@@ -5,8 +5,10 @@ export const copy = {
     heading: 'Eich nwyddau',
     animalsLabel: 'Anifeiliaid',
     animalsCaption: 'Cyfanswm nifer yr anifeiliaid yn y llwyth hwn',
+    animalsRegionLabel: 'Crynodeb anifeiliaid',
     packagesLabel: 'Pecynnau/blychau',
-    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
+    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn',
+    packagesRegionLabel: 'Crynodeb pecynnau'
   },
   reviewAndSubmit: 'Adolygu a chyflwyno',
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
@@ -31,7 +33,7 @@ export const copy = {
       title: 'Beth ydych chi’n ei fewnforio?'
     },
     importReason: {
-      title: 'Prif reswm dros fewnforio'
+      title: 'Prif reswm mewnforio'
     },
     consignmentDetails: {
       title: 'Manylion y nwyddau'
@@ -60,6 +62,21 @@ export const copy = {
     },
     documents: {
       title: 'Uwchlwytho dogfennau'
+    }
+  },
+  // While a template is being created the Overview is its task list: no
+  // Documents section, so the two after it renumber, and it ends with the
+  // template's own buttons.
+  template: {
+    taskListHeading: 'Rhestr dasgau’r templed',
+    reviewTemplate: 'Adolygu’r templed',
+    returnToManageTemplates: 'Dychwelyd i reoli templedi',
+    groups: {
+      'about-the-consignment': '1. Am y llwyth',
+      'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+      'transport-and-arrival': '3. Cludiant a chyrraedd',
+      'consignment-parties': '4. Partïon y llwyth',
+      'contact-address': '5. Cyfeiriad cyswllt'
     }
   }
 }

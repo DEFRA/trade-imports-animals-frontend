@@ -91,6 +91,21 @@ test.describe('declaration feature', () => {
     ).toBeVisible()
   })
 
+  test("confirms with a small checkbox under a hidden 'Declaration confirmation' legend and shows no status bar", async ({
+    page
+  }) => {
+    const group = page.getByRole('group', { name: copy.declarationLegend })
+    await expect(group).toBeVisible()
+    await expect(group.locator('legend')).toHaveClass(/govuk-visually-hidden/)
+    await expect(group.locator('.govuk-checkboxes')).toHaveClass(
+      /govuk-checkboxes--small/
+    )
+    await expect(
+      group.getByRole('checkbox', { name: copy.declarationLabel })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+  })
+
   test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
     page
   }) => {

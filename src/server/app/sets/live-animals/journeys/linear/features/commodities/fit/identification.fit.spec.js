@@ -62,6 +62,12 @@ const addLines = async (page, selections, counts = []) => {
       .locator(`#numberOfAnimalsQuantity-${index}`)
       .fill(counts[index] ?? DEFAULT_ANIMALS_COUNT)
   }
+  // Every package-count line's number of packages is save-blocking too.
+  for (const box of await page
+    .locator('input[name^="numberOfPackages-"]')
+    .all()) {
+    await box.fill('1')
+  }
 }
 
 const openIdentification = async (page, selections, counts = []) => {

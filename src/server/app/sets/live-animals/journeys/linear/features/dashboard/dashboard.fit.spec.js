@@ -8,6 +8,7 @@ import {
   openReviewFromHub,
   signIn,
   startNotification,
+  uploadHealthCertificate,
   urlUnderBase,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -21,8 +22,14 @@ const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
 const DESKTOP_BREAKPOINT_WIDTH = 769
 
-const submitNotification = async (page) => {
+const submitNotification = async (
+  page,
+  { withHealthCertificate = true } = {}
+) => {
   await completeAnswerSections(page)
+  if (withHealthCertificate) {
+    await uploadHealthCertificate(page)
+  }
   await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page
@@ -31,9 +38,9 @@ const submitNotification = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 }
 
-const stageSubmittedNotification = async (page) => {
+const stageSubmittedNotification = async (page, options) => {
   await startNotification(page)
-  await submitNotification(page)
+  await submitNotification(page, options)
   const reference = journeyIdFromPage(page)
   await page.goto(BASE)
   return reference
@@ -118,6 +125,20 @@ test.describe('dashboard feature — empty state and start', () => {
     ).toBeVisible()
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
   })
+
+  test('a start from another service opens a new notification at the origin page', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+    const strip = page.locator('.app-journey-strip')
+    await expect(strip).toContainText('Draft')
+    await expect(strip).toContainText(journeyIdFromPage(page))
+  })
 })
 
 test.describe('dashboard feature — notification rows and actions', () => {
@@ -146,6 +167,25 @@ test.describe('dashboard feature — notification rows and actions', () => {
       page.getByText(values.consignee.name, { exact: true })
     ).toBeVisible()
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
+    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
+    await expect(
+      actionFor(page, 'button', COPY_AS_NEW, reference)
+    ).toBeVisible()
+    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+  })
+
+  test('a notification submitted without its health certificate is listed as Submitted action required, with View, Amend, Copy as new and Delete', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page, {
+      withHealthCertificate: false
+    })
+
+    await expect(
+      page.getByText('Submitted action required', { exact: true })
+    ).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
     await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
     await expect(

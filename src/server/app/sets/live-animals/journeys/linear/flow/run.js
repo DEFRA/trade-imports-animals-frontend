@@ -17,6 +17,9 @@ import { addressesPage } from '../features/addresses/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
+import { inTemplateMode } from '../../../../../shared/template-mode.js'
+import { TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS } from './template-mode.js'
+import { identifiesAnAnimal } from './task-rows.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
@@ -65,6 +68,36 @@ export const RUN_STEPS = [
   { id: notificationViewPage.id, target: flowPageTarget(notificationViewPage) }
 ]
 
+/** The page each step's Back link names while the opening run is under way, as
+ * Design Release 2.1 orders them. The main import reason names What are you
+ * importing. Commodity details names the commodity page, not the reason between
+ * them. Additional details names Identification details when a chosen commodity
+ * needs identifiers, and Commodity details otherwise. Transit countries names
+ * Arrival details. A step left out keeps the overview. */
+const RUN_BACK_STEPS = Object.freeze({
+  [commoditiesPage.id]: () => originPage,
+  [importReasonPage.id]: () => commoditiesPage,
+  [consignmentDetailsPage.id]: () => commoditiesPage,
+  [additionalDetailsPage.id]: (answers) =>
+    identifiesAnAnimal(answers)
+      ? animalIdentificationPage
+      : consignmentDetailsPage,
+  [transitCountriesPage.id]: () => portOfEntryPage
+})
+
+/**
+ * The path a step's Back link names while the opening run is under way.
+ *
+ * @param {string} pageId - the page's id.
+ * @param {string} journeyId - the journey the page belongs to.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {string | null} the path, or null when the step keeps the overview.
+ */
+export const runBackTarget = (pageId, journeyId, answers = {}) =>
+  Object.hasOwn(RUN_BACK_STEPS, pageId)
+    ? pagePath(journeyId, RUN_BACK_STEPS[pageId](answers).slug)
+    : null
+
 export const nextRunTarget = (stepId, scope, journeyId) => {
   const index = RUN_STEPS.findIndex((step) => step.id === stepId)
   if (index === -1) {
@@ -73,7 +106,13 @@ export const nextRunTarget = (stepId, scope, journeyId) => {
   if (RUN_STEPS[index].endsRunWhenComplete && scope.readyForCheckYourAnswers) {
     return hubPath(journeyId)
   }
-  for (const step of RUN_STEPS.slice(index + 1)) {
+  const steps = RUN_STEPS.slice(index + 1).filter(
+    (step) =>
+      !(
+        inTemplateMode() && TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS.includes(step.id)
+      )
+  )
+  for (const step of steps) {
     const target = step.target(scope, journeyId)
     if (target) {
       return target

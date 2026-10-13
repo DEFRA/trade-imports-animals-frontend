@@ -1,19 +1,23 @@
 import {
   DRAFT,
   AMEND,
-  SUBMITTED
+  isSubmittedStatus
 } from '../../../../../engine/persistence/records.js'
+import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
 import { copiesBySourceAndKey, journeys } from '../store/state.js'
 import { mintReferenceNumber } from '../reference-number.js'
 import { marshal } from '../marshal/document.js'
 
-export const create = async () => {
+export const create = async (_actor, { fulfilment } = {}) => {
   const document = {
     id: mintReferenceNumber(),
     status: DRAFT,
     createdAt: new Date().toISOString(),
     submittedAt: null,
-    fulfilment: []
+    fulfilment:
+      fulfilment === undefined
+        ? []
+        : structuredClone(encodeEvaluatorFulfilments(fulfilment))
   }
   journeys().set(document.id, document)
   return structuredClone(marshal(document))
@@ -34,7 +38,7 @@ export const copy = async (journeyId, idempotencyKey, _actor) => {
   }
   if (
     source.status !== DRAFT &&
-    source.status !== SUBMITTED &&
+    !isSubmittedStatus(source.status) &&
     source.status !== AMEND
   ) {
     throw new Error(`Journey "${journeyId}" is ${source.status} — cannot copy`)

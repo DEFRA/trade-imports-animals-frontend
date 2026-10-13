@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { withTemplateMode } from '../../../../../shared/template-mode.js'
 import { dispatchPages } from '../features/index.js'
 import {
   animalIdentificationPage,
@@ -28,7 +29,7 @@ import { declarationPage } from '../features/declaration/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
-import { nextRunTarget, RUN_STEPS } from './run.js'
+import { nextRunTarget, RUN_STEPS, runBackTarget } from './run.js'
 import { allFlowPages } from './flow.js'
 
 const JOURNEY_ID = 'journey-1'
@@ -224,5 +225,87 @@ describe('the run covers the journey', () => {
       unregistered,
       'a new journey page must be added to RUN_STEPS or listed as outside the run'
     ).toEqual([])
+  })
+})
+
+describe('#nextRunTarget — the run in template mode', () => {
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  const templateStep = (stepId) =>
+    withTemplateMode('2100010101', () => next(stepId, completeSeed))
+
+  it('Should keep the run under the template, not the notification', () => {
+    expect(templateStep('origin')).toBe(
+      `/live-animals/templates/${JOURNEY_ID}/commodities`
+    )
+  })
+
+  it('Should skip the documents page on the way from the transporters to the addresses', () => {
+    expect(templateStep(transportersPage.id)).toBe(
+      pagePath(JOURNEY_ID, addressesPage.slug).replace(
+        '/notifications/',
+        '/templates/'
+      )
+    )
+  })
+
+  it('Should fall to the template path, never the review, after the last question', () => {
+    const target = templateStep(consignmentContactSelectPage.id)
+
+    expect(target).toBe(`/live-animals/templates/${JOURNEY_ID}`)
+    expect(target).not.toContain('notification-view')
+  })
+
+  it('Should still send a notification from the transporters through the documents page', () => {
+    expect(next(transportersPage.id, completeSeed)).toBe(
+      pagePath(JOURNEY_ID, documentsPage.slug)
+    )
+  })
+})
+
+describe('#runBackTarget — the Back link while the opening run is under way', () => {
+  it("Should name the origin page as the commodity page's Back link", () => {
+    expect(runBackTarget(commoditiesPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'origin')
+    )
+  })
+
+  it("Should name the commodity page, not the main reason for import, as Commodity details' Back link", () => {
+    expect(runBackTarget(consignmentDetailsPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it("Should name What are you importing? as the main import reason's Back link", () => {
+    expect(runBackTarget(importReasonPage.id, JOURNEY_ID, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it("Should name Identification details as Additional details' Back link when a chosen commodity needs identifiers", () => {
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Cow' }]
+      })
+    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
+  })
+
+  it("Should name Commodity details as Additional details' Back link when no chosen commodity needs identifiers", () => {
+    const commodityDetails = pagePath(JOURNEY_ID, 'consignment-details')
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Fish' }]
+      })
+    ).toBe(commodityDetails)
+    expect(runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {})).toBe(
+      commodityDetails
+    )
+  })
+
+  it('Should name nothing for a step the journey leaves to the overview', () => {
+    expect(runBackTarget('origin', JOURNEY_ID)).toBeNull()
+    expect(runBackTarget(portOfEntryPage.id, JOURNEY_ID)).toBeNull()
   })
 })

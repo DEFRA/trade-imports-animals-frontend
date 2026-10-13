@@ -6,11 +6,13 @@ import {
   answerCountryOfOrigin,
   completeAnswerSections,
   openReviewFromHub,
+  openTemplateTaskList,
+  referenceHeading,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  unlockSections
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -266,6 +268,45 @@ test.describe('hub feature', () => {
     ).toBeVisible()
   })
 
+  test('overview: with no commodity chosen, saving overland arrival details leaves the transit countries row off', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page
+      .getByRole('link', { name: copy.rows.arrivalDetails.title, exact: true })
+      .click()
+    await answerArrivalDetails(page)
+    await expectHub(page)
+
+    await expect(taskRow(page, copy.rows.transitCountries.title)).toHaveCount(0)
+    await expect(
+      taskRowTitles(groupTaskList(page, 'transport-and-arrival'))
+    ).toHaveText([copy.rows.arrivalDetails.title, copy.rows.transporter.title])
+  })
+
+  test('overview: with a commodity chosen and overland arrival details saved, transit countries sits between arrival and transport details as To do', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page
+      .getByRole('link', { name: copy.rows.arrivalDetails.title, exact: true })
+      .click()
+    await answerArrivalDetails(page)
+    await expectHub(page)
+
+    await expect(
+      taskRowTitles(groupTaskList(page, 'transport-and-arrival'))
+    ).toHaveText([
+      copy.rows.arrivalDetails.title,
+      copy.rows.transitCountries.title,
+      copy.rows.transporter.title
+    ])
+    await expect(taskRow(page, copy.rows.transitCountries.title)).toContainText(
+      copy.statuses.toDo
+    )
+  })
+
   test('overview: when a commodity carrying identifiers is chosen, the animal identification row appears', async ({
     page
   }) => {
@@ -400,9 +441,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('leads the secondary Return to dashboard button, with no review task row above them', async ({
@@ -430,9 +469,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   // Design release 1: "Animal identifiers are optional unless multiple species
@@ -450,9 +487,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('hub with nothing but the origin answered has no serious or critical axe violations', async ({
@@ -611,5 +646,239 @@ test.describe('hub feature — commodity totals', () => {
     ).toBeVisible()
 
     await expectAxeClean(page, 'Hub with commodity totals')
+  })
+})
+
+const TEMPLATE_NAME = 'Weekly cattle'
+const TEMPLATE_TASK_LIST_PATH = /\/live-animals\/templates\/[^/]+$/
+
+const templateGroupTitles = (page) =>
+  Promise.all(
+    Object.keys(copy.template.groups).map(async (groupId) => {
+      const titles = await taskRowTitles(
+        groupTaskList(page, groupId)
+      ).allTextContents()
+      return titles.map((title) => title.trim())
+    })
+  )
+
+test.describe("hub feature — a template's task list", () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openTemplateTaskList(page, TEMPLATE_NAME)
+  })
+
+  test('shows the Template tag and name in place of the status and reference, the Overview heading and "Template tasklist"', async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+
+    await expect(page).toHaveURL(TEMPLATE_TASK_LIST_PATH)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(strip.locator('.govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    await expect(strip).toContainText(TEMPLATE_NAME)
+    await expect(strip).not.toContainText('GBN-AG-')
+    await expect(
+      page.getByRole('heading', { name: copy.template.taskListHeading })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.taskListHeading })
+    ).toHaveCount(0)
+  })
+
+  test('keeps the commodity totals, reading 0 and 0', async ({ page }) => {
+    await expect(
+      page.getByRole('heading', { name: copy.commodityTotals.heading })
+    ).toBeVisible()
+    await expectTotalBoxes(page, '0', '0')
+  })
+
+  test("lists five sections without Documents, holding the notification's own tasks", async ({
+    page
+  }) => {
+    await expect(page.locator(SECTION_HEADING)).toHaveText(
+      Object.values(copy.template.groups)
+    )
+    expect(await templateGroupTitles(page)).toEqual([
+      [
+        copy.rows.origin.title,
+        copy.rows.commodities.title,
+        copy.rows.importReason.title
+      ],
+      [
+        copy.rows.consignmentDetails.title,
+        copy.rows.animalIdentification.title,
+        copy.rows.additionalDetails.title
+      ],
+      [copy.rows.arrivalDetails.title, copy.rows.transporter.title],
+      [copy.rows.addresses.title],
+      [copy.rows.contact.title]
+    ])
+    await expect(page.getByText(copy.rows.documents.title)).toHaveCount(0)
+  })
+
+  test('tags answered tasks Complete and the rest To do, and opens each task within the template', async ({
+    page
+  }) => {
+    await expect(
+      taskRow(page, copy.rows.origin.title).getByText(copy.statuses.complete)
+    ).toBeVisible()
+    await expect(
+      taskRow(page, copy.rows.commodities.title).getByText(
+        copy.statuses.complete
+      )
+    ).toBeVisible()
+    await expect(
+      taskRow(page, copy.rows.importReason.title).getByText(copy.statuses.toDo)
+    ).toBeVisible()
+
+    const hrefs = await page
+      .locator('.app-task-list .govuk-task-list__link')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const href of hrefs) {
+      expect(href).toMatch(/^\/live-animals\/templates\/[^/]+\/.+/)
+    }
+
+    await page.getByRole('link', { name: copy.rows.origin.title }).click()
+    await expect(page).toHaveURL(/\/live-animals\/templates\/[^/]+\/origin$/)
+  })
+
+  test('ends with Review template and Return to manage templates, and no Save template', async ({
+    page
+  }) => {
+    await expect(page.locator('.govuk-button-group .govuk-button')).toHaveText([
+      copy.template.reviewTemplate,
+      copy.template.returnToManageTemplates
+    ])
+    await expect(
+      page.getByRole('button', { name: 'Save template', exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.reviewAndSubmit })
+    ).toHaveCount(0)
+  })
+
+  test('Return to manage templates opens Manage templates', async ({
+    page
+  }) => {
+    await page
+      .getByRole('button', { name: copy.template.returnToManageTemplates })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Manage templates' })
+    ).toBeVisible()
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectAxeClean(page, "A template's task list")
+  })
+})
+
+test.describe('hub feature — regions for assistive technology', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('the two total cards are regions named Animals summary and Packages summary', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    const summary = page.getByRole('region', {
+      name: copy.commodityTotals.heading,
+      exact: true
+    })
+    const animals = summary.getByRole('region', {
+      name: copy.commodityTotals.animalsRegionLabel,
+      exact: true
+    })
+    const packages = summary.getByRole('region', {
+      name: copy.commodityTotals.packagesRegionLabel,
+      exact: true
+    })
+
+    await expect(animals).toContainText(copy.commodityTotals.animalsLabel)
+    await expect(animals).toContainText('0')
+    await expect(packages).toContainText(copy.commodityTotals.packagesLabel)
+    await expect(packages).toContainText('0')
+    await expect(summary.getByRole('region')).toHaveCount(2)
+  })
+
+  test('the commodity summary, the task list and each numbered section are regions named by their own heading', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('region', {
+        name: copy.commodityTotals.heading,
+        exact: true
+      })
+    ).toBeVisible()
+
+    const taskList = page.getByRole('region', {
+      name: copy.taskListHeading,
+      exact: true
+    })
+    await expect(taskList.getByRole('region')).toHaveCount(
+      Object.keys(copy.groups).length
+    )
+
+    for (const caption of Object.values(copy.groups)) {
+      const section = taskList.getByRole('region', {
+        name: caption,
+        exact: true
+      })
+      await expect(
+        section.getByRole('heading', { level: 3, name: caption })
+      ).toBeVisible()
+      await expect(section.locator('ul.govuk-task-list')).toHaveCount(1)
+    }
+
+    await expect(
+      taskList
+        .getByRole('region', { name: copy.groups['about-the-consignment'] })
+        .getByRole('link', { name: copy.rows.importReason.title })
+    ).toBeVisible()
+  })
+
+  test('each task link still reads its status, and Roles and addresses its hint, with the link', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('link', { name: copy.rows.origin.title, exact: true })
+    ).toHaveAccessibleDescription(copy.statuses.complete)
+    await expect(
+      page.getByRole('link', {
+        name: copy.rows.commodities.title,
+        exact: true
+      })
+    ).toHaveAccessibleDescription(copy.statuses.toDo)
+    await expect(
+      page.getByRole('link', { name: copy.rows.addresses.title, exact: true })
+    ).toHaveAccessibleDescription(
+      `${copy.rows.addresses.hint} ${copy.statuses.toDo}`
+    )
+  })
+
+  test('the third row of the first section reads Main import reason', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      taskRowTitles(groupTaskList(page, 'about-the-consignment'))
+    ).toHaveText([
+      copy.rows.origin.title,
+      copy.rows.commodities.title,
+      'Main import reason'
+    ])
+    await expect(page.getByText('Main reason for import')).toHaveCount(0)
   })
 })

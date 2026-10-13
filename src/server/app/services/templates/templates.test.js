@@ -1,0 +1,490 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+
+const originalMode = process.env.STUB_MODE
+
+const OWNER = '2100010101'
+const LIVE_ANIMALS = 'live-animals'
+const WEEKLY_CATTLE = 'Weekly cattle'
+const JANUARY = '2026-01-01T10:00:00Z'
+const ACORN = 'Acorn Farm'
+
+const savedTemplate = (id, name, created) => ({
+  id,
+  name,
+  setId: LIVE_ANIMALS,
+  created
+})
+
+const okResponse = (body) => ({ ok: true, status: 200, json: async () => body })
+
+const stubFetch = (impl) => vi.stubGlobal('fetch', vi.fn(impl))
+
+const realMode = () => {
+  process.env.STUB_MODE = 'false'
+}
+
+const stubMode = () => {
+  process.env.STUB_MODE = 'true'
+}
+
+const templatesService = () => import('./index.js')
+
+beforeEach(() => {
+  vi.resetModules()
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  if (originalMode === undefined) {
+    delete process.env.STUB_MODE
+  } else {
+    process.env.STUB_MODE = originalMode
+  }
+})
+
+describe('#listFor', () => {
+  test('Should list no templates for a user who has saved none, in stub mode', async () => {
+    stubMode()
+
+    const { listFor } = await templatesService()
+
+    expect(await listFor(OWNER)).toEqual([])
+  })
+
+  test("Should list only the user's own stub templates, newest first", async () => {
+    stubMode()
+    const { stubTemplates } = await import('./stub.js')
+    const older = savedTemplate('a', ACORN, JANUARY)
+    const newer = {
+      ...savedTemplate('b', 'Arena Aintree', '2026-02-01T10:00:00Z'),
+      fulfilments: [{ id: 'origin' }]
+    }
+    const other = savedTemplate('c', 'Not mine', JANUARY)
+    stubTemplates.set(OWNER, [older, newer])
+    stubTemplates.set('2100010102', [other])
+
+    const { listFor } = await templatesService()
+
+    expect(await listFor(OWNER)).toEqual([
+      { ...newer },
+      { ...older, fulfilments: [] }
+    ])
+    stubTemplates.clear()
+  })
+
+  test("Should ask the backend for the user's templates by the User-Id header", async () => {
+    realMode()
+    const saved = savedTemplate('a', ACORN, JANUARY)
+    const fetched = vi.fn(async () =>
+      okResponse({
+        items: [
+          { ...saved, fulfilments: [{ id: 'origin' }], extra: 'dropped' }
+        ],
+        totalItems: 1
+      })
+    )
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+
+    const { listFor } = await templatesService()
+    const found = await listFor(OWNER)
+
+    expect(fetched).toHaveBeenCalledWith(
+      `${backendBaseUrl}/templates`,
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ 'User-Id': OWNER })
+      })
+    )
+    expect(found).toEqual([{ ...saved, fulfilments: [{ id: 'origin' }] }])
+  })
+
+  test('Should answer no answers for a listed template the backend sends without any', async () => {
+    realMode()
+    const saved = savedTemplate('a', ACORN, JANUARY)
+    stubFetch(async () => okResponse({ items: [saved], totalItems: 1 }))
+
+    const { listFor } = await templatesService()
+
+    expect(await listFor(OWNER)).toEqual([{ ...saved, fulfilments: [] }])
+  })
+
+  test('Should refuse a failed backend list with the backend status', async () => {
+    realMode()
+    stubFetch(async () => ({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable'
+    }))
+
+    const { listFor } = await templatesService()
+
+    await expect(listFor(OWNER)).rejects.toMatchObject({
+      name: 'BackendRequestError',
+      status: 503
+    })
+  })
+
+  test('Should refuse to list templates without an owner', async () => {
+    const { listFor } = await templatesService()
+
+    await expect(listFor(undefined)).rejects.toThrow(
+      'Cannot list templates without an owner'
+    )
+  })
+})
+
+const TEMPLATE_ID = '6650f1c2a1b2c3d4e5f60718'
+
+const detail = (overrides = {}) => ({
+  id: TEMPLATE_ID,
+  name: WEEKLY_CATTLE,
+  setId: LIVE_ANIMALS,
+  created: JANUARY,
+  status: 'IN_PROGRESS',
+  version: 0,
+  fulfilments: [],
+  ...overrides
+})
+
+describe('stub templates in progress', () => {
+  it('Should hide a template still being created from the list', async () => {
+    stubMode()
+    const { startFor, listFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+
+    await startFor(OWNER, { setId: LIVE_ANIMALS, name: WEEKLY_CATTLE })
+
+    expect(await listFor(OWNER)).toEqual([])
+    stubTemplates.clear()
+  })
+
+  it('Should list a template once it is saved, for its owner only', async () => {
+    stubMode()
+    const { startFor, listFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+    expect(await listFor(OWNER)).toEqual([])
+
+    const saved = await saveFor(OWNER, started.id)
+
+    expect(saved).toMatchObject({ status: 'SAVED', version: 1 })
+    expect(await listFor(OWNER)).toMatchObject([{ name: WEEKLY_CATTLE }])
+    expect(await saveFor('2100010102', started.id)).toBeUndefined()
+    stubTemplates.clear()
+  })
+
+  it('Should list the template saved later first, whatever order they were started', async () => {
+    stubMode()
+    const { startFor, listFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    vi.useFakeTimers()
+
+    try {
+      vi.setSystemTime(new Date('2026-10-01T10:00:00Z'))
+      const first = await startFor(OWNER, { setId: LIVE_ANIMALS, name: 'A' })
+      vi.setSystemTime(new Date('2026-10-01T11:00:00Z'))
+      const second = await startFor(OWNER, { setId: LIVE_ANIMALS, name: 'B' })
+      vi.setSystemTime(new Date('2026-10-01T12:00:00Z'))
+      await saveFor(OWNER, second.id)
+      vi.setSystemTime(new Date('2026-10-01T13:00:00Z'))
+      await saveFor(OWNER, first.id)
+
+      const names = (await listFor(OWNER)).map((item) => item.name)
+
+      expect(names).toEqual(['A', 'B'])
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
+  it('Should keep the first saved time when a template is saved again', async () => {
+    stubMode()
+    const { startFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    vi.useFakeTimers()
+
+    try {
+      vi.setSystemTime(new Date('2026-10-01T10:00:00Z'))
+      const started = await startFor(OWNER, {
+        setId: LIVE_ANIMALS,
+        name: WEEKLY_CATTLE
+      })
+      await saveFor(OWNER, started.id)
+      vi.setSystemTime(new Date('2026-10-01T12:00:00Z'))
+      await saveFor(OWNER, started.id)
+
+      expect(stubTemplates.get(OWNER)[0].saved).toBe('2026-10-01T10:00:00.000Z')
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
+  it('Should start, read back, rename and fill a template for its owner only', async () => {
+    stubMode()
+    const { startFor, getFor, updateDetailsFor, replaceFulfilmentsFor } =
+      await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+    await updateDetailsFor(OWNER, started.id, {
+      setId: 'germinal-products',
+      name: 'Semen'
+    })
+    await replaceFulfilmentsFor(OWNER, started.id, [{ obligationId: 'a' }])
+    const read = await getFor(OWNER, started.id)
+
+    expect(started).toMatchObject({ status: 'IN_PROGRESS', version: 0 })
+    expect(read).toMatchObject({
+      name: 'Semen',
+      setId: 'germinal-products',
+      version: 2,
+      fulfilments: [{ obligationId: 'a' }]
+    })
+    expect(await getFor('2100010102', started.id)).toBeUndefined()
+    expect(await getFor(OWNER, 'missing')).toBeUndefined()
+    stubTemplates.clear()
+  })
+
+  it.each([
+    ['start a template', (service) => service.startFor(undefined, {})],
+    ['read a template', (service) => service.getFor(undefined, 'a')],
+    [
+      'change a template',
+      (service) => service.updateDetailsFor(undefined, 'a', {})
+    ],
+    [
+      'save a template',
+      (service) => service.replaceFulfilmentsFor(undefined, 'a', [])
+    ],
+    ['save a template for reuse', (service) => service.saveFor(undefined, 'a')]
+  ])('Should refuse to %s without an owner', async (action, call) => {
+    const service = await templatesService()
+
+    await expect(call(service)).rejects.toThrow(
+      `Cannot ${action} without an owner`
+    )
+  })
+})
+
+describe('real templates in progress', () => {
+  const sent = (fetched) => fetched.mock.calls[0]
+
+  it('Should post a new template with the owner header and read the stored one back', async () => {
+    realMode()
+    const fetched = vi.fn(async () => okResponse(detail()))
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+    const { startFor } = await templatesService()
+
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE,
+      organisationId: '5900001'
+    })
+
+    const [url, options] = sent(fetched)
+    expect(url).toBe(`${backendBaseUrl}/templates`)
+    expect(options.method).toBe('POST')
+    expect(options.headers).toMatchObject({ 'User-Id': OWNER })
+    expect(JSON.parse(options.body)).toEqual({
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE,
+      organisationId: '5900001'
+    })
+    expect(started).toMatchObject({ id: TEMPLATE_ID, status: 'IN_PROGRESS' })
+  })
+
+  it('Should get a template by its encoded id with the owner header', async () => {
+    realMode()
+    const fetched = vi.fn(async () => okResponse(detail()))
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+    const { getFor } = await templatesService()
+
+    const found = await getFor(OWNER, TEMPLATE_ID)
+
+    const [url, options] = sent(fetched)
+    expect(url).toBe(`${backendBaseUrl}/templates/${TEMPLATE_ID}`)
+    expect(options.headers).toMatchObject({ 'User-Id': OWNER })
+    expect(found).toMatchObject({ name: WEEKLY_CATTLE, version: 0 })
+  })
+
+  it('Should answer undefined for a template the backend does not have', async () => {
+    realMode()
+    stubFetch(async () => ({ ok: false, status: 404 }))
+    const { getFor } = await templatesService()
+
+    expect(await getFor(OWNER, TEMPLATE_ID)).toBeUndefined()
+  })
+
+  it('Should answer undefined, without asking, for an id no template can have', async () => {
+    realMode()
+    const fetched = vi.fn()
+    stubFetch(fetched)
+    const { getFor } = await templatesService()
+
+    expect(await getFor(OWNER, '../notifications')).toBeUndefined()
+    expect(fetched).not.toHaveBeenCalled()
+  })
+
+  it('Should put the details and the answers to their own routes', async () => {
+    realMode()
+    const fetched = vi.fn(async () => okResponse(detail()))
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+    const { updateDetailsFor, replaceFulfilmentsFor } = await templatesService()
+
+    await updateDetailsFor(OWNER, TEMPLATE_ID, {
+      setId: LIVE_ANIMALS,
+      name: 'Renamed'
+    })
+    await replaceFulfilmentsFor(OWNER, TEMPLATE_ID, [{ obligationId: 'a' }])
+
+    const [detailsUrl, detailsOptions] = fetched.mock.calls[0]
+    const [answersUrl, answersOptions] = fetched.mock.calls[1]
+    expect(detailsUrl).toBe(
+      `${backendBaseUrl}/templates/${TEMPLATE_ID}/details`
+    )
+    expect(detailsOptions.method).toBe('PUT')
+    expect(JSON.parse(detailsOptions.body)).toEqual({
+      setId: LIVE_ANIMALS,
+      name: 'Renamed'
+    })
+    expect(answersUrl).toBe(
+      `${backendBaseUrl}/templates/${TEMPLATE_ID}/fulfilments`
+    )
+    expect(JSON.parse(answersOptions.body)).toEqual({
+      fulfilments: [{ obligationId: 'a' }]
+    })
+  })
+
+  it("Should post the save to the template's own route with the owner header", async () => {
+    realMode()
+    const fetched = vi.fn(async () => okResponse(detail({ status: 'SAVED' })))
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+    const { saveFor } = await templatesService()
+
+    const saved = await saveFor(OWNER, TEMPLATE_ID)
+
+    const [url, options] = sent(fetched)
+    expect(url).toBe(`${backendBaseUrl}/templates/${TEMPLATE_ID}/save`)
+    expect(options.method).toBe('POST')
+    expect(options.body).toBeUndefined()
+    expect(options.headers).toMatchObject({ 'User-Id': OWNER })
+    expect(saved).toMatchObject({ id: TEMPLATE_ID, status: 'SAVED' })
+  })
+
+  it('Should refuse a failed start with the backend status', async () => {
+    realMode()
+    stubFetch(async () => ({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable'
+    }))
+    const { startFor } = await templatesService()
+
+    await expect(
+      startFor(OWNER, { setId: LIVE_ANIMALS, name: '' })
+    ).rejects.toMatchObject({ name: 'BackendRequestError', status: 503 })
+  })
+})
+
+describe('the time a template was first saved', () => {
+  it('Should carry the first saved time on a template read in stub mode', async () => {
+    stubMode()
+    const { startFor, saveFor, getFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+    expect((await getFor(OWNER, started.id)).saved).toBeUndefined()
+
+    await saveFor(OWNER, started.id)
+
+    expect((await getFor(OWNER, started.id)).saved).toEqual(expect.any(String))
+    stubTemplates.clear()
+  })
+
+  it('Should carry the first saved time on a template read from the backend', async () => {
+    realMode()
+    stubFetch(async () =>
+      okResponse(detail({ status: 'SAVED', saved: '2026-01-02T10:00:00Z' }))
+    )
+    const { getFor } = await templatesService()
+
+    const found = await getFor(OWNER, TEMPLATE_ID)
+
+    expect(found.saved).toBe('2026-01-02T10:00:00Z')
+  })
+})
+
+describe('the time a saved template was last saved', () => {
+  it('Should move the saved time on when a saved template’s answers are replaced', async () => {
+    stubMode()
+    const { startFor, saveFor, replaceFulfilmentsFor, getFor } =
+      await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    try {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-10-02T10:00:00Z'))
+      const started = await startFor(OWNER, {
+        setId: LIVE_ANIMALS,
+        name: WEEKLY_CATTLE
+      })
+      await saveFor(OWNER, started.id)
+      vi.setSystemTime(new Date('2026-10-05T12:00:00Z'))
+
+      await replaceFulfilmentsFor(OWNER, started.id, [{ obligationId: 'a' }])
+
+      expect((await getFor(OWNER, started.id)).saved).toBe(
+        '2026-10-05T12:00:00.000Z'
+      )
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
+  it('Should leave the saved time unset when a template still being created is filled', async () => {
+    stubMode()
+    const { startFor, replaceFulfilmentsFor, getFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+
+    await replaceFulfilmentsFor(OWNER, started.id, [{ obligationId: 'a' }])
+
+    expect((await getFor(OWNER, started.id)).saved).toBeUndefined()
+    stubTemplates.clear()
+  })
+})
+
+describe('#isBeingCreated', () => {
+  it('Should be true only for a template held as in progress', async () => {
+    const { isBeingCreated } = await templatesService()
+
+    expect(isBeingCreated({ status: 'IN_PROGRESS' })).toBe(true)
+    expect(isBeingCreated({ status: 'SAVED' })).toBe(false)
+    expect(isBeingCreated({})).toBe(false)
+    expect(isBeingCreated(undefined)).toBe(false)
+  })
+})

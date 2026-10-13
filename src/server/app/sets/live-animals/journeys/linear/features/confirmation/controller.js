@@ -1,7 +1,7 @@
 import {
   createPath,
   dashboardPath,
-  hubPath,
+  pagePath,
   pageRoutePath
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
@@ -12,21 +12,22 @@ import { confirmationPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { outstandingItems } from './outstanding.js'
+import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/confirmation/template`
 
 const copy = copyFor({ en, cy })
 
 const get = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
-  if (journey.status !== state.SUBMITTED) {
-    return h.redirect(hubPath(journey.journeyId))
+  const { journey } = await state.get(request, h)
+  if (!state.isSubmittedStatus(journey.status)) {
+    return h.redirect(pagePath(journey.journeyId, declarationPage.slug))
   }
   return h.view(view, {
     ...base(copy.title, { journeyId: journey.journeyId }),
     copy,
     referenceNumber: journey.journeyId,
-    outstandingItems: outstandingItems(answers, evaluation),
+    outstandingItems: outstandingItems(journey),
     dashboardHref: dashboardPath(),
     createAction: createPath()
   })

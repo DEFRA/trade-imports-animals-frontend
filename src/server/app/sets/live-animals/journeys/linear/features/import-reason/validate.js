@@ -149,9 +149,7 @@ const fromAnswers = (answers) => ({
   [TEMPORARY_ADMISSION_DATE_FIELD]: dateTextOf(answers.exitDate)
 })
 
-// Commits only the current reveal's answers; the evaluator purges any
-// belonging to a reason no longer chosen.
-const toAnswers = (values) => ({
+const revealAnswersOf = (values) => ({
   reasonForImport: values.reasonForImport,
   ...Object.fromEntries(
     revealsFor(values.reasonForImport).map(({ field, answer }) => [
@@ -162,6 +160,14 @@ const toAnswers = (values) => ({
     ])
   )
 })
+
+// A radio cannot be un-chosen, so a blank reason commits nothing.
+const toAnswers = (values) => {
+  if (values.reasonForImport === '') {
+    return {}
+  }
+  return revealAnswersOf(values)
+}
 
 export const validation = pageValidation({
   fields,

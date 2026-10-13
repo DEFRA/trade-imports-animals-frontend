@@ -16,6 +16,7 @@ import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
   it('Should have a non-empty string or copy function at every leaf', () => {
@@ -25,9 +26,58 @@ describe('#copy', () => {
   })
 
   it('Should interpolate the parameterised leaves', () => {
+    expect(copy.resubmitTitle).toBe('Review before re-submitting')
+    expect(copy.viewHeader.dateCreated('22 July 2026')).toBe(
+      'Date created: 22 July 2026'
+    )
+    expect(copy.viewHeader.dateSubmitted('22 July 2026')).toBe(
+      'Date submitted: 22 July 2026'
+    )
     expect(copy.identifierTable.animalN(2)).toBe('Animal 2')
     expect(copy.documentN(1)).toBe('Document 1')
-    expect(copy.hidden.commodity(3)).toBe('commodity 3')
+    expect(copy.hidden.documentN(2)).toBe('document 2')
+    expect(copy.hidden.numberOfAnimalsFor('Bos Taurus')).toBe(
+      'number of animals for Bos Taurus'
+    )
+    expect(copy.identifierTable.animalNamed('Bos taurus', 2)).toBe(
+      'Bos taurus 2'
+    )
+    expect(copy.hidden.identificationDetailsFor('Bos Taurus')).toBe(
+      'identification details for Bos Taurus'
+    )
+    expect(copy.errors.species.numberOfAnimals('felis catus')).toBe(
+      'Enter the number of animals for felis catus'
+    )
+    expect(copy.errors.species.atLeastOneIdentifier('felis catus')).toBe(
+      'Enter at least 1 animal identifier for felis catus'
+    )
+  })
+})
+
+describe('#copy.template — the template review', () => {
+  it('Should pin the template review copy in both locales', () => {
+    expect(copy.template).toEqual({
+      title: 'Review your template',
+      saveTemplate: 'Save template',
+      sections: {
+        'about-the-consignment': '1. About the consignment',
+        'description-of-the-goods': '2. Description of the goods',
+        'transport-and-arrival': '3. Transport and arrival',
+        'consignment-parties': '4. Consignment parties',
+        'contact-address-section': '5. Contact address'
+      }
+    })
+    expect(copyCy.template).toEqual({
+      title: 'Adolygu eich templed',
+      saveTemplate: 'Cadw’r templed',
+      sections: {
+        'about-the-consignment': '1. Am y llwyth',
+        'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+        'transport-and-arrival': '3. Cludiant a chyrraedd',
+        'consignment-parties': '4. Partïon y llwyth',
+        'contact-address-section': '5. Cyfeiriad cyswllt'
+      }
+    })
   })
 })
 
@@ -46,7 +96,7 @@ describe('GET check-answers — copy reaches the view', () => {
     await handler(journeyRequest(journey.journeyId), h)
     const { context } = h.captured.view
     expect(context.copy).toBe(copy)
-    expect(context.pageTitle).toBe(copy.title)
+    expect(context.pageTitle).toBe(journey.journeyId)
     expect(context.sharedCopy.layout.serviceName).toBe(
       'Import notification service'
     )

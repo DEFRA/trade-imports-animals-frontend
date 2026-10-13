@@ -1,12 +1,20 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
-import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
+} from '../engine/index.js'
 import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyRunBackTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
+import { changingSavedTemplate, inTemplateMode } from './template-mode.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
@@ -40,6 +48,10 @@ const STRIP_STATUS = {
     text: sharedCopy.journeyStrip.submitted,
     classes: 'govuk-tag--green'
   },
+  [SUBMITTED_ACTION_REQUIRED]: {
+    text: sharedCopy.journeyStrip.submittedActionRequired,
+    classes: 'govuk-tag--orange'
+  },
   [AMEND]: {
     text: sharedCopy.journeyStrip.amend,
     classes: 'govuk-tag--yellow'
@@ -48,6 +60,13 @@ const STRIP_STATUS = {
     text: sharedCopy.journeyStrip.deleted,
     classes: 'govuk-tag--grey'
   }
+}
+
+// A template's strip carries its name where a notification carries its
+// reference, so the same layout element draws both.
+const TEMPLATE_STRIP_STATUS = {
+  text: sharedCopy.journeyStrip.template,
+  classes: 'govuk-tag--grey'
 }
 
 export const CYA_SLUG = 'notification-view'
@@ -71,14 +90,22 @@ const cancelAmendControl = (journey) =>
  * journey is being amended. False on the page Cancel amend leads to.
  * @returns {object|null} the strip view model, or null without a journey.
  */
-export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
-  journey
-    ? {
-        reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status],
-        cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
-      }
-    : null
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) => {
+  if (!journey) {
+    return null
+  }
+  if (inTemplateMode()) {
+    return {
+      reference: journey.templateName ?? '',
+      status: TEMPLATE_STRIP_STATUS
+    }
+  }
+  return {
+    reference: journey.journeyId,
+    status: STRIP_STATUS[journey.status],
+    cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
+  }
+}
 
 const anchorHref = (field) => `#${field}`
 
@@ -124,10 +151,14 @@ export const changeContext = (request) => Boolean(request.query.change)
 export const withChangeContext = (request, href) =>
   changeContext(request) ? `${href}?change=1` : href
 
+/** Where a change-context page returns: the review, or a saved template's own page. */
+export const changeReturnPath = (journeyId) =>
+  changingSavedTemplate() ? hubPath(journeyId) : pagePath(journeyId, CYA_SLUG)
+
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
+    ? changeReturnPath(request.params.journeyId)
     : fallback)
 
 /** The review's path for a save made while amending from a Change link, else null. */
@@ -136,10 +167,31 @@ export const amendReviewTarget = (request, journey) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : null
 
+/** True for a save that skips the page's required-answer checks: 'Save and return to overview', or 'Save and return' to the review while amending. A format rule still applies. */
+export const skipsRequiredChecks = (request, journey) =>
+  isHubExit(request) || amendReviewTarget(request, journey) !== null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
+
+/**
+ * Where a page's Back link goes: the page before it in the opening run while
+ * the run is under way, otherwise the overview it was opened from.
+ *
+ * @param {object} request - the hapi request.
+ * @param {{ id: string }} page - the page identity.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {Promise<string>} the Back link's href.
+ */
+export const runBackLink = async (request, page, answers = {}) => {
+  const { journeyId } = request.params
+  const runBack = (await inOpeningRun(request, journeyId))
+    ? journeyRunBackTarget(page.id, journeyId, answers)
+    : null
+  return runBack ?? hubPath(journeyId)
+}
 
 export const nextTarget = async (request, page, scope) =>
   exitTarget(
@@ -160,6 +212,8 @@ export const nextTarget = async (request, page, scope) =>
  * on a page that ends with `saveActions`, and the view gains `amend`: the two
  * form actions its save buttons carry while the journey is being amended, or
  * null otherwise. A template passes it on as `amend = amend`.
+ * The view also carries `templateChange`: the page ends with Save and return
+ * and Cancel, because it is changing one section of a saved template.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -185,7 +239,9 @@ export const base = (
     // would send every set's service navigation to the default set's
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
+    // In template mode `hubPath` resolves to the template's own task list.
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
+    templateChange: changingSavedTemplate(),
     journeyStrip: journeyStrip(journey, { offerCancelAmend }),
     amending,
     // Per request because an amend page's save buttons carry the page's own
@@ -300,16 +356,27 @@ export const dateTextOf = (value) =>
  * group. The picker's client-side script inserts the calendar dialog inside
  * the form group, so a class here is the simplest stylesheet hook onto one
  * picker rather than all of them.
+ * @param {string} [options.labelClasses] - classes for the label; the GOV.UK
+ * small size unless the page asks for another.
  */
 export const dateField = (
   name,
-  { label, hint, value = {}, error, minDate, maxDate, formGroupClasses } = {}
+  {
+    label,
+    hint,
+    value = {},
+    error,
+    minDate,
+    maxDate,
+    formGroupClasses,
+    labelClasses = 'govuk-label--s'
+  } = {}
 ) => {
   return {
     id: name,
     name,
     classes: 'govuk-input--width-10',
-    label: { text: label, classes: 'govuk-label--s' },
+    label: { text: label, classes: labelClasses },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
     value: dateTextOf(value),

@@ -13,6 +13,7 @@ export const copy = {
     serviceNavigation: {
       menuButton: 'Dewislen',
       dashboard: 'Dangosfwrdd',
+      templates: 'Templedi',
       addressBook: 'Llyfr cyfeiriadau',
       manageAccount: 'Rheoli cyfrif',
       logOut: 'Allgofnodi'
@@ -63,14 +64,17 @@ export const copy = {
     saveAndReturn: 'Cadw a dychwelyd',
     saveAndContinue: 'Cadw a pharhau',
     saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
-    cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
+    cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg",
+    cancel: 'Canslo'
   },
   journeyStrip: {
     draft: 'Drafft',
     submitted: "Wedi'i gyflwyno",
+    submittedActionRequired: "Wedi'i gyflwyno – angen gweithredu",
     amend: 'Diwygio',
     cancelAmend: 'Canslo diwygio',
-    deleted: "Wedi'i ddileu"
+    deleted: "Wedi'i ddileu",
+    template: 'Templed'
   },
   addressHandshake: {
     addNewAddress: 'Ychwanegu cyfeiriad newydd',

@@ -1,7 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
   answerCountryOfOrigin,
+  answerImportReason,
+  answerOriginEntry,
   journeyUrl,
   urlUnderBase,
   selectSpecies,
@@ -13,6 +16,7 @@ import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const SAVE_AND_CONTINUE = 'Save and continue'
+const COMMODITY_DETAILS = 'Commodity details'
 
 // The species drives which questions the page asks, so it is the one thing
 // the set-up varies: cattle are asked the unweaned-animals question and
@@ -26,7 +30,7 @@ const startAtAdditionalDetails = async (page, species = 'Bos taurus') => {
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  await page.getByRole('link', { name: 'Commodity details' }).click()
+  await page.getByRole('link', { name: COMMODITY_DETAILS }).click()
   await page.getByLabel('Number of animals').fill('1')
   await page.getByLabel('Number of packages (when required)').fill('1')
   await page
@@ -88,6 +92,72 @@ test.describe('additional-details feature — rendering', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(hubUrl)
+  })
+})
+
+// The opening run walks the pages in order and never visits the overview, so
+// each page's Back link names the page before it.
+const reachAdditionalDetailsInTheRun = async (page, species, { packages }) => {
+  await page.goto(BASE)
+  await page.getByRole('button', { name: 'Start a new notification' }).click()
+  await answerOriginEntry(page)
+  await selectSpecies(page, [species])
+  await page
+    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Main import reason' })
+  ).toBeVisible()
+  await answerImportReason(page)
+  await expect(
+    page.getByRole('heading', { name: COMMODITY_DETAILS })
+  ).toBeVisible()
+  await page.getByLabel('Number of animals').fill('1')
+  if (packages) {
+    await page.getByLabel('Number of packages (when required)').fill('1')
+  }
+  await page
+    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+    .click()
+}
+
+test.describe('additional-details feature — in the opening run', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('back link returns to Identification details when a chosen commodity needs identifiers', async ({
+    page
+  }) => {
+    await reachAdditionalDetailsInTheRun(page, 'Bos taurus', { packages: true })
+    await expect(
+      page.getByRole('heading', { name: 'Identification details', exact: true })
+    ).toBeVisible()
+    await page
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+      .click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Identification details', exact: true })
+    ).toBeVisible()
+  })
+
+  test('back link returns to Commodity details when nothing chosen needs identifiers', async ({
+    page
+  }) => {
+    await reachAdditionalDetailsInTheRun(page, 'Salmo salar', {
+      packages: false
+    })
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(
+      page.getByRole('heading', { name: COMMODITY_DETAILS })
+    ).toBeVisible()
   })
 })
 

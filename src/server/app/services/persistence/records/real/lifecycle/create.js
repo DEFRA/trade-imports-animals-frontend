@@ -1,16 +1,32 @@
+import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
+import { fulfilmentToNotification } from '../../mapper.js'
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
+// A seeded draft carries the notification-shape fields and the encoded
+// fulfilments, as a save does. No reference number rides along: the backend
+// mints it.
+const notificationBody = (fulfilment) => {
+  if (fulfilment === undefined) {
+    return { fulfilments: [] }
+  }
+  const snapshot = structuredClone(fulfilment)
+  return {
+    ...fulfilmentToNotification(snapshot),
+    fulfilments: encodeEvaluatorFulfilments(snapshot)
+  }
+}
+
 // Backend mints the reference number; response carries the created notification.
-export const create = async (actor) => {
+export const create = async (actor, { fulfilment } = {}) => {
   const notificationResponse = await backendFetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-      notification: { fulfilments: [] },
+      notification: notificationBody(fulfilment),
       ...(actor ? { actor } : {})
     })
   })

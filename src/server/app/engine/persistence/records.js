@@ -1,9 +1,20 @@
 import { currentSetId, setKeyed } from '../../shared/set-context.js'
+import { inTemplateMode } from '../../shared/template-mode.js'
 
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
+export const SUBMITTED_ACTION_REQUIRED = 'submitted-action-required'
+export const OUTSTANDING_HEALTH_CERTIFICATE = 'HEALTH_CERTIFICATE'
+
+/** True for a lodged, read-only notification, with or without action required. */
+export const isSubmittedStatus = (status) =>
+  status === SUBMITTED || status === SUBMITTED_ACTION_REQUIRED
+
+/** The submitted status a submission lands in, given what it still owes. */
+export const submittedStatusFor = (outstandingItems = []) =>
+  outstandingItems.length > 0 ? SUBMITTED_ACTION_REQUIRED : SUBMITTED
 
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')
@@ -27,10 +38,29 @@ const store = setKeyed('records', { configuredBy: 'configureRecords' })
 
 // Reading before configuration is the un-booted case, which must report itself
 // through `unconfigured` rather than through setKeyed's "no such set" error.
-const impl = () => (store.has(currentSetId()) ? store.current() : UNCONFIGURED)
+const notificationImpl = () =>
+  store.has(currentSetId()) ? store.current() : UNCONFIGURED
+
+// Optional, unlike the notification records: a set that never enters template
+// mode need not configure it.
+const templateStore = setKeyed('template records')
+
+const templateImpl = () => {
+  const setId = currentSetId()
+  if (!templateStore.has(setId)) {
+    throw new Error(`template records not configured for set "${setId}"`)
+  }
+  return templateStore.current()
+}
+
+const impl = () => (inTemplateMode() ? templateImpl() : notificationImpl())
 
 export const configureRecords = (setId, newImpl) => {
   store.configure(setId, newImpl)
+}
+
+export const configureTemplateRecords = (setId, newImpl) => {
+  templateStore.configure(setId, newImpl)
 }
 
 export const records = {

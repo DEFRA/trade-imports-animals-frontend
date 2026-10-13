@@ -12,6 +12,23 @@ const ERROR_PAGE_COPY_KEY = {
 const errorMessageFor = (statusCode) =>
   sharedCopy.errorPage[ERROR_PAGE_COPY_KEY[statusCode] ?? 'unexpected']
 
+/**
+ * The error's stack followed by each cause's, so a wrapper such as fetch's
+ * "fetch failed" names the socket or DNS failure underneath it.
+ *
+ * @param {Error} error - the error behind the response.
+ * @returns {string} the stack, then "Caused by:" and each cause in turn.
+ */
+export const stackWithCauses = (error) => {
+  const lines = [error.stack]
+  let cause = error.cause
+  while (cause) {
+    lines.push(`Caused by: ${cause.stack ?? String(cause)}`)
+    cause = cause.cause
+  }
+  return lines.join('\n')
+}
+
 const errorChrome = (request, errorMessage) => {
   const setId = setIdForPath(request.path)
   return setId
@@ -30,7 +47,7 @@ export function catchAll(request, h) {
   const errorMessage = errorMessageFor(statusCode)
 
   if (statusCode >= statusCodes.internalServerError) {
-    request.logger.error(response?.stack)
+    request.logger.error(stackWithCauses(response))
     const cause = response.data?.cause
     if (cause) {
       request.logger.error({ err: cause }, `Caused by: ${cause.message}`)

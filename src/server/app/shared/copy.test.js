@@ -33,9 +33,11 @@ describe('journey strip copy', () => {
     expect(sharedEn.journeyStrip).toEqual({
       draft: 'Draft',
       submitted: 'Submitted',
+      submittedActionRequired: 'Submitted action required',
       amend: 'Amend',
       cancelAmend: 'Cancel amend',
-      deleted: 'Deleted'
+      deleted: 'Deleted',
+      template: 'Template'
     })
   })
 
@@ -69,10 +71,18 @@ describe('service-navigation copy', () => {
     expect(sharedEn.layout.serviceNavigation).toEqual({
       menuButton: 'Menu',
       dashboard: 'Dashboard',
+      templates: 'Templates',
       addressBook: 'Address book',
       manageAccount: 'Manage account',
       logOut: 'Log out'
     })
+  })
+
+  it('Should draft the Templates label in Welsh', () => {
+    expect(sharedCy.layout.serviceNavigation.templates).toBe('Templedi')
+    expect(sharedCy.layout.serviceNavigation.templates).not.toBe(
+      sharedEn.layout.serviceNavigation.templates
+    )
   })
 
   it('Should carry the same item keys in Welsh', () => {
@@ -100,13 +110,27 @@ describe('save-actions copy', () => {
       saveAndReturn: 'Save and return',
       saveAndContinue: 'Save and continue',
       saveAndReturnToHub: 'Save and return to overview',
-      cancelAndReturnToHub: 'Cancel and return to overview'
+      cancelAndReturnToHub: 'Cancel and return to overview',
+      cancel: 'Cancel'
     })
   })
 
   it('Should carry the same control keys in Welsh', () => {
     expect(Object.keys(sharedCy.saveActions)).toEqual(
       Object.keys(sharedEn.saveActions)
+    )
+  })
+})
+
+describe('journey-strip copy', () => {
+  it('Should name the tag a template shows in place of a notification status', () => {
+    expect(sharedEn.journeyStrip.template).toBe('Template')
+    expect(sharedCy.journeyStrip.template).toBe('Templed')
+  })
+
+  it('Should carry the same strip keys in Welsh', () => {
+    expect(Object.keys(sharedCy.journeyStrip)).toEqual(
+      Object.keys(sharedEn.journeyStrip)
     )
   })
 })

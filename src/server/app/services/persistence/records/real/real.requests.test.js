@@ -4,7 +4,8 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { obligationSet } from '../../../../model/obligations/manifest.js'
@@ -62,6 +63,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(mapStatus('SUBMITTED')).toBe(SUBMITTED)
     expect(mapStatus('AMEND')).toBe(AMEND)
     expect(mapStatus('DELETED')).toBe(DELETED)
+    expect(mapStatus('SUBMITTED_ACTION_REQUIRED')).toBe(
+      SUBMITTED_ACTION_REQUIRED
+    )
     expect(() => mapStatus('UNKNOWN')).toThrow(
       /Unknown backend fulfilment status "UNKNOWN"/
     )
@@ -84,7 +88,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       status: DRAFT,
       createdAt,
       submittedAt: null,
+      outstandingItems: [],
       concurrencyToken: 0,
+      answersChangedSinceSubmission: false,
       fulfilment: {}
     })
   })
@@ -98,6 +104,43 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       notification: { fulfilments: [] },
       actor
     })
+  })
+
+  it('Should create a notification seeded with a fulfilment, carrying the notification-shape fields and the encoded fulfilments in one POST', async () => {
+    const seed = assembleFulfilments({
+      countryOfOrigin: 'FR',
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfAnimalsQuantity: '5',
+          numberOfPackages: '2'
+        }
+      ]
+    })
+    fetchMocker.mockResponse(
+      JSON.stringify(
+        canonical({ fulfilments: encodeEvaluatorFulfilments(seed) })
+      ),
+      { status: 200 }
+    )
+
+    const created = await records.create(actor, { fulfilment: seed })
+
+    const requests = fetchMocker.requests()
+    expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
+      { method: 'POST', url: notificationsUrl }
+    ])
+    const body = await jsonOf(requests[0])
+    expect(body).toEqual({
+      notification: {
+        ...fulfilmentToNotification(seed),
+        fulfilments: encodeEvaluatorFulfilments(seed)
+      },
+      actor
+    })
+    expect(body.notification).not.toHaveProperty('referenceNumber')
+    expect(created.fulfilment).toEqual(seed)
   })
 
   it('Should classify the adapter fetch failure shape, but not programming errors, as recoverable', async () => {

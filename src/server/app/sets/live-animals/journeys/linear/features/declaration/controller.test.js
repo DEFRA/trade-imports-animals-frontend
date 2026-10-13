@@ -30,7 +30,10 @@ import { continueRequest, reviewedState } from './test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../engine/persistence/session.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
-import { records } from '../../../../../../engine/persistence/records.js'
+import {
+  records,
+  SUBMITTED_ACTION_REQUIRED
+} from '../../../../../../engine/persistence/records.js'
 import * as kit from '../../../../../../shared/kit.js'
 
 const post = postHandlerOf(declaration)
@@ -142,9 +145,29 @@ describe('#declaration', () => {
         redirect: pagePath(journeyId, 'confirmation')
       })
     })
+
+    it('Should send a notification submitted with action required to its confirmation', async () => {
+      const { journeyId } = await store.create()
+      await store.submit(journeyId)
+      expect((await records.load({ journeyId })).status).toBe(
+        SUBMITTED_ACTION_REQUIRED
+      )
+
+      const response = await get(journeyRequest(journeyId), stubH())
+
+      expect(response).toEqual({
+        redirect: pagePath(journeyId, 'confirmation')
+      })
+    })
   })
 
   describe('POST /declaration from the review (step=review)', () => {
+    it('Should draw no status strip on the declaration', async () => {
+      const result = await drivePost({ step: 'review' })
+
+      expect(result.view.context.journeyStrip).toBeNull()
+    })
+
     it('Should render the declaration carrying the token the review was rendered with', async () => {
       const result = await drivePost({ step: 'review' })
 

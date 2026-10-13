@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   createPath,
   dashboardPath,
-  hubPath
+  pagePath
 } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -59,6 +59,19 @@ describe('GET /confirmation', () => {
     expect(h.captured.view.context.referenceNumber).toBe(journeyId)
   })
 
+  it('Should show the confirmation for a notification submitted with action required', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    expect((await store.get(journeyId)).status).toBe(
+      'submitted-action-required'
+    )
+    const h = stubH()
+
+    await get(journeyRequest(journeyId), h)
+
+    expect(h.captured.view.context.referenceNumber).toBe(journeyId)
+  })
+
   // The declaration date belongs to the declaration page. Design release 1
   // takes the submitted page straight from the reference panel to what the
   // trader still has to do, so the date is not repeated here.
@@ -77,11 +90,22 @@ describe('GET /confirmation', () => {
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
-  it('Should list nothing outstanding when a document has been uploaded', async () => {
+  it('Should still list the outstanding documents when only a document that is not an ITAHC or health certificate has been uploaded', async () => {
     const view = await submittedView({ documents: [DOCUMENT] })
 
-    expect(view.context.outstandingItems).toEqual([])
+    expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
+
+  it.each(['ITAHC', 'HEALTH_CERTIFICATE'])(
+    'Should list nothing outstanding when a %s has been uploaded',
+    async (type) => {
+      const view = await submittedView({
+        documents: [{ ...DOCUMENT, accompanyingDocumentType: type }]
+      })
+
+      expect(view.context.outstandingItems).toEqual([])
+    }
+  )
 
   // The page offers a second way on: start another notification without going
   // back to the dashboard first.
@@ -92,11 +116,21 @@ describe('GET /confirmation', () => {
     expect(view.context.createAction).toBe(createPath())
   })
 
-  it('Should redirect a notification that is not submitted to the hub', async () => {
+  it('Should send a notification that is not submitted to its declaration', async () => {
     const { journeyId } = await store.create()
 
     const response = await get(journeyRequest(journeyId), stubH())
 
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({ redirect: pagePath(journeyId, 'declaration') })
+  })
+
+  it('Should send an amendment to its declaration', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    await recordsStub.amend(journeyId)
+
+    const response = await get(journeyRequest(journeyId), stubH())
+
+    expect(response).toEqual({ redirect: pagePath(journeyId, 'declaration') })
   })
 })

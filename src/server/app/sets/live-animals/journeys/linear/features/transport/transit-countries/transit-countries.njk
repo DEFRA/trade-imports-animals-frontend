@@ -52,8 +52,6 @@
        down a long one (design release 1). #}
     {% if hasCountries %}
       {{ addedCountriesTable(countryRows, copy) }}
-    {% else %}
-      <p class="govuk-body">{{ copy.empty }}</p>
     {% endif %}
 
     {# Each addition and removal is announced as it happens, not left to be
@@ -63,6 +61,6 @@
        not announced. #}
     <div id="transit-countries-status" class="govuk-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-module="app-status-announcer" data-message="{{ status }}"></div>
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend, templateChange = templateChange) }}
   </form>
 {% endblock %}

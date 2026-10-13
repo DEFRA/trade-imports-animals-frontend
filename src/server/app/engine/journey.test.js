@@ -4,6 +4,7 @@ import {
   cancelAmendJourney,
   copyJourney,
   currentJourney,
+  isJourneyNotFound,
   amendJourney,
   listKnownJourneys,
   replaceJourneyFulfilment,
@@ -13,7 +14,11 @@ import {
   startJourney
 } from './journey.js'
 import { store } from './store.js'
-import { configureRecords } from './persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from './persistence/records.js'
+import { withTemplateMode } from '../shared/template-mode.js'
 import { configureSession } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
@@ -127,6 +132,19 @@ describe('#currentJourney', () => {
       isBoom: true,
       output: { statusCode: 404 }
     })
+  })
+
+  it('Should recognise the not-found a missing notification raises, and nothing else', async () => {
+    const missing = await currentJourney(
+      requestFor('unknown', []),
+      recordingH()
+    ).catch((error) => error)
+
+    expect(isJourneyNotFound(missing)).toBe(true)
+    expect(isJourneyNotFound(new Error('boom'))).toBe(false)
+    expect(
+      isJourneyNotFound({ isBoom: true, output: { statusCode: 500 } })
+    ).toBe(false)
   })
 
   it('Should 404 a known id whose persisted record no longer exists', async () => {
@@ -263,6 +281,36 @@ describe('#currentJourney', () => {
   })
 })
 
+describe('#startJourney with a seed', () => {
+  beforeEach(async () => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    await store.clear()
+  })
+
+  it('Should create a draft seeded with the given fulfilment and add it to the known list', async () => {
+    const h = recordingH()
+    const fulfilment = { [countryOfOrigin.id]: 'FR' }
+
+    const journey = await startJourney(requestFor(undefined, []), h, {
+      fulfilment
+    })
+
+    expect((await store.get(journey.journeyId)).fulfilment).toEqual(fulfilment)
+    expect(h.cookies[knownJourneysCookie()]).toEqual([journey.journeyId])
+  })
+
+  it('Should forward the seed to records.create', async () => {
+    const create = vi.fn(recordsStub.create)
+    configureRecords(SET_ID, { ...recordsStub, create })
+    const fulfilment = { [countryOfOrigin.id]: 'FR' }
+
+    await startJourney(requestFor(undefined, []), recordingH(), { fulfilment })
+
+    expect(create).toHaveBeenCalledWith(authenticatedActor, { fulfilment })
+  })
+})
+
 describe('#replaceJourneyFulfilment', () => {
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)
@@ -294,5 +342,33 @@ describe('#replaceJourneyFulfilment', () => {
     // from the memo, which must now carry the freshly-saved value (5), not
     // the pre-save one (4).
     expect(tokensSeen).toEqual([4, 5])
+  })
+})
+
+describe('#currentJourney in template mode', () => {
+  const TEMPLATE_ID = 'template-1'
+  const OWNER = '2100010101'
+
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+  })
+
+  it('Should read the template records and never add the template to the known journeys', async () => {
+    const load = vi.fn(async ({ journeyId }) => ({
+      journeyId,
+      fulfilment: {},
+      templateName: 'Weekly cattle'
+    }))
+    configureTemplateRecords(SET_ID, { load })
+    const h = recordingH()
+
+    const journey = await withTemplateMode(OWNER, () =>
+      currentJourney(requestFor(TEMPLATE_ID, []), h)
+    )
+
+    expect(load).toHaveBeenCalledWith({ journeyId: TEMPLATE_ID })
+    expect(journey.templateName).toBe('Weekly cattle')
+    expect(h.cookies[knownJourneysCookie()]).toBeUndefined()
   })
 })

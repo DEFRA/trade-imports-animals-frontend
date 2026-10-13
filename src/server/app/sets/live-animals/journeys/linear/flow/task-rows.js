@@ -1,5 +1,7 @@
 import { NA, statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
+import { inTemplateMode } from '../../../../../shared/template-mode.js'
+import { TEMPLATE_NOT_HELD_FIELDS } from './template-mode.js'
 import { identifiedCommodities } from '../../../services/commodities/index.js'
 import { originPage } from '../features/origin/page.js'
 import {
@@ -30,10 +32,20 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 // moment the notification exists, so `statusOf` never reaches Not applicable
 // and `conditional: true` alone would leave the row drawn. It carries its own
 // applicability test instead — the same question the identification page asks
-// before it redirects a trader straight past itself.
-const identifiesAnAnimal = (answers) =>
+// before it redirects a trader straight past itself. The opening run's Back
+// link from Additional details asks the same question (see run.js).
+export const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
     (line) => identifiedCommodities().includes(line?.commoditySelection)
+  )
+
+// Design release 2.1 offers the Transit countries task only where the
+// notification owes transit countries. The means of transport puts the answer
+// in scope; with no commodity chosen there is no consignment to route yet, so
+// the row also waits for one.
+const hasChosenCommodity = (answers) =>
+  (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
+    (line) => Boolean(line?.commoditySelection)
   )
 
 export const taskRows = [
@@ -72,7 +84,12 @@ export const taskRows = [
     applies: identifiesAnAnimal
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
-  { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
+  {
+    id: 'transitCountries',
+    pages: [transitCountriesPage],
+    conditional: true,
+    applies: hasChosenCommodity
+  },
   // The list declares all three transporter answers, so the row still spans
   // the type and both address blocks from the one page.
   { id: 'transporter', pages: [transportersPage] },
@@ -83,8 +100,17 @@ export const taskRows = [
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 
-export const rowParts = (row) =>
-  row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
+// A template never holds what TEMPLATE_NOT_HELD_FIELDS names, so a row cannot
+// wait on it there: leave those names out while a template is walked.
+export const rowParts = (row) => {
+  const parts = row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
+  return inTemplateMode()
+    ? parts.filter(
+        (part) =>
+          typeof part !== 'string' || !TEMPLATE_NOT_HELD_FIELDS.includes(part)
+      )
+    : parts
+}
 
 // A row with no `applies` test is always applicable; one that answers no is
 // Not applicable however its parts roll up, which is what lets a `conditional`

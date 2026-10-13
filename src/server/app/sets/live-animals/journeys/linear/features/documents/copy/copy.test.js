@@ -83,8 +83,8 @@ describe('#copy', () => {
     // three fields beside it, which each name their answer. "Upload a file"
     // repeated the page heading and the "Save and add another" button, so the
     // trader read the same instruction three times over. "Attachment" is
-    // already the service's word for the file: check-answers lists
-    // "Attachment type" against the same record.
+    // already the service's word for the file: the review's document cards
+    // read the file name back under "Attachment".
     expect(copy.file.label).toBe('Attachment')
     expect(copy.file.label).not.toBe(copy.title)
     expect(copy.file.label).not.toBe(copy.fileUploadHeading)

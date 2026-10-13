@@ -9,6 +9,7 @@ import {
   DELETED,
   DRAFT,
   SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED,
   configureRecords
 } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
@@ -20,7 +21,8 @@ import {
   stubH
 } from '../../../../../engine/test-support.js'
 import { dispatchPages } from './index.js'
-import { journeyStrip } from '../../../../../shared/kit.js'
+import { base, journeyStrip } from '../../../../../shared/kit.js'
+import { withTemplateMode } from '../../../../../shared/template-mode.js'
 
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as dashboardRoutes } from './dashboard/controller.js'
@@ -28,6 +30,8 @@ import { routes as originRoutes } from './origin/controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
 
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
+const WEEKLY_CATTLE = 'Weekly cattle'
+const TEMPLATE_ID = 'template-1'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
 const DASHBOARD_PATH = dashboardPath()
 
@@ -67,6 +71,21 @@ describe('journey reference strip', () => {
     ).toEqual({
       reference: JOURNEY_REFERENCE,
       status: { text: 'Submitted', classes: 'govuk-tag--green' }
+    })
+  })
+
+  it("Should tag a notification submitted with action required 'Submitted action required' in orange", () => {
+    expect(
+      journeyStrip({
+        journeyId: JOURNEY_REFERENCE,
+        status: SUBMITTED_ACTION_REQUIRED
+      })
+    ).toEqual({
+      reference: JOURNEY_REFERENCE,
+      status: {
+        text: 'Submitted action required',
+        classes: 'govuk-tag--orange'
+      }
     })
   })
 
@@ -179,5 +198,47 @@ describe('journey reference strip', () => {
       reference: journey.journeyId,
       status: DRAFT_TAG
     })
+  })
+})
+
+describe('journey strip in template mode', () => {
+  const TEMPLATE_TAG = { text: 'Template', classes: 'govuk-tag--grey' }
+
+  it('Should draw a grey Template tag with the template name where a notification shows its reference', () => {
+    const strip = withTemplateMode('2100010101', () =>
+      journeyStrip({
+        journeyId: TEMPLATE_ID,
+        status: DRAFT,
+        templateName: WEEKLY_CATTLE
+      })
+    )
+
+    expect(strip).toEqual({ reference: WEEKLY_CATTLE, status: TEMPLATE_TAG })
+  })
+
+  it('Should draw the tag with no name for a template with a blank name', () => {
+    const strip = withTemplateMode('2100010101', () =>
+      journeyStrip({ journeyId: TEMPLATE_ID, status: DRAFT, templateName: '' })
+    )
+
+    expect(strip).toEqual({ reference: '', status: TEMPLATE_TAG })
+  })
+
+  it("Should link a template page to the template's own task list", () => {
+    const view = withTemplateMode('2100010101', () =>
+      base('Origin', { journey: { journeyId: TEMPLATE_ID, status: DRAFT } })
+    )
+
+    expect(view.hubHref).toBe(`/live-animals/templates/${TEMPLATE_ID}`)
+  })
+
+  it('Should still give a notification page its overview link', () => {
+    const view = base('Origin', {
+      journey: { journeyId: JOURNEY_REFERENCE, status: DRAFT }
+    })
+
+    expect(view.hubHref).toBe(
+      `/live-animals/notifications/${JOURNEY_REFERENCE}`
+    )
   })
 })

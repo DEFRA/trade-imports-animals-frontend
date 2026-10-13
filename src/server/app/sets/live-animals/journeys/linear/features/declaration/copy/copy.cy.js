@@ -25,6 +25,7 @@ export const copy = {
     legallyAct:
       'Gallaf weithredu’n gyfreithlon ar ran trydydd parti mewn perthynas ag amodau’r datganiad hwn.'
   },
+  declarationLegend: 'Cadarnhad y datganiad',
   declarationLabel:
     'Rwy’n cadarnhau fy mod wedi adolygu’r datganiad hwn a’m bod yn cydymffurfio ag ef, a bod yr wybodaeth a gyflwynwyd yn yr hysbysiad hwn yn wir ac yn gywir.',
   dateOfDeclaration: 'Dyddiad y datganiad:',

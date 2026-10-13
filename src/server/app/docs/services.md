@@ -39,6 +39,13 @@ The records adapter owns canonical storage and backend notification projections.
 The session adapter owns known journey ids, opening-run state and flow-only answers.
 See [Persistence](persistence.md).
 
+## Templates
+
+[`templates`](../services/templates/index.js) reads the signed-in user's saved
+notification templates from the animals backend (`GET /templates`, the user named
+by the `User-Id` header). Stub mode serves an in-memory store that starts empty and
+holds no examples. A call with no owner is refused.
+
 ## Set-owned services
 
 Reference data that only makes sense for one obligation set belongs to that set.

@@ -1,6 +1,6 @@
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { store, DRAFT, SUBMITTED } from './store.js'
+import { store, DRAFT, SUBMITTED_ACTION_REQUIRED } from './store.js'
 import { configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { obligationSet } from '../model/obligations/manifest.js'
@@ -70,7 +70,7 @@ describe('store clone/freeze contract', () => {
   it('Should flip status to submitted and stamp submittedAt on submit', async () => {
     const { journeyId } = await store.create()
     const submitted = await store.submit(journeyId)
-    expect(submitted.status).toBe(SUBMITTED)
+    expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(submitted.submittedAt).toEqual(expect.any(String))
   })
 

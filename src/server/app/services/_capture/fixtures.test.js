@@ -35,10 +35,10 @@ describe('#captured reference fixtures', () => {
     })
   })
 
-  it('Should flatten origin-page country options with subdivisions sorted by name', () => {
+  it('Should flatten origin-page country options with each subdivision named with its parent, sorted by name', () => {
     expect(originPageCountryEntries()).toContainEqual({
       code: 'ES-CN',
-      name: 'Canary Islands'
+      name: 'Canary Islands (Spain)'
     })
     expect(originPageCountryEntries().length).toBeGreaterThan(
       countriesOriginEntries().length

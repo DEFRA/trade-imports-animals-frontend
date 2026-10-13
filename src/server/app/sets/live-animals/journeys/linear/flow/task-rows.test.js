@@ -1,4 +1,5 @@
 import { pagePath } from '../../../../../shared/paths.js'
+import { withTemplateMode } from '../../../../../shared/template-mode.js'
 import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -60,6 +61,33 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it('Should complete the origin row only once a country is chosen and the region question is answered, with a code under Yes', () => {
+    expect(statusIn('origin', { countryOfOrigin: 'FR' })).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: ''
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no'
+      })
+    ).toBe(FULFILLED)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'FR-75'
+      })
+    ).toBe(FULFILLED)
+    expect(statusIn('origin', { regionOfOriginCodeRequirement: 'no' })).toBe(
+      IN_PROGRESS
+    )
+  })
+
   it('Should walk the import-reason row through Not yet started, In progress and Completed for the reasons that open a reveal', () => {
     expect(statusIn('importReason', unlocked)).toBe(NOT_STARTED)
     expect(
@@ -90,6 +118,47 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it("Should complete the import-reason row on each allowed reason's own answers while additional details is unanswered", () => {
+    const exitDate = { day: '20', month: '12', year: '2026' }
+    const internalMarket = {
+      ...unlocked,
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: 'breeding'
+    }
+    const transhipment = {
+      ...unlocked,
+      reasonForImport: 'transhipmentOrOnwardTravel',
+      destinationCountry: 'FR'
+    }
+    const transit = {
+      ...unlocked,
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const temporaryAdmission = {
+      ...unlocked,
+      reasonForImport: 'temporaryAdmissionHorses',
+      exitDate,
+      portOfExit: 'GB DVR'
+    }
+    const reEntry = { ...unlocked, reasonForImport: 'reEntry' }
+
+    expect(statusIn('importReason', unlocked)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', internalMarket)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', internalMarket)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', transhipment)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', transhipment)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', transit)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', transit)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', temporaryAdmission)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', temporaryAdmission)).not.toBe(
+      FULFILLED
+    )
+    expect(statusIn('importReason', reEntry)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', reEntry)).not.toBe(FULFILLED)
+  })
+
   it('Should walk the arrival-details row over the merged page (all five arrival and transport collects)', () => {
     expect(statusIn('arrivalDetails', unlocked)).toBe(NOT_STARTED)
     expect(
@@ -104,6 +173,23 @@ describe('#rowStatus — one status per hub task row', () => {
         transportIdentification: 'FR-892-LK',
         transportDocumentReference: 'CMR-1'
       })
+    ).toBe(FULFILLED)
+  })
+
+  it('Should not wait on an arrival date in template mode, and still wait on it outside', () => {
+    const withoutDate = {
+      ...unlocked,
+      portOfEntry: 'GB ABD',
+      meansOfTransport: 'AIRPLANE',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-1'
+    }
+
+    expect(statusIn('arrivalDetails', withoutDate)).toBe(IN_PROGRESS)
+    expect(
+      withTemplateMode('2100010101', () =>
+        statusIn('arrivalDetails', withoutDate)
+      )
     ).toBe(FULFILLED)
   })
 
@@ -372,6 +458,16 @@ describe('#rowStatus — the conditional transit-countries row', () => {
       })
     ).toBe(FULFILLED)
   })
+
+  it('Should be Not applicable (absent) for an overland means while no commodity is chosen', () => {
+    for (const means of ['ROAD_VEHICLE', 'RAILWAY']) {
+      const answers = { countryOfOrigin: 'FR', meansOfTransport: means }
+      expect(statusIn('transitCountries', answers)).toBe(NA)
+      expect(
+        statusIn('transitCountries', { ...answers, transitedCountries: ['FR'] })
+      ).toBe(NA)
+    }
+  })
 })
 
 describe('#rowEntry — every row opens on a page, in any order', () => {
@@ -481,6 +577,10 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'a blank journey': {},
     'an origin-only journey': { countryOfOrigin: 'FR' },
     'an unlocked skeleton journey': unlocked,
+    'an overland skeleton journey with no commodity': {
+      countryOfOrigin: 'FR',
+      meansOfTransport: 'ROAD_VEHICLE'
+    },
     'the happy path without a reason': { ...happyPath, reasonForImport: '' },
     'the happy path for temporary admission without an exit date': {
       ...happyPath,

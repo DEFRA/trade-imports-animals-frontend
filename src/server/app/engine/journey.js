@@ -9,8 +9,15 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
-import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
+import { inTemplateMode } from '../shared/template-mode.js'
+import {
+  AMEND,
+  DRAFT,
+  isSubmittedStatus,
+  records
+} from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
+import { HTTP_STATUS_NOT_FOUND } from '../lib/http-status.js'
 
 export {
   addressHandshakeTokensCookie,
@@ -79,6 +86,10 @@ export const registerJourneyCookie = (server) => {
   }
 }
 
+/** True for the not-found `currentJourney` raises for a notification that does not exist. */
+export const isJourneyNotFound = (error) =>
+  error?.isBoom === true && error.output?.statusCode === HTTP_STATUS_NOT_FOUND
+
 const JOURNEY_MEMO = Symbol('currentJourney')
 
 const memoRead = (request) => request?.app?.[JOURNEY_MEMO]
@@ -89,9 +100,21 @@ const memoWrite = (request, journey) => {
   }
 }
 
-export const startJourney = async (request, h) => {
+/**
+ * Creates a new draft for the signed-in user, adds it to the user's known
+ * journeys and remembers it for the rest of the request.
+ *
+ * @param {object} request - the Hapi request.
+ * @param {object} h - the Hapi response toolkit.
+ * @param {{ fulfilment?: object }} [options] - `fulfilment`: the UUID-keyed
+ * answers the new draft starts with. Without it the draft starts empty.
+ * @returns {Promise<object>} the created journey.
+ */
+export const startJourney = async (request, h, { fulfilment } = {}) => {
   const actor = buildActor(request.auth?.credentials)
-  const journey = await records.create(actor)
+  const journey = await (fulfilment === undefined
+    ? records.create(actor)
+    : records.create(actor, { fulfilment }))
   await session.addKnownJourney(request, h, journey.journeyId)
   memoWrite(request, journey)
   return journey
@@ -110,7 +133,8 @@ export const currentJourney = async (request, h) => {
   if (!loaded) {
     throw Boom.notFound()
   }
-  if (!(await isKnownJourney(request, journeyId))) {
+  // A template id is not a notification: it never joins the known list.
+  if (!inTemplateMode() && !(await isKnownJourney(request, journeyId))) {
     await session.addKnownJourney(request, h, journeyId)
   }
   memoWrite(request, loaded)
@@ -153,7 +177,7 @@ export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 const editableFromStatus = async (journey, journeyId, actor) => {
-  if (journey.status === SUBMITTED) {
+  if (isSubmittedStatus(journey.status)) {
     return records.amend(journeyId, actor)
   }
   if (journey.status === DRAFT || journey.status === AMEND) {

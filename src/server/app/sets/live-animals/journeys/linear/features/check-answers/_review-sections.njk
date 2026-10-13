@@ -1,0 +1,80 @@
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+{# The notification review's numbered sections and cards. The review and a saved
+   template's page both render them through here, so the template page shows the
+   review's own cards rather than a copy of them. `reviewCopy` is the review's
+   copy. #}
+{% macro cardError(text, reviewCopy) %}
+  {% if text %}
+    <p class="govuk-error-message">
+      <span class="govuk-visually-hidden">{{ reviewCopy.errors.prefix }}</span> {{ text }}
+    </p>
+  {% endif %}
+{% endmacro %}
+
+{% macro cardActions(actions) %}
+  {% if actions and actions.items.length %}
+    <ul class="govuk-summary-card__actions">
+      {% for item in actions.items %}
+        <li class="govuk-summary-card__action">
+          <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span></a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}
+
+{% macro reviewSections(sections, reviewCopy) %}
+  {% set cardHeadingLevel = 3 %}
+  {% set innerHeadingLevel = 4 %}
+  {% set blockHeadingLevel = 5 %}
+  {% for section in sections %}
+    {% if not loop.first %}
+      <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    {% endif %}
+    <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
+    {{ cardError(section.error, reviewCopy) }}
+    {% for card in section.cards %}
+      {% if card.speciesBlocks or card.subsections or card.error %}
+        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
+          <div class="govuk-summary-card__title-wrapper">
+            <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
+            {{ cardActions(card.actions) }}
+          </div>
+          <div class="govuk-summary-card__content">
+            {{ cardError(card.error, reviewCopy) }}
+            {% if card.rows.length %}
+              {{ govukSummaryList({ rows: card.rows }) }}
+            {% endif %}
+            {% for subsection in card.subsections %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ subsection.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: subsection.rows }) }}
+            {% endfor %}
+            {% for block in card.speciesBlocks %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s" id="{{ block.anchor }}" tabindex="-1">{{ block.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: block.rows }) }}
+              {% if block.identifierTable %}
+                <h{{ blockHeadingLevel }} class="govuk-heading-s">{{ reviewCopy.identifierTable.heading }}</h{{ blockHeadingLevel }}>
+                {% if block.identifierTable.actions %}
+                  {% set identificationChange = block.identifierTable.actions.items[0] %}
+                  <p class="govuk-body"><a class="govuk-link" href="{{ identificationChange.href }}">{{ identificationChange.text }}<span class="govuk-visually-hidden"> {{ identificationChange.visuallyHiddenText }}</span></a></p>
+                {% endif %}
+                {{ govukTable({ head: block.identifierTable.head, rows: block.identifierTable.rows }) }}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        {{ govukSummaryList({
+          card: {
+            title: { text: card.title, headingLevel: cardHeadingLevel },
+            actions: card.actions,
+            attributes: { id: card.anchor, tabindex: "-1" } if card.anchor else null
+          },
+          rows: card.rows
+        }) }}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endmacro %}

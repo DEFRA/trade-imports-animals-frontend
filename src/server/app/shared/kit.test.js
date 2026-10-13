@@ -1,7 +1,76 @@
 import { describe, expect, it } from 'vitest'
 
 import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
-import { amendReviewTarget, base, dateField, isHubExit } from './kit.js'
+import {
+  amendReviewTarget,
+  base,
+  dateField,
+  exitTarget,
+  isHubExit,
+  skipsRequiredChecks
+} from './kit.js'
+import { withSavedTemplateChange, withTemplateMode } from './template-mode.js'
+
+const OWNER = '2100010101'
+const JOURNEY_ID = 'journey-1'
+
+const changeRequest = {
+  payload: {},
+  params: { journeyId: JOURNEY_ID },
+  query: { change: '1' }
+}
+
+describe('#exitTarget — where a change-context save returns', () => {
+  it('Should return to the review outside template mode', () => {
+    expect(exitTarget(changeRequest, '/next')).toMatch(
+      new RegExp(`/notifications/${JOURNEY_ID}/notification-view$`)
+    )
+  })
+
+  it('Should return to the template review from a template being created', () => {
+    withTemplateMode(OWNER, () => {
+      expect(exitTarget(changeRequest, '/next')).toMatch(
+        new RegExp(`/templates/${JOURNEY_ID}/notification-view$`)
+      )
+    })
+  })
+
+  it('Should return to the template page from a saved template', () => {
+    withTemplateMode(OWNER, () =>
+      withSavedTemplateChange(() => {
+        expect(exitTarget(changeRequest, '/next')).toMatch(
+          new RegExp(`/templates/${JOURNEY_ID}$`)
+        )
+      })
+    )
+  })
+
+  it('Should leave a page with no change marker on its fallback', () => {
+    withTemplateMode(OWNER, () =>
+      withSavedTemplateChange(() => {
+        expect(exitTarget({ ...changeRequest, query: {} }, '/next')).toBe(
+          '/next'
+        )
+      })
+    )
+  })
+})
+
+describe('#base — the page ending', () => {
+  it('Should flag a page changing a saved template, and no other', () => {
+    expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(false)
+    withTemplateMode(OWNER, () => {
+      expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(
+        false
+      )
+      withSavedTemplateChange(() => {
+        expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(
+          true
+        )
+      })
+    })
+  })
+})
 
 describe('#isHubExit — the Save and return to overview submit', () => {
   const params = { journeyId: 'journey-1' }
@@ -51,6 +120,17 @@ describe('#dateField — MoJ date-picker view model', () => {
     const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.formGroup).toBeUndefined()
+  })
+
+  it('Should set the label in the size the page asks for, and small when it asks for none', () => {
+    const medium = dateField('entryDate', {
+      label: 'Entry date',
+      labelClasses: 'govuk-label--m'
+    })
+    const unasked = dateField('otherDate', { label: 'Other date' })
+
+    expect(medium.label.classes).toBe('govuk-label--m')
+    expect(unasked.label.classes).toBe('govuk-label--s')
   })
 })
 
@@ -125,5 +205,36 @@ describe('#amendReviewTarget — where a Change-link save of an amendment goes',
 
   it('Should be null for an amendment saved without a Change link', () => {
     expect(amendReviewTarget(notFromChangeLink, { status: AMEND })).toBeNull()
+  })
+})
+
+describe('#skipsRequiredChecks — the saves that do not demand every answer', () => {
+  const params = { journeyId: 'journey-1' }
+
+  it('Should be true for Save and return to overview', () => {
+    expect(
+      skipsRequiredChecks(
+        { params, payload: { exit: 'hub' }, query: {} },
+        { status: DRAFT }
+      )
+    ).toBe(true)
+  })
+
+  it('Should be true for a Change-link save while amending', () => {
+    expect(
+      skipsRequiredChecks({ params, query: { change: '1' } }, { status: AMEND })
+    ).toBe(true)
+  })
+
+  it('Should be false for a Change-link save of a draft', () => {
+    expect(
+      skipsRequiredChecks({ params, query: { change: '1' } }, { status: DRAFT })
+    ).toBe(false)
+  })
+
+  it('Should be false with neither', () => {
+    expect(skipsRequiredChecks({ params, query: {} }, { status: AMEND })).toBe(
+      false
+    )
   })
 })

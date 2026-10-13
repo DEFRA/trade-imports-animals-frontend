@@ -7,6 +7,7 @@ import {
   formatCalendarDate,
   formatDateText,
   formatMomentAsDay,
+  formatMomentAsLongDay,
   isoDateFromDateParts,
   parseDateText,
   startOfDayInZone,
@@ -282,6 +283,36 @@ describe('#formatMomentAsDay', () => {
     runInZone(WEST_OF_UTC, () => {
       expect(formatMomentAsDay(new Date(SUBMITTED_INSTANT))).toBe(
         SUBMITTED_DISPLAY
+      )
+    })
+  })
+})
+
+describe('#formatMomentAsLongDay', () => {
+  it('Should format a moment as the long day it fell on in the service zone', () => {
+    expect(formatMomentAsLongDay(new Date(SUBMITTED_INSTANT))).toBe(
+      '11 September 2026'
+    )
+    expect(formatMomentAsLongDay(new Date('2026-01-05T10:00:00Z'))).toBe(
+      '5 January 2026'
+    )
+  })
+  it('renders the UK day it happened with the month written out', () => {
+    expect(formatMomentAsLongDay(new Date('2026-07-21T23:30:00.000Z'))).toBe(
+      '22 July 2026'
+    )
+  })
+
+  it('writes September in full', () => {
+    expect(formatMomentAsLongDay(new Date('2026-09-10T10:00:00.000Z'))).toBe(
+      '10 September 2026'
+    )
+  })
+
+  it('renders the same string west of UTC as it does under UTC', () => {
+    runInZone(WEST_OF_UTC, () => {
+      expect(formatMomentAsLongDay(new Date('2026-07-21T23:30:00.000Z'))).toBe(
+        '22 July 2026'
       )
     })
   })

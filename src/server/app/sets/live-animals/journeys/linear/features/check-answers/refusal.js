@@ -41,12 +41,13 @@ export const documentScanCardErrors = async (
 }
 
 // The review must name every refusal here itself: the redirect back carries no reason.
+// A submitted notification, with or without action required, is never refused.
 export const isReviewRefused = async (request, toolkit) => {
   const { journey, answers, storedAnswers, scope } = await state.get(
     request,
     toolkit
   )
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return false
   }
   if (!scope.readyForCheckYourAnswers) {

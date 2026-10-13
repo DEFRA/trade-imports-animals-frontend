@@ -11,6 +11,12 @@ section is a navigation sequence. The `review` section has the one authored sect
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
+The sections follow Design Release 2.1. The `commodities` section holds the
+commodity page, the main reason for import and Commodity details; identification
+follows; Additional details is a section of its own after it. Section order sets
+each page's continue prerequisites, so the reason still comes after the commodity
+question.
+
 The `addresses` section holds the CPH number page and then Roles and addresses, so
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
@@ -40,8 +46,10 @@ identification row needs it: its part is the `commodityLines` collection, a
 structural group in scope from the moment the notification exists, so the roll-up
 never reaches Not applicable and `conditional: true` on its own would leave the row
 drawn. Reach for `applies` only when a scope condition genuinely cannot carry the
-rule — the transit-countries row needs no `applies`, because its answer leaves
-scope on its own.
+rule. The transit-countries row's answer leaves scope on its own with the means of
+transport, and the row carries an `applies` test as well, because Design Release 2.1
+also leaves it off a notification with no commodity chosen — a condition the
+answer's scope does not carry.
 
 The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
@@ -107,6 +115,15 @@ task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
 
+While the run is under way, four Back links name the page before them
+(`RUN_BACK_STEPS` and `runBackTarget` in `run.js`). The commodity page goes back
+to the origin page. The main reason for import goes back to the commodity page.
+Commodity details goes back to the commodity page, not to the main reason for
+import that comes between them. Additional details goes back to Identification
+details when a chosen commodity needs identifiers (`identifiesAnAnimal`, shared
+with the hub row), otherwise to Commodity details. Outside the run all four keep
+the overview, as every other page does.
+
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from
 the dashboard — not somewhere the run puts them between sections. Rendering the
@@ -120,17 +137,35 @@ this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
 
+A page's Back link can follow the same state.
+[`kit.runBackLink(request, page)`](../../../shared/kit.js) points Back at the
+page `RUN_BACK_STEPS` in [`flow/run.js`](../journeys/linear/flow/run.js) names
+for it while the run is active, and at the hub once it is not. The transit
+countries page uses it: in the run it is reached only from the arrival details,
+and outside the run only from its task on the hub. The same
+page sends a load or a submit to the hub when the means of transport leaves
+`transitedCountries` out of scope. The
+[consignment-details page](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js)
+applies the same load-time rule when it has no line, but sends the trader to the
+commodity question.
+
 The opening run begins when the notification is created — the dashboard's
-create POST in
+create POST and its start GET (`<set>/start`, reached from the Import
+Notification Service's type question) in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-is the only caller of `beginOpeningRun`. The origin page is the journey entry
-and an ordinary page otherwise: it has no opening-run special case.
+are the only callers of `beginOpeningRun`. Both go through one
+`openNewNotification` helper. The start entry sits outside `/notifications/`,
+so the entry guard never sees it. The origin page is the journey entry and an
+ordinary page otherwise: it has no opening-run special case.
 
 The guard admits a request when the opening run has begun for that journey in
 this session, or the journey carries committed user answers. A journey with
 neither — a deep link to an id this session never created and that holds no
-answers — is sent to the origin page. The origin page and its children are
-exempt from the guard, so there is no redirect loop.
+answers — is sent to the origin page. A notification that cannot be found is not
+the guard's to judge: it admits the request, and the page answers it — the review
+page sends it to the notification list, every other page answers not found. The
+origin page and its children are exempt from the guard, so there is no redirect
+loop.
 
 A journey the guard bounces to the origin page does not resume the opening run
 when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so
@@ -178,3 +213,80 @@ map renders no caption; its unit test lists those pages so a new page cannot be
 added without a decision either way.
 
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).
+
+## Template mode
+
+Template mode is another way of walking the journey's own pages, never a copy of
+them. The set gateway registers, beside every
+`/notifications/{journeyId}/<slug>` route, a twin at `/templates/{journeyId}/<slug>`
+whose handler is the same handler run inside a template-mode context
+([`shared/template-mode.js`](../../../shared/template-mode.js)). In that context
+the records port reads the template store, `pagePath` and `hubPath` build
+`/templates/...` links, and the page chrome draws the grey `Template` tag with the
+template's name in place of a notification's reference. A change to a journey page
+therefore reaches template mode with no template work.
+
+[`flow/template-mode.js`](../journeys/linear/flow/template-mode.js) lists what a
+template leaves out: the documents, declaration and confirmation pages, and the
+amend, cancel-amend, copy and delete actions. None of them gets a twin. The opening
+run also skips the review (`TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS`), so after the last
+question a template falls to its own overview path rather than the review.
+
+The overview route is twinned at `/templates/{journeyId}` and is the template's task
+list: the hub's own handler, which in template mode drops every task whose pages
+template mode leaves out (and any section left empty, today Documents), heads the
+list "Template tasklist" and ends with "Review template" and "Return to manage
+templates".
+
+Once a template is saved, the same address is the template's page
+(`features/template-page/`): the overview twin's handler is wrapped by
+`withTemplatePage` through `templateModeRoutes`' `overview` option, so a template
+still being created keeps the task list and a saved one shows its answers in the
+review's cards. A template the user does not have opens Manage templates.
+
+The card's and the page's "Use template" POST to `/templates/{journeyId}/use`
+([`features/templates/use-template.js`](../journeys/linear/features/templates/use-template.js)).
+The handler reads the user's saved template of this set, seeds a new draft through
+`startJourney`'s `fulfilment` option (`notificationSeedFrom`, which leaves out
+`TEMPLATE_NOT_CARRIED_OBLIGATION_IDS`), begins the opening run and opens the new
+notification's own task list. Any template the user cannot use opens Manage
+templates and creates nothing.
+
+Manage templates' cards summarise each template from the answers the list returns
+([`features/templates/card-answers.js`](../journeys/linear/features/templates/card-answers.js)):
+the commodity common names, the country of origin, and the consignee and consignor
+names, each "Not applicable" when unanswered. A saved template's page and a
+notification started from it use the template's place of origin as the contact
+address when the template has none (the template-page controller and
+`notificationSeedFrom`); the template itself keeps what was answered.
+
+The page's Change links open a question page with the change marker. Every other twin
+is wrapped by `withTemplateChange` through the `page` option, which sends a template
+the user does not have to Manage templates, and runs a saved template reached from a
+Change link in the saved-change context (`changingSavedTemplate()`). There the page
+ends with "Save and return" and a "Cancel" link to the template's page, Back returns
+there, and saving returns there with a Success banner kept in the session under the
+`templateUpdated` key ([`features/template-page/updated-banner.js`](../journeys/linear/features/template-page/updated-banner.js)),
+taken once. Saving moves the template's saved time on, which is its date created. A
+template never holds an arrival date (`TEMPLATE_NOT_HELD_OBLIGATIONS`): the records
+port drops it on write and on load.
+
+The review route is twinned too and is the template review: the review's own handler,
+which in template mode is titled "Review your template", shows no errors, leaves out
+the documents section (renumbering the last two as the task list does) and the arrival
+date, goes Back to the task list, and ends with "Save template". That button's POST
+moves the template to saved (`templates.saveFor`) and opens Manage templates instead
+of the declaration. Its Change links open each page under the template with the
+change marker, so saving that page returns to the template review.
+
+Save template also stores `{ name }` in the session (the `templateSaved` key,
+[`features/templates/saved-banner.js`](../journeys/linear/features/templates/saved-banner.js)).
+Manage templates reads and clears it, so the Success banner shows once and a reload
+loses it. A blank name reads "Untitled template" wherever a saved template is titled
+(the banner and its card). The list is ordered by when each template was last saved,
+newest first, not by when it was started.
+
+A template-mode page links to the template's task list, so its Save and return and
+Cancel controls return there. Pages that already hide the return controls (Origin, CPH number and the transporter sub-pages) still end with Save and continue alone. "What
+are you importing?" goes Back to Origin, and its Save and continue returns to the
+task list.

@@ -8,7 +8,6 @@ import {
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import * as countries from '../../../../../../../services/countries/index.js'
 import { transitCountriesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -18,6 +17,8 @@ import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
   offeredCodes,
+  offeredCountries,
+  offeredLabel,
   validation
 } from './validate.js'
 
@@ -32,16 +33,23 @@ export { COUNTRY_FIELD, MAX_TRANSITED_COUNTRIES }
 
 const copy = copyFor({ en, cy }).transitCountries
 
+const TRANSITED_COUNTRIES = 'transitedCountries'
+
+// Asked of rail and road consignments only. Out of scope, the page has
+// nothing to ask, so a load or a submit goes to the overview instead.
+const transitApplies = (scope) => scope.has(TRANSITED_COUNTRIES)
+
 // The list feeds a type-ahead that enhances this select, so it carries only the
-// placeholder and the real countries. Countries already added stay in the list:
-// the server refuses a repeat by name, which says more than a country quietly
-// missing from the search would.
+// placeholder, the real countries and their subdivisions. Places already added
+// stay in the list: the server refuses a repeat by name, which says more than a
+// place quietly missing from the search would.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...(await countries.originCountries())
+  ...(await offeredCountries())
 ]
 
 const render = async (
+  request,
   h,
   journey,
   selected,
@@ -52,13 +60,13 @@ const render = async (
   // is refused by the guards above; it is not rendered back.
   const known = selected.filter((code) => offered.has(code))
   const knownLabels = await Promise.all(
-    known.map(async (code) => (await countries.originLabel(code)) ?? code)
+    known.map(async (code) => (await offeredLabel(code)) ?? code)
   )
-  const chosenLabel = (await countries.originLabel(chosen)) ?? ''
+  const chosenLabel = (await offeredLabel(chosen)) ?? ''
   return h.view(view, {
-    ...kit.base(copy.title, {
+    ...kit.base(copy.pageTitle, {
       request: h.request,
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page),
       journey,
       page,
       recoverableError
@@ -105,7 +113,7 @@ const addErrors = async (chosen, selected) => {
     return { [COUNTRY_FIELD]: copy.errors.fromList }
   }
   if (selected.includes(chosen)) {
-    const chosenLabel = await countries.originLabel(chosen)
+    const chosenLabel = await offeredLabel(chosen)
     return { [COUNTRY_FIELD]: copy.errors.alreadyAdded(chosenLabel) }
   }
   if (selected.length >= MAX_TRANSITED_COUNTRIES) {
@@ -121,13 +129,13 @@ const postAdd = async (request, h, selected) => {
   const { journey } = await state.get(request, h)
   const errors = await addErrors(chosen, selected)
   if (Object.keys(errors).length > 0) {
-    return (await render(h, journey, selected, { errors, chosen })).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return (
+      await render(request, h, journey, selected, { errors, chosen })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
-  const chosenLabel = await countries.originLabel(chosen)
-  return render(h, journey, added, {
+  const chosenLabel = await offeredLabel(chosen)
+  return render(request, h, journey, added, {
     status: statusFor(copy.added(chosenLabel), added)
   })
 }
@@ -135,8 +143,8 @@ const postAdd = async (request, h, selected) => {
 const postRemove = async (request, h, selected, code) => {
   const { journey } = await state.get(request, h)
   const remaining = selected.filter((entry) => entry !== code)
-  const codeLabel = (await countries.originLabel(code)) ?? code
-  return render(h, journey, remaining, {
+  const codeLabel = (await offeredLabel(code)) ?? code
+  return render(request, h, journey, remaining, {
     status: copy.removed(codeLabel)
   })
 }
@@ -147,7 +155,7 @@ const postContinue = async (request, h, payload, selected) => {
   })
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
-    return (await render(h, journey, selected, { errors })).code(
+    return (await render(request, h, journey, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -160,7 +168,7 @@ const postContinue = async (request, h, payload, selected) => {
     async () => {
       const { journey } = await state.get(request, h)
       return (
-        await render(h, journey, selected, { recoverableError: true })
+        await render(request, h, journey, selected, { recoverableError: true })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
@@ -175,12 +183,19 @@ const postContinue = async (request, h, payload, selected) => {
 // filters stale codes out of the chip list; the banner tells the trader before
 // the next Continue silently commits the filtered list.
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, scope } = await state.get(request, h)
+  if (!transitApplies(scope)) {
+    return h.redirect(hubPath(request.params.journeyId))
+  }
   const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values.transitedCountries, { errors })
+  return render(request, h, journey, values.transitedCountries, { errors })
 }
 
 const post = async (request, h) => {
+  const { scope } = await state.get(request, h)
+  if (!transitApplies(scope)) {
+    return h.redirect(hubPath(request.params.journeyId))
+  }
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
   const { transitedCountries: selected } = validation.fromPayload(payload)

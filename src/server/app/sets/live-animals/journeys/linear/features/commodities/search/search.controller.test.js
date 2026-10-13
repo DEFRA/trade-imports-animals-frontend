@@ -3,7 +3,11 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from '../../../../../../../engine/persistence/records.js'
+import { withTemplateMode } from '../../../../../../../shared/template-mode.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
@@ -212,15 +216,44 @@ describe('commodity search — saving the selection', () => {
     expect(result.after.commodityLines ?? []).toEqual([])
   })
 
-  it('Should key the error to the tick boxes, keeping the query and the results', async () => {
+  it('Should empty a saved selection on Save and return to overview with nothing chosen', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+        ]
+      },
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.commodityLines ?? []).toEqual([])
+  })
+
+  it('Should clear a saved unweaned answer when the new choice holds only 01061900 species', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        containsUnweanedAnimals: 'yes',
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+        ]
+      },
+      payload: { species: [CAT_FELIS_CATUS_KEY, 'Dog|923502'] }
+    })
+    expect('containsUnweanedAnimals' in result.after).toBe(false)
+    expect(
+      result.after.commodityLines.map((line) => line.commoditySelection)
+    ).toEqual(['Cat', 'Dog'])
+  })
+
+  it('Should key the error to the search box even with results listed, keeping the query and the results', async () => {
     const result = await driveHandler(post, {
       payload: { commoditySearch: 'Bos' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.species).toBe(SELECT_COMMODITY)
-    expect(result.view.context.errors.commoditySearch).toBeUndefined()
+    expect(result.view.context.errors.commoditySearch).toBe(SELECT_COMMODITY)
+    expect(result.view.context.errors.species).toBeUndefined()
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#species' }
+      { text: SELECT_COMMODITY, href: '#commoditySearch' }
     ])
     expect(result.view.context.query).toBe('Bos')
     expect(legendsOf(result)).toEqual([COW_LEGEND])
@@ -319,5 +352,59 @@ describe('commodity search — saving the selection', () => {
         (line) => `${line.commoditySelection}|${line.speciesSelection}`
       )
     ).toEqual([COW_BOS_TAURUS_KEY])
+  })
+})
+
+describe('commodity search in template mode', () => {
+  const OWNER = '2100010101'
+  const asTemplateHandler = (handler) => (request, h) =>
+    withTemplateMode(OWNER, () => handler(request, h))
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureTemplateRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it("Should send Back to the template's Origin of the import", async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.backLink).toBe(
+      `/live-animals/templates/${result.journeyId}/origin`
+    )
+  })
+
+  it("Should link the overview controls to the template's task list", async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.hubHref).toBe(
+      `/live-animals/templates/${result.journeyId}`
+    )
+  })
+
+  it("Should return to the template's task list on Save and continue", async () => {
+    const result = await driveHandler(asTemplateHandler(post), {
+      payload: { species: COW_BOS_TAURUS_KEY }
+    })
+
+    expect(result.response.redirect).toBe(
+      `/live-animals/templates/${result.journeyId}`
+    )
+  })
+
+  it("Should still continue a notification on its own journey, not a template's", async () => {
+    const getResult = await driveHandler(get)
+    const postResult = await driveHandler(post, {
+      payload: { species: COW_BOS_TAURUS_KEY }
+    })
+
+    expect(getResult.view.context.backLink).toBe(
+      `/live-animals/notifications/${getResult.journeyId}`
+    )
+    expect(postResult.response.redirect).toBe(
+      `/live-animals/notifications/${postResult.journeyId}`
+    )
   })
 })

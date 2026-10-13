@@ -56,6 +56,7 @@ const render = (
       journey,
       recoverableError
     }),
+    journeyStrip: null,
     concurrencyToken: reviewedConcurrencyToken,
     copy,
     submissionDate: dateText(Date.now()),
@@ -71,7 +72,7 @@ const postedConcurrencyToken = (payload) =>
 
 const get = async (request, toolkit) => {
   const { journey } = await state.get(request, toolkit)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return toolkit.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
   return toolkit.redirect(reviewHref(journey.journeyId))
@@ -128,7 +129,7 @@ const declare = async (request, toolkit, journey, reviewedConcurrencyToken) => {
 
 const post = async (request, toolkit) => {
   const { journey } = await state.get(request, toolkit)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return toolkit.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
 

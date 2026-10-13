@@ -4,8 +4,10 @@ export const copy = {
     heading: 'Your commodities',
     animalsLabel: 'Animals',
     animalsCaption: 'Total number of animals in this consignment',
+    animalsRegionLabel: 'Animals summary',
     packagesLabel: 'Packages/boxes',
-    packagesCaption: 'Total number of packages in this consignment'
+    packagesCaption: 'Total number of packages in this consignment',
+    packagesRegionLabel: 'Packages summary'
   },
   reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
@@ -37,7 +39,7 @@ export const copy = {
       title: 'What are you importing?'
     },
     importReason: {
-      title: 'Main reason for import'
+      title: 'Main import reason'
     },
     consignmentDetails: {
       title: 'Commodity details'
@@ -66,6 +68,21 @@ export const copy = {
     },
     documents: {
       title: 'Upload documents'
+    }
+  },
+  // While a template is being created the Overview is its task list: no
+  // Documents section, so the two after it renumber, and it ends with the
+  // template's own buttons.
+  template: {
+    taskListHeading: 'Template tasklist',
+    reviewTemplate: 'Review template',
+    returnToManageTemplates: 'Return to manage templates',
+    groups: {
+      'about-the-consignment': '1. About the consignment',
+      'description-of-the-goods': '2. Description of the goods',
+      'transport-and-arrival': '3. Transport and arrival',
+      'consignment-parties': '4. Consignment parties',
+      'contact-address': '5. Contact address'
     }
   }
 }

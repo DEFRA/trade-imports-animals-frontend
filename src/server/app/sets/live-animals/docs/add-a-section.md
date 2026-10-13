@@ -283,8 +283,16 @@ Add a section or cards for the feature under
 Add English and Welsh headings, row labels and value labels to the
 check-answers copy bundles.
 
-Rows carry no Change link — `row(key, value)` is a key and a value. Each new
-card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
+A review section is its numbered heading and the cards that stand directly
+under it — `{ anchor, heading, cards }`. Design release 2.1 puts no subsection
+heading between them; a card's title is the heading one level below its
+section.
+
+Rows carry no Change link, except the transit countries row inside Arrival
+details, which carries its own (wrapped in `editableActions`, with a
+`hidden.rows.<key>` leaf in both copy bundles) — `row(key, value)` is a key and
+a value. Each new
+card needs one `changeAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
 wrapped in `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf
 in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that
 leaf the fit assertion "every Change link sits in a card heading and no summary

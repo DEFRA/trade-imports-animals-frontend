@@ -194,6 +194,18 @@ describe('#catchAll', () => {
     )
   })
 
+  test('Should log each cause under an internalServerError, so a failed fetch names its socket error', () => {
+    const socketError = new Error('other side closed')
+    const fetchError = new TypeError('fetch failed', { cause: socketError })
+    const response = Boom.boomify(fetchError)
+
+    catchAll({ response, logger: { error: mockErrorLogger } }, mockToolkit)
+
+    expect(mockErrorLogger).toHaveBeenCalledWith(
+      `${fetchError.stack}\nCaused by: ${socketError.stack}`
+    )
+  })
+
   test('Should log the cause a server error carries, so a reference data outage says why it happened', () => {
     const cause = new Error('connect ECONNREFUSED')
     const request = mockRequest(statusCodes.internalServerError)

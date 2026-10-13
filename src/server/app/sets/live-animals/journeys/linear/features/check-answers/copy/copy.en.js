@@ -1,5 +1,23 @@
 export const copy = {
   title: 'Review your notification',
+  resubmitTitle: 'Review before re-submitting',
+  // The lines under a notification's reference in its header.
+  viewHeader: {
+    dateCreated: (date) => `Date created: ${date}`,
+    dateSubmitted: (date) => `Date submitted: ${date}`,
+    amend: 'Amend this notification',
+    healthCertificateWarning: 'You need to upload a health certificate',
+    warningIcon: 'Warning'
+  },
+  // The section under a submitted notification's header; its values read as plain text.
+  importReferences: {
+    heading: 'Import reference numbers',
+    warning:
+      'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
+    warningIcon: 'Warning',
+    notificationReference: 'Notification reference',
+    customsDocumentCode: 'Customs document code'
+  },
   // An empty value inside a card that is finished. Nothing more is owed on
   // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
@@ -9,10 +27,10 @@ export const copy = {
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   means: {
-    AIRPLANE: 'Airplane',
-    RAILWAY: 'Railway',
-    ROAD_VEHICLE: 'Road Vehicle',
-    VESSEL: 'Vessel'
+    AIRPLANE: 'Air',
+    RAILWAY: 'Rail',
+    ROAD_VEHICLE: 'Road',
+    VESSEL: 'Sea'
   },
   documentTypes: {
     ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
@@ -34,63 +52,51 @@ export const copy = {
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
+    button: 'Cancel amend',
     successTitle: 'Success',
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
   },
-  // The six numbered sections of design release 1, in its order. The number is
-  // part of the heading, so renumbering means editing these strings.
+  // The six numbered sections of design release 2.1, in its order. The number
+  // is part of the heading, so renumbering means editing these strings.
   sections: {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
-    documents: '4. Documents',
-    consignmentParties: '5. Consignment parties',
+    documents: '4. Uploaded documents',
+    consignmentParties: '5. Consignment addresses',
     contactAddress: '6. Contact address'
   },
-  // The subsection heading that stands above each card. Every card has one.
-  groups: {
-    whereFrom: 'Where is this consignment coming from?',
-    mainReasonForImport: 'Main reason for import',
-    commodityDetails: 'Commodity details',
-    additionalDetails: 'Additional details',
-    arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
-    transportDetails: 'Transport details',
-    uploadDocuments: 'Upload documents',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment'
-  },
   cards: {
-    importDetails: 'Import details',
-    reasonForImport: 'Reason for import',
-    additionalAnimalDetails: 'Additional animal details',
+    importDetails: 'Origin of import',
+    whatAreYouImporting: 'What are you importing?',
+    reasonForImport: 'Main import reason',
+    additionalAnimalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment',
-    documents: 'Uploaded documents'
+    rolesAndAddresses: 'Addresses',
+    contactAddress: 'Contact address'
   },
+  subsections: { transitCountries: 'Transit countries' },
   rows: {
     countryOfOrigin: 'Country of origin',
-    regionCodeRequired: 'Region of origin code required',
     regionCode: 'Region of origin code',
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
     unweaned: 'Includes unweaned animals',
-    reasonForImport: 'Reason for import',
+    reasonForImport: 'Main import reason',
     purpose: 'Purpose in the market',
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
+    exitBorderControlPost: 'Exit border control post',
     commodityCode: 'Commodity code',
     commonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
-    numberOfPackages: 'Number of packages',
+    numberOfPackages: 'Number of packages (when required)',
     portOfEntry: 'Port of entry',
-    arrivalDate: 'Arrival date at port of entry',
+    arrivalDate: 'Arrival date at destination',
     meansOfTransport: 'Means of transport to the port of entry',
     transitedCountries: 'Countries that the consignment will travel through',
     transportIdentification: 'Transport identification',
@@ -110,56 +116,89 @@ export const copy = {
     documentReference: 'Document reference',
     documentType: 'Document type',
     dateOfIssue: 'Date of issue',
-    attachmentType: 'Attachment type'
+    attachment: 'Attachment'
   },
   identifierTable: {
     animalColumn: 'Animal',
     permanentAddress: 'Permanent address',
     animalN: (n) => `Animal ${n}`,
-    heading: 'Animal details'
+    animalNamed: (species, n) => `${species} ${n}`,
+    heading: 'Identification details'
   },
   documentN: (n) => `Document ${n}`,
-  // Shown inside the uploaded-documents card when nothing has been uploaded.
-  // The card itself always stands, so it needs a line rather than an empty box.
-  documentsEmpty: 'You have not added any documents yet.',
-  // What each Change link names once a screen reader reaches it. Cards carry
-  // the only Change links on the page, so a card's entry here reads as the rest
-  // of "Change ..." — lower case, and the card's own title in words.
+  // What each Change link names once a screen reader reaches it. Cards carry a
+  // Change link in the heading, so a card's entry here reads as the rest of
+  // "Change ..." — lower case, and the card's own title in words. The transit
+  // countries row and the first row of each species block carry one of their own,
+  // and the Identification details table of each species block carries one too.
+  // Each document card names its own number.
   hidden: {
     cards: {
-      importDetails: 'import details',
-      reasonForImport: 'reason for import',
-      additionalAnimalDetails: 'additional animal details',
+      importDetails: 'origin of import',
+      whatAreYouImporting: 'what are you importing',
+      reasonForImport: 'main import reason',
+      additionalAnimalDetails: 'additional details',
       arrivalDetails: 'arrival details',
-      transitCountries: 'transit countries',
       transportDetails: 'transport details',
-      rolesAndAddresses: 'roles and addresses',
-      contactAddress: 'contact address for this consignment',
-      documents: 'uploaded documents'
+      rolesAndAddresses: 'addresses',
+      contactAddress: 'contact address'
     },
-    commodity: (n) => `commodity ${n}`
+    // The transit countries row is the one row with a Change link of its own.
+    rows: {
+      transitedCountries: 'countries that the consignment will travel through'
+    },
+    numberOfAnimalsFor: (species) => `number of animals for ${species}`,
+    documentN: (n) => `document ${n}`,
+    identificationDetailsFor: (species) =>
+      `identification details for ${species}`
   },
-  // The review ends with the button and nothing else. Its label carries the
-  // whole instruction, so no heading and no sentence stand above it.
+  // The review ends with its buttons and no heading or sentence above them.
+  // Continue's label carries the whole instruction.
   submit: {
     button: 'Continue'
   },
+  // While a template is being created the review is the template review: the
+  // same page, titled for the template, without the documents section (so the
+  // two after it renumber, as on the template's task list), and ending with
+  // the button that saves the template.
+  template: {
+    title: 'Review your template',
+    saveTemplate: 'Save template',
+    sections: {
+      'about-the-consignment': '1. About the consignment',
+      'description-of-the-goods': '2. Description of the goods',
+      'transport-and-arrival': '3. Transport and arrival',
+      'consignment-parties': '4. Consignment parties',
+      'contact-address-section': '5. Contact address'
+    }
+  },
   errors: {
     prefix: 'Error:',
+    // In place of the document cards on a notification still owed its health certificate.
+    uploadHealthCertificate: 'Upload a valid health certificate',
     // One line per review card that still has answers outstanding. The same
     // line carries the error summary entry and the message inside the card, so
     // a trader reading either sees the same words.
     cards: {
-      importDetails: 'Complete import details',
-      reasonForImport: 'Complete reason for import',
-      additionalAnimalDetails: 'Complete additional animal details',
-      species: 'Complete species details',
+      importDetails: 'Complete origin of import',
+      whatAreYouImporting: 'Complete what are you importing?',
+      reasonForImport: 'Complete main import reason',
+      commodityDetails: 'Complete commodity details',
+      additionalAnimalDetails: 'Complete additional details',
       arrivalDetails: 'Complete arrival details',
-      transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
+    },
+    // A species of a multi-species consignment that is still short of what
+    // submit needs, named in lower case. Summary entries only: the species
+    // block itself is not marked.
+    species: {
+      numberOfAnimals: (species) =>
+        `Enter the number of animals for ${species}`,
+      atLeastOneIdentifier: (species) =>
+        `Enter at least 1 animal identifier for ${species}`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',
