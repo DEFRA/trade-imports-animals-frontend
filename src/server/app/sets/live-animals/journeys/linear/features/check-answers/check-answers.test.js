@@ -21,7 +21,10 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
-import { continueRequest } from '../declaration/test-support.js'
+import {
+  continueRequest,
+  declarationRoutesFromReview
+} from '../declaration/test-support.js'
 import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
@@ -53,8 +56,10 @@ const continueFromReview = async (seed, { submitted = false } = {}) => {
   return { journeyId, response, view: toolkit.captured.view }
 }
 
+const reviewPath = (journeyId) => pagePath(journeyId, 'notification-view')
+
 const refusedContinue = (journeyId) => ({
-  redirect: `${pagePath(journeyId, 'notification-view')}?refused=1`
+  redirect: `${reviewPath(journeyId)}?refused=1`
 })
 
 const reviewAfterRefusal = async (seed) => {
@@ -66,6 +71,16 @@ const reviewAfterRefusal = async (seed) => {
     toolkit
   )
   return toolkit.captured.view
+}
+
+const dateMonthsAhead = (months) => {
+  const date = new Date()
+  date.setMonth(date.getMonth() + months)
+  return {
+    day: String(date.getDate()),
+    month: String(date.getMonth() + 1),
+    year: String(date.getFullYear())
+  }
 }
 
 const sectionsFor = async (seed) =>
@@ -249,7 +264,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
-    expect(view.context.cancelAmendHref).toBeNull()
     expect(view.context.copyAction).toEqual({
       href: expect.stringMatching(/\/copy$/)
     })
@@ -284,14 +298,16 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(card.emptyText).toBe('You have not added any documents yet.')
   })
 
-  it('Should expose Cancel amendment only on an amending CYA', async () => {
+  it('Should expose Cancel amend in the strip only on an amending review', async () => {
     const draft = await viewForStatus(DRAFT)
     const submitted = await viewForStatus(SUBMITTED)
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.cancelAmendHref).toBeNull()
-    expect(submitted.context.cancelAmendHref).toBeNull()
-    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(submitted.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
+      /\/cancel-amend$/
+    )
   })
 
   it('Should show the cancel success indication only on the restored submitted view', async () => {
@@ -1240,12 +1256,86 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(context.errorSummary).toBeNull()
   })
 
-  it('Should flag an amend, which is still being worked on', async () => {
+  it('Should hold an amend without naming a role in error', async () => {
     const { context } = await viewForStatus(AMEND, {
       ...fullSeed,
       consignor: BROKEN_COPY
     })
-    expect(context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+
+  it('Should show no error summary or card error on an incomplete amend review', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+
+    const { context } = await viewForStatus(AMEND, withoutArrivalDate)
+
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+
+  it('Should show no error summary or card error when the arrival date is more than 6 months ahead', async () => {
+    const { context } = await viewForStatus(AMEND, {
+      ...fullSeed,
+      arrivalDateAtPort: dateMonthsAhead(8)
+    })
+
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+})
+
+describe(`${SUITE} — Continue on an amend review`, () => {
+  setupCheckAnswersEngine()
+
+  const continueAmend = (seed) =>
+    driveHandler(declarationRoutesFromReview[0].handler, { seed, amend: true })
+
+  const refusedAmendReview = (seed) =>
+    driveHandler(getHandler, { seed, query: { refused: '1' }, amend: true })
+
+  it('Should refuse an incomplete amend back to the review as refused', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+
+    const { journeyId, response } = await continueAmend(withoutArrivalDate)
+
+    expect(response).toEqual(refusedContinue(journeyId))
+    expect((await store.get(journeyId)).status).toBe(AMEND)
+  })
+
+  it('Should name what is outstanding on a refused amend review, with focus on the summary', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+
+    const { view } = await refusedAmendReview(withoutArrivalDate)
+
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
+    expect(
+      cardsOf(view.context.sections).filter((card) => card.error)
+    ).not.toEqual([])
+  })
+
+  it('Should refuse an amend whose arrival date is more than 6 months ahead, naming it on the review', async () => {
+    const seed = { ...fullSeed, arrivalDateAtPort: dateMonthsAhead(8) }
+
+    const { journeyId, response } = await continueAmend(seed)
+    expect(response).toEqual(refusedContinue(journeyId))
+
+    const { view } = await refusedAmendReview(seed)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+  })
+
+  it('Should still refuse an incomplete draft with the summary', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+
+    const view = await reviewAfterRefusal(withoutArrivalDate)
+
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
   })
 })
 

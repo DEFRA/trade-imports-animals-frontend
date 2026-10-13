@@ -20,6 +20,7 @@ import {
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 import * as countries from '../../../../../../services/countries/index.js'
 import { config } from '../../../../../../../../config/config.js'
 
@@ -333,6 +334,54 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     )
     expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('ABCDEF')
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST /origin — Save and return to overview', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const postRegion = (regionOfOriginCodeSuffix, extra = {}) =>
+    driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix,
+        internalReferenceNumber: '',
+        ...extra
+      }
+    })
+
+  it('Should save "Yes" with the region code left blank and go to the overview', async () => {
+    const result = await postRegion('', { exit: 'hub' })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after.regionOfOriginCode).toBe('')
+  })
+
+  it('Should refuse a region code over 5 characters and save nothing', async () => {
+    const result = await postRegion('ABCDEF', { exit: 'hub' })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_MAX_LENGTH_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep refusing a blank region code on Save and continue', async () => {
+    const result = await postRegion('')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
     expect(result.after).toEqual(result.before)
   })
 })

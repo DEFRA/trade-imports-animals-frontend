@@ -57,6 +57,7 @@ const render = async (
   const chosenLabel = (await countries.originLabel(chosen)) ?? ''
   return h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
       page,
@@ -141,7 +142,9 @@ const postRemove = async (request, h, selected, code) => {
 }
 
 const postContinue = async (request, h, payload, selected) => {
-  const { answers, errors } = await validation.onSubmit(payload)
+  const { answers, errors } = await validation.onSubmit(payload, {
+    allowMissing: kit.isHubExit(request)
+  })
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, selected, { errors })).code(

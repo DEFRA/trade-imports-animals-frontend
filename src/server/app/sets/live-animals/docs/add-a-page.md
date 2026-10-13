@@ -136,6 +136,21 @@ caption size that matches the heading. `journeys/linear/features/origin/template
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
+Pass `amend = amend` to `saveActions` on every page listed in a task row's `pages`
+([`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js)) and on
+every role or party picker. `kit.base()` supplies `amend` when the controller passes
+it the request (`request`, or `h.request` where the render has only the toolkit):
+the two form actions the save buttons carry while the notification is being amended,
+and null otherwise. While amending, a task-row page shows Save and return, Save and
+continue and Save and return to overview. A page that also passes
+`showReturnControls = false` (the CPH number page, the role address pickers) or
+`hubExitWhileAmending = false` (the contact address page) shows only the first two.
+Do not pass `amend` on an add-another sub-page that returns to its own list page:
+the transporter add, select and details pages pass `showReturnControls = false`
+alone, and the list page carries the amend ending.
+[`amend-endings.test.js`](../journeys/linear/features/amend-endings.test.js) renders
+every task-row page while amending and fails if one loses the ending.
+
 Import `TEMPLATES` from
 [`journeys/linear/config.js`](../journeys/linear/config.js) in the controller and
 build the view name below its `live-animals/journeys/linear` prefix. Do not prefix
@@ -168,8 +183,10 @@ owner to silence coverage.
 ## 6. Place the page in the journey and hub task row
 
 Import the page identity into [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js). Put it in the
-right `sections` entry. Its position controls `nextInSection()` and
-strictly-earlier prerequisites.
+right `sections` entry. Its position controls strictly-earlier
+prerequisites and where Save and continue goes outside the opening run
+(`nextInTaskRow()`: the next page of the section only when it is in the same
+task row).
 
 Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js). Put it in an
 existing task row when those pages form one user task. Add a task row only when
@@ -287,6 +304,7 @@ Cover:
 - preservation of entered values on error
 - every error-summary link moving focus to its control
 - back, Save and return to overview, Cancel and Change navigation as applicable
+- while amending, the amend controls (three on a task-row page; two on pickers, the CPH number page and the contact address page; none on add-another sub-pages) and where each one goes
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

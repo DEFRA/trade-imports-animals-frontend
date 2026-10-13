@@ -9,6 +9,7 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
+  driveHandler,
   stubH,
   journeyRequest,
   postHandlerOf
@@ -94,7 +95,7 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should keep Save and continue on the flow target when no exit is named', async () => {
+  it('Should send Save and continue to the overview outside the opening run when no exit is named', async () => {
     const { journeyId, response, after } = await drivePost(
       postHandlerOf(importReason),
       {
@@ -102,9 +103,7 @@ describe('save actions — hub exit semantics', () => {
         seed: reasonPrerequisites
       }
     )
-    expect(response).toEqual({
-      redirect: pagePath(journeyId, 'additional-details')
-    })
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
@@ -238,5 +237,43 @@ describe('save actions — hub exit semantics', () => {
     })
     expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
     expect(exit.after.countyParishHoldingCph).toBe('123456789')
+  })
+})
+
+describe('save actions — amend endings', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const reasonPrerequisites = {
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commoditySelection: 'Cat' }]
+  }
+  const internalMarketPayload = {
+    reasonForImport: 'internalMarket',
+    purposeInInternalMarket: 'breeding'
+  }
+
+  it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
+    const postAmending = (query) =>
+      driveHandler(postHandlerOf(importReason), {
+        seed: reasonPrerequisites,
+        payload: internalMarketPayload,
+        query,
+        amend: true
+      })
+
+    const saveAndReturn = await postAmending({ change: '1' })
+    const saveAndContinue = await postAmending({})
+
+    expect(saveAndReturn.response).toEqual({
+      redirect: pagePath(saveAndReturn.journeyId, 'notification-view')
+    })
+    expect(saveAndContinue.response).toEqual({
+      redirect: hubPath(saveAndContinue.journeyId)
+    })
   })
 })

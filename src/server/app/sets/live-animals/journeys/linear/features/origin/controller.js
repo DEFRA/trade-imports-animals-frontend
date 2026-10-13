@@ -60,6 +60,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: backLinkFor(journey, answers),
       journey,
       page,
@@ -84,7 +85,8 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { values, answers, errors } = await validation.onSubmit(
-    request.payload ?? {}
+    request.payload ?? {},
+    { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
     const { journey, answers: storedAnswers } = await state.get(request, h)

@@ -229,6 +229,15 @@ describe('GET addresses — change context', () => {
     )
   })
 
+  it('Should point Back at the task list, never the review, while amending', async () => {
+    const { journeyId, view } = await driveHandler(getAddresses, {
+      query: { change: '1' },
+      amend: true
+    })
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
+  })
+
   it('Should point Back at the task list when not changing', async () => {
     const result = await rowsFor({})
 

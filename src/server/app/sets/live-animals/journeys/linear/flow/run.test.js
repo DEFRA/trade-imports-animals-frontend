@@ -57,9 +57,9 @@ describe('#nextRunTarget — the opening run sequence', () => {
     )
   })
 
-  it('Should send the search page to the consignment details page once a line exists', () => {
+  it('Should send the search page to import reason once a line exists', () => {
     expect(next(commoditiesPage.id, lineSeed)).toBe(
-      pagePath(JOURNEY_ID, 'consignment-details')
+      pagePath(JOURNEY_ID, 'import-reason')
     )
   })
 
@@ -69,16 +69,16 @@ describe('#nextRunTarget — the opening run sequence', () => {
     )
   })
 
-  it('Should send the consignment details page to import reason', () => {
+  it('Should send the consignment details page to the identification surface', () => {
     expect(next(consignmentDetailsPage.id, lineSeed)).toBe(
-      pagePath(JOURNEY_ID, 'import-reason')
+      pagePath(JOURNEY_ID, animalIdentificationPage.slug)
     )
   })
 
-  it('Should send import reason straight to the identification surface — its follow-up questions are answered on the reason page itself', () => {
+  it('Should send import reason on to the consignment details, whichever reason is given', () => {
     for (const reasonForImport of ['internalMarket', 'transit']) {
       expect(next(importReasonPage.id, { ...lineSeed, reasonForImport })).toBe(
-        pagePath(JOURNEY_ID, animalIdentificationPage.slug)
+        pagePath(JOURNEY_ID, 'consignment-details')
       )
     }
   })
@@ -167,13 +167,20 @@ describe('#nextRunTarget — the run past the arrival details', () => {
     )
   })
 
-  it('Should send the roles and addresses on to the CPH number and then the contact address', () => {
-    expect(step(addressesPage.id)).toBe(
-      pagePath(JOURNEY_ID, cphNumberPage.slug)
-    )
-    expect(step(cphNumberPage.id)).toBe(
+  it('Should send the roles and addresses straight on to the contact address, never the CPH number', () => {
+    const { contactAddress, ...withoutContact } = completeSeed
+    expect(contactAddress).toBeDefined()
+    expect(next(addressesPage.id, withoutContact)).toBe(
       pagePath(JOURNEY_ID, consignmentContactSelectPage.slug)
     )
+  })
+
+  it('Should send the roles and addresses to the overview when every task is already complete', () => {
+    expect(step(addressesPage.id)).toBe(hubPath(JOURNEY_ID))
+  })
+
+  it('Should return null for the CPH number page — it is not a run step', () => {
+    expect(step(cphNumberPage.id)).toBeNull()
   })
 
   it('Should end the run on the review page once every task row is ready', () => {
@@ -182,9 +189,9 @@ describe('#nextRunTarget — the run past the arrival details', () => {
     )
   })
 
-  it('Should rest on the hub instead when the notification is not ready to review', () => {
+  it('Should end the run on the review page even when the notification is incomplete', () => {
     expect(next(consignmentContactSelectPage.id, lineSeed)).toBe(
-      hubPath(JOURNEY_ID)
+      pagePath(JOURNEY_ID, notificationViewPage.slug)
     )
   })
 
@@ -196,8 +203,14 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 describe('the run covers the journey', () => {
   // Pages deliberately outside the run: the dashboard sits before a
   // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run.
-  const OUTSIDE_THE_RUN = ['dashboard', 'declaration', 'confirmation']
+  // the review page has ended the run. The CPH number page is reached only
+  // from its row on the roles and addresses page.
+  const OUTSIDE_THE_RUN = [
+    'dashboard',
+    'cphNumber',
+    'declaration',
+    'confirmation'
+  ]
 
   it('Should decide every flow page, either running it or listing it as outside the run', () => {
     const stepIds = RUN_STEPS.map((step) => step.id)

@@ -218,7 +218,9 @@ test.describe('dashboard feature — notification rows and actions', () => {
 
     await page.goto(BASE)
 
-    await expect(page.getByText('Amending', { exact: true })).toBeVisible()
+    await expect(page.locator('.govuk-tag', { hasText: 'Amend' })).toHaveText(
+      'Amend'
+    )
     await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
     await expect(
       actionFor(page, 'link', 'Cancel amendment', reference)

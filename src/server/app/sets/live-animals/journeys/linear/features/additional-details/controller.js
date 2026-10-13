@@ -37,6 +37,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
       page,
@@ -72,7 +73,7 @@ const post = async (request, h) => {
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},
-    { showUnweaned }
+    { showUnweaned, allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
     return render(h, journey, values, showUnweaned, errors).code(

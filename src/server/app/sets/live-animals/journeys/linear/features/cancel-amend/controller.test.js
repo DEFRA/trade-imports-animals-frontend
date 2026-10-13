@@ -83,6 +83,15 @@ describe('cancel amendment routes', () => {
     expect(response.context.copy.body).toContain('submitted version restored')
   })
 
+  it('Should show the Amend tag but offer no Cancel amend on the confirmation page itself', async () => {
+    const journeyId = await startAmend()
+
+    const response = await get(journeyRequest(journeyId), stubH())
+
+    expect(response.context.journeyStrip.status.text).toBe('Amend')
+    expect(response.context.journeyStrip.cancelAmend).toBeUndefined()
+  })
+
   it('Should cancel AMEND, restore submitted content and redirect to the read-only CYA with success', async () => {
     const journeyId = await startAmend()
 

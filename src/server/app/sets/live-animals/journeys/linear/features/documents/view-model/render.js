@@ -37,6 +37,7 @@ export const render = ({
   ]
   return h.view(view, {
     ...kit.base(copy.title, {
+      request,
       backLink: hubPath(journey.journeyId),
       journey,
       page
