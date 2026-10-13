@@ -19,11 +19,10 @@
       id: "countryOfOrigin",
       name: "countryOfOrigin",
       label: { text: copy.country.label, classes: "govuk-label--m" },
-      hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
       items: countryItems,
-      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults, placeholder: copy.country.searchPlaceholder }
     }) }}
 
     {% set regionCodeHtml %}
@@ -33,6 +32,9 @@
         label: { text: copy.regionCode.label },
         hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
+        attributes: { maxlength: "5" },
+        autocomplete: "off",
+        spellcheck: false,
         prefix: { text: regionCodePrefix },
         value: values.regionOfOriginCodeSuffix,
         errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }

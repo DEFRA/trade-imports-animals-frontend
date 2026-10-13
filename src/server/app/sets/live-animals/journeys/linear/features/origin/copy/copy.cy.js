@@ -3,13 +3,13 @@ export const copy = {
   title: 'Tarddiad y mewnforyn',
   country: {
     label: 'Gwlad tarddiad',
-    hint: 'Dechreuwch deipio i chwilio am wlad.',
     placeholder: 'Dewiswch wlad',
+    searchPlaceholder: 'Chwiliwch am wlad',
     noResults: 'Dim gwledydd wedi’u darganfod'
   },
   regionRequirement: {
     legend: 'A oes gan y llwyth god rhanbarth tarddiad?',
-    hint: 'Os oes angen cod rhanbarth tarddiad, bydd yn cael ei ddangos ar eich tystysgrif iechyd.',
+    hint: 'Gwiriwch y dystysgrif iechyd am god rhanbarth tarddiad. Gallwch ychwanegu’r cod yn nes ymlaen os nad yw’r dystysgrif gennych nawr.',
     yes: 'Oes',
     no: 'Nac oes'
   },
@@ -19,7 +19,7 @@ export const copy = {
   },
   internalReference: {
     label: 'Eich cyfeirnod mewnol ar gyfer y llwyth hwn (dewisol)',
-    hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag. Gall fod hyd at 58 nod.'
+    hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag.'
   },
   errors: {
     countryFromList: 'Dewiswch wlad o’r rhestr',

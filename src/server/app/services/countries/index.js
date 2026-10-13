@@ -100,7 +100,7 @@ export const originCountries = async () => {
   return Object.entries(labels).map(([value, text]) => ({ value, text }))
 }
 
-const countryAndSubdivisionOptions = async (subdivisionText) => {
+const countryAndSubdivisionOptions = async () => {
   await ensureLoaded()
   const countryOptions = Object.entries(labels).map(([value, text]) => ({
     value,
@@ -108,20 +108,18 @@ const countryAndSubdivisionOptions = async (subdivisionText) => {
   }))
   const subdivisionOptions = Object.keys(subdivisionLabels).map((value) => ({
     value,
-    text: subdivisionText(value)
+    text: subdivisionDisplayLabel(value)
   }))
   return [...countryOptions, ...subdivisionOptions].sort((left, right) =>
     left.text.localeCompare(right.text)
   )
 }
 
-/** Flat country and subdivision entries for the origin page only. */
-export const originCountryOptions = () =>
-  countryAndSubdivisionOptions((code) => subdivisionLabels[code])
+/** The origin page's countries and subdivisions, one alphabetical list, each subdivision named with its parent country. */
+export const originCountryOptions = () => countryAndSubdivisionOptions()
 
 /** Countries and their subdivisions for a destination select, one alphabetical list, each subdivision named with its parent country. */
-export const destinationCountryOptions = () =>
-  countryAndSubdivisionOptions(subdivisionDisplayLabel)
+export const destinationCountryOptions = () => countryAndSubdivisionOptions()
 
 export const addressCountries = async () => {
   await ensureLoaded()
