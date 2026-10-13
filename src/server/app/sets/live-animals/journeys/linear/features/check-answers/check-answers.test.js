@@ -225,7 +225,6 @@ const ATTACHMENT_KEY = 'Attachment'
 const NO_DOCUMENTS_SENTENCE = 'You have not added any documents yet.'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
-const ARRIVAL_DATE_KEY = 'Arrival date at port of entry'
 const PORT_OF_ENTRY_KEY = 'Port of entry'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
@@ -2454,7 +2453,7 @@ describe(`${SUITE} — the template review`, () => {
       '4. Consignment parties',
       '5. Contact address'
     ])
-    expect(cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)).toBeUndefined()
+    expect(cardByTitle(sections, DOCUMENT_1_CARD)).toBeUndefined()
   })
 
   it('Should leave the arrival date row off the arrival details card', async () => {

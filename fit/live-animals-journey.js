@@ -594,7 +594,7 @@ export const answerEveryTemplateSection = async (page) => {
   await answerAnimalIdentification(page)
   await overview()
 
-  await task('Main reason for import')
+  await task('Main import reason')
   await answerImportReason(page)
   await overview()
   await task('Additional details')

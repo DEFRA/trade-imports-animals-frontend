@@ -34,6 +34,7 @@ const NO_DOCUMENTS_SENTENCE = 'You have not added any documents yet.'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 const MISSING_VALUE_SELECTOR = '.app-summary-list__value--missing'
 const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
+const JOURNEY_STRIP_SELECTOR = '.app-journey-strip'
 const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
 const COMMODITY_DETAILS_ANCHOR = '#commodity-details'
 const FELIS_CATUS = 'Felis Catus'
@@ -606,7 +607,7 @@ test.describe('check-answers feature navigation and submission', () => {
         .getByRole('main')
         .getByText(sharedCopy.journeyStrip.draft, { exact: true })
     ).toHaveClass(/govuk-tag--blue/)
-    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page.locator(JOURNEY_STRIP_SELECTOR)).toHaveCount(0)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
     await expect(
       page.getByText(
@@ -924,7 +925,7 @@ test.describe('check-answers feature submitted notification', () => {
       .getByText(sharedCopy.journeyStrip.submitted, { exact: true })
     await expect(tag).toBeVisible()
     await expect(tag).toHaveClass(/govuk-tag--green/)
-    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page.locator(JOURNEY_STRIP_SELECTOR)).toHaveCount(0)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
     await expect(page).toHaveTitle(
       `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
@@ -1089,7 +1090,7 @@ test.describe('check-answers feature template review', () => {
   test('is titled Review your template under the Template tag and name, with no error summary and no card errors', async ({
     page
   }) => {
-    const strip = page.locator('.app-journey-strip')
+    const strip = page.locator(JOURNEY_STRIP_SELECTOR)
 
     await expect(page).toHaveTitle(
       `${TEMPLATE_REVIEW_TITLE} - Import notification service - GOV.UK`
@@ -1111,10 +1112,10 @@ test.describe('check-answers feature template review', () => {
       page.getByRole('main').getByRole('heading', { level: 2 })
     ).toHaveText(TEMPLATE_SECTIONS)
     await expect(
-      page.getByText(copy.cards.documents, { exact: true })
+      page.getByText(copy.sections.documents, { exact: true })
     ).toHaveCount(0)
     await expect(
-      page.getByText('Arrival date at port of entry', { exact: true })
+      page.getByText(copy.rows.arrivalDate, { exact: true })
     ).toHaveCount(0)
     await expect(page.locator(MISSING_VALUE_SELECTOR)).toHaveCount(0)
     await expect(

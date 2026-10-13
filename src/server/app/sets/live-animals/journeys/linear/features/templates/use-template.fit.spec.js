@@ -8,6 +8,7 @@ import {
   journeyIdFromPage,
   openTemplateTaskList,
   partyPickerName,
+  referenceHeading,
   saveTemplateFromReview,
   signIn,
   startNotification,
@@ -83,6 +84,17 @@ const expectNewNotificationTaskList = async (page) => {
   await expect(
     page.getByRole('heading', { level: 1, name: hubCopy.title })
   ).toBeVisible()
+}
+
+const expectNoDocumentsCarried = async (page) => {
+  await expect(
+    page.locator('.govuk-summary-card__title', {
+      hasText: reviewCopy.documentN(2)
+    })
+  ).toHaveCount(0)
+  await expect(
+    cardRowFor(page, reviewCopy.documentN(1), reviewCopy.rows.documentReference)
+  ).toContainText(reviewCopy.notApplicable)
 }
 
 const expectNoSeriousOrCriticalAxeViolations = async (page) => {
@@ -196,15 +208,12 @@ test.describe('Use template', () => {
 
     await page.getByRole('button', { name: hubCopy.reviewAndSubmit }).click()
 
-    await expect(
-      page.getByRole('heading', { level: 1, name: reviewCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
     const answered = [
       [reviewCopy.rows.countryOfOrigin, COUNTRY_LABELS[values.countryOfOrigin]],
-      [reviewCopy.rows.regionCodeRequired, reviewCopy.yesNo.yes],
       [reviewCopy.rows.regionCode, values.regionOfOriginCode],
       [reviewCopy.rows.internalReference, values.internalReferenceNumber],
-      [reviewCopy.rows.species, 'Bos taurus'],
+      [reviewCopy.rows.species, 'Bos Taurus'],
       [reviewCopy.rows.numberOfAnimals, line.numberOfAnimalsQuantity],
       [reviewCopy.rows.numberOfPackages, line.numberOfPackages],
       [reviewCopy.rows.reasonForImport, 'Internal market'],
@@ -242,7 +251,7 @@ test.describe('Use template', () => {
         reviewCopy.notApplicable
       )
     }
-    await expect(page.getByText(reviewCopy.documentsEmpty)).toBeVisible()
+    await expectNoDocumentsCarried(page)
     await expect(
       rowFor(page, reviewCopy.rows.arrivalDate).locator(
         '.app-summary-list__value--missing'
@@ -259,9 +268,7 @@ test.describe('Use template', () => {
 
     await page.getByRole('button', { name: hubCopy.reviewAndSubmit }).click()
 
-    await expect(
-      page.getByRole('heading', { level: 1, name: reviewCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
     const parties = [
       [reviewCopy.rows.placeOfOrigin, values.placeOfOrigin],
       [reviewCopy.rows.consignor, values.consignor],

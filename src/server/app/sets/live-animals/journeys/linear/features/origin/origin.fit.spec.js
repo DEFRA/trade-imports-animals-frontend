@@ -1037,7 +1037,9 @@ test.describe('origin in template mode', () => {
     page
   }) => {
     await expect(page.locator(countryHidden)).toBeAttached()
-    await expect(page.getByText(copy.country.hint)).toBeVisible()
+    await expect(
+      page.getByText(copy.country.label, { exact: true })
+    ).toBeVisible()
     await expect(
       page.getByRole('group', { name: copy.regionRequirement.legend })
     ).toContainText(copy.regionRequirement.hint)

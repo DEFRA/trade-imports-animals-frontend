@@ -35,6 +35,7 @@ const NOT_APPLICABLE = 'Not applicable'
 const MANAGE_TEMPLATES = 'Manage templates'
 const TEMPLATE_PAGE_PATH = /\/live-animals\/templates\/[^/]+$/
 const ARRIVAL_DATE_LABEL = 'Arrival date at port of entry'
+const ARRIVAL_DATE_ROW = 'Arrival date at destination'
 const REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const REGION_CODE_FIELD = '#regionOfOriginCodeSuffix'
@@ -99,7 +100,7 @@ const saveWithReference = async (page, name = NAME) => {
 }
 
 const openChangeOrigin = async (page) => {
-  await changeLink(page, 'import details').click()
+  await changeLink(page, 'origin of import').click()
   await expect(
     page.getByRole('heading', { level: 1, name: 'Origin of the import' })
   ).toBeVisible()
@@ -128,7 +129,7 @@ const answerEverySection = async (page) => {
   await answerAnimalIdentification(page)
   await overview()
 
-  await task('Main reason for import')
+  await task('Main import reason')
   await answerImportReason(page)
   await overview()
   await task('Additional details')
@@ -389,14 +390,20 @@ test.describe('changing every section of a saved template', () => {
     await viewSaved(page, NAME)
     const templateUrl = page.url()
 
-    const hrefs = await main(page)
-      .locator('a[href*="?change=1"]')
-      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    const hrefs = [
+      ...new Set(
+        await main(page)
+          .locator('a[href*="?change=1"]')
+          .evaluateAll((links) =>
+            links.map((link) => link.getAttribute('href'))
+          )
+      )
+    ]
     expect(hrefs.length).toBeGreaterThanOrEqual(8)
 
     for (const href of hrefs) {
       await page.goto(templateUrl)
-      await main(page).locator(`a[href="${href}"]`).click()
+      await main(page).locator(`a[href="${href}"]`).first().click()
       await expect(
         page.getByRole('button', { name: SAVE_AND_RETURN, exact: true }),
         href
@@ -432,18 +439,18 @@ test.describe('changing every section of a saved template', () => {
     await reviewAndSave(page)
     await viewSaved(page, NAME)
     const templateUrl = page.url()
-    await expect(
-      page.getByText(ARRIVAL_DATE_LABEL, { exact: true })
-    ).toHaveCount(0)
+    await expect(page.getByText(ARRIVAL_DATE_ROW, { exact: true })).toHaveCount(
+      0
+    )
 
     await changeLink(page, ARRIVAL_DETAILS).click()
     await expect(page.getByLabel(ARRIVAL_DATE_LABEL)).toHaveValue('')
     await page.getByLabel(ARRIVAL_DATE_LABEL).fill(ARRIVAL_DATE_IN_WINDOW)
     await saveAndReturn(page)
     await expect(page).toHaveURL(templateUrl)
-    await expect(
-      page.getByText(ARRIVAL_DATE_LABEL, { exact: true })
-    ).toHaveCount(0)
+    await expect(page.getByText(ARRIVAL_DATE_ROW, { exact: true })).toHaveCount(
+      0
+    )
 
     await changeLink(page, ARRIVAL_DETAILS).click()
     await expect(page.getByLabel(ARRIVAL_DATE_LABEL)).toHaveValue('')
