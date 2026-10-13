@@ -153,6 +153,46 @@ test.describe('cancel-amend feature', () => {
   })
 })
 
+test.describe('amend review', () => {
+  test('Continue on an incomplete amendment shows There is a problem, naming the unfinished card', async ({
+    page
+  }) => {
+    await signIn(page)
+    const reference = await submitNotification(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
+    await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
+    await page.getByLabel('Arrival date at port of entry').fill('')
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub,
+        exact: true
+      })
+      .click()
+    await openReviewFromHub(page)
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toHaveCount(0)
+
+    await page
+      .getByRole('button', { name: checkAnswersCopy.submit.button })
+      .click()
+
+    await expect(page).toHaveURL(/\/notification-view\?refused=1$/)
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: checkAnswersCopy.errors.cards.arrivalDetails
+      })
+    ).toBeVisible()
+    await expectAmendStrip(page)
+  })
+})
+
 test.describe('cancel-amend feature without JavaScript', () => {
   test('the status bar Cancel amend reaches the confirmation and Yes restores Submitted', async ({
     page,
@@ -168,17 +208,20 @@ test.describe('cancel-amend feature without JavaScript', () => {
       javaScriptEnabled: false,
       storageState: await page.context().storageState()
     })
-    const noJs = await context.newPage()
+    try {
+      const noJs = await context.newPage()
 
-    await noJs.goto(`${BASE}/notifications/${reference}/origin`)
-    await cancelAmendLink(noJs).click()
-    await expect(noJs).toHaveURL(/\/cancel-amend$/)
-    await noJs.getByRole('button', { name: copy.confirmButton }).click()
+      await noJs.goto(`${BASE}/notifications/${reference}/origin`)
+      await cancelAmendLink(noJs).click()
+      await expect(noJs).toHaveURL(/\/cancel-amend$/)
+      await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
-    await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-    await expect(strip(noJs).locator(TAG)).toHaveText(
-      sharedCopy.journeyStrip.submitted
-    )
-    await context.close()
+      await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
+      await expect(strip(noJs).locator(TAG)).toHaveText(
+        sharedCopy.journeyStrip.submitted
+      )
+    } finally {
+      await context.close()
+    }
   })
 })

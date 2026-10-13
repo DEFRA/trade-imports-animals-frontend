@@ -194,6 +194,26 @@ describe('#catchAll', () => {
     )
   })
 
+  test('Should log the cause a server error carries, so a reference data outage says why it happened', () => {
+    const cause = new Error('connect ECONNREFUSED')
+    const request = mockRequest(statusCodes.internalServerError)
+    request.response.data = { dataset: 'countries', cause }
+
+    catchAll(request, mockToolkit)
+
+    expect(mockErrorLogger).toHaveBeenCalledWith(mockStack)
+    expect(mockErrorLogger).toHaveBeenCalledWith(
+      { err: cause },
+      'Caused by: connect ECONNREFUSED'
+    )
+  })
+
+  test('Should log only the stack for a server error with no cause', () => {
+    catchAll(mockRequest(statusCodes.internalServerError), mockToolkit)
+
+    expect(mockErrorLogger).toHaveBeenCalledTimes(1)
+  })
+
   test('Should leave non-Boom responses untouched', () => {
     const result = catchAll(
       { response: { statusCode: 302 }, logger: { error: mockErrorLogger } },

@@ -17,10 +17,18 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   journeyRequest,
+  postHandlerOf,
   stubH
 } from '../../../../../../engine/test-support.js'
+import * as declaration from '../declaration/controller.js'
+import {
+  continueRequest,
+  declarationRoutesFromReview
+} from '../declaration/test-support.js'
+import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
+import * as ports from '../../../../../../services/ports/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -33,7 +41,38 @@ import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
-const postHandler = routes.find((route) => route.method === 'POST').handler
+
+const continueFromReview = async (seed, { submitted = false } = {}) => {
+  const { journeyId } = await store.create()
+  await store.seedAnswers(journeyId, seed)
+  if (submitted) {
+    await store.submit(journeyId)
+  }
+  const { concurrencyToken } = await store.get(journeyId)
+  const toolkit = stubH()
+  const response = await postHandlerOf(declaration)(
+    continueRequest(journeyRequest(journeyId), concurrencyToken),
+    toolkit
+  )
+  return { journeyId, response, view: toolkit.captured.view }
+}
+
+const reviewPath = (journeyId) => pagePath(journeyId, 'notification-view')
+
+const refusedContinue = (journeyId) => ({
+  redirect: `${reviewPath(journeyId)}?refused=1`
+})
+
+const reviewAfterRefusal = async (seed) => {
+  const { journeyId, response } = await continueFromReview(seed)
+  expect(response).toEqual(refusedContinue(journeyId))
+  const toolkit = stubH()
+  await getHandler(
+    journeyRequest(journeyId, { query: { refused: '1' } }),
+    toolkit
+  )
+  return toolkit.captured.view
+}
 
 const dateMonthsAhead = (months) => {
   const date = new Date()
@@ -60,9 +99,9 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
-  const h = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), h)
-  return h.captured.view
+  const toolkit = stubH()
+  await getHandler(journeyRequest(journey.journeyId, { query }), toolkit)
+  return toolkit.captured.view
 }
 
 const cardsOf = (sections) =>
@@ -929,8 +968,21 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+  })
+
+  it('Should read the port of exit back exactly as the option the trader picked', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({ reasonForImport: 'transit', portOfExit: 'GB DVR' })
+      )
+    )
+    const picked = (await ports.portOptions()).find(
+      ({ value }) => value === 'GB DVR'
+    )
+
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
   })
 
   it('Should name a subdivision destination country with its parent country', async () => {
@@ -973,7 +1025,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, EXIT_DATE_KEY)).toBe('27/3/2026')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(DESTINATION_COUNTRY_KEY)
   })
 
@@ -1264,55 +1316,53 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
 describe(`${SUITE} — Continue on an amend review`, () => {
   setupCheckAnswersEngine()
 
-  const amendJourney = async (seed) => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, seed)
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-    return journey
-  }
+  const continueAmend = (seed) =>
+    driveHandler(declarationRoutesFromReview[0].handler, { seed, amend: true })
 
-  it('Should keep an incomplete amend on the review without an error', async () => {
+  const refusedAmendReview = (seed) =>
+    driveHandler(getHandler, { seed, query: { refused: '1' }, amend: true })
+
+  it('Should refuse an incomplete amend back to the review as refused', async () => {
     const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
     expect(arrivalDateAtPort).toBeDefined()
-    const journey = await amendJourney(withoutArrivalDate)
 
-    const response = await postHandler(
-      journeyRequest(journey.journeyId),
-      stubH()
-    )
+    const { journeyId, response } = await continueAmend(withoutArrivalDate)
 
-    expect(response.redirect).toBe(
-      pagePath(journey.journeyId, 'notification-view')
-    )
-    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+    expect(response).toEqual(refusedContinue(journeyId))
+    expect((await store.get(journeyId)).status).toBe(AMEND)
   })
 
-  it('Should keep an amend whose arrival date is more than 6 months ahead on the review without an error', async () => {
-    const journey = await amendJourney({
-      ...fullSeed,
-      arrivalDateAtPort: dateMonthsAhead(8)
-    })
-    const h = stubH()
+  it('Should name what is outstanding on a refused amend review, with focus on the summary', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
 
-    const response = await postHandler(journeyRequest(journey.journeyId), h)
+    const { view } = await refusedAmendReview(withoutArrivalDate)
 
-    expect(response.redirect).toBe(
-      pagePath(journey.journeyId, 'notification-view')
-    )
-    expect(h.captured.view).toBeUndefined()
-    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
+    expect(
+      cardsOf(view.context.sections).filter((card) => card.error)
+    ).not.toEqual([])
+  })
+
+  it('Should refuse an amend whose arrival date is more than 6 months ahead, naming it on the review', async () => {
+    const seed = { ...fullSeed, arrivalDateAtPort: dateMonthsAhead(8) }
+
+    const { journeyId, response } = await continueAmend(seed)
+    expect(response).toEqual(refusedContinue(journeyId))
+
+    const { view } = await refusedAmendReview(seed)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
   })
 
   it('Should still refuse an incomplete draft with the summary', async () => {
     const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
     expect(arrivalDateAtPort).toBeDefined()
-    const { response, view } = await driveHandler(postHandler, {
-      seed: withoutArrivalDate
-    })
 
-    expect(response.statusCode).toBe(400)
+    const view = await reviewAfterRefusal(withoutArrivalDate)
+
     expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
   })
 })
 
@@ -1361,7 +1411,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
   )
 })
 
-describe(`${SUITE} — POST navigation`, () => {
+describe(`${SUITE} — Continue to the declaration`, () => {
   setupCheckAnswersEngine()
 
   const withParties = (seed) => ({
@@ -1372,71 +1422,105 @@ describe(`${SUITE} — POST navigation`, () => {
     placeOfDestination: fullSeed.placeOfDestination
   })
 
-  // Continue used to carry an unfinished notification through to the
-  // declaration, where the submit failed its readiness check and bounced the
-  // trader back here saying nothing. It is refused on this page instead.
-  it('Should refuse Continue while the notification is unfinished', async () => {
-    const { response } = await driveHandler(postHandler, {
-      seed: withParties({})
-    })
-
-    expect(response.redirect).toBeUndefined()
-    expect(response.statusCode).toBe(400)
+  it('Should register no POST of its own — Continue posts to the declaration', () => {
+    expect(routes.map((route) => route.method)).toEqual(['GET'])
   })
 
-  it('Should redirect to the declaration once the notification is complete', async () => {
-    const { response } = await driveHandler(postHandler, { seed: fullSeed })
+  it('Should point Continue at the declaration, carrying the token the review was rendered with', async () => {
+    const { journeyId, view } = await driveHandler(getHandler, {
+      seed: fullSeed
+    })
+    const { concurrencyToken } = await store.get(journeyId)
 
-    expect(response.redirect).toMatch(/\/declaration$/)
+    expect(view.context.declarationHref).toBe(
+      pagePath(journeyId, 'declaration')
+    )
+    expect(view.context.concurrencyToken).toBe(concurrencyToken)
+  })
+
+  it('Should record in the session the token an editable review was rendered with', async () => {
+    const { journeyId } = await store.create()
+    await store.seedAnswers(journeyId, fullSeed)
+    const { concurrencyToken } = await store.get(journeyId)
+    const toolkit = stubH()
+
+    await getHandler(journeyRequest(journeyId), toolkit)
+
+    expect(toolkit.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+      [journeyId]: concurrencyToken
+    })
+  })
+
+  it('Should record nothing for a submitted notification, which cannot be declared again', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    const toolkit = stubH()
+
+    await getHandler(journeyRequest(journeyId), toolkit)
+
+    expect(reviewedConcurrencyTokensCookie() in toolkit.cookies).toBe(false)
+  })
+
+  it('Should refuse Continue while the notification is unfinished', async () => {
+    const { journeyId, response } = await continueFromReview(withParties({}))
+
+    expect(response).toEqual(refusedContinue(journeyId))
+  })
+
+  it('Should show the declaration once the notification is complete', async () => {
+    const { view } = await continueFromReview(fullSeed)
+
+    expect(view.view).toMatch(/\/declaration\/template$/)
   })
 
   it('Should refuse Continue while a referenced role is outstanding', async () => {
-    const { response } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: BROKEN_COPY }
+    const { journeyId, response } = await continueFromReview({
+      ...fullSeed,
+      consignor: BROKEN_COPY
     })
 
-    expect(response.redirect).toBeUndefined()
-    expect(response.statusCode).toBe(400)
+    expect(response).toEqual(refusedContinue(journeyId))
   })
 
   it('Should refuse Continue on a brand-new draft, naming what is outstanding', async () => {
-    const { response, view } = await driveHandler(postHandler, { seed: {} })
+    const view = await reviewAfterRefusal({})
 
-    expect(response.statusCode).toBe(400)
     expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
   })
 
-  it('Should re-render the page with the summary when Continue is refused', async () => {
-    const { view } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: BROKEN_COPY }
+  it('Should show the summary when Continue is refused', async () => {
+    const view = await reviewAfterRefusal({
+      ...fullSeed,
+      consignor: BROKEN_COPY
     })
 
     expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
   })
 
   it('Should move focus to the summary when Continue is refused', async () => {
-    const { view } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: BROKEN_COPY }
+    const view = await reviewAfterRefusal({
+      ...fullSeed,
+      consignor: BROKEN_COPY
     })
 
     expect(view.context.errorSummary.disableAutoFocus).toBe(false)
   })
 
-  it('Should not refuse a submitted notification carrying a deleted address', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, {
-      ...fullSeed,
-      consignor: BROKEN_COPY
+  it('Should leave focus on the heading on a plain visit', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, consignor: BROKEN_COPY }
     })
-    await store.submit(journey.journeyId)
 
-    const response = await postHandler(
-      journeyRequest(journey.journeyId),
-      stubH()
+    expect(view.context.errorSummary.disableAutoFocus).toBe(true)
+  })
+
+  it('Should not refuse a submitted notification carrying a deleted address', async () => {
+    const { journeyId, response } = await continueFromReview(
+      { ...fullSeed, consignor: BROKEN_COPY },
+      { submitted: true }
     )
 
-    expect(response.statusCode).not.toBe(400)
-    expect(response.redirect).toBeDefined()
+    expect(response).toEqual({ redirect: pagePath(journeyId, 'confirmation') })
   })
 })
 
@@ -1639,10 +1723,9 @@ describe(`${SUITE} — stale stored answers`, () => {
   })
 
   it('Should refuse Continue on an otherwise-complete notification carrying a stale stored answer', async () => {
-    const { response } = await driveHandler(postHandler, { seed: staleSeed })
+    const { journeyId, response } = await continueFromReview(staleSeed)
 
-    expect(response.redirect).toBeUndefined()
-    expect(response.statusCode).toBe(400)
+    expect(response).toEqual(refusedContinue(journeyId))
   })
 
   it('Should show neither a card error nor a summary entry for a stale answer on a submitted notification', async () => {
@@ -1654,13 +1737,7 @@ describe(`${SUITE} — stale stored answers`, () => {
   })
 })
 
-// Document scan verdicts are threaded onto the uploaded-documents card
-// through two paths that renderNotificationView wires up separately: the GET
-// path names a REJECTED scan (a permanent verdict on a stored file), and the
-// POST refuse path additionally names a PENDING scan (a mid-upload) via
-// extraCardErrors. Neither is exercised by the pure-function refusal tests —
-// those hit the helpers, not the controller's spread order or option
-// threading, so this block pins the controller-level wiring.
+// The refusal tests cover the scan helper; this block pins the controller's wiring of it.
 describe(`${SUITE} — document scan card errors`, () => {
   setupCheckAnswersEngine()
 
@@ -1684,8 +1761,6 @@ describe(`${SUITE} — document scan card errors`, () => {
     documents: [scanDoc({ filename })]
   })
 
-  // The GET path renders documentsRejectedCardErrors on the docs card, but
-  // only for a REJECTED scan — a PENDING is transient so must not surface.
   it('Should name the uploaded-documents card when a stored document was rejected by the scan', async () => {
     const card = cardByTitle(
       await sectionsFor(seedWithDoc(REJECTED_FILENAME)),
@@ -1695,39 +1770,41 @@ describe(`${SUITE} — document scan card errors`, () => {
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 
-  it('Should not name the uploaded-documents card for a still-scanning document on GET', async () => {
-    const card = cardByTitle(
-      await sectionsFor(seedWithDoc(PENDING_FILENAME)),
-      UPLOADED_DOCUMENTS_CARD
-    )
+  it('Should name the uploaded-documents card as still scanning when Continue is refused with a pending document', async () => {
+    const view = await reviewAfterRefusal(seedWithDoc(PENDING_FILENAME))
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
 
-    expect(card.error).toBeNull()
+    expect(card.error).toBe(documentsEn.errors.someStillScanning)
   })
 
-  // The POST refuse path threads extraCardErrors (documentScanCardErrors)
-  // through to the docs card, so a still-scanning document is named when
-  // Continue is refused — not on the read path, only on the write.
-  it('Should name the uploaded-documents card as still scanning when Continue is refused with a pending document', async () => {
-    const { view, response } = await driveHandler(postHandler, {
+  it('Should not name a still-scanning document on a plain visit to the review', async () => {
+    const { view } = await driveHandler(getHandler, {
       seed: seedWithDoc(PENDING_FILENAME)
     })
     const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
 
-    expect(response.statusCode).toBe(400)
-    expect(card.error).toBe(documentsEn.errors.someStillScanning)
+    expect(card.error).toBeNull()
+    expect(view.context.errorSummary).toBeNull()
   })
 
-  // On a rejected document, the docs card already carries the REJECTED
-  // verdict from the GET-path errors — the POST refuse path must not
-  // overwrite it with a still-scanning message, since a rejected file
-  // trumps a pending one.
   it('Should keep the rejected message on the uploaded-documents card when Continue is refused with a rejected document', async () => {
-    const { view, response } = await driveHandler(postHandler, {
-      seed: seedWithDoc(REJECTED_FILENAME)
+    const view = await reviewAfterRefusal(seedWithDoc(REJECTED_FILENAME))
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(card.error).toBe(documentsEn.errors.someRejected)
+  })
+
+  // Pending listed first, so the infected message wins on precedence, not order.
+  it('Should name the rejected document ahead of one still scanning when Continue is refused with both', async () => {
+    const view = await reviewAfterRefusal({
+      ...fullSeed,
+      documents: [
+        scanDoc({ uploadId: 'upload-1', filename: PENDING_FILENAME }),
+        scanDoc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })
+      ]
     })
     const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
 
-    expect(response.statusCode).toBe(400)
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 

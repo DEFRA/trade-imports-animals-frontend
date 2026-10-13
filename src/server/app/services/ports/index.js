@@ -33,17 +33,15 @@ export const list = async () => {
   return ports
 }
 
+const displayName = (port) => `${port.name} - ${port.code}`
+
 export const label = async (code) => {
   await ensureLoaded()
   const port = ports.find((entry) => entry.code === code)
-  return port ? `${port.name} (${port.code})` : undefined
+  return port ? displayName(port) : undefined
 }
 
-/** Every port as a select option, labelled '<name> - <code>' and valued by its code, in the order reference data serves them. */
 export const portOptions = async () => {
   await ensureLoaded()
-  return ports.map((port) => ({
-    value: port.code,
-    text: `${port.name} - ${port.code}`
-  }))
+  return ports.map((port) => ({ value: port.code, text: displayName(port) }))
 }

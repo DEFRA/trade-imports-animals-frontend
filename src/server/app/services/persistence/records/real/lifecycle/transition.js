@@ -16,9 +16,15 @@ const postTransition = async (url, action, body) => {
   return response
 }
 
-export const finalise = async (journeyId, actor) => {
+export const finalise = async (journeyId, actor, concurrencyToken) => {
+  if (concurrencyToken === undefined || concurrencyToken === null) {
+    throw new Error(
+      `finalise requires a concurrencyToken to submit notification ${journeyId}`
+    )
+  }
+  const query = new URLSearchParams({ concurrencyToken })
   const response = await postTransition(
-    `${notificationsUrl}/${journeyId}/submit`,
+    `${notificationsUrl}/${journeyId}/submit?${query}`,
     'submit notification',
     actor
   )

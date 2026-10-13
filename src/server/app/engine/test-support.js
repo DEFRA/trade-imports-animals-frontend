@@ -1,5 +1,6 @@
 import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
+import { records } from './persistence/records.js'
 
 // Mirrors what plugins/auth.js puts on credentials after sign-in: the raw
 // `currentRelationshipId` claim, plus the `organisationId` it is mapped to.
@@ -45,10 +46,13 @@ export const registerTestSessionAuth = (server) => {
   server.auth.strategy('session', 'test-session')
 }
 
-export const stubH = () => {
+/** A response toolkit that records what the handler rendered. Pass the request
+ * to expose it as `h.request`, as hapi's toolkit does. */
+export const stubH = (request) => {
   const captured = {}
   const cookies = {}
   return {
+    request,
     view: stubView(captured),
     redirect: (to) => {
       const result = { redirect: to }
@@ -106,17 +110,49 @@ export const recordingH = () => {
   }
 }
 
+/** The path and URL a request for `pathOf(journeyId)` carries, query included. */
+const requestLocation = (pathOf, journeyId, query) => {
+  if (!pathOf) {
+    return {}
+  }
+  const path = pathOf(journeyId)
+  const url = new URL(path, 'http://localhost')
+  Object.entries(query).forEach(([name, value]) =>
+    url.searchParams.set(name, value)
+  )
+  return { path, url }
+}
+
+/** Seeds a journey, runs one handler against it and reports the answers before
+ * and after. `amend` submits the journey and opens an amendment first;
+ * `pathOf(journeyId)` gives the request the path it was made to. */
 export const driveHandler = async (
   handler,
-  { payload = {}, seed = {}, params = {}, query = {}, state = {} } = {}
+  {
+    payload = {},
+    seed = {},
+    params = {},
+    query = {},
+    state = {},
+    amend = false,
+    pathOf
+  } = {}
 ) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
-  const h = stubH()
-  const response = await handler(
-    journeyRequest(journey.journeyId, { payload, params, query, state }),
-    h
-  )
+  if (amend) {
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+  }
+  const request = journeyRequest(journey.journeyId, {
+    payload,
+    params,
+    query,
+    state,
+    ...requestLocation(pathOf, journey.journeyId, query)
+  })
+  const h = stubH(request)
+  const response = await handler(request, h)
   const after = (await store.get(journey.journeyId)).answers
   return {
     journeyId: journey.journeyId,

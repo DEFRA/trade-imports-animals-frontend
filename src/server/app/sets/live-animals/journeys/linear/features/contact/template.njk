@@ -55,6 +55,6 @@
       }) }}
     {% endif %}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amendFormActions if amending else none, hubExitWhileAmending = false) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend, hubExitWhileAmending = false) }}
   </form>
 {% endblock %}

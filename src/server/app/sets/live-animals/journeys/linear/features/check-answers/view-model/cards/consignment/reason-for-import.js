@@ -25,7 +25,7 @@ const exitRows = async (answers, scope) => [
     ? [
         row(
           copy.rows.destinationCountry,
-          await countries.originDisplayLabel(answers.destinationCountry)
+          await countries.countryDisplayLabel(answers.destinationCountry)
         )
       ]
     : []),

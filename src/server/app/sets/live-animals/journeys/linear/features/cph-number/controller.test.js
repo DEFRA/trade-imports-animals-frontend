@@ -3,18 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../../engine/persistence/records.js'
+import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
-  postHandlerOf,
-  stubH
+  postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
@@ -31,27 +26,8 @@ const seed = () => ({
   commodityLines: [{ commoditySelection: 'Cow' }]
 })
 
-const driveWithQuery = async (
-  handler,
-  { payload = {}, query = {}, amend = false } = {}
-) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, seed())
-  if (amend) {
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-  }
-  const h = stubH()
-  const response = await handler(
-    journeyRequest(journey.journeyId, { payload, query }),
-    h
-  )
-  return {
-    journeyId: journey.journeyId,
-    response,
-    view: h.captured.view
-  }
-}
+const driveWithQuery = (handler, options = {}) =>
+  driveHandler(handler, { seed: seed(), ...options })
 
 describe('POST cph-number — three parts joined into the nine stored digits', () => {
   beforeAll(() => {
