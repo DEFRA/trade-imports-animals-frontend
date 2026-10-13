@@ -81,7 +81,7 @@ describe('countries service — stub mode', () => {
       value: 'ES-CN',
       text: 'Canary Islands'
     })
-    expect(await countries.originDisplayLabel('ES-CN')).toBe(
+    expect(await countries.countryDisplayLabel('ES-CN')).toBe(
       'Canary Islands (Spain)'
     )
     expect(countries.parentCountryCode('ES-CN')).toBe('ES')
