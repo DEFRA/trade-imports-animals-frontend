@@ -143,7 +143,7 @@ describe('#session.reviewedConcurrencyToken (real, yar)', () => {
     (await server.inject({ method: 'GET', url, headers: { cookie } })).result
       .token
 
-  it('Should hold one token per journey', async () => {
+  it('Should hold one concurrency token per journey', async () => {
     const server = await buildServer()
     const first = await server.inject({
       method: 'POST',
