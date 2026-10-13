@@ -8,7 +8,7 @@ import {
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import {
-  countriesOriginEntries,
+  destinationPageCountryEntries,
   portsOfEntry
 } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
@@ -24,9 +24,12 @@ const CHOOSE_DATE_LABEL = 'Choose date'
 const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
 const EXIT_PORT = portsOfEntry.find(({ code }) => code === PORT_CODE)
-const EXIT_PORT_LABEL = `${EXIT_PORT.name} (${EXIT_PORT.code})`
-const IRELAND = countriesOriginEntries().find(
+const EXIT_PORT_LABEL = `${EXIT_PORT.name} - ${EXIT_PORT.code}`
+const IRELAND = destinationPageCountryEntries().find(
   ({ code }) => code === COUNTRY_CODE
+)
+const CANARY_ISLANDS = destinationPageCountryEntries().find(
+  ({ code }) => code === 'ES-CN'
 )
 const transitPortInput = 'input#transitPortOfExit'
 const transitPortHidden = 'select#transitPortOfExit-select'
@@ -36,9 +39,9 @@ const transhipmentCountryInput = 'input#transhipmentDestinationCountry'
 const transhipmentCountryHidden = 'select#transhipmentDestinationCountry-select'
 const NO_JS_EXIT_DATE = '15/06/2030'
 const SECOND_PORT = portsOfEntry.find(({ code }) => code !== PORT_CODE)
-const SECOND_PORT_LABEL = `${SECOND_PORT.name} (${SECOND_PORT.code})`
-const FRANCE = countriesOriginEntries().find(({ code }) => code === 'FR')
-const irelandMatches = countriesOriginEntries().filter(({ name }) =>
+const SECOND_PORT_LABEL = `${SECOND_PORT.name} - ${SECOND_PORT.code}`
+const FRANCE = destinationPageCountryEntries().find(({ code }) => code === 'FR')
+const irelandMatches = destinationPageCountryEntries().filter(({ name }) =>
   /ire/i.test(name)
 )
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
@@ -124,6 +127,22 @@ const chooseTemporaryAdmissionPort = async (page) => {
   await field.fill(EXIT_PORT.code)
   await page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true }).click()
 }
+
+const renderedPortsIn = (select) =>
+  select.locator('option').evaluateAll((options) =>
+    options.map((option) => ({
+      code: option.value,
+      label: option.textContent
+    }))
+  )
+
+const expectedExitPortOptions = () => [
+  { code: '', label: copy.port.placeholder },
+  ...portsOfEntry.map((port) => ({
+    code: port.code,
+    label: `${port.name} - ${port.code}`
+  }))
+]
 
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
@@ -281,6 +300,9 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitPortInput)).toHaveAccessibleName(
       copy.port.label
     )
+    expect(await renderedPortsIn(page.locator(transitPortHidden))).toEqual(
+      expectedExitPortOptions()
+    )
     await expect(page.locator(transitCountryHidden)).toBeAttached()
     await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
@@ -293,7 +315,7 @@ test.describe('import-reason reveals', () => {
           name: option.textContent
         }))
       )
-    expect(renderedCountries).toEqual(countriesOriginEntries())
+    expect(renderedCountries).toEqual(destinationPageCountryEntries())
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -313,6 +335,9 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(temporaryAdmissionPortInput)
     ).toHaveAccessibleName(copy.port.label)
+    expect(
+      await renderedPortsIn(page.locator(temporaryAdmissionPortHidden))
+    ).toEqual(expectedExitPortOptions())
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
@@ -331,6 +356,15 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
+    const renderedCountries = await page
+      .locator(`${transhipmentCountryHidden} option`)
+      .evaluateAll((options) =>
+        options.slice(1).map((option) => ({
+          code: option.value,
+          name: option.textContent
+        }))
+      )
+    expect(renderedCountries).toEqual(destinationPageCountryEntries())
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({
@@ -433,6 +467,33 @@ test.describe('import-reason reveals', () => {
   })
 })
 
+test.describe('import-reason destination territories', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtImportReason(page)
+  })
+
+  test('saves a territory as the destination country and offers it back', async ({
+    page
+  }) => {
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'transhipmentOrOnwardTravel').check()
+    const field = page.locator(transhipmentCountryInput)
+    await field.click()
+    await field.fill(CANARY_ISLANDS.name)
+    await page
+      .getByRole('option', { name: CANARY_ISLANDS.name, exact: true })
+      .click()
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(page.locator(transhipmentCountryHidden)).toHaveValue('ES-CN')
+    await expect(field).toHaveValue(CANARY_ISLANDS.name)
+  })
+})
+
 test.describe('import-reason port and country type-ahead', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -452,8 +513,9 @@ test.describe('import-reason port and country type-ahead', () => {
 
   test('filters ports as the user types', async ({ page }) => {
     const field = page.locator(transitPortInput)
-    // "Dover" alone matches three Dover terminals; the code plus ")" is unique.
-    await field.fill(`${PORT_CODE})`)
+    // "Dover" or the code alone matches three Dover terminals; the end of the
+    // name and the code together are unique.
+    await field.fill(`Dover - ${PORT_CODE}`)
     await expect(
       page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
     ).toBeVisible()
@@ -475,7 +537,7 @@ test.describe('import-reason port and country type-ahead', () => {
       page.getByRole('option', { name: IRELAND.name, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('option')).toHaveCount(
-      countriesOriginEntries().length
+      destinationPageCountryEntries().length
     )
   })
 

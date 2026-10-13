@@ -1,314 +1,392 @@
 [
   {
     "code": "GB DYC",
-    "name": "Aberdeen Airport"
-  },
-  {
-    "code": "GB ABD",
-    "name": "Aberdeen Harbour"
-  },
-  {
-    "code": "GB AVO",
-    "name": "Avonmouth Docks"
-  },
-  {
-    "code": "GB AYR",
-    "name": "Ayr Port"
-  },
-  {
-    "code": "GB BKG",
-    "name": "Barking Port"
+    "name": "Aberdeen Airport",
+    "type": "airport"
   },
   {
     "code": "GB BHM",
-    "name": "Birmingham International Airport"
+    "name": "Birmingham International Airport",
+    "type": "airport"
   },
   {
     "code": "GB CBG",
-    "name": "Cambridge Airport"
-  },
-  {
-    "code": "GB CTM",
-    "name": "Chatham Docks"
+    "name": "Cambridge Airport",
+    "type": "airport"
   },
   {
     "code": "GB CVT",
-    "name": "Coventry Airport"
-  },
-  {
-    "code": "GB DFD",
-    "name": "Dartford, Thames Europort"
-  },
-  {
-    "code": "GB DUN",
-    "name": "Dundee Port"
+    "name": "Coventry Airport",
+    "type": "airport"
   },
   {
     "code": "GB EMA",
-    "name": "East Midlands Airport"
+    "name": "East Midlands Airport",
+    "type": "airport"
   },
   {
     "code": "GB EDI",
-    "name": "Edinburgh Airport"
+    "name": "Edinburgh Airport",
+    "type": "airport"
   },
   {
     "code": "GB FBO",
-    "name": "Farnborough Airport"
-  },
-  {
-    "code": "GB FXT",
-    "name": "Felixstowe Port"
-  },
-  {
-    "code": "GB FIS",
-    "name": "Fishguard Port"
-  },
-  {
-    "code": "GB FOL",
-    "name": "Folkestone"
-  },
-  {
-    "code": "GB FRB",
-    "name": "Fraserburgh Harbour"
+    "name": "Farnborough Airport",
+    "type": "airport"
   },
   {
     "code": "GB LGW",
-    "name": "Gatwick Airport"
+    "name": "Gatwick Airport",
+    "type": "airport"
   },
   {
     "code": "GB GLW",
-    "name": "Glasgow Airport"
+    "name": "Glasgow Airport",
+    "type": "airport"
   },
   {
     "code": "GB PIK",
-    "name": "Glasgow Prestwick Airport"
-  },
-  {
-    "code": "GB GRG",
-    "name": "Grangemouth Port"
-  },
-  {
-    "code": "GB GRK",
-    "name": "Greenock Port"
-  },
-  {
-    "code": "GB IMM",
-    "name": "Grimsby and Immingham Port"
-  },
-  {
-    "code": "GB HMR",
-    "name": "HES Humber Bulk Terminal"
-  },
-  {
-    "code": "GB HRW",
-    "name": "Harwich Port"
+    "name": "Glasgow Prestwick Airport",
+    "type": "airport"
   },
   {
     "code": "GB LHR",
-    "name": "Heathrow Airport"
-  },
-  {
-    "code": "GB HYM",
-    "name": "Heysham Port"
-  },
-  {
-    "code": "GB HLY",
-    "name": "Holyhead Port"
-  },
-  {
-    "code": "GB HUL",
-    "name": "Hull Port"
+    "name": "Heathrow Airport",
+    "type": "airport"
   },
   {
     "code": "GB HUY",
-    "name": "Humberside Airport"
-  },
-  {
-    "code": "GB HTH",
-    "name": "Hythe Port"
-  },
-  {
-    "code": "GB IVG",
-    "name": "Invergordon Port"
-  },
-  {
-    "code": "GB KGH",
-    "name": "Killingholme Port"
-  },
-  {
-    "code": "GB LEI",
-    "name": "Leith Port"
+    "name": "Humberside Airport",
+    "type": "airport"
   },
   {
     "code": "GB LPL",
-    "name": "Liverpool Airport"
-  },
-  {
-    "code": "GB LIV",
-    "name": "Liverpool Docks"
-  },
-  {
-    "code": "GB LGP",
-    "name": "London Gateway Port"
-  },
-  {
-    "code": "GB THP",
-    "name": "London Thamesport"
+    "name": "Liverpool Airport",
+    "type": "airport"
   },
   {
     "code": "GB LUT",
-    "name": "Luton Airport"
+    "name": "Luton Airport",
+    "type": "airport"
   },
   {
     "code": "GB MAN",
-    "name": "Manchester Airport"
-  },
-  {
-    "code": "GB MTH",
-    "name": "Methil Port"
-  },
-  {
-    "code": "GB NHV",
-    "name": "Newhaven Port"
+    "name": "Manchester Airport",
+    "type": "airport"
   },
   {
     "code": "GB NHP",
-    "name": "Northampton Airport"
-  },
-  {
-    "code": "GB NTG",
-    "name": "Nottingham Port"
-  },
-  {
-    "code": "GB PED",
-    "name": "Pembroke Port"
-  },
-  {
-    "code": "GB PEM",
-    "name": "Pembroke Port"
-  },
-  {
-    "code": "GB PER",
-    "name": "Perth Port"
-  },
-  {
-    "code": "GB PHD",
-    "name": "Peterhead Port"
-  },
-  {
-    "code": "GB PLY",
-    "name": "Plymouth Port"
-  },
-  {
-    "code": "GB POO",
-    "name": "Poole Port"
-  },
-  {
-    "code": "GB BRK",
-    "name": "Port of Birkenhead"
-  },
-  {
-    "code": "GB BLY",
-    "name": "Port of Blyth"
-  },
-  {
-    "code": "GB BRS",
-    "name": "Port of Bristol"
-  },
-  {
-    "code": "GB CYN",
-    "name": "Port of Cairnryan"
-  },
-  {
-    "code": "GB DAG",
-    "name": "Port of Dagenham"
-  },
-  {
-    "code": "GB DVR",
-    "name": "Port of Dover"
-  },
-  {
-    "code": "GB DVRE",
-    "name": "Port of Dover (Eastern)"
-  },
-  {
-    "code": "GB DVRW",
-    "name": "Port of Dover (Western)"
-  },
-  {
-    "code": "GB GSY",
-    "name": "Port of Grimsby"
-  },
-  {
-    "code": "GB IOG",
-    "name": "Port of Isle of Grain"
-  },
-  {
-    "code": "GB MNC",
-    "name": "Port of Manchester"
-  },
-  {
-    "code": "GB MID",
-    "name": "Port of Middlesbrough"
-  },
-  {
-    "code": "GBSHS",
-    "name": "Port of Sheerness"
-  },
-  {
-    "code": "GB SHS",
-    "name": "Port of Sheerness"
-  },
-  {
-    "code": "GB TYN",
-    "name": "Port of Tyne"
-  },
-  {
-    "code": "GB PME",
-    "name": "Portsmouth  Port"
-  },
-  {
-    "code": "GB PFT",
-    "name": "Purfleet Port"
-  },
-  {
-    "code": "GB PRU",
-    "name": "Royal Portbury Dock"
-  },
-  {
-    "code": "GB SIL",
-    "name": "Silloth Port"
-  },
-  {
-    "code": "GB SOU",
-    "name": "Southampton Port"
+    "name": "Northampton Airport",
+    "type": "airport"
   },
   {
     "code": "GB STN",
-    "name": "Stansted Airport"
-  },
-  {
-    "code": "GB STR",
-    "name": "Stranraer Harbour"
-  },
-  {
-    "code": "GB TIL",
-    "name": "TILBURY"
+    "name": "Stansted Airport",
+    "type": "airport"
   },
   {
     "code": "GB MME",
-    "name": "Teesside International Airport"
+    "name": "Teesside International Airport",
+    "type": "airport"
+  },
+  {
+    "code": "GB ABD",
+    "name": "Aberdeen Harbour",
+    "type": "seaport"
+  },
+  {
+    "code": "GB AVO",
+    "name": "Avonmouth Docks",
+    "type": "seaport"
+  },
+  {
+    "code": "GB AYR",
+    "name": "Ayr Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB BKG",
+    "name": "Barking Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB CTM",
+    "name": "Chatham Docks",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DFD",
+    "name": "Dartford, Thames Europort",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DUN",
+    "name": "Dundee Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB FXT",
+    "name": "Felixstowe Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB FIS",
+    "name": "Fishguard Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB FRB",
+    "name": "Fraserburgh Harbour",
+    "type": "seaport"
+  },
+  {
+    "code": "GB GRG",
+    "name": "Grangemouth Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB GRK",
+    "name": "Greenock Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB IMM",
+    "name": "Grimsby and Immingham Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HRW",
+    "name": "Harwich Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HMR",
+    "name": "HES Humber Bulk Terminal",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HYM",
+    "name": "Heysham Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HLY",
+    "name": "Holyhead Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HUL",
+    "name": "Hull Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB HTH",
+    "name": "Hythe Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB IVG",
+    "name": "Invergordon Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB KGH",
+    "name": "Killingholme Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB LEI",
+    "name": "Leith Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB LIV",
+    "name": "Liverpool Docks",
+    "type": "seaport"
+  },
+  {
+    "code": "GB LGP",
+    "name": "London Gateway Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB THP",
+    "name": "London Thamesport",
+    "type": "seaport"
+  },
+  {
+    "code": "GB MTH",
+    "name": "Methil Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB NHV",
+    "name": "Newhaven Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB NTG",
+    "name": "Nottingham Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PED",
+    "name": "Pembroke Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PEM",
+    "name": "Pembroke Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PER",
+    "name": "Perth Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PHD",
+    "name": "Peterhead Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PLY",
+    "name": "Plymouth Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB POO",
+    "name": "Poole Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB BRK",
+    "name": "Port of Birkenhead",
+    "type": "seaport"
+  },
+  {
+    "code": "GB BLY",
+    "name": "Port of Blyth",
+    "type": "seaport"
+  },
+  {
+    "code": "GB BRS",
+    "name": "Port of Bristol",
+    "type": "seaport"
+  },
+  {
+    "code": "GB CYN",
+    "name": "Port of Cairnryan",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DAG",
+    "name": "Port of Dagenham",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DVR",
+    "name": "Port of Dover",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DVRE",
+    "name": "Port of Dover (Eastern)",
+    "type": "seaport"
+  },
+  {
+    "code": "GB DVRW",
+    "name": "Port of Dover (Western)",
+    "type": "seaport"
+  },
+  {
+    "code": "GB GSY",
+    "name": "Port of Grimsby",
+    "type": "seaport"
+  },
+  {
+    "code": "GB IOG",
+    "name": "Port of Isle of Grain",
+    "type": "seaport"
+  },
+  {
+    "code": "GB MNC",
+    "name": "Port of Manchester",
+    "type": "seaport"
+  },
+  {
+    "code": "GB MID",
+    "name": "Port of Middlesbrough",
+    "type": "seaport"
+  },
+  {
+    "code": "GB SHS",
+    "name": "Port of Sheerness",
+    "type": "seaport"
+  },
+  {
+    "code": "GBSHS",
+    "name": "Port of Sheerness",
+    "type": "seaport"
+  },
+  {
+    "code": "GB TYN",
+    "name": "Port of Tyne",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PME",
+    "name": "Portsmouth  Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PFT",
+    "name": "Purfleet Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB PRU",
+    "name": "Royal Portbury Dock",
+    "type": "seaport"
+  },
+  {
+    "code": "GB SIL",
+    "name": "Silloth Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB SOU",
+    "name": "Southampton Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB STR",
+    "name": "Stranraer Harbour",
+    "type": "seaport"
   },
   {
     "code": "GB TEE",
-    "name": "Teestort"
+    "name": "Teestort",
+    "type": "seaport"
+  },
+  {
+    "code": "GB TIL",
+    "name": "TILBURY",
+    "type": "seaport"
   },
   {
     "code": "GB TILR",
-    "name": "Tilbury 2 Ro-Ro Terminal"
+    "name": "Tilbury 2 Ro-Ro Terminal",
+    "type": "seaport"
   },
   {
     "code": "GB TILL",
-    "name": "Tilbury Port"
+    "name": "Tilbury Port",
+    "type": "seaport"
+  },
+  {
+    "code": "GB FOL",
+    "name": "Folkestone",
+    "type": "rail"
   }
 ]

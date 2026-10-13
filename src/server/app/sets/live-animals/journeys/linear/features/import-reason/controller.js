@@ -40,15 +40,12 @@ const copy = copyFor({ en, cy })
 // under the placeholder, a searchable one does not.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...(await countries.originCountries())
+  ...(await countries.destinationCountryOptions())
 ]
 
 const portItems = async () => [
   { value: '', text: copy.port.placeholder },
-  ...(await ports.list()).map((port) => ({
-    value: port.code,
-    text: `${port.name} (${port.code})`
-  }))
+  ...(await ports.portOptions())
 ]
 
 const render = async (

@@ -28,6 +28,7 @@ import {
 import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
+import * as ports from '../../../../../../services/ports/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -967,8 +968,34 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+  })
+
+  it('Should read the port of exit back exactly as the option the trader picked', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({ reasonForImport: 'transit', portOfExit: 'GB DVR' })
+      )
+    )
+    const picked = (await ports.portOptions()).find(
+      ({ value }) => value === 'GB DVR'
+    )
+
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
+  })
+
+  it('Should name a subdivision destination country with its parent country', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'transhipmentOrOnwardTravel',
+          destinationCountry: 'FR-MQ'
+        })
+      )
+    )
+
+    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Martinique (France)')
   })
 
   it('Should show the destination country alone for a transhipment', async () => {
@@ -998,7 +1025,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, EXIT_DATE_KEY)).toBe('27/3/2026')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(DESTINATION_COUNTRY_KEY)
   })
 

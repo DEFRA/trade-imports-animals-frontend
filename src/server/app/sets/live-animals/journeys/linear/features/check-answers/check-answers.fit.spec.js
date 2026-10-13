@@ -242,7 +242,7 @@ test.describe('check-answers feature documents section', () => {
 test.describe('check-answers feature exit answers', () => {
   const IMPORT_REASON_SLUG = 'import-reason'
   const EXIT_PORT_CODE = 'GB DVR'
-  const EXIT_PORT_LABEL = 'Port of Dover (GB DVR)'
+  const EXIT_PORT_LABEL = 'Port of Dover - GB DVR'
   const DESTINATION_COUNTRY_NAME = 'Ireland'
 
   test.beforeEach(async ({ page }) => {

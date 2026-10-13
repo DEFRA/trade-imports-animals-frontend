@@ -237,6 +237,29 @@ describe('POST import-reason — the reveal the reason opens', () => {
     expect(result.after.destinationCountry).toBe('IE')
   })
 
+  it('Should commit a subdivision chosen as the transhipment destination country', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        transhipmentDestinationCountry: 'FR-MQ'
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.destinationCountry).toBe('FR-MQ')
+  })
+
+  it('Should commit a subdivision chosen as the transit destination country', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: 'ES-CN'
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.destinationCountry).toBe('ES-CN')
+  })
+
   it('Should drop the answers of the reason the user moved away from', async () => {
     const flipped = await driveHandler(post, {
       seed: {
@@ -314,6 +337,25 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
     })
     expect(result.view.context.values.transhipmentDestinationCountry).toBe('IE')
     expect(result.view.context.values.transitDestinationCountry).toBe('IE')
+  })
+
+  it('Should offer a stored subdivision back to both reveals, with no error', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'FR-MQ'
+      }
+    })
+    expect(result.view.context.values.transhipmentDestinationCountry).toBe(
+      'FR-MQ'
+    )
+    expect(result.view.context.values.transitDestinationCountry).toBe('FR-MQ')
+    expect(
+      result.view.context.errors?.transhipmentDestinationCountry
+    ).toBeUndefined()
+    expect(
+      result.view.context.errors?.transitDestinationCountry
+    ).toBeUndefined()
   })
 })
 

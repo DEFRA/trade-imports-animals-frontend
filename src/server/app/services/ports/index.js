@@ -33,8 +33,15 @@ export const list = async () => {
   return ports
 }
 
+const displayName = (port) => `${port.name} - ${port.code}`
+
 export const label = async (code) => {
   await ensureLoaded()
   const port = ports.find((entry) => entry.code === code)
-  return port ? `${port.name} (${port.code})` : undefined
+  return port ? displayName(port) : undefined
+}
+
+export const portOptions = async () => {
+  await ensureLoaded()
+  return ports.map((port) => ({ value: port.code, text: displayName(port) }))
 }

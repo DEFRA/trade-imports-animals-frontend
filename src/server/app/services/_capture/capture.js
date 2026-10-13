@@ -13,21 +13,12 @@ const targets = [
     name: 'countries-origin',
     url: `${referenceDataUrl}/countries?blocks=GBNAG_SPS_EX`
   },
-  {
-    name: 'ports-of-entry',
-    url: `${referenceDataUrl}/ports-of-entry`,
-    optional: true
-  }
+  { name: 'ports-of-entry', url: `${referenceDataUrl}/ports-of-entry` }
 ]
-
-const optionalTag = (target) =>
-  target.optional ? ' (expected — endpoint not built)' : ''
 
 const reportFetchFailure = (target, message) => {
   console.log(`${target.name}: ${message}`)
-  if (!target.optional) {
-    process.exitCode = 1
-  }
+  process.exitCode = 1
 }
 
 const fetchTarget = async (target) => {
@@ -36,7 +27,7 @@ const fetchTarget = async (target) => {
     if (!response.ok) {
       reportFetchFailure(
         target,
-        `HTTP ${response.status} ${response.statusText}${optionalTag(target)}`
+        `HTTP ${response.status} ${response.statusText}`
       )
       return null
     }
