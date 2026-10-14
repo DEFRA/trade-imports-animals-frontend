@@ -27,7 +27,7 @@ const privateRecord = {
   address: {
     addressLine1: '12 Harbour Road',
     townOrCity: 'Aberdeen',
-    postalOrZipCode: 'AB11 5DQ',
+    postcode: 'AB11 5DQ',
     country: 'United Kingdom'
   }
 }

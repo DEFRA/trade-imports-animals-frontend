@@ -5,7 +5,7 @@ import { toWireAddress } from '../../../../../../services/address-book/to-wire-a
 export const answerForInlineParty = (chosen) => ({
   pickedFromId: chosen.id,
   name: chosen.name,
-  phone: chosen.address?.telephoneNumber,
-  email: chosen.address?.emailAddress,
+  phone: chosen.address?.phone,
+  email: chosen.address?.email,
   address: toWireAddress(chosen.address ?? {})
 })

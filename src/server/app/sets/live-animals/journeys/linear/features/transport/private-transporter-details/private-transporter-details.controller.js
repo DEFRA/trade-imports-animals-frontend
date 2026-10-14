@@ -37,10 +37,10 @@ const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,
   addressLine1: copy.errors.addressLine1Required,
   townOrCity: copy.errors.townOrCityRequired,
-  postalOrZipCode: copy.errors.postalOrZipCodeRequired,
+  postcode: copy.errors.postcodeRequired,
   country: copy.errors.countryRequired,
-  emailAddress: copy.errors.emailRequired,
-  telephoneNumber: copy.errors.telephoneRequired
+  email: copy.errors.emailRequired,
+  phone: copy.errors.telephoneRequired
 }
 
 /** The fields the page shows, in the order it asks for them — the order the
@@ -52,10 +52,10 @@ const FIELD_ORDER = [
   'addressLine2',
   'townOrCity',
   'county',
-  'postalOrZipCode',
+  'postcode',
   'country',
-  'emailAddress',
-  'telephoneNumber'
+  'email',
+  'phone'
 ]
 
 const MAX_NAME_LENGTH = 255
@@ -75,18 +75,14 @@ const fields = async () =>
     maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
     maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
     maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-    maxText(
-      'postalOrZipCode',
-      MAX_POSTCODE_LENGTH,
-      copy.errors.postalOrZipCodeMaxLength
-    ),
+    maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
     oneOf(
       'country',
       await countries.addressCountries(),
       copy.errors.countryFromList
     ),
-    maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-    maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+    maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
+    maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
   )
 
 const recordProvided = (values) =>
@@ -140,10 +136,10 @@ const addressValues = (saved) => ({
   addressLine2: saved?.address?.addressLine2 ?? '',
   townOrCity: saved?.address?.townOrCity ?? '',
   county: saved?.address?.county ?? '',
-  postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
+  postcode: saved?.address?.postcode ?? '',
   country: saved?.address?.country ?? '',
-  emailAddress: saved?.address?.emailAddress ?? '',
-  telephoneNumber: saved?.address?.telephoneNumber ?? ''
+  email: saved?.address?.email ?? '',
+  phone: saved?.address?.phone ?? ''
 })
 
 // The reader returns display names (e.g. "France"), so we check by name.
@@ -200,11 +196,11 @@ const privateTransporter = async (values) => ({
     addressLine2: values.addressLine2,
     townOrCity: values.townOrCity,
     county: values.county,
-    postalOrZipCode: values.postalOrZipCode,
+    postcode: values.postcode,
     country: values.country,
     countryCode: await countries.countryCodeOf(values.country),
-    telephoneNumber: values.telephoneNumber,
-    emailAddress: values.emailAddress
+    phone: values.phone,
+    email: values.email
   }
 })
 

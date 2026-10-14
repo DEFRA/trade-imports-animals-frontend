@@ -68,7 +68,7 @@ describe('GET /address-return', () => {
       address: {
         addressLine1: '1 Test Lane',
         townOrCity: 'Carlisle',
-        postalOrZipCode: 'CA1 1AA',
+        postcode: 'CA1 1AA',
         country: 'United Kingdom'
       }
     })
@@ -179,7 +179,7 @@ describe('GET /address-return', () => {
       address: {
         addressLine1: '1 Test Lane',
         townOrCity: 'Carlisle',
-        postalOrZipCode: 'CA1 1AA',
+        postcode: 'CA1 1AA',
         country: 'United Kingdom'
       }
     })

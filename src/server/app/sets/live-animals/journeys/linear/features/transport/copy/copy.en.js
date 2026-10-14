@@ -205,10 +205,10 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or zip code',
+      postcode: 'Postcode or zip code',
       country: 'Country',
-      emailAddress: 'Email address',
-      telephoneNumber: 'Phone number'
+      email: 'Email address',
+      phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
     // A commercial transporter a trader adds by hand can only be a Northern
@@ -219,7 +219,7 @@ export const copy = {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postcode or zip code',
+      postcodeRequired: 'Enter a postcode or zip code',
       emailRequired: 'Enter an email address',
       telephoneRequired: 'Enter a phone number',
       approvalNumberMaxLength:
@@ -229,8 +229,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postalOrZipCodeMaxLength:
-        'Postcode or zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or zip code must be 12 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       countryFixed:
@@ -251,10 +250,10 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or Zip code',
+      postcode: 'Postcode or Zip code',
       country: 'Country',
-      emailAddress: 'Email address',
-      telephoneNumber: 'Phone number'
+      email: 'Email address',
+      phone: 'Phone number'
     },
     // A private transporter can be based in any of the countries the form
     // offers, so design release 1 hints the dialling code here exactly as it
@@ -265,7 +264,7 @@ export const copy = {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postcode or Zip code',
+      postcodeRequired: 'Enter a postcode or Zip code',
       countryRequired: 'Select a country',
       telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
@@ -274,8 +273,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postalOrZipCodeMaxLength:
-        'Postcode or Zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
       countryNoLongerAvailable:
         'The saved country is no longer available. Select a country from the list.',

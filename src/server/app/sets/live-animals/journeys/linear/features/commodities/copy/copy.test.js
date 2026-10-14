@@ -190,26 +190,24 @@ describe('#copy', () => {
   // error that names the field by another word sends the trader looking for a
   // field that is not on the page.
   it('Should label the permanent address postcode and phone fields as Design release 1 does', () => {
-    expect(copy.identification.address.postalOrZipCode).toBe(
-      'Postcode or Zip code'
-    )
-    expect(copy.identification.address.telephoneNumber).toBe('Phone number')
-    expect(copy.identification.addressHints.telephoneNumber).toBe(
+    expect(copy.identification.address.postcode).toBe('Postcode or Zip code')
+    expect(copy.identification.address.phone).toBe('Phone number')
+    expect(copy.identification.addressHints.phone).toBe(
       'For international numbers include the country code'
     )
-    expect(copyCy.identification.addressHints.telephoneNumber).toBe(
+    expect(copyCy.identification.addressHints.phone).toBe(
       'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
     )
-    expect(copy.identification.errors.addressMandatory.telephoneNumber).toBe(
+    expect(copy.identification.errors.addressMandatory.phone).toBe(
       'Enter a phone number'
     )
-    expect(copy.identification.errors.addressFormat.postalOrZipCode).toBe(
+    expect(copy.identification.errors.addressFormat.postcode).toBe(
       'Postcode or Zip code must be 12 characters or less'
     )
-    expect(copy.identification.errors.addressMandatory.postalOrZipCode).toBe(
+    expect(copy.identification.errors.addressMandatory.postcode).toBe(
       'Enter a postcode or Zip code'
     )
-    expect(copy.identification.errors.addressFormat.telephoneNumber).toBe(
+    expect(copy.identification.errors.addressFormat.phone).toBe(
       'Phone number must be 20 characters or less'
     )
   })

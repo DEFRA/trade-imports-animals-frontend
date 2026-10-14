@@ -300,9 +300,9 @@ describe('controller <-> model commit contract', () => {
         'nameOrOrganisationName-0': 'Pet Owner',
         'addressLine1-0': '1 Farm Lane',
         'townOrCity-0': 'Skipton',
-        'postalOrZipCode-0': 'BD23 1UD',
-        'telephoneNumber-0': '+44 1756 555 0192',
-        'emailAddress-0': 'owner@example.co.uk'
+        'postcode-0': 'BD23 1UD',
+        'phone-0': '+44 1756 555 0192',
+        'email-0': 'owner@example.co.uk'
       }
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]
@@ -442,10 +442,10 @@ describe('transporter commit contract — the list and its add spokes', () => {
           addressLine2: '',
           townOrCity: 'Belfast',
           county: 'County Antrim',
-          postalOrZipCode: 'BT1 3LG',
+          postcode: 'BT1 3LG',
           country: 'Northern Ireland',
-          emailAddress: 'movements@lough-neagh.example.com',
-          telephoneNumber: '+44 28 9000 0111'
+          email: 'movements@lough-neagh.example.com',
+          phone: '+44 28 9000 0111'
         }
       }
     )
@@ -465,10 +465,10 @@ describe('transporter commit contract — the list and its add spokes', () => {
         addressLine2: '',
         townOrCity: 'Amiens',
         county: '',
-        postalOrZipCode: '80000',
+        postcode: '80000',
         country: 'France',
-        telephoneNumber: '+33 3 22 55 01 44',
-        emailAddress: 'jean.dupont@example.fr'
+        phone: '+33 3 22 55 01 44',
+        email: 'jean.dupont@example.fr'
       }
     })
     expect(committedIds(typedIn)).toEqual(['privateTransporter'])

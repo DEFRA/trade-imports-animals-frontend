@@ -109,10 +109,10 @@
         "addressLine2": "",
         "townOrCity": "Amiens",
         "county": "",
-        "postalOrZipCode": "80000",
+        "postcode": "80000",
         "country": "France",
-        "telephoneNumber": "+33 3 22 55 01 44",
-        "emailAddress": "jean.dupont@example.fr"
+        "phone": "+33 3 22 55 01 44",
+        "email": "jean.dupont@example.fr"
       }
     },
     "contactAddress": {

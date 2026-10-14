@@ -126,15 +126,15 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or Zip code',
-      telephoneNumber: 'Phone number',
-      emailAddress: 'Email address'
+      postcode: 'Postcode or Zip code',
+      phone: 'Phone number',
+      email: 'Email address'
     },
     // A trader giving an address outside the UK has no way of knowing the
     // number will be dialled from here unless the field says so, so the phone
     // field is the one address field that carries a hint.
     addressHints: {
-      telephoneNumber: 'For international numbers include the country code'
+      phone: 'For international numbers include the country code'
     },
     errors: {
       identifierMax: {
@@ -148,9 +148,9 @@ export const copy = {
         nameOrOrganisationName: 'Enter a name or organisation name',
         addressLine1: 'Enter address line 1',
         townOrCity: 'Enter a town or city',
-        postalOrZipCode: 'Enter a postcode or Zip code',
-        telephoneNumber: 'Enter a phone number',
-        emailAddress: 'Enter an email address'
+        postcode: 'Enter a postcode or Zip code',
+        phone: 'Enter a phone number',
+        email: 'Enter an email address'
       },
       addressFormat: {
         nameOrOrganisationName:
@@ -159,9 +159,9 @@ export const copy = {
         addressLine2: 'Address line 2 must be 255 characters or less',
         townOrCity: 'Town or city must be 100 characters or less',
         county: 'County must be 100 characters or less',
-        postalOrZipCode: 'Postcode or Zip code must be 12 characters or less',
-        telephoneNumber: 'Phone number must be 20 characters or less',
-        emailAddress: 'Email address must be 254 characters or less'
+        postcode: 'Postcode or Zip code must be 12 characters or less',
+        phone: 'Phone number must be 20 characters or less',
+        email: 'Email address must be 254 characters or less'
       },
       atLeastOneIdentifier: 'Enter at least one identifier for this animal',
       capReached: (cap) =>

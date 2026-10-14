@@ -14,9 +14,9 @@ const ADDRESS_FIELD_ORDER = [
   'addressLine2',
   'townOrCity',
   'county',
-  'postalOrZipCode',
-  'telephoneNumber',
-  'emailAddress'
+  'postcode',
+  'phone',
+  'email'
 ]
 
 const ADDRESS_LINE_MAX_LENGTH = 255
@@ -53,19 +53,19 @@ export const addressChecksFor = (index) =>
       copy.errors.addressFormat.county
     ),
     maxText(
-      fieldName('postalOrZipCode', index),
+      fieldName('postcode', index),
       POSTCODE_MAX_LENGTH,
-      copy.errors.addressFormat.postalOrZipCode
+      copy.errors.addressFormat.postcode
     ),
     maxText(
-      fieldName('telephoneNumber', index),
+      fieldName('phone', index),
       TELEPHONE_MAX_LENGTH,
-      copy.errors.addressFormat.telephoneNumber
+      copy.errors.addressFormat.phone
     ),
     maxText(
-      fieldName('emailAddress', index),
+      fieldName('email', index),
       EMAIL_MAX_LENGTH,
-      copy.errors.addressFormat.emailAddress
+      copy.errors.addressFormat.email
     )
   )
 
@@ -119,17 +119,17 @@ export const addressFieldsFor = (index, values, errors) => {
     input('county', copy.address.county, {
       classes: 'govuk-!-width-two-thirds'
     }),
-    input('postalOrZipCode', copy.address.postalOrZipCode, {
+    input('postcode', copy.address.postcode, {
       classes: 'govuk-input--width-10',
       autocomplete: 'postal-code'
     }),
-    input('telephoneNumber', copy.address.telephoneNumber, {
+    input('phone', copy.address.phone, {
       type: 'tel',
       classes: 'govuk-input--width-20',
       autocomplete: 'tel',
-      hint: copy.addressHints.telephoneNumber
+      hint: copy.addressHints.phone
     }),
-    input('emailAddress', copy.address.emailAddress, {
+    input('email', copy.address.email, {
       type: 'email',
       autocomplete: 'email'
     })
