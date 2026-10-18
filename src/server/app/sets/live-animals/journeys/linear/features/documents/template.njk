@@ -19,7 +19,7 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# What to attach and why, before the form asks for it (design release 1). #}
+  {# What to attach and why, before the form asks for it. #}
   <p class="govuk-body">{{ copy.guidance.intro }}</p>
   <p class="govuk-body">{{ copy.guidance.otherDocumentsLead }}</p>
   <ul class="govuk-list govuk-list--bullet">
@@ -107,7 +107,7 @@
         {%- endset -%}
 
         {# javascript: true asks for the enhanced control — a drop zone with a
-           live region naming the chosen file (design release 1). The plain
+           live region naming the chosen file. The plain
            input stays behind it for a trader whose JavaScript does not run. #}
         {{ govukFileUpload({
           id: "file",

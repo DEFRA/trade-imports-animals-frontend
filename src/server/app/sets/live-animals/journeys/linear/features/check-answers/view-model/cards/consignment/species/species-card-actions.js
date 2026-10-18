@@ -6,7 +6,7 @@ import { cardAction } from '../../../rows/change-link.js'
 
 const copy = copyFor({ en, cy })
 
-/** One link, like every other card on the review (design release 1). It goes to
+/** One link, like every other card on the review. It goes to
  * the consignment-details page, which collects the commodity line itself; the
  * animal identifiers the card also shows are collected on their own page, which
  * keeps its own task row on the hub. */

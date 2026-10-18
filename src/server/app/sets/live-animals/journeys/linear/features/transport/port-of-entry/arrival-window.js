@@ -14,7 +14,7 @@ export const MONTHS_AHEAD = 6
  * both ends.
  *
  * `exampleText` is the worked example the hint shows the user so they can see
- * what a date should look like (design release 1). It is the service's civil
+ * what a date should look like. It is the service's civil
  * today rather than a fixed date: a hard-coded example reads as stale within
  * the year, and today is inside the window by construction, so the example is
  * always a date the user could actually enter.

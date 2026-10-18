@@ -196,7 +196,7 @@ test.describe('live-animals journey glue', () => {
 
     await openReviewFromHub(page)
 
-    // The review offers one Change link per card (design release 1), and the
+    // The review offers one Change link per card, and the
     // Species card's goes to the consignment details. The review no longer
     // offers a change-context route to the identification page, so this leg
     // opens it with the flag directly — the closest live equivalent is the

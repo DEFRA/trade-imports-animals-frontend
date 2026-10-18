@@ -29,8 +29,7 @@ import { copy as cy } from '../copy/copy.cy.js'
  * `commercialTransporter` it writes is declared by the transporter list, which
  * is where a trader normally answers it by picking a row. This is the way out
  * for a trader whose commercial transporter is not on that list — they give
- * its authorisation number, name, address and contact details by hand
- * (design release 1). */
+ * its authorisation number, name, address and contact details by hand. */
 const view = `${TEMPLATES}/features/transport/commercial-transporter-details/commercial-transporter-details`
 
 const bundle = copyFor({ en, cy })
@@ -201,7 +200,7 @@ const commercialTransporterRecord = (values) => ({
  *
  * A transporter that lives only on the notification it was typed into is typed
  * again on the next one, so the same record joins the organisation's own list
- * and the transporter list offers it from then on (design release 1). It goes
+ * and the transporter list offers it from then on. It goes
  * on as a commercial transporter that has not been approved yet, which is what
  * the organisation knows about it: nothing here has approved anything. */
 const remember = (request, values) =>

@@ -11,9 +11,6 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# Design release 1 opens the form with the authorisation rules, so a trader
-     typing a transporter in by hand meets the conditions the list states
-     before giving the authorisation number. #}
   {% call govukNotificationBanner({ titleText: copy.guidanceTitle }) %}
     <p class="govuk-body">{{ guidance.authorisationLead }}</p>
     <ul class="govuk-list govuk-list--bullet">
@@ -32,8 +29,6 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {# The authorisation number comes first, as Design release 1 asks it: it is
-       what makes the transporter a commercial one. #}
     {{ govukInput({
       id: "approvalNumber", name: "approvalNumber",
       label: { text: copy.fields.approvalNumber },
@@ -93,7 +88,7 @@
     }) }}
 
     {# A commercial transporter added by hand can only be a Northern Irish one,
-       so the country is shown and cannot be changed (Design release 1). The
+       so the country is shown and cannot be changed. The
        disabled control carries no value to the server, so the hidden field
        beside it posts the one the page fixed. #}
     {{ govukSelect({

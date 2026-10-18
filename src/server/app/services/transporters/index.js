@@ -15,12 +15,7 @@ export {
 } from './register.js'
 
 /** Every transporter the service ships, commercial and private together.
- *
- * Deliberately synchronous: the commercial register builds its `oneOf`
- * validation from these ids at module load, so this must resolve without
- * awaiting. The address book became async when it moved onto the API
- * (EUDPA-294) — keeping transporters here is what lets that happen without
- * breaking these pages. */
+ * Synchronous. */
 export const parties = () => TRANSPORTER_OPTIONS
 
 export const party = (id) => parties().find((record) => record.id === id)

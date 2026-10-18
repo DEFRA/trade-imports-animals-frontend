@@ -227,7 +227,7 @@ test.describe('arrival details rendering', () => {
   }) => {
     await openArrival(page)
 
-    // The hint is a worked example of the date format (design release 1); the
+    // The hint is a worked example of the date format; the
     // window it must fall in is policed by the picker's own bounds below.
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
@@ -248,7 +248,7 @@ test.describe('arrival details rendering', () => {
       ...Object.values(copy.portOfEntry.means.options)
     ])
     // The transport identification hint is a lead-in sentence plus one bullet
-    // per alternative (design release 1), so it is asserted as a list.
+    // per alternative, so it is asserted as a list.
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveAttribute('aria-describedby', /transportIdentification-hint/)

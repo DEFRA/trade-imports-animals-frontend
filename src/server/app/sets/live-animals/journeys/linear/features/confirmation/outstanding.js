@@ -5,7 +5,7 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// What the trader still owes once the notification is in (design release 1).
+// What the trader still owes once the notification is in.
 // Submission does not require documents — the documents group carries only a
 // cap, no floor and no required-one-of (obligations/sections/documents.js) — so
 // a notification can be submitted with the health certificate still to come.

@@ -184,12 +184,7 @@ describe('#copy', () => {
     )
   })
 
-  // Design release 1 names these two address fields 'Postcode or Zip code' and
-  // 'Phone number', and hints the phone field so a trader abroad knows to give
-  // a diallable number. The errors are pinned alongside the labels because an
-  // error that names the field by another word sends the trader looking for a
-  // field that is not on the page.
-  it('Should label the permanent address postcode and phone fields as Design release 1 does', () => {
+  it('Should label the permanent address postcode and phone fields, hint the country code and name both fields the same way in their errors', () => {
     expect(copy.identification.address.postcode).toBe('Postcode or Zip code')
     expect(copy.identification.address.phone).toBe('Phone number')
     expect(copy.identification.addressHints.phone).toBe(

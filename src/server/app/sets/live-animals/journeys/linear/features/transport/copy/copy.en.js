@@ -4,7 +4,7 @@ export const copy = {
     arrivalDate: {
       label: 'Arrival date at port of entry',
       // The second sentence is a worked example of the date format, not a
-      // statement of the accepted window (design release 1): the picker's own
+      // statement of the accepted window: the picker's own
       // bounds and errors.arrivalDateOutOfRange already police the window, so
       // the hint is free to show the user what a date should look like.
       hint: (example) =>
@@ -29,8 +29,7 @@ export const copy = {
     identification: {
       label: 'Transport identification',
       // The four alternatives are a list, not a sentence: a lead-in plus one
-      // bullet each, so the number of choices is visible without reading
-      // (design release 1).
+      // bullet each, so the number of choices is visible without reading.
       hint: {
         lead: 'To identify the means of transport, enter (one of the following):',
         items: [
@@ -81,7 +80,7 @@ export const copy = {
     empty: 'You have not added any countries yet.',
     added: (country) => `${country} added.`,
     removed: (country) => `${country} removed.`,
-    // The cap is not stated before the trader meets it (design release 1): the
+    // The cap is not stated before the trader meets it: the
     // search goes when the last country is added and this says why.
     limitReached: (max) =>
       `Maximum of ${max} countries reached. Remove a country to add another.`,
@@ -212,7 +211,7 @@ export const copy = {
     },
     telephoneHint: 'For international numbers include the country code',
     // A commercial transporter a trader adds by hand can only be a Northern
-    // Irish one (design release 1), so the country is shown rather than asked.
+    // Irish one, so the country is shown rather than asked.
     country: 'Northern Ireland',
     errors: {
       approvalNumberRequired: 'Enter the transporter authorisation number',

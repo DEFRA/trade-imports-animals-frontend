@@ -122,9 +122,8 @@ export const copy = {
   // Shown inside the uploaded-documents card when nothing has been uploaded.
   // The card itself always stands, so it needs a line rather than an empty box.
   documentsEmpty: 'You have not added any documents yet.',
-  // What each Change link names once a screen reader reaches it. Cards carry
-  // the only Change links on the page, so a card's entry here reads as the rest
-  // of "Change ..." — lower case, and the card's own title in words.
+  // The visually hidden end of each card's "Change ..." link: lower case, the
+  // card's title in words.
   hidden: {
     cards: {
       importDetails: 'import details',

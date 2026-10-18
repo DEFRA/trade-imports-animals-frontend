@@ -48,7 +48,7 @@ export const documentFromPayload = (payload) => ({
 })
 
 // The one field a trader cannot fill in by accident, so it is the one that
-// says a document is on its way (design release 1). A form carrying a chosen
+// says a document is on its way. A form carrying a chosen
 // type is a part-filled document to be finished, not an empty form being
 // skipped past; a form without one is left alone, uploading being optional.
 export const startsADocument = (payload) =>

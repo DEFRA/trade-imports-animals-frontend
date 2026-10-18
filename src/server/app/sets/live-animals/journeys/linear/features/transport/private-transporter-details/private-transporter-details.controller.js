@@ -212,7 +212,7 @@ const privateTransporterRecord = async (values) => ({
  *
  * A transporter that lives only on the notification it was typed into is typed
  * again on the next one, so the same record joins the organisation's own list
- * and the transporter list offers it from then on (design release 1). It goes
+ * and the transporter list offers it from then on. It goes
  * on as a private transporter that has not been approved yet, which is what the
  * organisation knows about it: nothing here has approved anything. */
 const remember = async (request, values) =>

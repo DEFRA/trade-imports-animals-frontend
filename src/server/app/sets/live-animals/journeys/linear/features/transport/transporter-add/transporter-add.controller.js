@@ -67,7 +67,7 @@ const get = async (request, h) => {
 /** Where the chosen type takes the trader.
  *
  * Each arm is a form for entering the transporter that could not be found on
- * the list — commercial or private (design release 1). An unanswered question
+ * the list — commercial or private. An unanswered question
  * adds nothing, so it goes back to the list — the same tolerance the question
  * carried as a journey step. */
 const branchSlug = (transporterType) => {

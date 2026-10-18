@@ -5,7 +5,7 @@ import { amendFormActions } from './amend-form-actions.js'
 const PATH = '/n/j-1/origin'
 
 describe('#amendFormActions', () => {
-  it('Should send Save and return to the real service change=1 return and Save and continue to the plain page', () => {
+  it('Should send Save and return to the page with change=1 and Save and continue to the plain page', () => {
     expect(amendFormActions(PATH, new URLSearchParams())).toEqual({
       returnAction: `${PATH}?change=1`,
       continueAction: PATH

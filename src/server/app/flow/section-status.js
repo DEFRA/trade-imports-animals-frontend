@@ -8,9 +8,8 @@ export const sectionObligationIds = (section) =>
 export const sectionStatus = (section, answers, inScope, evaluation) =>
   statusOf(sectionObligationIds(section), answers, inScope, evaluation)
 
-/** The three statuses that leave nothing for the trader to do. The review
- * page's unfinished-card test applies this same predicate, so "no unfinished
- * card" and "ready for Check your answers" cannot drift apart. */
+/** True for a status that leaves nothing for the trader to do: fulfilled, not
+ * applicable or optional. */
 export const rowReady = (status) =>
   status === FULFILLED || status === NA || status === OPTIONAL
 

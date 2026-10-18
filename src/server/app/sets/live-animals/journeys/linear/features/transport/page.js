@@ -10,7 +10,7 @@ export const transitCountriesPage = {
 
 /** The transporter list — the journey's one transporter step. Every
  * transporter the trader can use is on it, commercial and private together,
- * and the pick carries the type with it (design release 1). */
+ * and the pick carries the type with it. */
 export const transportersPage = {
   id: 'transporters',
   slug: 'transporters'

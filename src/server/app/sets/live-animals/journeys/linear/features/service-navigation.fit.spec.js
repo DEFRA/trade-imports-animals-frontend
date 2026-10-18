@@ -77,7 +77,7 @@ test.describe('service navigation', () => {
     ).toHaveAttribute('href', '/auth/sign-out')
   })
 
-  test('shows the signed-in user nowhere, as Design release 1 does not', async ({
+  test('shows neither the signed-in user nor a Sign out link', async ({
     page
   }) => {
     await page.goto(BASE)

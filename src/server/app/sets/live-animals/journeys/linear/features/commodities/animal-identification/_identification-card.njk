@@ -38,9 +38,6 @@
       {% endfor %}
 
       {% if card.showAddress %}
-        {# Design release 1 puts the fraud warning and the definition of a
-           permanent address above the question, because the reason the
-           address matters — APHA checks it — is what stops an invented one. #}
         {{ govukWarningText({ text: copy.permanentAddress.warning }) }}
 
         <p class="govuk-body">{{ copy.permanentAddress.definitionLeadIn }}</p>

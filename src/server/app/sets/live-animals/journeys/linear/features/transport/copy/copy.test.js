@@ -93,12 +93,7 @@ describe('transport copy module', () => {
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
   })
 
-  // Design release 1 heads the transporter list's columns rather than running
-  // each transporter's facts together in one hint. Copy parity only checks that
-  // the two decks carry the same paths and that each Welsh leaf differs from
-  // its English one, so a Welsh heading landing over the wrong column would
-  // pass it — the Welsh values are pinned here for that reason.
-  test('Should head every column Design release 1 shows on the transporter list', () => {
+  test('Should head every column of the transporter list in English and Welsh', () => {
     expect(copy.transporters.table).toEqual({
       selectHidden: 'Select',
       name: 'Name',
@@ -219,12 +214,7 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 asks for a "Postcode or Zip code" on every form that takes
-  // an address, so the private transporter's sixth field is worded exactly as
-  // the animals' permanent address is. The two error messages quote the label,
-  // so they move with it — an error naming a field by another word sends the
-  // trader looking for a field that is not on the page.
-  test('Should label the private form’s postcode field as Design release 1 does', () => {
+  test('Should label the private form’s postcode field and name it the same way in both its errors', () => {
     expect(copy.privateTransporterDetails.fields.postcode).toBe(
       'Postcode or Zip code'
     )
@@ -253,7 +243,7 @@ describe('transport copy module', () => {
   })
 
   // The banner repeats the authorisation rules the list states, and the phone
-  // number carries the international hint (design release 1).
+  // number carries the international hint.
   test('Should head the commercial form guidance banner and hint the phone number', () => {
     expect(copy.commercialTransporterDetails.guidanceTitle).toBe(
       'Help with transporter authorisation'

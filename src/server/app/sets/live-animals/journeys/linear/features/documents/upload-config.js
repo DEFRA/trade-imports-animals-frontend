@@ -26,8 +26,7 @@ export const ACCEPT_ATTRIBUTE = ALLOWED_TYPES.map(
 ).join(',')
 
 // Label every accepted extension, not the de-duplicated MIME types: .jpeg and
-// .jpg share image/jpeg, so collapsing on MIME dropped JPG from the sentence
-// while the input still accepted it. See EUDPA-523.
+// .jpg share image/jpeg.
 const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.ext.toUpperCase())
 
 export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
@@ -36,10 +35,8 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 
 export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
 
-// Held at 10 so MAX_PAYLOAD_BYTES stays inside the ingress request-body cap in
-// front of this service, which on CDP is nginx's 10 MiB default. EUDPA-518
-// raised this to 50 for Design release 1; a 50MB upload never reaches the
-// service, so the limit goes back until the ingress cap is raised with it.
+// MAX_PAYLOAD_BYTES must stay inside the ingress request-body cap, which on
+// CDP is nginx's 10 MiB default.
 const MAX_FILE_SIZE_MB = 10
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE

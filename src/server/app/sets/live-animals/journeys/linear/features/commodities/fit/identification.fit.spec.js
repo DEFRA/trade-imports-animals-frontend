@@ -336,10 +336,7 @@ test.describe('animal identification', () => {
     await expect(page.locator('select')).toHaveCount(0)
   })
 
-  // Design release 1 asks for the postcode and the phone number in these
-  // words, and tells a trader abroad to include the country code — without
-  // that hint the number they give may not be diallable from here.
-  test('permanent address names the postcode and phone fields as Design release 1 does', async ({
+  test('permanent address labels the postcode and phone fields and hints the country code', async ({
     page
   }) => {
     await openCatIdentification(page)
