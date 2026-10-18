@@ -354,7 +354,36 @@ what it declares. Add a case shaped like the matching layout:
    need no seed.
 4. Assert the handler committed exactly the declared ids.
 
-## The one hard limit
+## Test support
+
+Build test set-up from the shared helpers, and extend them rather than writing
+set-up in the test file:
+
+- controller tests:
+  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
+  seeds a journey, runs one handler and returns the answers before and after;
+  `journeyRequest`, `stubH`, `recordingH`, `postHandlerOf` and
+  `postHandlerEndingWith` build the request, toolkit and handler
+- browser tests:
+  [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
+  — journey steps such as `startNotification`, `selectSpecies`,
+  `addDocument` and `addTransitCountry`. A step that adds one instance to the
+  collection belongs here once two specs need it
+- set-up shared only inside one feature: that feature's `test-support.js`
+
+When a second test needs the same set-up, move it into one of these helpers in
+the same change and delete every local copy. Importing a sibling feature's test
+helper is fine.
+
+## Logging
+
+A branch that changes what the request does — a refusal such as a capped add, a
+redirect away from the normal next page, a retry or a fallback — logs once
+through `request.logger` with `journeyId` and the reason. A validation 400 that
+re-renders the page does not log. See "Logging" in
+[`architecture.md`](../../../docs/architecture.md).
+
+## Hard limit
 
 A member's `applyTo` gate reads values at the same identity level, or fans
 a shallower gate down onto its own instances via the gatedParentGroup. It
