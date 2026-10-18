@@ -78,10 +78,18 @@ export const stubH = (request) => {
   }
 }
 
+const silentLogger = () => ({
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {}
+})
+
 export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
   query: {},
   headers: {},
+  logger: silentLogger(),
   auth: {
     isAuthenticated: true,
     credentials: authenticatedCredentials

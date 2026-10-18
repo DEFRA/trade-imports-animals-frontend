@@ -49,12 +49,12 @@ const continueFromReview = async (seed, { submitted = false } = {}) => {
     await store.submit(journeyId)
   }
   const { concurrencyToken } = await store.get(journeyId)
-  const toolkit = stubH()
+  const h = stubH()
   const response = await postHandlerOf(declaration)(
     continueRequest(journeyRequest(journeyId), concurrencyToken),
-    toolkit
+    h
   )
-  return { journeyId, response, view: toolkit.captured.view }
+  return { journeyId, response, view: h.captured.view }
 }
 
 const reviewPath = (journeyId) => pagePath(journeyId, 'notification-view')
@@ -66,12 +66,9 @@ const refusedContinue = (journeyId) => ({
 const reviewAfterRefusal = async (seed) => {
   const { journeyId, response } = await continueFromReview(seed)
   expect(response).toEqual(refusedContinue(journeyId))
-  const toolkit = stubH()
-  await getHandler(
-    journeyRequest(journeyId, { query: { refused: '1' } }),
-    toolkit
-  )
-  return toolkit.captured.view
+  const h = stubH()
+  await getHandler(journeyRequest(journeyId, { query: { refused: '1' } }), h)
+  return h.captured.view
 }
 
 const dateMonthsAhead = (months) => {
@@ -99,9 +96,9 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
-  const toolkit = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), toolkit)
-  return toolkit.captured.view
+  const h = stubH()
+  await getHandler(journeyRequest(journey.journeyId, { query }), h)
+  return h.captured.view
 }
 
 const cardsOf = (sections) =>
@@ -354,7 +351,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     }
   })
 
-  it('Should name the subsection headings design release 1 gives each card', async () => {
+  it('Should name the subsection heading of each card', async () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(
@@ -1442,11 +1439,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     const { journeyId } = await store.create()
     await store.seedAnswers(journeyId, fullSeed)
     const { concurrencyToken } = await store.get(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(toolkit.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
       [journeyId]: concurrencyToken
     })
   })
@@ -1454,11 +1451,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   it('Should record nothing for a submitted notification, which cannot be declared again', async () => {
     const { journeyId } = await store.create()
     await store.submit(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(reviewedConcurrencyTokensCookie() in toolkit.cookies).toBe(false)
+    expect(reviewedConcurrencyTokensCookie() in h.cookies).toBe(false)
   })
 
   it('Should refuse Continue while the notification is unfinished', async () => {
