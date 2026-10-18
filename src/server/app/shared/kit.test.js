@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
+import { recordingLogger } from '../engine/test-support.js'
 import {
   amendReviewTarget,
   base,
@@ -146,7 +147,7 @@ describe('#pageRoutes — a save refused as stale', () => {
   ).find((route) => route.method === 'POST')
 
   it('Should log the journey id and posted token, then redirect back to the page with staleAction', async () => {
-    const logger = { info: vi.fn() }
+    const logger = recordingLogger()
     const request = {
       logger,
       params: { journeyId: 'journey-1' },
@@ -161,9 +162,13 @@ describe('#pageRoutes — a save refused as stale', () => {
     expect(response).toEqual({
       redirect: '/notifications/journey-1/origin?change=1&staleAction=1'
     })
-    expect(logger.info).toHaveBeenCalledExactlyOnceWith(
-      { journeyId: 'journey-1', postedConcurrencyToken: '3' },
-      'Save refused: the notification changed since the page was shown'
-    )
+    expect(logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: 'journey-1', postedConcurrencyToken: '3' },
+        message:
+          'Save refused: the notification changed since the page was shown'
+      }
+    ])
   })
 })

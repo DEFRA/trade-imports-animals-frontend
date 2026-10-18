@@ -1,5 +1,9 @@
+import { join } from 'node:path'
 import { Linter, RuleTester } from 'eslint'
+import { describe, expect, it } from 'vitest'
+
 import { houseRules, restrictedSyntax } from './house-rules.js'
+import { templateCommentFindings } from './template-comments.js'
 
 const ruleTester = new RuleTester()
 
@@ -7,6 +11,7 @@ ruleTester.run('no-tracking-ids', houseRules.rules['no-tracking-ids'], {
   valid: [
     '// Shows the review once every card is complete',
     "it('Should refuse a blank declaration', () => {})",
+    "const id = 'c-201'",
     "const id = 'eudpa-573-ghost-obligation'",
     "const uuid = 'c3d0a1e2-0b1c-4d2e-9f3a-123456789abc'",
     '// Unruled transporters carry no status'
@@ -35,36 +40,47 @@ ruleTester.run('no-tracking-ids', houseRules.rules['no-tracking-ids'], {
     {
       code: `test.describe(\`EUDPA-389 \${name}\`, () => {})`,
       errors: [{ messageId: 'found' }]
+    },
+    {
+      code: "it.each([1])('Should hold d-049 for %s', () => {})",
+      errors: [{ messageId: 'found' }]
     }
   ]
 })
+
+const SET_TERMS = ['live-animals', 'GBN-AG']
 
 ruleTester.run('no-set-vocabulary', houseRules.rules['no-set-vocabulary'], {
   valid: [
     {
       code: "const setId = 'plants-high-risk'",
-      options: [{ terms: ['live-animals', 'GBN-AG'] }]
+      options: [{ terms: SET_TERMS }]
     }
   ],
   invalid: [
     {
       code: "const setId = 'live-animals'",
-      options: [{ terms: ['live-animals', 'GBN-AG'] }],
+      options: [{ terms: SET_TERMS }],
       errors: [{ messageId: 'found' }]
     },
     {
       code: 'const liveAnimalsCodes = []',
-      options: [{ terms: ['live-animals', 'GBN-AG'] }],
+      options: [{ terms: SET_TERMS }],
+      errors: [{ messageId: 'found' }]
+    },
+    {
+      code: 'const mode = process.env.LIVE_ANIMALS_IT',
+      options: [{ terms: SET_TERMS }],
       errors: [{ messageId: 'found' }]
     },
     {
       code: '// a GBN-AG reference',
-      options: [{ terms: ['live-animals', 'GBN-AG'] }],
+      options: [{ terms: SET_TERMS }],
       errors: [{ messageId: 'found' }]
     },
     {
       code: 'const block = `GBNAG_SPS_EX`',
-      options: [{ terms: ['live-animals', 'GBN-AG'] }],
+      options: [{ terms: SET_TERMS }],
       errors: [{ messageId: 'found' }]
     }
   ]
@@ -93,5 +109,15 @@ describe('restricted syntax', () => {
     "logger.error('Catbox Memory is for local development only')"
   ])('Should accept %s', (code) => {
     expect(messagesFor(code)).toEqual([])
+  })
+})
+
+describe('#templateCommentFindings', () => {
+  it('Should name each template comment that carries a tracking id', () => {
+    const fixture = join(import.meta.dirname, 'fixtures/comments.njk')
+
+    expect(templateCommentFindings([fixture])).toEqual([
+      `${fixture}:2 a backlog or ruling id ("c-030")`
+    ])
   })
 })

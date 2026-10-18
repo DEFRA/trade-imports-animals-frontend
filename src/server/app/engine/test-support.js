@@ -78,18 +78,25 @@ export const stubH = (request) => {
   }
 }
 
-const silentLogger = () => ({
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {}
-})
+/** A request logger that keeps every line it is given in `entries`. */
+export const recordingLogger = () => {
+  const entries = []
+  const recordAt = (level) => (fields, message) =>
+    entries.push({ level, fields, message })
+  return {
+    entries,
+    debug: recordAt('debug'),
+    info: recordAt('info'),
+    warn: recordAt('warn'),
+    error: recordAt('error')
+  }
+}
 
 export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
   query: {},
   headers: {},
-  logger: silentLogger(),
+  logger: recordingLogger(),
   auth: {
     isAuthenticated: true,
     credentials: authenticatedCredentials

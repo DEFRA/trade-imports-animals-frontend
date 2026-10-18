@@ -21,6 +21,7 @@ import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read
 import {
   journeyRequest,
   postHandlerOf,
+  recordingLogger,
   stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -65,7 +66,7 @@ const drivePost = async ({
     await store.get(journeyId)
   await afterReview(journeyId)
   const h = stubH()
-  const logger = { info: vi.fn() }
+  const logger = recordingLogger()
   const response = await post(
     journeyRequest(journeyId, {
       logger,
@@ -94,13 +95,16 @@ const drivePost = async ({
 }
 
 const expectRefusalLogged = (result, expectedRefusal) =>
-  expect(result.logger.info).toHaveBeenCalledExactlyOnceWith(
-    expect.objectContaining({
-      journeyId: result.journeyId,
-      refusal: expectedRefusal
-    }),
-    'Declaration refused'
-  )
+  expect(result.logger.entries).toEqual([
+    {
+      level: 'info',
+      fields: expect.objectContaining({
+        journeyId: result.journeyId,
+        refusal: expectedRefusal
+      }),
+      message: 'Declaration refused'
+    }
+  ])
 
 // In practice kit.base()'s current token always equals the reviewed one, so it
 // is moved to show which of the two the page carries.
@@ -198,7 +202,7 @@ describe('#declaration', () => {
     it('Should log nothing when it renders the declaration', async () => {
       const result = await drivePost({ step: 'review' })
 
-      expect(result.logger.info).not.toHaveBeenCalled()
+      expect(result.logger.entries).toEqual([])
     })
   })
 

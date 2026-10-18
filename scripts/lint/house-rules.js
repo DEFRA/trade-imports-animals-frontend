@@ -4,8 +4,8 @@ const TEST_FUNCTIONS = new Set(['describe', 'it', 'test'])
 
 const rootIdentifierName = (callee) => {
   let node = callee
-  while (node.type === 'MemberExpression') {
-    node = node.object
+  while (node.type === 'MemberExpression' || node.type === 'CallExpression') {
+    node = node.type === 'MemberExpression' ? node.object : node.callee
   }
   return node.type === 'Identifier' ? node.name : null
 }

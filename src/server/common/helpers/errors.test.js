@@ -188,7 +188,7 @@ describe('#catchAll', () => {
         err: request.response,
         statusCode: statusCodes.internalServerError
       }),
-      'Request error'
+      'Request failed'
     )
     expect(mockToolkitView).toHaveBeenCalledWith(
       errorPage,
@@ -212,7 +212,7 @@ describe('#catchAll', () => {
         statusCode: statusCodes.serviceUnavailable,
         dataset: 'countries'
       },
-      'Request error'
+      'Request failed'
     )
   })
 

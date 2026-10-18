@@ -36,7 +36,7 @@ export function catchAll(request, h) {
         statusCode,
         dataset: response.data?.dataset
       },
-      'Request error'
+      'Request failed'
     )
   }
 

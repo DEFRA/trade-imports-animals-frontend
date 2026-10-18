@@ -210,8 +210,8 @@ set-up in the test file:
 - controller tests:
   [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
   seeds a journey, runs one handler and returns the answers before and after;
-  `journeyRequest`, `stubH`, `recordingH`, `postHandlerOf` and
-  `postHandlerEndingWith` build the request, toolkit and handler
+  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
+  and `postHandlerEndingWith` build the request, toolkit, logger and handler
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
