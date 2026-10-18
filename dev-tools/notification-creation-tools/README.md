@@ -131,7 +131,7 @@ in isolation.
 All the tests live in
 `stale-state-scenarios/stale-scenarios.integration.test.js`.
 
-### Smoke suite (gated by `LIVE_ANIMALS_IT=testcontainer`)
+### Smoke suite (gated by `PERSISTENCE_IT_MODE=testcontainer`)
 
 The load-bearing tier. Spins up one real MongoDB container via
 `testcontainers` (already a devDependency for the Redis IT), shared
@@ -144,13 +144,13 @@ across both scenarios, and for each asserts:
 Run with:
 
 ```sh
-LIVE_ANIMALS_IT=testcontainer npm test
+PERSISTENCE_IT_MODE=testcontainer npm test
 ```
 
 Or narrow to just this tool's integration tests:
 
 ```sh
-LIVE_ANIMALS_IT=testcontainer npx vitest run \
+PERSISTENCE_IT_MODE=testcontainer npx vitest run \
   dev-tools/notification-creation-tools/stale-state-scenarios/stale-scenarios.integration.test.js
 ```
 

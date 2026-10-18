@@ -153,11 +153,8 @@ const projectFlowOnlyScope = (inScope) => {
  * consume.
  *
  * `readyForCheckYourAnswers` comes from the readiness seam
- * (`bridge/readiness-config.js`), which `routes-live-animals.js` injects at
- * boot with `flow/section-status.js`'s `readyForCheckYourAnswers` — the roll-up
- * over the task rows via `rowStatus` / `statusOf`. Passing the projected
- * `inScope` yields readiness without this module importing `read.js` or
- * reaching up into flow. Unconfigured, the seam is fail-closed.
+ * (`bridge/readiness-config.js`), which each set's gateway configures at boot.
+ * Unconfigured, the seam is fail-closed.
  *
  * The FULL scope also carries the flow-only obligations the notification model
  * does not model (declaration — `projectFlowOnlyScope`), so their owning pages
