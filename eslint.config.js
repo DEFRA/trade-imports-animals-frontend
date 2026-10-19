@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { includeIgnoreFile } from 'eslint/config'
 import { neostandard } from 'neostandard'
 import sonarjs from 'eslint-plugin-sonarjs'
-import { houseRules, restrictedSyntax } from './scripts/lint/house-rules.js'
+import { codeQuality } from './eslint-rules/code-quality.js'
 
 const SETS_DIR = join(import.meta.dirname, 'src/server/app/sets')
 const SET_NAMES = readdirSync(SETS_DIR, { withFileTypes: true })
@@ -70,17 +70,19 @@ export default [
     }
   },
   {
-    plugins: { 'house-rules': houseRules },
+    files: ['**/*.{js,cjs,mjs}'],
+    plugins: { 'code-quality': codeQuality },
     rules: {
-      'house-rules/no-tracking-ids': 'error',
-      'no-restricted-syntax': ['error', ...restrictedSyntax]
+      'code-quality/no-tracking-references': 'error',
+      'code-quality/no-silent-catch': 'error',
+      'code-quality/no-message-only-error-log': 'error'
     }
   },
   {
     files: PLATFORM_LAYER,
     ignores: ['**/*.test.js', '**/test-support.js', '**/fixtures/**'],
     rules: {
-      'house-rules/no-set-vocabulary': [
+      'code-quality/no-set-vocabulary': [
         'error',
         { terms: [...SET_NAMES, ...SET_CODES] }
       ]

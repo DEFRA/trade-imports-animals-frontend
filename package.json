@@ -30,7 +30,7 @@
     "lint": "run-s lint:js lint:templates lint:scss lint:arch",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "lint:templates": "node scripts/lint/template-comments.js",
+    "lint:templates": "node eslint-rules/template-comments.js",
     "lint:scss": "stylelint \"src/**/*.scss\" --cache --cache-location .cache/stylelint --cache-strategy content --color --ignore-path .gitignore",
     "lint:arch": "depcruise src/server/app --config .dependency-cruiser.cjs --ignore-known --output-type err-long --cache",
     "depcruise:baseline": "depcruise src/server/app --config .dependency-cruiser.cjs --output-type baseline > .dependency-cruiser-known-violations.json",

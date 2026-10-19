@@ -10,6 +10,7 @@ journey change follow the recipes in
 
 - A comment describes only the lines below it, and only when a name or extraction cannot. No claims about callers, other modules, the backend, a library or a test. No counts.
 - No ticket keys, backlog or ruling ids, release names or session words in code, comments or test titles. `npm run lint` enforces this.
+- `npm run lint` enforces the id, silent-catch, error-log and platform-layer set-name rules through `eslint-rules/code-quality.js`, and the id rule in Nunjucks comments through `eslint-rules/template-comments.js`.
 - No history: no before/after narration, no `REMOVED_*`, no "renamed from".
 - A name predicts what the code returns and changes. No positional boolean flags, no metaphors, one name per concept. A rename covers the whole vocabulary.
 - Set-up used by two tests goes in the shared helper; promoting a helper deletes the local copies.

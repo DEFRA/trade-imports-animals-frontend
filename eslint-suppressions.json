@@ -1,356 +1,356 @@
 {
   "fit/live-animals-journey.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/bridge/applicability.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/model/obligations/evaluator.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/model/obligations/helpers/more-than-one.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/services/_capture/capture.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 1
     }
   },
   "src/server/app/services/countries/index.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 3
     }
   },
   "src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/direct-fields.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 1
     }
   },
   "src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/transport.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 1
     }
   },
   "src/server/app/services/persistence/records/notification-mapper/shared/lines/species-entry.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 1
     }
   },
   "src/server/app/services/persistence/records/stub/reference-number.js": {
-    "house-rules/no-set-vocabulary": {
+    "code-quality/no-set-vocabulary": {
       "count": 1
     }
   },
   "src/server/app/services/transporters/register.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/additional-details/additional-details.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/addresses/fit/hub-picker.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/check-answers.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 6
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/check-answers.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 12
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/additional-animal-details.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/reason-for-import.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/movement/arrival-details.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/cards/movement/transit-countries.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/incomplete-cards.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/index.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/rows/summary-row.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/rows/value-text.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/sections/about-consignment.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/sections/consignment-parties.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/sections/contact-address.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/sections/description-of-goods.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/check-answers/view-model/sections/transport-and-arrival.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 3
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/card/view-model.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/identifier/fields.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/consignment-details/view-model/selected-rows.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/commodities/fit/identification.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 8
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/confirmation/confirmation.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/confirmation/controller.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/confirmation/outstanding.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/confirmation/template.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/cph-number/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
-      "count": 3
+    "code-quality/no-tracking-references": {
+      "count": 4
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/cph-number/cph-number.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
-      "count": 1
+    "code-quality/no-tracking-references": {
+      "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/declaration/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/documents/controller.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 3
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/documents/fit/drop-zone.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/hub/controller.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 8
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 13
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/hub/hub.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 11
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/origin/origin.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/section-caption.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 10
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 6
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/fit/transporters.fit.spec.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 7
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/page.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/transporters/rows.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 3
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 3
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/flow/task-rows.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/journeys/linear/flow/task-rows.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 4
     }
   },
   "src/server/app/sets/live-animals/obligations/sections/commodities/aggregates.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/obligations/sections/commodities/identifiers.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 3
     }
   },
   "src/server/app/sets/live-animals/obligations/whitelists.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 4
     }
   },
   "src/server/app/sets/live-animals/services/commodities/index.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 1
     }
   },
   "src/server/app/sets/live-animals/services/commodities/index.test.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 2
     }
   },
   "src/server/app/sets/live-animals/services/commodities/stub.js": {
-    "house-rules/no-tracking-ids": {
+    "code-quality/no-tracking-references": {
       "count": 6
     }
   }

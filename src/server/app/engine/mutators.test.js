@@ -142,7 +142,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   })
 
   describe('#appendEntryAt — an empty appended entry is not persisted', () => {
-    it('Should accept the ruled loss of a leaf-less unit the canonical evaluator cannot express', async () => {
+    it('Should accept the loss of a leaf-less unit the canonical evaluator cannot express', async () => {
       // No numberOfAnimalsQuantity → uncapped (blank-count semantics).
       await store.seedAnswers(journeyId, {
         commodityLines: [{ commoditySelection: 'Cat', animalIdentifiers: [] }]
