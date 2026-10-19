@@ -35,7 +35,9 @@
  *
  * `anyAllowListed` reduces a group's fulfilmentIndexes to one decision
  * (rather than a per-fulfilmentIndex list) — for the "cph reads ANY
- * commodityCode across commodity lines" case. `branchedGate` is the
+ * commodityCode across commodity lines" case; `anyNotInUnionOf` is its
+ * dual, for when the rule names the exceptions and the members are
+ * open-ended. `branchedGate` is the
  * escape hatch for genuinely non-derivable predicates; must be paired
  * with `predicateMeta` for the reachability prover to synthesise a
  * witness.
@@ -49,6 +51,7 @@
 export { allowListed } from './allow-listed.js'
 export { notInUnionOf } from './not-in-union-of.js'
 export { anyAllowListed } from './any-allow-listed.js'
+export { anyNotInUnionOf } from './any-not-in-union-of.js'
 export { branchedGate } from './branched-gate.js'
 export { matches } from './matches.js'
 export { present } from './present.js'

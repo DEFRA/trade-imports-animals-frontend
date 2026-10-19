@@ -35,6 +35,7 @@ import {
   allowListed,
   alwaysInScope,
   anyAllowListed,
+  anyNotInUnionOf,
   branchedGate,
   equalsGate,
   includesGate,
@@ -275,6 +276,24 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
       kind: WITNESS_KIND.WITNESS,
       obligationId: codeObl.id,
       value: 'x'
+    })
+    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('Should return a value outside the union as witness for anyNotInUnionOf', () => {
+    const gate = anyNotInUnionOf(
+      codeObl,
+      ['0101', '01061900'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obl)
+    expect(witness).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObl.id,
+      value: '__witness_not_in_union__'
     })
     const decision = obl.applyTo({ [witness.obligationId]: witness.value })
     expect(decision.inScope).toBe(true)

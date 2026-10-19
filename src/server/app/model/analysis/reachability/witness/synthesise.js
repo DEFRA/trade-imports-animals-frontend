@@ -34,30 +34,6 @@ export const synthesiseWitness = (obligation) => {
 
 function synthesiseFromMetadata(meta) {
   switch (meta.gateType) {
-    case 'allowListed':
-      // metadata.values IS the allowlist — first entry is a witness.
-      // Include the gatedParentGroup id (if any) so the fidelity check
-      // can seed a synthetic path in `fulfilmentIndexesByObligationId` for
-      // depth-N > 1 gates (passport, tattoo, earTag, horseName,
-      // permanentAddress — all project onto unitRecord). Without a
-      // gatedParentGroup fulfilmentIndex the closure's `runGate` returns
-      // records: [] and `inScope: false`, which would be a false
-      // negative — the gate WOULD open in the real evaluator, which
-      // always seeds unitRecord paths from user-created units.
-      return firstListedValueWitness(
-        meta,
-        'allowListed metadata has empty values array',
-        { withGatedParentGroupId: true }
-      )
-
-    case 'anyAllowListed':
-      // Same shape as allowListed — but anyAllowListed has no
-      // gatedParentGroup (notification-level aggregate).
-      return firstListedValueWitness(
-        meta,
-        'anyAllowListed metadata has empty values array'
-      )
-
     case 'matches':
       // metadata.value IS the scalar target.
       return {
@@ -68,15 +44,6 @@ function synthesiseFromMetadata(meta) {
 
     case 'branchedGate':
       return synthesiseBranchedGateWitness(meta)
-
-    case 'notInUnionOf':
-      // metadata.values IS the derived union of the input allowlists.
-      // Witness = any value NOT in that union. A stable sentinel that
-      // is virtually guaranteed not to collide with real commodity
-      // codes; defensively confirmed against the derived union.
-      // Include the gatedParentGroup id (if any) for depth-N gates,
-      // which project onto that group's fulfilmentIndexes.
-      return synthesiseNotInUnionOfWitness(meta)
 
     case 'equalsGate':
       // Meta-first equivalent of branchedGate + predicateMeta.equals.
@@ -116,6 +83,57 @@ function synthesiseFromMetadata(meta) {
       // Unconditional — the gate is always open by construction, no
       // read at all. Trivial classification is the honest one.
       return { kind: WITNESS_KIND.TRIVIAL }
+
+    default:
+      return synthesiseAllowlistWitness(meta)
+  }
+}
+
+/**
+ * synthesiseAllowlistWitness — the allowlist and complement helpers,
+ * split out of `synthesiseFromMetadata` to keep each dispatch small.
+ */
+function synthesiseAllowlistWitness(meta) {
+  switch (meta.gateType) {
+    case 'allowListed':
+      // metadata.values IS the allowlist — first entry is a witness.
+      // Include the gatedParentGroup id (if any) so the fidelity check
+      // can seed a synthetic path in `fulfilmentIndexesByObligationId` for
+      // depth-N > 1 gates (passport, tattoo, earTag, horseName,
+      // permanentAddress — all project onto unitRecord). Without a
+      // gatedParentGroup fulfilmentIndex the closure's `runGate` returns
+      // records: [] and `inScope: false`, which would be a false
+      // negative — the gate WOULD open in the real evaluator, which
+      // always seeds unitRecord paths from user-created units.
+      return firstListedValueWitness(
+        meta,
+        'allowListed metadata has empty values array',
+        { withGatedParentGroupId: true }
+      )
+
+    case 'anyAllowListed':
+      // Same shape as allowListed — but anyAllowListed has no
+      // gatedParentGroup (notification-level aggregate).
+      return firstListedValueWitness(
+        meta,
+        'anyAllowListed metadata has empty values array'
+      )
+
+    case 'anyNotInUnionOf':
+      // Same sentinel as notInUnionOf — but, like anyAllowListed, a
+      // notification-level aggregate with no gatedParentGroup.
+      return synthesiseNotInUnionOfWitness(meta, {
+        withGatedParentGroupId: false
+      })
+
+    case 'notInUnionOf':
+      // metadata.values IS the derived union of the input allowlists.
+      // Witness = any value NOT in that union. A stable sentinel that
+      // is virtually guaranteed not to collide with real commodity
+      // codes; defensively confirmed against the derived union.
+      // Include the gatedParentGroup id (if any) for depth-N gates,
+      // which project onto that group's fulfilmentIndexes.
+      return synthesiseNotInUnionOfWitness(meta)
 
     default:
       return {
@@ -195,15 +213,29 @@ function synthesiseBranchedGateWitness(meta) {
  * (not vacuously green). In practice the manifest's inverse-gate
  * commodity-code unions cover only a handful of codes; any string not
  * matching those codes opens the gate.
+ *
+ * `withGatedParentGroupId: false` is for the notification-level
+ * `anyNotInUnionOf`, which has no gatedParentGroup to carry.
  */
-function synthesiseNotInUnionOfWitness(meta) {
+function synthesiseNotInUnionOfWitness(
+  meta,
+  { withGatedParentGroupId = true } = {}
+) {
   const SENTINEL = '__witness_not_in_union__'
   if (!Array.isArray(meta.values)) {
     return {
       kind: WITNESS_KIND.OPAQUE,
-      reason: 'notInUnionOf metadata has no derived values array'
+      reason: `${meta.gateType} metadata has no derived values array`
     }
   }
+  const witnessFor = (value) => ({
+    kind: WITNESS_KIND.WITNESS,
+    obligationId: meta.obligationId,
+    value,
+    ...(withGatedParentGroupId && {
+      gatedParentGroupId: meta.gatedParentGroupId ?? null
+    })
+  })
   if (meta.values.includes(SENTINEL)) {
     // The derived union already covers the sentinel — try a second
     // fallback before giving up. Vanishingly unlikely on real
@@ -213,20 +245,10 @@ function synthesiseNotInUnionOfWitness(meta) {
       /* c8 ignore next 4 */
       return {
         kind: WITNESS_KIND.OPAQUE,
-        reason: 'notInUnionOf derived union covers both witness sentinels'
+        reason: `${meta.gateType} derived union covers both witness sentinels`
       }
     }
-    return {
-      kind: WITNESS_KIND.WITNESS,
-      obligationId: meta.obligationId,
-      value: fallback,
-      gatedParentGroupId: meta.gatedParentGroupId ?? null
-    }
+    return witnessFor(fallback)
   }
-  return {
-    kind: WITNESS_KIND.WITNESS,
-    obligationId: meta.obligationId,
-    value: SENTINEL,
-    gatedParentGroupId: meta.gatedParentGroupId ?? null
-  }
+  return witnessFor(SENTINEL)
 }

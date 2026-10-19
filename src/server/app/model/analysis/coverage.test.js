@@ -81,6 +81,15 @@ const SAMPLE_OBLIGATIONS = {
       { inScope: false }
     )
   },
+  anyNotInUnionOf: {
+    id: 'sample-anyNotInUnionOf',
+    applyTo: helpers.anyNotInUnionOf(
+      gateObl,
+      ['x'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+  },
   matches: {
     id: 'sample-matches',
     applyTo: helpers.matches(gateObl, 'yes')

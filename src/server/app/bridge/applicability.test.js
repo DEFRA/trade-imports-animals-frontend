@@ -64,6 +64,12 @@ describe('#gateAdmits', () => {
     expect(gateAdmits(gate, 'Cow')).toBe(false)
   })
 
+  it('Should invert for an anyNotInUnionOf complement gate', () => {
+    const gate = { gateType: 'anyNotInUnionOf', values: ['0101', '01061900'] }
+    expect(gateAdmits(gate, '0103')).toBe(true)
+    expect(gateAdmits(gate, '0101')).toBe(false)
+  })
+
   it('Should admit nothing without gate metadata', () => {
     expect(gateAdmits(undefined, 'Cow')).toBe(false)
     expect(gateAdmits({}, 'Cow')).toBe(false)

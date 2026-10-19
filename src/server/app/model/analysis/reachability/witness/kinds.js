@@ -58,6 +58,7 @@ export const WITNESS_KIND = Object.freeze({
 export const STRUCTURED_HELPER_TYPES = new Set([
   'allowListed',
   'anyAllowListed',
+  'anyNotInUnionOf',
   'matches',
   'branchedGate',
   'notInUnionOf',
