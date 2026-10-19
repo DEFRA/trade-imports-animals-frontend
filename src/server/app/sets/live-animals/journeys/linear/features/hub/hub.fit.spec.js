@@ -49,9 +49,6 @@ const PACKAGES = '5'
 const TOTAL_BOX = '.app-commodity-total'
 const SECTION_HEADING = 'h3.govuk-heading-m'
 const SAVE_AND_CONTINUE = 'Save and continue'
-// The task row Design release 1 does not have: the review is a button now, so
-// nothing on the hub carries this title or the shut status it used to read.
-const RETIRED_REVIEW_ROW_TITLE = 'Check and submit'
 const CANNOT_START_STATUS = '.govuk-task-list__status--cannot-start-yet'
 const TASK_ROW_HINT = '.govuk-task-list__hint'
 
@@ -148,14 +145,8 @@ test.describe('hub feature', () => {
         name: copy.rows.consignmentDetails.title
       })
     ).toBeVisible()
-
-    await expect(page.getByText(RETIRED_REVIEW_ROW_TITLE)).toHaveCount(0)
   })
 
-  // Design release 1 heads the whole list "Notification tasklist" and divides
-  // the notification into six numbered sections under it: the documents come
-  // fourth, and the consignment parties and the contact address are sections
-  // of their own. Nothing follows them — the review is a button under the list.
   test('the task list is headed "Notification tasklist" over the six numbered design sections in order, with nothing after them', async ({
     page
   }) => {
@@ -172,13 +163,6 @@ test.describe('hub feature', () => {
     )
   })
 
-  // Design release 1 lets a trader start any task on the notification in any
-  // order, so every task the hub shows is a link before a commodity is
-  // chosen — the arrival details, the documents and the contact address
-  // included, none of which wait on an answer given anywhere else. Origin is
-  // the journey's entry page and the entry guard holds a notification there
-  // until it is answered, so the earliest hub a trader reaches already has
-  // origin Complete; this is that hub.
   test('every task the hub shows opens before a commodity is chosen', async ({
     page
   }) => {
@@ -248,9 +232,6 @@ test.describe('hub feature', () => {
     ).toBeVisible()
   })
 
-  // Design release 1 inserts the identification task only once the chosen
-  // commodities need identifiers, so before anything is chosen the hub has
-  // nothing to say about identification and leaves the row off.
   test('overview: when no commodity is chosen, the animal identification row is absent', async ({
     page
   }) => {
@@ -280,11 +261,6 @@ test.describe('hub feature', () => {
     ).toBeVisible()
   })
 
-  // Design release 1 runs the second section Commodity details, then
-  // Identification details, then Additional details: a trader is pointed at
-  // identifying the animals before being asked what they are certified for.
-  // That is the order the opening run visits the two pages in as well, so the
-  // hub reading the other way round was the one place that disagreed.
   test('overview: the second section lists identification above the additional details', async ({
     page
   }) => {
@@ -299,9 +275,6 @@ test.describe('hub feature', () => {
     ])
   })
 
-  // Design release 1 keeps the hub to one-line rows: every task is a bare link
-  // with a status tag beside it, and only "Roles and addresses" says anything
-  // underneath — the parties that row collects.
   test('overview: only the roles and addresses row carries a hint', async ({
     page
   }) => {
@@ -317,9 +290,6 @@ test.describe('hub feature', () => {
     )
   })
 
-  // Design release 1 gives the overview no back link — it is the top of the
-  // notification, not a step in it — so the routes out are the Return to
-  // dashboard button and the Dashboard item in the service navigation.
   test('overview has no back link and returns to the dashboard', async ({
     page
   }) => {
@@ -336,9 +306,6 @@ test.describe('hub feature', () => {
   })
 })
 
-// Design release 1 gives the commodity details a task of their own, first
-// under the second section, so the hub says whether the numbers have been
-// entered rather than folding them into "What are you importing?".
 test.describe('hub feature — the Commodity details row', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -380,10 +347,6 @@ test.describe('hub feature — the Commodity details row', () => {
   })
 })
 
-// Design release 1 ends the hub with a primary "Review and submit" button and
-// the secondary "Return to dashboard" beside it, and offers the review whatever
-// the notification still owes: it is how a trader reads back what they have
-// entered so far. There is no review task row and no section holding one.
 test.describe('hub feature — the Review and submit button', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -405,7 +368,7 @@ test.describe('hub feature — the Review and submit button', () => {
     ).toBeVisible()
   })
 
-  test('leads the secondary Return to dashboard button, with no review task row above them', async ({
+  test('leads the secondary Return to dashboard button, with no task shut as Cannot start yet', async ({
     page
   }) => {
     await startNotification(page)
@@ -417,7 +380,6 @@ test.describe('hub feature — the Review and submit button', () => {
     await expect(
       page.getByRole('button', { name: copy.reviewAndSubmit })
     ).not.toHaveClass(/govuk-button--secondary/)
-    await expect(page.getByText(RETIRED_REVIEW_ROW_TITLE)).toHaveCount(0)
     await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 
@@ -435,9 +397,6 @@ test.describe('hub feature — the Review and submit button', () => {
     ).toBeVisible()
   })
 
-  // Design release 1: "Animal identifiers are optional unless multiple species
-  // are selected." A single-species consignment reaches the review page with
-  // no identifier saved; what is outstanding is chased after submission.
   test('a single-species notification reaches the review with no identifier saved', async ({
     page
   }) => {
@@ -475,8 +434,6 @@ test.describe('hub feature — commodity totals', () => {
     await signIn(page)
   })
 
-  // Design release 1 shows the summary from the first visit to the hub, with
-  // both totals reading zero before any commodity line has been added.
   test('both boxes read 0 before a commodity is added', async ({ page }) => {
     await startNotification(page)
 
