@@ -24,13 +24,8 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: permanentAddressFrom(unit.permanentAddress)
   })
 
-// Species value → display name via the prototype's commodity reference data,
-// falling back to the raw value for unknown codes — matching the skeleton's
-// `speciesByValue.get(value) ?? value` resolution. The scalar
-// earTag/passport/microchip fields still carry only the line's first
-// identifier unit (an in-tree hop-2 GBN-AG mapper reads them as scalars);
-// `animalIdentifiers` carries every unit on the line, with all 6 per-unit
-// fields.
+// The scalar identifier fields carry the line's first identifier unit;
+// `animalIdentifiers` carries every unit on the line.
 export const speciesEntryFromLine = (line) => {
   const units = line.animalIdentifiers ?? []
   const unit = units[0] ?? {}
