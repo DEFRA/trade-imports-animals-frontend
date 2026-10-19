@@ -3,7 +3,7 @@ const TRACKING_REFERENCES = [
   { pattern: /\b(?:c|d|q|inc|req)-\d{3}\b/i, label: 'a backlog or ruling id' },
   { pattern: /\bdesign release\b/i, label: 'a release name' },
   { pattern: /\bDR ?\d+(?:\.\d+)?\b/i, label: 'a release name' },
-  { pattern: /\bruled\b/i, label: 'a ruling reference' },
+  { pattern: /\bRuled\b/, label: 'a ruling reference' },
   { pattern: /\breal service\b/i, label: 'session vocabulary' }
 ]
 

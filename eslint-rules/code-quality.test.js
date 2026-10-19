@@ -22,7 +22,9 @@ ruleTester.run(
       "const id = 'c-201'",
       "const reference = 'inc-104'",
       "const uuid = 'c3d0a1e2-0b1c-4d2e-9f3a-123456789abc'",
-      '// Unruled transporters carry no status'
+      '// Unruled transporters carry no status',
+      '// A second lookup is ruled out by the cache',
+      "it('Should keep the ruled out options hidden', () => {})"
     ],
     invalid: [
       {
@@ -62,8 +64,12 @@ ruleTester.run(
         errors: [{ messageId: 'inComment' }]
       },
       {
-        code: '// as the team ruled',
+        code: '// Ruled c-030',
         errors: [{ messageId: 'inComment' }]
+      },
+      {
+        code: "it('Ruled: the hint stays', () => {})",
+        errors: [{ messageId: 'inTestTitle' }]
       },
       {
         code: '// Save and return goes to the real service change page',
