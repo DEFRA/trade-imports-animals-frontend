@@ -21,3 +21,23 @@ export const fetchCommodities = async (term, { page, size }) => {
 
   return response.json()
 }
+
+export const postSpeciesCheck = async (lines) => {
+  const response = await fetch(
+    `${referenceDataUrl}/commodities/species-check`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines })
+    }
+  )
+
+  if (!response.ok) {
+    throw Object.assign(new Error('Failed to check species'), {
+      status: response.status,
+      statusText: response.statusText
+    })
+  }
+
+  return response.json()
+}

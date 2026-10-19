@@ -10,8 +10,23 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { AMEND, DRAFT } from '../../../../../../engine/index.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
-import { documentScanCardErrors, isReviewRefused } from './refusal.js'
+import { copy as reviewEn } from './copy/copy.en.js'
+import {
+  documentScanCardErrors,
+  isReviewRefused,
+  speciesCardErrors
+} from './refusal.js'
+
+const BOS_TAURUS_LINE = {
+  commoditySelection: '0102',
+  speciesSelection: 'Bos taurus'
+}
+const BOS_SPP_LINE = {
+  commoditySelection: '0102',
+  speciesSelection: 'Bos spp.'
+}
 
 const PENDING_FILENAME = 'notes-never-scans.pdf'
 const REJECTED_FILENAME = 'virus-alert.pdf'
@@ -142,6 +157,55 @@ describe('#isReviewRefused', () => {
     )
 
     expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+
+  // MDM lists "Bos sp." under 0102, not "Bos spp.".
+  it('Should refuse a draft holding a species MDM no longer lists under its code', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [BOS_SPP_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(true)
+  })
+
+  it('Should not refuse a draft whose species MDM still lists', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [BOS_TAURUS_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+})
+
+describe('#speciesCardErrors', () => {
+  it('Should name each species of a draft MDM no longer lists, with its code', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [BOS_TAURUS_LINE, BOS_SPP_LINE] }
+      )
+    ).toEqual({
+      species: reviewEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)')
+    })
+  })
+
+  // A submitted species keeps the value it was sent with through an amendment.
+  it('Should not check the species of an amendment', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: AMEND },
+        { commodityLines: [BOS_SPP_LINE] }
+      )
+    ).toEqual({})
+  })
+
+  it('Should not check a line that has no species yet', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [{ commoditySelection: '0102' }] }
+      )
+    ).toEqual({})
   })
 })
 

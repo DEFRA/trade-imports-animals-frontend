@@ -61,6 +61,36 @@ describe('commodities client', () => {
   })
 })
 
+describe('species check — real mode', () => {
+  const BOS_SPP = { code: '0102', latinName: 'Bos spp.' }
+
+  it('Should ask reference-data which lines MDM no longer lists', async () => {
+    process.env.STUB_MODE = 'false'
+    const fetchMock = vi.fn(async () => okResponse({ missing: [BOS_SPP] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { missingSpecies } = await import('./species-check.js')
+
+    expect(await missingSpecies([BOS_SPP])).toEqual([BOS_SPP])
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(new URL(url).pathname).toBe('/commodities/species-check')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body)).toEqual({ lines: [BOS_SPP] })
+  })
+
+  it('Should report reference data as unavailable when the check fails', async () => {
+    process.env.STUB_MODE = 'false'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 503, statusText: 'Down' }))
+    )
+    const { missingSpecies } = await import('./species-check.js')
+
+    const error = await missingSpecies([BOS_SPP]).catch((caught) => caught)
+    expect(error.isBoom).toBe(true)
+    expect(error.data.dataset).toBe('commodities')
+  })
+})
+
 describe('commodities search — real mode', () => {
   it('Should search through reference-data', async () => {
     process.env.STUB_MODE = 'false'

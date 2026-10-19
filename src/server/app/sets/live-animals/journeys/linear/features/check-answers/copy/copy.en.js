@@ -149,6 +149,10 @@ export const copy = {
       reasonForImport: 'Complete reason for import',
       additionalAnimalDetails: 'Complete additional animal details',
       species: 'Complete species details',
+      // Raised at submission when MDM no longer lists a chosen species under
+      // its code — removed, or renamed. `names` reads "Bos spp. (0102)".
+      speciesNoLongerOffered: (names) =>
+        `${names} can no longer be selected. Choose the species again`,
       arrivalDetails: 'Complete arrival details',
       transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',

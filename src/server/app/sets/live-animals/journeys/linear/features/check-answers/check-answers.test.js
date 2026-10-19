@@ -1438,6 +1438,33 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     expect(response).toEqual(refusedContinue(journeyId))
   })
 
+  // MDM lists "Bos sp." under 0102, not "Bos spp.".
+  const withRemovedSpecies = () => ({
+    ...fullSeed,
+    commodityLines: [
+      { ...fullSeed.commodityLines[0], speciesSelection: 'Bos spp.' }
+    ]
+  })
+
+  it('Should refuse Continue on a draft holding a species MDM no longer lists, naming it', async () => {
+    const view = await reviewAfterRefusal(withRemovedSpecies())
+
+    expect(view.context.errorSummary.errorList).toEqual([
+      {
+        text: copyEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)'),
+        href: '#description-of-the-goods'
+      }
+    ])
+  })
+
+  it('Should not name a species MDM no longer lists until Continue is refused', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: withRemovedSpecies()
+    })
+
+    expect(view.context.errorSummary).toBeNull()
+  })
+
   it('Should refuse Continue on a brand-new draft, naming what is outstanding', async () => {
     const view = await reviewAfterRefusal({})
 

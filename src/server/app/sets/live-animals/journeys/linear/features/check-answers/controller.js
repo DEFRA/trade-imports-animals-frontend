@@ -27,7 +27,7 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { documentScanCardErrors } from './refusal.js'
+import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
 import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
@@ -153,6 +153,12 @@ export const renderNotificationView = async (
   const scanDocErrors = hidesAnswerErrors
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
+  // MDM is asked only when the trader has just been refused, so the review
+  // can name the species the submission was refused for.
+  const speciesErrors =
+    !hidesAnswerErrors && refused
+      ? await speciesCardErrors(journey, answers)
+      : {}
   return renderCya(h, journey, {
     answers,
     scope,
@@ -171,6 +177,7 @@ export const renderNotificationView = async (
       : {
           ...invalidCardErrors,
           ...scanDocErrors,
+          ...speciesErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
     disableAutoFocus: !refused
