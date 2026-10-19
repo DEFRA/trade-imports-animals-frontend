@@ -109,21 +109,7 @@ export const PACKAGE_COUNT_COMMODITIES = [
   '0407 - SPF Eggs'
 ]
 
-// The identifiers each commodity carries, in the order Design release 1 asks
-// for them. The order belongs to the COMMODITY, not to the service: a cow is
-// asked for its ear tag before its passport because the ear tag is what a cow
-// actually carries, where a horse is asked for its microchip first
-// (design 01-14/16/17). A commodity with an empty list — Fish — is asked for
-// nothing at all: design release 1 offers no free-text fallback, so such a
-// line gets no identification panel and no animal records.
-//
-// The five per-identifier allowlists below are DERIVED from this map, so an
-// identifier's gate and its position on the panel cannot drift apart. Adding
-// an identifier to a commodity is one edit here.
 export const COMMODITY_IDENTIFIERS = {
-  // A cow is asked for an ear tag and a passport and nothing else: design
-  // release 1 puts the tattoo on commodity code 01061900 — the cat, dog and
-  // ferret code — and not on 0102 (design 01-14/16/17).
   Cow: ['animalIdentifierEarTag', 'animalIdentifierPassport'],
   Horse: ['animalIdentifierMicrochip', 'animalIdentifierPassport', 'horseName'],
   Cat: [
@@ -144,10 +130,6 @@ const commoditiesCarrying = (identifier) =>
     COMMODITY_IDENTIFIERS[name]?.includes(identifier)
   )
 
-// The equine and companion-animal commodities. Design release 1 asks for a
-// microchip on commodity code 0101 (Horse) and on 01061900 — the code Cat, Dog,
-// ferret and the other live mammals share — so ferret is covered by the same
-// entry as Cat and Dog once the picker offers it (design 01-16/17).
 export const MICROCHIP_COMMODITIES = commoditiesCarrying(
   'animalIdentifierMicrochip'
 )
@@ -162,43 +144,16 @@ export const EAR_TAG_COMMODITIES = commoditiesCarrying('animalIdentifierEarTag')
 
 export const HORSE_NAME_COMMODITIES = commoditiesCarrying('horseName')
 
-// The commodities design release 1 asks a trader to identify at all — the
-// ones the catalogue gives an identifier of their own. A commodity outside
-// this list is asked for no animal records, so it is not held to the
-// one-record-per-animal count either.
 export const IDENTIFIED_COMMODITIES = COMMODITY_OPTIONS.filter(
   (name) => (COMMODITY_IDENTIFIERS[name] ?? []).length > 0
 )
 
-// A mandatory unitRecord obligation, so every commodity here must also be in
-// IDENTIFIED_COMMODITIES above — a commodity asked for a permanent address but
-// missing from that list gets no identification panel and no per-animal count
-// rule, so the address is never collected. Pinned by commodities/index.test.js.
 export const PERMANENT_ADDRESS_COMMODITIES = ['Cat', 'Dog']
 
-// The commodities design release 1 asks the unweaned-animals question of. It
-// asks it only where a selected commodity carries unweaned options, and its
-// catalogue puts those on cattle and pigs alone — not on horses, and not on
-// sheep or goats. Of the five commodities this catalogue offers today only Cow
-// qualifies; Pig joins the list when the catalogue grows to hold it. Pinned by
-// obligations/whitelists.test.js.
 export const UNWEANED_ANIMAL_COMMODITIES = ['Cow']
 
-// Design release 1 asks for a CPH number on every consignment and names the
-// commodity codes that escape the question rather than the ones that need it:
-// a code has to be listed to be let off. Two live-animal codes are — 0101, the
-// horses and donkeys code, and 01061900, the cat, dog and ferret code, which is
-// asked for each animal's permanent address instead. Everything else in design
-// release 1's catalogue, from sheep and goats through poultry to ornamental
-// fish, falls to the default and is asked for a CPH number.
-//
-// Exempting by CODE rather than by picker name is what makes the rule hold as
-// the catalogue grows: ferrets join Cat and Dog under 01061900 and donkeys join
-// Horse under 0101 without a second edit here, and a commodity added under any
-// other code is asked the question rather than silently let off.
 export const CPH_EXEMPT_COMMODITY_CODES = ['0101', '01061900']
 
-// Derived, so the default is to ask. Pinned by obligations/whitelists.test.js.
 export const CPH_COMMODITIES = COMMODITY_OPTIONS.filter(
   (name) => !CPH_EXEMPT_COMMODITY_CODES.includes(COMMODITY_CODES[name])
 )

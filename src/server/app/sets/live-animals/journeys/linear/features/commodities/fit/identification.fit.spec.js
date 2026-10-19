@@ -261,27 +261,15 @@ test.describe('animal identification', () => {
     await expect(page.getByText(copy.identification.inset)).toBeVisible()
     await expect(page.locator(PASSPORT_FIELD)).toBeVisible()
     await expect(page.locator(EAR_TAG_FIELD)).toBeVisible()
-    // Design release 1 puts the tattoo on the cat, dog and ferret code and
-    // not on cattle, so a cow is asked for its ear tag and its passport and
-    // nothing else.
     await expect(page.locator('#animalIdentifierTattoo-0')).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-1')).toBeVisible()
     await expect(page.locator('#horseName-1')).toBeVisible()
     await expect(page.locator(MICROCHIP_FIELD)).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-2')).toHaveCount(0)
-    // Fish carries no identifier of its own, so its line earns no panel —
-    // design release 1 offers no free-text box to fall back on.
     await expect(page.locator('#identification-card-2')).toHaveCount(0)
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
   })
 
-  // Design release 1 asks for each commodity's identifiers in the order that
-  // commodity's own list gives. A cow carries an ear tag, so the ear tag is
-  // the box it is asked for first — and a horse, which carries a chip, is
-  // asked for its microchip first. This pins the rendered order per
-  // commodity; that the order is a property of the COMMODITY rather than one
-  // global sequence is pinned by #identifiersFor in
-  // services/commodities/index.test.js.
   test('asks a cattle line for its ear tag before its passport, and a horse for its microchip first', async ({
     page
   }) => {
@@ -302,13 +290,6 @@ test.describe('animal identification', () => {
     )
   })
 
-  // Design release 1 names an identifier once and uses that name both on the
-  // entry field and as the column heading of the saved-animals table. A trader
-  // who types under "Passport number" and reads the value back under
-  // "Passport" is being shown two names for one thing, so the entry label is
-  // pinned to the column label rather than to a wording of its own.
-  // Cattle only: microchip's entry label still reads 'Microchip number', a
-  // wording Design release 1 has not settled here.
   test('labels the passport and ear tag fields on a cattle line with the words the saved-animals table heads them with', async ({
     page
   }) => {
@@ -374,11 +355,8 @@ test.describe('animal identification', () => {
     ).toBeVisible()
   })
 
-  // Design release 1 ends this page the way it ends every other page of the
-  // journey. The page's own primary keeps the shared wording whatever the cards
-  // are doing — the in-card button is a separate control and may read "Save and
-  // finish" on the last outstanding animal, so the ban is scoped to the page's
-  // save actions rather than the whole page.
+  // The in-card button may read "Save and finish", so the check is scoped to
+  // the page's own save actions.
   test('ends on the same Save and continue as every other journey page', async ({
     page
   }) => {
@@ -442,10 +420,6 @@ test.describe('animal identification', () => {
     )
   })
 
-  // Design release 1 asks for identification only where the commodity has an
-  // identifier of its own. A consignment holding nothing but ornamental fish
-  // has nothing to identify, so the page does not exist for that person: a
-  // request for it carries them on rather than showing an empty surface.
   test('carries a consignment with nothing to identify past the page', async ({
     page
   }) => {
@@ -465,8 +439,6 @@ test.describe('animal identification', () => {
   })
 })
 
-// Design release 1 makes the in-card button name what is left on the line, so
-// the words tell the trader what pressing them does next.
 test.describe('animal identification in-card save button', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)

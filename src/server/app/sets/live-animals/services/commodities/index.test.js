@@ -43,10 +43,6 @@ describe('#speciesListedIndividually', () => {
 })
 
 describe('#identifiersFor', () => {
-  // Design release 1 asks for each commodity's identifiers in that
-  // commodity's own order — the ear tag first on a cow, the microchip first
-  // on a horse — so the order is data on the commodity, not one running order
-  // the service applies to every animal.
   it('Should give each commodity its identifiers in the order it asks for them', () => {
     expect(identifiersFor('Cow')).toEqual([
       'animalIdentifierEarTag',
@@ -118,11 +114,6 @@ describe('the identifier allowlists', () => {
   })
 })
 
-// CPH is the opposite shape to the identifier allowlists: design release 1
-// asks every consignment for a CPH number and exempts named commodity
-// codes, so the list is a derivation over the exemptions and the default is
-// to ask. Asserted as a derivation, not a literal — a commodity added to the
-// catalogue under a non-exempt code must be asked without a second edit here.
 describe('the CPH exemption', () => {
   it('Should exempt exactly the horse and cat/dog/ferret codes', () => {
     expect([...cphExemptCommodityCodes()].sort()).toEqual(['0101', '01061900'])

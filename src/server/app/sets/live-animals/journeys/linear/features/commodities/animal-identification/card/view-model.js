@@ -68,11 +68,6 @@ const capacityStateFor = (answers, index, unitCount) => {
   return { cap, atMax, overBy }
 }
 
-// Design release 1 makes the in-card button say what pressing it will do next.
-// A line of one animal gets no button of its own — there is nothing to add
-// after this record, so the page's own Save and continue captures it. The last
-// animal still outstanding finishes the line rather than inviting another. An
-// unanswered count has no last animal to name, so it keeps the open wording.
 const saveButtonTextFor = (cap, records) => {
   if (cap === null) {
     return copy.saveAndAddAnother
@@ -102,10 +97,6 @@ const visibleAddressFields = (
 ) =>
   showAddress && !atMax ? addressFieldsFor(index, addressValues, errors) : []
 
-// The card counter is the only place the declared animal count appears, so
-// every card carries the route back to the page that sets it. Design release 1
-// puts the same bare link on every panel: no species, no query, no change
-// context — the trader lands on the counts and finds their own way back.
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
   const commodity = entry.commoditySelection

@@ -38,8 +38,6 @@ export const copy = {
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
   },
-  // The six numbered sections of design release 1, in its order. The number is
-  // part of the heading, so renumbering means editing these strings.
   sections: {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
@@ -119,8 +117,6 @@ export const copy = {
     heading: 'Animal details'
   },
   documentN: (n) => `Document ${n}`,
-  // Shown inside the uploaded-documents card when nothing has been uploaded.
-  // The card itself always stands, so it needs a line rather than an empty box.
   documentsEmpty: 'You have not added any documents yet.',
   // The visually hidden end of each card's "Change ..." link: lower case, the
   // card's title in words.

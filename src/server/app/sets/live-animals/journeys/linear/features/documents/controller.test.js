@@ -80,9 +80,7 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
 })
 
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
-// The wording design release 1 gives the Status column. Pinned as literals
-// here rather than read from copy.en.js so a reworded tag fails a test rather
-// than following the copy silently; copy.test.js pins the same two words.
+// Pinned as literals rather than read from copy, so a reworded tag fails a test.
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
@@ -518,9 +516,6 @@ describe('documents — listing, scanning and removing', () => {
   })
 })
 
-// Continue posts the add-a-document fields with it. Design release 1 reads a
-// chosen document type as the trader saying a document is coming, and finishes
-// the form rather than dropping it.
 describe('documents — Continue finishes a part-filled document', () => {
   beforeAll(configureEngine)
   beforeEach(() => store.clear())

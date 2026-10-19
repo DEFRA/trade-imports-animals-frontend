@@ -14,19 +14,13 @@ export {
   rememberTransporter
 } from './register.js'
 
-/** Every transporter the service ships, commercial and private together.
- * Synchronous. */
+/** Every transporter the service ships, commercial and private together. */
 export const parties = () => TRANSPORTER_OPTIONS
 
 export const party = (id) => parties().find((record) => record.id === id)
 
 /** Every transporter this organisation can pick: the ones it has added for
  * itself, then the ones the service ships.
- *
- * The transporter list asks for this rather than `parties`, so a transporter a
- * trader added on an earlier notification is there to be picked on the next
- * one. It is per-organisation and so per-request, which is why the list
- * validates the ids it is rendering rather than a set fixed at module load.
  *
  * An added record replaces a shipped one of the same name rather than sitting
  * beside it: the register's "one name means one row" holds across the join too,
@@ -41,7 +35,5 @@ export const partiesFor = (orgId) => {
   ]
 }
 
-/** The approved commercial register alone — the one list a trader adding a
- * commercial transporter can choose from today. */
 export const commercialParties = () =>
   parties().filter((record) => record.type === COMMERCIAL)

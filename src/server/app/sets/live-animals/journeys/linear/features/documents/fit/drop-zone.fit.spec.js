@@ -93,7 +93,7 @@ test.describe('document upload drop zone', () => {
 
   // The enhancement must not duplicate the input or change the field the form
   // posts. This runs with JavaScript on, so it does not exercise the no-JS
-  // fallback itself — that coverage is an open question on inc-137.
+  // fallback itself.
   test('enhancement leaves a single file input named file behind the zone', async ({
     page
   }) => {

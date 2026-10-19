@@ -24,8 +24,6 @@ const render = (outstandingItems) =>
     }
   )
 
-// Design release 1 goes from the reference panel straight into what the trader
-// has to do. Nothing — the declaration date least of all — sits in between.
 describe('confirmation template panel', () => {
   it('Should follow the panel with what the trader still has to do', () => {
     const $ = load(render([copy.outstanding.documents]))

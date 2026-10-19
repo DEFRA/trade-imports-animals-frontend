@@ -7,32 +7,9 @@ import { missingCell } from './rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-// A row is finished when `rowReady` says so — literally the predicate
-// `readyForCheckYourAnswers` applies, imported rather than restated, so a
-// notification with no unfinished card is exactly a notification that is ready
-// to submit and the two cannot diverge.
-
 /**
  * The review page's cards in page order, each with the task rows whose answers
  * it shows and the id the error summary links to.
- *
- * Every task row appears exactly once — the `#REVIEW_CARDS` suite in
- * `check-answers.test.js` pins that — so "no unfinished card" and
- * `scope.readyForCheckYourAnswers` are the same verdict, and the POST can
- * refuse on the latter knowing the page will name something.
- *
- * The species entry is the one entry whose anchor is not a card, and the one
- * entry that marks no card at all. Species cards are built one per commodity
- * line and carry no `id`, so `decorateCard` never reaches them: even when lines
- * exist the entry names the outstanding work without marking a card, and it
- * anchors to the heading of the section those answers live in, which always
- * stands. Whether a short species card should be marked in its own right is an
- * open question on inc-150.
- *
- * The transit-countries card is the one entry whose card is conditional: it is
- * built only while the answer is in scope, and while it is out of scope its
- * task row is NA, so `incompleteCardErrors` never names a card that is not on
- * the page.
  */
 export const REVIEW_CARDS = [
   { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
@@ -44,8 +21,6 @@ export const REVIEW_CARDS = [
   {
     id: 'species',
     anchor: 'description-of-the-goods',
-    // The hub splits the commodity answers across three rows; the review shows
-    // them under one heading, so the entry names all three.
     rows: ['commodities', 'consignmentDetails', 'animalIdentification']
   },
   {
@@ -103,16 +78,12 @@ export const incompleteCardErrors = (answers, scope, evaluation) =>
   )
 
 /** The in-page target for a card error, or undefined for a key that is not a
- * card — which is how the error summary tells the two kinds of entry apart. */
+ * card. */
 export const cardAnchorHref = (key) => {
   const card = cardById.get(key)
   return card ? `#${card.anchor}` : undefined
 }
 
-/** An empty row is one whose value cell was built by `notApplicableCell`, which
- * stamps `empty: true` — whichever row builder produced it. The flag is the
- * mark, not the rendered text: a trader can type "Not applicable" into a
- * free-text answer, and that answer must survive the blanking pass. */
 const isEmptyRow = (row) => row.value?.empty === true
 
 const blankEmptyRows = (rows) =>
@@ -122,10 +93,6 @@ const blankEmptyRows = (rows) =>
       )
     : rows
 
-/** Every empty row inside an unfinished card loses its placeholder, whether the
- * answer was required or optional. Design release 1 decides this per card, not
- * per row: on a card that is still owed something the whole card reads as
- * unfinished, so an optional blank in it is not settled business either. */
 const blankEmptyValues = (card) => ({
   ...card,
   rows: blankEmptyRows(card.rows),
@@ -152,9 +119,7 @@ const decorateCard = (card, cardErrors) => {
   return decorated.error ? blankEmptyValues(decorated) : decorated
 }
 
-/** Give every card its anchor, and the unfinished ones their own message. The
- * decoration is a pass over the built sections rather than another argument
- * threaded through every card factory. */
+/** Give every card its anchor, and the unfinished ones their own message. */
 export const withCardErrors = (sections, cardErrors = {}) =>
   sections.map((section) => ({
     ...section,

@@ -91,9 +91,6 @@ test.describe('additional-details feature — rendering', () => {
   })
 })
 
-// Design release 1 asks the unweaned-animals question only of a commodity
-// that carries unweaned options — cattle, not horses — so a horses-only
-// consignment is asked what the animals are certified for and nothing else.
 test.describe('additional-details feature — the unweaned commodity gate', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)

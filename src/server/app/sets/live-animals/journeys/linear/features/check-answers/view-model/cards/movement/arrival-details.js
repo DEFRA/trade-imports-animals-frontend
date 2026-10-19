@@ -10,11 +10,7 @@ import { dateText } from '../../rows/value-text.js'
 const copy = copyFor({ en, cy })
 
 /**
- * Where and when the consignment lands, and what it arrives on. Every row here
- * comes from the port-of-entry page, so the card carries the one Change link
- * that page needs. The countries the consignment travels through used to be a
- * row here, reached from a second link; design release 1 gives them their own
- * card, which now carries the link to the page that collects them.
+ * Where and when the consignment lands, and what it arrives on.
  */
 export const arrivalDetailsCard = async (journeyId, answers, readOnly) => ({
   id: 'arrivalDetails',

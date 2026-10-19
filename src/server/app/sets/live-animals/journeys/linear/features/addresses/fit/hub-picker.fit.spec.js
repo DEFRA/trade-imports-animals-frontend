@@ -115,11 +115,6 @@ test.describe('addresses hub', () => {
   })
 })
 
-// Design release 1 asks every consignment for a CPH number and names the
-// commodity codes that escape the question, so the row is the default and its
-// absence is the exception. Fish is the sharpest case: it is on no other
-// commodity list at all, so if the rule were an allow-list of the commodities
-// somebody remembered, fish would be let off.
 test.describe('addresses hub — who is asked for a CPH number', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -138,7 +133,6 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     ).toBeVisible()
   })
 
-  // Commodity code 0101 is one of the two design release 1 lets off.
   test('does not ask a consignment of horses for a CPH number', async ({
     page
   }) => {

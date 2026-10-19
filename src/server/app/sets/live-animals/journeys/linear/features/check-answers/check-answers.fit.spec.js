@@ -100,13 +100,6 @@ test.describe('check-answers feature summary rows', () => {
     )
   })
 
-  // Design release 1 gives an empty value two different treatments, and the
-  // difference is the card around it, not whether that particular answer was
-  // required. The entry page finishes import details, so the optional internal
-  // reference it left blank is settled business and written out; arrival
-  // details is still outstanding, so its blank row is given no text at all and
-  // marked instead. A trader can then see which rows are still owed without
-  // reading a word.
   test('journey with only the entry page answered writes the settled blanks out and marks the outstanding ones', async ({
     page
   }) => {
@@ -125,10 +118,6 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
-// Design release 1 lays the review out as six numbered sections mirroring the
-// task list, with a subsection heading above every card. A brand-new
-// notification shows the sections that always stand: the commodity group waits
-// on a line and the transit-countries group on an overland arrival.
 test.describe('check-answers feature section structure', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -153,9 +142,6 @@ test.describe('check-answers feature section structure', () => {
     ])
   })
 
-  // Design release 1 ends the review with the button. Nothing stands between
-  // the last card and Continue — no heading and no sentence — so the button's
-  // own label carries the whole instruction.
   test('ends with the Continue button and nothing above it', async ({
     page
   }) => {
@@ -384,8 +370,6 @@ test.describe('check-answers feature change links', () => {
     )
   })
 
-  // Design release 1 puts one Change link in each card's heading bar and none
-  // on a row, so the trader meets one link per card rather than one per answer.
   test('every Change link sits in a card heading and no summary row carries one', async ({
     page
   }) => {
@@ -448,9 +432,6 @@ test.describe('check-answers feature navigation and submission', () => {
   })
 })
 
-// Design release 1 heads the review page of an unfinished notification with
-// "There is a problem", names each unfinished card, marks the card itself, and
-// refuses to go on until the notification is complete.
 test.describe('check-answers feature unfinished notification', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -547,10 +528,6 @@ test.describe('check-answers feature unfinished notification', () => {
   })
 })
 
-// Design release 1 renders no form on the review page once a notification is
-// submitted: the read-only review is a record of what was sent, ending with the
-// last card. It must not still invite the trader to submit a notification that
-// is already submitted.
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
 

@@ -19,18 +19,6 @@ import {
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 
-// Design release 1 puts the identification task on the hub only once a chosen
-// commodity carries an identifier of its own, and leaves it off the page
-// entirely until then: on a notification with nothing chosen there is nothing
-// to identify, so an empty locked row would be an instruction the trader
-// cannot act on.
-//
-// The row cannot read this off its status roll-up. Its part is the
-// `commodityLines` collection, a structural group that is in scope from the
-// moment the notification exists, so `statusOf` never reaches Not applicable
-// and `conditional: true` alone would leave the row drawn. It carries its own
-// applicability test instead — the same question the identification page asks
-// before it redirects a trader straight past itself.
 const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
     (line) => identifiedCommodities().includes(line?.commoditySelection)

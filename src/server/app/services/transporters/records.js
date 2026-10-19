@@ -1,20 +1,9 @@
-/** The transporters the service ships, commercial and private in one list.
- *
- * `type` is what a pick means: a Commercial record answers
- * `commercialTransporter`, a Private one answers `privateTransporter`. A
- * commercial record carries register address lines and an approval number; a
- * private one carries the address the private-transporter form collects.
- *
- * `status` is whether the transporter has been approved yet. */
 export const COMMERCIAL = 'Commercial'
 export const PRIVATE = 'Private'
 
 export const APPROVED = 'Approved'
 export const NEW = 'New'
 
-/** One private record. Every private transporter carries the same address
- * shape — the fields the private-transporter form collects — so the shape is
- * written once here and each record lists only what differs. */
 const privateRecord = ({
   id,
   name,
@@ -45,6 +34,14 @@ const privateRecord = ({
   }
 })
 
+/** The transporters the service ships, commercial and private in one list.
+ *
+ * `type` is what a pick means: a Commercial record answers
+ * `commercialTransporter`, a Private one answers `privateTransporter`. A
+ * commercial record carries register address lines and an approval number; a
+ * private one carries the address the private-transporter form collects.
+ *
+ * `status` is whether the transporter has been approved yet. */
 export const TRANSPORTER_OPTIONS = [
   {
     id: 'garcia-livestock-transport',

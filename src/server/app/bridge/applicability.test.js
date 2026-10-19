@@ -23,9 +23,6 @@ describe('#appliesForCommodity', () => {
     expect(appliesForCommodity('countyParishHoldingCph', 'Horse')).toBe(false)
   })
 
-  // Design release 1 asks for identification only where the commodity has an
-  // identifier type of its own. Fish is on none of the allowlists and there is
-  // no free-text fallback, so no identifier applies to it at all.
   it('Should apply no identifier to a commodity on none of the identifier lists', () => {
     for (const identifier of [
       'animalIdentifierMicrochip',

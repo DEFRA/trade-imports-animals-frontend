@@ -49,8 +49,6 @@ const dateText = (value) =>
     year: 'numeric'
   })
 
-// The reviewed token, not kit.base()'s current one, so a re-shown declaration
-// still declares exactly what the review showed.
 const render = (
   h,
   journey,

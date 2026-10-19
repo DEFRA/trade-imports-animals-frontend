@@ -128,7 +128,10 @@ it on the view and the template posts it back in a hidden field. A save whose
 token is stale throws `STALE_CONCURRENCY_TOKEN`. `kit.pageRoutes()` turns that
 into a redirect to the same page with `?staleAction=1`, and logs it. The
 declaration is the exception: it posts the token the review was rendered with,
-so it declares exactly what the trader reviewed.
+so it declares exactly what the trader reviewed. Every page carries the
+current token, so a posted token alone cannot prove the post came from the
+review: the review also records the token it rendered in the session, and the
+declaration refuses a token the session has not recorded.
 
 ### POST redirects
 

@@ -825,10 +825,9 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
 
-  // Design release 1 puts the tattoo on the cat, dog and ferret code and not
-  // on cattle, so a cow is asked for its ear tag and its passport only. The
-  // ear tag value is stored so a unit instance is enumerated and the commodity
-  // gate — not an empty unitRecord — is what puts the tattoo out of scope.
+  // The ear tag value is stored so a unit instance is enumerated and the
+  // commodity gate — not an empty unitRecord — is what puts the tattoo out of
+  // scope.
   it('is out of scope for cow (Cow not in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
@@ -883,12 +882,6 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
   })
 })
-
-// ---------------------------------------------------------------------------
-// A commodity on none of the identifier allowlists. Design release 1 asks
-// nothing at all of it: there is no free-text fallback to catch it, so every
-// identifier obligation stays out of scope on its line.
-// ---------------------------------------------------------------------------
 
 describe('V4 — a commodity with no identifier type of its own', () => {
   // With no unit storage every unit-level identifier is out of scope for a

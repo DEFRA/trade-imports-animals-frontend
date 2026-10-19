@@ -32,9 +32,7 @@ const GARCIA_ID = 'garcia-livestock-transport'
 const GARCIA_NAME = 'García Livestock Transport SL'
 const ABERDEEN_ID = 'aberdeen-livestock'
 const ABERDEEN_NAME = 'Aberdeen Livestock Ltd'
-// The one record design release 1 shows as added but not yet approved.
 const ROMANIAN_ID = 'romanian-agri-exports'
-// A pick the list does not offer — the only thing that refuses a save here.
 const NOT_ON_THE_LIST = 'not-a-transporter'
 
 const handlerFor = (method) =>
@@ -91,9 +89,6 @@ describe('/transporters', () => {
     expect(aberdeen.type).toBe(PRIVATE)
   })
 
-  // Design release 1 gives every transporter its own column of facts rather
-  // than one run-on hint, so the address stands on its own and a private
-  // transporter's blank approval number leaves an empty cell.
   it('Should give every row a column for each fact the list shows', async () => {
     const result = await driveHandler(getHandler)
 
@@ -250,9 +245,6 @@ describe('/transporters — Save and return to overview', () => {
   })
 })
 
-// Design release 1 puts a search over the list. It is a submit on the same
-// form, so the filtering happens on the server and a trader without JavaScript
-// searches the same way.
 describe('/transporters — searching the list', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())

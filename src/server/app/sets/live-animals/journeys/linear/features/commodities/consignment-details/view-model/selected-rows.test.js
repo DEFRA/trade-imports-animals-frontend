@@ -69,8 +69,6 @@ describe('#buildSelectedRows', () => {
   })
 
   it('Should give two species of one 01061900 commodity a row and a remove each, keyed to their own stored lines', () => {
-    // Today's stub holds one species per 01061900 commodity, so the second
-    // species is seeded straight in — see inc-091's open question.
     expect(
       buildSelectedRows(linesOf(['Dog', '923502'], ['Dog', '900001'])).map(
         ({ code, removeAction }) => [code, removeAction]

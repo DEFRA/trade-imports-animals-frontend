@@ -122,8 +122,6 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
     expect(state.obligations[cph.id].inScope).toBe(false)
   })
 
-  // Commodity code 0101. A horse is not kept on a county parish holding, so
-  // design release 1 exempts the code outright.
   it('Should not put cph in scope for a horses-only consignment', () => {
     const state = evaluate({
       [commodityCode.id]: { line1: 'Horse' }
@@ -131,8 +129,6 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
     expect(state.obligations[cph.id].inScope).toBe(false)
   })
 
-  // Commodity code 01061900 — cats, dogs and ferrets. Design release 1 asks
-  // this code for each animal's permanent address instead of a CPH number.
   for (const name of ['Cat', 'Dog']) {
     it(`Should not put cph in scope for a ${name.toLowerCase()}-only consignment`, () => {
       const state = evaluate({
@@ -158,7 +154,7 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 //
 // Same shape as cph — `anyAllowListed(commodityCode, unweanedCommodities())`
 // — so the question is asked once for the consignment as soon as ANY line
-// carries a commodity design release 1 asks it of.
+// carries an unweaned commodity.
 // ---------------------------------------------------------------------------
 
 describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)', () => {
@@ -178,10 +174,6 @@ describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)',
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
 
-  // Design release 1 asks the question only of a commodity carrying unweaned
-  // options, and horses carry none — so a horses-only consignment is never
-  // asked it. Named rather than left to the sentinel because Horse is a real
-  // commodity the picker offers and the gate used to hold it.
   it('Should not put containsUnweanedAnimals in scope for a horses-only consignment', () => {
     const state = evaluate({
       [commodityCode.id]: { line1: 'Horse' }

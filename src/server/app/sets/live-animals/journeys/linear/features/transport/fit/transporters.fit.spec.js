@@ -249,8 +249,6 @@ const expectTransporterGuidance = async (page) => {
   ).toBeVisible()
 }
 
-// Design release 1 offers the private arm first and explains only the
-// commercial one, which carries the Northern Ireland condition.
 const expectBranchOptions = async (page) => {
   const options = page.getByRole('radio')
   await expect(options).toHaveCount(2)
@@ -271,8 +269,7 @@ const expectBranchOptions = async (page) => {
     copy.transporterAdd.options.Commercial.hint
   )
 
-  // Design release 1 drops the journey-describing group hint entirely. A
-  // govuk fieldset-level hint renders as a direct child of the fieldset and
+  // A govuk fieldset-level hint renders as a direct child of the fieldset and
   // hangs off its aria-describedby, so neither radio's own accessible
   // description would see it come back — assert it is not there at all.
   await expect(page.locator('fieldset > .govuk-hint')).toHaveCount(0)
@@ -295,8 +292,6 @@ test.describe('transporter list page', () => {
     ).toBeVisible()
   })
 
-  // Design release 1 aligns the transporters into headed columns rather than
-  // running each one's facts together in a radio hint.
   test('lists every transporter the service knows about in headed columns, each row showing its address, approval number and type', async ({
     page
   }) => {
@@ -308,10 +303,7 @@ test.describe('transporter list page', () => {
       ).toHaveCount(1)
     }
 
-    // The column order Design release 1 uses: select, Name, Address, Approval
-    // number, Type, Status. Asserting by position is what pins a fact to its
-    // heading — checking the row merely contains it would pass with the
-    // address and the type swapped.
+    // Asserted by position, so swapped columns fail.
     for (const record of transporterRecords) {
       const row = transporterRow(page, record.name)
       await expect(row).toHaveCount(1)
@@ -457,9 +449,6 @@ test.describe('transporter list page', () => {
   })
 })
 
-// Design release 1 puts a search over the list — the register is longer than a
-// screenful and grows. It is a submit on the page's own form, so the filtering
-// is the server's and a trader without JavaScript searches the same way.
 test.describe('searching the transporter list', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -810,9 +799,6 @@ test.describe('private transporter rendering and optionality', () => {
     }
   })
 
-  // A private transporter is commonly based outside the UK, so design release 1
-  // tells the trader to include the dialling code — the same hint the
-  // commercial form carries.
   test('private transporter phone number hints the international dialling code', async ({
     page
   }) => {
@@ -823,8 +809,6 @@ test.describe('private transporter rendering and optionality', () => {
     ).toHaveAccessibleDescription(copy.privateTransporterDetails.telephoneHint)
   })
 
-  // Design release 1 closes the address at the country and heads the last two
-  // questions as contact details, email before phone.
   test('private transporter page heads the contact details after the address, email first', async ({
     page
   }) => {

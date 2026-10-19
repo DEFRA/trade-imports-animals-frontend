@@ -21,9 +21,6 @@ const expectPanelCopy = async (page) => {
   await expect(page.getByText(reference, { exact: true })).toBeVisible()
 }
 
-// The declaration date is shown once, on the declaration page. Design release 1
-// takes the submitted page from the reference panel straight to what the trader
-// still has to do, so the date is not repeated here.
 const expectNoDeclarationDate = async (page) => {
   await expect(page.getByText(/date of declaration/i)).toHaveCount(0)
 }

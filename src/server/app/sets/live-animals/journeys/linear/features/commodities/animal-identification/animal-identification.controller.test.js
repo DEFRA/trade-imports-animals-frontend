@@ -124,13 +124,6 @@ describe(`${SUITE} — the cards view`, () => {
     expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])
   })
 
-  // Design release 1 asks for each commodity's identifiers in the order that
-  // commodity's own list gives, so a cow is asked for its ear tag — the
-  // identifier a cow actually carries — before its passport, where a horse is
-  // asked for its microchip first. This pins the rendered order per
-  // commodity; that the order is a property of the COMMODITY rather than one
-  // global sequence is pinned by #identifiersFor in
-  // services/commodities/index.test.js.
   it("Should order each commodity's entry fields by that commodity's own identifier list", async () => {
     const [cow] = await viewCards({ commodityLines: [cowLine()] })
     expect(cow.fields.map((field) => field.id)).toEqual([
@@ -184,8 +177,6 @@ describe(`${SUITE} — the cards view`, () => {
   })
 })
 
-// Design release 1 lets the in-card button name what is left on the line, so
-// the words tell the trader what pressing them does next.
 describe(`${SUITE} — the in-card save button`, () => {
   setupIdentificationEngine()
 
@@ -730,10 +721,6 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
   )
 })
 
-// Design release 1 asks for identification only where the commodity has an
-// identifier type of its own. Fish is on none of the allowlists, so it earns
-// no panel — and where no line earns one there is no page to show: the
-// request carries on to the next step rather than rendering an empty surface.
 describe(`${SUITE} — a commodity that carries no identifier of its own`, () => {
   setupIdentificationEngine()
 

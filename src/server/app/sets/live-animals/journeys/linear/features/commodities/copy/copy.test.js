@@ -46,19 +46,12 @@ describe('#copy', () => {
     )
   })
 
-  // Design release 1 names this page 'Identification details'; the section
-  // caption above it now carries the orientation the old name carried.
   it('Should name the identification page without the word animal', () => {
     expect(copy.identification.title).toBe('Identification details')
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  // Design release 1 names an identifier once and uses that one name both on
-  // the entry field and as the column heading of the saved-animals table. A
-  // trader who types under one word and reads the value back under another is
-  // being shown two names for one thing, so the two label sets are pinned to
-  // each other in both locales. Microchip is left out on purpose: its entry
-  // label still reads 'Microchip number', which is a separate decision.
+  // Microchip is left out: its entry label reads 'Microchip number'.
   it('Should label each identifier entry field with its saved-animals column heading', () => {
     for (const field of [
       'animalIdentifierPassport',

@@ -30,10 +30,6 @@ const view = `${TEMPLATES}/features/commodities/animal-identification/animal-ide
 
 const copy = copyFor({ en, cy }).identification
 
-// Design release 1 asks for identification only where the commodity has an
-// identifier type of its own. A line whose commodity declares none has nothing
-// to ask, so it gets no panel — and a notification where no line declares one
-// has no page at all: the request carries on to the next step of the journey.
 const identifiedLines = (answers, evaluation) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
