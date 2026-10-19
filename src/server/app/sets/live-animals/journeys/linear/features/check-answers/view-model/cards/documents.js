@@ -9,11 +9,6 @@ import { dateText } from '../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-// Documents are optional, so nothing uploaded is the ordinary case rather than
-// an edge one. The card stands either way (design release 1): the review page
-// has to say that documents are part of the notification and offer the route to
-// add them. An empty card would read as broken, so with no entries it carries a
-// line saying none have been added.
 export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
   const documents = state
     .collectionView(answers, ['documents'], evaluation)

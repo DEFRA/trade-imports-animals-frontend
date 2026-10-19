@@ -9,10 +9,6 @@ export const copy = {
   },
   reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
-  // Design release 1 tags a task with one of two words and no others:
-  // "Complete" when the task is finished, "To do" everywhere else. It draws no
-  // part-done state, and never tells a trader on the hub that a task is
-  // optional.
   statuses: {
     complete: 'Complete',
     toDo: 'To do'
@@ -26,9 +22,6 @@ export const copy = {
     'consignment-parties': '5. Consignment parties',
     'contact-address': '6. Contact address'
   },
-  // Design release 1 keeps the hub compact: nine of its ten rows are a bare
-  // link with a status tag beside it, and only "Roles and addresses" carries a
-  // sentence underneath naming the parties it collects.
   rows: {
     origin: {
       title: 'Where is this consignment coming from?'

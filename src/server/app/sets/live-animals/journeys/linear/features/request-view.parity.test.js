@@ -124,9 +124,9 @@ const canonicalViewOf = (answers) =>
 // Each seed is a save, so the token differs between the two renders by design.
 const contextFor = async (handler, journeyId, answers) => {
   await store.seedAnswers(journeyId, answers)
-  const toolkit = stubH()
-  await handler(journeyRequest(journeyId), toolkit)
-  const context = toolkit.captured.view?.context
+  const h = stubH()
+  await handler(journeyRequest(journeyId), h)
+  const context = h.captured.view?.context
   if (!context) {
     return context
   }

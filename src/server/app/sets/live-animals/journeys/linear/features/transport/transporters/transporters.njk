@@ -42,8 +42,7 @@
       <input type="hidden" name="selected" value="{{ selectedId }}" />
     {% endif %}
 
-    {# Design release 1 searches the list over name, address and approval
-       number, above the table. The whole page is one form: the search button
+    {# The whole page is one form: the search button
        and the primary are both submits, told apart by their `action` value —
        the page's return controls are told apart by their own `exit` name, and
        "Cancel and return to overview" is a link. The filtering happens on the
@@ -65,11 +64,8 @@
       value: "search"
     }) }}
 
-    {# Design release 1 aligns the transporters into headed columns rather than
-       running each one's facts together in a radio hint, with the radio that
-       picks a row in the leading column — the same shape as the address
-       picker's results table. Names are escaped into the hidden label because
-       a transporter name may carry an ampersand. #}
+    {# Names are escaped into the hidden label because a transporter name may
+       carry an ampersand. #}
     {% set transporterTableRows = [] %}
     {% for row in transporterRows %}
       {% set selectCell %}

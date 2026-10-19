@@ -89,7 +89,7 @@ const render = async (
   })
 }
 
-// Announced as it happens, on top of the row appearing (design release 1).
+// Announced as it happens, on top of the row appearing.
 // Reaching the cap is said in the same breath as the country that reached it.
 const statusFor = (message, selected) =>
   selected.length >= MAX_TRANSITED_COUNTRIES
@@ -142,9 +142,7 @@ const postRemove = async (request, h, selected, code) => {
 }
 
 const postContinue = async (request, h, payload, selected) => {
-  const { answers, errors } = await validation.onSubmit(payload, {
-    allowMissing: kit.isHubExit(request)
-  })
+  const { answers, errors } = await validation.onSubmit(payload)
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, selected, { errors })).code(

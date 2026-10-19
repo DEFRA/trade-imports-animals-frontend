@@ -21,6 +21,7 @@ import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read
 import {
   journeyRequest,
   postHandlerOf,
+  recordingLogger,
   stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -64,9 +65,11 @@ const drivePost = async ({
   const { concurrencyToken: reviewedConcurrencyToken } =
     await store.get(journeyId)
   await afterReview(journeyId)
-  const toolkit = stubH()
+  const h = stubH()
+  const logger = recordingLogger()
   const response = await post(
     journeyRequest(journeyId, {
+      logger,
       payload: {
         step,
         concurrencyToken: `${reviewedConcurrencyToken}`,
@@ -77,7 +80,7 @@ const drivePost = async ({
         sessionConcurrencyToken(reviewedConcurrencyToken)
       )
     }),
-    toolkit
+    h
   )
   return {
     journeyId,
@@ -85,10 +88,23 @@ const drivePost = async ({
     before: seed,
     after: (await store.get(journeyId)).answers,
     response,
-    view: toolkit.captured.view,
-    cookies: toolkit.cookies
+    view: h.captured.view,
+    cookies: h.cookies,
+    logger
   }
 }
+
+const expectRefusalLogged = (result, expectedRefusal) =>
+  expect(result.logger.entries).toEqual([
+    {
+      level: 'info',
+      fields: expect.objectContaining({
+        journeyId: result.journeyId,
+        refusal: expectedRefusal
+      }),
+      message: 'Declaration refused'
+    }
+  ])
 
 // In practice kit.base()'s current token always equals the reviewed one, so it
 // is moved to show which of the two the page carries.
@@ -157,7 +173,7 @@ describe('#declaration', () => {
       expect(result.view.context.values).toEqual({ declaration: '' })
     })
 
-    it('Should send the trader back to the review with the changed banner when the notification changed after the review', async () => {
+    it('Should log the refusal and send the trader back to the review with the changed banner when the notification changed after the review', async () => {
       const result = await drivePost({
         step: 'review',
         afterReview: editElsewhere
@@ -166,9 +182,13 @@ describe('#declaration', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, CHANGED)
       })
+      expectRefusalLogged(
+        result,
+        declaration.DECLARATION_REFUSAL.changedSinceReview
+      )
     })
 
-    it('Should send the trader back to the review with its errors in focus when it is refused', async () => {
+    it('Should log the refusal and send the trader back to the review with its errors in focus when it is refused', async () => {
       configureReadyForCheckYourAnswers(SET_ID, () => false)
 
       const result = await drivePost({ step: 'review' })
@@ -176,12 +196,19 @@ describe('#declaration', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, REFUSED)
       })
+      expectRefusalLogged(result, declaration.DECLARATION_REFUSAL.reviewRefused)
+    })
+
+    it('Should log nothing when it renders the declaration', async () => {
+      const result = await drivePost({ step: 'review' })
+
+      expect(result.logger.entries).toEqual([])
     })
   })
 
   describe('POST /declaration from a browser that has not seen the review', () => {
     it.each(['review', 'declare'])(
-      'Should send step=%s back to the review when the session never rendered it',
+      'Should log the refusal and send step=%s back to the review when the session never rendered it',
       async (step) => {
         const finaliseSpy = vi.spyOn(records, 'finalise')
 
@@ -195,6 +222,10 @@ describe('#declaration', () => {
           redirect: reviewPath(result.journeyId)
         })
         expect(finaliseSpy).not.toHaveBeenCalled()
+        expectRefusalLogged(
+          result,
+          declaration.DECLARATION_REFUSAL.reviewNotRecorded
+        )
       }
     )
 
@@ -211,7 +242,7 @@ describe('#declaration', () => {
   })
 
   describe('POST /declaration with no recognised step', () => {
-    it('Should send the trader back to the review', async () => {
+    it('Should log the refusal and send the trader back to the review', async () => {
       const finaliseSpy = vi.spyOn(records, 'finalise')
 
       const result = await drivePost({
@@ -223,6 +254,7 @@ describe('#declaration', () => {
         redirect: reviewPath(result.journeyId)
       })
       expect(finaliseSpy).not.toHaveBeenCalled()
+      expectRefusalLogged(result, declaration.DECLARATION_REFUSAL.unknownStep)
     })
   })
 })
@@ -425,7 +457,7 @@ describe('#declaration submit against the real records adapter', () => {
         declaration: 'confirmed'
       })
       const { concurrencyToken } = await store.get(refused.journeyId)
-      const toolkit = stubH()
+      const h = stubH()
 
       await post(
         continueRequest(
@@ -434,10 +466,10 @@ describe('#declaration submit against the real records adapter', () => {
           }),
           concurrencyToken
         ),
-        toolkit
+        h
       )
 
-      expect(toolkit.captured.view.context.values).toEqual({ declaration: '' })
+      expect(h.captured.view.context.values).toEqual({ declaration: '' })
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {

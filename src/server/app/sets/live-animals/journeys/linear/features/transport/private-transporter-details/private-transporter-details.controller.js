@@ -24,11 +24,6 @@ import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
-/** The private arm of the add route.
- *
- * A spoke off the type chooser rather than a step in the journey: the
- * `privateTransporter` it writes is declared by the transporter list, which is
- * where a trader normally answers it by picking a row. */
 const view = `${TEMPLATES}/features/transport/private-transporter-details/private-transporter-details`
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
@@ -43,9 +38,6 @@ const MANDATORY_MESSAGES = {
   phone: copy.errors.telephoneRequired
 }
 
-/** The fields the page shows, in the order it asks for them — the order the
- * error summary lists them in too. The contact details close the form, email
- * before phone, as design release 1 asks them. */
 const FIELD_ORDER = [
   'nameOrOrganisationName',
   'addressLine1',
@@ -142,7 +134,6 @@ const addressValues = (saved) => ({
   phone: saved?.address?.phone ?? ''
 })
 
-// The reader returns display names (e.g. "France"), so we check by name.
 const isCountryStale = async (name) => {
   if (!name) {
     return false
@@ -183,12 +174,6 @@ const formErrors = async (payload, values) => {
   )
 }
 
-// The country picker offers display names; the journey answer keeps both the
-// display name and the ISO code so persistence has a code to write without a
-// reverse lookup, and check-answers renders the name it captured without a
-// forward lookup. An unrecognised name is refused by validation, so the code
-// is always resolvable here (bar United Kingdom, which addressCountries()
-// includes ahead of the offered list; countryCodeOf aliases it to GB).
 const privateTransporter = async (values) => ({
   name: values.nameOrOrganisationName,
   address: {
@@ -208,13 +193,6 @@ const privateTransporterRecord = async (values) => ({
   privateTransporter: await privateTransporter(values)
 })
 
-/** Keep the transporter for the organisation as well as for the notification.
- *
- * A transporter that lives only on the notification it was typed into is typed
- * again on the next one, so the same record joins the organisation's own list
- * and the transporter list offers it from then on (design release 1). It goes
- * on as a private transporter that has not been approved yet, which is what the
- * organisation knows about it: nothing here has approved anything. */
 const remember = async (request, values) =>
   rememberTransporter(organisationIdOf(request), {
     ...(await privateTransporter(values)),

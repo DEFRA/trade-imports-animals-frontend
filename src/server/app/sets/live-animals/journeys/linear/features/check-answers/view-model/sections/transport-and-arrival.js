@@ -8,12 +8,6 @@ import { transportDetailsCard } from '../cards/movement/transport-details.js'
 
 const copy = copyFor({ en, cy })
 
-/**
- * Design release 1's third numbered section: how the consignment gets here and
- * when it lands. The transit countries are collected on their own page and
- * apply only to an overland arrival, so they stand as their own headed card
- * rather than as a row inside arrival details.
- */
 export const transportAndArrivalSection = async (
   journeyId,
   answers,

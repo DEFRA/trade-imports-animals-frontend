@@ -430,7 +430,7 @@ const cardinalityCapTests = () => {
     ).toHaveLength(2)
   })
 
-  it('Should apply NO cap while the sibling count is unanswered — the ruled blank-count semantics (the floor still bites at submit)', async () => {
+  it('Should apply NO cap while the sibling count is unanswered (the floor still bites at submit)', async () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {

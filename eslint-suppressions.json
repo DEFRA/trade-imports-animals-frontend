@@ -1,0 +1,17 @@
+{
+  "src/server/app/services/_capture/capture.js": {
+    "code-quality/no-set-vocabulary": {
+      "count": 1
+    }
+  },
+  "src/server/app/services/countries/index.js": {
+    "code-quality/no-set-vocabulary": {
+      "count": 3
+    }
+  },
+  "src/server/app/services/persistence/records/stub/reference-number.js": {
+    "code-quality/no-set-vocabulary": {
+      "count": 1
+    }
+  }
+}

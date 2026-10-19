@@ -49,26 +49,15 @@ describe('#session.knownJourneyIds', () => {
   })
 
   it('Should append a newly known journey to the cookie list', async () => {
-    const toolkit = recordingH()
-    await session.addKnownJourney(
-      requestKnowing('journey-1'),
-      toolkit,
-      'journey-2'
-    )
-    expect(toolkit.cookies[knownJourneysCookie()]).toEqual([
-      'journey-1',
-      'journey-2'
-    ])
+    const h = recordingH()
+    await session.addKnownJourney(requestKnowing('journey-1'), h, 'journey-2')
+    expect(h.cookies[knownJourneysCookie()]).toEqual(['journey-1', 'journey-2'])
   })
 
   it('Should not duplicate an already-known journey', async () => {
-    const toolkit = recordingH()
-    await session.addKnownJourney(
-      requestKnowing('journey-1'),
-      toolkit,
-      'journey-1'
-    )
-    expect(knownJourneysCookie() in toolkit.cookies).toBe(false)
+    const h = recordingH()
+    await session.addKnownJourney(requestKnowing('journey-1'), h, 'journey-1')
+    expect(knownJourneysCookie() in h.cookies).toBe(false)
   })
 
   it('Should read the known list back from the request cookie', async () => {
@@ -80,10 +69,10 @@ describe('#session.knownJourneyIds', () => {
 
 describe('#session.openingRun', () => {
   it('Should round-trip phases without leaking them between journeys', async () => {
-    const toolkit = recordingH()
+    const h = recordingH()
     const request = { state: {} }
-    await session.setOpeningRun(toolkit, 'journey-1', 'active', request)
-    const stored = toolkit.cookies[openingRunCookie()]
+    await session.setOpeningRun(h, 'journey-1', 'active', request)
+    const stored = h.cookies[openingRunCookie()]
     expect(stored).toEqual({ 'journey-1': 'active' })
     expect(
       await session.openingRun(
@@ -104,11 +93,11 @@ describe('#session.openingRun', () => {
   })
 
   it('Should preserve another journey phase while updating the current one', async () => {
-    const toolkit = recordingH()
-    await session.setOpeningRun(toolkit, 'journey-2', 'complete', {
+    const h = recordingH()
+    await session.setOpeningRun(h, 'journey-2', 'complete', {
       state: { [openingRunCookie()]: { 'journey-1': 'active' } }
     })
-    expect(toolkit.cookies[openingRunCookie()]).toEqual({
+    expect(h.cookies[openingRunCookie()]).toEqual({
       'journey-1': 'active',
       'journey-2': 'complete'
     })
@@ -117,17 +106,17 @@ describe('#session.openingRun', () => {
 
 describe('#session.flowOnlyAnswers', () => {
   it('Should round-trip values without leaking them between journeys', async () => {
-    const toolkit = recordingH()
+    const h = recordingH()
     const request = { state: {} }
 
     await session.setFlowOnlyAnswers(
-      toolkit,
+      h,
       'journey-1',
       { declaration: DECLARATION_CONFIRMED },
       request
     )
 
-    const stored = toolkit.cookies[flowOnlyAnswersCookie()]
+    const stored = h.cookies[flowOnlyAnswersCookie()]
     expect(
       await session.flowOnlyAnswers(
         { state: { [flowOnlyAnswersCookie()]: stored } },
@@ -146,16 +135,16 @@ describe('#session.flowOnlyAnswers', () => {
     const existing = {
       'journey-1': { declaration: '' }
     }
-    const toolkit = recordingH()
+    const h = recordingH()
 
     await session.setFlowOnlyAnswers(
-      toolkit,
+      h,
       'journey-2',
       { declaration: DECLARATION_CONFIRMED },
       { state: { [flowOnlyAnswersCookie()]: existing } }
     )
 
-    expect(toolkit.cookies[flowOnlyAnswersCookie()]).toEqual({
+    expect(h.cookies[flowOnlyAnswersCookie()]).toEqual({
       ...existing,
       'journey-2': { declaration: DECLARATION_CONFIRMED }
     })
@@ -164,15 +153,15 @@ describe('#session.flowOnlyAnswers', () => {
 
 describe('#session.reviewedConcurrencyToken', () => {
   it('Should round-trip a reviewed concurrency token without leaking it between journeys', async () => {
-    const toolkit = recordingH()
-    await session.setReviewedConcurrencyToken(toolkit, 'journey-1', 4, {
+    const h = recordingH()
+    await session.setReviewedConcurrencyToken(h, 'journey-1', 4, {
       state: {}
     })
 
     const stored = {
       state: {
         [reviewedConcurrencyTokensCookie()]:
-          toolkit.cookies[reviewedConcurrencyTokensCookie()]
+          h.cookies[reviewedConcurrencyTokensCookie()]
       }
     }
     expect(await session.reviewedConcurrencyToken(stored, 'journey-1')).toBe(4)
@@ -182,14 +171,14 @@ describe('#session.reviewedConcurrencyToken', () => {
   })
 
   it('Should keep another journey’s token while recording one', async () => {
-    const toolkit = recordingH()
-    await session.setReviewedConcurrencyToken(toolkit, 'journey-1', 9, {
+    const h = recordingH()
+    await session.setReviewedConcurrencyToken(h, 'journey-1', 9, {
       state: {
         [reviewedConcurrencyTokensCookie()]: { 'journey-1': 4, 'journey-2': 7 }
       }
     })
 
-    expect(toolkit.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
       'journey-1': 9,
       'journey-2': 7
     })

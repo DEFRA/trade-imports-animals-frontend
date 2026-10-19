@@ -46,7 +46,6 @@ const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
-// The one hint Design release 1 shows on the hub, on the addresses row.
 const ADDRESSES_ROW_HINT =
   'Consignor or Exporter, Consignee, Importer and Place of Destination'
 const ADDRESSES_ROW_HINT_CY =
@@ -56,8 +55,6 @@ const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 // Anchored at the set base, not at `/notifications`: a row whose href lost or
 // doubled the set prefix would otherwise still match and pass.
 const A_JOURNEY_PAGE_URL = new RegExp(`^${SET_BASE}/notifications/[^/]+/.+`)
-// Design release 1 has two task statuses and no more: "To do" in blue and
-// "Complete" in green.
 const TO_DO_STATUS = {
   tag: { text: 'To do', classes: 'govuk-tag--blue' }
 }
@@ -87,9 +84,6 @@ describe('#copy', () => {
     expect(copy.taskListHeading).toBe('Notification tasklist')
   })
 
-  // Design release 1 keeps the hub to one-line rows: only "Roles and
-  // addresses" carries a sentence underneath, naming the four parties that row
-  // collects.
   test('Should give a hint to the roles and addresses row alone', () => {
     const hinted = Object.entries(copy.rows)
       .filter(([, row]) => row.hint !== undefined)
@@ -109,10 +103,6 @@ describe('#copy', () => {
     expect(copyCy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT_CY)
   })
 
-  // The English row titles are pinned exhaustively by the rendered-row table
-  // in 'GET /hub', but copy parity only checks that a Welsh leaf differs from
-  // its English counterpart, so the Welsh titles are pinned here the same way
-  // the Welsh parties hint above is. Design release 1 wording, both locales.
   test('Should pin the Welsh row titles', () => {
     const titlesCy = Object.fromEntries(
       Object.entries(copyCy.rows).map(([id, row]) => [id, row.title])
@@ -196,8 +186,6 @@ describe('#hubHandler', () => {
       groups.map((group) => group.items.map((item) => item.title.text))
     ).toEqual([
       [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
-      // Design release 1 asks for the identifiers before the certifications,
-      // which is the order the opening run visits the two pages in too.
       [
         CONSIGNMENT_DETAILS_ROW_TITLE,
         'Identification details',
@@ -223,9 +211,6 @@ describe('#hubHandler', () => {
   })
 
   it('Should carry the exit questions in the import-reason row status rather than a task of their own', async () => {
-    // Owing the exit date holds the row short of Complete. Design release 1
-    // draws that with the plain "To do" it gives an untouched task — the row
-    // is unfinished, and the hub says no more than that.
     const owingTheExitDate = await renderHub(temporaryAdmissionSeed)
     expect(
       rowByTitle(owingTheExitDate, IMPORT_REASON_ROW_TITLE).status
@@ -258,10 +243,6 @@ describe('#hubHandler', () => {
     expect(originRow.status).toEqual(COMPLETE_STATUS)
   })
 
-  // Design release 1 lets a trader start any task on the notification in any
-  // order, so every task the hub shows is a link with a real status from the
-  // moment the notification exists. With the review moved to a button, no row
-  // on the page is ever shut.
   it('Should link every row on a brand new notification, none of them "Cannot start yet"', async () => {
     const context = await renderHub()
     const rows = allItems(context)
@@ -345,9 +326,6 @@ describe('#hubHandler', () => {
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
     )
-    // The answer is optional, but Design release 1 does not say so on the hub:
-    // an untouched optional row carries the same "To do" tag as any other
-    // untouched row.
     expect(transitRow.status).toEqual(TO_DO_STATUS)
   })
 
@@ -372,9 +350,6 @@ describe('#hubHandler', () => {
     )
   })
 
-  // Design release 1 reaches the review from a button under the task list, not
-  // from a task row, and offers it on a notification with nothing answered:
-  // the review page is where a trader reads back what they have entered so far.
   it('Should offer the review as a button under the list, not as a task row', async () => {
     const context = await renderHub()
 
@@ -403,10 +378,6 @@ describe('#hubHandler — the task statuses', () => {
   })
   beforeEach(() => store.clear())
 
-  // Design release 1 gives a task one of two statuses and has no third. A row
-  // the engine holds part-answered, and one it holds optional, both read
-  // "To do": the hub never tells a trader a task is half-done, and never tells
-  // them on this page that a task can be left out.
   it('Should tag every row with one of the two design statuses, whatever is answered', async () => {
     const seeds = [
       {},
@@ -480,9 +451,6 @@ describe('#hubHandler — the commodity totals', () => {
   })
 })
 
-// Design release 1 gives the commodity details a task of their own, first
-// under the second section, so a reader can tell whether the numbers and
-// packages have been entered without opening the page.
 describe('#hubHandler — the Commodity details row', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -535,9 +503,6 @@ describe('#hubHandler — the Commodity details row', () => {
   })
 })
 
-// Design release 1 keeps the hub to one-line rows, so a row without a hint
-// gets no hint slot at all — handing govukTaskList `{ text: undefined }` would
-// still draw an empty hint element under every task.
 describe('#hubHandler — the row hints', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -565,10 +530,6 @@ describe('#hubHandler — the row hints', () => {
   })
 })
 
-// Temporary admission of horses makes a port of exit and an exit date
-// compulsory, and once a trader has answered them and moved on, the hub is
-// their only way back to change an answer. Design release 1 asks both under
-// "Main reason for import", so that row carries the return route.
 describe('#hubHandler — the way back to the exit questions', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)

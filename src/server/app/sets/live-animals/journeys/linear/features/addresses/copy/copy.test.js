@@ -58,9 +58,7 @@ describe('#copy', () => {
     expect(copy.hub.title).toBe('Consignment addresses')
   })
 
-  // Design release 1 lower-cases the term and puts "number" after the
-  // bracketed abbreviation, in the row title and in the hint beneath it.
-  it('Should word the CPH hub row and its hint as Design release 1 does', () => {
+  it('Should word the CPH hub row and its hint in lower case with "number" after the abbreviation', () => {
     expect(copy.hub.cph.title).toBe('County parish holding (CPH) number')
     expect(copy.hub.cph.hint).toBe(
       'The county parish holding (CPH) number identifies the holding where the animals will be kept.'

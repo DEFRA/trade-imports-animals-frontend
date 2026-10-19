@@ -32,12 +32,6 @@ describe('declaration copy module', () => {
     }
   })
 
-  // Design release 1 gives each declaration statement a heading and a body
-  // (app/views/declaration.html:40-64). This is a legal statement the trader
-  // affirms, so the wording is pinned rather than approximated.
-  // declaration.fit.spec.js asserts the page against these same constants, and
-  // src/server/app/copy-parity.test.js only checks that cy differs from en, so
-  // both locales need pinning here.
   it('Should name the regulation the contact statement sits under', () => {
     expect(copy.body.contactUkDetail).toBe(
       'I am complying with the requirements of Regulation (EU) 2017/625 including on animal health and welfare.'
@@ -74,8 +68,6 @@ describe('declaration copy module', () => {
     ])
   })
 
-  // Each accountability item names what is owed and when, rather than the
-  // compressed phrases the page carried before Design release 1.
   it('Should spell out each thing the trader is accountable for', () => {
     expect(copy.body.accountableFor).toBe(
       'I confirm that I am accountable for:'

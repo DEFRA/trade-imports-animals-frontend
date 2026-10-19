@@ -10,17 +10,12 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# Adding a transporter is the last resort, so the warning comes between the
-     heading and the choice — as Design release 1 does. #}
   {{ govukWarningText({ text: copy.warning }) }}
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {# The page is headed with its name, so the question stays as the group's
-       legend for a screen reader without being the largest thing on the page —
-       as Design release 1 does. #}
     {{ govukRadios({
       name: "transporterType",
       fieldset: {

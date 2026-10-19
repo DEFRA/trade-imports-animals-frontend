@@ -27,8 +27,6 @@ const leaves = (node, path = []) =>
     : [{ path: path.join('.'), value: node }]
 
 describe('transport copy module', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
   test('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       const text =
@@ -70,9 +68,6 @@ describe('transport copy module', () => {
     )
   })
 
-  // The Welsh deck carries the same sentence and takes the same one argument.
-  // Copy parity only checks the arity of a function leaf, never the sentence it
-  // builds, so the Welsh hint is asserted here alongside the English one.
   test('Should interpolate the Welsh portOfEntry.arrivalDate.hint with the worked example', () => {
     expect(copyCy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
       'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
@@ -93,12 +88,7 @@ describe('transport copy module', () => {
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
   })
 
-  // Design release 1 heads the transporter list's columns rather than running
-  // each transporter's facts together in one hint. Copy parity only checks that
-  // the two decks carry the same paths and that each Welsh leaf differs from
-  // its English one, so a Welsh heading landing over the wrong column would
-  // pass it — the Welsh values are pinned here for that reason.
-  test('Should head every column Design release 1 shows on the transporter list', () => {
+  test('Should head every column of the transporter list in English and Welsh', () => {
     expect(copy.transporters.table).toEqual({
       selectHidden: 'Select',
       name: 'Name',
@@ -126,8 +116,6 @@ describe('transport copy module', () => {
     expect(copyCy.transporters.optionHintApproved).toBeUndefined()
   })
 
-  // Copy parity only checks that a Welsh leaf differs from its English one, so
-  // the Welsh status words are asserted here beside the English ones.
   test('Should name both approval statuses in both languages', () => {
     expect(copy.transporters.statuses).toEqual({
       Approved: 'Approved',
@@ -139,9 +127,6 @@ describe('transport copy module', () => {
     })
   })
 
-  // The hint is the promise the search makes: it names the three facts the box
-  // matches, so the trader knows what to type before they type it. Parity only
-  // checks that the Welsh leaf differs from the English, so both are pinned.
   test('Should name the three facts the transporter search matches, in both languages', () => {
     expect(copy.transporters.search).toEqual({
       label: 'Search',
@@ -161,17 +146,19 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 heads the type question with the choice, warns that
-  // adding is a last resort, and explains only the commercial arm.
   test('Should head the type question with the choice and leave the private option unhinted', () => {
     expect(copy.transporterAdd.title).toBe('Choose a transporter type')
     expect(copy.transporterAdd.warning).toBe(
       'Before you add this transporter, please ensure you have already searched for it first.'
     )
-    // Design release 1 warns instead of describing the next page, so the
-    // journey-describing hint is gone from both decks.
-    expect(copy.transporterAdd.hint).toBeUndefined()
-    expect(copyCy.transporterAdd.hint).toBeUndefined()
+    for (const deck of [copy, copyCy]) {
+      expect(Object.keys(deck.transporterAdd)).toEqual([
+        'title',
+        'legend',
+        'warning',
+        'options'
+      ])
+    }
     expect(copy.transporterAdd.options.Private).toEqual({
       text: 'Private transporter'
     })
@@ -180,8 +167,6 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 heads the private form as the addition it is, under the
-  // same new-transporter caption as the type question.
   test('Should head the private form as an addition', () => {
     expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
     expect(copyCy.privateTransporterDetails.title).toBe(
@@ -189,10 +174,6 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 closes the address at the country and heads the last two
-  // questions as contact details, exactly as the commercial form does. Copy
-  // parity only checks that a Welsh leaf differs from its English counterpart,
-  // so both headings are pinned here.
   test('Should head the private form’s contact details in both languages', () => {
     expect(copy.privateTransporterDetails.contactHeading).toBe(
       'Enter contact details'
@@ -202,10 +183,6 @@ describe('transport copy module', () => {
     )
   })
 
-  // A private transporter can be based anywhere the country list offers, so
-  // design release 1 asks for a "Phone number" and hints the dialling code —
-  // the same wording the commercial form uses. The two error messages quote
-  // the label, so they have to move with it.
   test('Should ask the private form for a phone number and hint the country code', () => {
     expect(copy.privateTransporterDetails.fields.phone).toBe('Phone number')
     expect(copy.privateTransporterDetails.telephoneHint).toBe(
@@ -219,12 +196,7 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 asks for a "Postcode or Zip code" on every form that takes
-  // an address, so the private transporter's sixth field is worded exactly as
-  // the animals' permanent address is. The two error messages quote the label,
-  // so they move with it — an error naming a field by another word sends the
-  // trader looking for a field that is not on the page.
-  test('Should label the private form’s postcode field as Design release 1 does', () => {
+  test('Should label the private form’s postcode field and name it the same way in both its errors', () => {
     expect(copy.privateTransporterDetails.fields.postcode).toBe(
       'Postcode or Zip code'
     )
@@ -236,8 +208,6 @@ describe('transport copy module', () => {
     )
   })
 
-  // Design release 1 heads the commercial form as the addition it is, asks the
-  // authorisation number first and fixes the country to Northern Ireland.
   test('Should head the commercial form as an addition and fix its country', () => {
     expect(copy.commercialTransporterDetails.title).toBe(
       'Add commercial transporter'
@@ -252,8 +222,6 @@ describe('transport copy module', () => {
     expect(copyCy.commercialTransporterDetails.country).toBe('Gogledd Iwerddon')
   })
 
-  // The banner repeats the authorisation rules the list states, and the phone
-  // number carries the international hint (design release 1).
   test('Should head the commercial form guidance banner and hint the phone number', () => {
     expect(copy.commercialTransporterDetails.guidanceTitle).toBe(
       'Help with transporter authorisation'
@@ -266,17 +234,12 @@ describe('transport copy module', () => {
     )
   })
 
-  // Both languages must send the trader to the same guidance section — a
-  // divergent href here is a broken translation, not a wording choice.
   test('Should link the same guidance section in Welsh as in English', () => {
     expect(copyCy.transporters.guidance.linkHref).toBe(
       copy.transporters.guidance.linkHref
     )
   })
 
-  // Copy parity only checks that a Welsh leaf differs from its English
-  // counterpart, never the sentence itself, so the Welsh guidance sentence is
-  // asserted here beside the English one.
   test('Should carry the Welsh transporters.guidance.euNotValid sentence', () => {
     expect(copyCy.transporters.guidance.euNotValid).toBe(
       'Nid yw dogfennau a roddwyd mewn unrhyw aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'

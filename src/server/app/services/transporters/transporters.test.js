@@ -185,7 +185,7 @@ describe('the transporters an organisation has added for itself', () => {
     ).toBe(HAULIER_NAME)
   })
 
-  test('Should keep the newest addition at the top, the way design release 1 shows it', () => {
+  test('Should list the newest addition first', () => {
     transporters.rememberTransporter(ORG, haulier())
     transporters.rememberTransporter(ORG, haulier({ name: 'Marie Leclerc' }))
 

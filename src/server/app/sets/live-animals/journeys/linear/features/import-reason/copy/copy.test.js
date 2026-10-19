@@ -46,9 +46,6 @@ describe('import-reason copy module', () => {
     }
   })
 
-  // Design release 1 closes every internal-market purpose hint with a full
-  // stop. Four of them had lost theirs, so the whole set is pinned rather
-  // than the four that drifted.
   it('Should close every internal-market purpose hint with a full stop', () => {
     for (const [value, hint] of Object.entries(copy.purpose.hints)) {
       expect(hint.endsWith('.'), `${value} must end in a full stop`).toBe(true)
@@ -85,9 +82,6 @@ describe('import-reason copy module', () => {
     expect(copyCy.date.hint).toBe('Er enghraifft, 27/3/2026')
   })
 
-  // Design release 1 asks for a choice the user has yet to make, so the two
-  // select errors take the indefinite article. Welsh carries the same sense
-  // by dropping the definite article rather than adding one.
   it('Should ask for a destination country and a port of exit', () => {
     expect(copy.errors.countryRequired).toBe('Select a destination country')
     expect(copy.errors.portRequired).toBe('Select a port of exit')

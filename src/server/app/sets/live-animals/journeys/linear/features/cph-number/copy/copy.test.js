@@ -31,10 +31,6 @@ describe('cph-number copy module', () => {
     }
   })
 
-  // Design release 1 heads the page with an instruction and gives the group of
-  // boxes a short legend of its own, in both locales.
-  // src/server/app/copy-parity.test.js only checks that cy differs from en, so
-  // the Welsh wording needs pinning here.
   it('Should head the page with an instruction and name the group short', () => {
     expect(copy.title).toBe('Add the county parish holding number (CPH)')
     expect(copy.cph.legend).toBe('CPH number')
@@ -42,11 +38,6 @@ describe('cph-number copy module', () => {
     expect(copyCy.cph.legend).toBe('Rhif CPH')
   })
 
-  // The three boxes take the number in its real parts, so each carries a
-  // label of its own. Design release 1 hides these labels with its own
-  // stylesheet; the service keeps them on screen — pinned in
-  // cph-number.fit.spec.js, which asserts the label elements are rendered.
-  // This test pins the strings only.
   it('Should name each part of the number', () => {
     expect(copy.cph.county).toBe('County')
     expect(copy.cph.parish).toBe('Parish')
@@ -64,10 +55,6 @@ describe('cph-number copy module', () => {
     expect(copyCy.cph.hint).toBe('Er enghraifft, 12/345/6789.')
   })
 
-  // Design release 1 puts the help behind a "What is a CPH number?" expander:
-  // a definition and where to find the number. The second paragraph names APHA
-  // documents only — DR1's GOV.UK holding-details link is a placeholder href,
-  // so there is no destination to ship yet and no link string to hold.
   it('Should explain what a CPH number is and where to find one', () => {
     expect(copy.help.summary).toBe('What is a CPH number?')
     expect(copy.help.definition).toBe(

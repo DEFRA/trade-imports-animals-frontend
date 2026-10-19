@@ -49,12 +49,12 @@ const continueFromReview = async (seed, { submitted = false } = {}) => {
     await store.submit(journeyId)
   }
   const { concurrencyToken } = await store.get(journeyId)
-  const toolkit = stubH()
+  const h = stubH()
   const response = await postHandlerOf(declaration)(
     continueRequest(journeyRequest(journeyId), concurrencyToken),
-    toolkit
+    h
   )
-  return { journeyId, response, view: toolkit.captured.view }
+  return { journeyId, response, view: h.captured.view }
 }
 
 const reviewPath = (journeyId) => pagePath(journeyId, 'notification-view')
@@ -66,12 +66,9 @@ const refusedContinue = (journeyId) => ({
 const reviewAfterRefusal = async (seed) => {
   const { journeyId, response } = await continueFromReview(seed)
   expect(response).toEqual(refusedContinue(journeyId))
-  const toolkit = stubH()
-  await getHandler(
-    journeyRequest(journeyId, { query: { refused: '1' } }),
-    toolkit
-  )
-  return toolkit.captured.view
+  const h = stubH()
+  await getHandler(journeyRequest(journeyId, { query: { refused: '1' } }), h)
+  return h.captured.view
 }
 
 const dateMonthsAhead = (months) => {
@@ -99,9 +96,9 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
-  const toolkit = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), toolkit)
-  return toolkit.captured.view
+  const h = stubH()
+  await getHandler(journeyRequest(journey.journeyId, { query }), h)
+  return h.captured.view
 }
 
 const cardsOf = (sections) =>
@@ -322,9 +319,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 })
 
-// Design release 1 lays the review out as six numbered sections mirroring the
-// task list, with a subsection heading above every card. The numbers are part
-// of the heading copy, so the order here and the numbering there have to agree.
 describe(`${SUITE} — section and subsection headings`, () => {
   setupCheckAnswersEngine()
 
@@ -354,7 +348,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     }
   })
 
-  it('Should name the subsection headings design release 1 gives each card', async () => {
+  it('Should name the subsection heading of each card', async () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(
@@ -375,8 +369,6 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ])
   })
 
-  // Which numbered section a subsection sits under is the whole substance of
-  // design release 1's grouping, and a flattened list cannot see it move.
   it('Should place each subsection under the numbered section that owns it', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -541,10 +533,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
   })
 
-  // Design release 1 keys the contact address card's one row 'Contact address',
-  // not the generic 'Address' the Transport details card keeps — on a page
-  // listing seven addresses, the row has to say which one it is. The two labels
-  // are separate copy strings so naming this one cannot rename the other.
   it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -556,13 +544,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     ).toContain('Address')
   })
 
-  // Design release 1 puts the Change links in each card's heading and none on a
-  // row, so the page offers links per card rather than one per answer. Exactly
-  // one per card: a conditional second page gets its own headed card with its
-  // own link, rather than a second link on the card beside it.
-  // The one exception to "rows carry no action": a copied address can be
-  // edited on this notification, which the card's Change link (re-pick from
-  // the book) does not do.
   it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -627,10 +608,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 })
 
-// Design release 1 gives the countries a consignment travels through their own
-// headed card rather than a row inside arrival details. They are collected on
-// their own page and asked for only on an overland arrival, so the card stands
-// exactly while the answer is in scope and carries the link to that page.
 describe(`${SUITE} — transit countries`, () => {
   setupCheckAnswersEngine()
 
@@ -691,10 +668,6 @@ describe(`${SUITE} — transit countries`, () => {
   })
 })
 
-// Design release 1 gives the reason for import a card of its own rather than
-// folding it in among the animal details, and every row on it comes from the
-// reason-for-import page — so unlike the card that used to hold them, this one
-// can offer a Change link that reaches them all.
 describe(`${SUITE} — reason-for-import card`, () => {
   setupCheckAnswersEngine()
 
@@ -758,9 +731,6 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keys).not.toContain(UNWEANED_KEY)
   })
 
-  // CPH is the opposite shape: design release 1 asks every consignment for one
-  // and exempts named commodity codes, so the row goes away only on an exempt
-  // line — 0101 here. This block's own Fish line is asked for a CPH number.
   it('Should omit the CPH row for an exempt commodity', async () => {
     const keys = keysOf(
       rowsOf(
@@ -852,10 +822,6 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 })
 
-// Design release 1 writes an empty value out as "Not applicable" while the card
-// around it is finished, and gives it no text at all while the card still has
-// answers outstanding. The decision is per card, not per row: an optional blank
-// inside an unfinished card is marked missing along with the rest.
 describe(`${SUITE} — empty values on a finished and an unfinished card`, () => {
   setupCheckAnswersEngine()
 
@@ -1389,14 +1355,8 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
     }
   }
 
-  // CPH runs the other way round from the other two gates: design release 1
-  // asks every consignment for a CPH number and exempts named commodity codes,
-  // so the false rows below are the exemptions — 0101 for Horse and 01061900
-  // for Cat and Dog, which is asked for a permanent address instead.
   const MATRIX = [
     { commodity: 'Cow', packages: true, unweaned: true, cph: true },
-    // Design release 1 asks the unweaned-animals question only of a commodity
-    // carrying unweaned options, and a horse carries none.
     { commodity: 'Horse', packages: true, unweaned: false, cph: false },
     { commodity: 'Cat', packages: true, unweaned: false, cph: false },
     { commodity: 'Dog', packages: true, unweaned: false, cph: false },
@@ -1442,11 +1402,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     const { journeyId } = await store.create()
     await store.seedAnswers(journeyId, fullSeed)
     const { concurrencyToken } = await store.get(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(toolkit.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
       [journeyId]: concurrencyToken
     })
   })
@@ -1454,11 +1414,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   it('Should record nothing for a submitted notification, which cannot be declared again', async () => {
     const { journeyId } = await store.create()
     await store.submit(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(reviewedConcurrencyTokensCookie() in toolkit.cookies).toBe(false)
+    expect(reviewedConcurrencyTokensCookie() in h.cookies).toBe(false)
   })
 
   it('Should refuse Continue while the notification is unfinished', async () => {
@@ -1524,11 +1484,6 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   })
 })
 
-// Design release 1 heads the review page of an unfinished notification with
-// "There is a problem", names each unfinished card, marks the card itself, and
-// refuses to go on. Before this, the page looked finished: no summary, no
-// marking, and a live Continue that carried the trader to the declaration only
-// to bounce them back here with nothing said.
 describe(`${SUITE} — the unfinished notification`, () => {
   setupCheckAnswersEngine()
 
@@ -1626,9 +1581,6 @@ describe(`${SUITE} — the unfinished notification`, () => {
     ).toBe(true)
   })
 
-  // DOCUMENTED EXCEPTION, not an oversight: species cards carry no id, so
-  // `decorateCard` never marks them. The summary still names the outstanding
-  // work. See inc-150's open question on marking a short species card.
   it('Should name species in the summary while leaving the species cards unmarked', async () => {
     // Two lines, the second barely started: species cards are built for both,
     // and the species rows stay outstanding.

@@ -93,9 +93,7 @@ test.describe('section caption above the page heading', () => {
     )
   })
 
-  test('leaves the overview bare, as Design release 1 does', async ({
-    page
-  }) => {
+  test('leaves the overview with no section caption', async ({ page }) => {
     await startNotification(page)
 
     await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveCount(0)

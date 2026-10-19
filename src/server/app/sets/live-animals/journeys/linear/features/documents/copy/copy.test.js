@@ -79,12 +79,6 @@ describe('#copy', () => {
   })
 
   it('Should name the thing the file field collects rather than repeat the instruction', () => {
-    // Design release 1 labels this field "Attachment" — a noun, matching the
-    // three fields beside it, which each name their answer. "Upload a file"
-    // repeated the page heading and the "Save and add another" button, so the
-    // trader read the same instruction three times over. "Attachment" is
-    // already the service's word for the file: check-answers lists
-    // "Attachment type" against the same record.
     expect(copy.file.label).toBe('Attachment')
     expect(copy.file.label).not.toBe(copy.title)
     expect(copy.file.label).not.toBe(copy.fileUploadHeading)
@@ -134,12 +128,8 @@ describe('#copy', () => {
   })
 
   it('Should name the virus check in the status tags rather than judge the file', () => {
-    // Design release 1 words the Status column as a report on the check: what
-    // is running, then that it has finished. "Safe" was a verdict about the
-    // file and "Checking" never said what was being checked.
     expect(copy.scanTags.scanning).toBe('Scanning for virus')
     expect(copy.scanTags.complete).toBe('Check completed')
-    // The other two states are ours, not design release 1's, and stand.
     expect(copy.scanTags.virusFound).toBe('Virus found')
     expect(copy.scanTags.unknown).toBe('Unknown')
   })

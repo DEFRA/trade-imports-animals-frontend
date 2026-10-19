@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
-import { amendReviewTarget, base, dateField, isHubExit } from './kit.js'
+import { recordingLogger } from '../engine/test-support.js'
+import {
+  amendReviewTarget,
+  base,
+  dateField,
+  isHubExit,
+  pageRoutes
+} from './kit.js'
 
 describe('#isHubExit — the Save and return to overview submit', () => {
   const params = { journeyId: 'journey-1' }
@@ -125,5 +132,43 @@ describe('#amendReviewTarget — where a Change-link save of an amendment goes',
 
   it('Should be null for an amendment saved without a Change link', () => {
     expect(amendReviewTarget(notFromChangeLink, { status: AMEND })).toBeNull()
+  })
+})
+
+describe('#pageRoutes — a save refused as stale', () => {
+  const staleSave = () => {
+    const error = new Error('stale')
+    error.code = 'STALE_CONCURRENCY_TOKEN'
+    throw error
+  }
+  const postRoute = pageRoutes(
+    { slug: 'origin' },
+    { get: () => null, post: staleSave }
+  ).find((route) => route.method === 'POST')
+
+  it('Should log the journey id and posted token, then redirect back to the page with staleAction', async () => {
+    const logger = recordingLogger()
+    const request = {
+      logger,
+      params: { journeyId: 'journey-1' },
+      payload: { concurrencyToken: '3' },
+      path: '/notifications/journey-1/origin',
+      url: new URL('http://localhost/notifications/journey-1/origin?change=1')
+    }
+    const h = { redirect: (to) => ({ redirect: to }) }
+
+    const response = await postRoute.handler(request, h)
+
+    expect(response).toEqual({
+      redirect: '/notifications/journey-1/origin?change=1&staleAction=1'
+    })
+    expect(logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: 'journey-1', postedConcurrencyToken: '3' },
+        message:
+          'Save refused: the notification changed since the page was shown'
+      }
+    ])
   })
 })

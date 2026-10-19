@@ -79,28 +79,11 @@ export const unitRecord = {
   // `checkAnyOfIds` skips an instance no listed leaf is in scope
   // for, and the empty-collection floor the bridge derives from
   // this key does the same (bridge/status/completeness/invariants.js).
-  // Design release 1 asks for identification only where the
-  // commodity has an identifier of its own; such a line gets no
-  // unit records and none are demanded of it.
   //
-  // How MANY animals must be identified before the notification can be
-  // submitted. Design release 1's own rule is "Animal identifiers are
-  // optional unless multiple species are selected, in which case at
-  // least one identifier is required per species" — so a consignment
-  // carrying one identified species can be submitted with no identifier
-  // saved at all, and one carrying several is asked for one complete
-  // record per species, never one per animal.
-  //
-  // `requires.floorAppliesToParent` carries that condition. It narrows
-  // the empty-collection floor the bridge derives from `anyOfIds`
-  // (bridge/status/completeness/invariants.js) to the lines of a
-  // multi-species consignment: `moreThanOne` stands the whole floor down
-  // unless more than one line carries a commodity with an identifier set
-  // of its own.
-  //
-  // The number of animals a line declares is still shown as progress on
-  // the identification page and on Check your answers; it no longer
-  // gates the submission.
+  // `floorAppliesToParent` narrows the empty-collection floor to the lines
+  // of a multi-species consignment: `moreThanOne` stands the whole floor
+  // down unless more than one line carries a commodity with an identifier
+  // set of its own.
   requires: {
     anyOfIds: [
       '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
@@ -177,13 +160,6 @@ export const horseName = {
     horseNameReason
   ])
 }
-
-// A commodity on none of the identifier allowlists is asked for no
-// identifier at all. There is no free-text fallback: design release 1
-// asks for identification only where the commodity has an identifier
-// type of its own, so an unlisted commodity — ornamental fish, say —
-// carries no identifier obligation and gets no panel on the
-// identification page.
 
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',

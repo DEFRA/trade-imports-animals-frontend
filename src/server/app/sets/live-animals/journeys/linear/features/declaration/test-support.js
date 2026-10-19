@@ -21,11 +21,11 @@ export const continueRequest = (request, token, payload = {}) => ({
 export const declarationRoutesFromReview = [
   {
     method: 'GET',
-    handler: async (request, toolkit) => {
+    handler: async (request, h) => {
       const { concurrencyToken } = await store.get(request.params.journeyId)
       return postHandlerOf(declaration)(
         continueRequest(request, concurrencyToken),
-        toolkit
+        h
       )
     }
   }

@@ -15,7 +15,7 @@ import { fulfilmentToNotification } from '../mapper.js'
 // resources. The default hermetic run skips it. Run against the matching
 // backend worktree with:
 //
-//   LIVE_ANIMALS_IT=real npm run test:live-animals -- real.integration
+//   PERSISTENCE_IT_MODE=real npm run test:live-animals -- real.integration
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'

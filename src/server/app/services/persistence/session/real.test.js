@@ -21,8 +21,8 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/known',
-      handler: async (request, toolkit) => {
-        await session.addKnownJourney(request, toolkit, request.payload.id)
+      handler: async (request, h) => {
+        await session.addKnownJourney(request, h, request.payload.id)
         return { ok: true }
       }
     },
@@ -36,9 +36,9 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/run/{journeyId}',
-      handler: async (request, toolkit) => {
+      handler: async (request, h) => {
         await session.setOpeningRun(
-          toolkit,
+          h,
           request.params.journeyId,
           request.payload.phase
         )
@@ -56,9 +56,9 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/flow/{journeyId}',
-      handler: async (request, toolkit) => {
+      handler: async (request, h) => {
         await session.setFlowOnlyAnswers(
-          toolkit,
+          h,
           request.params.journeyId,
           request.payload
         )
@@ -75,9 +75,9 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: REVIEWED_PATH,
-      handler: async (request, toolkit) => {
+      handler: async (request, h) => {
         await session.setReviewedConcurrencyToken(
-          toolkit,
+          h,
           request.params.journeyId,
           request.payload.token
         )

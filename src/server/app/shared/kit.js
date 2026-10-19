@@ -237,6 +237,13 @@ const redirectOnStaleAction = (post) => async (request, h) => {
     return await post(request, h)
   } catch (error) {
     if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+      request.logger.info(
+        {
+          journeyId: request.params.journeyId,
+          postedConcurrencyToken: request.payload?.concurrencyToken
+        },
+        'Save refused: the notification changed since the page was shown'
+      )
       const query = request.url.searchParams
       query.set('staleAction', '1')
       return h.redirect(`${request.path}?${query.toString()}`)

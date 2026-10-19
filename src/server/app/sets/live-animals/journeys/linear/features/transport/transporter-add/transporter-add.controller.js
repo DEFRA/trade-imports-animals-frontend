@@ -20,12 +20,6 @@ import {
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
-/** The first step of adding a transporter that is not on the list.
- *
- * A spoke off the transporter list rather than a step in the journey: the
- * `transporterType` it writes is declared by the list page, which is where a
- * trader answers it by picking a transporter (design release 1 asks the type
- * only of someone who could not find theirs). */
 const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 
 const copy = copyFor({ en, cy }).transporterAdd
@@ -64,13 +58,7 @@ const get = async (request, h) => {
   })
 }
 
-/** Where the chosen type takes the trader.
- *
- * Each arm is a form for entering the transporter that could not be found on
- * the list — commercial or private (design release 1). An unanswered question
- * adds nothing, so it goes back to the list — the same tolerance the question
- * carried as a journey step. */
-const branchSlug = (transporterType) => {
+const nextSlugForTransporterType = (transporterType) => {
   if (transporterType === COMMERCIAL) {
     return commercialTransporterDetailsPage.slug
   }
@@ -106,7 +94,10 @@ const post = async (request, h) => {
   return h.redirect(
     kit.withChangeContext(
       request,
-      pagePath(request.params.journeyId, branchSlug(values.transporterType))
+      pagePath(
+        request.params.journeyId,
+        nextSlugForTransporterType(values.transporterType)
+      )
     )
   )
 }

@@ -146,7 +146,6 @@ const CAPTIONED_PAGES = [
   ['documents', 'Documents', documentsRoutes, parityFixture]
 ]
 
-// Design release 1 opens these pages straight into their heading.
 const BARE_PAGES = [
   ['overview', hubRoutes, parityFixture],
   ['check your answers', checkAnswersRoutes, parityFixture],

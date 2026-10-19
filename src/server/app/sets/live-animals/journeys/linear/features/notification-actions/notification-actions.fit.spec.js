@@ -11,10 +11,6 @@ import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 
-// Copy on the real backend emits a NotificationCreated event that resolves the
-// source parties, so the acting user's organisationId has to travel with the
-// call whenever the source carries address-book parties. The FIT stub mirrors
-// this check, so the source here picks parties end-to-end (EUDPA-389).
 const createAnsweredNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)

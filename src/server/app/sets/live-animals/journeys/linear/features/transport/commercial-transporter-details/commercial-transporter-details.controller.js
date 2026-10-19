@@ -23,29 +23,14 @@ import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
-/** The commercial arm of the add route.
- *
- * A spoke off the type chooser rather than a step in the journey: the
- * `commercialTransporter` it writes is declared by the transporter list, which
- * is where a trader normally answers it by picking a row. This is the way out
- * for a trader whose commercial transporter is not on that list — they give
- * its authorisation number, name, address and contact details by hand
- * (design release 1). */
 const view = `${TEMPLATES}/features/transport/commercial-transporter-details/commercial-transporter-details`
 
 const bundle = copyFor({ en, cy })
 
 const copy = bundle.commercialTransporterDetails
 
-/** The authorisation rules the transporter list states, repeated at the top of
- * this form as design release 1 repeats them: one set of sentences shown in
- * two places rather than two copies of the same rules to keep in step. */
 const guidance = bundle.transporters.guidance
 
-/** The country of a hand-added commercial transporter, which design release 1
- * fixes rather than asks: the restriction the type chooser states on the
- * Commercial option. Stored in English whatever the page is read in, because
- * it is an answer on the notification and not display text. */
 const NORTHERN_IRELAND = 'Northern Ireland'
 
 const MANDATORY_MESSAGES = {
@@ -58,8 +43,6 @@ const MANDATORY_MESSAGES = {
   phone: copy.errors.telephoneRequired
 }
 
-/** The fields the page shows, in the order it asks for them — the order the
- * error summary lists them in too. */
 const FIELD_ORDER = [
   'approvalNumber',
   'nameOrOrganisationName',
@@ -73,9 +56,6 @@ const FIELD_ORDER = [
   'phone'
 ]
 
-/** The country is fixed rather than typed, so it is the one field of the order
- * that is neither trimmed off the payload nor counted as the trader having
- * begun a record. */
 const FIXED_FIELDS = ['country']
 
 const ENTERED_FIELDS = FIELD_ORDER.filter(
@@ -197,13 +177,6 @@ const commercialTransporterRecord = (values) => ({
   commercialTransporter: commercialTransporterParty(values)
 })
 
-/** Keep the transporter for the organisation as well as for the notification.
- *
- * A transporter that lives only on the notification it was typed into is typed
- * again on the next one, so the same record joins the organisation's own list
- * and the transporter list offers it from then on (design release 1). It goes
- * on as a commercial transporter that has not been approved yet, which is what
- * the organisation knows about it: nothing here has approved anything. */
 const remember = (request, values) =>
   rememberTransporter(organisationIdOf(request), {
     ...commercialTransporterParty(values),

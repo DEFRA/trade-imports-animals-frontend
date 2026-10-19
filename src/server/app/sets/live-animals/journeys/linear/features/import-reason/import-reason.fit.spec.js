@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import {
   BASE,
   answerOriginEntry,
+  chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -107,26 +108,29 @@ const fieldIdsIn = (reveal) =>
         .map((field) => field.id)
     )
 
-const chooseTransitPort = async (page) => {
-  const field = page.locator(transitPortInput)
-  await field.click()
-  await field.fill(EXIT_PORT.code)
-  await page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true }).click()
-}
+const chooseTransitPort = (page) =>
+  chooseAutocompleteByLabel(page, {
+    label: copy.port.label,
+    query: EXIT_PORT.code,
+    optionName: EXIT_PORT_LABEL,
+    inputId: 'transitPortOfExit'
+  })
 
-const chooseTransitCountry = async (page) => {
-  const field = page.locator(transitCountryInput)
-  await field.click()
-  await field.fill(IRELAND.name)
-  await page.getByRole('option', { name: IRELAND.name, exact: true }).click()
-}
+const chooseTransitCountry = (page) =>
+  chooseAutocompleteByLabel(page, {
+    label: copy.country.label,
+    query: IRELAND.name,
+    optionName: IRELAND.name,
+    inputId: 'transitDestinationCountry'
+  })
 
-const chooseTemporaryAdmissionPort = async (page) => {
-  const field = page.locator(temporaryAdmissionPortInput)
-  await field.click()
-  await field.fill(EXIT_PORT.code)
-  await page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true }).click()
-}
+const chooseTemporaryAdmissionPort = (page) =>
+  chooseAutocompleteByLabel(page, {
+    label: copy.port.label,
+    query: EXIT_PORT.code,
+    optionName: EXIT_PORT_LABEL,
+    inputId: 'temporaryAdmissionPortOfExit'
+  })
 
 const renderedPortsIn = (select) =>
   select.locator('option').evaluateAll((options) =>

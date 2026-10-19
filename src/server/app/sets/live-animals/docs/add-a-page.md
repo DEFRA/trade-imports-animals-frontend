@@ -114,6 +114,21 @@ Wrap the write in `kit.recoverableSave()`. A marked persistence failure renders
 the same values with `recoverableError: true` and status 500. Unexpected errors
 must throw.
 
+"Save and return to overview" posts `exit=hub`. When the page has a required
+rule, opt in to saving a blank answer on that exit by passing
+`{ allowMissing: kit.isHubExit(request) }` to `validate` (or to `onSubmit` of a
+`pageValidation`), as
+[`journeys/linear/features/origin/controller.js`](../journeys/linear/features/origin/controller.js)
+does. Every other rule still refuses. Do not opt in when the page has no
+required rule: `oneOf` and an empty `compose()` already accept a blank, so the
+option would change nothing. These task-row pages stay strict and refuse a
+blank answer on every exit:
+
+- commodity details
+  ([`journeys/linear/features/commodities/consignment-details/consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
+- CPH number
+  ([`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js))
+
 Export the standard routes:
 
 ```js
@@ -281,6 +296,35 @@ In `controller.test.js`, cover:
 
 Add or update flow tests for section order, skip behaviour, task-row entry,
 status and opening-run behaviour.
+
+## Test support
+
+Build test set-up from the shared helpers, and extend them rather than writing
+set-up in the test file:
+
+- controller tests:
+  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
+  seeds a journey, runs one handler and returns the answers before and after;
+  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
+  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+- browser tests:
+  [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
+  — journey steps such as `startNotification`, `answerOriginEntry`,
+  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`
+- set-up shared only inside one feature: that feature's `test-support.js`, as in
+  [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
+
+When a second test needs the same set-up, move it into one of these helpers in
+the same change and delete every local copy. Importing a sibling feature's test
+helper is fine.
+
+## Logging
+
+A branch that changes what the request does — a refusal, a redirect away from
+the normal next page, a retry or a fallback — logs once through
+`request.logger` with `journeyId` and the reason. A validation 400 that
+re-renders the page does not log. See "Logging" in
+[`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 

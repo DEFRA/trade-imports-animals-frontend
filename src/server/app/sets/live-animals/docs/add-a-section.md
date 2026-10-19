@@ -328,6 +328,38 @@ scope, redirects, marked recoverable failures and unexpected errors.
 Add focused tests for bindings, model gates, flow order, branch skipping,
 task-row status, hub rendering, check-answers rows and notification mapping.
 
+## Test support
+
+Build test set-up from the shared helpers, and extend them rather than writing
+set-up in the test file:
+
+- controller tests:
+  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
+  seeds a journey, runs one handler and returns the answers before and after;
+  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
+  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+- browser tests:
+  [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
+  — journey steps such as `startNotification`, `answerOriginEntry`,
+  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`. A new
+  section adds its own `answer<Section>` step here and to
+  `completeAnswerSections`
+- set-up shared only inside one feature group: that group's `test-support.js`,
+  as in
+  [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
+
+When a second test needs the same set-up, move it into one of these helpers in
+the same change and delete every local copy. Importing a sibling feature's test
+helper is fine.
+
+## Logging
+
+A branch that changes what the request does — a refusal, a redirect away from
+the normal next page, a retry or a fallback — logs once through
+`request.logger` with `journeyId` and the reason. A validation 400 that
+re-renders the page does not log. See "Logging" in
+[`architecture.md`](../../../docs/architecture.md).
+
 ## Playwright feature test
 
 Put the co-located specs in `journeys/linear/features/<group>/fit/`, following

@@ -64,9 +64,7 @@ export const formatDisplayCalendarDate = (value) =>
 
 /**
  * A moment that happened — created, submitted. Rendered as the day it
- * happened in the service's zone, not the container's ambient `TZ`, which
- * differs between production, CI and a laptop and can be dropped. Same class
- * of environment dependency EUDPA-282 removed from the backend.
+ * happened in the service's zone, not the container's ambient `TZ`.
  * @param {string|Date} value
  */
 export const formatDisplayMoment = (value) =>

@@ -531,11 +531,6 @@ export const completeAnswerSections = async (
   await answerContactAddress(page)
 }
 
-/**
- * Design release 1 reaches the review from a primary button under the hub's
- * task list rather than from a task row, and offers it whatever the
- * notification still owes.
- */
 export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
 }

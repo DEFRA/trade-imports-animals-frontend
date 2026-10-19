@@ -33,21 +33,21 @@ export const session = {
     return knownFrom(request)
   },
 
-  async addKnownJourney(request, toolkit, journeyId) {
+  async addKnownJourney(request, h, journeyId) {
     const known = knownFrom(request)
     if (known.includes(journeyId)) {
       return
     }
-    toolkit.state(knownJourneysCookie(), [...known, journeyId])
+    h.state(knownJourneysCookie(), [...known, journeyId])
   },
 
   async openingRun(request, journeyId) {
     return openingRunByJourneyFrom(request)[journeyId]
   },
 
-  async setOpeningRun(toolkit, journeyId, phase, request) {
-    const byJourney = openingRunByJourneyFrom(request ?? toolkit?.request)
-    toolkit.state(openingRunCookie(), {
+  async setOpeningRun(h, journeyId, phase, request) {
+    const byJourney = openingRunByJourneyFrom(request ?? h?.request)
+    h.state(openingRunCookie(), {
       ...byJourney,
       [journeyId]: phase
     })
@@ -58,13 +58,13 @@ export const session = {
     return isObject(values) ? structuredClone(values) : {}
   },
 
-  async setFlowOnlyAnswers(toolkit, journeyId, values, request) {
-    const byJourney = flowOnlyByJourneyFrom(request ?? toolkit?.request)
+  async setFlowOnlyAnswers(h, journeyId, values, request) {
+    const byJourney = flowOnlyByJourneyFrom(request ?? h?.request)
     const next = {
       ...byJourney,
       [journeyId]: structuredClone(values ?? {})
     }
-    toolkit.state(flowOnlyAnswersCookie(), next)
+    h.state(flowOnlyAnswersCookie(), next)
     return structuredClone(next[journeyId])
   },
 
@@ -72,9 +72,9 @@ export const session = {
     return reviewedConcurrencyTokensFrom(request)[journeyId]
   },
 
-  async setReviewedConcurrencyToken(toolkit, journeyId, token, request) {
-    toolkit.state(reviewedConcurrencyTokensCookie(), {
-      ...reviewedConcurrencyTokensFrom(request ?? toolkit?.request),
+  async setReviewedConcurrencyToken(h, journeyId, token, request) {
+    h.state(reviewedConcurrencyTokensCookie(), {
+      ...reviewedConcurrencyTokensFrom(request ?? h?.request),
       [journeyId]: token
     })
   }

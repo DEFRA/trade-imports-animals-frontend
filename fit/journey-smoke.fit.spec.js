@@ -196,12 +196,8 @@ test.describe('live-animals journey glue', () => {
 
     await openReviewFromHub(page)
 
-    // The review offers one Change link per card (design release 1), and the
-    // Species card's goes to the consignment details. The review no longer
-    // offers a change-context route to the identification page, so this leg
-    // opens it with the flag directly — the closest live equivalent is the
-    // consignment-details count-drop error link
-    // (features/commodities/consignment-details/validation/count-drop.js:26-32).
+    // The review has no Change link to the identification page, so this leg
+    // opens it with the change flag directly.
     await page.goto(
       `${journeyUrl(page, 'commodities/identification')}?change=1`
     )

@@ -1,8 +1,8 @@
 /**
  * Two obligation sets, one Node process.
  *
- * This is the suite EUDPA-619 exists to satisfy, so it boots the PRODUCTION
- * router rather than hand-rolling the composition it is meant to be checking.
+ * It boots the PRODUCTION router rather than hand-rolling the composition it
+ * is meant to be checking.
  *
  * The second set is a test fixture (test/fixtures/second-set.js) rather than a
  * real journey. Co-residency is a property of the platform, and shipping a

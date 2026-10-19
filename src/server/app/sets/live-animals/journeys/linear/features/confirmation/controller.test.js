@@ -59,9 +59,6 @@ describe('GET /confirmation', () => {
     expect(h.captured.view.context.referenceNumber).toBe(journeyId)
   })
 
-  // The declaration date belongs to the declaration page. Design release 1
-  // takes the submitted page straight from the reference panel to what the
-  // trader still has to do, so the date is not repeated here.
   it('Should not supply a submission date to the submitted page', async () => {
     const view = await submittedView()
 

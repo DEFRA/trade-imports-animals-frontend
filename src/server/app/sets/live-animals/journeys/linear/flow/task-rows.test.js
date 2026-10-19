@@ -154,8 +154,6 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     expect(statusIn('consignmentDetails', {})).toBe(NOT_STARTED)
   })
 
-  // Design release 1 gives the commodity details a task of their own, so a
-  // reader can tell the selection apart from the numbers on the hub.
   it('Should complete the commodities row on the selection while the details row still owes the numbers', () => {
     const answers = {
       commodityLines: [
@@ -218,9 +216,6 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     }
     expect(statusIn('commodities', answers)).toBe(FULFILLED)
     expect(statusIn('consignmentDetails', answers)).toBe(FULFILLED)
-    // Design release 1 asks for identifiers only once a consignment
-    // carries more than one identified species, so a twenty-five-animal
-    // single-species line owes none of them.
     expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
   })
 
@@ -310,8 +305,6 @@ describe('#rowStatus — the commodities/details/identification facet split of c
   })
 })
 
-// Design release 1 inserts the identification task between the commodity rows
-// only once a chosen commodity carries an identifier of its own.
 describe('#rowStatus — the conditional animal-identification row', () => {
   it('Should be Not applicable (absent) on a notification with no commodity', () => {
     expect(statusIn('animalIdentification', {})).toBe(NA)
@@ -447,10 +440,6 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       transitedCountries: []
     },
-    // Design release 1: "Animal identifiers are optional unless multiple
-    // species are selected". The happy path carries one species, so it can
-    // be submitted with no identifier saved at all — the outstanding work
-    // is chased after submission rather than refused before it.
     'the happy path without identifiers on its single species': {
       ...happyPath,
       commodityLines: [

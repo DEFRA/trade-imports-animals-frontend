@@ -78,7 +78,7 @@ const portRule = async (field, stored) => {
     : requiredOneOf(field, codes, copy.errors.portRequired)
 }
 
-// The reason radio itself is optional to proceed (Design release 1); the
+// The reason radio itself is optional to proceed; the
 // reveal's questions are required on submit. Purpose and exit-date are the
 // service's own words rather than reference data, so neither can go stale —
 // the stored reading asks nothing of them.

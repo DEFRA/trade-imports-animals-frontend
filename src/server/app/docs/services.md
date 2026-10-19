@@ -29,6 +29,21 @@ Countries and ports expose `prime()` operations. The set's gateway
 (`routes-<set-id>.js`, re-exported by the `routes.js` barrel) primes them when
 the application runs in real mode, before Hapi routes are registered.
 
+## Transporters
+
+[`transporters`](../services/transporters/index.js) holds the transporters the
+service ships and the ones an organisation adds for itself. The address book
+has no field for a transporter's approval number, so neither list lives there.
+
+- The shipped list is a local fixture, read synchronously.
+- An organisation's added transporters are held in process memory, keyed on
+  the organisation and never on the user or session. They do not survive a
+  restart and are not shared between instances until a transporter register
+  service exists; the pages only call `partiesFor` and `rememberTransporter`,
+  so that service can replace the module without changing them.
+- The two commercial fixtures carry status `APPROVED` as a placeholder: no
+  register has said what status they hold.
+
 ## Persistence adapters
 
 [`src/server/app/services/persistence/`](../services/persistence/) implements the

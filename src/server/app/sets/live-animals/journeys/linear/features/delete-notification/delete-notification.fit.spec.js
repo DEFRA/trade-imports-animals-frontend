@@ -91,10 +91,6 @@ test.describe('delete-notification feature', () => {
   })
 })
 
-// Deleting a submitted notification carrying real address-book parties emits a
-// NotificationSubmissionDeleted event that has to resolve those parties, so the
-// backend requires the acting user's organisationId. This flow proves the
-// frontend forwards it (EUDPA-389).
 test.describe('delete-notification feature (submitted)', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)

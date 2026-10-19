@@ -36,7 +36,7 @@ describe('service navigation', () => {
     email: 'sam@example.test'
   }
 
-  it('Should offer the four Design release 1 items on a signed-in page', () => {
+  it('Should offer the dashboard, address book, account and log out items on a signed-in page', () => {
     const $ = load(renderLayout(signedIn))
     const items = $('.govuk-service-navigation__item')
     const links = items.find('a')
@@ -87,7 +87,7 @@ describe('service navigation', () => {
     expect(html).not.toContain('aria-current')
   })
 
-  it('Should not show the signed-in user anywhere, as Design release 1 does not', () => {
+  it('Should not show the signed-in user anywhere', () => {
     const html = renderLayout(signedIn)
 
     expect(html).not.toContain('Sam Example')
@@ -141,7 +141,7 @@ describe('alpha phase banner', () => {
 })
 
 describe('breadcrumbs', () => {
-  it('Should render no breadcrumb trail, as Design release 1 has none', () => {
+  it('Should render no breadcrumb trail', () => {
     const html = renderLayout(
       { isAuthenticated: true },
       { backLink: '/notifications' }

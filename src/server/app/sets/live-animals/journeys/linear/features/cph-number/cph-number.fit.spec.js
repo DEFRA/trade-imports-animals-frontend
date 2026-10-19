@@ -109,10 +109,6 @@ test.describe('cph-number feature', () => {
       await expect(box).toHaveAttribute('inputmode', 'numeric')
     }
 
-    // Design release 1 clips its per-part labels out of sight with its own
-    // stylesheet. The service takes DR1's labels, not its picture: three
-    // unlabelled boxes under one legend would be worse than the single field
-    // they replace, so the labels have to be on screen, not just announced.
     for (const [id, text] of [
       ['cphCounty', copy.cph.county],
       ['cphParish', copy.cph.parish],

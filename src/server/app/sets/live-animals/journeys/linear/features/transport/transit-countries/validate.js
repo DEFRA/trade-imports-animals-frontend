@@ -20,7 +20,7 @@ export const COUNTRY_FIELD = 'transitedCountry'
 export const offeredCodes = async () =>
   new Set((await countries.originCountries()).map(({ value }) => value))
 
-// Empty is fine — the question is optional (design release 1). Too long or
+// Empty is fine — the question is optional. Too long or
 // holding a country the service no longer offers is not: on submit because
 // no rendering could have produced it, on stored because the list has moved.
 const listErrors = async (selected, stored) => {

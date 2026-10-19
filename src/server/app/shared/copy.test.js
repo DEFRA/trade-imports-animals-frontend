@@ -49,7 +49,7 @@ describe('journey strip copy', () => {
 })
 
 describe('phase-banner copy', () => {
-  it('Should carry the Design release 1 banner wording', () => {
+  it('Should carry the alpha banner wording', () => {
     expect(sharedEn.layout.phaseBanner).toEqual({
       tag: 'Alpha',
       bodyPrefix: 'This is a new service. Help us improve it and',
@@ -65,7 +65,7 @@ describe('phase-banner copy', () => {
 })
 
 describe('service-navigation copy', () => {
-  it('Should carry the Design release 1 item labels', () => {
+  it('Should carry the service navigation item labels', () => {
     expect(sharedEn.layout.serviceNavigation).toEqual({
       menuButton: 'Menu',
       dashboard: 'Dashboard',
@@ -95,7 +95,7 @@ describe('error-page copy', () => {
 })
 
 describe('save-actions copy', () => {
-  it('Should carry the Design release 1 control labels', () => {
+  it('Should carry the save control labels', () => {
     expect(sharedEn.saveActions).toEqual({
       saveAndReturn: 'Save and return',
       saveAndContinue: 'Save and continue',

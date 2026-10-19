@@ -80,9 +80,6 @@ const seedPerSpeciesLines = () => ({
   ]
 })
 
-// Two species under ONE commodity on code 01061900 — the case the design turns
-// into two rows. Today's stub carries one species per 01061900 commodity, so it
-// is seeded straight into the store (see inc-091's open question).
 const seedTwoSpeciesOfOneCommodity = () => ({
   commodityLines: [
     {

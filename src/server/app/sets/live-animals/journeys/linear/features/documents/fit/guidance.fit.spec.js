@@ -39,7 +39,7 @@ test.describe('document upload guidance', () => {
     // The guidance introduces the form, so it must sit outside it.
     await expect(page.locator('form').getByText(guidance.intro)).toHaveCount(0)
     // ...and before it: the trader reads what to attach without scrolling past
-    // the upload panel (design release 1).
+    // the upload panel.
     await expect(
       page
         .locator('p.govuk-body', { hasText: guidance.intro })

@@ -579,8 +579,6 @@ test.describe('origin country and region validation', () => {
 
   // The country is mandatory for completeness even though it does not block
   // the save, so the gap is shown on the hub rather than enforced at the page.
-  // Design release 1 draws the gap with the same "To do" it gives an untouched
-  // task: it tells a trader the task is unfinished, not how far in they are.
   test('country: an unanswered country leaves the origin task unfinished', async ({
     page
   }) => {
