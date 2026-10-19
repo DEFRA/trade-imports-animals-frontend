@@ -4,10 +4,10 @@ import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { commoditiesPage, consignmentDetailsPage as page } from '../../page.js'
-import { commodityNamesOf, linesOf } from '../lines.js'
+import { commodityCodesOf, linesOf } from '../lines.js'
 
-export const groupNames = (answers, evaluation) =>
-  commodityNamesOf(linesOf(answers, evaluation))
+export const groupCodes = (answers, evaluation) =>
+  commodityCodesOf(linesOf(answers, evaluation))
 
 // While a line is left the page still has quantities to collect, so a removal
 // returns to it. Take the last line out and it has nothing to ask, so the user
@@ -26,17 +26,17 @@ const afterRemoval = (request, h, kept) =>
 
 // A removal drops every line of one commodity group, so it submits the page
 // form — the crumb travels with it and no GET can trigger it. The group index
-// keys back to a name in the journey; anything else is refused before any
+// keys back to a code in the journey; anything else is refused before any
 // reconcile runs.
 export const postRemove = async (request, h, index, lineKey) => {
   const { answers, evaluation } = await state.get(request, h)
-  const name = groupNames(answers, evaluation)[index]
-  if (name === undefined) {
+  const code = groupCodes(answers, evaluation)[index]
+  if (code === undefined) {
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const kept = (answers.commodityLines ?? []).filter(
-    (entry) => entry.commoditySelection !== name
+    (entry) => entry.commoditySelection !== code
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
   return afterRemoval(request, h, kept)

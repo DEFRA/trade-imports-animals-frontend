@@ -37,7 +37,7 @@ describe('POST additional-details — invalid payload', () => {
 })
 
 describe('POST additional-details — Save and return to overview', () => {
-  const UNWEANED_SEED = { commodityLines: [{ commoditySelection: 'Cow' }] }
+  const UNWEANED_SEED = { commodityLines: [{ commoditySelection: '0102' }] }
 
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)

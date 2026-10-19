@@ -1,19 +1,19 @@
 /**
- * State-free commodity applicability — "does obligation X apply to
- * commodity NAME C?".
+ * State-free commodity applicability — "does obligation X apply to a line
+ * whose gate value is V?".
  *
  * Answers the question a page must ask BEFORE any record exists (which
  * identifier fields to render for a picked commodity, which CYA rows a
  * line's commodity earns), so runtime scope (`makeScope`) cannot answer
- * it. Sourced from the manifest's gate metadata: the commodity-gated
- * helpers expose their allowlist on `applyTo.metadata.values` in the
- * stored picker-name vocabulary, so the stored commodity compares
- * directly.
+ * it. Sourced from the manifest's gate metadata: the gated helpers expose
+ * their allowlist on `applyTo.metadata.values` in the vocabulary the gate
+ * obligation stores, so the stored value compares directly. The caller
+ * passes the value the gate reads — a commodity code for most gates, a
+ * species for a species-gated one.
  *
  * `notInUnionOf` and `anyNotInUnionOf` gates are complements: they apply
- * exactly when the commodity is NOT in the derived union. Every other
- * shape applies when
- * the commodity is in the list; an obligation with no commodity gate never
+ * exactly when the value is NOT in the derived union. Every other shape
+ * applies when the value is in the list; an obligation with no gate never
  * applies here, so a commodity on none of the identifier allowlists is
  * asked for no identifier at all.
  */
@@ -38,15 +38,15 @@ export const gateAdmits = (metadata, value) => {
 }
 
 /**
- * Whether the named obligation applies to a commodity, judged from the
+ * Whether the named obligation applies to a line, judged from the
  * manifest's gate metadata alone (no journey state).
  *
  * @param {string} obligationName - the obligation's manifest name.
- * @param {string} commodityName - the picker commodity name (e.g. 'Cow').
+ * @param {string} value - the line's value for the obligation's gate.
  * @returns {boolean}
  */
-export const appliesForCommodity = (obligationName, commodityName) =>
-  gateAdmits(obligationByName(obligationName)?.applyTo?.metadata, commodityName)
+export const appliesForCommodity = (obligationName, value) =>
+  gateAdmits(obligationByName(obligationName)?.applyTo?.metadata, value)
 
 /**
  * The manifest's cap on the documents collection

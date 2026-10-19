@@ -20,6 +20,7 @@ import {
   FULFILLED,
   OPTIONAL
 } from '../../../../../bridge/status/index.js'
+const BOS_TAURUS = 'Bos taurus'
 
 // The presentation rollup (statusOf), pinned against the manifest. The expected
 // statuses below are stated as literals so a regression fails loudly. The
@@ -97,7 +98,7 @@ const cases = {
   'a partial single-line journey': {
     answers: {
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commoditySelection: '0102' }]
     },
     rows: [
       IN_PROGRESS,
@@ -131,8 +132,8 @@ const cases = {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commoditySelection: '0102',
+          speciesSelection: BOS_TAURUS,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
@@ -291,7 +292,7 @@ describe('statusOf — the commodities/identification facet split', () => {
   const facetCases = [
     [{}, NOT_STARTED, NOT_STARTED],
     [
-      { commodityLines: [{ commoditySelection: 'Cow' }] },
+      { commodityLines: [{ commoditySelection: '0102' }] },
       IN_PROGRESS,
       FULFILLED
     ],
@@ -299,8 +300,8 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
+            commoditySelection: '0102',
+            speciesSelection: BOS_TAURUS,
             commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
@@ -312,8 +313,8 @@ describe('statusOf — the commodities/identification facet split', () => {
     [
       {
         commodityLines: [
-          { commoditySelection: 'Cow' },
-          { commoditySelection: 'Horse' }
+          { commoditySelection: '0102' },
+          { commoditySelection: '0101' }
         ]
       },
       IN_PROGRESS,
@@ -323,7 +324,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
+            commoditySelection: '0102',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           }
         ]
@@ -338,7 +339,8 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: 'Cat',
+            commoditySelection: '01061900',
+            speciesSelection: 'Felis catus',
             animalIdentifiers: [
               {
                 permanentAddress: {
@@ -381,8 +383,8 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   }
 
   const cowLine = (quantity, identifiers) => ({
-    commoditySelection: 'Cow',
-    speciesSelection: '1148346',
+    commoditySelection: '0102',
+    speciesSelection: BOS_TAURUS,
     numberOfAnimalsQuantity: quantity,
     animalIdentifiers: identifiers
   })
@@ -407,10 +409,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   it('Should block the identifiers facet while a second identified species carries no record', () => {
     expect(
       facetStatus({
-        commodityLines: [
-          cowLine('5', [earTag]),
-          { commoditySelection: 'Horse' }
-        ]
+        commodityLines: [cowLine('5', [earTag]), { commoditySelection: '0101' }]
       })
     ).toBe(IN_PROGRESS)
   })
@@ -421,7 +420,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
         commodityLines: [
           cowLine('5', [earTag]),
           {
-            commoditySelection: 'Horse',
+            commoditySelection: '0101',
             numberOfAnimalsQuantity: '4',
             animalIdentifiers: [{ horseName: 'Shergar' }]
           }
@@ -435,7 +434,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
     // consignment is a one-identified-species consignment.
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', []), { commoditySelection: 'Fish' }]
+        commodityLines: [cowLine('5', []), { commoditySelection: '01063300' }]
       })
     ).toBe(FULFILLED)
   })

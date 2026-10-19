@@ -1,4 +1,3 @@
-import * as commodities from '../../../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
@@ -8,15 +7,13 @@ const copy = copyFor({ en, cy })
 
 const NOT_APPLICABLE = copy.notApplicable
 
-// One card per commodity line = one per species; the title carries
-// both the commodity and the species so same-commodity cards stay distinct.
+// One card per commodity line = one per species; the title carries both the
+// CN code and the species so same-code cards stay distinct.
 export const speciesCardTitle = (entry) => {
-  const name = (entry.commoditySelection ?? '').trim()
-  if (!name) {
+  const code = (entry.commoditySelection ?? '').trim()
+  if (!code) {
     return NOT_APPLICABLE
   }
-  const code = commodities.commodityCodeFor(name)
-  const commodity = code ? `${name} (${code})` : name
   const species = speciesText(entry)
-  return species ? `${commodity} — ${species}` : commodity
+  return species ? `${code} — ${species}` : code
 }

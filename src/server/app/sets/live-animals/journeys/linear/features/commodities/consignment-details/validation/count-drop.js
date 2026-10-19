@@ -1,7 +1,6 @@
 import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
 import { animalIdentificationPage } from '../../page.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
@@ -19,12 +18,10 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
   if (!Number.isInteger(entered) || entered >= records) {
     return []
   }
-  const species =
-    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
   return [
     {
       field: animalsField(index),
-      text: copy.errors.countDrop(records, species, entered),
+      text: copy.errors.countDrop(records, entry.speciesSelection, entered),
       href: `${kit.withChangeContext(
         request,
         pagePath(request.params.journeyId, animalIdentificationPage.slug)

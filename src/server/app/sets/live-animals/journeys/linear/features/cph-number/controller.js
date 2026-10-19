@@ -25,9 +25,12 @@ const copy = copyFor({ en, cy })
 
 const asArray = (value) => [value ?? []].flat()
 
+// Asked unless every line's code is exempt.
 export const isCphApplicable = (answers) =>
-  asArray(answers.commodityLines).some((line) =>
-    commodities.cphCommodities().includes(line?.commoditySelection)
+  asArray(answers.commodityLines).some(
+    (line) =>
+      Boolean(line?.commoditySelection) &&
+      !commodities.cphExemptCommodityCodes().includes(line.commoditySelection)
   )
 
 const hubEntryReturn = (request) =>

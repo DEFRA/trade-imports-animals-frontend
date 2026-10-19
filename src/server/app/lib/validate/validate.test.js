@@ -217,7 +217,7 @@ describe('#requiredOneOf — save-blocking value domain', () => {
       COMMODITY_REQUIRED_MESSAGE
     )
 
-    expect(run(noDomain, { commoditySelection: 'Cow' }).errors).toEqual({
+    expect(run(noDomain, { commoditySelection: '0102' }).errors).toEqual({
       commoditySelection: COMMODITY_REQUIRED_MESSAGE
     })
     expect(run(noDomain, { commoditySelection: '' }).errors).toEqual({

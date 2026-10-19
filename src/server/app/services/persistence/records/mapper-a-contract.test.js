@@ -118,7 +118,7 @@ describe('Mapper A PUT /notifications contract', () => {
         transitedCountries: ['FR', 'BE']
       },
       commodity: {
-        name: 'Cow',
+        name: '0102',
         commodityComplement: [
           {
             typeOfCommodity: 'Domestic',
@@ -126,7 +126,7 @@ describe('Mapper A PUT /notifications contract', () => {
             totalNoOfPackages: 5,
             species: [
               {
-                value: '1148346',
+                value: 'Bos taurus',
                 text: 'Bos taurus',
                 noOfAnimals: '1',
                 noOfPackages: '5',

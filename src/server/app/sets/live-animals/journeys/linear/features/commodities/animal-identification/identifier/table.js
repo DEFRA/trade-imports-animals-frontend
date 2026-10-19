@@ -12,12 +12,12 @@ const PERMANENT_ADDRESS = 'permanentAddress'
 // One column per identifier the COMMODITY declares — not per identifier the
 // trader happened to fill — so the header row says which identifiers this line
 // expects and an empty cell shows which are still missing (design 01-16/17).
-export const identifierColumns = (commodity) => [
+export const identifierColumns = (commodity, species) => [
   ...scopedFields(commodity).map((field) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),
-  ...(permanentAddressApplies(commodity)
+  ...(permanentAddressApplies(species)
     ? [[PERMANENT_ADDRESS, copy.table.permanentAddressColumn]]
     : [])
 ]

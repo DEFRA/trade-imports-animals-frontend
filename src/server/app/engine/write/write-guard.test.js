@@ -34,7 +34,7 @@ describe('#write.js — answer-key guard', () => {
   it('Should reject an appended entry carrying an unrecognised key', async () => {
     await commit(buildRequest(), stubH(), {
       commodityLines: [
-        { commoditySelection: 'Horse', numberOfAnimalsQuantity: '1' }
+        { commoditySelection: '0101', numberOfAnimalsQuantity: '1' }
       ]
     })
     await expect(

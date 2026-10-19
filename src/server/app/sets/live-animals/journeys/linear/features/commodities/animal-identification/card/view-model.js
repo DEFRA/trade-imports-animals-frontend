@@ -1,5 +1,4 @@
 import * as state from '../../../../../../../../engine/index.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
@@ -14,17 +13,13 @@ import { identifierCellText, identifierColumns } from '../identifier/table.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const speciesTextOf = (entry) =>
-  commodities.speciesLabel(entry.speciesSelection) ??
-  entry.speciesSelection ??
-  ''
+const speciesTextOf = (entry) => entry.speciesSelection ?? ''
 
+// The card names its line by CN code and scientific name.
 const cardTitleOf = (entry) => {
-  const name = (entry.commoditySelection ?? '').trim()
-  const code = commodities.commodityCodeFor(name)
-  const commodity = code ? `${name} (${code})` : name
+  const code = (entry.commoditySelection ?? '').trim()
   const species = speciesTextOf(entry)
-  return species ? `${commodity} — ${species}` : commodity
+  return species ? `${code} — ${species}` : code
 }
 
 const counterOf = (species, records, cap) =>
@@ -105,8 +100,8 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const species = speciesTextOf(entry)
   const values = form?.values ?? blankValuesFor(commodity)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(commodity)
-  const columns = identifierColumns(commodity)
+  const showAddress = permanentAddressApplies(entry.speciesSelection)
+  const columns = identifierColumns(commodity, entry.speciesSelection)
   return {
     index,
     anchor: `identification-card-${index}`,

@@ -67,7 +67,7 @@ describe('#instanceComplete', () => {
   it('reads a fully-populated instance as complete', () => {
     const st = state({
       fulfilments: {
-        [commoditySelection.id]: { [line1FulfilmentIndex]: 'Cow' },
+        [commoditySelection.id]: { [line1FulfilmentIndex]: '0102' },
         [passport.id]: { [line1Unit1FulfilmentIndex]: 'P-1' }
       },
       obligations: impls([
@@ -136,7 +136,7 @@ describe('#instanceComplete', () => {
   it('reads a unit with no identifier stored as incomplete via anyOfIds', () => {
     const st = state({
       fulfilments: {
-        [commoditySelection.id]: { [line1FulfilmentIndex]: 'Cow' }
+        [commoditySelection.id]: { [line1FulfilmentIndex]: '0102' }
       },
       obligations: impls([
         {

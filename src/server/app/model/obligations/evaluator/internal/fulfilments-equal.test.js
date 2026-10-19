@@ -24,26 +24,26 @@ describe('fulfilmentsEqual', () => {
   })
 
   it('is true when indexedFulfilments maps have the same keys and values (fresh objects — purge replays produce this shape)', () => {
-    const a = { commodityCode: { line0: 'Cow', line1: 'Horse' } }
-    const b = { commodityCode: { line0: 'Cow', line1: 'Horse' } }
+    const a = { commodityCode: { line0: '0102', line1: '0101' } }
+    const b = { commodityCode: { line0: '0102', line1: '0101' } }
     expect(fulfilmentsEqual(a, b)).toBe(true)
   })
 
   it('is false when two indexedFulfilments maps have different key sets', () => {
-    const a = { commodityCode: { line0: 'Cow' } }
-    const b = { commodityCode: { line1: 'Cow' } }
+    const a = { commodityCode: { line0: '0102' } }
+    const b = { commodityCode: { line1: '0102' } }
     expect(fulfilmentsEqual(a, b)).toBe(false)
   })
 
   it('is false when two indexedFulfilments maps share keys but differ in a value', () => {
-    const a = { commodityCode: { line0: 'Cow' } }
-    const b = { commodityCode: { line0: 'Horse' } }
+    const a = { commodityCode: { line0: '0102' } }
+    const b = { commodityCode: { line0: '0101' } }
     expect(fulfilmentsEqual(a, b)).toBe(false)
   })
 
   it('is false when two indexedFulfilments maps have different key counts', () => {
-    const a = { commodityCode: { line0: 'Cow' } }
-    const b = { commodityCode: { line0: 'Cow', line1: 'Horse' } }
+    const a = { commodityCode: { line0: '0102' } }
+    const b = { commodityCode: { line0: '0102', line1: '0101' } }
     expect(fulfilmentsEqual(a, b)).toBe(false)
   })
 })

@@ -3,24 +3,23 @@ import { appliesForCommodity, gateAdmits } from './applicability.js'
 
 describe('#appliesForCommodity', () => {
   it('Should apply an allowListed obligation for a commodity in its list', () => {
-    expect(appliesForCommodity('horseName', 'Horse')).toBe(true)
-    expect(appliesForCommodity('animalIdentifierPassport', 'Horse')).toBe(true)
-    expect(appliesForCommodity('permanentAddress', 'Cat')).toBe(true)
+    expect(appliesForCommodity('horseName', '0101')).toBe(true)
+    expect(appliesForCommodity('animalIdentifierPassport', '0101')).toBe(true)
+    expect(appliesForCommodity('permanentAddress', 'Felis catus')).toBe(true)
   })
 
   it('Should not apply an allowListed obligation for a commodity outside its list', () => {
-    expect(appliesForCommodity('horseName', 'Cow')).toBe(false)
-    expect(appliesForCommodity('permanentAddress', 'Cow')).toBe(false)
+    expect(appliesForCommodity('horseName', '0102')).toBe(false)
+    expect(appliesForCommodity('permanentAddress', 'Felis')).toBe(false)
   })
 
-  // The CPH list is derived by exemption rather than by inclusion — design
-  // release 1 asks every consignment for a CPH number and lets off two
-  // commodity codes — so Horse (0101) is the value outside it and Fish, on no
-  // other list at all, is inside.
-  it('Should apply an anyAllowListed obligation per its commodity list', () => {
-    expect(appliesForCommodity('containsUnweanedAnimals', 'Cow')).toBe(true)
-    expect(appliesForCommodity('countyParishHoldingCph', 'Fish')).toBe(true)
-    expect(appliesForCommodity('countyParishHoldingCph', 'Horse')).toBe(false)
+  // CPH is asked by exemption rather than by inclusion — every consignment is
+  // asked for a CPH number except two commodity codes — so horses (0101) are
+  // let off and ostriches (01063300), on no other list at all, are asked.
+  it('Should apply a notification-level obligation per its commodity list', () => {
+    expect(appliesForCommodity('containsUnweanedAnimals', '0102')).toBe(true)
+    expect(appliesForCommodity('countyParishHoldingCph', '01063300')).toBe(true)
+    expect(appliesForCommodity('countyParishHoldingCph', '0101')).toBe(false)
   })
 
   it('Should apply no identifier to a commodity on none of the identifier lists', () => {
@@ -31,7 +30,7 @@ describe('#appliesForCommodity', () => {
       'animalIdentifierEarTag',
       'horseName'
     ]) {
-      expect(appliesForCommodity(identifier, 'Fish')).toBe(false)
+      expect(appliesForCommodity(identifier, '01063300')).toBe(false)
     }
   })
 
@@ -41,27 +40,27 @@ describe('#appliesForCommodity', () => {
   })
 
   it('Should never apply for an obligation with no commodity gate', () => {
-    expect(appliesForCommodity('countryOfOrigin', 'Cow')).toBe(false)
-    expect(appliesForCommodity('no-such-obligation', 'Cow')).toBe(false)
+    expect(appliesForCommodity('countryOfOrigin', '0102')).toBe(false)
+    expect(appliesForCommodity('no-such-obligation', '0102')).toBe(false)
   })
 })
 
-// The manifest carries no complement gate today, so the inversion is pinned
-// against the metadata shape directly rather than through a named obligation.
+// The inversion is pinned against the metadata shape directly rather than
+// through a named obligation.
 describe('#gateAdmits', () => {
   it('Should admit a value its allowlist holds', () => {
     expect(
-      gateAdmits({ gateType: 'allowListed', values: ['Cow'] }, 'Cow')
+      gateAdmits({ gateType: 'allowListed', values: ['0102'] }, '0102')
     ).toBe(true)
     expect(
-      gateAdmits({ gateType: 'allowListed', values: ['Cow'] }, 'Fish')
+      gateAdmits({ gateType: 'allowListed', values: ['0102'] }, '01063300')
     ).toBe(false)
   })
 
   it('Should invert for a notInUnionOf complement gate', () => {
-    const gate = { gateType: 'notInUnionOf', values: ['Cow'] }
-    expect(gateAdmits(gate, 'Fish')).toBe(true)
-    expect(gateAdmits(gate, 'Cow')).toBe(false)
+    const gate = { gateType: 'notInUnionOf', values: ['0102'] }
+    expect(gateAdmits(gate, '01063300')).toBe(true)
+    expect(gateAdmits(gate, '0102')).toBe(false)
   })
 
   it('Should invert for an anyNotInUnionOf complement gate', () => {
@@ -71,7 +70,7 @@ describe('#gateAdmits', () => {
   })
 
   it('Should admit nothing without gate metadata', () => {
-    expect(gateAdmits(undefined, 'Cow')).toBe(false)
-    expect(gateAdmits({}, 'Cow')).toBe(false)
+    expect(gateAdmits(undefined, '0102')).toBe(false)
+    expect(gateAdmits({}, '0102')).toBe(false)
   })
 })

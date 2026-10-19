@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   MIN_SEARCH_LENGTH,
+  SEARCH_PAGE_SIZE,
   isSearchable,
-  matchesCode,
-  matchesWords,
   normaliseQuery
 } from './matching.js'
 
@@ -27,32 +26,8 @@ describe('#isSearchable', () => {
   })
 })
 
-describe('#matchesWords', () => {
-  it('Should match any word of the text on its opening characters', () => {
-    expect(matchesWords(BOS_TAURUS, 'tau')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'bos')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'aurus')).toBe(false)
-  })
-
-  it('Should ignore case and punctuation', () => {
-    expect(matchesWords('Bos spp.', 'SPP')).toBe(true)
-    expect(matchesWords('Bos spp.', 'bos,spp')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'Bos-tau')).toBe(true)
-  })
-
-  it('Should match several words only where they run in order', () => {
-    expect(matchesWords('Canis lupus familiaris', 'lupus fam')).toBe(true)
-    expect(matchesWords('Canis lupus familiaris', 'fam lupus')).toBe(false)
-  })
-
-  it('Should match nothing on an empty query', () => {
-    expect(matchesWords(BOS_TAURUS, '   ')).toBe(false)
-  })
-})
-
-describe('#matchesCode', () => {
-  it('Should match a commodity code on its leading digits', () => {
-    expect(matchesCode('01061900', '0106')).toBe(true)
-    expect(matchesCode('01061900', '1900')).toBe(false)
+describe('SEARCH_PAGE_SIZE', () => {
+  it('Should list ten species a search', () => {
+    expect(SEARCH_PAGE_SIZE).toBe(10)
   })
 })

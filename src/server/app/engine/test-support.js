@@ -1,5 +1,5 @@
 import { store } from './store.js'
-import { knownJourneysCookie } from './journey.js'
+import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
 import { records } from './persistence/records.js'
 
 export const authenticatedCredentials = Object.freeze({
@@ -153,14 +153,20 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
+/** The request cookie holding a journey's flow-only answers, in stub mode. */
+const flowOnlyState = (journeyId, flowOnly) =>
+  flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
+
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after. `amend` submits the journey and opens an amendment first;
- * `pathOf(journeyId)` gives the request the path it was made to. */
+ * and after. `flowOnly` seeds the journey's session-only answers. `amend`
+ * submits the journey and opens an amendment first; `pathOf(journeyId)` gives
+ * the request the path it was made to. */
 export const driveHandler = async (
   handler,
   {
     payload = {},
     seed = {},
+    flowOnly,
     params = {},
     query = {},
     state = {},
@@ -178,7 +184,7 @@ export const driveHandler = async (
     payload,
     params,
     query,
-    state,
+    state: { ...flowOnlyState(journey.journeyId, flowOnly), ...state },
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
@@ -189,7 +195,8 @@ export const driveHandler = async (
     before: seed,
     after,
     response,
-    view: h.captured.view
+    view: h.captured.view,
+    cookies: h.cookies
   }
 }
 

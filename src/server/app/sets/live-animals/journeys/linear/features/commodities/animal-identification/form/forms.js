@@ -42,10 +42,11 @@ const addressErrorsFor = (showAddress, addressValues, index, payload) => {
   }
 }
 
-const buildLineForm = (payload, commodity, index) => {
+const buildLineForm = (payload, entry, index) => {
+  const commodity = entry.commoditySelection
   const values = identifierValuesFromPayload(payload, commodity, index)
   const addressValues = addressValuesFromPayload(payload, index)
-  const showAddress = permanentAddressApplies(commodity)
+  const showAddress = permanentAddressApplies(entry.speciesSelection)
   const holdsData = formHoldsData(showAddress, values, addressValues)
 
   const { errors: idErrors } = validate(
@@ -84,7 +85,7 @@ export const buildLineForms = (payload, answers, lines) => {
     .filter(({ index }) => !atMaxByIndex.has(index))
     .map(({ index, entry }) => ({
       index,
-      ...buildLineForm(payload, entry.commoditySelection, index)
+      ...buildLineForm(payload, entry, index)
     }))
   const forms = new Map(built.map(({ index, form }) => [index, form]))
   const errors = Object.assign({}, ...built.map((line) => line.errors))

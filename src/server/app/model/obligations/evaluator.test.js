@@ -99,17 +99,17 @@ const numberOfPackagesReason = {
 const cphReason = {
   code: 'obligation.cph.applicable.becauseCphCommodity',
   explanation:
-    'CPH applies when any commodity line has a CPH-required commodityCode'
+    'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }
 
 // Line-instance-id mnemonics. Real orchestrator-generated ids are
 // opaque ULIDs; the tests use readable constants so intent is
 // scannable.
 const LINE_UNKNOWN = 'line1' // commodity not in any allowlist
-const LINE_FISH = 'line2' //  Fish — no packages, no CPH, no specific identifier
-const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + earTag
-const LINE_HORSE = 'lineH' // Horse — packages, passport + horseName
-const LINE_CAT = 'lineD' //   Cat — packages, passport + tattoo + permanentAddress
+const LINE_FISH = 'line2' //  01063300 ostriches — CPH, no packages, no identifier
+const LINE_COW = 'line4' //   0102 cattle — packages AND CPH, passport + earTag
+const LINE_HORSE = 'lineH' // 0101 horses — packages, passport + horseName
+const LINE_CAT = 'lineD' //   01061900 cats — packages, passport + tattoo + permanentAddress
 
 // Unit-instance-id mnemonics for depth-2 composite keys (`lineId.unitId`).
 const UNIT_1 = 'unit1'
@@ -138,7 +138,7 @@ const horseNameReason = {
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
-    'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose species requires per-animal permanent address'
 }
 
 // A representative composite address value — the obligation model treats
@@ -448,8 +448,8 @@ describe('V4 — commodity line group semantics', () => {
   it('infers a group fulfilmentIndex per line from commodityCode composite-key prefixes', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_HORSE]: 'Horse',
-        [LINE_CAT]: 'Cat'
+        [LINE_HORSE]: '0101',
+        [LINE_CAT]: '01061900'
       }
     })
     const ids = new Set(result.obligations[commodityLine.id].fulfilmentIndexes)
@@ -460,7 +460,7 @@ describe('V4 — commodity line group semantics', () => {
     // Only numberOfAnimals is answered on the second line — the line's
     // presence is still inferred (no dedicated commodityCode entry required).
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [commodityCode.id]: { [LINE_HORSE]: '0101' },
       [numberOfAnimals.id]: { [LINE_CAT]: 42 }
     })
     const ids = new Set(result.obligations[commodityLine.id].fulfilmentIndexes)
@@ -476,8 +476,8 @@ describe('V4 — commodity line field fulfilments (round-trip)', () => {
   it('commodityCode stores one value per line', () => {
     const commodityCodeFulfilments = {
       [LINE_UNKNOWN]: 'Unicorn',
-      [LINE_HORSE]: 'Horse',
-      [LINE_CAT]: 'Cat'
+      [LINE_HORSE]: '0101',
+      [LINE_CAT]: '01061900'
     }
     const result = evaluator.evaluate({
       [commodityCode.id]: commodityCodeFulfilments
@@ -533,14 +533,14 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
 
   it('is out of scope when no line has a package-count commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
+      [commodityCode.id]: { [LINE_FISH]: '01063300' }
     })
     expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
   })
 
   it('is in scope with reason on a matching line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
+      [commodityCode.id]: { [LINE_HORSE]: '0101' }
     })
     expect(result.obligations[numberOfPackages.id]).toEqual({
       inScope: true,
@@ -553,9 +553,9 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
   it('fulfilmentIndexes list contains only matching line ids (mixed manifest)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_FISH]: 'Fish',
-        [LINE_HORSE]: 'Horse',
-        [LINE_CAT]: 'Cat'
+        [LINE_FISH]: '01063300',
+        [LINE_HORSE]: '0101',
+        [LINE_CAT]: '01061900'
       }
     })
     const ids = result.obligations[numberOfPackages.id].fulfilmentIndexes
@@ -564,7 +564,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
 
   it('keeps a stored value on a matching line (round-trip)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [commodityCode.id]: { [LINE_HORSE]: '0101' },
       [numberOfPackages.id]: { [LINE_HORSE]: 3 }
     })
     expect(result.fulfilments[numberOfPackages.id]).toEqual({
@@ -574,7 +574,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
 
   it('purges a stored value on a non-matching line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [commodityCode.id]: { [LINE_FISH]: '01063300' },
       [numberOfPackages.id]: { [LINE_FISH]: 7 }
     })
     expect(result.fulfilments[numberOfPackages.id]).toBeUndefined()
@@ -583,9 +583,9 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
   it('keeps matching-line values, purges non-matching-line values (mixed)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_FISH]: 'Fish',
-        [LINE_HORSE]: 'Horse',
-        [LINE_CAT]: 'Cat'
+        [LINE_FISH]: '01063300',
+        [LINE_HORSE]: '0101',
+        [LINE_CAT]: '01061900'
       },
       [numberOfPackages.id]: {
         [LINE_FISH]: 7, // should be purged
@@ -603,8 +603,8 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
   it('supports two lines sharing the same matching commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_HORSE]: 'Horse',
-        [LINE_CAT]: 'Horse' // both lines: horses
+        [LINE_HORSE]: '0101',
+        [LINE_CAT]: '0101' // both lines: horses
       },
       [numberOfPackages.id]: {
         [LINE_HORSE]: 3,
@@ -633,8 +633,8 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
   it('is out of scope when no line has a CPH-required commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_HORSE]: 'Horse',
-        [LINE_CAT]: 'Cat'
+        [LINE_HORSE]: '0101',
+        [LINE_CAT]: '01061900'
       }
     })
     expect(result.obligations[cph.id]).toEqual(outOfScope)
@@ -643,8 +643,8 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
   it('is mandatory in-scope when at least one line has a CPH-required commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_HORSE]: 'Horse', // not CPH-required
-        [LINE_COW]: 'Cow' //      CPH-required
+        [LINE_HORSE]: '0101', // not CPH-required
+        [LINE_COW]: '0102' //      CPH-required
       }
     })
     expect(result.obligations[cph.id]).toEqual({
@@ -656,7 +656,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
 
   it('keeps a stored cph value when a required commodity is present', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [cph.id]: '123456789'
     })
     expect(result.fulfilments[cph.id]).toBe('123456789')
@@ -664,7 +664,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
 
   it('purges a stored cph value when no line has a required commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [commodityCode.id]: { [LINE_HORSE]: '0101' },
       [cph.id]: '123456789'
     })
     expect(result.fulfilments[cph.id]).toBeUndefined()
@@ -678,7 +678,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
 describe('V4 — cow line triggers both packages and CPH gates', () => {
   it('activates numberOfPackages (per-line) and cph (notification-level) simultaneously', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
+      [commodityCode.id]: { [LINE_COW]: '0102' }
     })
     expect(result.obligations[numberOfPackages.id].fulfilmentIndexes).toEqual([
       LINE_COW
@@ -700,7 +700,7 @@ describe('V4 — cow line triggers both packages and CPH gates', () => {
 describe('V4 — unitRecord group semantics', () => {
   it('has no fulfilmentIndexes when no unit-level obligations have storage', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
+      [commodityCode.id]: { [LINE_COW]: '0102' }
     })
     expect(result.obligations[unitRecord.id]).toEqual({
       inScope: true,
@@ -710,7 +710,7 @@ describe('V4 — unitRecord group semantics', () => {
 
   it('infers unit-instance paths from a per-unit identifier storage', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [passport.id]: {
         [`${LINE_COW}.${UNIT_1}`]: 'UK123',
         [`${LINE_COW}.${UNIT_2}`]: 'UK456'
@@ -724,7 +724,7 @@ describe('V4 — unitRecord group semantics', () => {
 
   it('unions unit-instance paths across multiple identifier storages', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [passport.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123' },
       [earTag.id]: { [`${LINE_COW}.${UNIT_2}`]: 'UK-EAR-999' }
     })
@@ -748,14 +748,14 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 
   it('is out of scope for lines with non-passport commodities', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
+      [commodityCode.id]: { [LINE_FISH]: '01063300' }
     })
     expect(result.obligations[passport.id]).toEqual({ inScope: false })
   })
 
   it('is in scope with one fulfilmentIndex per unit under a passport-list line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [passport.id]: {
         [`${LINE_COW}.${UNIT_1}`]: 'UK123',
         [`${LINE_COW}.${UNIT_2}`]: 'UK456'
@@ -771,7 +771,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 
   it('keeps a stored passport value on a matching-line unit (round-trip)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [passport.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123' }
     })
     expect(result.fulfilments[passport.id]).toEqual({
@@ -781,7 +781,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 
   it('purges a stored passport value on a non-matching-line unit', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [commodityCode.id]: { [LINE_FISH]: '01063300' },
       [passport.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
     expect(result.fulfilments[passport.id]).toBeUndefined()
@@ -790,8 +790,8 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
   it('keeps matching-line values, purges non-matching (mixed lines)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_FISH]: 'Fish',
-        [LINE_COW]: 'Cow'
+        [LINE_FISH]: '01063300',
+        [LINE_COW]: '0102'
       },
       [passport.id]: {
         [`${LINE_FISH}.${UNIT_1}`]: 'STRAY',
@@ -811,7 +811,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
   it('is in scope for a cat line (Cat in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CAT]: 'Cat' },
+      [commodityCode.id]: { [LINE_CAT]: '01061900' },
       [tattoo.id]: { [`${LINE_CAT}.${UNIT_1}`]: 'CT-99' }
     })
     expect(result.obligations[tattoo.id].inScope).toBe(true)
@@ -820,7 +820,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
 
   it('is out of scope for horse (Horse not in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
+      [commodityCode.id]: { [LINE_HORSE]: '0101' }
     })
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
@@ -830,7 +830,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
   // scope.
   it('is out of scope for cow (Cow not in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [earTag.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123456789012' }
     })
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
@@ -841,8 +841,8 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
   it('is in scope across two cow lines', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_COW]: 'Cow',
-        [LINE_UNKNOWN]: 'Cow'
+        [LINE_COW]: '0102',
+        [LINE_UNKNOWN]: '0102'
       },
       [earTag.id]: {
         [`${LINE_COW}.${UNIT_1}`]: 'UK-COW-1',
@@ -859,7 +859,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
 
   it('is out of scope for cats (Cat not in the ear-tag list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CAT]: 'Cat' }
+      [commodityCode.id]: { [LINE_CAT]: '01061900' }
     })
     expect(result.obligations[earTag.id]).toEqual({ inScope: false })
   })
@@ -868,7 +868,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
 describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
   it('is in scope only for horse commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [commodityCode.id]: { [LINE_HORSE]: '0101' },
       [horseName.id]: { [`${LINE_HORSE}.${UNIT_1}`]: 'Silver' }
     })
     expect(result.obligations[horseName.id].inScope).toBe(true)
@@ -877,7 +877,7 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
 
   it('is out of scope for cows', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
+      [commodityCode.id]: { [LINE_COW]: '0102' }
     })
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
   })
@@ -891,7 +891,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
   // discriminates.
   it('puts no identifier obligation in scope on a fish line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [commodityCode.id]: { [LINE_FISH]: '01063300' },
       [earTag.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
     for (const identifier of [microchip, passport, tattoo, earTag, horseName]) {
@@ -901,7 +901,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
 
   it('puts the commodity’s own identifiers in scope on the same shape of cow line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [earTag.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123456789012' }
     })
     expect(result.obligations[earTag.id].inScope).toBe(true)
@@ -912,7 +912,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
 
   it('purges an identifier value smuggled onto a fish unit', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [commodityCode.id]: { [LINE_FISH]: '01063300' },
       [earTag.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
     expect(result.fulfilments[earTag.id]).toBeUndefined()
@@ -920,7 +920,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
 
   it('leaves the at-least-one-identifier rule with nothing to ask on such a line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [commodityCode.id]: { [LINE_FISH]: '01063300' },
       [numberOfAnimals.id]: { [LINE_FISH]: 2 }
     })
     expect(groupInvariantErrors(unitRecord, result)).toEqual([])
@@ -944,7 +944,8 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
 
   it('is in scope for cats with composite address value', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CAT]: 'Cat' },
+      [commodityCode.id]: { [LINE_CAT]: '01061900' },
+      [species.id]: { [LINE_CAT]: 'Felis catus' },
       [permanentAddress.id]: { [`${LINE_CAT}.${UNIT_1}`]: petAddress }
     })
     expect(result.obligations[permanentAddress.id].inScope).toBe(true)
@@ -962,14 +963,14 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
 
   it('is out of scope for cows', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
+      [commodityCode.id]: { [LINE_COW]: '0102' }
     })
     expect(result.obligations[permanentAddress.id]).toEqual({ inScope: false })
   })
 
   it('purges a stored permanentAddress on a non-cats/dogs line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [commodityCode.id]: { [LINE_COW]: '0102' },
       [permanentAddress.id]: { [`${LINE_COW}.${UNIT_1}`]: petAddress }
     })
     expect(result.fulfilments[permanentAddress.id]).toBeUndefined()
@@ -985,8 +986,8 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
   it('cow + horse: passport applies to both, earTag only to cow, horseName only to horse', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_COW]: 'Cow',
-        [LINE_HORSE]: 'Horse'
+        [LINE_COW]: '0102',
+        [LINE_HORSE]: '0101'
       },
       [passport.id]: {
         [`${LINE_COW}.${UNIT_1}`]: 'UK-C-1',

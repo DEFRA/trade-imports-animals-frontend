@@ -20,8 +20,8 @@ const STALE_COW_LINE = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commoditySelection: '0102',
+      speciesSelection: 'Bos taurus',
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
         { animalIdentifierEarTag: 'UK123', horseName: 'Dobbin' }
@@ -34,8 +34,8 @@ const HORSE_LINE = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Horse',
-      speciesSelection: '822332',
+      commoditySelection: '0101',
+      speciesSelection: 'Equus cabalus',
       numberOfAnimalsQuantity: '1',
       animalIdentifiers: [{ horseName: 'Dobbin' }]
     }

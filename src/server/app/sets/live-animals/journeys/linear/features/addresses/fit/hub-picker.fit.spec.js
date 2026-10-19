@@ -120,8 +120,8 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await signIn(page)
   })
 
-  test('asks a consignment of fish for a CPH number', async ({ page }) => {
-    await openAddresses(page, 'Salmo salar')
+  test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
+    await openAddresses(page, 'Struthio')
 
     const row = rowFor(page, copy.hub.cph.title)
     await expect(row).toContainText(copy.hub.cph.hint)
@@ -136,7 +136,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   test('does not ask a consignment of horses for a CPH number', async ({
     page
   }) => {
-    await openAddresses(page, 'Equus caballus')
+    await openAddresses(page, 'Equus cabalus')
 
     await expect(rowFor(page, copy.hub.cph.title)).toHaveCount(0)
   })

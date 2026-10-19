@@ -646,11 +646,11 @@ describe('alwaysInScope', () => {
 // ---------------------------------------------------------------------------
 
 describe('moreThanOne', () => {
-  const inner = allowListed(codeObl, ['Cow'], null)
+  const inner = allowListed(codeObl, ['0102'], null)
 
   it('Should hand back the inner decision where it admits more than one entry', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Cow' } })).toEqual({
+    expect(gate({ [codeObl.id]: { line1: '0102', line2: '0102' } })).toEqual({
       inScope: true,
       fulfilmentIndexes: ['line1', 'line2']
     })
@@ -658,14 +658,16 @@ describe('moreThanOne', () => {
 
   it('Should stand the inner gate down on a single admitted entry', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Fish' } })).toEqual({
+    expect(
+      gate({ [codeObl.id]: { line1: '0102', line2: '01063300' } })
+    ).toEqual({
       inScope: false
     })
   })
 
   it('Should stay out of scope where the inner gate admits nothing', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Fish' } })).toEqual({
+    expect(gate({ [codeObl.id]: { line1: '01063300' } })).toEqual({
       inScope: false
     })
   })

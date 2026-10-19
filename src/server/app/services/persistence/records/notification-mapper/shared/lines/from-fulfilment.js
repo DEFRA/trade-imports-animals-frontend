@@ -37,6 +37,7 @@ const lineFrom = ({
     commoditySelection: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
     speciesSelection: valueAt(obligations.species, lineIndex),
+    commonName: valueAt(obligations.commonName, lineIndex),
     numberOfAnimalsQuantity: legacyAnimalCount(
       valueAt(obligations.numberOfAnimals, lineIndex)
     ),
@@ -58,6 +59,7 @@ export const commodityLinesFromFulfilment = (reader) => {
     obligations.commodityCode,
     obligations.commodityType,
     obligations.species,
+    obligations.commonName,
     obligations.numberOfAnimals,
     obligations.numberOfPackages,
     ...identifierObligations

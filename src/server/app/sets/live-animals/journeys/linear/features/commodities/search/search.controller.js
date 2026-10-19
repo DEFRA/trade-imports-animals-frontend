@@ -7,9 +7,11 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { commoditiesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { search } from '../../../../../services/commodities/search.js'
 import { commitSelection } from './actions/commit-selection.js'
-import { isSearchable, normaliseQuery } from './matching.js'
+import { SEARCH_PAGE_SIZE, isSearchable, normaliseQuery } from './matching.js'
 import { mergedKeysFromPayload, storedKeys } from './selection/selected-keys.js'
+import { knownRows, rememberRows, resultRows } from './selection/rows.js'
 import { commodityGroups } from './view-model/commodity-groups.js'
 import { selectedSummary } from './view-model/selected-summary.js'
 
@@ -23,8 +25,17 @@ const copy = copyFor({ en, cy }).search
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
-const render = (h, journey, { selected, query = '', errorText = null }) => {
-  const groups = commodityGroups(selected, query)
+const searchFor = (query) =>
+  isSearchable(query)
+    ? search(normaliseQuery(query), { size: SEARCH_PAGE_SIZE })
+    : null
+
+const render = (
+  h,
+  journey,
+  { selected, results = null, query = '', errorText = null }
+) => {
+  const groups = commodityGroups(results, selected)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
@@ -55,27 +66,35 @@ const get = async (request, h) => {
   return render(h, journey, { selected: storedKeys(answers) })
 }
 
-const rerender = async (request, h, { selected, query, errorText }) => {
+// Searching again keeps the rows behind the chosen species and the rows now on
+// screen, so whichever the trader ticks next can be saved with its common name.
+const rerender = async (request, h, known, { selected, query, errorText }) => {
+  const results = await searchFor(query)
+  await rememberRows(request, h, [
+    ...selected.map((key) => known.get(key)),
+    ...resultRows(results)
+  ])
   const { journey } = await state.get(request, h)
-  return render(h, journey, { selected, query, errorText })
+  return render(h, journey, { selected, results, query, errorText })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = normaliseQuery(payload.commoditySearch)
+  const known = knownRows(await state.get(request, h))
 
   if (payload.action === CLEAR_ACTION) {
-    return rerender(request, h, { selected: [], query })
+    return rerender(request, h, known, { selected: [], query })
   }
 
-  const selected = mergedKeysFromPayload(payload)
+  const selected = mergedKeysFromPayload(payload, known)
 
   if (payload.action === SEARCH_ACTION) {
-    return rerender(request, h, { selected, query })
+    return rerender(request, h, known, { selected, query })
   }
 
   if (selected.length === 0 && !kit.isHubExit(request)) {
-    const response = await rerender(request, h, {
+    const response = await rerender(request, h, known, {
       selected,
       query,
       errorText: copy.errors.selectCommodity
@@ -83,7 +102,11 @@ const post = async (request, h) => {
     return response.code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, selected)
+  return commitSelection(
+    request,
+    h,
+    selected.map((key) => known.get(key))
+  )
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

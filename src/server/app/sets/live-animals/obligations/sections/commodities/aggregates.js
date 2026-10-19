@@ -1,26 +1,31 @@
 import {
-  cphCommodities,
+  cphExemptCommodityCodes,
   unweanedCommodities
 } from '../../../services/commodities/index.js'
-import { anyAllowListed } from '../../../../../model/obligations/helpers/index.js'
+import {
+  anyAllowListed,
+  anyNotInUnionOf
+} from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode } from './lines.js'
 
 const cphReason = {
   code: 'obligation.cph.applicable.becauseCphCommodity',
   explanation:
-    'CPH applies when any commodity line has a CPH-required commodityCode'
+    'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }
 
 // -----------------------------------------------------------------------------
-// CPH — notification-level single, aggregated across commodity lines.
+// CPH — notification-level single, aggregated across commodity lines. Asked
+// unless every line's code is one of the exempt codes, so a code new to the
+// picker is asked rather than let off.
 // -----------------------------------------------------------------------------
 
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'countyParishHoldingCph',
-  applyTo: anyAllowListed(
+  applyTo: anyNotInUnionOf(
     commodityCode,
-    cphCommodities,
+    cphExemptCommodityCodes,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
   )

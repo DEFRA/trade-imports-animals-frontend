@@ -94,7 +94,7 @@ test.describe('additional-details feature — rendering', () => {
 test.describe('additional-details feature — the unweaned commodity gate', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtAdditionalDetails(page, 'Equus caballus')
+    await startAtAdditionalDetails(page, 'Equus cabalus')
   })
 
   test('does not ask a horses-only consignment about unweaned animals', async ({

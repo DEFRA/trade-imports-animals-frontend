@@ -18,14 +18,14 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
 
   const nestedAnswers = {
     commodityLines: [
-      { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
+      { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
     ]
   }
 
   it('Should read a leaf value at a nested path', () => {
     expect(
       valueAt(nestedAnswers, ['commodityLines', 0, 'commoditySelection'])
-    ).toBe('Cow')
+    ).toBe('0102')
   })
 
   it('Should read a sibling leaf value at a nested path', () => {
@@ -36,7 +36,7 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
 
   it('Should return the whole array when the path targets a collection', () => {
     expect(valueAt(nestedAnswers, ['commodityLines'])).toEqual([
-      { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
+      { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
     ])
   })
 
@@ -48,7 +48,7 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
 
   it('Should set a value at a nested path without mutating the input', () => {
     const answers = {
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commoditySelection: '0102' }]
     }
     const next = setAt(
       answers,
@@ -62,12 +62,12 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
   it('Should delete a leaf key at a nested path', () => {
     const answers = {
       commodityLines: [
-        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
+        { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
       ]
     }
     deleteAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
     expect(answers.commodityLines[0]).toEqual({
-      commoditySelection: 'Cow'
+      commoditySelection: '0102'
     })
   })
 

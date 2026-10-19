@@ -21,6 +21,7 @@ import { dispatchPages } from '../../index.js'
 import { consignmentDetailsPage } from '../page.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
+const CATTLE_OR_COW = 'Cattle or Cow'
 
 const post = postHandlerOf(animalIdentification)
 const getHandler = animalIdentification.routes.find(
@@ -37,32 +38,36 @@ const BOS_TAURUS_1 = 'Bos taurus 1'
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 
 const catLine = (extra = {}) => ({
-  commoditySelection: 'Cat',
-  speciesSelection: '923501',
+  commoditySelection: '01061900',
+  speciesSelection: 'Felis catus',
+  commonName: 'Domestic Cat',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
 })
 
 const cowLine = (extra = {}) => ({
-  commoditySelection: 'Cow',
-  speciesSelection: '1148346',
+  commoditySelection: '0102',
+  speciesSelection: 'Bos taurus',
+  commonName: CATTLE_OR_COW,
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
 })
 
 const horseLine = (extra = {}) => ({
-  commoditySelection: 'Horse',
-  speciesSelection: '822332',
+  commoditySelection: '0101',
+  speciesSelection: 'Equus cabalus',
+  commonName: 'Horse',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
 })
 
-const fishLine = (extra = {}) => ({
-  commoditySelection: 'Fish',
-  speciesSelection: '801204',
+const ostrichLine = (extra = {}) => ({
+  commoditySelection: '01063300',
+  speciesSelection: 'Struthio',
+  commonName: 'Ostriches',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
@@ -102,7 +107,7 @@ describe(`${SUITE} — the cards view`, () => {
         })
       ]
     })
-    expect(card.title).toBe('Cow (0102) — Bos taurus')
+    expect(card.title).toBe('0102 — Bos taurus')
     expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
     expect(card.atMax).toBe(false)
     expect(card.units).toHaveLength(1)
@@ -274,7 +279,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
       ]
     })
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: 'Domestic cattle', animals: '2' },
+      { code: '0102', name: CATTLE_OR_COW, animals: '2' },
       { code: '0101', name: 'Horse', animals: '3' }
     ])
   })
@@ -659,11 +664,11 @@ describe(`${SUITE} — Remove`, () => {
 })
 
 // The identifier-field render reads the `.metadata.values` (the coverage-gated
-// sidecar), normalising the selected commodity NAME to a CN code via
-// commodityCodeFor before comparing. This matrix pins the rendered fields per
-// selectable species that carries identifiers (Cow/Horse/Cat/Dog). Fish
-// carries none, so it is not in the matrix — it earns no panel at all, which
-// the "no commodity carries an identifier" suite below pins instead.
+// sidecar) and compares the line's stored CN code directly. This matrix pins
+// the rendered fields per code that carries identifiers (0102, 0101,
+// 01061900). Ostriches carry none, so they are not in the matrix — they earn no
+// panel at all, which the "no commodity carries an identifier" suite below
+// pins instead.
 describe(`${SUITE} — identifier render matrix — model metadata per selectable species`, () => {
   setupIdentificationEngine()
 
@@ -686,26 +691,26 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
 
   const MATRIX = [
     {
-      commodity: 'Cow',
-      species: '1148346',
+      commodity: '0102',
+      species: 'Bos taurus',
       fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
       showAddress: false
     },
     {
-      commodity: 'Horse',
-      species: '822332',
+      commodity: '0101',
+      species: 'Equus cabalus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
       showAddress: false
     },
     {
-      commodity: 'Cat',
-      species: '923501',
+      commodity: '01061900',
+      species: 'Felis catus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     },
     {
-      commodity: 'Dog',
-      species: '923502',
+      commodity: '01061900',
+      species: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     }
@@ -732,21 +737,21 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     return { journeyId: journey.journeyId, response, view: h.captured.view }
   }
 
-  it('Should give a fish line no panel but keep it in the summary', async () => {
+  it('Should give an ostrich line no panel but keep it in the summary', async () => {
     const context = await viewContext({
       commodityLines: [
         cowLine({ numberOfAnimalsQuantity: '2' }),
-        fishLine({ numberOfAnimalsQuantity: '3' })
+        ostrichLine({ numberOfAnimalsQuantity: '3' })
       ]
     })
     expect(context.cards.map((card) => card.title)).toEqual([
-      'Cow (0102) — Bos taurus'
+      '0102 — Bos taurus'
     ])
-    // The recap is the whole consignment: the fish line the page asks nothing
+    // The recap is the whole consignment: the ostrich line the page asks nothing
     // of still has to appear, or the table misdescribes what was declared.
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: 'Domestic cattle', animals: '2' },
-      { code: '0301', name: 'Atlantic salmon', animals: '3' }
+      { code: '0102', name: CATTLE_OR_COW, animals: '2' },
+      { code: '01063300', name: 'Ostriches', animals: '3' }
     ])
   })
 
@@ -757,7 +762,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
   it('Should keep a surviving card on its own commodity-line index when an earlier line is filtered out', async () => {
     const context = await viewContext({
       commodityLines: [
-        fishLine({ numberOfAnimalsQuantity: '3' }),
+        ostrichLine({ numberOfAnimalsQuantity: '3' }),
         cowLine({ numberOfAnimalsQuantity: '2' })
       ]
     })
@@ -772,7 +777,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
 
   it('Should carry a request for the page on when no line carries an identifier', async () => {
     const { journeyId, response, view } = await requestPage({
-      commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })]
+      commodityLines: [ostrichLine({ numberOfAnimalsQuantity: '3' })]
     })
     expect(view).toBeUndefined()
     expect(response).toEqual({ redirect: hubPath(journeyId) })
@@ -790,27 +795,27 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
   // carried on rather than falling through to the add/remove handling. The
   // store holds the declared count as a number once saved, so the untouched
   // answers are stated outright rather than compared against the raw seed.
-  const untouchedFishAnswers = {
-    commodityLines: [fishLine({ numberOfAnimalsQuantity: 3 })]
+  const untouchedOstrichAnswers = {
+    commodityLines: [ostrichLine({ numberOfAnimalsQuantity: 3 })]
   }
 
   it('Should carry a stale add post on without writing a record', async () => {
     const result = await driveHandler(post, {
-      seed: { commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })] },
+      seed: { commodityLines: [ostrichLine({ numberOfAnimalsQuantity: '3' })] },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedFishAnswers)
+    expect(result.after).toEqual(untouchedOstrichAnswers)
   })
 
   it('Should carry a stale remove post on without deleting a record', async () => {
     const result = await driveHandler(post, {
-      seed: { commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })] },
+      seed: { commodityLines: [ostrichLine({ numberOfAnimalsQuantity: '3' })] },
       payload: { action: REMOVE_FIRST_UNIT }
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedFishAnswers)
+    expect(result.after).toEqual(untouchedOstrichAnswers)
   })
 })

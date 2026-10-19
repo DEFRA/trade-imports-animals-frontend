@@ -64,9 +64,9 @@ const answers = {
   ],
   commodityLines: [
     {
-      commoditySelection: 'Cow',
+      commoditySelection: '0102',
       commodityType: '16',
-      speciesSelection: ['1148346'],
+      speciesSelection: ['Bos taurus'],
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '5',
       animalIdentifiers: [

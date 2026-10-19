@@ -10,8 +10,8 @@ import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).consignmentDetails
 
-export const packagesApply = (commoditySelection) =>
-  commodities.packageCountCommodities().includes(commoditySelection)
+export const packagesApply = (code) =>
+  commodities.packageCountCommodities().includes(code)
 
 export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`

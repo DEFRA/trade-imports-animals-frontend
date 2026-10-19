@@ -17,8 +17,10 @@ export const scopedFields = (commodity) =>
     .filter((id) => appliesForCommodity(id, commodity))
     .map((id) => ({ id, ...copy.typeFields[id] }))
 
-export const permanentAddressApplies = (commodity) =>
-  appliesForCommodity('permanentAddress', commodity)
+// Asked of the species, not the code: 01061900 holds the cats, dogs and
+// ferrets that need it alongside many mammals that do not.
+export const permanentAddressApplies = (species) =>
+  appliesForCommodity('permanentAddress', species)
 
 export const identifierChecksFor = (commodity, index) =>
   compose(

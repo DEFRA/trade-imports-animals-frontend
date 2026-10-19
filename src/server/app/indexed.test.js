@@ -41,7 +41,7 @@ describe('indexed obligations are first-class', () => {
   it('Should scope each stored commodity line instance path when the collection is in scope', () => {
     const { inScope } = makeScope({
       commodityLines: [
-        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' },
+        { commoditySelection: '0102', numberOfAnimalsQuantity: '25' },
         { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
       ]
     })
@@ -63,9 +63,9 @@ describe('indexed obligations are first-class', () => {
       countyParishHoldingCph: '12/345/6789',
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commoditySelection: '0102',
           commodityType: '16',
-          speciesSelection: ['1148346'],
+          speciesSelection: ['Bos taurus'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -122,7 +122,7 @@ describe('indexed obligations are first-class', () => {
     }
     const incomplete = {
       ...complete,
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commoditySelection: '0102' }]
     }
     expect(
       readyForCheckYourAnswers(
@@ -180,14 +180,14 @@ describe('indexed obligations are first-class', () => {
 
   it('Should roll per-item completeness into the commodities section status', () => {
     const withIncompleteLine = {
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commoditySelection: '0102' }]
     }
     const withCompleteLine = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commoditySelection: '0102',
           commodityType: '16',
-          speciesSelection: ['1148346'],
+          speciesSelection: ['Bos taurus'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

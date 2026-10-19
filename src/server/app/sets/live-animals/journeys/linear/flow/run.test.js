@@ -37,7 +37,9 @@ const next = (stepId, answers) =>
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+  commodityLines: [
+    { commoditySelection: '01061900', speciesSelection: 'Felis catus' }
+  ]
 }
 
 // A whole notification, so the tail of the run can be walked with every later

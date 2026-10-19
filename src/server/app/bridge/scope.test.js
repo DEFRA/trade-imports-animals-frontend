@@ -32,7 +32,7 @@ const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commoditySelection'
 
 const line = (commodity, units) => ({
   commoditySelection: commodity,
-  speciesSelection: '1148346',
+  speciesSelection: 'Bos taurus',
   numberOfAnimalsQuantity: String(units.length),
   animalIdentifiers: units
 })
@@ -100,11 +100,11 @@ describe('scope bridge — per-gate scoping', () => {
     const scope = makeScope(
       resolveRegion({
         commodityLines: [
-          line('Cow', [
+          line('0102', [
             { animalIdentifierEarTag: 'UK111' },
             { animalIdentifierEarTag: 'UK222' }
           ]),
-          line('Horse', [{ horseName: 'Dobbin' }])
+          line('0101', [{ horseName: 'Dobbin' }])
         ]
       })
     )

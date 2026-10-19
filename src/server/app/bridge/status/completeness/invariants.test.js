@@ -28,7 +28,7 @@ const allowListedLeaf = {
   id: 'allow-listed-leaf',
   name: 'allowListedLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'unit-group' })
+  applyTo: allowListed(commoditySelection, ['0102'], { id: 'unit-group' })
 }
 
 // A shape `gateAdmits` cannot read: no `values`, no gated parent group.
@@ -38,7 +38,7 @@ const equalsGateLeaf = {
   status: 'optional',
   applyTo: equalsGate(
     commoditySelection,
-    'Cow',
+    '0102',
     { inScope: true },
     { inScope: false }
   )
@@ -50,7 +50,7 @@ const fannedElsewhereLeaf = {
   id: 'elsewhere-leaf',
   name: 'elsewhereLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'other-group' })
+  applyTo: allowListed(commoditySelection, ['0102'], { id: 'other-group' })
 }
 
 const unitGroupWith = (anyOfIds) => ({
@@ -91,7 +91,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         { requiredAtLeastOne: false },
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(true)
   })
@@ -102,7 +102,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(false)
   })
@@ -113,7 +113,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(true)
   })
@@ -130,7 +130,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([equalsGateLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
@@ -142,7 +142,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([fannedElsewhereLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
@@ -161,7 +161,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
 
     const twoLines = {
       fulfilments: {
-        [commoditySelection.id]: { line1: 'Cow', line2: 'Cow' }
+        [commoditySelection.id]: { line1: '0102', line2: '0102' }
       }
     }
 
@@ -170,10 +170,10 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         emptyCollectionSatisfiesFloor(
           collection,
           gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
+            moreThanOne(allowListed(commoditySelection, ['0102'], null))
           ),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })
@@ -186,15 +186,15 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         emptyCollectionSatisfiesFloor(
           collection,
           gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Horse'], null))
+            moreThanOne(allowListed(commoditySelection, ['0101'], null))
           ),
           LINE_1,
           {
             fulfilments: {
               [commoditySelection.id]: {
-                line1: 'Cow',
-                line2: 'Horse',
-                line3: 'Horse'
+                line1: '0102',
+                line2: '0101',
+                line3: '0101'
               }
             }
           }
@@ -207,7 +207,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         emptyCollectionSatisfiesFloor(
           collection,
           gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
+            moreThanOne(allowListed(commoditySelection, ['0102'], null))
           ),
           LINE_1,
           twoLines
@@ -221,9 +221,9 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(allowListed(commoditySelection, ['Horse'], null)),
+          gatedGroup(allowListed(commoditySelection, ['0101'], null)),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })

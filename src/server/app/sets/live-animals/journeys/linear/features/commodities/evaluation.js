@@ -6,6 +6,7 @@ import {
   commodityCode,
   commodityLine,
   commodityType,
+  commonName,
   earTag,
   horseName,
   microchip,
@@ -48,6 +49,7 @@ export const evaluationBindings = feature('commodities', [
   lineLeaf('commoditySelection', commodityCode),
   lineLeaf('commodityType', commodityType),
   lineLeaf('speciesSelection', species),
+  lineLeaf('commonName', commonName),
   lineLeaf('numberOfAnimalsQuantity', numberOfAnimals, {
     convert: toNumberWhenParses
   }),

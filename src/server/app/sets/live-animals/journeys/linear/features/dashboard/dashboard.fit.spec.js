@@ -134,7 +134,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
     ).toBeVisible()
-    await expect(page.getByText('Cow', { exact: true })).toBeVisible()
+    await expect(page.getByText('0102', { exact: true })).toBeVisible()
     await expect(page.getByText('France', { exact: true })).toBeVisible()
     await expect(
       page.getByText(ARRIVAL_DATE_IN_WINDOW_DISPLAY, { exact: true })

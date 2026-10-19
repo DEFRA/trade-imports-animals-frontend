@@ -50,7 +50,7 @@ describe('GET addresses — conditional CPH hub row', () => {
 
   it('Should not render a CPH row when no CPH-triggering commodity line exists', async () => {
     const result = await rowsFor({
-      commodityLines: [{ commoditySelection: 'Cat' }]
+      commodityLines: [{ commoditySelection: '01061900' }]
     })
     const { rows } = result.view.context
     expect(rows).toHaveLength(5)
@@ -59,7 +59,7 @@ describe('GET addresses — conditional CPH hub row', () => {
 
   it('Should render an empty-state CPH row with an Add link into cph-number when a CPH-triggering commodity line exists', async () => {
     const result = await rowsFor({
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commoditySelection: '0102' }]
     })
     const { rows } = result.view.context
     const cphRow = cphRowOf(rows)
@@ -73,7 +73,7 @@ describe('GET addresses — conditional CPH hub row', () => {
 
   it('Should render the stored (slash-stripped) CPH value with a Change link when answered', async () => {
     const result = await rowsFor({
-      commodityLines: [{ commoditySelection: 'Cow' }],
+      commodityLines: [{ commoditySelection: '0102' }],
       countyParishHoldingCph: '123456789'
     })
     const { rows } = result.view.context
@@ -203,7 +203,7 @@ describe('GET addresses — change context', () => {
 
   it('Should leave the CPH link alone, its slug already carrying a query string', async () => {
     const result = await rowsFor(
-      { commodityLines: [{ commoditySelection: 'Cow' }] },
+      { commodityLines: [{ commoditySelection: '0102' }] },
       { change: '1' }
     )
 

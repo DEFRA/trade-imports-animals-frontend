@@ -4,14 +4,14 @@ import {
   identifiedCommodities,
   microchipCommodities,
   passportCommodities,
-  permanentAddressCommodities,
+  permanentAddressSpecies,
   tattooCommodities
 } from '../../../services/commodities/index.js'
 import {
   allowListed,
   moreThanOne
 } from '../../../../../model/obligations/helpers/index.js'
-import { commodityCode, commodityLine } from './lines.js'
+import { commodityCode, commodityLine, species } from './lines.js'
 
 const microchipReason = {
   code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
@@ -45,7 +45,7 @@ const horseNameReason = {
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
-    'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose species requires per-animal permanent address'
 }
 
 // -----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ export const unitRecord = {
 // `allowListed` with projection to unitRecord's instance-paths.
 // The evaluator's pre-purge enumeration supplies the paths; the
 // obligation code doesn't enumerate them itself. Allowlists come from
-// the commodities service in the stored picker-name vocabulary.
+// the commodities service as CN codes.
 // -----------------------------------------------------------------------------
 
 export const microchip = {
@@ -161,12 +161,15 @@ export const horseName = {
   ])
 }
 
+// Gated on the species, not the code: 01061900 holds the cats, dogs and
+// ferrets asked for a permanent address alongside a hundred other
+// mammals that are not.
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(commodityCode, permanentAddressCommodities, unitRecord, [
+  applyTo: allowListed(species, permanentAddressSpecies, unitRecord, [
     permanentAddressReason
   ])
 }

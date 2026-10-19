@@ -29,9 +29,9 @@ const completeAnswers = {
   countyParishHoldingCph: '12/345/6789',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
+      commoditySelection: '0102',
       commodityType: '16',
-      speciesSelection: ['1148346'],
+      speciesSelection: ['Bos taurus'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '1',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

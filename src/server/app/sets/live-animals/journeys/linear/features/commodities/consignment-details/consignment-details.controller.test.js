@@ -20,6 +20,10 @@ import {
 import { dispatchPages } from '../../index.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
+const FELIS_CATUS = 'Felis catus'
+const CANIS_FAMILIARIS = 'Canis familiaris'
+const BISON_BISON = 'Bison bison'
+const BOS_TAURUS = 'Bos taurus'
 
 const post = postHandlerOf(consignmentDetails)
 
@@ -30,20 +34,20 @@ const COMMODITIES_SLUG = 'commodities'
 const seedLines = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commoditySelection: '0102',
+      speciesSelection: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '716661',
+      commoditySelection: '0102',
+      speciesSelection: BISON_BISON,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Fish',
-      speciesSelection: '801204',
+      commoditySelection: '01063300',
+      speciesSelection: 'Struthio',
       numberOfAnimalsQuantity: ''
     }
   ]
@@ -54,26 +58,26 @@ const seedLines = () => ({
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commoditySelection: '0102',
+      speciesSelection: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '716661',
+      commoditySelection: '0102',
+      speciesSelection: BISON_BISON,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Dog',
-      speciesSelection: '923502',
+      commoditySelection: '01061900',
+      speciesSelection: CANIS_FAMILIARIS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
+      commoditySelection: '01061900',
+      speciesSelection: FELIS_CATUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     }
@@ -83,19 +87,19 @@ const seedPerSpeciesLines = () => ({
 const seedTwoSpeciesOfOneCommodity = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commoditySelection: '0102',
+      speciesSelection: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Dog',
-      speciesSelection: '923502',
+      commoditySelection: '01061900',
+      speciesSelection: CANIS_FAMILIARIS,
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '7'
     },
     {
-      commoditySelection: 'Dog',
+      commoditySelection: '01061900',
       speciesSelection: '900001',
       numberOfPackages: '4',
       numberOfAnimalsQuantity: '9'
@@ -165,8 +169,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commoditySelection: '0102',
+          speciesSelection: BOS_TAURUS,
           numberOfPackages: '',
           numberOfAnimalsQuantity: '3',
           animalIdentifiers: [
@@ -205,8 +209,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
+            commoditySelection: '0102',
+            speciesSelection: BOS_TAURUS,
             numberOfPackages: '',
             numberOfAnimalsQuantity: '',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -220,15 +224,12 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should group the view by commodity with one quantity block per species line', async () => {
+  it('Should group the view by code with one quantity block per species line', async () => {
     const { groups } = await contextOf(seedLines())
-    expect(groups.map((group) => [group.name, group.code])).toEqual([
-      ['Cow', '0102'],
-      ['Fish', '0301']
-    ])
+    expect(groups.map((group) => group.code)).toEqual(['0102', '01063300'])
     expect(groups[0].lines.map((line) => line.speciesText)).toEqual([
-      'Bos taurus',
-      'Bison bison'
+      BOS_TAURUS,
+      BISON_BISON
     ])
     expect(groups[0].showPackages).toBe(true)
     expect(groups[1].showPackages).toBe(false)
@@ -242,7 +243,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.response.redirect).toContain(PAGE_SLUG)
     expect(
       result.after.commodityLines.map((line) => line.commoditySelection)
-    ).toEqual(['Fish'])
+    ).toEqual(['01063300'])
   })
 
   it('Should send the user back to the commodity question when the removed group was the only one, leaving no commodity behind', async () => {
@@ -250,8 +251,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Fish',
-            speciesSelection: '801204',
+            commoditySelection: '01063300',
+            speciesSelection: 'Struthio',
             numberOfAnimalsQuantity: '4'
           }
         ]
@@ -341,6 +342,8 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
   })
   beforeEach(() => store.clear())
 
+  // The seeded lines carry no common name, so each species is named by its
+  // Latin name.
   it('Should list each chosen species of a 01061900 commodity as its own row, and every other commodity as one row', async () => {
     const { selectedRows } = await contextOf(seedPerSpeciesLines())
     expect(
@@ -350,9 +353,9 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         removeAction
       ])
     ).toEqual([
-      ['0102', 'Cow', 'remove:0'],
-      ['01061900', 'Dog', 'remove-species:2'],
-      ['01061900', 'Cat', 'remove-species:3']
+      ['0102', 'Bos taurus, Bison bison', 'remove:0'],
+      ['01061900', CANIS_FAMILIARIS, 'remove-species:2'],
+      ['01061900', FELIS_CATUS, 'remove-species:3']
     ])
   })
 
@@ -371,9 +374,9 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         ]
       )
     ).toEqual([
-      ['Cow', '1148346'],
-      ['Cow', '716661'],
-      ['Cat', '923501']
+      ['0102', BOS_TAURUS],
+      ['0102', BISON_BISON],
+      ['01061900', FELIS_CATUS]
     ])
   })
 
@@ -390,8 +393,8 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         speciesSelection
       ])
     ).toEqual([
-      ['Cow', '1148346'],
-      ['Dog', '900001']
+      ['0102', BOS_TAURUS],
+      ['01061900', '900001']
     ])
     // reconcileEntriesAt keys by commodity|species, so the surviving Dog line
     // keeps its own quantities rather than inheriting the removed line's.
@@ -404,8 +407,8 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Dog',
-            speciesSelection: '923502',
+            commoditySelection: '01061900',
+            speciesSelection: CANIS_FAMILIARIS,
             numberOfPackages: '3',
             numberOfAnimalsQuantity: '7'
           }
@@ -462,8 +465,8 @@ describe('#consignmentDetailsController — the animal count must be answered be
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commoditySelection: '0102',
+          speciesSelection: BOS_TAURUS,
           numberOfPackages: '',
           numberOfAnimalsQuantity: '3',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -491,8 +494,8 @@ describe('#consignmentDetailsController — the animal count must be answered be
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commoditySelection: '0102',
+          speciesSelection: BOS_TAURUS,
           numberOfPackages: '',
           numberOfAnimalsQuantity: '3'
         }
