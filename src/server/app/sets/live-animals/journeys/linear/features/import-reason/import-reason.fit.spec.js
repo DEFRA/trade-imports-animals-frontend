@@ -4,11 +4,12 @@ import {
   chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
   expectNoSeriousOrCriticalViolations,
+  renderedCountriesIn,
   startNotificationAtImportReason,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import {
-  destinationPageCountryEntries,
+  countryAndSubdivisionEntriesNamedWithCountry,
   portsOfEntry
 } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
@@ -25,10 +26,11 @@ const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
 const EXIT_PORT = portsOfEntry.find(({ code }) => code === PORT_CODE)
 const EXIT_PORT_LABEL = `${EXIT_PORT.name} - ${EXIT_PORT.code}`
-const IRELAND = destinationPageCountryEntries().find(
+const UNIQUE_DOVER_TERMINAL_LABEL = `Dover - ${PORT_CODE}`
+const IRELAND = countryAndSubdivisionEntriesNamedWithCountry().find(
   ({ code }) => code === COUNTRY_CODE
 )
-const CANARY_ISLANDS = destinationPageCountryEntries().find(
+const CANARY_ISLANDS = countryAndSubdivisionEntriesNamedWithCountry().find(
   ({ code }) => code === 'ES-CN'
 )
 const transitPortInput = 'input#transitPortOfExit'
@@ -40,9 +42,11 @@ const transhipmentCountryHidden = 'select#transhipmentDestinationCountry-select'
 const NO_JS_EXIT_DATE = '15/06/2030'
 const SECOND_PORT = portsOfEntry.find(({ code }) => code !== PORT_CODE)
 const SECOND_PORT_LABEL = `${SECOND_PORT.name} - ${SECOND_PORT.code}`
-const FRANCE = destinationPageCountryEntries().find(({ code }) => code === 'FR')
-const irelandMatches = destinationPageCountryEntries().filter(({ name }) =>
-  /ire/i.test(name)
+const FRANCE = countryAndSubdivisionEntriesNamedWithCountry().find(
+  ({ code }) => code === 'FR'
+)
+const irelandMatches = countryAndSubdivisionEntriesNamedWithCountry().filter(
+  ({ name }) => /ire/i.test(name)
 )
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
 const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
@@ -52,8 +56,6 @@ const temporaryAdmissionPortHidden =
 const radioFor = (page, value) =>
   page.locator(`${REASON_INPUT_SELECTOR}[value="${value}"]`)
 
-/** The reveal a reason opens, found through the radio that controls it — so
- * the lookup only works while the radio really does control a reveal. */
 const revealFor = async (page, value) => {
   const controls = await radioFor(page, value).getAttribute('aria-controls')
   expect(controls, `${value} controls a reveal`).toBeTruthy()
@@ -125,7 +127,6 @@ test.describe('import-reason feature', () => {
       0
     )
 
-    // Hidden from sight, still the group's accessible name.
     await expect(
       page.locator('legend').filter({ hasText: copy.legend })
     ).toHaveClass(/govuk-visually-hidden/)
@@ -272,15 +273,9 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    const renderedCountries = await page
-      .locator(`${transitCountryHidden} option`)
-      .evaluateAll((options) =>
-        options.slice(1).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    expect(
+      await renderedCountriesIn(page.locator(transitCountryHidden))
+    ).toEqual(countryAndSubdivisionEntriesNamedWithCountry())
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -321,15 +316,9 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    const renderedCountries = await page
-      .locator(`${transhipmentCountryHidden} option`)
-      .evaluateAll((options) =>
-        options.slice(1).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    expect(
+      await renderedCountriesIn(page.locator(transhipmentCountryHidden))
+    ).toEqual(countryAndSubdivisionEntriesNamedWithCountry())
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({
@@ -478,9 +467,7 @@ test.describe('import-reason port and country type-ahead', () => {
 
   test('filters ports as the user types', async ({ page }) => {
     const field = page.locator(transitPortInput)
-    // "Dover" or the code alone matches three Dover terminals; the end of the
-    // name and the code together are unique.
-    await field.fill(`Dover - ${PORT_CODE}`)
+    await field.fill(UNIQUE_DOVER_TERMINAL_LABEL)
     await expect(
       page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
     ).toBeVisible()
@@ -502,7 +489,7 @@ test.describe('import-reason port and country type-ahead', () => {
       page.getByRole('option', { name: IRELAND.name, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('option')).toHaveCount(
-      destinationPageCountryEntries().length
+      countryAndSubdivisionEntriesNamedWithCountry().length
     )
   })
 

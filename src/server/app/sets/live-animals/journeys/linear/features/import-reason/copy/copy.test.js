@@ -130,7 +130,7 @@ describe('GET import-reason — copy reaches the view', () => {
       copy.country.placeholder
     )
     expect(result.view.context.countryItems.slice(1)).toEqual(
-      await countries.destinationCountryOptions()
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(1)).toEqual(

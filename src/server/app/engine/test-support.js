@@ -1,6 +1,12 @@
+import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
+import { config } from '../../../config/config.js'
+import { buildDispatch } from '../flow/dispatch.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
-import { records } from './persistence/records.js'
+import { configureRecords, records } from './persistence/records.js'
+import { configureSession } from './persistence/session.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -200,3 +206,27 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
+
+export const referenceDataServing = () => {
+  const originalMode = config.get('stubMode')
+  afterAll(() => {
+    vi.unstubAllGlobals()
+    config.set('stubMode', originalMode)
+  })
+  return (rows) => {
+    config.set('stubMode', false)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => rows }))
+    )
+  }
+}
+
+export const useStubbedJourney = (setId, dispatchPages) => {
+  beforeAll(() => {
+    configureRecords(setId, recordsStub)
+    configureSession(setId, sessionStub)
+    buildDispatch(setId, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+}

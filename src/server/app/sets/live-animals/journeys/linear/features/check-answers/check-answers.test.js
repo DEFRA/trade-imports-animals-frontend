@@ -713,7 +713,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
+  it('Should show whatever region-of-origin code is stored on its row, even when the requirement is no', async () => {
     const rows = rowsOf(
       await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
     )

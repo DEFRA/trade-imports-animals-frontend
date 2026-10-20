@@ -77,32 +77,24 @@ describe('countries service — stub mode', () => {
       value: 'AT',
       text: 'Austria'
     })
-    expect(await countries.originCountryOptions()).toContainEqual({
-      value: 'ES-CN',
-      text: 'Canary Islands'
-    })
     expect(await countries.countryDisplayLabel('ES-CN')).toBe(
       'Canary Islands (Spain)'
     )
     expect(countries.parentCountryCode('ES-CN')).toBe('ES')
   })
 
-  it('Should offer destination options as the origin countries and their subdivisions, each subdivision named with its parent, in one alphabetical list', async () => {
+  it('Should offer the stub countries and their subdivisions, each subdivision named with its country, in one list sorted by label', async () => {
     process.env.STUB_MODE = 'true'
     const countries = await import('./countries/index.js')
-    const destination = await countries.destinationCountryOptions()
-    const origin = await countries.originCountryOptions()
+    const options =
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
 
-    expect(destination).toContainEqual({
+    expect(options).toContainEqual({
       value: 'ES-CN',
       text: 'Canary Islands (Spain)'
     })
-    expect(destination).toContainEqual({ value: 'AT', text: 'Austria' })
-    expect(destination).toHaveLength(origin.length)
-    expect(destination.map(({ value }) => value).sort()).toEqual(
-      origin.map(({ value }) => value).sort()
-    )
-    const texts = destination.map(({ text }) => text)
+    expect(options).toContainEqual({ value: 'AT', text: 'Austria' })
+    const texts = options.map(({ text }) => text)
     expect(texts).toEqual(
       [...texts].sort((left, right) => left.localeCompare(right))
     )
@@ -158,7 +150,7 @@ describe('countries service — real mode', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('Should offer destination options as whatever reference data serves, each subdivision named with its parent, in one alphabetical list', async () => {
+  it('Should offer countries and subdivisions as whatever reference data serves, each subdivision named with its country, in one list sorted by label', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(
       okOnlyForBlock('GBNAG_SPS_EX', [
@@ -172,7 +164,9 @@ describe('countries service — real mode', () => {
     )
     const countries = await import('./countries/index.js')
 
-    expect(await countries.destinationCountryOptions()).toEqual([
+    expect(
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
+    ).toEqual([
       { value: 'AA', text: 'Aland' },
       { value: 'ZZ-1', text: 'Alpha Isle (Zedland)' },
       { value: 'ZZ', text: 'Zedland' }
@@ -307,9 +301,6 @@ describe('ports service — real mode', () => {
   })
 })
 
-// isStubMode's own unit test mocks config; these two run the real convict
-// schema, so they are what proves the STUB_MODE environment variable actually
-// reaches the services above.
 describe('mode resolution', () => {
   it('Should default to real when the flag is unset', async () => {
     delete process.env.STUB_MODE

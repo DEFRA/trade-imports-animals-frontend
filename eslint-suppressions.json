@@ -6,7 +6,7 @@
   },
   "src/server/app/services/countries/index.js": {
     "code-quality/no-set-vocabulary": {
-      "count": 3
+      "count": 1
     }
   },
   "src/server/app/services/persistence/records/stub/reference-number.js": {

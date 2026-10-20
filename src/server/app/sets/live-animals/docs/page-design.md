@@ -60,6 +60,32 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Documents are not required to submit, so a notification with none lists
   them as still owed.
 
+## Origin of the import
+
+- The country is checked only against the list, not required, so a trader can
+  save what they know and return.
+- The list names a territory with its country, "Canary Islands (Spain)", and
+  is sorted by the name shown.
+- The trader types only the part of the region code after the country's
+  prefix, and the stored answer is the whole joined code.
+- A typed prefix is accepted and not doubled.
+- The region code is required under Yes, and stored only with a country's
+  prefix. Under No, or with no country, the stored code is empty.
+- The rules measure the typed part with any typed prefix removed, whatever the
+  answer; the page shows back what was typed.
+- The region code box stops typing at the same length the rule allows.
+- Clearing the country clears the region code too, because the prefix
+  depends on the country.
+- The internal reference is checked for length only. It is the trader's own
+  and keeps their punctuation.
+- The back link goes to the dashboard until something is saved, then to the
+  overview.
+- The status strip shows from the first request.
+- Stored answers are re-checked against the page's rules when the page opens,
+  so a country the reference data no longer offers is named on the page.
+- The overview origin task reads Complete only when a country is chosen and
+  the region of origin code question is answered (Yes with a code, or No).
+
 ## Identification
 
 - The in-card button says what pressing it does next: "Save and add another"

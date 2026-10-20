@@ -13,7 +13,11 @@ import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { prefixFor, validation } from './validate.js'
+import {
+  prefixFor,
+  REGION_CODE_SUFFIX_MAX_LENGTH,
+  validation
+} from './validate.js'
 
 export const meta = {
   ...page,
@@ -30,33 +34,21 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
 
-// The list feeds a type-ahead that enhances this select, so it carries only the
-// placeholder and the real countries — a scroll-only list needed a divider rule
-// under the placeholder, a searchable one does not.
 const countryItems = async () => [
-  { value: '', text: copy.country.placeholder },
-  ...(await countries.originCountryOptions())
+  { value: '', text: copy.country.selectText },
+  ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
 
-// The back link is the one thing on this page told by what has been saved: a
-// notification with nothing saved has no hub to go back to, so it goes to the
-// dashboard instead. The status strip does not follow it — see `render`.
 const backLinkFor = (journey, answers) =>
   hasCommittedNotificationAnswers(answers)
     ? hubPath(journey.journeyId)
     : dashboardPath()
 
-// The journey always reaches the layout, so the status strip — the Draft tag
-// and the notification reference — is drawn from the first request, matching
-// every later page. The reference exists by then: starting a notification
-// creates the record, and the user arrives here redirected under it.
 const render = async (
   h,
   journey,
   values,
-  errors = {},
-  answers = values,
-  recoverableError = false
+  { errors = {}, answers = values, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -71,16 +63,14 @@ const render = async (
     errors,
     errorSummary: kit.errorSummary(errors),
     countryItems: await countryItems(),
-    regionCodePrefix: prefixFor(values.countryOfOrigin)
+    regionCodePrefix: prefixFor(values.countryOfOrigin),
+    regionCodeSuffixMaxLength: REGION_CODE_SUFFIX_MAX_LENGTH
   })
 
-// The stored answers go back through the page's own rules on the way in, so a
-// country the reference data has moved past is named here rather than
-// surviving to the review page.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values, errors, answers)
+  return render(h, journey, values, { errors, answers })
 }
 
 const post = async (request, h) => {
@@ -90,9 +80,9 @@ const post = async (request, h) => {
   )
   if (hasErrors(errors)) {
     const { journey, answers: storedAnswers } = await state.get(request, h)
-    return (await render(h, journey, values, errors, storedAnswers)).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return (
+      await render(h, journey, values, { errors, answers: storedAnswers })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let committed
@@ -102,9 +92,12 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey, answers: storedAnswers } = await state.get(request, h)
-      return (await render(h, journey, values, {}, storedAnswers, true)).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return (
+        await render(h, journey, values, {
+          answers: storedAnswers,
+          recoverableError: true
+        })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {

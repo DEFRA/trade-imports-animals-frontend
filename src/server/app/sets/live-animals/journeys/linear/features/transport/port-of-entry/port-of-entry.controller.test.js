@@ -17,7 +17,8 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  postHandlerOf,
+  referenceDataServing
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
@@ -29,7 +30,6 @@ import {
 
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow } from './arrival-window.js'
-import { config } from '../../../../../../../../../config/config.js'
 import * as portOfEntry from './port-of-entry.controller.js'
 
 const post = postHandlerOf(portOfEntry)
@@ -320,7 +320,7 @@ describe('POST port-of-entry — empty port overwrites a stored answer', () => {
 })
 
 describe('POST port-of-entry — port membership follows the primed list', () => {
-  const originalMode = config.get('stubMode')
+  const serveReferenceData = referenceDataServing()
 
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -329,20 +329,8 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
   })
   beforeEach(() => store.clear())
 
-  afterAll(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-  })
-
   it('Should validate against the list as primed at POST time, not as imported', async () => {
-    config.set('stubMode', false)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => [{ code: 'ZZ 001', name: 'Zedport' }]
-      }))
-    )
+    serveReferenceData([{ code: 'ZZ 001', name: 'Zedport' }])
     await ports.ensureLoaded()
 
     const accepted = await driveHandler(post, {

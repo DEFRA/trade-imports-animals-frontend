@@ -1,34 +1,24 @@
 import { SET_ID } from '../../../../set.js'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  postHandlerOf,
+  referenceDataServing,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import * as countries from '../../../../../../services/countries/index.js'
-import { config } from '../../../../../../../../config/config.js'
 
 import * as origin from './controller.js'
+import { copy } from './copy/copy.en.js'
+import { REGION_CODE_SUFFIX_MAX_LENGTH } from './validate.js'
 
 const post = postHandlerOf(origin)
 const get = origin.routes.find((route) => route.method === 'GET').handler
 
+const COUNTRY_CODE_OUTSIDE_THE_LIST = 'ZZ'
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 const REGION_CODE_MAX_LENGTH_MESSAGE =
@@ -37,14 +27,9 @@ const INTERNAL_REFERENCE_MAX_LENGTH = 58
 const INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE =
   'Internal reference must be 58 characters or less'
 
-describe('POST /origin — invalid payload', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+useStubbedJourney(SET_ID, dispatchPages)
 
+describe('POST /origin — invalid payload', () => {
   const cases = [
     {
       name: 'countryOfOrigin outside the countries list',
@@ -80,13 +65,6 @@ describe('POST /origin — invalid payload', () => {
 })
 
 describe('POST /origin — an unanswered country still saves', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should keep the rest of the page and move on when no country is chosen', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -117,7 +95,7 @@ describe('POST /origin — an unanswered country still saves', () => {
     expect(result.after.regionOfOriginCodeRequirement).toBe('')
   })
 
-  it('Should store the region code without a prefix while no country is chosen', async () => {
+  it('Should save no region code while no country gives it its prefix', async () => {
     const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
@@ -128,43 +106,28 @@ describe('POST /origin — an unanswered country still saves', () => {
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.regionOfOriginCode).toBe('75')
+    expect(result.after.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after.regionOfOriginCode).toBe('')
   })
 
-  // The prefix-free region code is an intermediate value: it self-heals when
-  // the user comes back to the page and chooses the country.
-  it('Should join the country prefix once the country is filled in later', async () => {
-    await driveHandler(post, {
+  it('Should keep the typed code on the page when the save is refused for another answer', async () => {
+    const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
         regionOfOriginCodeRequirement: 'yes',
         regionOfOriginCodeSuffix: '75',
-        internalReferenceNumber: ''
+        internalReferenceNumber: 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1)
       }
     })
 
-    const result = await driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'FR',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix: '75',
-        internalReferenceNumber: ''
-      }
-    })
-
-    expect(result.view).toBeUndefined()
-    expect(result.after.regionOfOriginCode).toBe('FR-75')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+    expect(result.view.context.regionCodePrefix).toBe('')
+    expect(result.after).toEqual(result.before)
   })
 })
 
 describe('POST /origin — valid internal reference', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should accept and save an internal reference containing an underscore', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -178,8 +141,6 @@ describe('POST /origin — valid internal reference', () => {
     expect(result.after.internalReferenceNumber).toBe('Imports456_GB')
   })
 
-  // The reference is whatever the user's own system calls the consignment, so
-  // the punctuation their records use has to survive the page untouched.
   const punctuatedReferences = [
     'ACME-2026/01',
     'Acme ref 12',
@@ -188,7 +149,7 @@ describe('POST /origin — valid internal reference', () => {
   ]
 
   it.each(punctuatedReferences)(
-    'Should accept and save the internal reference %s',
+    'Should save the internal reference %s with its punctuation unchanged',
     async (internalReferenceNumber) => {
       const result = await driveHandler(post, {
         payload: {
@@ -219,13 +180,6 @@ describe('POST /origin — valid internal reference', () => {
 })
 
 describe('POST /origin — region of origin code prefix and suffix', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   const postSuffix = (regionOfOriginCodeSuffix) =>
     driveHandler(post, {
       payload: {
@@ -294,6 +248,37 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  const changeStoredCodeToNo = () =>
+    driveHandler(post, {
+      seed: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'FR-75'
+      },
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+  it('Should clear the stored code when the answer changes from Yes to No', async () => {
+    const changed = await changeStoredCodeToNo()
+
+    expect(changed.view).toBeUndefined()
+    expect(changed.before.regionOfOriginCode).toBe('FR-75')
+    expect(changed.after.regionOfOriginCodeRequirement).toBe('no')
+    expect(changed.after.regionOfOriginCode).toBe('')
+  })
+
+  it('Should show an empty region code box on return after the answer was changed to No', async () => {
+    const { after } = await changeStoredCodeToNo()
+
+    const reopened = await driveHandler(get, { seed: after })
+    expect(reopened.view.context.values.regionOfOriginCodeSuffix).toBe('')
+  })
+
   it('Should let a blank box through when the answer is No', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -339,13 +324,6 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
 })
 
 describe('POST /origin — Save and return to overview', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   const postRegion = (regionOfOriginCodeSuffix, extra = {}) =>
     driveHandler(post, {
       payload: {
@@ -387,13 +365,6 @@ describe('POST /origin — Save and return to overview', () => {
 })
 
 describe('GET /origin — region of origin code splits back into its two parts', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should render the country as the prefix and only the rest in the box', async () => {
     const result = await driveHandler(get, {
       seed: {
@@ -416,18 +387,45 @@ describe('GET /origin — region of origin code splits back into its two parts',
 })
 
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should supply the placeholder and full country list to the select', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Select a country' })
     expect(items).toContainEqual({ value: 'FR', text: 'France' })
+  })
+
+  it('Should name a subdivision with its parent country in the select', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.countryItems).toContainEqual({
+      value: 'ES-CN',
+      text: 'Canary Islands (Spain)'
+    })
+  })
+
+  it("Should sort the select's countries and subdivisions by the label shown", async () => {
+    const result = await driveHandler(get)
+    const labels = result.view.context.countryItems
+      .slice(1)
+      .map(({ text }) => text)
+    expect(labels).toEqual(
+      [...labels].sort((left, right) => left.localeCompare(right))
+    )
+  })
+
+  it('Should supply the feature copy module and the shared chrome copy', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.copy).toBe(copy)
+    expect(result.view.context.pageTitle).toBe(copy.title)
+    expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
+      'Save and continue'
+    )
+  })
+
+  it('Should supply the region code suffix maximum length to the view', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.regionCodeSuffixMaxLength).toBe(
+      REGION_CODE_SUFFIX_MAX_LENGTH
+    )
   })
 
   it('Should offer no unselectable filler rows for the type-ahead to search', async () => {
@@ -438,16 +436,7 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
   })
 })
 
-// `ZZ` is deliberately absent from the captured countries fixture, so seeding
-// it doubles as an out-of-list "stale" code.
 describe('POST /origin — empty country overwrites a stored answer', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should replace a previously stored country with an empty string when the placeholder is submitted', async () => {
     const result = await driveHandler(post, {
       seed: {
@@ -469,17 +458,10 @@ describe('POST /origin — empty country overwrites a stored answer', () => {
 })
 
 describe('GET /origin — a stored country the reader no longer offers', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should blank the country in values so the select renders unselected', async () => {
     const result = await driveHandler(get, {
       seed: {
-        countryOfOrigin: 'ZZ',
+        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
         regionOfOriginCodeRequirement: 'no',
         internalReferenceNumber: ''
       }
@@ -487,14 +469,16 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
 
     expect(result.view.context.values.countryOfOrigin).toBe('')
     expect(
-      result.view.context.countryItems.find((item) => item.value === 'ZZ')
+      result.view.context.countryItems.find(
+        (item) => item.value === COUNTRY_CODE_OUTSIDE_THE_LIST
+      )
     ).toBeUndefined()
   })
 
   it('Should surface a country-no-longer-available error on the country field', async () => {
     const result = await driveHandler(get, {
       seed: {
-        countryOfOrigin: 'ZZ',
+        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
         regionOfOriginCodeRequirement: 'no',
         internalReferenceNumber: ''
       }
@@ -508,7 +492,7 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
   it('Should blank the region-code suffix input so the whole stored code does not cascade into it', async () => {
     const result = await driveHandler(get, {
       seed: {
-        countryOfOrigin: 'ZZ',
+        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
         regionOfOriginCodeRequirement: 'yes',
         regionOfOriginCode: 'AT-123'
       }
@@ -521,34 +505,23 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
   it('Should leave the stored answer intact — GET only reshapes what the page renders', async () => {
     const result = await driveHandler(get, {
       seed: {
-        countryOfOrigin: 'ZZ',
+        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
         regionOfOriginCodeRequirement: 'yes',
         regionOfOriginCode: 'AT-123'
       }
     })
 
-    expect(result.before.countryOfOrigin).toBe('ZZ')
-    expect(result.after.countryOfOrigin).toBe('ZZ')
+    expect(result.before.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
+    expect(result.after.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
     expect(result.after.regionOfOriginCode).toBe('AT-123')
   })
 })
 
-// This POST payload is unreachable from a normal browser flow after the GET
-// fix above (which blanks the suffix input on render). The controller still
-// handles the shape verbatim, so the max-length rule still fires on the
-// suffix. Kept as a pathological-payload guard.
 describe('POST /origin — a stored region code cascades to a length error under a stale country', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should reject the payload with a max-length error on the region code', async () => {
     const result = await driveHandler(post, {
       seed: {
-        countryOfOrigin: 'ZZ',
+        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
         regionOfOriginCodeRequirement: 'yes',
         regionOfOriginCode: 'AT-123'
       },
@@ -569,13 +542,6 @@ describe('POST /origin — a stored region code cascades to a length error under
 })
 
 describe('POST /origin — country subdivisions', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should store the subdivision code when a subdivision is picked', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -614,13 +580,6 @@ describe('POST /origin — country subdivisions', () => {
 })
 
 describe('GET /origin — country subdivisions', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should render a stored subdivision in the country field', async () => {
     const result = await driveHandler(get, {
       seed: {
@@ -633,32 +592,27 @@ describe('GET /origin — country subdivisions', () => {
 
     expect(result.view.context.values.countryOfOrigin).toBe('ES-CN')
   })
+
+  it("Should show the parent country's code as the region code prefix for a stored subdivision", async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ES-CN',
+        countryOfOriginSubdivisionCode: 'ES-CN',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'ES-12'
+      }
+    })
+
+    expect(result.view.context.regionCodePrefix).toBe('ES')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('12')
+  })
 })
 
 describe('POST /origin — country membership follows the primed list', () => {
-  const originalMode = config.get('stubMode')
-
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
-  afterAll(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-  })
+  const serveReferenceData = referenceDataServing()
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
-    config.set('stubMode', false)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => [{ code: 'ZZ', name: 'Zedland' }]
-      }))
-    )
+    serveReferenceData([{ code: 'ZZ', name: 'Zedland' }])
     await countries.ensureLoaded()
 
     const accepted = await driveHandler(post, {

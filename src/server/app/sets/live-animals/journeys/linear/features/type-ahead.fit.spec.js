@@ -1,10 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  FORM_GROUP_ANCESTOR_XPATH,
   GOVUK_BLUE,
   GOVUK_BLUE_SHADE_50,
   WHITE,
+  childTagsAndClassesOf,
   expectNoSeriousOrCriticalViolations,
+  expectedFormGroupChildren,
   openArrival,
   openTransit,
   signIn,
@@ -26,23 +29,6 @@ const france = countriesOrigin.find(({ code }) => code === 'FR')
 const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 const dover = portsOfEntry.find(({ code }) => code === 'GB DVR')
 const DOVER_OPTION = `${dover.name} - ${dover.code}`
-
-const FORM_GROUP_ANCESTOR =
-  'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
-
-const childrenOf = (formGroup) =>
-  formGroup.evaluate((group) =>
-    [...group.children].map(({ tagName, className }) => ({
-      tagName,
-      className
-    }))
-  )
-
-const expectedFormGroupChildren = ({ hint, labelSize }) => [
-  { tagName: 'LABEL', className: `govuk-label govuk-label--${labelSize}` },
-  ...(hint ? [{ tagName: 'DIV', className: 'govuk-hint' }] : []),
-  { tagName: 'SELECT', className: 'govuk-select' }
-]
 
 const inputFor = (page, inputId) => page.locator(`input#${inputId}`)
 
@@ -73,8 +59,7 @@ const typeAheads = [
     inputId: 'countryOfOrigin',
     label: originCopy.country.label,
     labelSize: 'm',
-    hint: originCopy.country.hint,
-    selectText: originCopy.country.placeholder,
+    selectText: originCopy.country.selectText,
     open: startNotificationAtOrigin
   }),
   portCase({
@@ -230,13 +215,17 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
 
       const formGroup = page
         .locator(`select#${inputId}`)
-        .locator(FORM_GROUP_ANCESTOR)
+        .locator(FORM_GROUP_ANCESTOR_XPATH)
       const select = formGroup.getByLabel(label, { exact: true })
 
       await expect(select).toHaveJSProperty('tagName', 'SELECT')
       await expect(select).toBeVisible()
       await expect(select.locator('option').first()).toHaveText(selectText)
-      expect(await childrenOf(formGroup)).toEqual(
+      await expect(select.locator('option').first()).toHaveJSProperty(
+        'value',
+        ''
+      )
+      expect(await childTagsAndClassesOf(formGroup)).toEqual(
         expectedFormGroupChildren({ hint, labelSize })
       )
       await expect(

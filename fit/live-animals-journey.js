@@ -50,6 +50,37 @@ export const expectNoSeriousOrCriticalViolations = async (page, subject) => {
   ).toEqual([])
 }
 
+export const FORM_GROUP_ANCESTOR_XPATH =
+  'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
+
+export const childTagsAndClassesOf = (formGroup) =>
+  formGroup.evaluate((group) =>
+    [...group.children].map(({ tagName, className }) => ({
+      tagName,
+      className
+    }))
+  )
+
+export const expectedFormGroupChildren = ({
+  hint,
+  labelSize,
+  enhanced = false
+}) => [
+  { tagName: 'LABEL', className: `govuk-label govuk-label--${labelSize}` },
+  ...(hint ? [{ tagName: 'DIV', className: 'govuk-hint' }] : []),
+  ...(enhanced ? [{ tagName: 'DIV', className: 'app-autocomplete' }] : []),
+  { tagName: 'SELECT', className: 'govuk-select' }
+]
+
+/** The { code, name } of every option after the first in a country select. */
+export const renderedCountriesIn = (select) =>
+  select.locator('option').evaluateAll((options) =>
+    options.slice(1).map((option) => ({
+      code: option.value,
+      name: option.textContent
+    }))
+  )
+
 /** govuk-frontend's blue, its darkest shade and white, as the browser reports them. */
 export const GOVUK_BLUE = 'rgb(29, 112, 184)'
 export const GOVUK_BLUE_SHADE_50 = 'rgb(15, 56, 92)'

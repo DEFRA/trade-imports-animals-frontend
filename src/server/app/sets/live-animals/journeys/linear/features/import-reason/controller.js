@@ -35,12 +35,9 @@ const view = `${TEMPLATES}/features/import-reason/template`
 
 const copy = copyFor({ en, cy })
 
-// The lists feed type-aheads that enhance these selects, so each carries only the
-// placeholder and the real options — a scroll-only list needed a divider rule
-// under the placeholder, a searchable one does not.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...(await countries.destinationCountryOptions())
+  ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
 
 const portItems = async () => [
@@ -52,8 +49,7 @@ const render = async (
   h,
   journey,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -87,15 +83,13 @@ const render = async (
     })
   })
 
-// The stored answers go back through the page's own rules on the way in, so an
-// answer the reference data has moved past is named here rather than surviving
-// to the review page. A stale answer is blanked in every field it prefills —
-// not only the one the current reason happens to reveal — so neither reveal
-// can render it as chosen.
+const putStoredAnswersThroughPageRules = (answers) =>
+  validation.onStored(answers)
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values, errors)
+  const { values, errors } = await putStoredAnswersThroughPageRules(answers)
+  return render(h, journey, values, { errors })
 }
 
 const post = async (request, h) => {
@@ -105,7 +99,7 @@ const post = async (request, h) => {
   )
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
-    return (await render(h, journey, values, errors)).code(
+    return (await render(h, journey, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -117,9 +111,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return (await render(h, journey, values, {}, true)).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return (
+        await render(h, journey, values, { recoverableError: true })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {
