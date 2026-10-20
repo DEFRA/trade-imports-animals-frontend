@@ -12,5 +12,5 @@ $app-date-picker-calendar-max-width: 360px;
 }
 
 .app-date-picker .moj-datepicker__toggle {
-  @include helpers.blue-icon-button;
+  @extend %blue-icon-button;
 }

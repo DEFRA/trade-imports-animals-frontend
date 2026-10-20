@@ -30,7 +30,8 @@ const HTML_ESCAPES = {
 const escapeHtml = (text) =>
   text.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char])
 
-const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const escapeRegExp = (text) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
 
 const normaliseQuery = (query) => query.toLowerCase().trim()
 
