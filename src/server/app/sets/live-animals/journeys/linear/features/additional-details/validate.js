@@ -17,7 +17,7 @@ const asArray = (value) => [value ?? []].flat()
 // but not scope. Same predicate the controller uses via `scope.has(...)`.
 export const unweanedApplies = (answers) =>
   asArray(answers?.commodityLines).some((line) =>
-    commodities.unweanedCommodities().includes(line?.commoditySelection)
+    commodities.unweanedCommodityCodes().includes(line?.commodityCode)
   )
 
 // One rule, two audiences: submit falls back to the generic `defaults.oneOf`;

@@ -19,12 +19,15 @@ const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
-const GOVUK_TABLE = '.govuk-table'
+const THIRD_ANIMALS_QUANTITY_INPUT = '#numberOfAnimalsQuantity-2'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
 const CATTLE_OR_COW = 'Cattle or Cow'
 const DOMESTIC_CAT = 'Domestic Cat'
 const REMOVE_COW = `Remove ${CATTLE_OR_COW}`
 const REMOVE_CAT = `Remove ${DOMESTIC_CAT}`
+
+const selectedCommoditiesTable = (page) =>
+  page.getByRole('table', { name: copy.consignmentDetails.table.caption })
 
 const openDetails = async (page) => {
   await startNotification(page)
@@ -74,7 +77,7 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('renders grouped species quantities and collection table', async ({
     page
   }) => {
-    const table = page.locator(GOVUK_TABLE)
+    const table = selectedCommoditiesTable(page)
     await expect(table).toContainText(copy.consignmentDetails.table.caption)
     await expect(table).toContainText(
       copy.consignmentDetails.table.commodityCode
@@ -128,9 +131,7 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('lists a commodity on code 01061900 as a species row whose remove drops that species alone', async ({
     page
   }) => {
-    const table = page.locator(GOVUK_TABLE)
-    // 0102 keeps the commodity-level remove; the cat is on 01061900, so its row is
-    // the species' own and its remove names the line rather than the commodity.
+    const table = selectedCommoditiesTable(page)
     await expect(
       table.getByRole('button', { name: REMOVE_COW })
     ).toHaveAttribute('value', 'remove:0')
@@ -232,7 +233,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await page.getByRole('button', { name: REMOVE_CAT }).click()
 
-    await expect(page.locator(GOVUK_TABLE)).not.toContainText(DOMESTIC_CAT)
+    await expect(selectedCommoditiesTable(page)).not.toContainText(DOMESTIC_CAT)
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
 
@@ -242,10 +243,9 @@ test.describe('commodity consignment details — persistence and accessibility',
     await fillValidQuantities(page)
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-    // 0102 is not 01061900, so its row keeps the commodity-level remove.
     await page.getByRole('button', { name: REMOVE_COW }).click()
 
-    const table = page.locator(GOVUK_TABLE)
+    const table = selectedCommoditiesTable(page)
     await expect(table).not.toContainText(CATTLE_OR_COW)
     await expect(table).toContainText(DOMESTIC_CAT)
     // The cat line is the only one left and its saved count travelled with it,
@@ -257,8 +257,6 @@ test.describe('commodity consignment details — persistence and accessibility',
     page
   }) => {
     await page.getByRole('button', { name: REMOVE_COW }).click()
-    // The cat is on 01061900, so its row carries the species-level remove — and it
-    // is the only line left, so the page has nothing more to ask.
     await page.getByRole('button', { name: REMOVE_CAT }).click()
 
     await expect(
@@ -290,12 +288,10 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page
       .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
       .click()
-    await expect(page.locator(GOVUK_TABLE)).toContainText('Dog')
-    // Canonical order is by code, then Latin name, so the dog (Canis) lands
-    // between the cattle and the cat (Felis).
+    await expect(selectedCommoditiesTable(page)).toContainText('Dog')
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('')
-    await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('2')
+    await expect(page.locator(THIRD_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
   })
 
   test('ends with all three controls now the hub links straight here', async ({

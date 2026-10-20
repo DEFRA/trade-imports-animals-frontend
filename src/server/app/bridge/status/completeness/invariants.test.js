@@ -15,9 +15,9 @@ import { emptyCollectionSatisfiesFloor } from './invariants.js'
 
 const line = { id: 'line-group', name: 'commodityLines' }
 
-const commoditySelection = {
+const commodityCode = {
   id: 'commodity-selection',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: line,
   status: 'mandatory'
 }
@@ -28,7 +28,7 @@ const allowListedLeaf = {
   id: 'allow-listed-leaf',
   name: 'allowListedLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['0102'], { id: 'unit-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'unit-group' })
 }
 
 // A shape `gateAdmits` cannot read: no `values`, no gated parent group.
@@ -37,7 +37,7 @@ const equalsGateLeaf = {
   name: 'equalsGateLeaf',
   status: 'optional',
   applyTo: equalsGate(
-    commoditySelection,
+    commodityCode,
     '0102',
     { inScope: true },
     { inScope: false }
@@ -50,7 +50,7 @@ const fannedElsewhereLeaf = {
   id: 'elsewhere-leaf',
   name: 'elsewhereLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['0102'], { id: 'other-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'other-group' })
 }
 
 const unitGroupWith = (anyOfIds) => ({
@@ -65,14 +65,14 @@ const collection = { requiredAtLeastOne: true }
 const LINE_1 = 'line1'
 
 const stateWithCommodity = (value) => ({
-  fulfilments: { [commoditySelection.id]: { [LINE_1]: value } }
+  fulfilments: { [commodityCode.id]: { [LINE_1]: value } }
 })
 
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
     configureObligationSet(SET_ID, {
       obligations: [
-        commoditySelection,
+        commodityCode,
         allowListedLeaf,
         equalsGateLeaf,
         fannedElsewhereLeaf
@@ -161,7 +161,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
 
     const twoLines = {
       fulfilments: {
-        [commoditySelection.id]: { line1: '0102', line2: '0102' }
+        [commodityCode.id]: { line1: '0102', line2: '0102' }
       }
     }
 
@@ -169,9 +169,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['0102'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
           stateWithCommodity('0102')
         )
@@ -185,13 +183,11 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['0101'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0101'], null))),
           LINE_1,
           {
             fulfilments: {
-              [commoditySelection.id]: {
+              [commodityCode.id]: {
                 line1: '0102',
                 line2: '0101',
                 line3: '0101'
@@ -206,9 +202,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['0102'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
           twoLines
         )
@@ -221,7 +215,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(allowListed(commoditySelection, ['0101'], null)),
+          gatedGroup(allowListed(commodityCode, ['0101'], null)),
           LINE_1,
           stateWithCommodity('0102')
         )

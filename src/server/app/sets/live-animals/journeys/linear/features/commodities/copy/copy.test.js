@@ -10,7 +10,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
-  identifiedCommodities,
+  identifiedCommodityCodes,
   identifiersFor
 } from '../../../../../services/commodities/index.js'
 
@@ -83,7 +83,7 @@ describe('#copy', () => {
   }
 
   it('Should carry an entry field and a column heading for every identifier a commodity asks for', () => {
-    const pairs = identifiedCommodities().flatMap((commodity) =>
+    const pairs = identifiedCommodityCodes().flatMap((commodity) =>
       identifiersFor(commodity).map((identifier) => [commodity, identifier])
     )
     expect(pairs.length, 'no commodity carries any identifier').toBeGreaterThan(

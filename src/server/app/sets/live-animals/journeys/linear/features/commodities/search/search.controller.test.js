@@ -18,42 +18,28 @@ import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 
 import * as search from './search.controller.js'
+import { lineKey } from './selection/line-key.js'
+import { SHOWN_SEARCH_ROWS } from './selection/rows.js'
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS_ROW,
+  FELIS_CATUS_ROW
+} from './test-support.js'
 
 const get = search.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(search)
 
-// Rows as the saved TST data holds them.
-const BISON_BISON = {
-  code: '0102',
-  latinName: 'Bison bison',
-  commonName: 'Bisons Spp'
-}
-const BOS_TAURUS = {
-  code: '0102',
-  latinName: 'Bos taurus',
-  commonName: 'Cattle or Cow'
-}
-const FELIS_CATUS = {
-  code: '01061900',
-  latinName: 'Felis catus',
-  commonName: 'Domestic Cat'
-}
-const CANIS_FAMILIARIS = {
-  code: '01061900',
-  latinName: 'Canis familiaris',
-  commonName: 'Dog'
-}
-
-const keyOf = (row) => `${row.code}|${row.latinName}`
-
-const BISON_BISON_KEY = keyOf(BISON_BISON)
-const BOS_TAURUS_KEY = keyOf(BOS_TAURUS)
-const FELIS_CATUS_KEY = keyOf(FELIS_CATUS)
+const BISON_BISON_KEY = lineKey(BISON_BISON_ROW)
+const BOS_TAURUS_KEY = lineKey(BOS_TAURUS_ROW)
+const FELIS_CATUS_KEY = lineKey(FELIS_CATUS_ROW)
 
 const SELECT_COMMODITY = 'Select a commodity'
 
-// The rows earlier searches showed, held in the session until the page saves.
-const shown = (...rows) => ({ commoditySearchRows: rows })
+const searchRowsShownEarlier = (...rows) => ({ [SHOWN_SEARCH_ROWS]: rows })
+
+const storedSearchRowsOf = (result) =>
+  result.cookies[flowOnlyAnswersCookie()][result.journeyId][SHOWN_SEARCH_ROWS]
 
 const searchFor = (commoditySearch, payload = {}, flowOnly = undefined) =>
   driveHandler(post, {
@@ -68,8 +54,7 @@ const legendsOf = (result) => groupsOf(result).map((group) => group.legend)
 const textsOf = (result) =>
   groupsOf(result).flatMap((group) => group.items.map((item) => item.text))
 
-const keysOf = (lines) =>
-  lines.map((line) => `${line.commoditySelection}|${line.speciesSelection}`)
+const keysOf = (lines) => lines.map(lineKey)
 
 describe('commodity search', () => {
   beforeAll(() => {
@@ -136,26 +121,26 @@ describe('commodity search', () => {
 
   it('Should tick a result the trader has already chosen', async () => {
     const bubalis = {
-      code: '0102',
-      latinName: 'Bubalus bubalis',
+      commodityCode: '0102',
+      speciesLatinName: 'Bubalus bubalis',
       commonName: 'Water Buffalo'
     }
     const result = await searchFor(
       'buffalo',
-      { selection: keyOf(bubalis) },
-      shown(bubalis)
+      { selection: lineKey(bubalis) },
+      searchRowsShownEarlier(bubalis)
     )
     const items = groupsOf(result).flatMap((group) => group.items)
     expect(
       items.filter((item) => item.checked).map((item) => item.value)
-    ).toEqual([keyOf(bubalis)])
+    ).toEqual([lineKey(bubalis)])
   })
 
   it('Should carry a choice made under an earlier query off screen', async () => {
     const result = await searchFor(
       'felis',
       { selection: BOS_TAURUS_KEY },
-      shown(BOS_TAURUS)
+      searchRowsShownEarlier(BOS_TAURUS_ROW)
     )
     expect(legendsOf(result)).toEqual(['01061900'])
     expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
@@ -165,7 +150,7 @@ describe('commodity search', () => {
     const result = await searchFor(
       'felis',
       { species: FELIS_CATUS_KEY },
-      shown(FELIS_CATUS)
+      searchRowsShownEarlier(FELIS_CATUS_ROW)
     )
     expect(result.view.context.carriedKeys).toEqual([])
   })
@@ -174,9 +159,13 @@ describe('commodity search', () => {
     const ticked = await searchFor(
       'felis',
       { species: FELIS_CATUS_KEY },
-      shown(FELIS_CATUS)
+      searchRowsShownEarlier(FELIS_CATUS_ROW)
     )
-    const unticked = await searchFor('felis', {}, shown(FELIS_CATUS))
+    const unticked = await searchFor(
+      'felis',
+      {},
+      searchRowsShownEarlier(FELIS_CATUS_ROW)
+    )
     expect(ticked.view.context.selectedSummary.count).toBe(1)
     expect(unticked.view.context.selectedSummary.count).toBe(0)
   })
@@ -185,16 +174,13 @@ describe('commodity search', () => {
     const result = await searchFor(
       'ferret',
       { selection: BOS_TAURUS_KEY },
-      shown(BOS_TAURUS, BISON_BISON)
+      searchRowsShownEarlier(BOS_TAURUS_ROW, BISON_BISON_ROW)
     )
-    expect(
-      result.cookies[flowOnlyAnswersCookie()][result.journeyId]
-        .commoditySearchRows
-    ).toEqual([
-      BOS_TAURUS,
+    expect(storedSearchRowsOf(result)).toEqual([
+      BOS_TAURUS_ROW,
       {
-        code: '01061900',
-        latinName: 'Mustela putorius furo',
+        commodityCode: '01061900',
+        speciesLatinName: 'Mustela putorius furo',
         commonName: 'Ferret'
       }
     ])
@@ -203,12 +189,9 @@ describe('commodity search', () => {
   it('Should forget the rows once the page has saved its lines', async () => {
     const result = await driveHandler(post, {
       payload: { species: BOS_TAURUS_KEY },
-      flowOnly: shown(BOS_TAURUS)
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
     })
-    expect(
-      result.cookies[flowOnlyAnswersCookie()][result.journeyId]
-        .commoditySearchRows
-    ).toEqual([])
+    expect(storedSearchRowsOf(result)).toEqual([])
   })
 
   it('Should ignore a choice the page was never shown', async () => {
@@ -231,16 +214,16 @@ describe('commodity search — what has been chosen so far', () => {
       seed: {
         commodityLines: [
           {
-            commoditySelection: '0102',
-            speciesSelection: BOS_TAURUS.latinName
+            commodityCode: '0102',
+            speciesLatinName: BOS_TAURUS_ROW.speciesLatinName
           },
           {
-            commoditySelection: '0102',
-            speciesSelection: BISON_BISON.latinName
+            commodityCode: '0102',
+            speciesLatinName: BISON_BISON_ROW.speciesLatinName
           },
           {
-            commoditySelection: '01061900',
-            speciesSelection: FELIS_CATUS.latinName
+            commodityCode: '01061900',
+            speciesLatinName: FELIS_CATUS_ROW.speciesLatinName
           }
         ]
       }
@@ -251,9 +234,12 @@ describe('commodity search — what has been chosen so far', () => {
       groups: [
         {
           legend: '0102',
-          items: [BISON_BISON.latinName, BOS_TAURUS.latinName]
+          items: [
+            BISON_BISON_ROW.speciesLatinName,
+            BOS_TAURUS_ROW.speciesLatinName
+          ]
         },
-        { legend: '01061900', items: [FELIS_CATUS.latinName] }
+        { legend: '01061900', items: [FELIS_CATUS_ROW.speciesLatinName] }
       ]
     })
   })
@@ -265,7 +251,7 @@ describe('commodity search — what has been chosen so far', () => {
         commoditySearch: 'buffalo',
         selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
       },
-      flowOnly: shown(BOS_TAURUS, FELIS_CATUS)
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
     })
     expect(result.view.context.selectedSummary.count).toBe(0)
     expect(result.view.context.query).toBe('buffalo')
@@ -317,29 +303,27 @@ describe('commodity search — saving the selection', () => {
   it('Should create one line per chosen species in canonical order, with its common name', async () => {
     const result = await driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY, BOS_TAURUS_KEY, BISON_BISON_KEY] },
-      flowOnly: shown(FELIS_CATUS, BOS_TAURUS, BISON_BISON)
+      flowOnly: searchRowsShownEarlier(
+        FELIS_CATUS_ROW,
+        BOS_TAURUS_ROW,
+        BISON_BISON_ROW
+      )
     })
     expect(result.after.commodityLines).toEqual([
       {
-        commoditySelection: '0102',
-        speciesSelection: BISON_BISON.latinName,
-        commonName: 'Bisons Spp',
+        ...BISON_BISON_ROW,
         commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
-        commoditySelection: '0102',
-        speciesSelection: BOS_TAURUS.latinName,
-        commonName: BOS_TAURUS.commonName,
+        ...BOS_TAURUS_ROW,
         commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
-        commoditySelection: '01061900',
-        speciesSelection: FELIS_CATUS.latinName,
-        commonName: 'Domestic Cat',
+        ...FELIS_CATUS_ROW,
         commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
@@ -355,7 +339,7 @@ describe('commodity search — saving the selection', () => {
         selection: BOS_TAURUS_KEY,
         species: FELIS_CATUS_KEY
       },
-      flowOnly: shown(BOS_TAURUS, FELIS_CATUS)
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
     })
     expect(keysOf(result.after.commodityLines)).toEqual([
       BOS_TAURUS_KEY,
@@ -365,9 +349,7 @@ describe('commodity search — saving the selection', () => {
 
   it("Should preserve a chosen line's data and remove one that is gone", async () => {
     const kept = {
-      commoditySelection: '0102',
-      speciesSelection: BOS_TAURUS.latinName,
-      commonName: BOS_TAURUS.commonName,
+      ...BOS_TAURUS_ROW,
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -377,21 +359,19 @@ describe('commodity search — saving the selection', () => {
         commodityLines: [
           kept,
           {
-            commoditySelection: '01061900',
-            speciesSelection: FELIS_CATUS.latinName,
+            commodityCode: '01061900',
+            speciesLatinName: FELIS_CATUS_ROW.speciesLatinName,
             numberOfAnimalsQuantity: '2'
           }
         ]
       },
-      payload: { species: [BOS_TAURUS_KEY, keyOf(CANIS_FAMILIARIS)] },
-      flowOnly: shown(CANIS_FAMILIARIS)
+      payload: { species: [BOS_TAURUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
+      flowOnly: searchRowsShownEarlier(CANIS_FAMILIARIS_ROW)
     })
     expect(result.after.commodityLines).toEqual([
       { ...kept, numberOfAnimalsQuantity: 25 },
       {
-        commoditySelection: '01061900',
-        speciesSelection: 'Canis familiaris',
-        commonName: 'Dog',
+        ...CANIS_FAMILIARIS_ROW,
         commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
@@ -405,7 +385,7 @@ describe('commodity search — saving the selection', () => {
         selection: ['Wolf|999', BOS_TAURUS_KEY],
         species: [BOS_TAURUS_KEY, 'not-a-key']
       },
-      flowOnly: shown(BOS_TAURUS)
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
     })
     expect(keysOf(result.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
   })

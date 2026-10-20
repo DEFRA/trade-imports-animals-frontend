@@ -89,14 +89,14 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    seed: { commodityLines: [{ commoditySelection: '0102' }] },
+    seed: { commodityLines: [{ commodityCode: '0102' }] },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    seed: { commodityLines: [{ commoditySelection: '0102' }] },
+    seed: { commodityLines: [{ commodityCode: '0102' }] },
     payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
   },
   {
@@ -227,34 +227,34 @@ describe('controller <-> model commit contract', () => {
       flowOnly: {
         commoditySearchRows: [
           {
-            code: '0102',
-            latinName: BOS_TAURUS,
+            commodityCode: '0102',
+            speciesLatinName: BOS_TAURUS,
             commonName: 'Cattle or Cow'
           },
           {
-            code: '01061900',
-            latinName: FELIS_CATUS,
+            commodityCode: '01061900',
+            speciesLatinName: FELIS_CATUS,
             commonName: 'Domestic Cat'
           }
         ]
       },
-      payload: { species: ['0102|Bos taurus', '01061900|Felis catus'] }
+      payload: { species: [`0102|${BOS_TAURUS}`, `01061900|${FELIS_CATUS}`] }
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(commoditiesSearch.meta.collects))
     )
     expect(result.after.commodityLines).toEqual([
       {
-        commoditySelection: '0102',
-        speciesSelection: BOS_TAURUS,
+        commodityCode: '0102',
+        speciesLatinName: BOS_TAURUS,
         commonName: 'Cattle or Cow',
         commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
-        commoditySelection: '01061900',
-        speciesSelection: FELIS_CATUS,
+        commodityCode: '01061900',
+        speciesLatinName: FELIS_CATUS,
         commonName: 'Domestic Cat',
         commodityType: '2',
         numberOfPackages: '',
@@ -268,15 +268,15 @@ describe('controller <-> model commit contract', () => {
     const result = await drive(postHandlerOf(consignmentDetails), {
       seed: {
         commodityLines: [
-          { commoditySelection: '0102', speciesSelection: BOS_TAURUS }
+          { commodityCode: '0102', speciesLatinName: BOS_TAURUS }
         ]
       },
       payload: { 'numberOfAnimalsQuantity-0': '25', 'numberOfPackages-0': '5' }
     })
     expect(committedIds(result)).toEqual([])
     expect(result.after.commodityLines[0]).toEqual({
-      commoditySelection: '0102',
-      speciesSelection: BOS_TAURUS,
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
       numberOfAnimalsQuantity: 25,
       numberOfPackages: '5'
     })
@@ -311,7 +311,7 @@ describe('controller <-> model commit contract', () => {
     const result = await drive(post, {
       seed: {
         commodityLines: [
-          { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+          { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       },
       payload: {

@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { appliesForCommodity, gateAdmits } from './applicability.js'
+import { appliesForGateValue, gateAdmits } from './applicability.js'
 
-describe('#appliesForCommodity', () => {
+describe('#appliesForGateValue', () => {
   it('Should apply an allowListed obligation for a commodity in its list', () => {
-    expect(appliesForCommodity('horseName', '0101')).toBe(true)
-    expect(appliesForCommodity('animalIdentifierPassport', '0101')).toBe(true)
-    expect(appliesForCommodity('permanentAddress', 'Felis catus')).toBe(true)
+    expect(appliesForGateValue('horseName', '0101')).toBe(true)
+    expect(appliesForGateValue('animalIdentifierPassport', '0101')).toBe(true)
+    expect(appliesForGateValue('permanentAddress', 'Felis catus')).toBe(true)
   })
 
   it('Should not apply an allowListed obligation for a commodity outside its list', () => {
-    expect(appliesForCommodity('horseName', '0102')).toBe(false)
-    expect(appliesForCommodity('permanentAddress', 'Felis')).toBe(false)
+    expect(appliesForGateValue('horseName', '0102')).toBe(false)
+    expect(appliesForGateValue('permanentAddress', 'Felis')).toBe(false)
   })
 
-  // CPH is asked by exemption rather than by inclusion — every consignment is
-  // asked for a CPH number except two commodity codes — so horses (0101) are
-  // let off and ostriches (01063300), on no other list at all, are asked.
-  it('Should apply a notification-level obligation per its commodity list', () => {
-    expect(appliesForCommodity('containsUnweanedAnimals', '0102')).toBe(true)
-    expect(appliesForCommodity('countyParishHoldingCph', '01063300')).toBe(true)
-    expect(appliesForCommodity('countyParishHoldingCph', '0101')).toBe(false)
+  it('Should ask about unweaned animals for cattle (0102)', () => {
+    expect(appliesForGateValue('containsUnweanedAnimals', '0102')).toBe(true)
+  })
+
+  it('Should ask for CPH for ostriches (01063300) but not for horses (0101)', () => {
+    expect(appliesForGateValue('countyParishHoldingCph', '01063300')).toBe(true)
+    expect(appliesForGateValue('countyParishHoldingCph', '0101')).toBe(false)
   })
 
   it('Should apply no identifier to a commodity on none of the identifier lists', () => {
@@ -30,23 +30,21 @@ describe('#appliesForCommodity', () => {
       'animalIdentifierEarTag',
       'horseName'
     ]) {
-      expect(appliesForCommodity(identifier, '01063300')).toBe(false)
+      expect(appliesForGateValue(identifier, '01063300')).toBe(false)
     }
   })
 
   it('Should treat an unknown commodity as outside every allowlist', () => {
-    expect(appliesForCommodity('horseName', 'no-such-commodity')).toBe(false)
-    expect(appliesForCommodity('permanentAddress', 'Unicorn')).toBe(false)
+    expect(appliesForGateValue('horseName', 'no-such-commodity')).toBe(false)
+    expect(appliesForGateValue('permanentAddress', 'Unicorn')).toBe(false)
   })
 
   it('Should never apply for an obligation with no commodity gate', () => {
-    expect(appliesForCommodity('countryOfOrigin', '0102')).toBe(false)
-    expect(appliesForCommodity('no-such-obligation', '0102')).toBe(false)
+    expect(appliesForGateValue('countryOfOrigin', '0102')).toBe(false)
+    expect(appliesForGateValue('no-such-obligation', '0102')).toBe(false)
   })
 })
 
-// The inversion is pinned against the metadata shape directly rather than
-// through a named obligation.
 describe('#gateAdmits', () => {
   it('Should admit a value its allowlist holds', () => {
     expect(

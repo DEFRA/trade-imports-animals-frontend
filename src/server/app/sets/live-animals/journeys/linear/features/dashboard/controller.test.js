@@ -150,7 +150,7 @@ describe('dashboard notifications list', () => {
         arrivalDateAtPort: { day: '5', month: '3', year: '2026' },
         consignor: { name: 'Consignor Ltd' },
         consignee: { name: 'Consignee Ltd' },
-        commodityLines: [{ commoditySelection: '0102' }]
+        commodityLines: [{ commodityCode: '0102' }]
       })
     )
 

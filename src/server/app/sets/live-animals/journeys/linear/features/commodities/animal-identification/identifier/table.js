@@ -1,13 +1,15 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { permanentAddressApplies, scopedFields } from './fields.js'
+import {
+  PERMANENT_ADDRESS,
+  permanentAddressApplies,
+  scopedFields
+} from './fields.js'
 
 const copy = copyFor({ en, cy }).identification
 
 export const IDENTIFIER_LABELS = copy.identifierLabels
-
-const PERMANENT_ADDRESS = 'permanentAddress'
 
 // One column per identifier the COMMODITY declares — not per identifier the
 // trader happened to fill — so the header row says which identifiers this line

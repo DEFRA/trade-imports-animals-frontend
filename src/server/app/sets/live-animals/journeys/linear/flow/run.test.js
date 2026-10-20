@@ -38,7 +38,7 @@ const next = (stepId, answers) =>
 const lineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
-    { commoditySelection: '01061900', speciesSelection: 'Felis catus' }
+    { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
   ]
 }
 

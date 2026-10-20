@@ -34,9 +34,9 @@ const lineFrom = ({
   lineIndex
 }) =>
   compact({
-    commoditySelection: valueAt(obligations.commodityCode, lineIndex),
+    commodityCode: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
-    speciesSelection: valueAt(obligations.species, lineIndex),
+    speciesLatinName: valueAt(obligations.speciesLatinName, lineIndex),
     commonName: valueAt(obligations.commonName, lineIndex),
     numberOfAnimalsQuantity: legacyAnimalCount(
       valueAt(obligations.numberOfAnimals, lineIndex)
@@ -58,7 +58,7 @@ export const commodityLinesFromFulfilment = (reader) => {
   const commodityObligations = [
     obligations.commodityCode,
     obligations.commodityType,
-    obligations.species,
+    obligations.speciesLatinName,
     obligations.commonName,
     obligations.numberOfAnimals,
     obligations.numberOfPackages,

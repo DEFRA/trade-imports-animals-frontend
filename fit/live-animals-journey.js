@@ -234,13 +234,13 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-// A tick box is labelled with the species' Latin name alone, and MDM lists
-// some species under more than one code (Bos taurus under 0102 and 01061900),
-// so the first exact match is ticked — the first code in the results.
+const tickFirstExactSpeciesMatch = (page, name) =>
+  page.getByRole('checkbox', { name, exact: true }).first().check()
+
 export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
     await searchCommodities(page, name)
-    await page.getByRole('checkbox', { name, exact: true }).first().check()
+    await tickFirstExactSpeciesMatch(page, name)
   }
 }
 

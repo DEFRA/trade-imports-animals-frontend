@@ -13,11 +13,10 @@ import { identifierCellText, identifierColumns } from '../identifier/table.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const speciesTextOf = (entry) => entry.speciesSelection ?? ''
+const speciesTextOf = (entry) => entry.speciesLatinName ?? ''
 
-// The card names its line by CN code and scientific name.
 const cardTitleOf = (entry) => {
-  const code = (entry.commoditySelection ?? '').trim()
+  const code = (entry.commodityCode ?? '').trim()
   const species = speciesTextOf(entry)
   return species ? `${code} — ${species}` : code
 }
@@ -94,14 +93,14 @@ const visibleAddressFields = (
 
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
-  const commodity = entry.commoditySelection
+  const commodity = entry.commodityCode
   const units = entry.animalIdentifiers ?? []
   const { cap, atMax, overBy } = capacityStateFor(answers, index, units.length)
   const species = speciesTextOf(entry)
   const values = form?.values ?? blankValuesFor(commodity)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(entry.speciesSelection)
-  const columns = identifierColumns(commodity, entry.speciesSelection)
+  const showAddress = permanentAddressApplies(entry.speciesLatinName)
+  const columns = identifierColumns(commodity, entry.speciesLatinName)
   return {
     index,
     anchor: `identification-card-${index}`,

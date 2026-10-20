@@ -153,7 +153,6 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
-/** The request cookie holding a journey's flow-only answers, in stub mode. */
 const flowOnlyState = (journeyId, flowOnly) =>
   flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
 

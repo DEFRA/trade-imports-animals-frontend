@@ -8,7 +8,7 @@
  *   - bare top-level ids            `'countryOfOrigin'`
  *   - the group obligation node     `'commodityLines'`,
  *                                   `'commodityLines[0].animalIdentifiers'`
- *   - positional leaf paths         `'commodityLines[0].commoditySelection'`,
+ *   - positional leaf paths         `'commodityLines[0].commodityCode'`,
  *                                   `'commodityLines[0].animalIdentifiers[1].animalIdentifierPassport'`
  * The group OBLIGATION node is keyed once per parent instance, never a bare
  * group instance (`'commodityLines[0]'` is not a key).
@@ -30,7 +30,7 @@ import { flowOnlyKeys } from './flow-only-keys.js'
 // answers tree over its ancestor-group chain, testing each positional instance
 // with `isAnswered`. The manifest does not carry declaration, but
 // `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE` prerequisites
-// (`countryOfOrigin`, `commoditySelection`, flow/gates.js), which it does — so
+// (`countryOfOrigin`, `commodityCode`, flow/gates.js), which it does — so
 // the check is exact.
 const collectInstanceValues = (answers, chain, name) => {
   const values = []

@@ -39,9 +39,9 @@ const wipeOf = (answers) => {
 
 const GOATS_COMMODITY = '010420 - Goats'
 
-const line = (commoditySelection, extra = {}) => ({
-  commoditySelection,
-  speciesSelection: BOS_TAURUS,
+const line = (commodityCode, extra = {}) => ({
+  commodityCode,
+  speciesLatinName: BOS_TAURUS,
   numberOfAnimalsQuantity: '25',
   ...extra
 })
@@ -69,19 +69,19 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         buildRequest(),
         stubH(),
         ['commodityLines'],
-        { commoditySelection: '0102' }
+        { commodityCode: '0102' }
       )
       expect(first).toBe(0)
       const second = await appendEntryAt(
         buildRequest(),
         stubH(),
         ['commodityLines'],
-        { commoditySelection: GOATS_COMMODITY }
+        { commodityCode: GOATS_COMMODITY }
       )
       expect(second).toBe(1)
       expect((await answersNow()).commodityLines).toEqual([
-        { commoditySelection: '0102' },
-        { commoditySelection: GOATS_COMMODITY }
+        { commodityCode: '0102' },
+        { commodityCode: GOATS_COMMODITY }
       ])
     })
   })
@@ -99,8 +99,8 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         line('0101')
       )
       const lines = (await answersNow()).commodityLines
-      expect(lines[0].commoditySelection).toBe('0101')
-      expect(lines[1].commoditySelection).toBe(GOATS_COMMODITY)
+      expect(lines[0].commodityCode).toBe('0101')
+      expect(lines[1].commodityCode).toBe(GOATS_COMMODITY)
     })
   })
 
@@ -111,16 +111,14 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       })
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       expect(
-        (await answersNow()).commodityLines.map(
-          (entry) => entry.commoditySelection
-        )
+        (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
       ).toEqual([GOATS_COMMODITY])
     })
   })
 
   describe('#appendEntryAt cap — `maxEntriesFrom` fires', () => {
     const cappedLine = () => ({
-      commoditySelection: '01061900',
+      commodityCode: '01061900',
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
         { animalIdentifierPassport: 'UK-1' },
@@ -147,9 +145,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     it('Should accept the loss of a leaf-less unit the canonical evaluator cannot express', async () => {
       // No numberOfAnimalsQuantity → uncapped (blank-count semantics).
       await store.seedAnswers(journeyId, {
-        commodityLines: [
-          { commoditySelection: '01061900', animalIdentifiers: [] }
-        ]
+        commodityLines: [{ commodityCode: '01061900', animalIdentifiers: [] }]
       })
       const index = await appendEntryAt(
         buildRequest(),
@@ -172,15 +168,15 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
-          { commoditySelection: '0102', speciesSelection: BOS_TAURUS },
-          { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+          { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
+          { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       })
       // After removing the Cow line, the evaluator owns the wipe decision.
       const afterRemoval = {
         containsUnweanedAnimals: 'no',
         commodityLines: [
-          { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+          { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       }
       expect(wipeOf(afterRemoval)).toContain('containsUnweanedAnimals')
@@ -188,15 +184,14 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       const answers = await answersNow()
       expect(
-        answers.commodityLines.map((entry) => entry.commoditySelection)
+        answers.commodityLines.map((entry) => entry.commodityCode)
       ).toEqual(['01061900'])
       expect('containsUnweanedAnimals' in answers).toBe(false)
     })
   })
 
   describe('#reconcileEntriesAt — multi-select sync + evaluator-authoritative purge', () => {
-    const keyOf = (entry) =>
-      `${entry.commoditySelection}|${entry.speciesSelection}`
+    const keyOf = (entry) => `${entry.commodityCode}|${entry.speciesLatinName}`
     const reconcileLines = (entries) =>
       reconcileEntriesAt(
         buildRequest(),
@@ -210,16 +205,16 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       await store.seedAnswers(journeyId, {
         commodityLines: [
           {
-            commoditySelection: '0102',
-            speciesSelection: BOS_TAURUS,
+            commodityCode: '0102',
+            speciesLatinName: BOS_TAURUS,
             numberOfAnimalsQuantity: '25',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           }
         ]
       })
       await reconcileLines([
-        { commoditySelection: '0102', speciesSelection: BOS_TAURUS },
-        { commoditySelection: '0102', speciesSelection: 'Bison bison' }
+        { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
+        { commodityCode: '0102', speciesLatinName: 'Bison bison' }
       ])
       const lines = (await answersNow()).commodityLines
       expect(lines).toHaveLength(2)
@@ -228,8 +223,8 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         { animalIdentifierEarTag: 'UK123456789012' }
       ])
       expect(lines[1]).toEqual({
-        commoditySelection: '0102',
-        speciesSelection: 'Bison bison'
+        commodityCode: '0102',
+        speciesLatinName: 'Bison bison'
       })
     })
 
@@ -237,12 +232,12 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
-          { commoditySelection: '0102', speciesSelection: BOS_TAURUS },
-          { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+          { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
+          { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       })
       await reconcileLines([
-        { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+        { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
       ])
       const answers = await answersNow()
       expect('containsUnweanedAnimals' in answers).toBe(false)

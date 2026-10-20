@@ -25,8 +25,8 @@ const address = {
 }
 
 const completeLine = {
-  commoditySelection: '0102',
-  speciesSelection: [BOS_TAURUS],
+  commodityCode: '0102',
+  speciesLatinName: [BOS_TAURUS],
   commodityType: '16',
   numberOfAnimalsQuantity: '1',
   animalIdentifiers: [
@@ -34,7 +34,7 @@ const completeLine = {
   ]
 }
 
-const partialLine = { commoditySelection: '0102' }
+const partialLine = { commodityCode: '0102' }
 
 const emptyLine = {}
 
@@ -60,8 +60,8 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: '01061900',
-          speciesSelection: ['Felis catus'],
+          commodityCode: '01061900',
+          speciesLatinName: ['Felis catus'],
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [
             { animalIdentifierPassport: 'P-1', permanentAddress: address },
@@ -99,8 +99,8 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: [BOS_TAURUS],
+          commodityCode: '0102',
+          speciesLatinName: [BOS_TAURUS],
           commodityType: '16',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -117,8 +117,8 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: [BOS_TAURUS],
+          commodityCode: '0102',
+          speciesLatinName: [BOS_TAURUS],
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{}]
         }

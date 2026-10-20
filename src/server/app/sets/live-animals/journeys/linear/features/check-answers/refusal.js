@@ -9,7 +9,7 @@ import { copy as en } from '../documents/copy/copy.en.js'
 import { copy as cy } from '../documents/copy/copy.cy.js'
 import { copy as reviewEn } from './copy/copy.en.js'
 import { copy as reviewCy } from './copy/copy.cy.js'
-import { missingSpecies } from '../../../../services/commodities/species-check.js'
+import { linesWithUnlistedSpecies } from '../../../../services/commodities/species-check.js'
 
 const documentsCopy = copyFor({ en, cy })
 const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
@@ -17,29 +17,26 @@ const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
 const chosenSpecies = (answers) =>
   [answers.commodityLines ?? []]
     .flat()
-    .filter((line) => line?.commoditySelection && line?.speciesSelection)
+    .filter((line) => line?.commodityCode && line?.speciesLatinName)
     .map((line) => ({
-      code: line.commoditySelection,
-      latinName: line.speciesSelection
+      code: line.commodityCode,
+      latinName: line.speciesLatinName
     }))
 
-/** A draft's chosen species that MDM no longer lists under their code, checked
- * against MDM's current data at submission only — not on every view of the
- * review. An amendment is not checked: its submitted species keep the value
- * they were sent with, and a line changed during the amendment was chosen from
- * MDM's current data. */
 export const speciesCardErrors = async (journey, answers) => {
   if (journey.status !== state.DRAFT) {
     return {}
   }
-  const missing = await missingSpecies(chosenSpecies(answers))
-  if (missing.length === 0) {
+  const unlisted = await linesWithUnlistedSpecies(chosenSpecies(answers))
+  if (unlisted.length === 0) {
     return {}
   }
-  const names = missing
+  const speciesWithCodes = unlisted
     .map(({ code, latinName }) => `${latinName} (${code})`)
     .join(', ')
-  return { species: reviewCopy.errors.cards.speciesNoLongerOffered(names) }
+  return {
+    species: reviewCopy.errors.cards.speciesNoLongerOffered(speciesWithCodes)
+  }
 }
 
 const documentScanStatuses = async (answers) => {

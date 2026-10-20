@@ -12,14 +12,11 @@ import { copy } from '../copy/copy.en.js'
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
-// Results are grouped under their CN code, and each tick box carries the
-// species' scientific name only.
-const CATTLE_LEGEND = '0102'
-const OTHER_MAMMALS_LEGEND = '01061900'
+const CATTLE_CODE = '0102'
+const OTHER_MAMMALS_CODE = '01061900'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const BACK_LINK = '.govuk-back-link'
 
-// Canonical order is by code, then by Latin name.
 const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
 
 const openSelection = async (page) => {
@@ -93,7 +90,7 @@ test.describe('commodity search', () => {
     page
   }) => {
     await searchCommodities(page, 'buffalo')
-    const group = page.getByRole('group', { name: CATTLE_LEGEND })
+    const group = page.getByRole('group', { name: CATTLE_CODE })
     await expect(group).toBeVisible()
     await expect(group.getByRole('checkbox')).toHaveCount(3)
     await expect(
@@ -113,7 +110,7 @@ test.describe('commodity search', () => {
 
   test('finds a species by its common name', async ({ page }) => {
     await searchCommodities(page, 'ferret')
-    const group = page.getByRole('group', { name: OTHER_MAMMALS_LEGEND })
+    const group = page.getByRole('group', { name: OTHER_MAMMALS_CODE })
     await expect(
       group.getByRole('checkbox', {
         name: 'Mustela putorius furo',
@@ -127,8 +124,8 @@ test.describe('commodity search', () => {
     page
   }) => {
     await searchCommodities(page, 'taurus')
-    const cattle = page.getByRole('group', { name: CATTLE_LEGEND })
-    const otherMammals = page.getByRole('group', { name: OTHER_MAMMALS_LEGEND })
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    const otherMammals = page.getByRole('group', { name: OTHER_MAMMALS_CODE })
     await expect(
       cattle.getByRole('checkbox', { name: BOS_TAURUS, exact: true })
     ).toBeVisible()
@@ -157,8 +154,8 @@ test.describe('commodity search', () => {
     const panel = selectionPanel(page)
 
     await expect(panel).toContainText(copy.search.selected.heading(2))
-    await expect(panel).toContainText(`${CATTLE_LEGEND}: ${BOS_TAURUS}`)
-    await expect(panel).toContainText(`${OTHER_MAMMALS_LEGEND}: ${FELIS_CATUS}`)
+    await expect(panel).toContainText(`${CATTLE_CODE}: ${BOS_TAURUS}`)
+    await expect(panel).toContainText(`${OTHER_MAMMALS_CODE}: ${FELIS_CATUS}`)
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
@@ -206,9 +203,9 @@ test.describe('commodity search', () => {
     const panel = selectionPanel(page)
     await expect(panel).toContainText(copy.search.selected.heading(3))
     await expect(panel).toContainText(
-      `${CATTLE_LEGEND}: ${BISON_BISON}, ${BOS_TAURUS}`
+      `${CATTLE_CODE}: ${BISON_BISON}, ${BOS_TAURUS}`
     )
-    await expect(panel).toContainText(`${OTHER_MAMMALS_LEGEND}: ${FELIS_CATUS}`)
+    await expect(panel).toContainText(`${OTHER_MAMMALS_CODE}: ${FELIS_CATUS}`)
     await expect(panel).not.toContainText('Canis familiaris')
   })
 
@@ -221,13 +218,21 @@ test.describe('commodity search', () => {
     await searchCommodities(page, 'taurus')
     await expect(
       page
-        .getByRole('group', { name: CATTLE_LEGEND })
+        .getByRole('group', { name: CATTLE_CODE })
         .getByRole('checkbox', { name: BOS_TAURUS, exact: true })
     ).toBeChecked()
-    // The same species under another code is a different line.
+  })
+
+  test('leaves the same species under another code unticked', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await reopenSelection(page)
+    await searchCommodities(page, 'taurus')
     await expect(
       page
-        .getByRole('group', { name: OTHER_MAMMALS_LEGEND })
+        .getByRole('group', { name: OTHER_MAMMALS_CODE })
         .getByRole('checkbox', { name: BOS_TAURUS, exact: true })
     ).not.toBeChecked()
   })

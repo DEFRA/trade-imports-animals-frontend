@@ -19,13 +19,13 @@ import {
   speciesCardErrors
 } from './refusal.js'
 
-const BOS_TAURUS_LINE = {
-  commoditySelection: '0102',
-  speciesSelection: 'Bos taurus'
+const LISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos taurus'
 }
-const BOS_SPP_LINE = {
-  commoditySelection: '0102',
-  speciesSelection: 'Bos spp.'
+const UNLISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos spp.'
 }
 
 const PENDING_FILENAME = 'notes-never-scans.pdf'
@@ -159,10 +159,9 @@ describe('#isReviewRefused', () => {
     expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
-  // MDM lists "Bos sp." under 0102, not "Bos spp.".
   it('Should refuse a draft holding a species MDM no longer lists under its code', async () => {
     const journey = await seedAnd(
-      fullyAnswered({ commodityLines: [BOS_SPP_LINE] })
+      fullyAnswered({ commodityLines: [UNLISTED_SPECIES_LINE] })
     )
 
     expect(await askRefused(journey.journeyId)).toBe(true)
@@ -170,7 +169,7 @@ describe('#isReviewRefused', () => {
 
   it('Should not refuse a draft whose species MDM still lists', async () => {
     const journey = await seedAnd(
-      fullyAnswered({ commodityLines: [BOS_TAURUS_LINE] })
+      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
     )
 
     expect(await askRefused(journey.journeyId)).toBe(false)
@@ -182,28 +181,27 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [BOS_TAURUS_LINE, BOS_SPP_LINE] }
+        { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] }
       )
     ).toEqual({
       species: reviewEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)')
     })
   })
 
-  // A submitted species keeps the value it was sent with through an amendment.
-  it('Should not check the species of an amendment', async () => {
+  it('Should return no species error for an amendment holding an unlisted species', async () => {
     expect(
       await speciesCardErrors(
         { status: AMEND },
-        { commodityLines: [BOS_SPP_LINE] }
+        { commodityLines: [UNLISTED_SPECIES_LINE] }
       )
     ).toEqual({})
   })
 
-  it('Should not check a line that has no species yet', async () => {
+  it('Should return no species error for a line with no species', async () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [{ commoditySelection: '0102' }] }
+        { commodityLines: [{ commodityCode: '0102' }] }
       )
     ).toEqual({})
   })

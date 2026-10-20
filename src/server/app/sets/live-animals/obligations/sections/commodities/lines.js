@@ -1,4 +1,4 @@
-import { packageCountCommodities } from '../../../services/commodities/index.js'
+import { packageCountCommodityCodes } from '../../../services/commodities/index.js'
 import { allowListed } from '../../../../../model/obligations/helpers/index.js'
 
 const numberOfPackagesReason = {
@@ -33,7 +33,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -49,16 +49,13 @@ export const commodityType = {
   status: 'mandatory'
 }
 
-// The species' Latin name, as MDM spells it. One species per line.
-export const species = {
+export const speciesLatinName = {
   id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
-  name: 'speciesSelection',
+  name: 'speciesLatinName',
   within: commodityLine,
   status: 'mandatory'
 }
 
-// What MDM calls the species in English, saved from the search row the
-// trader ticked. MDM has none for some species, so it is optional.
 export const commonName = {
   id: 'c8824345-0a1a-421d-8f35-f932fa1874f7',
   name: 'commonName',
@@ -85,7 +82,7 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, packageCountCommodities, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }

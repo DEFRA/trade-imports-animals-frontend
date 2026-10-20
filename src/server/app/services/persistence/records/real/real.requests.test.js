@@ -170,8 +170,8 @@ describe('real records adapter — fulfilment writes', () => {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: 'Bos taurus',
+          commodityCode: '0102',
+          speciesLatinName: 'Bos taurus',
           numberOfAnimalsQuantity: '5',
           numberOfPackages: '2'
         }

@@ -26,9 +26,9 @@ let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = async () => (await store.get(journeyId)).answers
 
-const line = (commoditySelection, extra = {}) => ({
-  commoditySelection,
-  speciesSelection: BOS_TAURUS,
+const line = (commodityCode, extra = {}) => ({
+  commodityCode,
+  speciesLatinName: BOS_TAURUS,
   numberOfAnimalsQuantity: 25,
   ...extra
 })
@@ -39,7 +39,7 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 const catsLine = (units = []) => ({
-  commoditySelection: '01061900',
+  commodityCode: '01061900',
   animalIdentifiers: units
 })
 const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
@@ -64,19 +64,19 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      { commoditySelection: '0102' }
+      { commodityCode: '0102' }
     )
     expect(first).toBe(0)
     const second = await appendEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      { commoditySelection: GOATS_COMMODITY_SELECTION }
+      { commodityCode: GOATS_COMMODITY_SELECTION }
     )
     expect(second).toBe(1)
     expect((await answersNow()).commodityLines).toEqual([
-      { commoditySelection: '0102' },
-      { commoditySelection: GOATS_COMMODITY_SELECTION }
+      { commodityCode: '0102' },
+      { commodityCode: GOATS_COMMODITY_SELECTION }
     ])
   })
 
@@ -91,10 +91,8 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       0,
       line('0101')
     )
-    expect((await answersNow()).commodityLines[0].commoditySelection).toBe(
-      '0101'
-    )
-    expect((await answersNow()).commodityLines[1].commoditySelection).toBe(
+    expect((await answersNow()).commodityLines[0].commodityCode).toBe('0101')
+    expect((await answersNow()).commodityLines[1].commodityCode).toBe(
       GOATS_COMMODITY_SELECTION
     )
   })
@@ -105,9 +103,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
     expect(
-      (await answersNow()).commodityLines.map(
-        (entry) => entry.commoditySelection
-      )
+      (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
     ).toEqual([GOATS_COMMODITY_SELECTION])
   })
 
@@ -122,9 +118,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       Number('foo')
     )
     expect(
-      (await answersNow()).commodityLines.map(
-        (entry) => entry.commoditySelection
-      )
+      (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
     ).toEqual(['0102', GOATS_COMMODITY_SELECTION])
   })
 
@@ -174,7 +168,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     const persisted = projectAnswers(
       (await records.load({ journeyId })).fulfilment
     )
-    expect(persisted.commodityLines[0].commoditySelection).toBe('01063300')
+    expect(persisted.commodityLines[0].commodityCode).toBe('01063300')
     expect('numberOfPackages' in persisted.commodityLines[0]).toBe(false)
   })
 
@@ -195,11 +189,10 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 describe('batch reconcile (reconcileEntriesAt — the species-grain create)', () => {
   setupJourneyEngine()
 
-  const keyOf = (entry) =>
-    `${entry.commoditySelection}|${entry.speciesSelection}`
-  const seed = (commoditySelection, speciesSelection) => ({
-    commoditySelection,
-    speciesSelection,
+  const keyOf = (entry) => `${entry.commodityCode}|${entry.speciesLatinName}`
+  const seed = (commodityCode, speciesLatinName) => ({
+    commodityCode,
+    speciesLatinName,
     numberOfPackages: '',
     numberOfAnimalsQuantity: ''
   })
@@ -229,8 +222,8 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: BOS_TAURUS,
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -241,8 +234,8 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     const lines = (await answersNow()).commodityLines
     expect(lines).toHaveLength(2)
     expect(lines[0]).toEqual({
-      commoditySelection: '0102',
-      speciesSelection: BOS_TAURUS,
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
       numberOfPackages: '5',
       numberOfAnimalsQuantity: 25,
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -254,14 +247,14 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: BOS_TAURUS,
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           numberOfAnimalsQuantity: '25',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
         {
-          commoditySelection: '01061900',
-          speciesSelection: FELIS_CATUS,
+          commodityCode: '01061900',
+          speciesLatinName: FELIS_CATUS,
           numberOfAnimalsQuantity: '2'
         }
       ]
@@ -269,7 +262,7 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     await reconcileLines([seed('01061900', FELIS_CATUS)])
     const lines = (await answersNow()).commodityLines
     expect(lines).toHaveLength(1)
-    expect(lines[0].commoditySelection).toBe('01061900')
+    expect(lines[0].commodityCode).toBe('01061900')
     expect(lines[0].numberOfAnimalsQuantity).toBe(2)
   })
 
@@ -279,8 +272,8 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     await store.seedAnswers(journeyId, {
       containsUnweanedAnimals: 'no',
       commodityLines: [
-        { commoditySelection: '0102', speciesSelection: BOS_TAURUS },
-        { commoditySelection: '01061900', speciesSelection: FELIS_CATUS }
+        { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
+        { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
       ]
     })
     await reconcileLines([seed('01061900', FELIS_CATUS)])
@@ -390,7 +383,7 @@ const cardinalityCapTests = () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [
             { animalIdentifierPassport: 'UK-1' },
@@ -415,7 +408,7 @@ const cardinalityCapTests = () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
         }
@@ -437,7 +430,7 @@ const cardinalityCapTests = () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: '',
           animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
         }
@@ -456,7 +449,7 @@ const cardinalityCapTests = () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: 'many',
           animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
         }
@@ -475,12 +468,12 @@ const cardinalityCapTests = () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
         },
         {
-          commoditySelection: '01061900',
+          commodityCode: '01061900',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierPassport: 'UK-2' }]
         }
@@ -529,7 +522,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     await commit(buildRequest(), stubH(), {
       commodityLines: [
         {
-          commoditySelection: '0101',
+          commodityCode: '0101',
           animalIdentifiers: [
             { animalIdentifierPassport: 'UK-1', permanentAddress: address }
           ]

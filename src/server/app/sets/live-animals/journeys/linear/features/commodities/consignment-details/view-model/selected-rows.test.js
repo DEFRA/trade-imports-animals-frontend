@@ -7,9 +7,9 @@ const CATTLE_OR_COW = 'Cattle or Cow'
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
 
 const linesOf = (...triples) =>
-  triples.map(([commoditySelection, speciesSelection, commonName], index) => ({
+  triples.map(([commodityCode, speciesLatinName, commonName], index) => ({
     index,
-    entry: { commoditySelection, speciesSelection, commonName }
+    entry: { commodityCode, speciesLatinName, commonName }
   }))
 
 describe('#buildSelectedRows', () => {
@@ -33,9 +33,6 @@ describe('#buildSelectedRows', () => {
   })
 
   it('Should key a code row to its group index even where a species group is built before it', () => {
-    // 01061900 sorts before 01063300, so the ostriches are the second group and
-    // their remove must say so — the index keys back to the group list that
-    // post-remove resolves, not to the rows already built.
     expect(
       buildSelectedRows(
         linesOf(

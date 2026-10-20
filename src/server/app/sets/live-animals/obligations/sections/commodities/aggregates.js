@@ -1,6 +1,6 @@
 import {
   cphExemptCommodityCodes,
-  unweanedCommodities
+  unweanedCommodityCodes
 } from '../../../services/commodities/index.js'
 import {
   anyAllowListed,
@@ -33,7 +33,7 @@ export const cph = {
 
 // -----------------------------------------------------------------------------
 // Contains unweaned animals — notification-level yes/no, gated on the
-// commodities unweanedCommodities() names. Declared after commodityCode
+// commodities unweanedCommodityCodes() names. Declared after commodityCode
 // because the applyTo closure captures it.
 // -----------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ export const containsUnweanedAnimals = {
   name: 'containsUnweanedAnimals',
   applyTo: anyAllowListed(
     commodityCode,
-    unweanedCommodities,
+    unweanedCommodityCodes,
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
   )

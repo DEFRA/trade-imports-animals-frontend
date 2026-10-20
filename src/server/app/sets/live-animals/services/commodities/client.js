@@ -1,43 +1,23 @@
-const referenceDataUrl =
-  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
+import {
+  referenceDataUrl,
+  requestReferenceData
+} from '../../../../services/reference-data/request.js'
 
-export const fetchCommodities = async (term, { page, size }) => {
-  const url = new URL(`${referenceDataUrl}/commodities`)
+export const fetchCommodities = (term, { page, size }) => {
+  const url = referenceDataUrl('/commodities')
   url.searchParams.set('search', term)
   url.searchParams.set('page', String(page))
   url.searchParams.set('size', String(size))
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
-  })
-
-  if (!response.ok) {
-    throw Object.assign(new Error('Failed to search commodities'), {
-      status: response.status,
-      statusText: response.statusText
-    })
-  }
-
-  return response.json()
-}
-
-export const postSpeciesCheck = async (lines) => {
-  const response = await fetch(
-    `${referenceDataUrl}/commodities/species-check`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lines })
-    }
+  return requestReferenceData(
+    url,
+    { method: 'GET' },
+    'Failed to search commodities'
   )
-
-  if (!response.ok) {
-    throw Object.assign(new Error('Failed to check species'), {
-      status: response.status,
-      statusText: response.statusText
-    })
-  }
-
-  return response.json()
 }
+
+export const checkSpecies = (lines) =>
+  requestReferenceData(
+    referenceDataUrl('/commodities/species-check'),
+    { method: 'POST', body: JSON.stringify({ lines }) },
+    'Failed to check species'
+  )

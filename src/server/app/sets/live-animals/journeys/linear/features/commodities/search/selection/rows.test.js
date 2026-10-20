@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { BOS_TAURUS_ROW, FELIS_CATUS_ROW } from '../test-support.js'
 import { knownRows, lineRow, resultRows } from './rows.js'
-
-const FELIS_CATUS = {
-  code: '01061900',
-  latinName: 'Felis catus',
-  commonName: 'Domestic Cat'
-}
 
 describe('#resultRows', () => {
   it('Should give one row per species in the search results, with its code', () => {
@@ -14,17 +9,17 @@ describe('#resultRows', () => {
       resultRows({
         groups: [
           {
-            code: '01061900',
+            code: FELIS_CATUS_ROW.commodityCode,
             species: [
               {
-                latinName: FELIS_CATUS.latinName,
-                commonName: FELIS_CATUS.commonName
+                latinName: FELIS_CATUS_ROW.speciesLatinName,
+                commonName: FELIS_CATUS_ROW.commonName
               }
             ]
           }
         ]
       })
-    ).toEqual([FELIS_CATUS])
+    ).toEqual([FELIS_CATUS_ROW])
   })
 
   it('Should give no rows before a search', () => {
@@ -36,25 +31,16 @@ describe('#knownRows', () => {
   it('Should know the rows earlier searches showed and the lines already saved, by key', () => {
     const known = knownRows({
       answers: {
-        commodityLines: [
-          {
-            commoditySelection: '0102',
-            speciesSelection: 'Bos taurus',
-            commonName: 'Cattle or Cow'
-          }
-        ]
+        commodityLines: [{ ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '3' }]
       },
-      flowOnlyAnswers: { commoditySearchRows: [FELIS_CATUS] }
+      flowOnlyAnswers: { commoditySearchRows: [FELIS_CATUS_ROW] }
     })
+
     expect([...known.keys()]).toEqual([
       '01061900|Felis catus',
       '0102|Bos taurus'
     ])
-    expect(known.get('0102|Bos taurus')).toEqual({
-      code: '0102',
-      latinName: 'Bos taurus',
-      commonName: 'Cattle or Cow'
-    })
+    expect(known.get('0102|Bos taurus')).toEqual(BOS_TAURUS_ROW)
   })
 
   it('Should know nothing on a fresh notification', () => {
@@ -65,11 +51,7 @@ describe('#knownRows', () => {
 describe('#lineRow', () => {
   it('Should read a stored line back as the row it was saved from', () => {
     expect(
-      lineRow({
-        commoditySelection: '01061900',
-        speciesSelection: FELIS_CATUS.latinName,
-        commonName: FELIS_CATUS.commonName
-      })
-    ).toEqual(FELIS_CATUS)
+      lineRow({ ...FELIS_CATUS_ROW, numberOfAnimalsQuantity: '2' })
+    ).toEqual(FELIS_CATUS_ROW)
   })
 })

@@ -14,12 +14,12 @@ const animalAddress = {
 }
 
 const commodityLine = ({
-  speciesSelection = 'Bos taurus',
+  speciesLatinName = 'Bos taurus',
   numberOfAnimalsQuantity = '1',
   animalIdentifiers = [{ animalIdentifierEarTag: 'UK123456789012' }]
 } = {}) => ({
-  commoditySelection: '0102',
-  speciesSelection,
+  commodityCode: '0102',
+  speciesLatinName,
   commodityType: '16',
   numberOfPackages: '1',
   numberOfAnimalsQuantity,
@@ -52,7 +52,7 @@ const comprehensive = {
       ]
     }),
     commodityLine({
-      speciesSelection: 'Bison bison',
+      speciesLatinName: 'Bison bison',
       animalIdentifiers: [
         {
           animalIdentifierEarTag: 'UK000000000001'
@@ -98,7 +98,7 @@ export const characterisationCorpus = [
       countryOfOrigin: '',
       commodityLines: [
         {
-          commoditySelection: '0102',
+          commodityCode: '0102',
           animalIdentifiers: [{}]
         }
       ],
@@ -129,8 +129,8 @@ export const characterisationCorpus = [
       commodityLines: [
         {
           ...gateOpen.commodityLines[0],
-          commoditySelection: '01063300',
-          speciesSelection: 'Struthio',
+          commodityCode: '01063300',
+          speciesLatinName: 'Struthio',
           commodityType: '2'
         }
       ]

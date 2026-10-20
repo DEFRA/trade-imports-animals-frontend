@@ -3,16 +3,16 @@ import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
 import { packagesApply } from '../../../applicability.js'
 import { row } from '../../../rows/summary-row.js'
-import { speciesText } from './species-text.js'
+import { speciesLatinNameOf } from './species-latin-name.js'
 
 const copy = copyFor({ en, cy })
 
 export const speciesCardRows = (entry) => [
-  row(copy.rows.commodityCode, entry.commoditySelection),
+  row(copy.rows.commodityCode, entry.commodityCode),
   row(copy.rows.commonName, entry.commonName ?? ''),
-  row(copy.rows.species, speciesText(entry)),
+  row(copy.rows.species, speciesLatinNameOf(entry)),
   row(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
-  ...(packagesApply(entry.commoditySelection)
+  ...(packagesApply(entry.commodityCode)
     ? [row(copy.rows.numberOfPackages, entry.numberOfPackages)]
     : [])
 ]

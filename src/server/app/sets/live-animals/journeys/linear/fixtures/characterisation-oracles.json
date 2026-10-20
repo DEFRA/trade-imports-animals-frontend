@@ -705,9 +705,9 @@
       "animalsCertifiedFor": "slaughter",
       "commodityLines": [
         {
-          "commoditySelection": "0102",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "Bos taurus",
+          "speciesLatinName": "Bos taurus",
           "numberOfAnimalsQuantity": 2,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -731,9 +731,9 @@
           ]
         },
         {
-          "commoditySelection": "0102",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "Bison bison",
+          "speciesLatinName": "Bison bison",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1172,7 +1172,7 @@
       "countryOfOrigin": "",
       "commodityLines": [
         {
-          "commoditySelection": "0102"
+          "commodityCode": "0102"
         }
       ],
       "documents": [
@@ -1692,9 +1692,9 @@
       "purposeInInternalMarket": "breeding",
       "commodityLines": [
         {
-          "commoditySelection": "0102",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "Bos taurus",
+          "speciesLatinName": "Bos taurus",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1997,9 +1997,9 @@
       "purposeInInternalMarket": "breeding",
       "commodityLines": [
         {
-          "commoditySelection": "01063300",
+          "commodityCode": "01063300",
           "commodityType": "2",
-          "speciesSelection": "Struthio",
+          "speciesLatinName": "Struthio",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [

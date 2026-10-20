@@ -7,7 +7,7 @@ import {
 } from '../remove/actions.js'
 
 const linesOfCode = (lines, code) =>
-  lines.filter(({ entry }) => entry.commoditySelection === code)
+  lines.filter(({ entry }) => entry.commodityCode === code)
 
 const commodityRow = (lines, code, index) => ({
   code,
@@ -24,13 +24,9 @@ const speciesRows = (lines, code) =>
     removeAction: `${REMOVE_SPECIES_ACTION_PREFIX}${index}`
   }))
 
-// One Selected commodities row per code, naming the species chosen under it,
-// except under commodity code 01061900: there the design gives each chosen
-// species its own row, with a Remove that drops that species and keeps the
-// rest of the commodity (design 01-14).
 export const buildSelectedRows = (lines) =>
   commodityCodesOf(lines).flatMap((code, index) =>
-    commodities.speciesListedIndividually(code)
+    commodities.listsSpeciesIndividually(code)
       ? speciesRows(lines, code)
       : [commodityRow(lines, code, index)]
   )

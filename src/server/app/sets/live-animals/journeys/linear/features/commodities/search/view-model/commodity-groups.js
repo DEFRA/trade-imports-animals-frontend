@@ -1,11 +1,14 @@
-import { rowKey } from '../selection/keys.js'
+import { lineKey } from '../selection/line-key.js'
 import { resultRows } from '../selection/rows.js'
+import { legendFor, speciesLabelFor } from './labels.js'
 
-// Each tick box shows the species' scientific name only, under a heading of
-// its CN code.
 const itemFor = (row, selected) => {
-  const key = rowKey(row)
-  return { value: key, text: row.latinName, checked: selected.includes(key) }
+  const key = lineKey(row)
+  return {
+    value: key,
+    text: speciesLabelFor(row.speciesLatinName),
+    checked: selected.includes(key)
+  }
 }
 
 /**
@@ -17,9 +20,9 @@ const itemFor = (row, selected) => {
  * @returns {Array<{legend: string, items: object[]}>} the result groups.
  */
 export const commodityGroups = (results, selected) =>
-  [...Map.groupBy(resultRows(results), (row) => row.code)].map(
-    ([code, rows]) => ({
-      legend: code,
+  [...Map.groupBy(resultRows(results), (row) => row.commodityCode)].map(
+    ([commodityCode, rows]) => ({
+      legend: legendFor(commodityCode),
       items: rows.map((row) => itemFor(row, selected))
     })
   )

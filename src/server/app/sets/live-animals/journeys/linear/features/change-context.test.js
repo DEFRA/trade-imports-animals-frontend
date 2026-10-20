@@ -48,8 +48,8 @@ const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 const lineSeed = {
   commodityLines: [
     {
-      commoditySelection: '01061900',
-      speciesSelection: 'Felis catus',
+      commodityCode: '01061900',
+      speciesLatinName: 'Felis catus',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
     }
@@ -109,7 +109,7 @@ describe('change context — context survives the internal loop navigation', () 
       {
         seed: {
           commodityLines: [
-            { commoditySelection: '01061900', speciesSelection: 'Felis catus' }
+            { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
           ]
         },
         payload: { species: ['01061900|Felis catus'] },

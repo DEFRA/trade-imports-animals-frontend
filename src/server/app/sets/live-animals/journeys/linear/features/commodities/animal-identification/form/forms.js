@@ -43,14 +43,14 @@ const addressErrorsFor = (showAddress, addressValues, index, payload) => {
 }
 
 const buildLineForm = (payload, entry, index) => {
-  const commodity = entry.commoditySelection
-  const values = identifierValuesFromPayload(payload, commodity, index)
+  const { commodityCode } = entry
+  const values = identifierValuesFromPayload(payload, commodityCode, index)
   const addressValues = addressValuesFromPayload(payload, index)
-  const showAddress = permanentAddressApplies(entry.speciesSelection)
+  const showAddress = permanentAddressApplies(entry.speciesLatinName)
   const holdsData = formHoldsData(showAddress, values, addressValues)
 
   const { errors: idErrors } = validate(
-    identifierChecksFor(commodity, index),
+    identifierChecksFor(commodityCode, index),
     payload
   )
   const errors = {
@@ -59,7 +59,7 @@ const buildLineForm = (payload, entry, index) => {
   }
 
   return {
-    form: { commodity, values, addressValues, showAddress, holdsData },
+    form: { commodityCode, values, addressValues, showAddress, holdsData },
     errors
   }
 }
@@ -127,8 +127,8 @@ export const withEmptyFormGuard = (errors, forms, addIndex) => {
   if (addIndex === null || anyData || !forms.has(addIndex)) {
     return errors
   }
-  const { commodity } = forms.get(addIndex)
-  const [first] = scopedFields(commodity)
+  const { commodityCode } = forms.get(addIndex)
+  const [first] = scopedFields(commodityCode)
   return {
     ...errors,
     [fieldName(first.id, addIndex)]: copy.errors.atLeastOneIdentifier

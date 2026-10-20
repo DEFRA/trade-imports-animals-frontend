@@ -43,6 +43,37 @@ so generic notification-mapper code does not import the set.
   which are asked for each animal's permanent address instead). A commodity
   added under any other code is asked.
 
+### Codes and species from MDM
+
+- MDM supplies the CN codes and the species under them, but no rules, so the
+  rules live in [`rules.js`](../services/commodities/rules.js). A rule keyed by
+  a Latin name matches MDM's spelling exactly: if MDM corrects a spelling, the
+  rule stops matching and has to follow it.
+- `PERMANENT_ADDRESS_SPECIES` gates on the species, not the code: `01061900`
+  holds the domestic cats, dogs and ferrets that need a permanent address
+  alongside many mammals that do not. The genus Felis (MDM's "Cat") is not one
+  of them. `Canis lupus familiaris` is listed beside MDM's `Canis familiaris`
+  in case MDM renames it.
+- The package-count list holds the codes of the design's package-count list
+  that MDM's live-animal data holds. Where the design named an entry by animal,
+  the whole code is on the list.
+- The Domestic/Game split on `0102` comes from the IPAFFS commodity-categories
+  extract, which names `Bos spp.` as Game. MDM lists `Bos sp.`, so no `0102`
+  species MDM offers is Game today. Every other code has one type with blank
+  text, which the backend payload drops.
+- MDM has no common name for some species, so a line's common name is
+  optional.
+- The search page saves only a species a search showed it, so it keeps the
+  rows shown since it last saved as the flow-only answer
+  `commoditySearchRows`. They are never sent to the backend.
+- The stub's [`fixtures/commodities.json`](../services/commodities/fixtures/commodities.json)
+  is TST's MDM data as reference-data groups it, saved on 16 October 2026:
+  every selectable code the `010` search returned, with every species of
+  `01061900`. The stub does not rank matches as MDM does; it lists them in
+  data order.
+- The species check at submission reads a renamed species as a removed one:
+  the old name is no longer listed under its code.
+
 ## Platform services used by the journey
 
 The journey also calls shared service barrels for countries, ports, address books,

@@ -7,18 +7,13 @@ const BOS_TAURUS = 'Bos taurus'
 const linesOf = (...rows) =>
   rows.map(
     (
-      [
-        commoditySelection,
-        speciesSelection,
-        commonName,
-        numberOfAnimalsQuantity
-      ],
+      [commodityCode, speciesLatinName, commonName, numberOfAnimalsQuantity],
       index
     ) => ({
       index,
       entry: {
-        commoditySelection,
-        speciesSelection,
+        commodityCode,
+        speciesLatinName,
         commonName,
         numberOfAnimalsQuantity
       }
@@ -61,7 +56,6 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([{ code: '0102', name: CATTLE_OR_COW, animals: '' }])
   })
 
-  // MDM has no common name for some species.
   it('Should name a row by its Latin name where the species has no common name', () => {
     expect(
       buildSelectedCommodities(linesOf(['01061900', 'Catagonus', undefined, 1]))

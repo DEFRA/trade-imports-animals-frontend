@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest'
 
 import {
   cphExemptCommodityCodes,
-  earTagCommodities,
-  horseNameCommodities,
-  identifiedCommodities,
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  identifiedCommodityCodes,
   identifiersFor,
-  microchipCommodities,
-  passportCommodities,
+  microchipCommodityCodes,
+  passportCommodityCodes,
   permanentAddressSpecies,
-  speciesListedIndividually,
-  tattooCommodities,
+  listsSpeciesIndividually,
+  tattooCommodityCodes,
   typeIdFor,
   typeTextForId
 } from './index.js'
@@ -23,7 +23,6 @@ const OTHER_MAMMALS = '01061900'
 const OSTRICHES = '01063300'
 
 describe('#search', () => {
-  // The suite runs in stub mode, so search reads the saved TST data.
   it('Should find a species by its common name, under its code', async () => {
     const results = await search('ferret', { size: 10 })
     expect(results).toEqual({
@@ -65,11 +64,11 @@ describe('#search', () => {
   })
 })
 
-describe('#speciesListedIndividually', () => {
+describe('#listsSpeciesIndividually', () => {
   it('Should hold for code 01061900 and for no other', () => {
-    expect(speciesListedIndividually(OTHER_MAMMALS)).toBe(true)
-    expect(speciesListedIndividually(CATTLE)).toBe(false)
-    expect(speciesListedIndividually(HORSES)).toBe(false)
+    expect(listsSpeciesIndividually(OTHER_MAMMALS)).toBe(true)
+    expect(listsSpeciesIndividually(CATTLE)).toBe(false)
+    expect(listsSpeciesIndividually(HORSES)).toBe(false)
   })
 })
 
@@ -102,15 +101,15 @@ describe('#identifiersFor', () => {
 // two that can disagree.
 describe('the identifier allowlists', () => {
   const derivations = [
-    ['microchip', microchipCommodities, 'animalIdentifierMicrochip'],
-    ['passport', passportCommodities, 'animalIdentifierPassport'],
-    ['tattoo', tattooCommodities, 'animalIdentifierTattoo'],
-    ['ear tag', earTagCommodities, 'animalIdentifierEarTag'],
-    ['horse name', horseNameCommodities, 'horseName']
+    ['microchip', microchipCommodityCodes, 'animalIdentifierMicrochip'],
+    ['passport', passportCommodityCodes, 'animalIdentifierPassport'],
+    ['tattoo', tattooCommodityCodes, 'animalIdentifierTattoo'],
+    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag'],
+    ['horse name', horseNameCommodityCodes, 'horseName']
   ]
 
   for (const [name, allowlist, identifier] of derivations) {
-    it(`Should hold exactly the codes whose own list carries the ${name}`, () => {
+    it(`Should list only codes that carry the ${name}`, () => {
       for (const code of allowlist()) {
         expect(identifiersFor(code)).toContain(identifier)
       }
@@ -119,17 +118,13 @@ describe('the identifier allowlists', () => {
   }
 
   it('Should identify exactly the codes that carry at least one identifier', () => {
-    expect([...identifiedCommodities()].sort()).toEqual([
+    expect([...identifiedCommodityCodes()].sort()).toEqual([
       HORSES,
       CATTLE,
       OTHER_MAMMALS
     ])
   })
 
-  // `permanentAddress` is mandatory inside the unitRecord group, and unit
-  // records exist only on identified codes. A species asked for a permanent
-  // address that sat under no identified code would collect nothing at all
-  // and still read as Fulfilled.
   it('Should find every permanent-address species MDM holds under an identified code', () => {
     const codesOf = (latinName) =>
       COMMODITY_GROUPS.filter((group) =>
@@ -138,7 +133,7 @@ describe('the identifier allowlists', () => {
 
     for (const latinName of permanentAddressSpecies()) {
       for (const code of codesOf(latinName)) {
-        expect(identifiedCommodities()).toContain(code)
+        expect(identifiedCommodityCodes()).toContain(code)
       }
     }
     expect(codesOf('Felis catus')).toEqual([OTHER_MAMMALS])
@@ -158,13 +153,24 @@ describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
     expect(typeIdFor(CATTLE, 'Bos taurus')).toBe('16')
     expect(typeIdFor(CATTLE, 'Bos spp.')).toBe('24')
+  })
+
+  it('Should give every other code its one type', () => {
+    expect(typeIdFor(OTHER_MAMMALS, 'Felis catus')).toBe('2')
+  })
+})
+
+describe('#typeTextForId', () => {
+  it('Should name the cattle types Domestic and Game', () => {
     expect(typeTextForId(CATTLE, '16')).toBe('Domestic')
     expect(typeTextForId(CATTLE, '24')).toBe('Game')
   })
 
-  it('Should give every other code its one type, with blank text', () => {
-    expect(typeIdFor(OTHER_MAMMALS, 'Felis catus')).toBe('2')
+  it('Should give a single-type code blank text', () => {
     expect(typeTextForId(OTHER_MAMMALS, '2')).toBe('')
+  })
+
+  it('Should give no text for a type id the code does not have', () => {
     expect(typeTextForId(CATTLE, '2')).toBeUndefined()
   })
 })

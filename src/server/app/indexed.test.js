@@ -26,6 +26,15 @@ const completeDocument = {
   accompanyingDocumentDateOfIssue: { day: '1', month: '2', year: '2026' }
 }
 
+const completeCommodityLine = {
+  commodityCode: '0102',
+  commodityType: '16',
+  speciesLatinName: ['Bos taurus'],
+  numberOfPackages: '5',
+  numberOfAnimalsQuantity: '1',
+  animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+}
+
 describe('indexed obligations are first-class', () => {
   beforeAll(() => {
     buildDispatch(SET_ID, dispatchPages)
@@ -34,21 +43,21 @@ describe('indexed obligations are first-class', () => {
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('commodityLines')
-    expect(addresses).toContain('commodityLines.commoditySelection')
+    expect(addresses).toContain('commodityLines.commodityCode')
     expect(addresses).toContain('commodityLines.numberOfAnimalsQuantity')
   })
 
   it('Should scope each stored commodity line instance path when the collection is in scope', () => {
     const { inScope } = makeScope({
       commodityLines: [
-        { commoditySelection: '0102', numberOfAnimalsQuantity: '25' },
-        { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
+        { commodityCode: '0102', numberOfAnimalsQuantity: '25' },
+        { commodityCode: '010420 - Goats', numberOfAnimalsQuantity: '9' }
       ]
     })
     expect(inScope.has('commodityLines')).toBe(true)
-    expect(inScope.has('commodityLines[0].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[0].commodityCode')).toBe(true)
     expect(inScope.has('commodityLines[0].numberOfAnimalsQuantity')).toBe(true)
-    expect(inScope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[1].commodityCode')).toBe(true)
     expect(inScope.has('commodityLines[1].numberOfAnimalsQuantity')).toBe(true)
   })
 
@@ -61,16 +70,7 @@ describe('indexed obligations are first-class', () => {
       animalsCertifiedFor: 'slaughter',
       containsUnweanedAnimals: 'no',
       countyParishHoldingCph: '12/345/6789',
-      commodityLines: [
-        {
-          commoditySelection: '0102',
-          commodityType: '16',
-          speciesSelection: ['Bos taurus'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-        }
-      ],
+      commodityLines: [completeCommodityLine],
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -122,7 +122,7 @@ describe('indexed obligations are first-class', () => {
     }
     const incomplete = {
       ...complete,
-      commodityLines: [{ commoditySelection: '0102' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
     expect(
       readyForCheckYourAnswers(
@@ -180,19 +180,10 @@ describe('indexed obligations are first-class', () => {
 
   it('Should roll per-item completeness into the commodities section status', () => {
     const withIncompleteLine = {
-      commodityLines: [{ commoditySelection: '0102' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
     const withCompleteLine = {
-      commodityLines: [
-        {
-          commoditySelection: '0102',
-          commodityType: '16',
-          speciesSelection: ['Bos taurus'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-        }
-      ]
+      commodityLines: [completeCommodityLine]
     }
     expect(
       sectionStatus(

@@ -5,16 +5,16 @@ import { evaluateAnswers } from '../../bridge/evaluation.js'
 const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const completeLine = {
-  commoditySelection: '0102',
+  commodityCode: '0102',
   commodityType: '16',
-  speciesSelection: ['Bos taurus'],
+  speciesLatinName: ['Bos taurus'],
   numberOfAnimalsQuantity: '1',
   animalIdentifiers: [
     { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
   ]
 }
 
-const incompleteLine = { commoditySelection: '0102' }
+const incompleteLine = { commodityCode: '0102' }
 
 const viewOf = (answers, collectionPath) =>
   collectionView(answers, collectionPath, evaluateAnswers(answers))

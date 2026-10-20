@@ -138,8 +138,8 @@ export const copy = {
       additionalAnimalDetails:
         'Cwblhewch y manylion ychwanegol am yr anifeiliaid',
       species: 'Cwblhewch fanylion y rhywogaeth',
-      speciesNoLongerOffered: (names) =>
-        `Ni ellir dewis ${names} mwyach. Dewiswch y rhywogaeth eto`,
+      speciesNoLongerOffered: (speciesWithCodes) =>
+        `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch y rhywogaeth eto`,
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transitCountries: 'Cwblhewch y gwledydd tramwy',
       transportDetails: 'Cwblhewch y manylion cludo',

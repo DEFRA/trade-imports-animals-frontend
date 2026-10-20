@@ -34,6 +34,32 @@ Use the narrowest helper that expresses the rule. `branchedGate` is the escape h
 for a rule that cannot use the standard equality, presence, inclusion or allow-list
 helpers.
 
+Each helper returns `applyTo(fulfilments, fulfilmentIndexesByObligationId)`, which
+gives a decision, and carries a `.metadata` property that describes the gate. An
+obligation may also declare `dependsOn`, the ids of the obligations its gate reads.
+The reachability prover inverts gates from this data, and a coverage assertion fails
+the build for a gated obligation without a complete declared or derived `dependsOn`.
+
+Which helper to pick:
+
+- One verdict for the whole obligation, typically when it is not indexed:
+  `equalsGate`, `includesGate`, `presentGate`, `alwaysInScope` or `matches`.
+- A decision naming which fulfilment indexes are in scope, typically when the
+  obligation is indexed: `allowListed` or `notInUnionOf`. Pass `null` for
+  `gatedParentGroup` when the gate and the gated obligation sit at the same level,
+  or the group when the gated obligation is deeper; the engine then fans across
+  that group's fulfilment indexes for each matching parent.
+- One decision from any value across a group: `anyAllowListed` when the rule names
+  the members, `anyNotInUnionOf` when it names the exceptions and the members are
+  open-ended. The CPH question is asked unless every commodity line's code is
+  exempt; a line with no code yet is ignored rather than counted as outside the
+  exemptions.
+- `branchedGate` for a predicate that cannot be derived. Pair it with
+  `predicateMeta` so the prover can build a witness.
+- `moreThanOne` is a combinator, not a gate: it stands another helper down unless
+  that helper admits more than one entry, for a question asked only of a
+  consignment carrying more than one identified commodity line.
+
 ## Evaluation
 
 [`src/server/app/model/obligations/evaluator.js`](../model/obligations/evaluator.js)

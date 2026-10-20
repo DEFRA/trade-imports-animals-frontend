@@ -15,15 +15,15 @@ import {
 const line = { id: 'line-group', name: 'commodityLines' }
 const unit = { id: 'unit-group', name: 'animalIdentifiers', within: line }
 const passport = { id: 'passport', name: 'passport', within: unit }
-const commoditySelection = {
-  id: 'commoditySelection',
-  name: 'commoditySelection',
+const commodityCode = {
+  id: 'commodityCode',
+  name: 'commodityCode',
   within: line
 }
 const topLevelUnindexed = { id: 'reasonForImport', name: 'reasonForImport' }
 
 const syntheticSet = {
-  obligations: [line, unit, passport, commoditySelection, topLevelUnindexed],
+  obligations: [line, unit, passport, commodityCode, topLevelUnindexed],
   groups: [line, unit]
 }
 
@@ -41,7 +41,7 @@ describe('#manifest-graph', () => {
     })
 
     it('returns the parent group for a direct child', () => {
-      expect(ancestorChain(commoditySelection)).toEqual([line])
+      expect(ancestorChain(commodityCode)).toEqual([line])
     })
 
     it('returns root-to-parent order for a nested leaf', () => {
@@ -57,14 +57,14 @@ describe('#manifest-graph', () => {
 
     it('is false for a leaf', () => {
       expect(isGroup(passport)).toBe(false)
-      expect(isGroup(commoditySelection)).toBe(false)
+      expect(isGroup(commodityCode)).toBe(false)
       expect(isGroup(topLevelUnindexed)).toBe(false)
     })
   })
 
   describe('#leavesUnder', () => {
     it('collects leaves at every depth beneath the group', () => {
-      expect(leavesUnder(line)).toEqual([passport, commoditySelection])
+      expect(leavesUnder(line)).toEqual([passport, commodityCode])
     })
 
     it('collects only leaves whose chain includes the given group', () => {

@@ -3,7 +3,6 @@
  * not a usable page. */
 export const MIN_SEARCH_LENGTH = 3
 
-/** How many species one search lists. */
 export const SEARCH_PAGE_SIZE = 10
 
 export const normaliseQuery = (value) => String(value ?? '').trim()

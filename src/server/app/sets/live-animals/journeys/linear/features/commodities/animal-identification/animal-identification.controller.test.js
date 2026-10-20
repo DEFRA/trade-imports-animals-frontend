@@ -38,8 +38,8 @@ const BOS_TAURUS_1 = 'Bos taurus 1'
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 
 const catLine = (extra = {}) => ({
-  commoditySelection: '01061900',
-  speciesSelection: 'Felis catus',
+  commodityCode: '01061900',
+  speciesLatinName: 'Felis catus',
   commonName: 'Domestic Cat',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -47,8 +47,8 @@ const catLine = (extra = {}) => ({
 })
 
 const cowLine = (extra = {}) => ({
-  commoditySelection: '0102',
-  speciesSelection: 'Bos taurus',
+  commodityCode: '0102',
+  speciesLatinName: 'Bos taurus',
   commonName: CATTLE_OR_COW,
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -56,8 +56,8 @@ const cowLine = (extra = {}) => ({
 })
 
 const horseLine = (extra = {}) => ({
-  commoditySelection: '0101',
-  speciesSelection: 'Equus cabalus',
+  commodityCode: '0101',
+  speciesLatinName: 'Equus cabalus',
   commonName: 'Horse',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -65,8 +65,8 @@ const horseLine = (extra = {}) => ({
 })
 
 const ostrichLine = (extra = {}) => ({
-  commoditySelection: '01063300',
-  speciesSelection: 'Struthio',
+  commodityCode: '01063300',
+  speciesLatinName: 'Struthio',
   commonName: 'Ostriches',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -400,7 +400,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
     const [card] = await viewCards({
       commodityLines: [
         cowLine({
-          speciesSelection: '',
+          speciesLatinName: '',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
         })
@@ -672,16 +672,16 @@ describe(`${SUITE} — Remove`, () => {
 describe(`${SUITE} — identifier render matrix — model metadata per selectable species`, () => {
   setupIdentificationEngine()
 
-  const speciesLine = (commoditySelection, speciesSelection) => ({
-    commoditySelection,
-    speciesSelection,
+  const speciesLine = (commodityCode, speciesLatinName) => ({
+    commodityCode,
+    speciesLatinName,
     numberOfPackages: '',
     numberOfAnimalsQuantity: ''
   })
 
-  const renderFor = async (commodity, species) => {
+  const renderFor = async (commodityCode, speciesLatinName) => {
     const [card] = await viewCards({
-      commodityLines: [speciesLine(commodity, species)]
+      commodityLines: [speciesLine(commodityCode, speciesLatinName)]
     })
     return {
       fieldIds: card.fields.map((field) => field.id),
@@ -691,35 +691,35 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
 
   const MATRIX = [
     {
-      commodity: '0102',
-      species: 'Bos taurus',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
       fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
       showAddress: false
     },
     {
-      commodity: '0101',
-      species: 'Equus cabalus',
+      commodityCode: '0101',
+      speciesLatinName: 'Equus cabalus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
       showAddress: false
     },
     {
-      commodity: '01061900',
-      species: 'Felis catus',
+      commodityCode: '01061900',
+      speciesLatinName: 'Felis catus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     },
     {
-      commodity: '01061900',
-      species: 'Canis familiaris',
+      commodityCode: '01061900',
+      speciesLatinName: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     }
   ]
 
   it.each(MATRIX)(
-    'Should render the identifier fields for $commodity',
-    async ({ commodity, species, fieldIds, showAddress }) => {
-      const rendered = await renderFor(commodity, species)
+    'Should render the identifier fields for $commodityCode',
+    async ({ commodityCode, speciesLatinName, fieldIds, showAddress }) => {
+      const rendered = await renderFor(commodityCode, speciesLatinName)
       expect(rendered.fieldIds).toEqual(fieldIds)
       expect(rendered.showAddress).toBe(showAddress)
     }
@@ -747,8 +747,6 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(context.cards.map((card) => card.title)).toEqual([
       '0102 — Bos taurus'
     ])
-    // The recap is the whole consignment: the ostrich line the page asks nothing
-    // of still has to appear, or the table misdescribes what was declared.
     expect(context.selectedCommodities).toEqual([
       { code: '0102', name: CATTLE_OR_COW, animals: '2' },
       { code: '01063300', name: 'Ostriches', animals: '3' }

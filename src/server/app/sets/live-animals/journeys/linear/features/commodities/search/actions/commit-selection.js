@@ -4,16 +4,13 @@ import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { lineKey } from '../selection/line-key.js'
-import { forgetRows } from '../selection/rows.js'
+import { clearStoredSearchRows } from '../selection/rows.js'
 
-// A line saves what the trader ticked: the code, the Latin name and the common
-// name from the search row. Its type follows from the code and species and is
-// always non-blank, so every line completes.
-export const seedLine = (row) => ({
-  commoditySelection: row.code,
-  speciesSelection: row.latinName,
-  ...(row.commonName ? { commonName: row.commonName } : {}),
-  commodityType: commodities.typeIdFor(row.code, row.latinName),
+export const seedLine = ({ commodityCode, speciesLatinName, commonName }) => ({
+  commodityCode,
+  speciesLatinName,
+  ...(commonName ? { commonName } : {}),
+  commodityType: commodities.typeIdFor(commodityCode, speciesLatinName),
   numberOfPackages: '',
   numberOfAnimalsQuantity: ''
 })
@@ -38,7 +35,7 @@ export const commitSelection = async (request, h, rows) => {
     lineKey,
     rows.map(seedLine)
   )
-  await forgetRows(request, h)
+  await clearStoredSearchRows(request, h)
   const { scope } = await state.get(request, h)
   return h.redirect(await selectionTarget(request, scope))
 }

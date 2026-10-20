@@ -1,20 +1,23 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { splitKey } from '../selection/keys.js'
+import { codeAndLatinNameOf } from '../selection/keys.js'
+import { legendFor, speciesLabelFor } from './labels.js'
 
 const copy = copyFor({ en, cy }).search
 
-// The panel names a chosen species the same way its tick box did — by its
-// scientific name, under its CN code — so the two halves of the page do not
-// drift apart.
 const groupsFor = (selected) =>
-  [...Map.groupBy(selected.map(splitKey), ([code]) => code)].map(
-    ([code, pairs]) => ({
-      legend: code,
-      items: pairs.map(([, latinName]) => latinName)
-    })
-  )
+  [
+    ...Map.groupBy(
+      selected.map(codeAndLatinNameOf),
+      ([commodityCode]) => commodityCode
+    )
+  ].map(([commodityCode, pairs]) => ({
+    legend: legendFor(commodityCode),
+    items: pairs.map(([, speciesLatinName]) =>
+      speciesLabelFor(speciesLatinName)
+    )
+  }))
 
 /**
  * What is on the notification so far, so the trader never has to scroll a

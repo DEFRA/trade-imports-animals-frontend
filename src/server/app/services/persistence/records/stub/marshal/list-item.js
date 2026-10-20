@@ -4,7 +4,7 @@ import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 
 export const marshalListItem = async (document) => {
   const answers = projectAnswers(decodePersistedFulfilment(document.fulfilment))
-  const commodityName = answers.commodityLines?.[0]?.commoditySelection
+  const commodityName = answers.commodityLines?.[0]?.commodityCode
   const status = document.status
 
   return {

@@ -1,6 +1,5 @@
-import Boom from '@hapi/boom'
-import { isStubMode } from '../../../../../common/services/mode.js'
-import { postSpeciesCheck } from './client.js'
+import { callReferenceData } from './call-reference-data.js'
+import { checkSpecies } from './client.js'
 import { COMMODITY_GROUPS } from './stub.js'
 
 const listedInStub = ({ code, latinName }) =>
@@ -11,27 +10,18 @@ const listedInStub = ({ code, latinName }) =>
   )
 
 /**
- * The lines whose species MDM no longer lists under their code, as
- * `[{ code, latinName }]` — empty when every line still stands. A rename
- * reads as a removal: the old name is no longer listed. Stub runs check
- * against the saved TST data instead of reference-data.
- *
  * @param {Array<{code: string, latinName: string}>} lines - the lines to check.
- * @returns {Promise<Array<{code: string, latinName: string}>>} the lines MDM no longer lists.
+ * @returns {Promise<Array<{code: string, latinName: string}>>} the lines whose
+ *   Latin name is not listed under their code; empty when all are listed.
+ * @throws {import('@hapi/boom').Boom} 503 when reference data fails.
  */
-export const missingSpecies = async (lines) => {
+export const linesWithUnlistedSpecies = async (lines) => {
   if (lines.length === 0) {
     return []
   }
-  if (isStubMode()) {
-    return lines.filter((line) => !listedInStub(line))
-  }
-  try {
-    return (await postSpeciesCheck(lines)).missing ?? []
-  } catch (err) {
-    throw Boom.serverUnavailable('Reference data unavailable', {
-      dataset: 'commodities',
-      cause: err
-    })
-  }
+  return callReferenceData({
+    stubCall: () => lines.filter((line) => !listedInStub(line)),
+    realCall: async () => (await checkSpecies(lines)).missing ?? [],
+    failureLog: 'Species check failed'
+  })
 }

@@ -27,24 +27,21 @@ import {
   earTag,
   horseName,
   permanentAddress,
-  species
+  speciesLatinName
 } from './index.js'
 import {
   cphExemptCommodityCodes,
-  earTagCommodities,
-  horseNameCommodities,
-  microchipCommodities,
-  packageCountCommodities,
-  passportCommodities,
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  microchipCommodityCodes,
+  packageCountCommodityCodes,
+  passportCommodityCodes,
   permanentAddressSpecies,
-  tattooCommodities,
-  unweanedCommodities
+  tattooCommodityCodes,
+  unweanedCommodityCodes
 } from '../services/commodities/index.js'
 
-// Sentinel — a value deliberately not present in any V4 allowlist. If a
-// real code or species ever matches, change this to another
-// definitely-not-listed value.
-const CONTROL_VALUE = 'Unicorn'
+const VALUE_ON_NO_ALLOWLIST = 'Unicorn'
 
 let evaluate
 beforeAll(() => {
@@ -56,12 +53,12 @@ beforeAll(() => {
 // Line-scoped gate: numberOfPackages
 //
 // `numberOfPackages` is `within: commodityLine` with
-// `applyTo: allowListed(commodityCode, packageCountCommodities(), null, …)`.
+// `applyTo: allowListed(commodityCode, packageCountCommodityCodes(), null, …)`.
 // Records at line-instance granularity — one per matching line.
 // ---------------------------------------------------------------------------
 
 describe('package-count list → numberOfPackages (line-scoped)', () => {
-  for (const code of packageCountCommodities()) {
+  for (const code of packageCountCommodityCodes()) {
     it(`Should put numberOfPackages in scope for a line with code = '${code}'`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: code }
@@ -74,7 +71,7 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
 
   it(`Should not put numberOfPackages in scope for a control value`, () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: CONTROL_VALUE }
+      [commodityCode.id]: { line1: VALUE_ON_NO_ALLOWLIST }
     })
     const fulfilmentIndexes =
       state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
@@ -108,8 +105,6 @@ describe('CPH exemptions → cph (top-level anyNotInUnionOf)', () => {
     expect(state.obligations[cph.id].inScope).toBe(false)
   })
 
-  // Pigs (0103) were not in the old catalogue. Outside the exemptions, so
-  // asked — even alongside an exempt horse.
   it('Should put cph in scope when any line is not exempt', () => {
     const state = evaluate({
       [commodityCode.id]: { line1: '0101', line2: '0103' }
@@ -119,7 +114,7 @@ describe('CPH exemptions → cph (top-level anyNotInUnionOf)', () => {
 
   it('Should put cph in scope for a code on no list at all', () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: CONTROL_VALUE }
+      [commodityCode.id]: { line1: VALUE_ON_NO_ALLOWLIST }
     })
     expect(state.obligations[cph.id].inScope).toBe(true)
   })
@@ -133,12 +128,12 @@ describe('CPH exemptions → cph (top-level anyNotInUnionOf)', () => {
 // ---------------------------------------------------------------------------
 // Notification-level gate: containsUnweanedAnimals
 //
-// `anyAllowListed(commodityCode, unweanedCommodities())` — the question is
+// `anyAllowListed(commodityCode, unweanedCommodityCodes())` — the question is
 // asked once for the consignment as soon as ANY line carries an unweaned code.
 // ---------------------------------------------------------------------------
 
 describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)', () => {
-  for (const code of unweanedCommodities()) {
+  for (const code of unweanedCommodityCodes()) {
     it(`Should put containsUnweanedAnimals in scope when a line has code = '${code}'`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: code }
@@ -149,7 +144,7 @@ describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)',
 
   it(`Should not put containsUnweanedAnimals in scope when no line matches`, () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: CONTROL_VALUE }
+      [commodityCode.id]: { line1: VALUE_ON_NO_ALLOWLIST }
     })
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
@@ -179,36 +174,36 @@ const UNIT_SCOPED_ALLOWLISTS = [
   {
     name: 'microchip list',
     gate: commodityCode,
-    values: microchipCommodities(),
+    values: microchipCommodityCodes(),
     gated: microchip
   },
   {
     name: 'passport list',
     gate: commodityCode,
-    values: passportCommodities(),
+    values: passportCommodityCodes(),
     gated: passport
   },
   {
     name: 'tattoo list',
     gate: commodityCode,
-    values: tattooCommodities(),
+    values: tattooCommodityCodes(),
     gated: tattoo
   },
   {
     name: 'ear-tag list',
     gate: commodityCode,
-    values: earTagCommodities(),
+    values: earTagCommodityCodes(),
     gated: earTag
   },
   {
     name: 'horse-name list',
     gate: commodityCode,
-    values: horseNameCommodities(),
+    values: horseNameCommodityCodes(),
     gated: horseName
   },
   {
     name: 'permanent-address list',
-    gate: species,
+    gate: speciesLatinName,
     values: permanentAddressSpecies(),
     gated: permanentAddress
   }
@@ -230,7 +225,7 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
 
     it(`Should not put ${gated.name} in scope for a control value`, () => {
       const state = evaluate({
-        [gate.id]: { line1: CONTROL_VALUE },
+        [gate.id]: { line1: VALUE_ON_NO_ALLOWLIST },
         [gated.id]: { 'line1.unit1': '' }
       })
       const fulfilmentIndexes =
@@ -240,12 +235,10 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
   })
 }
 
-// The genus Felis — MDM's "Cat" — sits under 01061900 beside the domestic
-// cat but is not asked for a permanent address.
-it('Should not put permanentAddress in scope for the genus Felis', () => {
+it('Should not put permanentAddress in scope for the genus Felis under 01061900', () => {
   const state = evaluate({
     [commodityCode.id]: { line1: '01061900' },
-    [species.id]: { line1: 'Felis' },
+    [speciesLatinName.id]: { line1: 'Felis' },
     [permanentAddress.id]: { 'line1.unit1': '' }
   })
   expect(
@@ -312,14 +305,14 @@ const EXPECTED = {
 }
 
 const ALLOWLISTS_UNDER_TEST = [
-  { name: 'package-count list', values: packageCountCommodities() },
+  { name: 'package-count list', values: packageCountCommodityCodes() },
   { name: 'CPH exemptions', values: cphExemptCommodityCodes() },
-  { name: 'unweaned list', values: unweanedCommodities() },
-  { name: 'microchip list', values: microchipCommodities() },
-  { name: 'passport list', values: passportCommodities() },
-  { name: 'tattoo list', values: tattooCommodities() },
-  { name: 'ear-tag list', values: earTagCommodities() },
-  { name: 'horse-name list', values: horseNameCommodities() },
+  { name: 'unweaned list', values: unweanedCommodityCodes() },
+  { name: 'microchip list', values: microchipCommodityCodes() },
+  { name: 'passport list', values: passportCommodityCodes() },
+  { name: 'tattoo list', values: tattooCommodityCodes() },
+  { name: 'ear-tag list', values: earTagCommodityCodes() },
+  { name: 'horse-name list', values: horseNameCommodityCodes() },
   { name: 'permanent-address list', values: permanentAddressSpecies() }
 ]
 

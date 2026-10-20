@@ -1,17 +1,17 @@
 import {
-  earTagCommodities,
-  horseNameCommodities,
-  identifiedCommodities,
-  microchipCommodities,
-  passportCommodities,
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  identifiedCommodityCodes,
+  microchipCommodityCodes,
+  passportCommodityCodes,
   permanentAddressSpecies,
-  tattooCommodities
+  tattooCommodityCodes
 } from '../../../services/commodities/index.js'
 import {
   allowListed,
   moreThanOne
 } from '../../../../../model/obligations/helpers/index.js'
-import { commodityCode, commodityLine, species } from './lines.js'
+import { commodityCode, commodityLine, speciesLatinName } from './lines.js'
 
 const microchipReason = {
   code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
@@ -94,7 +94,7 @@ export const unitRecord = {
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
     floorAppliesToParent: moreThanOne(
-      allowListed(commodityCode, identifiedCommodities, null)
+      allowListed(commodityCode, identifiedCommodityCodes, null)
     )
   }
 }
@@ -112,7 +112,7 @@ export const microchip = {
   name: 'animalIdentifierMicrochip',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, microchipCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, microchipCommodityCodes, unitRecord, [
     microchipReason
   ])
 }
@@ -122,7 +122,7 @@ export const passport = {
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, passportCommodityCodes, unitRecord, [
     passportReason
   ])
   // Note: `unitRecord` is a structural gatedParentGroup (the closure's
@@ -136,7 +136,7 @@ export const tattoo = {
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, tattooCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, tattooCommodityCodes, unitRecord, [
     tattooReason
   ])
 }
@@ -146,7 +146,7 @@ export const earTag = {
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, earTagCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, earTagCommodityCodes, unitRecord, [
     earTagReason
   ])
 }
@@ -156,20 +156,17 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, horseNameCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, horseNameCommodityCodes, unitRecord, [
     horseNameReason
   ])
 }
 
-// Gated on the species, not the code: 01061900 holds the cats, dogs and
-// ferrets asked for a permanent address alongside a hundred other
-// mammals that are not.
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(species, permanentAddressSpecies, unitRecord, [
+  applyTo: allowListed(speciesLatinName, permanentAddressSpecies, unitRecord, [
     permanentAddressReason
   ])
 }

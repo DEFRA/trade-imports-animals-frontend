@@ -1,37 +1,45 @@
 import { describe, expect, it } from 'vitest'
 
-import { matchesCode, matchesWords, searchCommodities } from './stub.js'
+import {
+  matchesCodePrefix,
+  matchesWordPrefixes,
+  searchCommodities
+} from './stub.js'
 
 const BOS_TAURUS = 'Bos taurus'
 
-describe('#matchesWords', () => {
+describe('#matchesWordPrefixes', () => {
   it('Should match any word of the text on its opening characters', () => {
-    expect(matchesWords(BOS_TAURUS, 'tau')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'bos')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'aurus')).toBe(false)
+    expect(matchesWordPrefixes(BOS_TAURUS, 'tau')).toBe(true)
+    expect(matchesWordPrefixes(BOS_TAURUS, 'bos')).toBe(true)
+    expect(matchesWordPrefixes(BOS_TAURUS, 'aurus')).toBe(false)
   })
 
   it('Should ignore case and punctuation', () => {
-    expect(matchesWords('Bos sp.', 'SP')).toBe(true)
-    expect(matchesWords('Bos sp.', 'bos,sp')).toBe(true)
-    expect(matchesWords(BOS_TAURUS, 'Bos-tau')).toBe(true)
+    expect(matchesWordPrefixes('Bos sp.', 'SP')).toBe(true)
+    expect(matchesWordPrefixes('Bos sp.', 'bos,sp')).toBe(true)
+    expect(matchesWordPrefixes(BOS_TAURUS, 'Bos-tau')).toBe(true)
   })
 
   it('Should match several words only where they run in order', () => {
-    expect(matchesWords('Mustela putorius furo', 'putorius fur')).toBe(true)
-    expect(matchesWords('Mustela putorius furo', 'furo putorius')).toBe(false)
+    expect(matchesWordPrefixes('Mustela putorius furo', 'putorius fur')).toBe(
+      true
+    )
+    expect(matchesWordPrefixes('Mustela putorius furo', 'furo putorius')).toBe(
+      false
+    )
   })
 
   it('Should match nothing on an empty term or text', () => {
-    expect(matchesWords(BOS_TAURUS, '   ')).toBe(false)
-    expect(matchesWords(null, 'bos')).toBe(false)
+    expect(matchesWordPrefixes(BOS_TAURUS, '   ')).toBe(false)
+    expect(matchesWordPrefixes(null, 'bos')).toBe(false)
   })
 })
 
-describe('#matchesCode', () => {
+describe('#matchesCodePrefix', () => {
   it('Should match a code on its leading digits', () => {
-    expect(matchesCode('01061900', '0106')).toBe(true)
-    expect(matchesCode('01061900', '1900')).toBe(false)
+    expect(matchesCodePrefix('01061900', '0106')).toBe(true)
+    expect(matchesCodePrefix('01061900', '1900')).toBe(false)
   })
 })
 

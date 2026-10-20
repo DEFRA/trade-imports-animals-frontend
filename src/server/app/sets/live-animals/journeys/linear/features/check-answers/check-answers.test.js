@@ -192,8 +192,8 @@ const fullSeed = {
   internalReferenceNumber: 'Imports456GB',
   commodityLines: [
     {
-      commoditySelection: '0102',
-      speciesSelection: 'Bos taurus',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
       commonName: 'Cattle or Cow',
       commodityType: '16',
       numberOfAnimalsQuantity: '25',
@@ -701,7 +701,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   const gatedOffSeed = {
     regionOfOriginCodeRequirement: 'no',
     reasonForImport: 'transit',
-    commodityLines: [{ commoditySelection: '01063300' }],
+    commodityLines: [{ commodityCode: '01063300' }],
     meansOfTransport: 'AIRPLANE',
     transporterType: 'Private',
     privateTransporter: { name: 'Jean Dupont' }
@@ -736,7 +736,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       rowsOf(
         await sectionsFor({
           ...gatedOffSeed,
-          commodityLines: [{ commoditySelection: '0101' }]
+          commodityLines: [{ commodityCode: '0101' }]
         })
       )
     )
@@ -918,7 +918,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
   setupCheckAnswersEngine()
 
   const reasonSeed = (answers) => ({
-    commodityLines: [{ commoditySelection: '01063300' }],
+    commodityLines: [{ commodityCode: '01063300' }],
     ...answers
   })
 
@@ -1340,7 +1340,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
 
   const gatesFor = async (commodity) => {
     const sections = await sectionsFor({
-      commodityLines: [{ commoditySelection: commodity }]
+      commodityLines: [{ commodityCode: commodity }]
     })
     const allKeys = keysOf(rowsOf(sections))
     const speciesCard = cardByTitle(sections, commodity)
@@ -1438,20 +1438,25 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     expect(response).toEqual(refusedContinue(journeyId))
   })
 
-  // MDM lists "Bos sp." under 0102, not "Bos spp.".
-  const withRemovedSpecies = () => ({
+  const SPECIES_MDM_DOES_NOT_LIST = 'Bos spp.'
+  const withUnlistedSpecies = () => ({
     ...fullSeed,
     commodityLines: [
-      { ...fullSeed.commodityLines[0], speciesSelection: 'Bos spp.' }
+      {
+        ...fullSeed.commodityLines[0],
+        speciesLatinName: SPECIES_MDM_DOES_NOT_LIST
+      }
     ]
   })
 
   it('Should refuse Continue on a draft holding a species MDM no longer lists, naming it', async () => {
-    const view = await reviewAfterRefusal(withRemovedSpecies())
+    const view = await reviewAfterRefusal(withUnlistedSpecies())
 
     expect(view.context.errorSummary.errorList).toEqual([
       {
-        text: copyEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)'),
+        text: copyEn.errors.cards.speciesNoLongerOffered(
+          `${SPECIES_MDM_DOES_NOT_LIST} (0102)`
+        ),
         href: '#description-of-the-goods'
       }
     ])
@@ -1459,7 +1464,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
 
   it('Should not name a species MDM no longer lists until Continue is refused', async () => {
     const { view } = await driveHandler(getHandler, {
-      seed: withRemovedSpecies()
+      seed: withUnlistedSpecies()
     })
 
     expect(view.context.errorSummary).toBeNull()
@@ -1608,10 +1613,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     // Two lines, the second barely started: species cards are built for both,
     // and the species rows stay outstanding.
     const seed = {
-      commodityLines: [
-        fullSeed.commodityLines[0],
-        { commoditySelection: '0102' }
-      ]
+      commodityLines: [fullSeed.commodityLines[0], { commodityCode: '0102' }]
     }
 
     expect(await textsFor(seed)).toContain(SPECIES_INCOMPLETE)

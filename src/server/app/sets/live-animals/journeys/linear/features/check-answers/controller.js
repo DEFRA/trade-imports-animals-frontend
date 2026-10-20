@@ -153,12 +153,10 @@ export const renderNotificationView = async (
   const scanDocErrors = hidesAnswerErrors
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
-  // MDM is asked only when the trader has just been refused, so the review
-  // can name the species the submission was refused for.
-  const speciesErrors =
-    !hidesAnswerErrors && refused
-      ? await speciesCardErrors(journey, answers)
-      : {}
+  const checksSpeciesAgainstMdm = !hidesAnswerErrors && refused
+  const speciesErrors = checksSpeciesAgainstMdm
+    ? await speciesCardErrors(journey, answers)
+    : {}
   return renderCya(h, journey, {
     answers,
     scope,

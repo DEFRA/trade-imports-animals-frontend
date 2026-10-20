@@ -11,7 +11,11 @@ import { search } from '../../../../../services/commodities/search.js'
 import { commitSelection } from './actions/commit-selection.js'
 import { SEARCH_PAGE_SIZE, isSearchable, normaliseQuery } from './matching.js'
 import { mergedKeysFromPayload, storedKeys } from './selection/selected-keys.js'
-import { knownRows, rememberRows, resultRows } from './selection/rows.js'
+import {
+  knownRows,
+  replaceStoredSearchRows,
+  resultRows
+} from './selection/rows.js'
 import { commodityGroups } from './view-model/commodity-groups.js'
 import { selectedSummary } from './view-model/selected-summary.js'
 
@@ -26,9 +30,10 @@ const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
 const searchFor = (query) =>
-  isSearchable(query)
-    ? search(normaliseQuery(query), { size: SEARCH_PAGE_SIZE })
-    : null
+  isSearchable(query) ? search(query, { size: SEARCH_PAGE_SIZE }) : null
+
+const rowsFor = (keys, knownRowsByKey) =>
+  keys.map((key) => knownRowsByKey.get(key))
 
 const render = (
   h,
@@ -66,12 +71,15 @@ const get = async (request, h) => {
   return render(h, journey, { selected: storedKeys(answers) })
 }
 
-// Searching again keeps the rows behind the chosen species and the rows now on
-// screen, so whichever the trader ticks next can be saved with its common name.
-const rerender = async (request, h, known, { selected, query, errorText }) => {
+const searchStoreRowsAndRender = async (
+  request,
+  h,
+  knownRowsByKey,
+  { selected, query, errorText }
+) => {
   const results = await searchFor(query)
-  await rememberRows(request, h, [
-    ...selected.map((key) => known.get(key)),
+  await replaceStoredSearchRows(request, h, [
+    ...rowsFor(selected, knownRowsByKey),
     ...resultRows(results)
   ])
   const { journey } = await state.get(request, h)
@@ -81,32 +89,35 @@ const rerender = async (request, h, known, { selected, query, errorText }) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = normaliseQuery(payload.commoditySearch)
-  const known = knownRows(await state.get(request, h))
+  const knownRowsByKey = knownRows(await state.get(request, h))
 
   if (payload.action === CLEAR_ACTION) {
-    return rerender(request, h, known, { selected: [], query })
+    return searchStoreRowsAndRender(request, h, knownRowsByKey, {
+      selected: [],
+      query
+    })
   }
 
-  const selected = mergedKeysFromPayload(payload, known)
+  const selected = mergedKeysFromPayload(payload, knownRowsByKey)
 
   if (payload.action === SEARCH_ACTION) {
-    return rerender(request, h, known, { selected, query })
+    return searchStoreRowsAndRender(request, h, knownRowsByKey, {
+      selected,
+      query
+    })
   }
 
   if (selected.length === 0 && !kit.isHubExit(request)) {
-    const response = await rerender(request, h, known, {
-      selected,
-      query,
-      errorText: copy.errors.selectCommodity
-    })
+    const response = await searchStoreRowsAndRender(
+      request,
+      h,
+      knownRowsByKey,
+      { selected, query, errorText: copy.errors.selectCommodity }
+    )
     return response.code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(
-    request,
-    h,
-    selected.map((key) => known.get(key))
-  )
+  return commitSelection(request, h, rowsFor(selected, knownRowsByKey))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

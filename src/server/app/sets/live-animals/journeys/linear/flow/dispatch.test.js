@@ -29,9 +29,9 @@ const completeAnswers = {
   countyParishHoldingCph: '12/345/6789',
   commodityLines: [
     {
-      commoditySelection: '0102',
+      commodityCode: '0102',
       commodityType: '16',
-      speciesSelection: ['Bos taurus'],
+      speciesLatinName: ['Bos taurus'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '1',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -241,10 +241,8 @@ describe('#buildDispatch', () => {
   })
 
   it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {
-    expect(pageOfObligation('commodityLines.commoditySelection')).toBe(
-      'commodities'
-    )
-    expect(pageOfObligation('commodityLines[0].commoditySelection')).toBe(
+    expect(pageOfObligation('commodityLines.commodityCode')).toBe('commodities')
+    expect(pageOfObligation('commodityLines[0].commodityCode')).toBe(
       'commodities'
     )
     expect(pageOfObligation('commodityLines[0]')).toBe('commodities')

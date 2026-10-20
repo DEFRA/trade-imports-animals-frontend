@@ -36,7 +36,7 @@ export const postRemove = async (request, h, index, lineKey) => {
   }
 
   const kept = (answers.commodityLines ?? []).filter(
-    (entry) => entry.commoditySelection !== code
+    (entry) => entry.commodityCode !== code
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
   return afterRemoval(request, h, kept)
@@ -52,7 +52,7 @@ export const postRemoveSpecies = async (request, h, index, lineKey) => {
   const line = stored[index]
   if (
     line === undefined ||
-    !commodities.speciesListedIndividually(line.commoditySelection)
+    !commodities.listsSpeciesIndividually(line.commodityCode)
   ) {
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }

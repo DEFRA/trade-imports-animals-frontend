@@ -15,7 +15,7 @@ const countText = (value) => String(value ?? '')
 // list is answered.
 export const buildSelectedCommodities = (lines) =>
   lines.map(({ entry }) => ({
-    code: entry.commoditySelection ?? '',
+    code: entry.commodityCode ?? '',
     name: speciesName(entry),
     animals: countText(entry.numberOfAnimalsQuantity)
   }))

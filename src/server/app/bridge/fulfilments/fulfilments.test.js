@@ -21,7 +21,7 @@ const {
   animalsCertifiedFor,
   commodityLine,
   commodityCode,
-  species,
+  speciesLatinName,
   numberOfAnimals,
   numberOfPackages,
   cph,
@@ -80,16 +80,16 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     const answers = {
       commodityLines: [
         {
-          commoditySelection: '0102',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '25',
-          speciesSelection: [BOS_TAURUS],
+          speciesLatinName: [BOS_TAURUS],
           animalIdentifiers: [
             { animalIdentifierEarTag: 'A' },
             { animalIdentifierEarTag: 'B' }
           ]
         },
         {
-          commoditySelection: '0101',
+          commodityCode: '0101',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ horseName: 'Silver' }]
         }
@@ -106,7 +106,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
 
   it('Should round-trip every commodity name exactly', () => {
     for (const name of ['0102', '0101', '01063300', '01061900', '01061900']) {
-      const answers = { commodityLines: [{ commoditySelection: name }] }
+      const answers = { commodityLines: [{ commodityCode: name }] }
       expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
     }
   })
@@ -220,7 +220,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
   it('Should accept out-of-order records and canonicalise arrays by numeric index', () => {
     const fulfilments = {
       [commodityCode.id]: { line1: '0101', line0: '0102' },
-      [species.id]: { line1: BISON_BISON, line0: BOS_TAURUS },
+      [speciesLatinName.id]: { line1: BISON_BISON, line0: BOS_TAURUS },
       [earTag.id]: {
         'line1.unit1': 'horse-2',
         'line0.unit0': 'cow-1',
@@ -232,13 +232,13 @@ describe('#fulfilments — page projection validation and ordering', () => {
     expect(projectAnswers(fulfilments)).toEqual({
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: BOS_TAURUS,
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           animalIdentifiers: [{ animalIdentifierEarTag: 'cow-1' }]
         },
         {
-          commoditySelection: '0101',
-          speciesSelection: BISON_BISON,
+          commodityCode: '0101',
+          speciesLatinName: BISON_BISON,
           animalIdentifiers: [
             { animalIdentifierEarTag: 'horse-1' },
             { animalIdentifierEarTag: 'horse-2' }
@@ -274,12 +274,12 @@ describe('#fulfilments — page projection validation and ordering', () => {
     expect(
       projectAnswers({
         [commodityCode.id]: { line0: '0102' },
-        [species.id]: { line1: BISON_BISON }
+        [speciesLatinName.id]: { line1: BISON_BISON }
       })
     ).toEqual({
       commodityLines: [
-        { commoditySelection: '0102' },
-        { speciesSelection: BISON_BISON }
+        { commodityCode: '0102' },
+        { speciesLatinName: BISON_BISON }
       ]
     })
   })
@@ -293,7 +293,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
 describe('#fulfilments — stored values pass through', () => {
   it('Should store the picker name for a commodity selection', () => {
     const fulfilments = assembleFulfilments({
-      commodityLines: [{ commoditySelection: '0102' }]
+      commodityLines: [{ commodityCode: '0102' }]
     })
     expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
   })
@@ -315,14 +315,14 @@ describe('#fulfilments — stored values pass through', () => {
       animalsCertifiedFor: 'slaughter',
       meansOfTransport: 'ROAD_VEHICLE',
       transitedCountries: ['FR', 'BE'],
-      commodityLines: [{ speciesSelection: [BOS_TAURUS] }]
+      commodityLines: [{ speciesLatinName: [BOS_TAURUS] }]
     }
     const fulfilments = assembleFulfilments(answers)
     expect(fulfilments[purposeInInternalMarket.id]).toBe('breeding')
     expect(fulfilments[animalsCertifiedFor.id]).toBe('slaughter')
     expect(fulfilments[meansOfTransport.id]).toBe('ROAD_VEHICLE')
     expect(fulfilments[transitedCountries.id]).toEqual(['FR', 'BE'])
-    expect(fulfilments[species.id]).toEqual({ line0: [BOS_TAURUS] })
+    expect(fulfilments[speciesLatinName.id]).toEqual({ line0: [BOS_TAURUS] })
   })
 
   it('Should keep an unparseable animal count raw for controller-side validation', () => {

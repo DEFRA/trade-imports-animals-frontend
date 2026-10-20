@@ -20,8 +20,6 @@ import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
 
-// `commoditySearchRows` holds the commodity search page's rows until the page
-// saves its lines (features/commodities/search/selection/rows.js).
 export const FLOW_ONLY_KEYS = ['declaration', 'commoditySearchRows']
 
 export const sections = [

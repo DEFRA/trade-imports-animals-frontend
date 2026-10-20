@@ -76,7 +76,7 @@ import {
   commonName,
   numberOfAnimals,
   numberOfPackages,
-  species
+  speciesLatinName
 } from './sections/commodities/lines.js'
 import {
   accompanyingDocumentAttachmentType,
@@ -167,7 +167,7 @@ export {
   reasonForImport,
   regionCode,
   regionCodeRequirement,
-  species,
+  speciesLatinName,
   tattoo,
   transitedCountries,
   transportDocumentReference,
@@ -213,7 +213,7 @@ export const obligations = [
   commodityLine,
   commodityCode,
   commodityType,
-  species,
+  speciesLatinName,
   commonName,
   numberOfAnimals,
   numberOfPackages,

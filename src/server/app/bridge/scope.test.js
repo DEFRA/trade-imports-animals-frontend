@@ -28,11 +28,11 @@ const resolveRegion = (answers) => ({
   ...answers
 })
 
-const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commoditySelection'
+const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commodityCode'
 
 const line = (commodity, units) => ({
-  commoditySelection: commodity,
-  speciesSelection: 'Bos taurus',
+  commodityCode: commodity,
+  speciesLatinName: 'Bos taurus',
   numberOfAnimalsQuantity: String(units.length),
   animalIdentifiers: units
 })
@@ -109,7 +109,7 @@ describe('scope bridge — per-gate scoping', () => {
       })
     )
     expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
-    expect(scope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(scope.has('commodityLines[1].commodityCode')).toBe(true)
   })
 
   it('Should keep the group node in scope for an empty required collection', () => {
@@ -169,7 +169,7 @@ describe('scope bridge — makeScope shape parity', () => {
   it('Should read whether an obligation instance is answered via answered(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.answered('countryOfOrigin')).toBe(true)
-    expect(scope.answered('commoditySelection')).toBe(true)
+    expect(scope.answered('commodityCode')).toBe(true)
     expect(scope.answered('portOfEntry')).toBe(true)
   })
 })

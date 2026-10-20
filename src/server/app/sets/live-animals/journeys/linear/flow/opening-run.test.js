@@ -98,8 +98,8 @@ const lineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: '01061900',
-      speciesSelection: 'Felis catus',
+      commodityCode: '01061900',
+      speciesLatinName: 'Felis catus',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
     }
@@ -112,8 +112,8 @@ const fishLineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: '01063300',
-      speciesSelection: 'Struthio',
+      commodityCode: '01063300',
+      speciesLatinName: 'Struthio',
       numberOfAnimalsQuantity: '3',
       numberOfPackages: ''
     }
@@ -189,12 +189,10 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
-    // The cat is already on the notification, so the page can save it
-    // without a search in hand.
     const withCat = {
       countryOfOrigin: 'FR',
       commodityLines: [
-        { commoditySelection: '01061900', speciesSelection: 'Felis catus' }
+        { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
       ]
     }
     const inRun = await store.create()

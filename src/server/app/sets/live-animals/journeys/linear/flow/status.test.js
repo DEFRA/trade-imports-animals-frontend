@@ -98,7 +98,7 @@ const cases = {
   'a partial single-line journey': {
     answers: {
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: '0102' }]
+      commodityLines: [{ commodityCode: '0102' }]
     },
     rows: [
       IN_PROGRESS,
@@ -132,8 +132,8 @@ const cases = {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: BOS_TAURUS,
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
@@ -291,17 +291,13 @@ describe('statusOf — the commodities/identification facet split', () => {
   // work.
   const facetCases = [
     [{}, NOT_STARTED, NOT_STARTED],
-    [
-      { commodityLines: [{ commoditySelection: '0102' }] },
-      IN_PROGRESS,
-      FULFILLED
-    ],
+    [{ commodityLines: [{ commodityCode: '0102' }] }, IN_PROGRESS, FULFILLED],
     [
       {
         commodityLines: [
           {
-            commoditySelection: '0102',
-            speciesSelection: BOS_TAURUS,
+            commodityCode: '0102',
+            speciesLatinName: BOS_TAURUS,
             commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
@@ -312,10 +308,7 @@ describe('statusOf — the commodities/identification facet split', () => {
     ],
     [
       {
-        commodityLines: [
-          { commoditySelection: '0102' },
-          { commoditySelection: '0101' }
-        ]
+        commodityLines: [{ commodityCode: '0102' }, { commodityCode: '0101' }]
       },
       IN_PROGRESS,
       NOT_STARTED
@@ -324,7 +317,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: '0102',
+            commodityCode: '0102',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           }
         ]
@@ -339,8 +332,8 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: '01061900',
-            speciesSelection: 'Felis catus',
+            commodityCode: '01061900',
+            speciesLatinName: 'Felis catus',
             animalIdentifiers: [
               {
                 permanentAddress: {
@@ -383,8 +376,8 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   }
 
   const cowLine = (quantity, identifiers) => ({
-    commoditySelection: '0102',
-    speciesSelection: BOS_TAURUS,
+    commodityCode: '0102',
+    speciesLatinName: BOS_TAURUS,
     numberOfAnimalsQuantity: quantity,
     animalIdentifiers: identifiers
   })
@@ -409,7 +402,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   it('Should block the identifiers facet while a second identified species carries no record', () => {
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', [earTag]), { commoditySelection: '0101' }]
+        commodityLines: [cowLine('5', [earTag]), { commodityCode: '0101' }]
       })
     ).toBe(IN_PROGRESS)
   })
@@ -420,7 +413,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
         commodityLines: [
           cowLine('5', [earTag]),
           {
-            commoditySelection: '0101',
+            commodityCode: '0101',
             numberOfAnimalsQuantity: '4',
             animalIdentifiers: [{ horseName: 'Shergar' }]
           }
@@ -434,7 +427,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
     // consignment is a one-identified-species consignment.
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', []), { commoditySelection: '01063300' }]
+        commodityLines: [cowLine('5', []), { commodityCode: '01063300' }]
       })
     ).toBe(FULFILLED)
   })

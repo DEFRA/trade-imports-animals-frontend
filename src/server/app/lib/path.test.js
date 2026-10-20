@@ -8,8 +8,8 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
   })
 
   it('Should encode indexed instance paths', () => {
-    expect(pathKey(['commodityLines', 0, 'commoditySelection'])).toBe(
-      'commodityLines[0].commoditySelection'
+    expect(pathKey(['commodityLines', 0, 'commodityCode'])).toBe(
+      'commodityLines[0].commodityCode'
     )
     expect(pathKey(['commodityLines', 2, 'numberOfAnimalsQuantity'])).toBe(
       'commodityLines[2].numberOfAnimalsQuantity'
@@ -17,15 +17,13 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
   })
 
   const nestedAnswers = {
-    commodityLines: [
-      { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
-    ]
+    commodityLines: [{ commodityCode: '0102', numberOfAnimalsQuantity: '25' }]
   }
 
   it('Should read a leaf value at a nested path', () => {
-    expect(
-      valueAt(nestedAnswers, ['commodityLines', 0, 'commoditySelection'])
-    ).toBe('0102')
+    expect(valueAt(nestedAnswers, ['commodityLines', 0, 'commodityCode'])).toBe(
+      '0102'
+    )
   })
 
   it('Should read a sibling leaf value at a nested path', () => {
@@ -36,19 +34,19 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
 
   it('Should return the whole array when the path targets a collection', () => {
     expect(valueAt(nestedAnswers, ['commodityLines'])).toEqual([
-      { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
+      { commodityCode: '0102', numberOfAnimalsQuantity: '25' }
     ])
   })
 
   it('Should return undefined for an out-of-range index', () => {
     expect(
-      valueAt(nestedAnswers, ['commodityLines', 5, 'commoditySelection'])
+      valueAt(nestedAnswers, ['commodityLines', 5, 'commodityCode'])
     ).toBeUndefined()
   })
 
   it('Should set a value at a nested path without mutating the input', () => {
     const answers = {
-      commodityLines: [{ commoditySelection: '0102' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
     const next = setAt(
       answers,
@@ -61,27 +59,25 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
 
   it('Should delete a leaf key at a nested path', () => {
     const answers = {
-      commodityLines: [
-        { commoditySelection: '0102', numberOfAnimalsQuantity: '25' }
-      ]
+      commodityLines: [{ commodityCode: '0102', numberOfAnimalsQuantity: '25' }]
     }
     deleteAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
     expect(answers.commodityLines[0]).toEqual({
-      commoditySelection: '0102'
+      commodityCode: '0102'
     })
   })
 
   it('Should splice an indexed entry out when the leaf is an array index', () => {
     const answers = {
-      commodityLines: [{ commoditySelection: 'a' }, { commoditySelection: 'b' }]
+      commodityLines: [{ commodityCode: 'a' }, { commodityCode: 'b' }]
     }
     deleteAt(answers, ['commodityLines', 0])
-    expect(answers.commodityLines).toEqual([{ commoditySelection: 'b' }])
+    expect(answers.commodityLines).toEqual([{ commodityCode: 'b' }])
   })
 
   it('Should delete a whole collection at a depth-0 path (=== delete answers.id)', () => {
     const answers = {
-      commodityLines: [{ commoditySelection: 'a' }],
+      commodityLines: [{ commodityCode: 'a' }],
       other: 1
     }
     deleteAt(answers, ['commodityLines'])
@@ -125,8 +121,8 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
   it('Should delete a sibling array-index and a nested path in order via destroyWiped', () => {
     const answers = {
       commodityLines: [
-        { commoditySelection: 'a', numberOfAnimalsQuantity: '100' },
-        { commoditySelection: 'b', numberOfAnimalsQuantity: '200' }
+        { commodityCode: 'a', numberOfAnimalsQuantity: '100' },
+        { commodityCode: 'b', numberOfAnimalsQuantity: '200' }
       ],
       countryOfOrigin: 'FR'
     }
@@ -135,7 +131,7 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
       'commodityLines[1].numberOfAnimalsQuantity'
     ])
     expect(answers).toEqual({
-      commodityLines: [{ commoditySelection: 'b' }],
+      commodityLines: [{ commodityCode: 'b' }],
       countryOfOrigin: 'FR'
     })
   })

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
+
+const fetchMocker = createFetchMock(vi)
 
 const originalMode = process.env.STUB_MODE
 
-const okResponse = (body) => ({ ok: true, json: async () => body })
-
-// reference-data's answer for "ferret", as TST's MDM data gives it.
 const FERRET_RESULTS = {
   total: 1,
   page: 0,
@@ -17,12 +17,23 @@ const FERRET_RESULTS = {
   ]
 }
 
+const BOS_SPP = { code: '0102', latinName: 'Bos spp.' }
+
+const respondWith = (status, statusText) =>
+  fetchMocker.mockResponse(() => ({ status, statusText, body: '' }))
+
+const respondWithJson = (body) => fetchMocker.mockResponse(JSON.stringify(body))
+
+const firstRequest = () => fetchMocker.requests()[0]
+
 beforeEach(() => {
   vi.resetModules()
+  fetchMocker.enableMocks()
+  fetchMocker.resetMocks()
 })
 
 afterEach(() => {
-  vi.unstubAllGlobals()
+  fetchMocker.disableMocks()
   if (originalMode === undefined) {
     delete process.env.STUB_MODE
   } else {
@@ -30,16 +41,17 @@ afterEach(() => {
   }
 })
 
-describe('commodities client', () => {
+describe('#fetchCommodities', () => {
   it('Should ask reference-data for one page of a search', async () => {
-    const fetchMock = vi.fn(async () => okResponse(FERRET_RESULTS))
-    vi.stubGlobal('fetch', fetchMock)
+    respondWithJson(FERRET_RESULTS)
     const { fetchCommodities } = await import('./client.js')
 
     expect(await fetchCommodities('ferret', { page: 0, size: 10 })).toEqual(
       FERRET_RESULTS
     )
-    const url = new URL(fetchMock.mock.calls[0][0])
+
+    const url = new URL(firstRequest().url)
+    expect(firstRequest().method).toBe('GET')
     expect(url.pathname).toBe('/commodities')
     expect(Object.fromEntries(url.searchParams)).toEqual({
       search: 'ferret',
@@ -48,77 +60,82 @@ describe('commodities client', () => {
     })
   })
 
-  it('Should throw on a non-ok response', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: false, status: 500, statusText: 'Error' }))
-    )
+  it('Should throw with the status on a non-ok response', async () => {
+    respondWith(500, 'Error')
     const { fetchCommodities } = await import('./client.js')
 
     await expect(
       fetchCommodities('ferret', { page: 0, size: 10 })
-    ).rejects.toThrow('Failed to search commodities')
+    ).rejects.toMatchObject({
+      message: 'Failed to search commodities',
+      status: 500,
+      statusText: 'Error'
+    })
   })
 })
 
-describe('species check — real mode', () => {
-  const BOS_SPP = { code: '0102', latinName: 'Bos spp.' }
+describe('#linesWithUnlistedSpecies', () => {
+  describe('in real mode', () => {
+    beforeEach(() => {
+      process.env.STUB_MODE = 'false'
+    })
 
-  it('Should ask reference-data which lines MDM no longer lists', async () => {
-    process.env.STUB_MODE = 'false'
-    const fetchMock = vi.fn(async () => okResponse({ missing: [BOS_SPP] }))
-    vi.stubGlobal('fetch', fetchMock)
-    const { missingSpecies } = await import('./species-check.js')
+    it('Should ask reference-data which lines are not listed', async () => {
+      respondWithJson({ missing: [BOS_SPP] })
+      const { linesWithUnlistedSpecies } = await import('./species-check.js')
 
-    expect(await missingSpecies([BOS_SPP])).toEqual([BOS_SPP])
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(new URL(url).pathname).toBe('/commodities/species-check')
-    expect(init.method).toBe('POST')
-    expect(JSON.parse(init.body)).toEqual({ lines: [BOS_SPP] })
-  })
+      expect(await linesWithUnlistedSpecies([BOS_SPP])).toEqual([BOS_SPP])
 
-  it('Should report reference data as unavailable when the check fails', async () => {
-    process.env.STUB_MODE = 'false'
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: false, status: 503, statusText: 'Down' }))
-    )
-    const { missingSpecies } = await import('./species-check.js')
+      expect(new URL(firstRequest().url).pathname).toBe(
+        '/commodities/species-check'
+      )
+      expect(firstRequest().method).toBe('POST')
+      expect(await firstRequest().json()).toEqual({ lines: [BOS_SPP] })
+    })
 
-    const error = await missingSpecies([BOS_SPP]).catch((caught) => caught)
-    expect(error.isBoom).toBe(true)
-    expect(error.data.dataset).toBe('commodities')
+    it('Should report reference data as unavailable when the check fails', async () => {
+      respondWith(503, 'Down')
+      const { linesWithUnlistedSpecies } = await import('./species-check.js')
+
+      const error = await linesWithUnlistedSpecies([BOS_SPP]).catch(
+        (caught) => caught
+      )
+
+      expect(error.isBoom).toBe(true)
+      expect(error.output.statusCode).toBe(503)
+      expect(error.data.dataset).toBe('commodities')
+    })
   })
 })
 
-describe('commodities search — real mode', () => {
-  it('Should search through reference-data', async () => {
-    process.env.STUB_MODE = 'false'
-    const fetchMock = vi.fn(async () => okResponse(FERRET_RESULTS))
-    vi.stubGlobal('fetch', fetchMock)
-    const commodities = await import('./search.js')
+describe('#search', () => {
+  describe('in real mode', () => {
+    beforeEach(() => {
+      process.env.STUB_MODE = 'false'
+    })
 
-    expect(await commodities.search('ferret', { size: 10 })).toEqual(
-      FERRET_RESULTS
-    )
-    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get('page')).toBe(
-      '0'
-    )
-  })
+    it('Should search through reference-data', async () => {
+      respondWithJson(FERRET_RESULTS)
+      const commodities = await import('./search.js')
 
-  it('Should report reference data as unavailable when the search fails', async () => {
-    process.env.STUB_MODE = 'false'
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: false, status: 503, statusText: 'Down' }))
-    )
-    const commodities = await import('./search.js')
+      expect(await commodities.search('ferret', { size: 10 })).toEqual(
+        FERRET_RESULTS
+      )
 
-    const error = await commodities
-      .search('ferret', { size: 10 })
-      .catch((caught) => caught)
-    expect(error.isBoom).toBe(true)
-    expect(error.output.statusCode).toBe(503)
-    expect(error.data.dataset).toBe('commodities')
+      expect(new URL(firstRequest().url).searchParams.get('page')).toBe('0')
+    })
+
+    it('Should report reference data as unavailable when the search fails', async () => {
+      respondWith(503, 'Down')
+      const commodities = await import('./search.js')
+
+      const error = await commodities
+        .search('ferret', { size: 10 })
+        .catch((caught) => caught)
+
+      expect(error.isBoom).toBe(true)
+      expect(error.output.statusCode).toBe(503)
+      expect(error.data.dataset).toBe('commodities')
+    })
   })
 })

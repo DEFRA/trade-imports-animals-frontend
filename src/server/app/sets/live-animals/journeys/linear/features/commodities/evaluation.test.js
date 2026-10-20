@@ -12,7 +12,7 @@ describe('commodities evaluation bindings', () => {
     let lineWalks = 0
     let unitWalks = 0
     const line = {
-      commoditySelection: '0102',
+      commodityCode: '0102',
       numberOfAnimalsQuantity: '1',
       get animalIdentifiers() {
         unitWalks += 1

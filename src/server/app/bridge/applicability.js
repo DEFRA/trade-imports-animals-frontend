@@ -42,11 +42,11 @@ export const gateAdmits = (metadata, value) => {
  * manifest's gate metadata alone (no journey state).
  *
  * @param {string} obligationName - the obligation's manifest name.
- * @param {string} value - the line's value for the obligation's gate.
+ * @param {string} gateValue - the value the obligation's gate reads.
  * @returns {boolean}
  */
-export const appliesForCommodity = (obligationName, value) =>
-  gateAdmits(obligationByName(obligationName)?.applyTo?.metadata, value)
+export const appliesForGateValue = (obligationName, gateValue) =>
+  gateAdmits(obligationByName(obligationName)?.applyTo?.metadata, gateValue)
 
 /**
  * The manifest's cap on the documents collection

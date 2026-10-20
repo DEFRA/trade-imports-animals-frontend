@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
-const FELIS_CATUS = 'Felis catus'
 
 /** A party answer in backend wire shape, as `answerForInlineParty` stores it
  * — see addresses/party-inline.js. */
@@ -13,6 +12,12 @@ const address = (name, line1) => ({
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
+const FELIS_CATUS = 'Felis catus'
+const BISON_BISON = 'Bison bison'
+const STRUTHIO = 'Struthio'
+const CATTLE_CODE = '0102'
+const CAT_CODE = '01061900'
+const RATITE_CODE = '01063300'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
 const TRANSPORTER_NAME = 'Transporter Co'
@@ -50,8 +55,8 @@ const mappedAnswers = () => ({
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
-      commoditySelection: '0102',
-      speciesSelection: BOS_TAURUS,
+      commodityCode: CATTLE_CODE,
+      speciesLatinName: BOS_TAURUS,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -94,8 +99,8 @@ const answersWithGaps = () => ({
   ],
   commodityLines: [
     {
-      commoditySelection: '0102',
-      speciesSelection: BOS_TAURUS,
+      commodityCode: CATTLE_CODE,
+      speciesLatinName: BOS_TAURUS,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -133,24 +138,24 @@ const answersWithGaps = () => ({
 // entries, totals summed per complement.
 const groupedLines = () => [
   {
-    commoditySelection: '0102',
-    speciesSelection: BOS_TAURUS,
+    commodityCode: CATTLE_CODE,
+    speciesLatinName: BOS_TAURUS,
     commodityType: '16',
     numberOfPackages: '5',
     numberOfAnimalsQuantity: '25',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
   },
   {
-    commoditySelection: '0102',
-    speciesSelection: 'Bison bison',
+    commodityCode: CATTLE_CODE,
+    speciesLatinName: BISON_BISON,
     commodityType: '16',
     numberOfPackages: '2',
     numberOfAnimalsQuantity: '10',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
   },
   {
-    commoditySelection: '01061900',
-    speciesSelection: FELIS_CATUS,
+    commodityCode: CAT_CODE,
+    speciesLatinName: FELIS_CATUS,
     commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
@@ -167,7 +172,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodity } = currentNotificationFrom(mappedAnswers())
     expect(commodity).toEqual({
-      name: '0102',
+      name: CATTLE_CODE,
       commodityComplement: [
         {
           typeOfCommodity: 'Domestic',
@@ -195,7 +200,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const { commodity } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
-    expect(commodity.name).toBe('0102')
+    expect(commodity.name).toBe(CATTLE_CODE)
     expect(commodity.commodityComplement).toHaveLength(2)
 
     const [cow, cat] = commodity.commodityComplement
@@ -203,7 +208,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(cow.totalNoOfPackages).toBe(7)
     expect(cow.species.map((entry) => entry.value)).toEqual([
       BOS_TAURUS,
-      'Bison bison'
+      BISON_BISON
     ])
     expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
     expect(cat.totalNoOfAnimals).toBe(2)
@@ -386,8 +391,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: '01061900',
-          speciesSelection: FELIS_CATUS,
+          commodityCode: CAT_CODE,
+          speciesLatinName: FELIS_CATUS,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierMicrochip: '900987654321098' }]
@@ -411,8 +416,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: '0102',
-          speciesSelection: BOS_TAURUS,
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
           animalIdentifiers: [
             {
               animalIdentifierEarTag: firstUnit.earTag,
@@ -443,8 +448,8 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: '01063300',
-          speciesSelection: 'Struthio',
+          commodityCode: RATITE_CODE,
+          speciesLatinName: STRUTHIO,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '40'
         }
@@ -452,8 +457,8 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
     })
 
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
-      value: 'Struthio',
-      text: 'Struthio',
+      value: STRUTHIO,
+      text: STRUTHIO,
       noOfAnimals: '40',
       noOfPackages: '1'
     })

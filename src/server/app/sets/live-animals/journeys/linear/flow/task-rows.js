@@ -1,6 +1,6 @@
 import { NA, statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
-import { identifiedCommodities } from '../../../services/commodities/index.js'
+import { identifiedCommodityCodes } from '../../../services/commodities/index.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
@@ -21,7 +21,7 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 
 const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
-    (line) => identifiedCommodities().includes(line?.commoditySelection)
+    (line) => identifiedCommodityCodes().includes(line?.commodityCode)
   )
 
 export const taskRows = [

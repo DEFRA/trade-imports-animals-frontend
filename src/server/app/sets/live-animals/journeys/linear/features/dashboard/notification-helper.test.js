@@ -70,12 +70,12 @@ describe('promoted dashboard notification helpers', () => {
     expect(formatDisplayCalendarDate(null)).toBe('')
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
-    expect(formatCommodity({ name: '0102' })).toBe('0102')
+    expect(formatCommodity({ name: 'Cattle' })).toBe('Cattle')
     expect(
       formatCommodity({ commodityCode: '0101' }, (code) =>
-        code === '0101' ? '0101' : undefined
+        code === '0101' ? 'Horses' : undefined
       )
-    ).toBe('0101')
+    ).toBe('Horses')
     expect(formatCommodity(null)).toBe('')
   })
 
