@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   searchCommodities,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const BISON_BISON = 'Bison bison'

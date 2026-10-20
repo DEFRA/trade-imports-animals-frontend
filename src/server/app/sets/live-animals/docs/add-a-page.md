@@ -359,9 +359,11 @@ state. Use
 [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
 as the example.
 
-Build axe with `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])`. Fail if
-any result has `impact` equal to `serious` or `critical`. Only filter a known
-component false positive when the same component and condition apply.
+Call `expectNoSeriousOrCriticalViolations(page, subject)` from
+[`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
+It holds the five WCAG tags, fails if any result has `impact` equal to
+`serious` or `critical`, and applies the one proved conditional-reveal filter.
+Do not build `AxeBuilder` in a spec.
 
 ## 10. Run every check
 

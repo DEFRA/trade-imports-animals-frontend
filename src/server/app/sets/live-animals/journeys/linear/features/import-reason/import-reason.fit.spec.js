@@ -1,11 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
-  answerOriginEntry,
   chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
+  expectNoSeriousOrCriticalViolations,
+  startNotificationAtImportReason,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import {
@@ -49,44 +48,6 @@ const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
 const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
 const temporaryAdmissionPortHidden =
   'select#temporaryAdmissionPortOfExit-select'
-
-// govuk-frontend's own conditional-reveal script puts aria-expanded on the
-// radio it belongs to, which axe reads as an attribute a radio may not carry.
-// The same filter guards the origin page's axe tests.
-const isGovukConditionalRevealFalsePositive = (violation) =>
-  violation.id === 'aria-allowed-attr' &&
-  violation.nodes.every((node) =>
-    /govuk-(radios|checkboxes)__input/.test(node.html)
-  )
-
-const expectNoSeriousOrCriticalAxeViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
-
-  expect(
-    seriousOrCritical,
-    `Import reason has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
-
-const startAtImportReason = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
-
-  const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
-  await answerOriginEntry(page)
-
-  await page.goto(reasonUrl)
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
 
 const radioFor = (page, value) =>
   page.locator(`${REASON_INPUT_SELECTOR}[value="${value}"]`)
@@ -151,7 +112,7 @@ const expectedExitPortOptions = () => [
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
   })
 
   test('heads the page with its name and keeps the question as a legend only a screen reader meets', async ({
@@ -246,14 +207,14 @@ test.describe('import-reason feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 })
 
 test.describe('import-reason reveals', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
   })
 
   test('opens no reveal until a reason that needs one is chosen', async ({
@@ -474,7 +435,7 @@ test.describe('import-reason reveals', () => {
 test.describe('import-reason destination territories', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
   })
 
   test('saves a territory as the destination country and offers it back', async ({
@@ -501,7 +462,7 @@ test.describe('import-reason destination territories', () => {
 test.describe('import-reason port and country type-ahead', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
     await radioFor(page, 'transit').check()
   })
 
@@ -609,7 +570,7 @@ test.describe('import-reason port and country type-ahead', () => {
 test.describe('import-reason temporary admission port type-ahead', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
     await radioFor(page, 'temporaryAdmissionHorses').check()
   })
 
@@ -638,7 +599,7 @@ test.describe('import-reason port and country without JavaScript', () => {
     page
   }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
     const reasonUrl = page.url()
 
     await radioFor(page, 'transit').check()
@@ -687,7 +648,7 @@ test.describe('import-reason port and country without JavaScript', () => {
 test.describe('import-reason reveal accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtImportReason(page)
+    await startNotificationAtImportReason(page)
   })
 
   test('has no serious or critical axe violations with the exit date missing', async ({
@@ -697,7 +658,7 @@ test.describe('import-reason reveal accessibility', () => {
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 
   test('has no serious or critical axe violations with a reveal open and in error', async ({
@@ -707,7 +668,7 @@ test.describe('import-reason reveal accessibility', () => {
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 
   test('has no serious or critical axe violations with the internal-market purpose reveal open', async ({
@@ -717,7 +678,7 @@ test.describe('import-reason reveal accessibility', () => {
     const reveal = await revealFor(page, 'internalMarket')
     await expect(reveal).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 
   test('has no serious or critical axe violations with the internal-market purpose reveal in error', async ({
@@ -727,7 +688,7 @@ test.describe('import-reason reveal accessibility', () => {
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 
   test('has no serious or critical axe violations with the picker dialog open inside a reveal', async ({
@@ -738,6 +699,6 @@ test.describe('import-reason reveal accessibility', () => {
     await reveal.getByRole('button', { name: CHOOSE_DATE_LABEL }).click()
     await expect(reveal.getByRole('dialog')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page)
+    await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
 })

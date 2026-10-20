@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openReviewFromHub,
   signIn,
@@ -125,17 +125,7 @@ test.describe('declaration feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Declaration has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Declaration')
   })
 
   test('submits a complete notification, redirects to confirmation and keeps the declaration', async ({

@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { animalIdentificationPage } from '../page.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
@@ -569,8 +569,6 @@ test.describe('animal identification selected commodities summary', () => {
     ).toBeVisible()
   })
 
-  // The route back to the commodity question used to appear only when there
-  // was nothing to identify, so it vanished as the page became usable.
   test('offers Add another commodity while there are commodities to identify', async ({
     page
   }) => {

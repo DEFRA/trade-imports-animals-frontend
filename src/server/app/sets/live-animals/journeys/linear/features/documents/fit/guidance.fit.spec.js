@@ -1,21 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const guidance = copy.guidance
 const additional = guidance.additional
-
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
 
 const openExpander = async (page) => {
   await page.getByText(additional.summary).click()

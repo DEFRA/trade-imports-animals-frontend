@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  setUploadFile,
   signIn,
-  startNotification,
-  unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
@@ -23,33 +23,16 @@ const HTTP_OK = 200
 const DATE_OF_ISSUE_TEXT = '03/01/2026'
 const OVERSIZE_FILENAME = 'oversize.pdf'
 
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
-
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
 const rowFor = (scope, reference) =>
   scope.locator('.govuk-table__row', { hasText: reference })
 
-// The enhanced upload hides the input inside a drop zone and puts a button in
-// front of it carrying the field's id, so the element that takes the file and
-// the control the trader reaches are two different elements.
 const fileInput = (page) => page.locator('input[type="file"]')
 
 const uploadControl = (scope) =>
   scope.getByRole('button', { name: copy.file.label })
-
-const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
-  fileInput(page).setInputFiles({
-    name: filename,
-    mimeType,
-    buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
-  })
 
 const validDocument = {
   accompanyingDocumentReference: 'ITAHC-2026-0001',

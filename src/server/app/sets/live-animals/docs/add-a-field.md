@@ -262,12 +262,12 @@ Add an axe test for both page states the field changes:
 - initial render
 - validation error state, after the inline error and error summary appear
 
-Use `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail when any
-violation has `impact` equal to `serious` or `critical`. Use the initial and
-error-state examples in
+Call `expectNoSeriousOrCriticalViolations(page, subject)` from
+[`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
+It holds the five WCAG tags, fails on any violation with `impact` equal to
+`serious` or `critical`, and applies the one proved conditional-reveal filter.
+Do not build `AxeBuilder` in a spec. Use the initial and error-state examples in
 [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js).
-Filter a known component false positive only when the exemplar does and the
-same markup proves it applies.
 
 ## 9. Run every check
 

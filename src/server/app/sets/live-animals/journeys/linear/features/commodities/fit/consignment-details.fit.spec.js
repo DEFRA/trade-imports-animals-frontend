@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   expectSpeciesSelected,
   journeyUrl,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 

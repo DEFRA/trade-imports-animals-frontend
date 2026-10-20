@@ -1,10 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
   chooseAutocompleteByLabel,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
@@ -38,20 +38,6 @@ const missingMarker = (page, label) =>
  * reader reads it — "Change import details". */
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
-
-const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-
-  expect(
-    seriousOrCritical,
-    `${pageName} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 const openOrigin = (page) =>
   page
@@ -412,7 +398,7 @@ test.describe('check-answers feature navigation and submission', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Check answers')
+    await expectNoSeriousOrCriticalViolations(page, 'Check answers')
   })
 
   // An address error belongs to a reference that no longer resolves, not to a
@@ -521,10 +507,7 @@ test.describe('check-answers feature unfinished notification', () => {
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expectNoSeriousOrCriticalAxeViolations(
-      page,
-      'Unfinished check answers'
-    )
+    await expectNoSeriousOrCriticalViolations(page, 'Unfinished check answers')
   })
 })
 
@@ -567,9 +550,6 @@ test.describe('check-answers feature submitted notification', () => {
   test('submitted review has no serious or critical axe violations', async ({
     page
   }) => {
-    await expectNoSeriousOrCriticalAxeViolations(
-      page,
-      'Submitted check answers'
-    )
+    await expectNoSeriousOrCriticalViolations(page, 'Submitted check answers')
   })
 })

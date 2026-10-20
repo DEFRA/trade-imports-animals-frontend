@@ -1,10 +1,19 @@
 import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
+  GOVUK_BLUE,
+  GOVUK_BLUE_SHADE_50,
+  WHITE,
+  MEANS_OF_TRANSPORT_SELECT,
+  addTransitCountry,
+  choosePortOfEntry,
+  computedStyle,
+  expectOverview,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
+  openArrival,
+  openTransit,
   signIn,
-  startNotification,
-  unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import {
@@ -16,25 +25,16 @@ import {
   formatDateText
 } from '../../../../../../../lib/validate/calendar.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
-// accessible-autocomplete enhances the native <select>: the visible combobox
-// input keeps the original id, and the native select is hidden and renamed with
-// a "-select" suffix (it still submits the port code).
 const portInput = 'input#portOfEntry'
-const portHidden = 'select#portOfEntry-select'
-const meansSelect = 'select#meansOfTransport'
+const portNativeSelect = 'select#portOfEntry-select'
 const identificationHint = 'div#transportIdentification-hint'
-// Transit countries is a type-ahead over the same native <select> contract:
-// the visible combobox input keeps the original id and holds the country name,
-// and the native select is hidden and renamed with a "-select" suffix.
 const transitCountryInput = 'input#transitedCountry'
 const transitCountryHidden = 'select#transitedCountry-select'
-// The countries added so far ride with the page as hidden inputs until the
-// trader saves.
 const transitedCountriesInputs =
   'input[type="hidden"][name="transitedCountries"]'
 const transitStatus = '#transit-countries-status'
@@ -42,18 +42,10 @@ const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
-// The visually hidden name the MoJ picker gives the button that opens the
-// calendar.
-const CHOOSE_DATE = 'Choose date'
-// govuk-frontend's blue and its shades, as the browser reports them.
-const GOVUK_BLUE = 'rgb(29, 112, 184)'
+const CHOOSE_DATE_BUTTON_NAME = 'Choose date'
 const GOVUK_BLUE_SHADE_25 = 'rgb(22, 84, 138)'
-const GOVUK_BLUE_SHADE_50 = 'rgb(15, 56, 92)'
-const WHITE = 'rgb(255, 255, 255)'
-// The GOV.UK focus colours, as the browser reports them.
 const GOVUK_FOCUS = 'rgb(255, 221, 0)'
 const GOVUK_FOCUS_TEXT = 'rgb(11, 12, 12)'
-// The computed property those colours are read from.
 const BACKGROUND_COLOR = 'background-color'
 
 const dateWindow = arrivalWindow()
@@ -67,8 +59,6 @@ const justAfterWindow = formatDateText(addUtcDays(dateWindow.max, 1))
 const inUtc = (options) =>
   new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options })
 
-// The accessible name the MoJ picker gives a day button, assembled the way the
-// component assembles it.
 const dayLabel = (date) =>
   `${inUtc({ weekday: 'long' }).format(date)} ${date.getUTCDate()} ${inUtc({ month: 'long' }).format(date)} ${date.getUTCFullYear()}`
 
@@ -82,34 +72,6 @@ const showMonth = async (page, target, from) => {
   }
 }
 
-const openArrival = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await expect(
-    page.getByRole('heading', { name: copy.portOfEntry.title })
-  ).toBeVisible()
-}
-
-const portLabel = (code) => {
-  const port = portsOfEntry.find((entry) => entry.code === code)
-  return `${port.name} - ${port.code}`
-}
-
-// Pick a port. With JavaScript the field is the enhanced type-ahead: typing
-// the code filters (the code is in the option label), then pick the single
-// match. Without JavaScript it stays a native <select>, chosen by its value.
-const choosePort = async (page, code = values.portOfEntry) => {
-  const field = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
-  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
-    await field.selectOption(code)
-    return
-  }
-  await field.click()
-  await field.fill(code)
-  await page.getByRole('option', { name: portLabel(code), exact: true }).click()
-}
-
 // Positions measured against the document, not the viewport, so a scroll
 // between two measurements cannot make an unmoved element look like it moved.
 const documentTop = (locator) =>
@@ -117,12 +79,6 @@ const documentTop = (locator) =>
 
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
-
-const computedStyle = (locator, property) =>
-  locator.evaluate(
-    (el, name) => window.getComputedStyle(el).getPropertyValue(name),
-    property
-  )
 
 const ERROR_SUMMARY = '.govuk-error-summary'
 
@@ -132,17 +88,10 @@ const errorLink = (page, message) =>
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
-const TRANSIT_COUNTRIES_ROW = 'Transit countries'
-
-const expectOverview = (page) =>
-  expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-
-const fillValidArrival = async (page) => {
+const fillTransportDetails = async (page) => {
   await page
-    .getByLabel(copy.portOfEntry.arrivalDate.label)
-    .fill(ARRIVAL_DATE_IN_WINDOW)
-  await choosePort(page)
-  await page.locator(meansSelect).selectOption(values.meansOfTransport)
+    .locator(MEANS_OF_TRANSPORT_SELECT)
+    .selectOption(values.meansOfTransport)
   await page
     .getByLabel(copy.portOfEntry.identification.label)
     .fill(values.transportIdentification)
@@ -151,52 +100,23 @@ const fillValidArrival = async (page) => {
     .fill(values.transportDocumentReference)
 }
 
-const openTransit = async (page) => {
-  await openArrival(page)
-  await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
-  await submit(page)
-  await expectOverview(page)
+const fillValidArrival = async (page) => {
   await page
-    .getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
-    .click()
-  await expect(
-    page.getByRole('heading', { name: copy.transitCountries.title })
-  ).toBeVisible()
+    .getByLabel(copy.portOfEntry.arrivalDate.label)
+    .fill(ARRIVAL_DATE_IN_WINDOW)
+  await choosePortOfEntry(page)
+  await fillTransportDetails(page)
 }
 
 const transitField = (page) =>
   page.getByLabel(copy.transitCountries.country.label, { exact: true })
-
-// Add a transit country the way a user does: type part of the name to filter,
-// pick the match, then press the button that adds it to the list. Without
-// JavaScript the field is still the native select, chosen by option label.
-const addTransitCountry = async (page, name) => {
-  const field = transitField(page)
-  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
-    await field.selectOption({ label: name })
-  } else {
-    await field.click()
-    await field.fill(name)
-    await page.getByRole('option', { name, exact: true }).click()
-  }
-  await page
-    .getByRole('button', { name: copy.transitCountries.add, exact: true })
-    .click()
-  // The row landing is the post-condition. `addedCountries` reads the hidden
-  // inputs with evaluateAll, which does not auto-wait, so without this it can
-  // race the form submit and read a document that is still navigating.
-  await expect(page.getByRole('cell', { name, exact: true })).toBeVisible()
-}
 
 const addedCountries = (page) =>
   page
     .locator(transitedCountriesInputs)
     .evaluateAll((items) => items.map((item) => item.value))
 
-// Put codes into the form the page could not have put there itself. The tamper
-// tests are the only way to reach the guards that hold against a submitted list
-// no rendering of the page produces.
-const forceTransitedCountries = (page, codes) =>
+const submitTransitedCountriesTheFormCannotProduce = (page, codes) =>
   page.evaluate(
     ({ wanted, selector }) => {
       const form = document.querySelector('form')
@@ -263,7 +183,7 @@ test.describe('arrival details rendering', () => {
     ).toHaveAccessibleDescription(copy.portOfEntry.documentReference.hint)
 
     const options = await page
-      .locator(`${portHidden} option`)
+      .locator(`${portNativeSelect} option`)
       .evaluateAll((items) =>
         items.slice(1).map((option) => ({
           code: option.value,
@@ -324,9 +244,9 @@ test.describe('port of entry type-ahead', () => {
     page
   }) => {
     await openArrival(page)
-    await choosePort(page, 'GB DVR')
+    await choosePortOfEntry(page, DOVER_OPTION)
     await expect(page.locator(portInput)).toHaveValue(DOVER_OPTION)
-    await expect(page.locator(portHidden)).toHaveValue('GB DVR')
+    await expect(page.locator(portNativeSelect)).toHaveValue('GB DVR')
   })
 
   test('shows the no-results message when nothing matches (AC3)', async ({
@@ -353,13 +273,7 @@ test.describe('port of entry without JavaScript', () => {
     await page
       .getByLabel(copy.portOfEntry.port.label, { exact: true })
       .selectOption(values.portOfEntry)
-    await page.locator(meansSelect).selectOption(values.meansOfTransport)
-    await page
-      .getByLabel(copy.portOfEntry.identification.label)
-      .fill(values.transportIdentification)
-    await page
-      .getByLabel(copy.portOfEntry.documentReference.label)
-      .fill(values.transportDocumentReference)
+    await fillTransportDetails(page)
     await submit(page)
 
     await expectOverview(page)
@@ -392,7 +306,7 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue('31/2/2026')
-    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 
   test('the open calendar sits in the flow of the page and pushes the port question below it', async ({
@@ -402,7 +316,7 @@ test.describe('arrival details validation', () => {
     const port = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
     const closed = await documentTop(port)
 
-    await page.getByRole('button', { name: CHOOSE_DATE }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()
 
@@ -420,7 +334,7 @@ test.describe('arrival details validation', () => {
     page
   }) => {
     await openArrival(page)
-    const toggle = page.getByRole('button', { name: CHOOSE_DATE })
+    const toggle = page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME })
     await expect(toggle).toBeVisible()
 
     expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(GOVUK_BLUE)
@@ -446,7 +360,7 @@ test.describe('arrival details validation', () => {
     page
   }) => {
     await openArrival(page)
-    const toggle = page.getByRole('button', { name: CHOOSE_DATE })
+    const toggle = page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME })
     await toggle.focus()
 
     // The component drops the browser's own focus ring, so our restated focus
@@ -459,7 +373,7 @@ test.describe('arrival details validation', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: CHOOSE_DATE }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
     const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
@@ -527,11 +441,13 @@ test.describe('arrival details validation', () => {
         await expect(
           page.getByLabel(copy.portOfEntry.arrivalDate.label)
         ).toHaveValue(value)
-        await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+        await expect(page.locator(portNativeSelect)).toHaveValue(
+          values.portOfEntry
+        )
         await expect(
           page.getByLabel(copy.portOfEntry.identification.label)
         ).toHaveValue(values.transportIdentification)
-        await expect(page.locator(meansSelect)).toHaveValue(
+        await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue(
           values.meansOfTransport
         )
       })
@@ -566,7 +482,7 @@ test.describe('arrival details validation', () => {
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await page.locator(portHidden).evaluate((select) => {
+    await page.locator(portNativeSelect).evaluate((select) => {
       select.add(new Option('Invalid port', 'INVALID'))
       select.value = 'INVALID'
     })
@@ -580,7 +496,9 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
-    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue(
+      values.meansOfTransport
+    )
   })
 
   test('means validation: out-of-list value links to and focuses the cleared dropdown while preserving other values', async ({
@@ -588,7 +506,7 @@ test.describe('arrival details validation', () => {
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await page.locator(meansSelect).evaluate((select) => {
+    await page.locator(MEANS_OF_TRANSPORT_SELECT).evaluate((select) => {
       select.add(new Option('Invalid means', 'INVALID'))
       select.value = 'INVALID'
     })
@@ -597,9 +515,9 @@ test.describe('arrival details validation', () => {
     const link = errorLink(page, validatorDefaults.oneOf)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.locator(meansSelect)).toBeFocused()
-    await expect(page.locator(meansSelect)).toHaveValue('')
-    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toBeFocused()
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue('')
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 })
 
@@ -629,7 +547,7 @@ test.describe('arrival transport reference validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(invalid)
-    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 
   test('transport document validation: over 58 characters links to and focuses the preserved value', async ({
@@ -655,7 +573,7 @@ test.describe('arrival transport reference validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(invalid)
-    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 })
 
@@ -673,7 +591,10 @@ test.describe('arrival save and routing', () => {
 
     await expectOverview(page)
     await expect(
-      page.getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
+      page.getByRole('link', {
+        name: hubCopy.rows.transitCountries.title,
+        exact: true
+      })
     ).toBeVisible()
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(
@@ -682,8 +603,10 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
-    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
-    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue(
+      values.meansOfTransport
+    )
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
@@ -811,7 +734,7 @@ test.describe('transit countries rendering and validation', () => {
     page
   }) => {
     await openTransit(page)
-    await forceTransitedCountries(page, ['INVALID'])
+    await submitTransitedCountriesTheFormCannotProduce(page, ['INVALID'])
     await submit(page)
 
     const link = errorLink(page, copy.transitCountries.errors.fromList)
@@ -828,7 +751,7 @@ test.describe('transit countries rendering and validation', () => {
     page
   }) => {
     await openTransit(page)
-    await forceTransitedCountries(page, [
+    await submitTransitedCountriesTheFormCannotProduce(page, [
       '"><img src=x onerror="window.__xss=1">'
     ])
     await submit(page)
@@ -908,7 +831,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await openTransit(page)
     const before = countriesOrigin.slice(0, MAX_TRANSITED_COUNTRIES - 1)
     const last = countriesOrigin[MAX_TRANSITED_COUNTRIES - 1]
-    await forceTransitedCountries(
+    await submitTransitedCountriesTheFormCannotProduce(
       page,
       before.map(({ code }) => code)
     )
@@ -939,7 +862,7 @@ test.describe('transit countries list, limits and persistence', () => {
     page
   }) => {
     await openTransit(page)
-    await forceTransitedCountries(
+    await submitTransitedCountriesTheFormCannotProduce(
       page,
       countriesOrigin
         .slice(0, MAX_TRANSITED_COUNTRIES + 1)
@@ -1003,7 +926,7 @@ test.describe('arrival and transit accessibility', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: CHOOSE_DATE }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,

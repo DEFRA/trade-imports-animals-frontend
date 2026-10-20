@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectNoSeriousOrCriticalViolations,
   partyPickerName,
   signIn,
   startNotification,
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as editCopy } from '../party-edit/copy/copy.en.js'

@@ -1,21 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
-
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
 
 const rowFor = (page, reference) =>
   page.locator('.govuk-table__row', { hasText: reference })

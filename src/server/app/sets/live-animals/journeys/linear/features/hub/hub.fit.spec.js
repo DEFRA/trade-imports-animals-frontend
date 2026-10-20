@@ -1,10 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
   answerArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   openReviewFromHub,
   selectSpecies,
   signIn,
@@ -30,19 +30,6 @@ const groupTaskList = (page, groupId) =>
     .filter({ has: page.locator(`[id^="${groupId}-"]`) })
 
 const taskRowTitles = (list) => list.locator('.govuk-task-list__link')
-
-const seriousOrCritical = (violations) =>
-  violations.filter(({ impact }) => ['serious', 'critical'].includes(impact))
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 const ANIMALS = '25'
 const PACKAGES = '5'
@@ -327,7 +314,7 @@ test.describe('hub feature — the Commodity details row', () => {
       copy.statuses.complete
     )
 
-    await expectAxeClean(page, 'Partly-complete hub')
+    await expectNoSeriousOrCriticalViolations(page, 'Partly-complete hub')
   })
 
   test('reads Complete once the numbers are saved, leaving the other rows alone', async ({
@@ -425,7 +412,7 @@ test.describe('hub feature — the Review and submit button', () => {
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()
 
-    await expectAxeClean(page, 'Hub')
+    await expectNoSeriousOrCriticalViolations(page, 'Hub')
   })
 })
 
@@ -567,6 +554,6 @@ test.describe('hub feature — commodity totals', () => {
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()
 
-    await expectAxeClean(page, 'Hub with commodity totals')
+    await expectNoSeriousOrCriticalViolations(page, 'Hub with commodity totals')
   })
 })

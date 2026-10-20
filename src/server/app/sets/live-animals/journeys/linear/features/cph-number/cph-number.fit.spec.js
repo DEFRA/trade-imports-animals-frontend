@@ -1,12 +1,12 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
   answerOriginEntry,
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   openCphNumberFromRow,
   selectSpecies,
+  startNotificationAtOrigin,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -27,27 +27,8 @@ const fillCph = async (page, { county, parish, holding }) => {
   await boxes.holding.fill(holding)
 }
 
-const expectNoSeriousAxeViolations = async (page, label) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-
-  expect(
-    seriousOrCritical,
-    `${label} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
-
 const startAtCphNumber = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+  await startNotificationAtOrigin(page)
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
   await answerOriginEntry(page)
@@ -193,7 +174,7 @@ test.describe('cph-number feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousAxeViolations(page, 'CPH number')
+    await expectNoSeriousOrCriticalViolations(page, 'CPH number')
   })
 })
 
@@ -316,6 +297,9 @@ test.describe('cph-number validation', () => {
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousAxeViolations(page, 'CPH number in its error state')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'CPH number in its error state'
+    )
   })
 })

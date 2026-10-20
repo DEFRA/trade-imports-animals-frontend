@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
   chooseCountryOfOrigin,
   signIn,
-  urlUnderBase
+  startNotificationAtOrigin
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../shared/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
@@ -13,24 +12,10 @@ const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 
-// Origin is the journey's entry page, so it is the cheapest page to reach that
-// both carries a page name of its own and can be made to show errors.
-const startAtOrigin = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
-  await expect(
-    page.getByRole('heading', { name: originCopy.title })
-  ).toBeVisible()
-}
-
 test.describe('page title', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('reads page name, service name and GOV.UK, joined by hyphens', async ({

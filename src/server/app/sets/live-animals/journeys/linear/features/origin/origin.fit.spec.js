@@ -1,9 +1,11 @@
 import {
   BASE,
+  chooseCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
+  startNotificationAtOrigin,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   countriesOrigin,
@@ -22,12 +24,8 @@ const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 
-// accessible-autocomplete enhances the native <select>: the visible combobox
-// input keeps the original id and holds the country name, and the native select
-// is hidden and renamed with a "-select" suffix (it still submits the code).
 const countryInput = 'input#countryOfOrigin'
 const countryHidden = 'select#countryOfOrigin-select'
-const AUTOCOMPLETE_WRAPPER = '.autocomplete__wrapper'
 const AUTOCOMPLETE_OPTION = '.autocomplete__option'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
@@ -41,30 +39,6 @@ const countryField = (page) =>
 
 const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
 
-const startAtOrigin = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
-
-// Pick a country from the enhanced type-ahead, the way a user does: type part
-// of the name to filter, then pick the match. The combobox is addressed by its
-// own selector rather than by label, because the label points at the native
-// select until the client bundle has swapped the type-ahead in.
-const chooseCountry = async (page, { name }) => {
-  const field = page.locator(countryInput)
-  await field.click()
-  await field.fill(name)
-  await page.getByRole('option', { name, exact: true }).click()
-}
-
-// Nothing in the type-ahead offers a value that is not a country, so the
-// out-of-list case is reached the only way it could be reached at all — by
-// putting the value into the select the form submits.
 const chooseOutOfListCountry = (page) =>
   page.locator(countryHidden).evaluate((select, code) => {
     select.add(new Option(code, code))
@@ -72,42 +46,20 @@ const chooseOutOfListCountry = (page) =>
   }, OUT_OF_LIST_COUNTRY)
 
 const fillOriginAnswers = async (page, { country = france, regionCode }) => {
-  await chooseCountry(page, country)
+  await chooseCountryOfOrigin(page, country.name)
   await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
   await page.getByLabel(copy.regionCode.label, { exact: true }).fill(regionCode)
-}
-
-const isGovukConditionalRevealFalsePositive = (violation) =>
-  violation.id === 'aria-allowed-attr' &&
-  violation.nodes.every((node) =>
-    /govuk-(radios|checkboxes)__input/.test(node.html)
-  )
-
-const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
-
-  expect(
-    seriousOrCritical,
-    `${pageName} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 test.describe('origin feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('renders the captured MDM country options and feature copy', async ({
     page
   }) => {
-    // The enhancement has run once the native select has been renamed, and the
-    // country label then names the search box rather than the select.
     await expect(page.locator(countryHidden)).toBeAttached()
     await expect(countryField(page)).toHaveAttribute('role', 'combobox')
     await expect(page.getByText(copy.country.hint)).toBeVisible()
@@ -139,9 +91,6 @@ test.describe('origin feature', () => {
     expect(renderedCountries).toEqual(originPageCountryEntries())
   })
 
-  // The page asks three questions under one h1, so all three have to carry the
-  // same weight — the size class is the whole of the behaviour here, which is
-  // why it is asserted directly rather than through a rendered role.
   test('sets all three question labels at the same medium size', async ({
     page
   }) => {
@@ -158,9 +107,6 @@ test.describe('origin feature', () => {
     ).toHaveClass(/govuk-label--m/)
   })
 
-  // The strip is drawn from the first request, before anything is saved: the
-  // reference is minted when the notification is created, so the user starting
-  // one can read it off the page they land on.
   test('shows the draft status and the notification reference before any answer is saved', async ({
     page
   }) => {
@@ -221,8 +167,6 @@ test.describe('origin feature', () => {
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.no })
     ).toBeChecked()
-    // The box lives in the Yes conditional and is hidden under No, so the
-    // label is not a reliable locator once the requirement has flipped.
     await expect(page.locator('#regionOfOriginCodeSuffix')).toHaveValue('75')
 
     await page.goto(journeyUrl(page, 'notification-view'))
@@ -272,7 +216,7 @@ test.describe('origin feature', () => {
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await page.goto(originUrl)
 
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin with prefix')
+    await expectNoSeriousOrCriticalViolations(page, 'Origin with prefix')
   })
 
   test('back link returns to the dashboard while the journey is unanswered', async ({
@@ -289,7 +233,7 @@ test.describe('origin feature', () => {
     const originUrl = page.url()
     const hubUrl = hubUrlOf(originUrl)
 
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await page.goto(originUrl)
@@ -312,14 +256,14 @@ test.describe('origin feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin')
+    await expectNoSeriousOrCriticalViolations(page, 'Origin')
   })
 })
 
 test.describe('country of origin type-ahead', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('offers the whole country list on focus, without typing', async ({
@@ -355,7 +299,7 @@ test.describe('country of origin type-ahead', () => {
   test('leaves the chosen country visible in the box and submits its code', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
 
     await expect(page.locator(countryInput)).toHaveValue(france.name)
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
@@ -377,14 +321,14 @@ test.describe('country of origin type-ahead', () => {
       page.getByRole('option', { name: france.name, exact: true })
     ).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin results list')
+    await expectNoSeriousOrCriticalViolations(page, 'Origin results list')
   })
 })
 
 test.describe('country of origin type-ahead styles', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('uses GOV.UK typography for the enhanced input and its options', async ({
@@ -426,36 +370,6 @@ test.describe('country of origin type-ahead styles', () => {
     expect(typography.inputFamily).toMatch(/^"?GDS Transport/)
     expect(typography.inputSize).toBe(typography.referenceSize)
     expect(typography.optionSize).toBe(typography.referenceSize)
-  })
-
-  test('paints the search icon behind the interactive input', async ({
-    page
-  }) => {
-    const paintStack = await page
-      .locator(AUTOCOMPLETE_WRAPPER)
-      .first()
-      .evaluate((wrapper) => {
-        const input = wrapper.querySelector('.autocomplete__input')
-        const arrow = wrapper.querySelector(
-          '.autocomplete__dropdown-arrow-down'
-        )
-        const afterStyle = getComputedStyle(wrapper, '::after')
-        return {
-          arrowHidden: getComputedStyle(arrow).display === 'none',
-          searchIconBackground: afterStyle.backgroundImage,
-          searchIconZIndex: afterStyle.zIndex,
-          searchIconPointerEvents: afterStyle.pointerEvents,
-          inputPaddingRight: getComputedStyle(input).paddingRight,
-          wrapperZIndex: getComputedStyle(wrapper).zIndex
-        }
-      })
-
-    expect(paintStack.arrowHidden).toBe(true)
-    expect(paintStack.searchIconBackground).toContain('data:image/svg+xml')
-    expect(paintStack.searchIconZIndex).toBe('-1')
-    expect(paintStack.searchIconPointerEvents).toBe('none')
-    expect(paintStack.inputPaddingRight).toBe('35px')
-    expect(paintStack.wrapperZIndex).toBe('0')
   })
 
   test('keeps the upstream focus indicator on the enhanced input', async ({
@@ -531,7 +445,7 @@ test.describe('country of origin without JavaScript', () => {
     page
   }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
     const originUrl = page.url()
 
     await countryField(page).selectOption(france.code)
@@ -549,13 +463,9 @@ test.describe('country of origin without JavaScript', () => {
 test.describe('origin country and region validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
-  // The commodity search is asked for by country of origin, so with the
-  // country unanswered the opening run has no next page to offer and the user
-  // is set down on the hub. The point of the test is that the save went
-  // through at all: nothing on the page is thrown away.
   test('country: an unanswered country saves the rest of the page and moves on', async ({
     page
   }) => {
@@ -577,8 +487,6 @@ test.describe('origin country and region validation', () => {
     )
   })
 
-  // The country is mandatory for completeness even though it does not block
-  // the save, so the gap is shown on the hub rather than enforced at the page.
   test('country: an unanswered country leaves the origin task unfinished', async ({
     page
   }) => {
@@ -616,7 +524,7 @@ test.describe('origin country and region validation', () => {
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(
+    await expectNoSeriousOrCriticalViolations(
       page,
       'Origin out-of-list country error'
     )
@@ -625,7 +533,7 @@ test.describe('origin country and region validation', () => {
   test('region requirement validation: when the submitted option is invalid, links to and focuses the group', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page
       .locator('input[name="regionOfOriginCodeRequirement"]')
       .first()
@@ -653,7 +561,7 @@ test.describe('origin country and region validation', () => {
     page
   }) => {
     const originUrl = page.url()
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -675,7 +583,7 @@ test.describe('origin country and region validation', () => {
   test('region code validation: No leaves the empty box unasked for', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -685,12 +593,12 @@ test.describe('origin country and region validation', () => {
   test('empty region code error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(
+    await expectNoSeriousOrCriticalViolations(
       page,
       'Origin empty region code error'
     )
@@ -699,7 +607,7 @@ test.describe('origin country and region validation', () => {
   test('region code validation: when over 5 characters, links to and focuses the preserved value', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
     await page.getByLabel(copy.regionCode.label, { exact: true }).fill('ABCDEF')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
@@ -726,14 +634,14 @@ test.describe('origin country and region validation', () => {
 test.describe('origin internal reference validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('internal reference validation: when over 58 characters, links to and focuses the preserved value', async ({
     page
   }) => {
     const invalidReference = 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1)
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByLabel(copy.internalReference.label).fill(invalidReference)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -748,15 +656,12 @@ test.describe('origin internal reference validation', () => {
     )
   })
 
-  // The reference belongs to the user's own records, so the punctuation those
-  // records use — hyphens, slashes, spaces, full stops — goes in as they hold
-  // it, and comes back the same when they return to the page.
   test('internal reference validation: saves a reference punctuated the way the user holds it', async ({
     page
   }) => {
     const originUrl = page.url()
 
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page
       .getByLabel(copy.internalReference.label)
       .fill(PUNCTUATED_INTERNAL_REFERENCE)

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
@@ -15,7 +16,6 @@ import {
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { addressSummary } from '../transporters/transporter-record.js'

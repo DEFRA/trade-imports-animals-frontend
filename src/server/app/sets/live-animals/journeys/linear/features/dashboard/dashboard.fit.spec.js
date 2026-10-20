@@ -1,9 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   BASE,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   openReviewFromHub,
   signIn,
@@ -70,20 +70,6 @@ const startTwoNotifications = async (page) => {
   const secondReference = journeyIdFromPage(page)
   await page.goto(BASE)
   return { firstReference, secondReference }
-}
-
-const expectNoSeriousOrCriticalViolations = async (page, subject) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-
-  expect(
-    seriousOrCritical,
-    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 test.describe('dashboard feature — empty state and start', () => {
