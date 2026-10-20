@@ -15,11 +15,6 @@ import {
   countriesOrigin,
   portsOfEntry
 } from '../../../../../services/_capture/fixtures.js'
-import {
-  boldLettersOf,
-  measureJoinedSearchButton,
-  suggestionListWidthsOf
-} from './type-ahead-measurements.js'
 import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as transportCopy } from './transport/copy/copy.en.js'
@@ -331,3 +326,45 @@ test.describe('country of origin change announcement', () => {
     await expect(page.locator(COUNTRY_SELECT)).toHaveValue(france.code)
   })
 })
+
+const measureJoinedSearchButton = (input) =>
+  input.evaluate((inputElement) => {
+    const container = inputElement.closest('.app-autocomplete')
+    const button = container.querySelector('.app-autocomplete__button')
+    const arrow = container.querySelector('.autocomplete__dropdown-arrow-down')
+    const inputEdges = inputElement.getBoundingClientRect()
+    const buttonEdges = button.getBoundingClientRect()
+    const buttonStyle = window.getComputedStyle(button)
+    return {
+      arrowDisplay: window.getComputedStyle(arrow).display,
+      inputTop: inputEdges.top,
+      inputBottom: inputEdges.bottom,
+      inputRight: inputEdges.right,
+      buttonTop: buttonEdges.top,
+      buttonBottom: buttonEdges.bottom,
+      buttonRight: buttonEdges.right,
+      buttonWidth: buttonEdges.width,
+      buttonHeight: buttonEdges.height,
+      background: buttonStyle.backgroundColor,
+      boxShadow: buttonStyle.boxShadow,
+      borderWidth: buttonStyle.borderTopWidth,
+      iconColour: window.getComputedStyle(button, '::before').backgroundColor
+    }
+  })
+
+const suggestionListWidthsOf = (input) =>
+  input.evaluate((inputElement) => {
+    const container = inputElement.closest('.app-autocomplete')
+    return {
+      listWidth: container
+        .querySelector('.autocomplete__menu')
+        .getBoundingClientRect().width,
+      controlWidth: container.getBoundingClientRect().width
+    }
+  })
+
+const boldLettersOf = (page, suggestionName) =>
+  page
+    .getByRole('option', { name: suggestionName, exact: true })
+    .locator('strong')
+    .allTextContents()
