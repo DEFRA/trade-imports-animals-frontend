@@ -120,6 +120,17 @@ test.describe('commodity search', () => {
     await expect(page.getByRole('checkbox')).toHaveCount(1)
   })
 
+  test('finds cattle by their common name', async ({ page }) => {
+    await searchCommodities(page, 'cattle')
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    for (const name of ['Bos', BOS_TAURUS, 'Bibos spp.', 'Novibos spp.']) {
+      await expect(
+        cattle.getByRole('checkbox', { name, exact: true })
+      ).toBeVisible()
+    }
+    await expect(cattle.getByRole('checkbox')).toHaveCount(5)
+  })
+
   test('renders a separate group per matching commodity code', async ({
     page
   }) => {
