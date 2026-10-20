@@ -44,11 +44,25 @@ The live-animals journey supplies these names in its
 
 Session state is keyed by journey id. It does not replace the canonical record.
 
+In stub mode each journey cookie is its own cookie, scoped to the set's mount,
+so one set's dashboard never sees another set's drafts. In real mode the same
+values are keys in the one server-wide session cookie, and each set's distinct
+cookie names keep them apart.
+
 ## Lifecycle and request memoisation
 
 [`src/server/app/engine/journey.js`](../engine/journey.js) connects a request to one
 journey record. It memoises loads on `request.app`, tracks known journey ids and
 implements create, amend, cancel-amend, copy and soft-delete orchestration.
+
+Viewing and amending a notification load it from the records port and add it to
+the session's known journey ids, so a notification submitted in an earlier browser
+session can be amended from the dashboard. Copying checks that the notification
+exists (`records.has`), then registers the new copy's id, not the original's.
+Cancel-amend and soft-delete act only on known journey ids.
+
+A save replaces the memo with the result it returns, so the next save in the
+same request sends the concurrency token the backend returned.
 
 [`src/server/app/engine/read.js`](../engine/read.js) separately memoises the assembled
 request view so controllers in one request do not repeat evaluation or IO.

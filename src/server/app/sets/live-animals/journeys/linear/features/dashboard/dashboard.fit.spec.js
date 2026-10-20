@@ -434,3 +434,23 @@ test.describe('dashboard feature — accessibility', () => {
     )
   })
 })
+
+test.describe('dashboard feature — amend refused banner', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await page.goto(`${BASE}?amendRefused=1`)
+  })
+
+  test('renders the could-not-amend banner with its title and body', async ({
+    page
+  }) => {
+    const banner = page.getByRole('region', { name: copy.amendRefused.title })
+
+    await expect(banner).toBeVisible()
+    await expect(banner).toContainText(copy.amendRefused.body)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Amend refused banner')
+  })
+})

@@ -2,8 +2,6 @@ import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
 import { records } from './persistence/records.js'
 
-// Mirrors what plugins/auth.js puts on credentials after sign-in: the raw
-// `currentRelationshipId` claim, plus the `organisationId` it is mapped to.
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
   name: 'Andrew Farmer',
@@ -38,6 +36,10 @@ const stubView = (captured) => (view, context) => {
   return rendered
 }
 
+export const registerTestRequestLogger = (server) => {
+  server.decorate('request', 'logger', () => recordingLogger(), { apply: true })
+}
+
 export const registerTestSessionAuth = (server) => {
   server.auth.scheme('test-session', () => ({
     authenticate: (_request, h) =>
@@ -46,18 +48,32 @@ export const registerTestSessionAuth = (server) => {
   server.auth.strategy('session', 'test-session')
 }
 
+const cookieRecorder = () => {
+  const cookies = {}
+  const calls = []
+  return {
+    cookies,
+    calls,
+    state: (name, value) => {
+      calls.push([name, value])
+      cookies[name] = value
+    },
+    unstate: (name) => {
+      delete cookies[name]
+    }
+  }
+}
+
 /** A response toolkit that records what the handler rendered. Pass the request
- * to expose it as `h.request`, as hapi's toolkit does. */
+ * to expose it as `h.request`. */
 export const stubH = (request) => {
   const captured = {}
-  const cookies = {}
   return {
+    ...cookieRecorder(),
     request,
     view: stubView(captured),
     redirect: (to) => {
       const result = { redirect: to }
-      // Non-enumerable so tests that assert toEqual({ redirect: to }) still
-      // match after chaining .code(...).
       Object.defineProperty(result, 'code', {
         value: (statusCode) => {
           result.statusCode = statusCode
@@ -67,13 +83,6 @@ export const stubH = (request) => {
       return result
     },
     response: stubResponse,
-    state: (name, value) => {
-      cookies[name] = value
-    },
-    unstate: (name) => {
-      delete cookies[name]
-    },
-    cookies,
     captured
   }
 }
@@ -92,7 +101,11 @@ export const recordingLogger = () => {
   }
 }
 
-export const journeyRequest = (journeyId, overrides = {}) => ({
+export const journeyRequest = (
+  journeyId,
+  { knownJourneyIds, ...overrides } = {}
+) => ({
+  app: {},
   payload: {},
   query: {},
   headers: {},
@@ -104,28 +117,30 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [knownJourneysCookie()]: [journeyId],
+    [knownJourneysCookie()]: knownJourneyIds ?? (journeyId ? [journeyId] : []),
     ...overrides.state
   }
 })
 
-export const recordingH = () => {
-  const cookies = {}
-  const calls = []
-  return {
-    state: (name, value) => {
-      calls.push([name, value])
-      cookies[name] = value
-    },
-    unstate: (name) => {
-      delete cookies[name]
-    },
-    cookies,
-    calls
-  }
-}
+export const recordingH = () => cookieRecorder()
 
-/** The path and URL a request for `pathOf(journeyId)` carries, query included. */
+export const backendJourneyId = 'GBN-AG-26-ABC123'
+
+export const backendNotification = ({
+  status = 'DRAFT',
+  fulfilments = [],
+  concurrencyToken = 0,
+  submittedAt = null
+} = {}) =>
+  JSON.stringify({
+    referenceNumber: backendJourneyId,
+    fulfilments,
+    status,
+    created: '2026-07-23T09:00:00Z',
+    submittedAt,
+    concurrencyToken
+  })
+
 const requestLocation = (pathOf, journeyId, query) => {
   if (!pathOf) {
     return {}

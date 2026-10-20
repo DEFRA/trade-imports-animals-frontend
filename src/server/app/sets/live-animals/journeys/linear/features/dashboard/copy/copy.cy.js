@@ -1,4 +1,3 @@
-// MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Gwasanaeth hysbysu mewnforio',
   body:
@@ -52,6 +51,10 @@ export const copy = {
     amend: 'Diwygio',
     resume: 'Ailddechrau',
     cancelAmend: 'Canslo diwygiad'
+  },
+  amendRefused: {
+    title: 'Pwysig',
+    body: 'Nid oedd modd diwygio’r hysbysiad hwn.'
   },
   actionHidden: (reference) => `hysbysiad ${reference}`,
   emptyText: 'Nid ydych wedi dechrau unrhyw hysbysiadau yn y sesiwn hon.'
