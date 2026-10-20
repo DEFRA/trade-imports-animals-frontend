@@ -28,6 +28,7 @@ convention and full-suite coverage.
 - [Page design decisions](page-design.md)
 - [Set-owned services](services.md)
 - [Live-animals limits](limits.md)
+- [Copy awaiting review](copy-status.md)
 - [Testing the set and journey](testing.md)
 - [Lighthouse](lighthouse.md)
 

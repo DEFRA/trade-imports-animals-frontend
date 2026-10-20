@@ -1,5 +1,6 @@
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 import {
   cancelAmendJourney,
   copyJourney,
@@ -17,51 +18,52 @@ import { configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
+import { records as recordsReal } from '../services/persistence/records/real/index.js'
+import { notificationsUrl } from '../services/persistence/records/real/config.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { encodeEvaluatorFulfilments } from '../services/persistence/records/fulfilment-codec/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import {
   authenticatedActor,
-  authenticatedCredentials,
+  backendJourneyId,
+  backendNotification,
+  journeyRequest,
   recordingH
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
 const { countryOfOrigin } = obligationSet()
 
-const requestFor = (journeyId, knownJourneyIds) => ({
-  params: journeyId ? { journeyId } : {},
-  state: { [knownJourneysCookie()]: knownJourneyIds },
-  headers: {},
-  auth: {
-    isAuthenticated: true,
-    credentials: authenticatedCredentials
-  },
-  app: {}
-})
+const fetchMocker = createFetchMock(vi)
+fetchMocker.enableMocks()
+
+const jsonOf = (request) => request.clone().json()
+
+const submittedJourney = async () => {
+  const journey = await store.create()
+  await store.submit(journey.journeyId)
+  return journey.journeyId
+}
+
+const useStubRecords = async () => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  configureReadyForCheckYourAnswers(SET_ID, () => false)
+  await store.clear()
+}
 
 describe('#currentJourney', () => {
-  beforeEach(async () => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    configureReadyForCheckYourAnswers(SET_ID, () => false)
-    await store.clear()
-  })
+  beforeEach(useStubRecords)
 
   it('Should create only through startJourney and add the real record id to the known list', async () => {
     const h = recordingH()
-    const journey = await startJourney(requestFor(undefined, []), h)
+    const journey = await startJourney(
+      journeyRequest(undefined, { knownJourneyIds: [] }),
+      h
+    )
 
     expect(await store.has(journey.journeyId)).toBe(true)
     expect(h.cookies[knownJourneysCookie()]).toEqual([journey.journeyId])
-  })
-
-  it('Should forward the authenticated actor to records.create on startJourney', async () => {
-    const create = vi.fn(recordsStub.create)
-    configureRecords(SET_ID, { ...recordsStub, create })
-    const h = recordingH()
-
-    await startJourney(requestFor(undefined, []), h)
-
-    expect(create).toHaveBeenCalledWith(authenticatedActor)
   })
 
   it('Should resolve two URL-selected journeys independently in one shared session', async () => {
@@ -72,11 +74,11 @@ describe('#currentJourney', () => {
     const known = [journeyA.journeyId, journeyB.journeyId]
 
     const loadedA = await currentJourney(
-      requestFor(journeyA.journeyId, known),
+      journeyRequest(journeyA.journeyId, { knownJourneyIds: known }),
       recordingH()
     )
     const loadedB = await currentJourney(
-      requestFor(journeyB.journeyId, known),
+      journeyRequest(journeyB.journeyId, { knownJourneyIds: known }),
       recordingH()
     )
 
@@ -94,8 +96,12 @@ describe('#currentJourney', () => {
       [journeyA.journeyId]: { declaration: 'confirmed' },
       [journeyB.journeyId]: { declaration: '' }
     }
-    const requestA = requestFor(journeyA.journeyId, known)
-    const requestB = requestFor(journeyB.journeyId, known)
+    const requestA = journeyRequest(journeyA.journeyId, {
+      knownJourneyIds: known
+    })
+    const requestB = journeyRequest(journeyB.journeyId, {
+      knownJourneyIds: known
+    })
     requestA.state[flowOnlyAnswersCookie()] = flowOnly
     requestB.state[flowOnlyAnswersCookie()] = flowOnly
 
@@ -116,13 +122,19 @@ describe('#currentJourney', () => {
     const known = ['known-but-not-requested']
 
     await expect(
-      currentJourney(requestFor(undefined, known), recordingH())
+      currentJourney(
+        journeyRequest(undefined, { knownJourneyIds: known }),
+        recordingH()
+      )
     ).rejects.toMatchObject({
       isBoom: true,
       output: { statusCode: 404 }
     })
     await expect(
-      currentJourney(requestFor('unknown', known), recordingH())
+      currentJourney(
+        journeyRequest('unknown', { knownJourneyIds: known }),
+        recordingH()
+      )
     ).rejects.toMatchObject({
       isBoom: true,
       output: { statusCode: 404 }
@@ -131,57 +143,59 @@ describe('#currentJourney', () => {
 
   it('Should 404 a known id whose persisted record no longer exists', async () => {
     await expect(
-      currentJourney(requestFor('gone-1234', ['gone-1234']), recordingH())
+      currentJourney(
+        journeyRequest('gone-1234', { knownJourneyIds: ['gone-1234'] }),
+        recordingH()
+      )
     ).rejects.toMatchObject({
       isBoom: true,
       output: { statusCode: 404 }
     })
   })
 
-  it('Should load a referenced journey the session does not yet know and record it as known', async () => {
+  it('Should load a referenced journey the session does not yet know, record it as known and log the registration once', async () => {
     const journey = await store.create()
     const h = recordingH()
+    const request = journeyRequest(journey.journeyId, { knownJourneyIds: [] })
 
-    const loaded = await currentJourney(requestFor(journey.journeyId, []), h)
+    const loaded = await currentJourney(request, h)
 
     expect(loaded.journeyId).toBe(journey.journeyId)
     expect(h.cookies[knownJourneysCookie()]).toContain(journey.journeyId)
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: journey.journeyId },
+        message: 'Notification added to the known journeys of this session'
+      }
+    ])
   })
+})
 
-  it('Should cancel amendment only for a session-known journey', async () => {
-    const cancelAmend = vi.fn(async (journeyId) => ({
-      journeyId,
-      status: 'submitted',
-      fulfilment: {}
-    }))
-    configureRecords(SET_ID, { ...recordsStub, cancelAmend })
-    const journeyId = 'GBN-AG-26-ABC123'
-    const request = requestFor(journeyId, [journeyId])
+describe('#amendJourney', () => {
+  beforeEach(useStubRecords)
 
-    const restored = await cancelAmendJourney(request, recordingH(), journeyId)
+  it('Should open a submitted notification the session has not opened for amending and add it to the known list', async () => {
+    const journeyId = await submittedJourney()
+    const h = recordingH()
 
-    expect(cancelAmend).toHaveBeenCalledWith(journeyId, authenticatedActor)
-    expect(restored.status).toBe('submitted')
-
-    const unknown = await cancelAmendJourney(
-      requestFor('unknown', []),
-      recordingH(),
-      'unknown'
+    const editable = await amendJourney(
+      journeyRequest(journeyId, { knownJourneyIds: [] }),
+      h,
+      journeyId
     )
-    expect(unknown).toBeUndefined()
-    expect(cancelAmend).toHaveBeenCalledTimes(1)
+
+    expect(editable.status).toBe('amend')
+    expect((await store.get(journeyId)).status).toBe('amend')
+    expect(h.cookies[knownJourneysCookie()]).toEqual([journeyId])
   })
 
-  it('Should amend a submitted journey with the authenticated actor', async () => {
+  it('Should refuse a deleted notification, leave it deleted and log the refusal once with its status', async () => {
     const journey = await store.create()
-    await recordsStub.finalise(
-      journey.journeyId,
-      undefined,
-      journey.concurrencyToken
-    )
-    const amend = vi.fn(recordsStub.amend)
-    configureRecords(SET_ID, { ...recordsStub, amend })
-    const request = requestFor(journey.journeyId, [journey.journeyId])
+    await recordsStub.softDelete(journey.journeyId)
+    const request = journeyRequest(journey.journeyId, {
+      knownJourneyIds: [journey.journeyId]
+    })
 
     const editable = await amendJourney(
       request,
@@ -189,110 +203,271 @@ describe('#currentJourney', () => {
       journey.journeyId
     )
 
-    expect(amend).toHaveBeenCalledWith(journey.journeyId, authenticatedActor)
-    expect(editable.status).toBe('amend')
-  })
-
-  it('Should copy only a known source and remember the new draft', async () => {
-    const copy = vi.fn(async (_journeyId, _idempotencyKey) => ({
-      journeyId: 'GBN-AG-26-COPIED',
-      status: 'draft',
-      fulfilment: {}
-    }))
-    configureRecords(SET_ID, { ...recordsStub, copy })
-    const sourceId = 'GBN-AG-26-SOURCE'
-    const request = requestFor(sourceId, [sourceId])
-    const h = recordingH()
-
-    const copied = await copyJourney(request, h, sourceId, 'copy-key-123')
-
-    const [args] = copy.mock.calls
-    expect(args).toEqual([sourceId, 'copy-key-123', authenticatedActor])
-    expect(copied.status).toBe('draft')
-    expect(h.cookies[knownJourneysCookie()]).toEqual([
-      sourceId,
-      copied.journeyId
+    expect(editable).toBeUndefined()
+    expect((await store.get(journey.journeyId)).status).toBe('deleted')
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: {
+          journeyId: journey.journeyId,
+          refusal: 'not-editable',
+          status: 'deleted'
+        },
+        message: 'Amend refused'
+      }
     ])
-
-    expect(
-      await copyJourney(
-        requestFor('unknown', []),
-        recordingH(),
-        'unknown',
-        'unused'
-      )
-    ).toBeUndefined()
-    expect(copy).toHaveBeenCalledTimes(1)
-  })
-
-  it('Should soft-delete only a known journey', async () => {
-    const softDelete = vi.fn(async (journeyId) => ({
-      journeyId,
-      status: 'deleted',
-      fulfilment: {}
-    }))
-    configureRecords(SET_ID, { ...recordsStub, softDelete })
-    const journeyId = 'GBN-AG-26-DELETE'
-    const request = requestFor(journeyId, [journeyId])
-
-    const deleted = await softDeleteJourney(request, recordingH(), journeyId)
-
-    expect(softDelete).toHaveBeenCalledWith(journeyId, authenticatedActor)
-    expect(deleted.status).toBe('deleted')
-
-    expect(
-      await softDeleteJourney(
-        requestFor('unknown', []),
-        recordingH(),
-        'unknown'
-      )
-    ).toBeUndefined()
-    expect(softDelete).toHaveBeenCalledTimes(1)
-  })
-
-  it("Should list the session's known journeys without the organisation", async () => {
-    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
-    configureRecords(SET_ID, { ...recordsStub, list })
-    const journeyId = 'GBN-AG-26-LIST01'
-
-    await listKnownJourneys(requestFor(journeyId, [journeyId]), { page: 2 })
-
-    const [query] = list.mock.calls[0]
-    expect(query).toMatchObject({ journeyIds: [journeyId], page: 2 })
-    expect(query).not.toHaveProperty('organisationId')
   })
 })
 
-describe('#replaceJourneyFulfilment', () => {
-  beforeEach(async () => {
-    configureRecords(SET_ID, recordsStub)
+describe('#amendJourney against the backend', () => {
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsReal)
     configureSession(SET_ID, sessionStub)
-    configureReadyForCheckYourAnswers(SET_ID, () => false)
-    await store.clear()
+    fetchMocker.resetMocks()
   })
 
-  it('Should carry the freshly-saved concurrencyToken into the memo so a subsequent save in the same request does not send a stale one', async () => {
-    const journeyId = 'GBN-AG-26-MULTI'
-    const tokensSeen = []
-    const replaceFulfilment = vi.fn(async (id, fulfilment, { known }) => {
-      tokensSeen.push(known?.concurrencyToken)
-      return {
-        journeyId: id,
-        status: 'draft',
-        concurrencyToken: (known?.concurrencyToken ?? 0) + 1,
-        fulfilment
+  it('Should refuse an id the backend does not hold, log it and send no amend request', async () => {
+    fetchMocker.mockResponse('Not Found', { status: 404 })
+    const request = journeyRequest(backendJourneyId, { knownJourneyIds: [] })
+
+    const editable = await amendJourney(request, recordingH(), backendJourneyId)
+
+    expect(editable).toBeUndefined()
+    expect(
+      fetchMocker.requests().map(({ method, url }) => ({ method, url }))
+    ).toEqual([
+      {
+        method: 'GET',
+        url: `${notificationsUrl}/${backendJourneyId}/fulfilments`
       }
+    ])
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: backendJourneyId, refusal: 'not-found' },
+        message: 'Amend refused'
+      }
+    ])
+  })
+})
+
+describe('#copyJourney', () => {
+  beforeEach(useStubRecords)
+
+  it('Should copy a submitted notification the session has not opened into a new draft, leave the source submitted and remember the copy', async () => {
+    const sourceId = await submittedJourney()
+    const h = recordingH()
+
+    const copied = await copyJourney(
+      journeyRequest(sourceId, { knownJourneyIds: [] }),
+      h,
+      sourceId,
+      'copy-key-123'
+    )
+
+    expect(copied.status).toBe('draft')
+    expect((await store.get(copied.journeyId)).status).toBe('draft')
+    expect((await store.get(sourceId)).status).toBe('submitted')
+    expect(h.cookies[knownJourneysCookie()]).toEqual([copied.journeyId])
+  })
+
+  it('Should refuse a source the store does not hold and log the refusal once', async () => {
+    const request = journeyRequest('unknown', { knownJourneyIds: [] })
+
+    const copied = await copyJourney(request, recordingH(), 'unknown', 'unused')
+
+    expect(copied).toBeUndefined()
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: 'unknown', refusal: 'not-found' },
+        message: 'Copy refused'
+      }
+    ])
+  })
+})
+
+describe('#cancelAmendJourney and #softDeleteJourney', () => {
+  beforeEach(useStubRecords)
+
+  it('Should cancel an amendment only for a session-known journey', async () => {
+    const knownId = await submittedJourney()
+    const unknownId = await submittedJourney()
+    await recordsStub.amend(knownId)
+    await recordsStub.amend(unknownId)
+    const request = journeyRequest(knownId, { knownJourneyIds: [knownId] })
+
+    const restored = await cancelAmendJourney(request, recordingH(), knownId)
+    const refused = await cancelAmendJourney(request, recordingH(), unknownId)
+
+    expect(restored.status).toBe('submitted')
+    expect((await store.get(knownId)).status).toBe('submitted')
+    expect(refused).toBeUndefined()
+    expect((await store.get(unknownId)).status).toBe('amend')
+  })
+
+  it('Should soft-delete only a session-known journey', async () => {
+    const knownJourney = await store.create()
+    const unknownJourney = await store.create()
+    const request = journeyRequest(knownJourney.journeyId)
+
+    const deleted = await softDeleteJourney(
+      request,
+      recordingH(),
+      knownJourney.journeyId
+    )
+    const refused = await softDeleteJourney(
+      request,
+      recordingH(),
+      unknownJourney.journeyId
+    )
+
+    expect(deleted.status).toBe('deleted')
+    expect((await store.get(knownJourney.journeyId)).status).toBe('deleted')
+    expect(refused).toBeUndefined()
+    expect((await store.get(unknownJourney.journeyId)).status).toBe('draft')
+  })
+})
+
+describe('#listKnownJourneys', () => {
+  beforeEach(useStubRecords)
+
+  it("Should list only the session's known journeys", async () => {
+    const knownJourney = await store.create()
+    await store.create()
+    const request = journeyRequest(knownJourney.journeyId)
+
+    const { rows } = await listKnownJourneys(request, { page: 1 })
+
+    expect(rows.map((row) => row.journeyId)).toEqual([knownJourney.journeyId])
+  })
+})
+
+describe('#listKnownJourneys against the backend', () => {
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsReal)
+    fetchMocker.resetMocks()
+  })
+
+  it('Should request the page asked for without the organisation', async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 2,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+        content: []
+      })
+    )
+
+    await listKnownJourneys(
+      journeyRequest(backendJourneyId, { knownJourneyIds: [backendJourneyId] }),
+      { page: 2 }
+    )
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(`${notificationsUrl}?page=2&sort=arrivalDate,desc`)
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
+  })
+})
+
+describe('backend requests carry the authenticated actor', () => {
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsReal)
+    configureSession(SET_ID, sessionStub)
+    fetchMocker.resetMocks()
+    fetchMocker.mockResponse(backendNotification({ status: 'SUBMITTED' }))
+  })
+
+  it('Should send the authenticated actor as the body of the create request', async () => {
+    await startJourney(
+      journeyRequest(undefined, { knownJourneyIds: [] }),
+      recordingH()
+    )
+
+    expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
+      notification: { fulfilments: [] },
+      actor: authenticatedActor
     })
-    configureRecords(SET_ID, { ...recordsStub, replaceFulfilment })
-    const request = requestFor(journeyId, [journeyId])
+  })
+
+  it.each([
+    [
+      'amend',
+      (request, h) => amendJourney(request, h, backendJourneyId),
+      `${notificationsUrl}/${backendJourneyId}/amend`
+    ],
+    [
+      'cancel-amend',
+      (request, h) => cancelAmendJourney(request, h, backendJourneyId),
+      `${notificationsUrl}/${backendJourneyId}/cancel-amend`
+    ],
+    [
+      'copy',
+      (request, h) => copyJourney(request, h, backendJourneyId, 7),
+      `${notificationsUrl}/${backendJourneyId}/copy?concurrencyToken=7`
+    ],
+    [
+      'soft-delete',
+      (request, h) => softDeleteJourney(request, h, backendJourneyId),
+      `${notificationsUrl}/${backendJourneyId}/soft-delete`
+    ]
+  ])(
+    'Should send the authenticated actor as the body of the %s request',
+    async (_name, act, expectedUrl) => {
+      await act(
+        journeyRequest(backendJourneyId, {
+          knownJourneyIds: [backendJourneyId]
+        }),
+        recordingH()
+      )
+
+      const lastRequest = fetchMocker.requests().at(-1)
+      expect(lastRequest.url).toBe(expectedUrl)
+      expect(await jsonOf(lastRequest)).toEqual(authenticatedActor)
+    }
+  )
+})
+
+describe('#replaceJourneyFulfilment', () => {
+  beforeEach(() => {
+    configureRecords(SET_ID, recordsReal)
+    configureSession(SET_ID, sessionStub)
+    fetchMocker.resetMocks()
+  })
+
+  it('Should send the concurrencyToken the first save returned on a second save in the same request', async () => {
+    const first = assembleFulfilments({ countryOfOrigin: 'FR' })
+    const second = assembleFulfilments({ countryOfOrigin: 'DE' })
+    fetchMocker.mockResponses(
+      [backendNotification(), { status: 200 }],
+      [
+        backendNotification({
+          fulfilments: encodeEvaluatorFulfilments(first),
+          concurrencyToken: 5
+        }),
+        { status: 200 }
+      ],
+      [
+        backendNotification({
+          fulfilments: encodeEvaluatorFulfilments(second),
+          concurrencyToken: 6
+        }),
+        { status: 200 }
+      ]
+    )
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId]
+    })
     request.payload = { concurrencyToken: '4' }
 
-    await replaceJourneyFulfilment(request, journeyId, { foo: 'first' })
-    await replaceJourneyFulfilment(request, journeyId, { foo: 'second' })
+    await replaceJourneyFulfilment(request, backendJourneyId, first)
+    await replaceJourneyFulfilment(request, backendJourneyId, second)
 
-    // First save reads the token from the payload (4); second save reads it
-    // from the memo, which must now carry the freshly-saved value (5), not
-    // the pre-save one (4).
-    expect(tokensSeen).toEqual([4, 5])
+    const puts = fetchMocker.requests().filter(({ method }) => method === 'PUT')
+    const tokensSent = await Promise.all(
+      puts.map(async (put) => (await jsonOf(put)).notification.concurrencyToken)
+    )
+    expect(tokensSent).toEqual([4, 5])
   })
 })

@@ -31,7 +31,10 @@ import { obligations } from './model/obligations/manifest.js'
 import { fulfilmentRegistry } from './bridge/fulfilment-registry.js'
 import { journeySections } from './flow/journey-flow.js'
 import { dashboardPath } from './shared/paths.js'
-import { registerTestSessionAuth } from './engine/test-support.js'
+import {
+  registerTestRequestLogger,
+  registerTestSessionAuth
+} from './engine/test-support.js'
 import {
   SET_BASE as LIVE_ANIMALS_BASE,
   SET_ID as LIVE_ANIMALS
@@ -125,17 +128,11 @@ beforeAll(async () => {
       files: { relativeTo: path.resolve(config.get('root'), '.public') }
     }
   })
+  registerTestRequestLogger(server)
   registerTestSessionAuth(server)
   await server.register([nunjucksConfig, router])
-  // The two server-wide extensions server.js registers, in the same order:
-  // the set context resolved from the path before routing, and the shared
-  // error page. Without them this server could not show what an unrouted path
-  // does with two sets mounted, which is the case that 500s.
   server.ext(setContextExtension)
   server.ext('onPreResponse', catchAll)
-  // Mounted the way router.js mounts live-animals. Registering a set without
-  // its prefix collides with the root redirect, which is the namespace split
-  // working: no set may sit at the root.
   await server.register(secondSet, { routes: { prefix: SECOND_SET_BASE } })
   await server.register(foreignRealm)
   await server.initialize()
@@ -266,9 +263,6 @@ describe('co-residency — the render path resolves the request’s set', () => 
     )
 
     expect(response.statusCode).toBe(200)
-    // The view is marshalled after the handler returns. These two values come
-    // from the set's own configuration — its journey layout and its mount — so
-    // a render that resolved the wrong set could not produce both.
     expect(response.result).toContain(SECOND_SET_RENDERED_TITLE)
     expect(response.result).toContain(`href="${SECOND_SET_BASE}"`)
     expect(response.result).not.toContain(`href="${LIVE_ANIMALS_BASE}"`)
@@ -280,9 +274,6 @@ describe('co-residency — the render path resolves the request’s set', () => 
   ])(
     'Should answer an unrouted path %s with 404 rather than 500',
     async (_where, url) => {
-      // The error page renders the shared chrome. Resolving it through the
-      // sole-set fallback throws with two sets mounted, which turns the 404
-      // the user should see into a 500.
       const response = await server.inject(url)
 
       expect(response.statusCode).toBe(404)
@@ -292,19 +283,10 @@ describe('co-residency — the render path resolves the request’s set', () => 
 
 describe('co-residency — a real set’s entry guard', () => {
   it('Should answer a journey id this set has never issued with 404', async () => {
-    // The guard is an `onPreHandler` registered on the server, so — unlike a
-    // route handler — `routeWithSetContext` does not wrap it. Authentication
-    // crosses an async boundary after the `onPreAuth` that entered the
-    // context, so the gateway has to re-enter it around the guard itself.
-    // Without that the guard resolves only by the sole-set fallback, and every
-    // journey page 500s as soon as a second set mounts.
     const response = await server.inject(
       `${LIVE_ANIMALS_BASE}/notifications/GBN-AG-26-NOTREAL`
     )
 
-    // The concrete outcome, not "anything but a 500": the guard reads the
-    // journey out of this set's own store, finds nothing, and the page is not
-    // found.
     expect(response.statusCode).toBe(404)
   })
 
@@ -318,8 +300,6 @@ describe('co-residency — a real set’s entry guard', () => {
       `${LIVE_ANIMALS_BASE}/notifications/${draft.journeyId}`
     )
 
-    // The redirect the guard builds carries this set's prefix, resolved inside
-    // the guard's own context. Drop the guard and the hub renders 200 instead.
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe(
       `${LIVE_ANIMALS_BASE}/notifications/${draft.journeyId}/origin`
@@ -329,9 +309,6 @@ describe('co-residency — a real set’s entry guard', () => {
 
 describe('co-residency — interleaved requests', () => {
   it('Should keep each in-flight request in its own set while the other is still running', async () => {
-    // Genuinely interleaved, not sequential: both injections are started
-    // before either is awaited, so their AsyncLocalStorage contexts overlap.
-    // Running them one after the other would prove nothing.
     const inFlight = [
       server.inject(`${SECOND_SET_BASE}/notifications/SUN-A/details`),
       server.inject(`${FOREIGN_REALM_BASE}/probe`),
@@ -364,8 +341,6 @@ describe('co-residency — extensions are sandboxed to their own set', () => {
     await server.inject('/health')
     await server.inject('/')
 
-    // A `server.ext` registered without { sandbox: 'plugin' } is server-wide,
-    // so without it this would have ticked on all four.
     expect(foreignRealmExtensionRan).toBe(0)
 
     await server.inject(`${FOREIGN_REALM_BASE}/probe`)
@@ -402,16 +377,11 @@ describe('co-residency — journey cookies are scoped to their set', () => {
     })
     jar.absorb(created)
 
-    // The positive first. A set that issued no cookie at all would satisfy the
-    // negative below without proving anything, so the jar has to be shown to
-    // hold this set's journey cookie before it is shown not to travel.
     expect(created.statusCode).toBe(302)
     expect(jar.namesFor(`${SECOND_SET_BASE}/notifications`)).toContain(
       SECOND_SET_COOKIES.knownJourneys
     )
 
-    // The browser rule: a cookie scoped to /sundry-goods never travels to
-    // /live-animals, so a draft started in one set cannot reach the other.
     expect(jar.namesFor(`${LIVE_ANIMALS_BASE}/notifications`)).not.toContain(
       SECOND_SET_COOKIES.knownJourneys
     )
@@ -426,7 +396,6 @@ describe('co-residency — journey cookies are scoped to their set', () => {
     expect(listed.rows.map(({ journeyId }) => journeyId)).toEqual([
       journey.journeyId
     ])
-    // live-animals reads its own store, which has never seen this id.
     const acrossSets = await withSetContext(LIVE_ANIMALS, async () => {
       const { records } = await import('./engine/persistence/records.js')
       return records.list({ journeyIds: [journey.journeyId] })
@@ -435,11 +404,6 @@ describe('co-residency — journey cookies are scoped to their set', () => {
   })
 
   it('Should keep the SHIPPED stub store’s journeys to the set that created them', async () => {
-    // The fixture above carries a store of its own, so it cannot show what the
-    // shipped stub does. This configures BOTH sets on that stub —
-    // services/persistence/records — and asks whether one set's drafts reach
-    // the other. A single module-level Map in stub/store/state.js would be a
-    // set singleton, and both sets would list each other's notifications.
     const { records: stubRecords } =
       await import('./services/persistence/records/index.js')
     const inSet = (setId, work) => withSetContext(setId, work)
@@ -502,8 +466,6 @@ describe('co-residency — the real composition root', () => {
   let realServer
 
   beforeAll(async () => {
-    // The sign-in routes are registered by server.js alongside the router, not
-    // inside it, so only the real composition root can show where they land.
     realServer = await createServer()
   })
 
@@ -533,9 +495,6 @@ describe('co-residency — the real composition root', () => {
   })
 
   it('Should keep the real OIDC routes outside the set prefix too', () => {
-    // The unit suite runs in stub mode, so the server above never registers the
-    // real OIDC plugin. Ask that plugin what it declares instead, so a prefix
-    // creeping into the routes only production registers is still caught.
     const declared = []
     authRoutes.plugin.register({
       route: (routes) => declared.push(...[routes].flat())

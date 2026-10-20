@@ -25,6 +25,13 @@
     }) }}
   {% endif %}
 
+  {% if amendRefused %}
+    {{ govukNotificationBanner({
+      titleText: copy.amendRefused.title,
+      text: copy.amendRefused.body
+    }) }}
+  {% endif %}
+
   {{ sectionCaption(caption, "govuk-caption-xl") }}
   <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
   <p class="govuk-body">{{ copy.body }}</p>

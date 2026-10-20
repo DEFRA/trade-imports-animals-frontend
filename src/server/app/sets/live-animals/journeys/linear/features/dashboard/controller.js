@@ -104,17 +104,18 @@ export const renderDashboard = async (
     }),
     recoverableError,
     deletionSucceeded: request.query?.deleted === '1',
-    copySucceeded: request.query?.copied === '1'
+    copySucceeded: request.query?.copied === '1',
+    amendRefused: request.query?.amendRefused === '1'
   })
 }
 
 const listGet = async (request, h) => renderDashboard(request, h)
 
-const backToDashboard = (h) => h.redirect(dashboardPath())
-
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
+  return h.redirect(
+    journey ? hubPath(journey.journeyId) : `${dashboardPath()}?amendRefused=1`
+  )
 }
 
 const createPost = async (request, h) => {

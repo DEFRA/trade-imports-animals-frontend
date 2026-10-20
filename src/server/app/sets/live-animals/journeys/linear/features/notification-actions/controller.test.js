@@ -1,13 +1,6 @@
 import { SET_ID } from '../../../../set.js'
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
 import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -19,14 +12,47 @@ import {
   configureSession,
   knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  backendJourneyId,
+  backendNotification,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
+import { records as recordsReal } from '../../../../../../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
 const copyPost = routes[0].handler
+
+const fetchMocker = createFetchMock(vi)
+fetchMocker.enableMocks()
+
+const copyPayload = { concurrencyToken: '0', copyOrigin: 'dashboard' }
+
+const emptyNotificationList = JSON.stringify({
+  page: 1,
+  size: 20,
+  totalElements: 0,
+  totalPages: 0,
+  content: []
+})
+
+const backendAnsweringCopyWith = (copyResponse) =>
+  fetchMocker.mockResponse(async (request) => {
+    if (request.url.includes('/copy')) {
+      return copyResponse()
+    }
+    return {
+      body: request.url.endsWith('/fulfilments')
+        ? backendNotification({
+            status: 'SUBMITTED',
+            submittedAt: '2026-07-23T10:00:00Z'
+          })
+        : emptyNotificationList
+    }
+  })
 
 describe('copy notification action', () => {
   beforeAll(() => {
@@ -34,128 +60,125 @@ describe('copy notification action', () => {
     buildDispatch(SET_ID, dispatchPages)
   })
 
-  beforeEach(() => {
-    configureRecords(SET_ID, recordsStub)
-    records.clear()
-  })
+  describe('against the stub store', () => {
+    beforeEach(() => {
+      configureRecords(SET_ID, recordsStub)
+      records.clear()
+    })
 
-  afterEach(() => {
-    configureRecords(SET_ID, recordsStub)
-    vi.unstubAllGlobals()
-  })
+    it('Should copy into a known new draft and redirect to its journey-scoped hub', async () => {
+      const source = await records.create()
 
-  it('Should copy into a known new draft and redirect to its journey-scoped hub', async () => {
-    const source = await records.create()
-    const h = stubH()
+      const response = await copyPost(
+        journeyRequest(source.journeyId, { payload: copyPayload }),
+        stubH()
+      )
 
-    const response = await copyPost(
-      journeyRequest(source.journeyId, {
-        payload: {
-          concurrencyToken: '0',
-          copyOrigin: 'dashboard'
-        }
-      }),
-      h
-    )
+      expect(response.redirect).toMatch(/\/notifications\/[^/]+$/)
+      const copiedJourneyId = response.redirect.split('/').at(-1)
+      expect(response.redirect).toBe(hubPath(copiedJourneyId))
+      expect(copiedJourneyId).not.toBe(source.journeyId)
+      expect(await records.load({ journeyId: copiedJourneyId })).toMatchObject({
+        status: 'draft'
+      })
+    })
 
-    expect(response.redirect).toMatch(/\/notifications\/[^/]+$/)
-    const copiedJourneyId = response.redirect.split('/').at(-1)
-    expect(response.redirect).toBe(hubPath(copiedJourneyId))
-    expect(copiedJourneyId).not.toBe(source.journeyId)
-    expect(await records.load({ journeyId: copiedJourneyId })).toMatchObject({
-      status: 'draft'
+    it('Should copy a source the session has not opened into a new draft at its hub', async () => {
+      const source = await records.create()
+      await records.finalise(
+        source.journeyId,
+        undefined,
+        source.concurrencyToken
+      )
+      const h = stubH()
+
+      const response = await copyPost(
+        journeyRequest(source.journeyId, {
+          payload: copyPayload,
+          knownJourneyIds: []
+        }),
+        h
+      )
+
+      const [copiedJourneyId] = h.cookies[knownJourneysCookie()]
+      expect(response.redirect).toBe(hubPath(copiedJourneyId))
+      expect(copiedJourneyId).not.toBe(source.journeyId)
+      expect(await records.load({ journeyId: copiedJourneyId })).toMatchObject({
+        status: 'draft'
+      })
+      expect(await records.load({ journeyId: source.journeyId })).toMatchObject(
+        { status: 'submitted' }
+      )
+    })
+
+    it('Should redirect a source the store does not hold to the dashboard and register no copy', async () => {
+      const unknownJourneyId = 'GBN-AG-26-UNKNOWN'
+      const h = stubH()
+
+      const response = await copyPost(
+        journeyRequest(unknownJourneyId, {
+          payload: copyPayload,
+          knownJourneyIds: []
+        }),
+        h
+      )
+
+      expect(response.redirect).toBe(dashboardPath())
+      expect(await records.has(unknownJourneyId)).toBe(false)
+      expect(h.cookies).toEqual({})
     })
   })
 
-  it('Should re-render the dashboard at 500 after a recoverable backend failure', async () => {
-    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: false,
+  describe('against the backend', () => {
+    beforeEach(() => {
+      configureRecords(SET_ID, recordsReal)
+      fetchMocker.resetMocks()
+    })
+
+    it('Should re-render the dashboard at 500 after a recoverable backend failure', async () => {
+      backendAnsweringCopyWith(() => ({
+        body: 'Unavailable',
         status: 503,
         statusText: 'Service Unavailable'
       }))
-    )
-    const source = await records.create()
 
-    const response = await copyPost(
-      journeyRequest(source.journeyId, {
-        payload: {
-          concurrencyToken: '0',
-          copyOrigin: 'dashboard'
-        }
-      }),
-      stubH()
-    )
-
-    expect(response.statusCode).toBe(500)
-    expect(response.view).toBe(
-      'live-animals/journeys/linear/features/dashboard/template'
-    )
-    expect(response.context.recoverableError).toBe(true)
-  })
-
-  it('Should redirect to the dashboard with ?staleToken=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {
-    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: false,
-        status: 409,
-        statusText: 'Conflict',
-        clone() {
-          return this
-        },
-        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
-      }))
-    )
-    const source = await records.create()
-
-    const response = await copyPost(
-      journeyRequest(source.journeyId, {
-        payload: {
-          concurrencyToken: '0',
-          copyOrigin: 'dashboard'
-        }
-      }),
-      stubH()
-    )
-
-    expect(response.redirect).toBe(`${dashboardPath()}?staleAction=1`)
-  })
-
-  it('Should propagate a non-STALE_CONCURRENCY_TOKEN error thrown from copy', async () => {
-    configureRecords(SET_ID, {
-      ...recordsStub,
-      copy: async () => {
-        throw new TypeError('programmer error')
-      }
-    })
-    const source = await records.create()
-
-    await expect(
-      copyPost(
-        journeyRequest(source.journeyId, {
-          payload: { concurrencyToken: '0', copyOrigin: 'dashboard' }
-        }),
+      const response = await copyPost(
+        journeyRequest(backendJourneyId, { payload: copyPayload }),
         stubH()
       )
-    ).rejects.toThrow('programmer error')
-  })
 
-  it('Should redirect an unknown source to the dashboard without copying', async () => {
-    const response = await copyPost(
-      journeyRequest('GBN-AG-26-UNKNOWN', {
-        payload: {
-          concurrencyToken: '0',
-          copyOrigin: 'dashboard'
-        },
-        state: { [knownJourneysCookie()]: [] }
-      }),
-      stubH()
-    )
+      expect(response.statusCode).toBe(500)
+      expect(response.view).toBe(
+        'live-animals/journeys/linear/features/dashboard/template'
+      )
+      expect(response.context.recoverableError).toBe(true)
+    })
 
-    expect(response.redirect).toBe(dashboardPath())
+    it('Should redirect to the dashboard with ?staleAction=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {
+      backendAnsweringCopyWith(() => ({
+        body: JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
+        status: 409
+      }))
+
+      const response = await copyPost(
+        journeyRequest(backendJourneyId, { payload: copyPayload }),
+        stubH()
+      )
+
+      expect(response.redirect).toBe(`${dashboardPath()}?staleAction=1`)
+    })
+
+    it('Should propagate a network failure that is not a backend response', async () => {
+      backendAnsweringCopyWith(() => {
+        throw new TypeError('network down')
+      })
+
+      await expect(
+        copyPost(
+          journeyRequest(backendJourneyId, { payload: copyPayload }),
+          stubH()
+        )
+      ).rejects.toThrow('network down')
+    })
   })
 })
