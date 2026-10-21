@@ -100,7 +100,7 @@ const seedTwoSpeciesOfOneCommodity = () => ({
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: '900001',
+      speciesLatinName: FELIS_CATUS,
       numberOfPackages: '4',
       numberOfAnimalsQuantity: '9'
     }
@@ -390,9 +390,9 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       ])
     ).toEqual([
       ['0102', BOS_TAURUS],
-      ['01061900', '900001']
+      ['01061900', FELIS_CATUS]
     ])
-    // reconcileEntriesAt keys by commodity|species, so the surviving Dog line
+    // reconcileEntriesAt keys by commodity|species, so the surviving Felis catus line
     // keeps its own quantities rather than inheriting the removed line's.
     expect(lines[1].numberOfAnimalsQuantity).toBe(9)
     expect(lines[1].numberOfPackages).toBe('4')
