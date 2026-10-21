@@ -1,8 +1,8 @@
 /**
  * Whitelist scope tests.
  *
- * V4 gates nine commodity-scoped obligations on the commodities
- * service's allowlists — CN codes, or Latin names for the permanent
+ * Nine commodity-scoped obligations are gated on the commodities
+ * service's allowlists of CN codes, or of Latin names for the permanent
  * address. Silently widening any allowlist is a real risk (e.g. adding a
  * code to the package-count list that puts `numberOfPackages` in scope
  * for a new commodity). This test iterates every `(allowlist,
