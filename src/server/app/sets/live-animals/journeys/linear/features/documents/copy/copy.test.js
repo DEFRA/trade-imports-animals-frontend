@@ -1,13 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  sampleText,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import * as documents from '../controller.js'
@@ -19,23 +17,14 @@ import {
 } from '../upload-config.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
 describe('#copy', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
-      const text =
-        typeof value === 'function' ? value('sample', 'sample') : value
+      const text = sampleText(value, ['sample', 'sample'])
       expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
+      expect(text.trim(), `${path} must not be empty`).not.toBe('')
     }
   })
 
@@ -57,7 +46,7 @@ describe('#copy', () => {
     expect(guidance.additional.rows).toEqual([
       {
         consignment: 'Animals that do not need a health certificate',
-        documents: "An exporter's declaration that they are fit to travel"
+        documents: "Exporter's declaration that they are fit to travel"
       },
       {
         consignment: 'Livestock transiting bluetongue restricted territories',
@@ -65,14 +54,12 @@ describe('#copy', () => {
       },
       {
         consignment: 'Rodents imported for research purposes',
-        documents: 'An RM39 licence and supplementary health certificate'
+        documents: 'RM39 licence and supplementary health certificate'
       }
     ])
-    // The hard-coded target="_blank" in template.njk requires the GDS new-tab suffix.
     expect(guidance.additional.linkText).toBe(
       'Check the documents you need on GOV.UK (opens in a new tab)'
     )
-    // The design's href carried prototype analytics parameters; ours is clean.
     expect(guidance.additional.linkHref).toBe(
       'https://www.gov.uk/guidance/import-of-products-animals-food-and-feed-system'
     )
@@ -82,44 +69,53 @@ describe('#copy', () => {
     expect(copy.file.label).toBe('Attachment')
     expect(copy.file.label).not.toBe(copy.title)
     expect(copy.file.label).not.toBe(copy.fileUploadHeading)
-    // The Welsh deck takes the noun the check-answers row already uses for it.
-    // Asserted here rather than left to copy-parity because the two Welsh
-    // strings had collided: the label and the section heading were both
-    // "Uwchlwytho ffeil".
     expect(copyCy.file.label).toBe('Atodiad')
     expect(copyCy.file.label).not.toBe(copyCy.fileUploadHeading)
   })
 
   it('Should state the archive rule and its reason before the trader chooses a file', () => {
-    // The allow-list refuses a ZIP either way; this bullet is the only place
-    // the trader is told so, and told why, ahead of choosing.
     expect(copy.file.noZipFiles).toBe(
       'ZIP files are not allowed for security reasons'
     )
   })
 
   it('Should state how many documents a notification holds before a file is chosen', () => {
-    // The hint carries the count as well as the size and the file types, so a
-    // trader is told the limit ahead of choosing rather than on refusal. The
-    // number is an argument, never a literal, so it can only ever be the
-    // obligation's — the same value errors.maxDocuments is given. Both samples
-    // are deliberately not the current cap, and they differ from each other, so
-    // a copy function that ignored its argument and hard-coded the cap fails
-    // here rather than sliding through because the sample happened to match.
     expect(copy.file.upToMaximum(3)).toBe('up to a maximum of 3 files')
     expect(copy.file.upToMaximum(7)).toBe('up to a maximum of 7 files')
-    // The Welsh deck states the same limit and takes it the same way, so a
-    // trader reading Welsh is told the count too rather than meeting it only
-    // at the point of refusal. Asserted on the number rather than the whole
-    // sentence: the wording is machine-draft and awaits a translator, the
-    // interpolation is what must survive that review.
     expect(copyCy.file.upToMaximum(3)).toContain('3')
     expect(copyCy.file.upToMaximum(7)).toContain('7')
   })
 
+  it('Should label the document reference with no hint', () => {
+    expect(copy.reference).toEqual({ label: 'Document reference' })
+    expect(copyCy.reference).toEqual({ label: 'Cyfeirnod y ddogfen' })
+  })
+
+  it('Should hint the date of issue with an example date in both locales', () => {
+    expect(copy.dateOfIssue.hint).toBe('For example, 27/3/2026')
+    expect(copyCy.dateOfIssue.hint).toBe('Er enghraifft, 27/3/2026')
+  })
+
+  it('Should state the file size as files smaller than the size it is given', () => {
+    expect(copy.file.smallerThan('10MB')).toBe(
+      'files that are smaller than 10MB'
+    )
+    expect(copy.file.smallerThan('50MB')).toBe(
+      'files that are smaller than 50MB'
+    )
+  })
+
+  it('Should state the file size and the allowed file types in Welsh', () => {
+    expect(copyCy.file.smallerThan('10MB')).toBe('yn llai na 10MB')
+    expect(copyCy.file.allowedTypes('PDF, DOC')).toBe('yn PDF, DOC')
+  })
+
+  it('Should name the hidden table header Action', () => {
+    expect(copy.table.actionsHidden).toBe('Action')
+    expect(copyCy.table.actionsHidden).toBe('Cam gweithredu')
+  })
+
   it('Should word the drop zone the way the design system does', () => {
-    // The template hands these to govukFileUpload, so a drift here silently
-    // reworded a control traders meet elsewhere on GOV.UK.
     expect(copy.file.chooseButton).toBe('Choose file')
     expect(copy.file.dropInstruction).toBe('or drop file')
     expect(copy.file.noFileChosen).toBe('No file chosen')
@@ -135,18 +131,12 @@ describe('#copy', () => {
   })
 
   it('Should name the document the status belongs to for a screen reader', () => {
-    // The tag carries no other text, so the hidden label is the only thing
-    // tying "Check completed" to the row it sits in. The reference is an
-    // argument, never a literal, in both decks.
     expect(copy.scanStatusHidden('GBHC1234567890')).toBe(
       'Virus check status for GBHC1234567890'
     )
     expect(copy.scanStatusHidden('ITAHC-000123')).toBe(
       'Virus check status for ITAHC-000123'
     )
-    // Asserted on the interpolation rather than the whole sentence: the Welsh
-    // wording is machine-draft awaiting a translator, the reference is what
-    // must survive that review.
     expect(copyCy.scanStatusHidden('GBHC1234567890')).toContain(
       'GBHC1234567890'
     )
@@ -169,12 +159,7 @@ describe('#copy', () => {
 })
 
 describe('GET /accompanying-documents', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
     const get = documents.routes.find((route) => route.method === 'GET').handler

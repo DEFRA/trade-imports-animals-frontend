@@ -16,7 +16,7 @@ export const copy = {
       rows: [
         {
           consignment: 'Animals that do not need a health certificate',
-          documents: "An exporter's declaration that they are fit to travel"
+          documents: "Exporter's declaration that they are fit to travel"
         },
         {
           consignment: 'Livestock transiting bluetongue restricted territories',
@@ -24,7 +24,7 @@ export const copy = {
         },
         {
           consignment: 'Rodents imported for research purposes',
-          documents: 'An RM39 licence and supplementary health certificate'
+          documents: 'RM39 licence and supplementary health certificate'
         }
       ],
       linkText: 'Check the documents you need on GOV.UK (opens in a new tab)',
@@ -34,8 +34,7 @@ export const copy = {
   },
   fileUploadHeading: 'File upload',
   reference: {
-    label: 'Document reference',
-    hint: 'For example, GBHC1234567890.'
+    label: 'Document reference'
   },
   documentType: {
     label: 'Document type',
@@ -43,18 +42,15 @@ export const copy = {
   },
   dateOfIssue: {
     label: 'Date of issue',
-    hint: 'For example, 12/12/2025'
+    hint: 'For example, 27/3/2026'
   },
   file: {
     label: 'Attachment',
     mustBe: 'Your file must be:',
-    smallerThan: 'smaller than',
-    a: 'a',
+    smallerThan: (size) => `files that are smaller than ${size}`,
+    allowedTypes: (hint) => hint,
     upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',
-    // Wording for the JavaScript-enhanced drop zone. These match the design
-    // system's own defaults so the control reads the way traders meet it
-    // elsewhere on GOV.UK.
     chooseButton: 'Choose file',
     dropInstruction: 'or drop file',
     noFileChosen: 'No file chosen',
@@ -68,7 +64,7 @@ export const copy = {
     type: 'Document type',
     dateOfIssue: 'Date of issue',
     status: 'Status',
-    actionsHidden: 'Actions'
+    actionsHidden: 'Action'
   },
   types: {
     ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
@@ -93,7 +89,6 @@ export const copy = {
   viewFileHidden: (documentNumber) => `for document ${documentNumber}`,
   refreshStatus: 'Refresh virus scan status',
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
-  empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
   scanTags: {
     complete: 'Check completed',
@@ -101,9 +96,6 @@ export const copy = {
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
-  // Read out ahead of the tag so the status names the document it belongs to.
-  // The tag carries no other text, so without this a screen reader hears
-  // "Check completed" with nothing saying what was checked.
   scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',

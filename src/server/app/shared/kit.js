@@ -160,6 +160,9 @@ export const nextTarget = async (request, page, scope) =>
  * on a page that ends with `saveActions`, and the view gains `amend`: the two
  * form actions its save buttons carry while the journey is being amended, or
  * null otherwise.
+ * @param {string} [options.surface] - a key of `SURFACES` naming the width of
+ * the content column. Defaults to `form`, the reading measure; an unknown
+ * surface throws.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -171,7 +174,8 @@ export const base = (
     page,
     recoverableError = false,
     offerCancelAmend = true,
-    request
+    request,
+    surface = 'form'
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -192,7 +196,7 @@ export const base = (
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
-    contentColumnClass: SURFACES.form
+    contentColumnClass: surfaceClass(surface)
   }
 }
 
@@ -217,7 +221,7 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
       throw error
     }
     if (isRecoverableBackendError(error)) {
-      return { failure: await onRecoverableFailure() }
+      return { failure: await onRecoverableFailure(error) }
     }
     throw error
   }

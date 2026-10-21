@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   describeDatePickerLook,
+  expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   openDatePicker,
   openDocuments,
@@ -30,6 +31,81 @@ const errorLink = (page, message) =>
 
 const rowFor = (scope, reference) =>
   scope.locator('.govuk-table__row', { hasText: reference })
+
+const fileUploadCard = (page) =>
+  page.getByRole('region', { name: copy.fileUploadHeading })
+
+const addedDocumentsTable = (page) =>
+  fileUploadCard(page).getByRole('table', { name: copy.table.caption })
+
+const escapeRegExp = (text) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+
+const expectNoDocumentsAdded = async (page) => {
+  await expect(addedDocumentsTable(page)).toHaveCount(0)
+  await expect(fileUploadCard(page)).toHaveText(
+    new RegExp(`${escapeRegExp(copy.addAnother)}\\s*$`)
+  )
+}
+
+const withinTwoThirdsColumn = (locator) =>
+  locator.locator(
+    'xpath=ancestor::*[contains(@class,"govuk-grid-column-two-thirds")]'
+  )
+
+const withinFullWidthColumn = (locator) =>
+  locator.locator(
+    'xpath=ancestor::*[contains(@class,"govuk-grid-column-full")]'
+  )
+
+const expectSaveAndContinueOutsideCard = async (page) => {
+  await expect(
+    fileUploadCard(page).getByRole('button', {
+      name: sharedCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('button', {
+      name: sharedCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+  ).toBeVisible()
+}
+
+const actionsCellOf = (row) => row.getByRole('cell').last()
+
+const expectViewFileAndRemoveInCell = async (actionsCell) => {
+  await expect(
+    actionsCell.getByRole('link', {
+      name: `${copy.viewFile} ${copy.viewFileHidden(1)}`
+    })
+  ).toBeVisible()
+  await expect(
+    actionsCell.getByRole('button', {
+      name: `${copy.remove} ${copy.removeHidden(1)}`,
+      exact: true
+    })
+  ).toBeVisible()
+}
+
+const LONG_REFERENCE = 'R'.repeat(REFERENCE_MAX_LENGTH)
+
+const expectLongReferenceFitsCard = async (
+  page,
+  { afterUpload = async () => {} } = {}
+) => {
+  await uploadDocument(page, {
+    ...validDocument,
+    accompanyingDocumentReference: LONG_REFERENCE
+  })
+  await afterUpload()
+  await expect(rowFor(page, LONG_REFERENCE)).toContainText(
+    copy.scanTags.complete
+  )
+  await expect(withinTwoThirdsColumn(addedDocumentsTable(page))).toHaveCount(0)
+  await expectNoHorizontalOverflow(fileUploadCard(page), 'File upload card')
+}
 
 const fileInput = (page) => page.locator('input[type="file"]')
 
@@ -94,12 +170,12 @@ test.describe('document upload page', () => {
     await openDocuments(page)
   })
 
-  test('renders feature copy, upload constraints and empty state', async ({
+  test('renders the reference with no hint, the date hint, the upload constraints and no added-documents table', async ({
     page
   }) => {
     await expect(
       page.getByLabel(copy.reference.label)
-    ).toHaveAccessibleDescription(copy.reference.hint)
+    ).toHaveAccessibleDescription('')
     await expect(
       page.getByLabel(copy.dateOfIssue.label)
     ).toHaveAccessibleDescription(copy.dateOfIssue.hint)
@@ -107,16 +183,20 @@ test.describe('document upload page', () => {
     await expect(fileInput(page)).toHaveAttribute('accept', ACCEPT_ATTRIBUTE)
     await expect(page.getByText(copy.file.mustBe)).toBeVisible()
     await expect(
-      page.getByText(`${copy.file.smallerThan} ${MAX_FILE_SIZE_LABEL}`)
+      page.getByText(copy.file.smallerThan(MAX_FILE_SIZE_LABEL), {
+        exact: true
+      })
     ).toBeVisible()
     await expect(
-      page.getByText(`${copy.file.a} ${ALLOWED_FILE_TYPES_HINT}`)
+      page.getByText(copy.file.allowedTypes(ALLOWED_FILE_TYPES_HINT), {
+        exact: true
+      })
     ).toBeVisible()
     await expect(
       page.getByText(copy.file.upToMaximum(MAX_DOCUMENTS))
     ).toBeVisible()
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
-    await expect(page.getByText(copy.empty)).toBeVisible()
+    await expectNoDocumentsAdded(page)
     await expect(
       page.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
@@ -165,9 +245,7 @@ test.describe('document upload page', () => {
   test('groups the fields and the add button under the file upload heading, leaving the page actions outside', async ({
     page
   }) => {
-    const fileUpload = page.getByRole('region', {
-      name: copy.fileUploadHeading
-    })
+    const fileUpload = fileUploadCard(page)
     await expect(
       fileUpload.getByRole('heading', { name: copy.fileUploadHeading })
     ).toBeVisible()
@@ -178,18 +256,29 @@ test.describe('document upload page', () => {
     await expect(
       fileUpload.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
+    await expectSaveAndContinueOutsideCard(page)
+  })
+
+  test('puts the card in the full-width column, the guidance in a two-thirds column and the fields in a two-thirds column inside the card', async ({
+    page
+  }) => {
+    const card = fileUploadCard(page)
+    await expect(withinFullWidthColumn(card)).toHaveCount(1)
+    await expect(withinTwoThirdsColumn(card)).toHaveCount(0)
     await expect(
-      fileUpload.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toHaveCount(0)
+      withinTwoThirdsColumn(page.getByText(copy.guidance.intro))
+    ).toHaveCount(1)
     await expect(
-      page.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toBeVisible()
+      withinTwoThirdsColumn(
+        page.getByRole('heading', { name: copy.title, level: 1 })
+      )
+    ).toHaveCount(1)
+    await expect(
+      withinTwoThirdsColumn(card.getByLabel(copy.reference.label))
+    ).toHaveCount(1)
+    await expect(
+      withinTwoThirdsColumn(card.getByRole('button', { name: copy.addAnother }))
+    ).toHaveCount(1)
   })
 
   test('back link returns to the overview', async ({ page }) => {
@@ -462,7 +551,7 @@ test.describe('document upload oversize validation', () => {
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
-    await expect(page.getByText(copy.empty)).toBeVisible()
+    await expectNoDocumentsAdded(page)
   })
 })
 
@@ -545,24 +634,43 @@ test.describe('document upload saved rows', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const fileUpload = page.getByRole('region', {
-      name: copy.fileUploadHeading
-    })
+    const fileUpload = fileUploadCard(page)
     await expect(
       rowFor(fileUpload, validDocument.accompanyingDocumentReference)
     ).toBeVisible()
+    await expectSaveAndContinueOutsideCard(page)
+  })
+
+  test('keeps a long reference inside the full-width card, with the table outside any two-thirds column', async ({
+    page
+  }) => {
+    test.slow()
+    await expectLongReferenceFitsCard(page)
+  })
+
+  test('lists the document under five headings with View file and Remove right-aligned at the end of the row', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page)
+    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    await expect(row).toContainText(copy.scanTags.complete)
+
     await expect(
-      fileUpload.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toHaveCount(0)
+      addedDocumentsTable(page).getByRole('columnheader')
+    ).toHaveText([
+      copy.table.reference,
+      copy.table.type,
+      copy.table.dateOfIssue,
+      copy.table.status,
+      copy.table.actionsHidden
+    ])
+    const actionsCell = actionsCellOf(row)
+    await expectViewFileAndRemoveInCell(actionsCell)
+    await expect(actionsCell).toHaveCSS('text-align', 'right')
     await expect(
-      page.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toBeVisible()
+      addedDocumentsTable(page).getByRole('columnheader').last()
+    ).toHaveCSS('text-align', 'right')
   })
 
   test('keeps stating the document limit once a document is saved', async ({
@@ -598,7 +706,7 @@ test.describe('document upload saved rows', () => {
     expect((await response.text()).startsWith('%PDF-')).toBe(true)
   })
 
-  test('removes a saved document and restores the empty state', async ({
+  test('removes a saved document and leaves the page showing no added-documents table', async ({
     page
   }) => {
     test.slow()
@@ -611,7 +719,7 @@ test.describe('document upload saved rows', () => {
       })
       .click()
     await expect(row).toHaveCount(0)
-    await expect(page.getByText(copy.empty)).toBeVisible()
+    await expectNoDocumentsAdded(page)
   })
 })
 
@@ -621,7 +729,7 @@ test.describe('document upload capacity and accessibility', () => {
     await openDocuments(page)
   })
 
-  test('rejects another upload after the maximum document capacity is reached', async ({
+  test('refuses a sixteenth document with the limit message in the summary and on the Attachment field, keeping the typed reference', async ({
     page
   }) => {
     test.slow()
@@ -643,7 +751,10 @@ test.describe('document upload capacity and accessibility', () => {
     const link = errorLink(page, message)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page).toHaveURL(/#documents-added$/)
+    await expect(uploadControl(page)).toBeFocused()
+    await expect(page.locator('#file-error')).toHaveText(
+      `${copy.errors.hiddenPrefix} ${message}`
+    )
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(
       'ITAHC-ONE-TOO-MANY'
     )
@@ -691,6 +802,39 @@ test.describe('document upload capacity and accessibility', () => {
     await expectNoSeriousOrCriticalViolations(
       page,
       'Populated document upload page'
+    )
+  })
+})
+
+test.describe('document upload page without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDocuments(page)
+  })
+
+  test('lays out the empty page with two-thirds guidance and a full-width card showing no added-documents table', async ({
+    page
+  }) => {
+    const card = fileUploadCard(page)
+    await expect(
+      withinTwoThirdsColumn(page.getByText(copy.guidance.intro))
+    ).toHaveCount(1)
+    await expect(withinFullWidthColumn(card)).toHaveCount(1)
+    await expect(withinTwoThirdsColumn(card)).toHaveCount(0)
+    await expectNoDocumentsAdded(page)
+  })
+
+  test('keeps a long reference inside the card with View file and Remove on the row', async ({
+    page
+  }) => {
+    await expectLongReferenceFitsCard(page, {
+      afterUpload: () =>
+        page.getByRole('link', { name: copy.refreshStatus }).click()
+    })
+    await expectViewFileAndRemoveInCell(
+      actionsCellOf(rowFor(page, LONG_REFERENCE))
     )
   })
 })

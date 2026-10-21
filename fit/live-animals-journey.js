@@ -50,6 +50,38 @@ export const expectNoSeriousOrCriticalViolations = async (page, subject) => {
   ).toEqual([])
 }
 
+/**
+ * Fails when the element's content is wider than the element.
+ *
+ * @param {import('@playwright/test').Locator} element
+ * @param {string} subject - names the element in the failure message.
+ */
+export const expectNoHorizontalOverflow = async (element, subject) => {
+  const { overflowsBy, offenders } = await element.evaluate((el) => {
+    const rightEdge = el.getBoundingClientRect().left + el.clientWidth
+    const textSnippetOf = (descendant) =>
+      (descendant.textContent ?? '').trim().slice(0, 30)
+    return {
+      overflowsBy: el.scrollWidth - el.clientWidth,
+      offenders: [...el.querySelectorAll('*')]
+        .filter(
+          (descendant) => descendant.getBoundingClientRect().right > rightEdge
+        )
+        .slice(0, 10)
+        .map(
+          (descendant) =>
+            `${descendant.tagName.toLowerCase()}.${descendant.className || '(no class)'} "${textSnippetOf(descendant)}"`
+        )
+    }
+  })
+  const viewportWidth = element.page().viewportSize().width
+
+  expect(
+    overflowsBy,
+    `${subject} overflows horizontally at ${viewportWidth}px: ${offenders.join(', ')}`
+  ).toBeLessThanOrEqual(0)
+}
+
 export const FORM_GROUP_ANCESTOR_XPATH =
   'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
 

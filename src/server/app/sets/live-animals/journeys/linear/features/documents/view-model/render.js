@@ -40,11 +40,16 @@ export const render = ({
       request,
       backLink: hubPath(journey.journeyId),
       journey,
-      page
+      page,
+      surface: 'display'
     }),
     ...extra,
     copy,
     rows: documentRows(documents, journey.journeyId),
+    additionalDocumentRows: copy.guidance.additional.rows.map((row) => [
+      { text: row.consignment },
+      { text: row.documents }
+    ]),
     hasDocuments: documents.length > 0,
     values,
     errors,

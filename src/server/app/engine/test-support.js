@@ -3,6 +3,7 @@ import Hapi from '@hapi/hapi'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
 import { config } from '../../../config/config.js'
 import { buildDispatch } from '../flow/dispatch.js'
+import { currentSetId } from '../shared/set-context.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { store } from './store.js'
@@ -144,6 +145,11 @@ export const journeyRequest = (
   }
 })
 
+/** The text a copy leaf gives: the string itself, or what the copy function
+ * returns for the sample arguments. */
+export const sampleText = (value, sampleArguments) =>
+  typeof value === 'function' ? value(...sampleArguments) : value
+
 export const recordingH = () => cookieRecorder()
 
 export const backendJourneyId = 'GBN-AG-26-ABC123'
@@ -175,9 +181,18 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
+const recordsRejectingSaves = (failure) => ({
+  ...recordsStub,
+  replaceFulfilment: async () => {
+    throw failure
+  }
+})
+
 /** Seeds a journey, runs one handler against it and reports the answers before
  * and after. `amend` submits the journey and opens an amendment first;
- * `pathOf(journeyId)` gives the request the path it was made to. */
+ * `pathOf(journeyId)` gives the request the path it was made to;
+ * `saveFailure` makes the records store refuse every save the handler makes
+ * with that error. */
 export const driveHandler = async (
   handler,
   {
@@ -187,6 +202,7 @@ export const driveHandler = async (
     query = {},
     state = {},
     amend = false,
+    saveFailure,
     pathOf
   } = {}
 ) => {
@@ -204,14 +220,23 @@ export const driveHandler = async (
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
-  const response = await handler(request, h)
+  if (saveFailure) {
+    configureRecords(currentSetId(), recordsRejectingSaves(saveFailure))
+  }
+  let response
+  try {
+    response = await handler(request, h)
+  } finally {
+    configureRecords(currentSetId(), recordsStub)
+  }
   const after = (await store.get(journey.journeyId)).answers
   return {
     journeyId: journey.journeyId,
     before: seed,
     after,
     response,
-    view: h.captured.view
+    view: h.captured.view,
+    logger: request.logger
   }
 }
 

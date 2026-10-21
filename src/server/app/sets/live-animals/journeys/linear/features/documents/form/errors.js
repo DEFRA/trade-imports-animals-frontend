@@ -3,7 +3,6 @@ import { validate } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import {
   FILE_TYPE_MESSAGE,
@@ -15,9 +14,6 @@ import { fields } from './payload.js'
 
 const copy = copyFor({ en, cy })
 
-// Every document field is mandatory per record and there is no edit
-// page — a record added with blanks could never be completed in place,
-// so presence is enforced at add time.
 export const presenceErrors = (entry) => ({
   ...(entry.accompanyingDocumentReference
     ? {}
@@ -40,9 +36,6 @@ export const fileErrors = (file) => {
   return {}
 }
 
-// The error summary lists the fields in the order it is handed them, and the
-// summary has to read down the page. Presence and format rules fire in their
-// own order, so the merged result is rebuilt in the page's order.
 const FIELD_ORDER = [
   'accompanyingDocumentReference',
   'accompanyingDocumentType',
@@ -67,9 +60,6 @@ export const documentAddErrors = (payload, bare, pendingDocumentSave) => {
   })
 }
 
-export const capacityExceededError = () => [
-  {
-    text: copy.errors.maxDocuments(MAX_DOCUMENTS),
-    href: DOCUMENTS_ADDED_ANCHOR
-  }
-]
+export const capacityExceededFieldErrors = () => ({
+  file: copy.errors.maxDocuments(MAX_DOCUMENTS)
+})

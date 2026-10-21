@@ -3,6 +3,7 @@ import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   BASE,
   completeAnswerSections,
+  expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   openReviewFromHub,
@@ -42,26 +43,8 @@ const stageSubmittedNotification = async (page) => {
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
 
-const overflowReport = () => {
-  const root = document.documentElement
-  const offenders = [...document.querySelectorAll('body *')]
-    .map((element) => ({
-      selector: `${element.tagName.toLowerCase()}.${element.className || '(no class)'}`,
-      right: Math.round(element.getBoundingClientRect().right)
-    }))
-    .filter(({ right }) => right > root.clientWidth)
-    .slice(0, 10)
-  return { overflow: root.scrollWidth - root.clientWidth, offenders }
-}
-
-const expectNoHorizontalOverflow = async (page) => {
-  const { overflow, offenders } = await page.evaluate(overflowReport)
-
-  expect(
-    overflow,
-    `Dashboard overflows at ${page.viewportSize().width}px: ${JSON.stringify(offenders)}`
-  ).toBeLessThanOrEqual(0)
-}
+const expectDashboardNotToOverflow = (page) =>
+  expectNoHorizontalOverflow(page.locator('html'), 'Dashboard')
 
 const startTwoNotifications = async (page) => {
   await startNotification(page)
@@ -149,13 +132,13 @@ test.describe('dashboard feature — notification rows and actions', () => {
       page.getByRole('heading', { name: reference, exact: true })
     ).toBeVisible()
 
-    await expectNoHorizontalOverflow(page)
+    await expectDashboardNotToOverflow(page)
 
     await page.setViewportSize({
       width: DESKTOP_BREAKPOINT_WIDTH,
       height: 900
     })
-    await expectNoHorizontalOverflow(page)
+    await expectDashboardNotToOverflow(page)
   })
 
   test('draft notification renders only its available actions', async ({

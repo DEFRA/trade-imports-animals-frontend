@@ -196,6 +196,34 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a part-filled form rather than dropping it.
 - The file size limit is held at 10 MB so the request stays inside the CDP
   ingress body cap.
+- The page uses the full-width surface so the added-documents table fits. The
+  guidance and the fields keep a two-thirds reading width.
+- With no documents, the File upload card shows no table and no sentence.
+- The Document reference field has no hint.
+- The reference cell breaks a long unbroken reference onto further lines, so
+  the table stays inside the card. The actions sit at the right-hand end of
+  each row.
+- Exception to the "no custom CSS" rule in `.claude/rules/gds.md`: the
+  reference cell carries `app-table__cell--break-anywhere`.
+  `govuk-!-text-break-word` sets only `overflow-wrap: break-word`, which
+  leaves a table cell's minimum width at the unbroken reference, so a
+  reference of the maximum length pushes the table past the card.
+- The limit error belongs to the Attachment field: the summary links to it and
+  the same message shows on it.
+- Every document field is mandatory per record and there is no edit page, so
+  presence is checked when a document is added.
+- The error summary lists the fields in the order they appear on the page.
+- A saved document returns the trader to the page, so a reload cannot replay
+  the save. Continue is pressed again from the fresh page once scans settle.
+- A file still being checked holds Continue back. The exit to the overview
+  does not wait.
+- A well-formed upload id from another journey answers 404, not 403, so the
+  journey never confirms that upload exists.
+- The drop zone wording matches the design system's own defaults.
+- A document's file is opened with a link, not a submit, so it needs no crumb.
+  A file is offered only once its scan has settled clean.
+- The Status tag carries a visually hidden name for the document it belongs
+  to, so a screen reader hears what was checked.
 
 ## Transport
 
