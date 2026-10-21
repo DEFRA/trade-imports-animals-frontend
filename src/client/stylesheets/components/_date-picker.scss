@@ -14,3 +14,19 @@ $app-date-picker-calendar-max-width: 360px;
 .app-date-picker .moj-datepicker__toggle {
   @extend %blue-icon-button;
 }
+
+.app-date-picker .moj-datepicker__button--selected:focus:not(:focus-visible) {
+  outline-color: transparent;
+  color: govuk-colour("white");
+  background-color: govuk-colour("blue");
+
+  &::after {
+    background-color: govuk-colour("blue");
+  }
+}
+
+.app-date-picker
+  .moj-datepicker__calendar
+  tbody:focus-within:not(:has(:focus-visible)) {
+  outline: none;
+}

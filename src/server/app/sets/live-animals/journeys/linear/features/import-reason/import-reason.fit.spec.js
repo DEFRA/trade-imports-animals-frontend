@@ -3,7 +3,9 @@ import { expect, test } from '@playwright/test'
 import {
   chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
+  describeDatePickerLook,
   expectNoSeriousOrCriticalViolations,
+  openDatePicker,
   renderedCountriesIn,
   startNotificationAtImportReason,
   urlUnderBase
@@ -421,6 +423,21 @@ test.describe('import-reason reveals', () => {
   })
 })
 
+test.describe('import-reason exit date calendar', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtImportReason(page)
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+  })
+
+  describeDatePickerLook({
+    fieldName: 'exit date',
+    label: copy.date.label,
+    nextQuestionLabel: (page) =>
+      page.locator('label[for="temporaryAdmissionPortOfExit"]')
+  })
+})
+
 test.describe('import-reason destination territories', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -682,9 +699,7 @@ test.describe('import-reason reveal accessibility', () => {
     page
   }) => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
-    const reveal = await revealFor(page, 'temporaryAdmissionHorses')
-    await reveal.getByRole('button', { name: CHOOSE_DATE_LABEL }).click()
-    await expect(reveal.getByRole('dialog')).toBeVisible()
+    await openDatePicker(page, copy.date.label)
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
   })

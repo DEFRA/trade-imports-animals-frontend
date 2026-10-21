@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
+  describeDatePickerLook,
   expectNoSeriousOrCriticalViolations,
+  openDatePicker,
   openDocuments,
   setUploadFile,
   signIn,
@@ -148,7 +150,6 @@ test.describe('document upload page', () => {
       copy.types.OTHER
     ])
 
-    // A locator resolves in document order, so this pins where the select sits.
     const controlIds = await page
       .locator(
         '#accompanyingDocumentReference, #accompanyingDocumentType, #accompanyingDocumentDateOfIssue'
@@ -194,6 +195,12 @@ test.describe('document upload page', () => {
   test('back link returns to the overview', async ({ page }) => {
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  describeDatePickerLook({
+    fieldName: 'date of issue',
+    label: copy.dateOfIssue.label,
+    nextQuestionLabel: (page) => page.locator('label[for="file"]')
   })
 })
 
@@ -370,8 +377,6 @@ test.describe('document upload file validation', () => {
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
-    // The rule the trader has just fallen foul of stays in the hint on the
-    // error state, so they can read why the archive was refused.
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
   })
 })
@@ -406,8 +411,6 @@ test.describe('document upload oversize validation', () => {
       '[data-client-error="file-size-message"]'
     )
     await expect(clientMessage).toContainText(OVERSIZE_FILE_MESSAGE)
-    // GDS order is label, hint, error, control: the message goes above the
-    // whole drop zone, never inside it under the Choose file button.
     await expect(
       page.locator(
         '.govuk-file-upload-wrapper [data-client-error="file-size-message"]'
@@ -421,9 +424,6 @@ test.describe('document upload oversize validation', () => {
     await expectPreservedMetadata(page)
   })
 
-  // The enhanced upload renames the input to file-input and gives the new
-  // button the original id, so the summary link has to point at the button.
-  // Pointing it at the input sends focus to a hidden element.
   test('file validation: the client-side oversize summary link focuses the upload control', async ({
     page
   }) => {
@@ -466,9 +466,6 @@ test.describe('document upload oversize validation', () => {
   })
 })
 
-// Continue posts the add-a-document fields with it, so a trader who fills the
-// form and presses the primary button has to end up with the document saved or
-// told what is missing — never carried on with the file quietly dropped.
 test.describe('document upload continue', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -576,9 +573,6 @@ test.describe('document upload saved rows', () => {
     await expect(
       rowFor(page, validDocument.accompanyingDocumentReference)
     ).toBeVisible()
-    // The limit bullet stays on the page once rows exist, so the trader sees the
-    // total on the populated state — not only on the empty page and not only
-    // once they are refused.
     await expect(
       page.getByText(copy.file.upToMaximum(MAX_DOCUMENTS))
     ).toBeVisible()
@@ -679,8 +673,7 @@ test.describe('document upload capacity and accessibility', () => {
   test('document date picker has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Choose date' }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await openDatePicker(page, copy.dateOfIssue.label)
     await expectNoSeriousOrCriticalViolations(
       page,
       'Document date picker dialog'

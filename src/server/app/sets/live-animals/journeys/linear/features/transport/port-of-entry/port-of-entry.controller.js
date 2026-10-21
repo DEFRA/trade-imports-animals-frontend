@@ -75,17 +75,10 @@ const render = async (
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
-      maxDate: dateWindow.maxText,
-      // Opens the calendar in the flow of the page so it pushes the port and
-      // transport questions down rather than covering them.
-      formGroupClasses: 'app-date-picker'
+      maxDate: dateWindow.maxText
     })
   })
 
-// The stored answers go back through the page's own rules on the way in, so an
-// answer the reference data has moved past is named here rather than surviving
-// to the review page. A port that is no longer offered cannot be the select's
-// value either: the control opens on its placeholder with the message above it.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const dateWindow = arrivalWindow()
@@ -94,8 +87,6 @@ const get = async (request, h) => {
 }
 
 const post = async (request, h) => {
-  // One clock read per request: two would let the widget bounds and the server
-  // bounds disagree across a midnight boundary.
   const dateWindow = arrivalWindow()
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},

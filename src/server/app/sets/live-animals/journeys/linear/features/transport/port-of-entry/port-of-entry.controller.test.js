@@ -72,7 +72,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should wipe the transited countries when the means changes off the overland set (scope-exit wipe survives the merge)', async () => {
+  it('Should wipe the transited countries when the means changes off the overland set', async () => {
     const result = await driveHandler(post, {
       seed: {
         meansOfTransport: 'ROAD_VEHICLE',
@@ -165,19 +165,11 @@ describe('port-of-entry — the arrival-date window', () => {
   beforeEach(() => store.clear())
   afterAll(() => vi.useRealTimers())
 
-  it('Should hand the picker the window bounds so the calendar cannot offer a date outside it', async () => {
+  it('Should hand the picker the window bounds', async () => {
     const result = await driveHandler(get)
 
     expect(result.view.context.arrivalDate.minDate).toBe(dateWindow.minText)
     expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
-  })
-
-  it('Should mark the picker in-flow so an open calendar pushes the questions below it down rather than covering them', async () => {
-    const result = await driveHandler(get)
-
-    expect(result.view.context.arrivalDate.formGroup).toEqual({
-      classes: 'app-date-picker'
-    })
   })
 
   it.each([
@@ -191,8 +183,6 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.arrivalDateAtPort).toBe(outOfRangeError)
     expect(result.after).toEqual(result.before)
-    // The re-rendered picker keeps its bounds, so the calendar a user is sent
-    // back to still refuses what the server just refused.
     expect(result.view.context.arrivalDate.minDate).toBe(dateWindow.minText)
     expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
   })
@@ -255,8 +245,6 @@ describe('port-of-entry — the arrival-date window', () => {
   })
 })
 
-// `GB ZZZ` is absent from the captured ports fixture, so it doubles as an
-// out-of-list "stale" stored code.
 describe('GET port-of-entry — a stored port the reader no longer offers', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -286,7 +274,7 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
     )
   })
 
-  it('Should leave the stored port intact — GET only reshapes what the page renders', async () => {
+  it('Should leave the stored port intact', async () => {
     const result = await driveHandler(get, {
       seed: { portOfEntry: 'GB ZZZ' }
     })
@@ -329,7 +317,7 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
   })
   beforeEach(() => store.clear())
 
-  it('Should validate against the list as primed at POST time, not as imported', async () => {
+  it('Should validate against the list as primed at POST time', async () => {
     serveReferenceData([{ code: 'ZZ 001', name: 'Zedport' }])
     await ports.ensureLoaded()
 

@@ -1,17 +1,15 @@
 import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
-  GOVUK_BLUE,
-  GOVUK_BLUE_SHADE_50,
-  WHITE,
   MEANS_OF_TRANSPORT_SELECT,
   addTransitCountry,
   choosePortOfEntry,
-  computedStyle,
+  describeDatePickerLook,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openArrival,
+  openDatePicker,
   openTransit,
   signIn,
   values
@@ -42,11 +40,6 @@ const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
-const CHOOSE_DATE_BUTTON_NAME = 'Choose date'
-const GOVUK_BLUE_SHADE_25 = 'rgb(22, 84, 138)'
-const GOVUK_FOCUS = 'rgb(255, 221, 0)'
-const GOVUK_FOCUS_TEXT = 'rgb(11, 12, 12)'
-const BACKGROUND_COLOR = 'background-color'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -71,14 +64,6 @@ const showMonth = async (page, target, from) => {
     await page.getByRole('button', { name }).click()
   }
 }
-
-// Positions measured against the document, not the viewport, so a scroll
-// between two measurements cannot make an unmoved element look like it moved.
-const documentTop = (locator) =>
-  locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
-
-const documentBottom = (locator) =>
-  locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
 
 const ERROR_SUMMARY = '.govuk-error-summary'
 
@@ -147,16 +132,12 @@ test.describe('arrival details rendering', () => {
   }) => {
     await openArrival(page)
 
-    // The hint is a worked example of the date format; the
-    // window it must fall in is policed by the picker's own bounds below.
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveAccessibleDescription(
       copy.portOfEntry.arrivalDate.hint(dateWindow.exampleText)
     )
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
-    // Means of transport is a dropdown: it opens on the placeholder with
-    // nothing chosen, and the four options are the reference list in order.
     const means = page.getByLabel(copy.portOfEntry.means.label, { exact: true })
     await expect(means).toBeVisible()
     await expect(means).toHaveValue('')
@@ -167,8 +148,6 @@ test.describe('arrival details rendering', () => {
       copy.portOfEntry.means.placeholder,
       ...Object.values(copy.portOfEntry.means.options)
     ])
-    // The transport identification hint is a lead-in sentence plus one bullet
-    // per alternative, so it is asserted as a list.
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveAttribute('aria-describedby', /transportIdentification-hint/)
@@ -208,14 +187,10 @@ test.describe('arrival details rendering', () => {
 test.describe('port of entry type-ahead', () => {
   test('shows the full list of ports on focus', async ({ page }) => {
     await openArrival(page)
-    // showAllValues: clicking the field opens the menu with every port,
-    // before the user types anything.
     await page.getByLabel(copy.portOfEntry.port.label, { exact: true }).click()
     await expect(
       page.getByRole('option', { name: DOVER_OPTION, exact: true })
     ).toBeVisible()
-    // Scoped to the type-ahead's own menu: the means-of-transport dropdown
-    // puts options on the page too, and they are not ports.
     await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(
       portsOfEntry.length
     )
@@ -231,11 +206,9 @@ test.describe('port of entry type-ahead', () => {
       exact: true
     })
 
-    // Matches part of the port name, case-insensitive.
     await field.fill('DOV')
     await expect(doverOption).toBeVisible()
 
-    // The same field matches by port code.
     await field.fill('gb dvr')
     await expect(doverOption).toBeVisible()
   })
@@ -284,6 +257,19 @@ test.describe('port of entry without JavaScript', () => {
   })
 })
 
+test.describe('arrival date calendar', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openArrival(page)
+  })
+
+  describeDatePickerLook({
+    fieldName: 'arrival date',
+    label: copy.portOfEntry.arrivalDate.label,
+    nextQuestionLabel: (page) => page.locator('label[for="portOfEntry"]')
+  })
+})
+
 test.describe('arrival details validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -309,72 +295,11 @@ test.describe('arrival details validation', () => {
     await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 
-  test('the open calendar sits in the flow of the page and pushes the port question below it', async ({
-    page
-  }) => {
-    await openArrival(page)
-    const port = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
-    const closed = await documentTop(port)
-
-    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog).toBeVisible()
-
-    const calendarBottom = await documentBottom(dialog)
-    const open = await documentTop(port)
-
-    // The calendar takes up room rather than floating: the port question moves
-    // down the page ...
-    expect(open).toBeGreaterThan(closed)
-    // ... and starts below the calendar's bottom edge instead of behind it.
-    expect(open).toBeGreaterThanOrEqual(calendarBottom)
-  })
-
-  test('the button that opens the calendar is a blue button with a white icon', async ({
-    page
-  }) => {
-    await openArrival(page)
-    const toggle = page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME })
-    await expect(toggle).toBeVisible()
-
-    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(GOVUK_BLUE)
-    // The icon paints itself with currentColor, so the button's text colour is
-    // the icon's colour.
-    expect(await computedStyle(toggle, 'color')).toBe(WHITE)
-    expect(await computedStyle(toggle, 'border-bottom-width')).toBe('0px')
-    // The darker blue bottom edge a GOV.UK button carries.
-    expect(await computedStyle(toggle, 'box-shadow')).toContain(
-      GOVUK_BLUE_SHADE_50
-    )
-
-    // Hovering darkens the blue rather than handing hover back to the
-    // component's grey default.
-    await toggle.hover()
-    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(
-      GOVUK_BLUE_SHADE_25
-    )
-    expect(await computedStyle(toggle, 'color')).toBe(WHITE)
-  })
-
-  test('the button that opens the calendar keeps the GOV.UK focus indicator', async ({
-    page
-  }) => {
-    await openArrival(page)
-    const toggle = page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME })
-    await toggle.focus()
-
-    // The component drops the browser's own focus ring, so our restated focus
-    // rule is the only thing drawing the indicator.
-    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(GOVUK_FOCUS)
-    expect(await computedStyle(toggle, 'color')).toBe(GOVUK_FOCUS_TEXT)
-  })
-
   test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await openDatePicker(page, copy.portOfEntry.arrivalDate.label)
 
     const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
     const dayBefore = addUtcDays(dateWindow.min, -1)
@@ -398,8 +323,6 @@ test.describe('arrival details validation', () => {
     ).toHaveValue(dateWindow.minText)
   })
 
-  // The hint's example is computed rather than hard-coded precisely so it never
-  // goes stale into a date the service would then reject.
   test('the worked example in the arrival date hint is itself accepted', async ({
     page
   }) => {
@@ -637,8 +560,6 @@ test.describe('transit countries rendering and validation', () => {
     await expect(
       page.getByRole('button', { name: copy.transitCountries.add, exact: true })
     ).toBeVisible()
-    // Nothing added yet, so there is no table to read back — just the sentence
-    // that says so, and no cap stated up front.
     await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
     await expect(page.getByRole('table')).toHaveCount(0)
     await expect(
@@ -687,8 +608,6 @@ test.describe('transit countries rendering and validation', () => {
     ).toBeVisible()
   })
 
-  // The question is asked overland but never compulsory, so an empty list is
-  // an answer: continuing without adding a country saves it and moves on.
   test('transit countries are optional: continuing with none saves and returns to the overview', async ({
     page
   }) => {
@@ -741,8 +660,6 @@ test.describe('transit countries rendering and validation', () => {
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.locator(transitCountryInput)).toBeFocused()
-    // The refused value does not survive the re-render: a code the list does
-    // not contain is never rendered back.
     expect(await addedCountries(page)).toEqual([])
     await expect(page.getByRole('cell', { name: 'INVALID' })).toHaveCount(0)
   })
@@ -785,14 +702,10 @@ test.describe('transit countries list, limits and persistence', () => {
       page.getByRole('cell', { name: 'France', exact: true })
     ).toBeVisible()
     await expect(removeControl(page, 'France')).toBeVisible()
-    // The mechanism, not just the string: strip the ARIA attributes and this
-    // region stops being a status, whatever text it ends up holding.
     const statusRegion = page.locator(transitStatus)
     await expect(statusRegion).toHaveAttribute('role', 'status')
     await expect(statusRegion).toHaveAttribute('aria-live', 'polite')
     await expect(statusRegion).toHaveAttribute('aria-atomic', 'true')
-    // The message ships in the attribute and is written into the region after
-    // load — content already there at parse is not announced.
     await expect(statusRegion).toHaveAttribute(
       'data-message',
       copy.transitCountries.added('France')
@@ -800,7 +713,6 @@ test.describe('transit countries list, limits and persistence', () => {
     await expect(page.locator(transitStatus)).toHaveText(
       copy.transitCountries.added('France')
     )
-    // The search box is cleared and ready for the next one.
     await expect(page.locator(transitCountryInput)).toHaveValue('')
     expect(await addedCountries(page)).toEqual(['FR'])
   })
@@ -843,17 +755,12 @@ test.describe('transit countries list, limits and persistence', () => {
       page.getByRole('button', { name: copy.transitCountries.add, exact: true })
     ).toHaveCount(0)
     const limit = copy.transitCountries.limitReached(MAX_TRANSITED_COUNTRIES)
-    // On the page for anyone reading it, and in the live region for anyone
-    // who will not see it appear.
     await expect(page.locator(transitLimit)).toHaveText(limit)
     await expect(page.locator(transitStatus)).toContainText(limit)
-    // The country that reached the cap is said in the same breath as the cap.
     await expect(page.locator(transitStatus)).toContainText(
       copy.transitCountries.added(last.name)
     )
 
-    // Removing one brings the search back, so a thirteenth is never offered
-    // and a swap is always possible.
     await removeControl(page, last.name).click()
     await expect(transitField(page)).toBeVisible()
   })
@@ -894,8 +801,6 @@ test.describe('transit countries list, limits and persistence', () => {
     await expect(
       page.getByRole('cell', { name: 'Belgium', exact: true })
     ).toBeVisible()
-    // Nothing is announced on a fresh load — the live region only speaks for a
-    // change the trader has just made.
     await expect(page.locator(transitStatus)).toHaveText('')
   })
 })
@@ -926,8 +831,7 @@ test.describe('arrival and transit accessibility', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: CHOOSE_DATE_BUTTON_NAME }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await openDatePicker(page, copy.portOfEntry.arrivalDate.label)
     await expectNoSeriousOrCriticalViolations(
       page,
       'Arrival details with date picker open'

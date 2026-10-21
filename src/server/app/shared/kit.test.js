@@ -25,7 +25,7 @@ describe('#isHubExit — the Save and return to overview submit', () => {
 })
 
 describe('#dateField — MoJ date-picker view model', () => {
-  it('Should carry supplied bounds through verbatim so the macro emits the restriction attributes', () => {
+  it('Should carry supplied bounds and value as d/m/yyyy text', () => {
     const field = dateField('arrivalDateAtPort', {
       label: 'Arrival date at port of entry',
       value: { day: '3', month: '1', year: '2027' },
@@ -38,26 +38,39 @@ describe('#dateField — MoJ date-picker view model', () => {
     expect(field.value).toBe('3/1/2027')
   })
 
-  it('Should leave both bounds undefined when none are supplied, so an unrestricted picker stays unrestricted', () => {
+  it('Should leave both bounds undefined when none are supplied', () => {
     const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.minDate).toBeUndefined()
     expect(field.maxDate).toBeUndefined()
   })
 
-  it('Should carry form-group classes through, so a stylesheet can reach one picker rather than all of them', () => {
-    const field = dateField('arrivalDateAtPort', {
-      label: 'Arrival date at port of entry',
-      formGroupClasses: 'app-date-picker'
-    })
+  it('Should give the form group exactly the house date-picker class when the page passes no classes', () => {
+    const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.formGroup).toEqual({ classes: 'app-date-picker' })
   })
 
-  it('Should leave the form group undefined when no classes are supplied, so the macro emits the default markup', () => {
-    const field = dateField('exitDate', { label: 'Exit date' })
+  it('Should follow the house date-picker class with the classes the page passes', () => {
+    const field = dateField('exitDate', {
+      label: 'Exit date',
+      formGroupClasses: 'govuk-!-margin-bottom-6'
+    })
 
-    expect(field.formGroup).toBeUndefined()
+    expect(field.formGroup).toEqual({
+      classes: 'app-date-picker govuk-!-margin-bottom-6'
+    })
+  })
+
+  it('Should set the label in the size the page asks for, and small when it asks for none', () => {
+    const medium = dateField('entryDate', {
+      label: 'Entry date',
+      labelClasses: 'govuk-label--m'
+    })
+    const unasked = dateField('otherDate', { label: 'Other date' })
+
+    expect(medium.label.classes).toBe('govuk-label--m')
+    expect(unasked.label.classes).toBe('govuk-label--s')
   })
 })
 
