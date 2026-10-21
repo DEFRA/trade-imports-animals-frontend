@@ -164,7 +164,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   describe('#removeEntryAt — the purge is evaluator-authoritative', () => {
     it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
-      // triggering commodity (Cow) existing in ANY line, and carries wipeOnExit.
+      // triggering commodity (0102) existing in ANY line, and carries wipeOnExit.
       await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
@@ -172,7 +172,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
           { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       })
-      // After removing the Cow line, the evaluator owns the wipe decision.
+      // After removing the 0102 line, the evaluator owns the wipe decision.
       const afterRemoval = {
         containsUnweanedAnimals: 'no',
         commodityLines: [
