@@ -15,10 +15,25 @@ export const MAX_TRANSITED_COUNTRIES = 12
 // page anchors to that control.
 export const COUNTRY_FIELD = 'transitedCountry'
 
+/**
+ * Every country and subdivision reference data serves, each subdivision named
+ * with its parent country, in one alphabetical list.
+ * @returns {Promise<{ value: string, text: string }[]>}
+ */
+export const offeredCountries = () => countries.destinationCountryOptions()
+
 // The offered list, not the label lookup: GB resolves for address forms but
 // is not a country this page offers.
 export const offeredCodes = async () =>
-  new Set((await countries.originCountries()).map(({ value }) => value))
+  new Set((await offeredCountries()).map(({ value }) => value))
+
+/**
+ * The name the page shows for an offered code.
+ * @param {string} code
+ * @returns {Promise<string | undefined>} `undefined` for a code the list does not hold
+ */
+export const offeredLabel = async (code) =>
+  (await offeredCountries()).find(({ value }) => value === code)?.text
 
 // Empty is fine — the question is optional. Too long or
 // holding a country the service no longer offers is not: on submit because

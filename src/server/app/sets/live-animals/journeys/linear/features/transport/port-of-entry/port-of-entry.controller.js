@@ -76,6 +76,7 @@ const render = async (
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
       maxDate: dateWindow.maxText,
+      labelClasses: 'govuk-label--m',
       // Opens the calendar in the flow of the page so it pushes the port and
       // transport questions down rather than covering them.
       formGroupClasses: 'app-date-picker'
