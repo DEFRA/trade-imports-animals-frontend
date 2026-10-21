@@ -96,7 +96,32 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   no query or change context.
 - An identifier has one name, used both on the entry field and as the
   saved-animals column heading.
+- The saved-animals table has one column per identifier the commodity
+  declares, not per identifier the trader filled. The header row says which
+  identifiers the line expects, and an empty cell shows which are still
+  missing.
 - A consignment with nothing to identify skips the page.
+- The phone field is the one permanent-address field with a hint. A trader
+  giving an address outside the UK cannot otherwise know the number is dialled
+  from here.
+
+## Commodity pages
+
+- A choice made under an earlier search has no tick box on screen, so it is
+  sent back with the form as a hidden value.
+- Commodity code 01061900 covers several commodities and hundreds of species.
+  Each chosen species gets its own Selected commodities row, named by the
+  species.
+- The commodity heading on Commodity details is set at the larger size because
+  the commodity blocks are the substance of the page. The type steps down from
+  commodity to species to quantity labels, and the labels carry a size so they
+  do not read at the weight of their hints.
+- The number of animals question has no hint because the page repeats it per
+  species, so an example would repeat with it.
+- Each search option shows its common name with the Latin name in brackets, so
+  a trader who does not read Latin can tell the tick boxes apart.
+- The inset's second sentence stops a reader concluding that goods with no
+  certificate need no notification.
 
 ## CPH number
 

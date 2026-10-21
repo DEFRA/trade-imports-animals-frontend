@@ -19,8 +19,7 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
   if (!Number.isInteger(entered) || entered >= records) {
     return []
   }
-  const species =
-    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
+  const species = commodities.speciesLatinName(entry.speciesSelection)
   return [
     {
       field: animalsField(index),

@@ -15,9 +15,7 @@ import { identifierCellText, identifierColumns } from '../identifier/table.js'
 const copy = copyFor({ en, cy }).identification
 
 const speciesTextOf = (entry) =>
-  commodities.speciesLabel(entry.speciesSelection) ??
-  entry.speciesSelection ??
-  ''
+  commodities.speciesLatinName(entry.speciesSelection) ?? ''
 
 const cardTitleOf = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()

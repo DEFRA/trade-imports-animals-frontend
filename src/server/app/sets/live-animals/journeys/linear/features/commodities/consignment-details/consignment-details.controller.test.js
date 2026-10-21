@@ -1,6 +1,4 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import Crumb from '@hapi/crumb'
-import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -11,10 +9,10 @@ import { configureSession } from '../../../../../../../engine/persistence/sessio
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
+  crumbProtectedServerMounting,
   driveHandler,
   postHandlerOf,
   journeyRequest,
-  registerTestSessionAuth,
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -24,6 +22,8 @@ import * as consignmentDetails from './consignment-details.controller.js'
 const post = postHandlerOf(consignmentDetails)
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
+const PACKAGES_WHOLE_NUMBER_MESSAGE =
+  'Number of packages must be a whole number, like 5'
 const PAGE_SLUG = 'consignment-details'
 const COMMODITIES_SLUG = 'commodities'
 
@@ -49,8 +49,6 @@ const seedLines = () => ({
   ]
 })
 
-// Cow (0102) holds two species, Dog and Cat share commodity code 01061900 —
-// the code the design lists species by species.
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     {
@@ -124,7 +122,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
   beforeEach(() => store.clear())
 
-  it("Should save each line's own quantities, packages only where the commodity applies", async () => {
+  it("Should save each line's own quantities, keeping a package count only where the commodity takes one", async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -133,7 +131,6 @@ describe('#consignmentDetailsController — per-species quantities over every li
         'numberOfAnimalsQuantity-1': '10',
         'numberOfPackages-1': '2',
         'numberOfAnimalsQuantity-2': '40',
-        // Fish takes no package count — a smuggled value must not persist.
         'numberOfPackages-2': '9'
       }
     })
@@ -226,7 +223,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       ['Cow', '0102'],
       ['Fish', '0301']
     ])
-    expect(groups[0].lines.map((line) => line.speciesText)).toEqual([
+    expect(groups[0].lines.map((line) => line.latinName)).toEqual([
       'Bos taurus',
       'Bison bison'
     ])
@@ -305,17 +302,9 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
-    const server = Hapi.server()
-    await server.register(Crumb)
-    registerTestSessionAuth(server)
-    // Mounted under the set prefix, as the router does, so the injected
-    // `pagePath()` URL below reaches the route rather than 404ing.
-    await server.register(
-      {
-        name: 'consignment-details-under-test',
-        register: (inner) => inner.route(consignmentDetails.routes)
-      },
-      { routes: { prefix: SET_BASE } }
+    const server = await crumbProtectedServerMounting(
+      consignmentDetails.routes,
+      SET_BASE
     )
 
     const forged = await server.inject({
@@ -393,8 +382,6 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       ['Cow', '1148346'],
       ['Dog', '900001']
     ])
-    // reconcileEntriesAt keys by commodity|species, so the surviving Dog line
-    // keeps its own quantities rather than inheriting the removed line's.
     expect(lines[1].numberOfAnimalsQuantity).toBe(9)
     expect(lines[1].numberOfPackages).toBe('4')
   })
@@ -531,5 +518,30 @@ describe('#consignmentDetailsController — the animal count must be answered be
       '#numberOfAnimalsQuantity-2'
     ])
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should list every number of animals error before any number of packages error', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' },
+          { commoditySelection: 'Cow', speciesSelection: '716661' }
+        ]
+      },
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfAnimalsQuantity-1': '',
+        'numberOfPackages-0': 'abc',
+        'numberOfPackages-1': 'abc'
+      }
+    })
+    const { errorList } = result.view.context.errorSummary
+    expect(errorList).toEqual([
+      { href: '#numberOfAnimalsQuantity-0', text: ANIMALS_REQUIRED_MESSAGE },
+      { href: '#numberOfAnimalsQuantity-1', text: ANIMALS_REQUIRED_MESSAGE },
+      { href: '#numberOfPackages-0', text: PACKAGES_WHOLE_NUMBER_MESSAGE },
+      { href: '#numberOfPackages-1', text: PACKAGES_WHOLE_NUMBER_MESSAGE }
+    ])
+    expect(result.after.commodityLines).toHaveLength(2)
   })
 })

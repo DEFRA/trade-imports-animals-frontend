@@ -1,3 +1,5 @@
+import Crumb from '@hapi/crumb'
+import Hapi from '@hapi/hapi'
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
 import { config } from '../../../config/config.js'
 import { buildDispatch } from '../flow/dispatch.js'
@@ -52,6 +54,20 @@ export const registerTestSessionAuth = (server) => {
       h.authenticated({ credentials: authenticatedCredentials })
   }))
   server.auth.strategy('session', 'test-session')
+}
+
+export const crumbProtectedServerMounting = async (routes, prefix) => {
+  const server = Hapi.server()
+  await server.register(Crumb)
+  registerTestSessionAuth(server)
+  await server.register(
+    {
+      name: 'routes-under-test',
+      register: (inner) => inner.route(routes)
+    },
+    { routes: { prefix } }
+  )
+  return server
 }
 
 const cookieRecorder = () => {

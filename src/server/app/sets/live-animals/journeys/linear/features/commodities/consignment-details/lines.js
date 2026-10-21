@@ -8,3 +8,6 @@ export const linesOf = (answers, evaluation) =>
 export const commodityNamesOf = (lines) => [
   ...new Set(lines.map(({ entry }) => entry.commoditySelection))
 ]
+
+export const linesOfCommodity = (lines, name) =>
+  lines.filter(({ entry }) => entry.commoditySelection === name)

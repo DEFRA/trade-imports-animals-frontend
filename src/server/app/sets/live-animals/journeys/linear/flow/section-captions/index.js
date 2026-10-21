@@ -25,26 +25,6 @@ import { documentsPage } from '../../features/documents/page.js'
 
 const copy = copyFor({ en, cy })
 
-/**
- * Which section of the notification each page belongs to.
- *
- * The caption above a page heading tells someone part-way through a long
- * notification which part of it they are in, so the value is a property of
- * where the page sits in the journey, not of the page's own copy. One entry
- * per section, listing its pages — never a string per page.
- *
- * These sections are the ones the caption names, which are finer than the
- * hub's task-row groups: the hub files animal identification with the other
- * commodity work and puts every transport row under one group, while the
- * caption keeps identification with the rest of the consignment questions and
- * separates arrival, transit and adding a transporter.
- *
- * A page that is absent is deliberately bare. The overview, check-your-
- * answers, contact-address, declaration and confirmation pages open straight
- * into their heading; delete-notification and cancel-amend are interruptions
- * rather than steps in a section. The address pickers carry their own caption
- * from the addresses feature.
- */
 export const captionSections = [
   { id: 'dashboard', pages: [dashboardPage] },
   {
@@ -52,12 +32,12 @@ export const captionSections = [
     pages: [
       originPage,
       commoditiesPage,
-      consignmentDetailsPage,
       animalIdentificationPage,
       importReasonPage
     ]
   },
-  { id: 'commodityDetails', pages: [additionalDetailsPage] },
+  { id: 'descriptionOfTheGoods', pages: [consignmentDetailsPage] },
+  { id: 'additionalDetails', pages: [additionalDetailsPage] },
   { id: 'consignmentParties', pages: [addressesPage, cphNumberPage] },
   { id: 'movement', pages: [transitCountriesPage] },
   { id: 'transportAndArrival', pages: [portOfEntryPage, transportersPage] },

@@ -177,4 +177,20 @@ transit and adding a transporter, where the hub does not. A page left out of the
 map renders no caption; its unit test lists those pages so a new page cannot be
 added without a decision either way.
 
+The caption names where a page sits in the notification, not the page's own
+copy, so one string serves every page in a section. The map has one entry per
+section, listing its pages, and never a string per page.
+
+The commodity details page (the Selected commodities table and quantities) is
+filed under its own section, "Description of the goods"; the section captioned
+"Commodity details" (id additionalDetails) holds the additional details page.
+
+Some pages carry no caption on purpose:
+
+- The overview, check your answers, contact address, declaration and
+  confirmation pages open straight into their heading.
+- Delete notification and cancel amend are interruptions, not steps in a
+  section.
+- The address pickers get their caption from the addresses feature.
+
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).

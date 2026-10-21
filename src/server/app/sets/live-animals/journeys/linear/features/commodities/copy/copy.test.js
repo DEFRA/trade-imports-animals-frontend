@@ -27,13 +27,20 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
+const resolvedWithSampleArguments = (value) =>
+  typeof value === 'function' ? value('sample', 2, 3, 4) : value
+
+const IDENTIFIERS_LABELLED_AS_COLUMN_HEADING = [
+  'animalIdentifierPassport',
+  'animalIdentifierTattoo',
+  'animalIdentifierEarTag',
+  'horseName'
+]
+
 describe('#copy', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
-      const text =
-        typeof value === 'function' ? value('sample', 2, 3, 4) : value
+      const text = resolvedWithSampleArguments(value)
       expect(typeof text, `${path} must resolve to a string`).toBe('string')
       expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
     }
@@ -51,14 +58,8 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  // Microchip is left out: its entry label reads 'Microchip number'.
   it('Should label each identifier entry field with its saved-animals column heading', () => {
-    for (const field of [
-      'animalIdentifierPassport',
-      'animalIdentifierTattoo',
-      'animalIdentifierEarTag',
-      'horseName'
-    ]) {
+    for (const field of IDENTIFIERS_LABELLED_AS_COLUMN_HEADING) {
       expect(copy.identification.typeFields[field].label).toBe(
         copy.identification.identifierLabels[field]
       )
@@ -68,10 +69,6 @@ describe('#copy', () => {
     }
   })
 
-  // The commodity now sets the running order of its own identifier boxes, so
-  // the copy block is a lookup rather than a list. An identifier a commodity
-  // asks for but the copy block has no entry for would render an unlabelled
-  // box, which this closes off in both locales.
   const expectLabelledIn = (block, commodity, identifier) => {
     const where = `${commodity} asks for ${identifier}`
     expect(block.identification.typeFields[identifier]?.label, where).toEqual(
@@ -96,14 +93,21 @@ describe('#copy', () => {
     }
   })
 
-  // A user reading only the first sentence could conclude that no health
-  // certificate means no notification. The second sentence closes that off.
-  it('Should tell the user that a consignment without a health certificate must still be notified', () => {
+  it('Should tell the user to submit one notification per ITAHC and one for goods that need none', () => {
     expect(copy.search.inset).toBe(
-      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.'
+      'You must submit a separate notification for every single ITAHC. You must also submit a notification for goods that do not need an ITAHC.'
     )
-    expect(copyCy.search.inset).toContain(
-      'Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.'
+    expect(copyCy.search.inset).toBe(
+      'Rhaid i chi gyflwyno hysbysiad ar wahân ar gyfer pob ITAHC unigol. Rhaid i chi hefyd gyflwyno hysbysiad ar gyfer nwyddau nad oes angen ITAHC arnynt.'
+    )
+  })
+
+  it('Should hint searching by common name, commodity code or Latin name', () => {
+    expect(copy.search.searchHint).toBe(
+      'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).'
+    )
+    expect(copyCy.search.searchHint).toBe(
+      'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).'
     )
   })
 
@@ -128,9 +132,6 @@ describe('#copy', () => {
     )
   })
 
-  // The identification page's summary carries the animal count the
-  // consignment-details table has no column for, so it owns its own heads
-  // rather than borrowing that table's.
   it('Should head the identification summary with the code, the common name and the animal count', () => {
     expect(copy.identification.summary).toMatchObject({
       caption: 'Selected commodities',
@@ -144,8 +145,6 @@ describe('#copy', () => {
     )
   })
 
-  // Every card gets the same link, so it names no species — it says what it
-  // changes, not which animal it changes it for.
   it('Should label the route back to the animal count without naming a species', () => {
     expect(copy.identification.changeAnimalCount).toBe(
       'Change number of animals'
@@ -155,9 +154,6 @@ describe('#copy', () => {
     )
   })
 
-  // Saying the address is required tells the trader nothing about why an
-  // invented one is a problem. The warning names the offence and the second
-  // bullet names APHA, who will turn up at whatever address was given.
   it('Should warn that a false permanent address is fraud and say APHA can check it', () => {
     expect(copy.identification.permanentAddress.warning).toBe(
       'Providing a false address is an act of fraud'

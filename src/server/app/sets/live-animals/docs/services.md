@@ -24,10 +24,16 @@ so generic notification-mapper code does not import the set.
   is asked for its ear tag first, a horse for its microchip.
 - The per-identifier allow-lists are derived from that map, so an identifier's
   gate and its place on the page cannot drift apart. Adding an identifier to a
-  commodity is one edit.
+  commodity is one edit. `IDENTIFIED_COMMODITIES` is derived from the same map,
+  so whether a commodity is asked to identify at all is part of that edit.
 - A commodity with no identifiers, such as fish, is asked for none. There is no
   free-text identifier, so its line gets no identification panel and no animal
   records.
+- A species belongs to exactly one type, so a line's stored type derives from
+  its species. The type text is blank for a single-type commodity.
+- A species with no common name is named after its commodity.
+- A species' Latin name is its catalogue label; a value the catalogue does not
+  hold is shown as stored.
 - Animal identifiers are optional unless more than one commodity line carries
   an identified commodity. Then each such line needs at least one complete
   identifier record, never one per animal. `moreThanOne` on the unit-record

@@ -1,6 +1,4 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import Crumb from '@hapi/crumb'
-import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
@@ -14,7 +12,7 @@ import {
   driveHandler,
   journeyRequest,
   postHandlerOf,
-  registerTestSessionAuth,
+  crumbProtectedServerMounting,
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -630,17 +628,9 @@ describe(`${SUITE} — Remove`, () => {
   })
 
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
-    const server = Hapi.server()
-    await server.register(Crumb)
-    registerTestSessionAuth(server)
-    // Mounted under the set prefix, as the router does, so the injected
-    // `pagePath()` URL below reaches the route rather than 404ing.
-    await server.register(
-      {
-        name: 'animal-identification-under-test',
-        register: (inner) => inner.route(animalIdentification.routes)
-      },
-      { routes: { prefix: SET_BASE } }
+    const server = await crumbProtectedServerMounting(
+      animalIdentification.routes,
+      SET_BASE
     )
 
     const forged = await server.inject({

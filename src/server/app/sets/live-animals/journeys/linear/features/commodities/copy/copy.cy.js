@@ -1,21 +1,17 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 
-// Welsh pluralisation differs from English; this machine draft uses the
-// simple numeric style ('N cofnod dynodwr') rather than risking wrong
-// mutations. A translator should review every function leaf.
 const plural = (count, noun) => `${count} ${noun}`
 
-// The visually-hidden head of every table's action column.
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
     inset:
-      'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd. Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.',
+      'Rhaid i chi gyflwyno hysbysiad ar wahân ar gyfer pob ITAHC unigol. Rhaid i chi hefyd gyflwyno hysbysiad ar gyfer nwyddau nad oes angen ITAHC arnynt.',
     searchLabel: 'Chwilio am nwydd',
     searchHint:
-      'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
+      'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
     selected: {
@@ -29,7 +25,8 @@ export const copy = {
       describes:
         'Mae cod nwyddau yn disgrifio cynnyrch penodol wrth fewnforio neu allforio nwyddau.',
       lookupPrefix: 'Gallwch chwilio am godau nwyddau gan ddefnyddio’r',
-      lookupLink: 'teclyn Tariff Masnach (yn agor mewn tab newydd)',
+      lookupLink: 'teclyn Tariff Masnach',
+      lookupNewTab: '(yn agor mewn tab newydd)',
       lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
@@ -43,6 +40,7 @@ export const copy = {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',
       commonName: 'Enw cyffredin',
+      species: 'Rhywogaeth',
       actionsHidden: ACTIONS_HIDDEN,
       remove: 'Tynnu'
     },
