@@ -160,7 +160,7 @@ const copyOf = (id) =>
 // A copy that breaks the address-book rules — no address line, town or
 // postcode — but still has a name to show.
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
-const COW_CARD_TITLE = '0102 — Bos taurus'
+const CATTLE_CARD_TITLE = '0102 — Bos taurus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -453,7 +453,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should render one species card per commodity line with the design rows', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
     expect(valueOf(card.rows, 'Common name')).toBe('Cattle or Cow')
     expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
@@ -462,7 +462,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should render a read-only identifier table inside the species card', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Ear tag',
@@ -586,11 +586,11 @@ describe(`${SUITE} — fully-populated notification`, () => {
 
     expect(hiddenTextOf(IMPORT_DETAILS_CARD)).toBe('import details')
     expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
-    expect(hiddenTextOf(COW_CARD_TITLE)).toBe('commodity 1')
+    expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
   })
 
   it('Should point the species-card Change action at the consignment-details page with a change flag', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
       /\/consignment-details\?change=1$/
