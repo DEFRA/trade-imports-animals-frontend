@@ -29,6 +29,8 @@
       }
     }) }}
 
+    {% set regionCodePrefixHtml %}<span data-region-code-prefix-text>{{ regionCodePrefix }}</span>{% endset %}
+
     {% set regionCodeHtml %}
       {{ govukInput({
         id: "regionOfOriginCodeSuffix",
@@ -39,7 +41,15 @@
         autocomplete: "off",
         spellcheck: false,
         attributes: { maxlength: regionCodeSuffixMaxLength },
-        prefix: { text: regionCodePrefix },
+        prefix: {
+          html: regionCodePrefixHtml,
+          classes: "app-js-only",
+          attributes: {
+            "data-module": "app-region-code-prefix",
+            "data-country-field-name": "countryOfOrigin",
+            "data-prefixes-by-country": regionCodePrefixesByCountry | dump
+          }
+        },
         value: values.regionOfOriginCodeSuffix,
         errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }
       }) }}

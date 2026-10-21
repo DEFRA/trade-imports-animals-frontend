@@ -177,7 +177,12 @@ an explicit omission assertion. Do not invent a payload property.
 
 ## 7. Register client JavaScript when the field needs it
 
-Prefer server-rendered controls. If the page needs a new client bundle:
+Prefer server-rendered controls. If the page needs client JavaScript, use a
+component in `src/client/javascripts/components/` registered in `application.js`,
+or a feature entry: [add-a-page.md section 8](add-a-page.md#8-register-client-javascript-when-needed)
+holds the steps for the component route.
+
+For the feature entry route:
 
 1. Put its entry module under the feature, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).

@@ -34,10 +34,17 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
 
-const countryItems = async () => [
+const loadCountryItems = async () => [
   { value: '', text: copy.country.selectText },
   ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
+
+const regionCodePrefixesByCountry = (countryItems) =>
+  Object.fromEntries(
+    countryItems
+      .filter(({ value }) => value)
+      .map(({ value }) => [value, prefixFor(value)])
+  )
 
 const backLinkFor = (journey, answers) =>
   hasCommittedNotificationAnswers(answers)
@@ -49,8 +56,9 @@ const render = async (
   journey,
   values,
   { errors = {}, answers = values, recoverableError = false } = {}
-) =>
-  h.view(view, {
+) => {
+  const countryItems = await loadCountryItems()
+  return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
       backLink: backLinkFor(journey, answers),
@@ -62,10 +70,12 @@ const render = async (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: await countryItems(),
+    countryItems,
     regionCodePrefix: prefixFor(values.countryOfOrigin),
+    regionCodePrefixesByCountry: regionCodePrefixesByCountry(countryItems),
     regionCodeSuffixMaxLength: REGION_CODE_SUFFIX_MAX_LENGTH
   })
+}
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)

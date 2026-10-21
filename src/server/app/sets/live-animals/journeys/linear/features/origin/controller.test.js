@@ -211,6 +211,30 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     expect(result.after.regionOfOriginCode).toBe('FR-75')
   })
 
+  it('Should store a code typed with the country code but no hyphen as typed, after the joined prefix', async () => {
+    const result = await postSuffix('fr75')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-FR75')
+  })
+
+  it('Should store a typed prefix with a rest of exactly 5 characters as the joined code', async () => {
+    const result = await postSuffix('fr-abcde')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-ABCDE')
+  })
+
+  it('Should refuse a typed prefix with a rest of 6 characters and commit nothing', async () => {
+    const result = await postSuffix('fr-abcdef')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_MAX_LENGTH_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should hold the user on the page when the typed part is blank', async () => {
     const result = await postSuffix('   ')
 
@@ -378,7 +402,7 @@ describe('GET /origin — region of origin code splits back into its two parts',
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
   })
 
-  it('Should render no prefix before a country has been chosen', async () => {
+  it('Should give an empty prefix value and an empty box before a country has been chosen', async () => {
     const result = await driveHandler(get)
 
     expect(result.view.context.regionCodePrefix).toBe('')
@@ -433,6 +457,17 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
     const items = result.view.context.countryItems
     expect(items.filter((item) => item.disabled)).toEqual([])
     expect(items.filter((item) => item.value === '')).toHaveLength(1)
+  })
+})
+
+describe('GET /origin — region code prefix for each offered country', () => {
+  it("Should map exactly the offered countries to their region code prefixes, a subdivision to its parent's", async () => {
+    const result = await driveHandler(get)
+    const { countryItems, regionCodePrefixesByCountry } = result.view.context
+    const offeredValues = countryItems.slice(1).map(({ value }) => value)
+    expect(Object.keys(regionCodePrefixesByCountry)).toEqual(offeredValues)
+    expect(regionCodePrefixesByCountry.FR).toBe('FR')
+    expect(regionCodePrefixesByCountry['ES-CN']).toBe('ES')
   })
 })
 

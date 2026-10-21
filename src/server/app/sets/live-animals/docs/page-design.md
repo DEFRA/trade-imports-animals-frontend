@@ -66,14 +66,27 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   save what they know and return.
 - The list names a territory with its country, "Canary Islands (Spain)", and
   is sorted by the name shown.
-- The trader types only the part of the region code after the country's
-  prefix, and the stored answer is the whole joined code.
-- A typed prefix is accepted and not doubled.
+- With JavaScript the region code box shows the country's code as a fixed
+  prefix, empty until a country is picked and filled in as soon as one is, so
+  the trader types only the rest. Without JavaScript there is no prefix. The
+  stored answer is the whole joined code either way.
+- The server always draws the prefix, so a revisit or an error shows the saved
+  or submitted code at once. Styling hides it until GOV.UK Frontend's
+  JavaScript can run, and a small client module updates it on a change of
+  country.
+- The country-to-prefix rule has one owner on the server. The page hands the
+  browser a map built with it, and the module only looks the chosen country up.
+- A code typed with the country's code and a hyphen (for example "FR-75") is
+  recognised and not doubled. A code typed with the country's letters but no
+  hyphen (for example "FR75") is kept as typed and joined to the prefix
+  ("FR-FR75"), because a real region code can begin with those letters.
 - The region code is required under Yes, and stored only with a country's
   prefix. Under No, or with no country, the stored code is empty.
 - The rules measure the typed part with any typed prefix removed, whatever the
   answer; the page shows back what was typed.
-- The region code box stops typing at the same length the rule allows.
+- The region code box stops typing at the same length the rule allows. The
+  stop applies to the raw text, so a trader without JavaScript who types the
+  country's code before a rest of more than two characters has it cut short.
 - Clearing the country clears the region code too, because the prefix
   depends on the country.
 - The internal reference is checked for length only. It is the trader's own

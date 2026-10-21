@@ -261,7 +261,30 @@ omission. Do not invent one.
 
 ## 8. Register client JavaScript when needed
 
-Most pages need no page-specific JavaScript. If this page does:
+Most pages need no page-specific JavaScript. If this page does, pick the route:
+
+- A small enhancement that reacts to one control is a `data-module` component,
+  scripted below.
+- A page that orchestrates its own behaviour gets a feature entry module and a
+  webpack entry, scripted after it.
+
+For the component route:
+
+1. Add the class under `src/client/javascripts/components/` with a
+   `static moduleName` matching the template's `data-module`, following
+   [`status-announcer.js`](../../../../../client/javascripts/components/status-announcer.js)
+   and
+   [`region-code-prefix.js`](../../../../../client/javascripts/components/region-code-prefix.js).
+2. Register it with `createAll` in `src/client/javascripts/application.js`.
+3. Add a jsdom unit test beside the class (`<name>.test.js`), following
+   [`region-code-prefix.test.js`](../../../../../client/javascripts/components/region-code-prefix.test.js),
+   that initialises it through `createAll`.
+4. For server-rendered markup that must not show without JavaScript, give it
+   the existing `app-js-only` class (hidden by
+   `.govuk-template__body:not(.govuk-frontend-supported) .app-js-only` in
+   `src/client/stylesheets/core/_main.scss`). Never add a second hide mechanism.
+
+For the feature entry route:
 
 1. Add a feature entry module, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
@@ -310,7 +333,12 @@ set-up in the test file:
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`
+  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`;
+  `answerOriginDetails` takes the country, region code and internal reference
+  to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
+  URL matcher at the origin and the mount, because `toHaveURL` matches the whole
+  URL, so a pattern anchored nowhere passes on a doubled prefix and one anchored
+  at the mount alone never matches
 - set-up shared only inside one feature: that feature's `test-support.js`, as in
   [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
 

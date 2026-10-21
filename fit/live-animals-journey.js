@@ -19,7 +19,6 @@ import { copy as transportCopy } from '../src/server/app/sets/live-animals/journ
 
 export { signIn } from './sign-in.js'
 
-/** The set's mount, under the one name every spec imports. */
 export const BASE = SET_BASE
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -95,11 +94,6 @@ export const computedStyle = (locator, property) =>
 
 /**
  * An anchored matcher for a URL under this set's mount.
- *
- * `toHaveURL` matches the WHOLE url, origin included, so a pattern anchored at
- * the mount alone never matches and one anchored nowhere passes on a doubled
- * prefix. Anchoring at the origin is what makes a dropped or doubled prefix
- * fail here rather than 404 further down the spec.
  *
  * @param {string} pathPattern - the path under the mount, as regex source.
  * @returns {RegExp} the anchored matcher.
@@ -391,15 +385,22 @@ export const addDocument = async (page, entry) => {
 const save = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
-export const answerOriginDetails = async (page) => {
-  await chooseCountryOfOrigin(page)
+export const answerOriginDetails = async (
+  page,
+  {
+    countryName,
+    regionCode = FIXTURE_REGION_CODE_SUFFIX,
+    internalReference = values.internalReferenceNumber
+  } = {}
+) => {
+  await chooseCountryOfOrigin(page, countryName)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
     .getByLabel('Enter the region of origin code', { exact: true })
-    .fill(FIXTURE_REGION_CODE_SUFFIX)
+    .fill(regionCode)
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
-    .fill(values.internalReferenceNumber)
+    .fill(internalReference)
   await save(page)
 }
 
@@ -597,13 +598,11 @@ export const answerContactAddress = async (page) => {
 }
 
 /**
- * Answers the whole notification one task row at a time, the way a returning
- * user works once the opening run is over.
+ * Answers the whole notification one task row at a time.
  *
  * @param {import('@playwright/test').Page} page
  * @param {{ skipAnimalIdentification?: boolean }} [options] - pass
- *   `skipAnimalIdentification` to leave the identification row untouched, as a
- *   trader may on a single-species consignment.
+ *   `skipAnimalIdentification` to leave the identification row untouched.
  */
 export const completeAnswerSections = async (
   page,
@@ -656,9 +655,10 @@ export const openReviewFromHub = async (page) => {
 }
 
 /**
- * A page reached from another page ends with the primary alone: the shared
- * saveActions macro emits no "Save and return to overview" button and no
- * "Cancel and return to overview" link.
+ * Asserts the page ends with the primary button alone: no "Save and return to
+ * overview" button and no "Cancel and return to overview" link.
+ *
+ * @param {import('@playwright/test').Page} page
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
   await expect(

@@ -307,7 +307,12 @@ Do not invent fields.
 
 ## 9. Register client JavaScript when needed
 
-If any page needs feature JavaScript:
+If any page needs JavaScript, use a component in
+`src/client/javascripts/components/` registered in `application.js`, or a
+feature entry: [add-a-page.md section 8](add-a-page.md#8-register-client-javascript-when-needed)
+holds the steps for the component route.
+
+For the feature entry route:
 
 1. Add a client entry module, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
