@@ -1,9 +1,7 @@
 import { buildAnyCandidateGate } from './internals/build-any-candidate-gate.js'
 
 // Reduces a per-instance gate to one decision — true if ANY stored value
-// on the gate obligation is in the allowlist. Handles the "cph reads ANY
-// commodityCode across commodity lines" shape (per-line gate feeding a
-// notification-level gated obligation).
+// on the gate obligation is in the allowlist.
 export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) =>
   buildAnyCandidateGate({
     gateType: 'anyAllowListed',

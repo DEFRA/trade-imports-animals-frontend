@@ -607,7 +607,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     expect(decision.inScope).toBe(true)
   })
 
-  it('Should open the closure with a scalar witness for cph (anyAllowListed)', () => {
+  it('Should open the closure with a scalar witness for cph (anyNotInUnionOf)', () => {
     const cph = obligations.find(
       (obligation) => obligation.name === 'countyParishHoldingCph'
     )
