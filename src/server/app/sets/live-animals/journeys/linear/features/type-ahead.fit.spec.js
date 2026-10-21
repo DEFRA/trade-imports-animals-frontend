@@ -156,13 +156,14 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       await open(page)
     })
 
-    test('shows the empty search box text and no value', async ({ page }) => {
-      test.skip(emptyBoxText === undefined)
-      const input = inputFor(page, inputId)
+    if (emptyBoxText !== undefined) {
+      test('shows the empty search box text and no value', async ({ page }) => {
+        const input = inputFor(page, inputId)
 
-      await expect(input).toHaveAttribute('placeholder', emptyBoxText)
-      await expect(input).toHaveValue('')
-    })
+        await expect(input).toHaveAttribute('placeholder', emptyBoxText)
+        await expect(input).toHaveValue('')
+      })
+    }
 
     test('shows the joined blue magnifying glass button flush with the box and no dropdown arrow', async ({
       page
