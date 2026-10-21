@@ -79,7 +79,7 @@ const SINGLE_TYPE = { id: '2', text: '' }
 
 const MULTI_TYPE_CODE = CATTLE_CODE
 
-const GAME_SPECIES = ['Bos spp.']
+const GAME_SPECIES = new Set(['Bos spp.'])
 
 const TYPES_BY_CODE = { [MULTI_TYPE_CODE]: [DOMESTIC, GAME] }
 
@@ -87,7 +87,7 @@ export const typeFor = (code, latinName) => {
   if (code !== MULTI_TYPE_CODE) {
     return SINGLE_TYPE
   }
-  return GAME_SPECIES.includes(latinName) ? GAME : DOMESTIC
+  return GAME_SPECIES.has(latinName) ? GAME : DOMESTIC
 }
 
 export const typesFor = (code) => TYPES_BY_CODE[code] ?? [SINGLE_TYPE]

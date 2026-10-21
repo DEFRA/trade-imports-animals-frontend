@@ -1,6 +1,6 @@
 import { obligationByName } from '../model/obligations/manifest.js'
 
-const COMPLEMENT_GATE_TYPES = ['notInUnionOf', 'anyNotInUnionOf']
+const COMPLEMENT_GATE_TYPES = new Set(['notInUnionOf', 'anyNotInUnionOf'])
 
 /**
  * Whether a gate admits a value: a complement gate admits what its list
@@ -12,7 +12,7 @@ const COMPLEMENT_GATE_TYPES = ['notInUnionOf', 'anyNotInUnionOf']
  */
 export const gateAdmits = (metadata, value) => {
   const inList = (metadata?.values ?? []).includes(value)
-  return COMPLEMENT_GATE_TYPES.includes(metadata?.gateType) ? !inList : inList
+  return COMPLEMENT_GATE_TYPES.has(metadata?.gateType) ? !inList : inList
 }
 
 /**
