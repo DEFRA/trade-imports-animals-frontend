@@ -64,13 +64,17 @@ const suffixOf = (prefix, code) => {
     : value
 }
 
-const regionCodeFrom = (countryOfOrigin, suffix) => {
-  const prefix = prefixFor(countryOfOrigin)
-  const rest = suffixOf(prefix, suffix)
-  if (!rest) {
+const regionCodeFrom = (values) => {
+  const prefix = prefixFor(values.countryOfOrigin)
+  const rest = suffixOf(prefix, values[REGION_CODE_SUFFIX_FIELD])
+  if (
+    values.regionOfOriginCodeRequirement !== REGION_CODE_REQUIRED_ANSWER ||
+    !prefix ||
+    !rest
+  ) {
     return ''
   }
-  return prefix ? `${prefix}${REGION_CODE_SEPARATOR}${rest}` : rest
+  return `${prefix}${REGION_CODE_SEPARATOR}${rest}`
 }
 
 const countryMessage = (stored) =>
@@ -151,10 +155,7 @@ export const validation = pageValidation({
       ? values.countryOfOrigin
       : '',
     regionOfOriginCodeRequirement: values.regionOfOriginCodeRequirement,
-    regionOfOriginCode: regionCodeFrom(
-      values.countryOfOrigin,
-      values[REGION_CODE_SUFFIX_FIELD]
-    ),
+    regionOfOriginCode: regionCodeFrom(values),
     internalReferenceNumber: values.internalReferenceNumber
   })
 })
