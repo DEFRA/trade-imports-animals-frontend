@@ -70,7 +70,6 @@ describe('#buildSelectedRows', () => {
     ])
   })
 
-  // MDM has no common name for some species.
   it('Should name a species by its Latin name where it has no common name', () => {
     expect(
       buildSelectedRows(linesOf(['01061900', 'Catagonus', undefined]))
