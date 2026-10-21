@@ -51,7 +51,7 @@ describe('indexed obligations are first-class', () => {
     const { inScope } = makeScope({
       commodityLines: [
         { commodityCode: '0102', numberOfAnimalsQuantity: '25' },
-        { commodityCode: '010420 - Goats', numberOfAnimalsQuantity: '9' }
+        { commodityCode: '010420', numberOfAnimalsQuantity: '9' }
       ]
     })
     expect(inScope.has('commodityLines')).toBe(true)

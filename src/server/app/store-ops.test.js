@@ -20,7 +20,7 @@ const FELIS_CATUS = 'Felis catus'
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
 
-const GOATS_COMMODITY_SELECTION = '010420 - Goats'
+const GOATS_CODE = '010420'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
@@ -71,18 +71,18 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      { commodityCode: GOATS_COMMODITY_SELECTION }
+      { commodityCode: GOATS_CODE }
     )
     expect(second).toBe(1)
     expect((await answersNow()).commodityLines).toEqual([
       { commodityCode: '0102' },
-      { commodityCode: GOATS_COMMODITY_SELECTION }
+      { commodityCode: GOATS_CODE }
     ])
   })
 
   it('Should edit a commodity line in place, leaving siblings intact', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('0102'), line(GOATS_COMMODITY_SELECTION)]
+      commodityLines: [line('0102'), line(GOATS_CODE)]
     })
     await updateEntryAt(
       buildRequest(),
@@ -93,23 +93,23 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     )
     expect((await answersNow()).commodityLines[0].commodityCode).toBe('0101')
     expect((await answersNow()).commodityLines[1].commodityCode).toBe(
-      GOATS_COMMODITY_SELECTION
+      GOATS_CODE
     )
   })
 
   it('Should remove a commodity line in place, leaving siblings intact', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('0102'), line(GOATS_COMMODITY_SELECTION)]
+      commodityLines: [line('0102'), line(GOATS_CODE)]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
     expect(
       (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
-    ).toEqual([GOATS_COMMODITY_SELECTION])
+    ).toEqual([GOATS_CODE])
   })
 
   it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('0102'), line(GOATS_COMMODITY_SELECTION)]
+      commodityLines: [line('0102'), line(GOATS_CODE)]
     })
     await removeEntryAt(
       buildRequest(),
@@ -119,7 +119,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     )
     expect(
       (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
-    ).toEqual(['0102', GOATS_COMMODITY_SELECTION])
+    ).toEqual(['0102', GOATS_CODE])
   })
 
   it('Should ignore an out-of-range index on remove', async () => {
