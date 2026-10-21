@@ -21,7 +21,7 @@ const linesOf = (...rows) =>
   )
 
 describe('#buildSelectedCommodities', () => {
-  it('Should give every commodity line its own summary row so the table pairs with the cards', () => {
+  it('Should give every commodity line a summary row with its code, species name and animal count', () => {
     expect(
       buildSelectedCommodities(
         linesOf(
