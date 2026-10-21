@@ -101,11 +101,12 @@ test.describe('commodity search', () => {
 
   test('offers each species by its scientific name', async ({ page }) => {
     await searchCommodities(page, 'buffalo')
-    await expect(page.locator('.govuk-checkboxes__label')).toHaveText([
-      'Bubalus',
-      'Bubalus bubalis',
-      'Syncerus'
-    ])
+    const scientificNames = ['Bubalus', 'Bubalus bubalis', 'Syncerus']
+    const checkboxes = page.getByRole('checkbox')
+    await expect(checkboxes).toHaveCount(scientificNames.length)
+    for (const [index, name] of scientificNames.entries()) {
+      await expect(checkboxes.nth(index)).toHaveAccessibleName(name)
+    }
   })
 
   test('finds a species by its common name', async ({ page }) => {
