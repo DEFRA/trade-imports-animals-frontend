@@ -5,14 +5,6 @@ import { speciesName } from '../../species-name.js'
 // has not counted yet shows nothing rather than "undefined".
 const countText = (value) => String(value ?? '')
 
-// One summary row per commodity line on the consignment — the whole list, not
-// only the lines with a card below it, because a commodity carrying no
-// identifier of its own earns a row here but no identification card. Each row
-// carries the CN code, the species' common name and the number of animals the
-// line declares. The consignment-details page shows the same code/common-name
-// pairing without the count and with a Remove action; here the row action is a
-// Change link back to the commodity question, which is where the commodity
-// list is answered.
 export const buildSelectedCommodities = (lines) =>
   lines.map(({ entry }) => ({
     code: entry.commodityCode ?? '',
