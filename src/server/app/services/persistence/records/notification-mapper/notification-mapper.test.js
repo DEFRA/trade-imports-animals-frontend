@@ -203,16 +203,19 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(commodity.name).toBe(CATTLE_CODE)
     expect(commodity.commodityComplement).toHaveLength(2)
 
-    const [cow, cat] = commodity.commodityComplement
-    expect(cow.totalNoOfAnimals).toBe(35)
-    expect(cow.totalNoOfPackages).toBe(7)
-    expect(cow.species.map((entry) => entry.value)).toEqual([
+    const [cattleComplement, catComplement] = commodity.commodityComplement
+    expect(cattleComplement.totalNoOfAnimals).toBe(35)
+    expect(cattleComplement.totalNoOfPackages).toBe(7)
+    expect(cattleComplement.species.map((entry) => entry.value)).toEqual([
       BOS_TAURUS,
       BISON_BISON
     ])
-    expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
-    expect(cat.totalNoOfAnimals).toBe(2)
-    expect(cat.species).toEqual([
+    expect(cattleComplement.species.map((entry) => entry.noOfAnimals)).toEqual([
+      '25',
+      '10'
+    ])
+    expect(catComplement.totalNoOfAnimals).toBe(2)
+    expect(catComplement.species).toEqual([
       {
         value: FELIS_CATUS,
         text: FELIS_CATUS,
@@ -231,9 +234,9 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const { commodity } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
-    const [cow, cat] = commodity.commodityComplement
-    expect(cow.typeOfCommodity).toBe('Domestic')
-    expect('typeOfCommodity' in cat).toBe(false)
+    const [cattleComplement, catComplement] = commodity.commodityComplement
+    expect(cattleComplement.typeOfCommodity).toBe('Domestic')
+    expect('typeOfCommodity' in catComplement).toBe(false)
   })
 
   test('Should place every storable answer in its skeleton field home', () => {
