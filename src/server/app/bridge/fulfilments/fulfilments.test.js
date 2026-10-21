@@ -104,9 +104,9 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     })
   })
 
-  it('Should round-trip every commodity name exactly', () => {
-    for (const name of ['0102', '0101', '01063300', '01061900', '01061900']) {
-      const answers = { commodityLines: [{ commodityCode: name }] }
+  it('Should round-trip every commodity code exactly', () => {
+    for (const code of ['0102', '0101', '01063300', '01061900']) {
+      const answers = { commodityLines: [{ commodityCode: code }] }
       expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
     }
   })
@@ -291,7 +291,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
 // ---------------------------------------------------------------------------
 
 describe('#fulfilments — stored values pass through', () => {
-  it('Should store the picker name for a commodity selection', () => {
+  it('Should store the commodity code of a commodity line', () => {
     const fulfilments = assembleFulfilments({
       commodityLines: [{ commodityCode: '0102' }]
     })
@@ -413,7 +413,7 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
   const fulfilments = assembleFulfilments(happyPath)
   const result = evaluator.evaluate(fulfilments)
 
-  it('Should store the commodity name the gates compare', () => {
+  it('Should store the commodity code the gates compare', () => {
     expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
   })
 
