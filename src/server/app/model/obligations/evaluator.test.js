@@ -509,15 +509,15 @@ describe('V4 — commodity line field fulfilments (round-trip)', () => {
     })
   })
 
-  it('species stores an array of species strings per line', () => {
+  it('speciesLatinName stores an array of Latin names per line', () => {
     const result = evaluator.evaluate({
       [speciesLatinName.id]: {
-        [LINE_OSTRICHES]: ['Salmo salar'],
+        [LINE_OSTRICHES]: ['Struthio'],
         [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
       }
     })
     expect(result.fulfilments[speciesLatinName.id]).toEqual({
-      [LINE_OSTRICHES]: ['Salmo salar'],
+      [LINE_OSTRICHES]: ['Struthio'],
       [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
     })
   })
@@ -811,7 +811,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 // ---------------------------------------------------------------------------
 
 describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
-  it('is in scope for a cat line (Cat in the tattoo list)', () => {
+  it('is in scope for a 01061900 line (01061900 in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
       [tattoo.id]: { [`${LINE_CATS}.${UNIT_1}`]: 'CT-99' }
@@ -820,7 +820,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
     expect(result.obligations[tattoo.id].reasons).toEqual([tattooReason])
   })
 
-  it('is out of scope for horse (Horse not in the tattoo list)', () => {
+  it('is out of scope for a 0101 line (0101 not in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE }
     })
@@ -830,7 +830,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
   // The ear tag value is stored so a unit instance is enumerated and the
   // commodity gate — not an empty unitRecord — is what puts the tattoo out of
   // scope.
-  it('is out of scope for cow (Cow not in the tattoo list)', () => {
+  it('is out of scope for a 0102 line (0102 not in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
       [earTag.id]: { [`${LINE_CATTLE}.${UNIT_1}`]: 'UK123456789012' }
@@ -840,7 +840,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
 })
 
 describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
-  it('is in scope across two cow lines', () => {
+  it('is in scope across two 0102 lines', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_CATTLE]: CATTLE_CODE,
@@ -859,7 +859,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
     )
   })
 
-  it('is out of scope for cats (Cat not in the ear-tag list)', () => {
+  it('is out of scope for a 01061900 line (01061900 not in the ear-tag list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATS]: CATS_CODE }
     })
@@ -868,7 +868,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
 })
 
 describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
-  it('is in scope only for horse commodity', () => {
+  it('is in scope for a 0101 line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
       [horseName.id]: { [`${LINE_HORSES}.${UNIT_1}`]: 'Silver' }
@@ -877,7 +877,7 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
     expect(result.obligations[horseName.id].reasons).toEqual([horseNameReason])
   })
 
-  it('is out of scope for cows', () => {
+  it('is out of scope for a 0102 line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
     })
@@ -901,7 +901,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
     }
   })
 
-  it('puts the commodity’s own identifiers in scope on the same shape of cow line', () => {
+  it('puts the commodity’s own identifiers in scope on the same shape of 0102 line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
       [earTag.id]: { [`${LINE_CATTLE}.${UNIT_1}`]: 'UK123456789012' }
@@ -944,7 +944,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
     email: 'intake@meadowfarm.co.uk'
   }
 
-  it('is in scope for cats with composite address value', () => {
+  it('is in scope for Felis catus under 01061900 with a composite address value', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
       [speciesLatinName.id]: { [LINE_CATS]: 'Felis catus' },
@@ -963,7 +963,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
     })
   })
 
-  it('is out of scope for cows', () => {
+  it('is out of scope for a 0102 line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
     })
@@ -985,7 +985,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — mixed lines drive per-line identifier gating', () => {
-  it('cow + horse: passport applies to both, earTag only to cow, horseName only to horse', () => {
+  it('0102 + 0101: passport applies to both, earTag only to 0102, horseName only to 0101', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_CATTLE]: CATTLE_CODE,
