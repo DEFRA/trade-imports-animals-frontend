@@ -16,7 +16,7 @@ import { emptyCollectionSatisfiesFloor } from './invariants.js'
 const line = { id: 'line-group', name: 'commodityLines' }
 
 const commodityCode = {
-  id: 'commodity-selection',
+  id: 'commodity-code',
   name: 'commodityCode',
   within: line,
   status: 'mandatory'
@@ -176,8 +176,8 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       ).toBe(true)
     })
 
-    // The gate is in scope and names the two Horse lines, not this one,
-    // while `allowListedLeaf` could still apply on a Cow line — so only
+    // The gate is in scope and names the two 0101 lines, not this 0102 one,
+    // while `allowListedLeaf` could still apply on a 0102 line — so only
     // the gate's own index list can stand the floor down here.
     it('Should stand the floor down for a parent the in-scope gate does not name', () => {
       expect(
