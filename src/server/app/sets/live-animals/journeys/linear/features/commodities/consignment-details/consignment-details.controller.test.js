@@ -137,7 +137,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
         'numberOfAnimalsQuantity-1': '10',
         'numberOfPackages-1': '2',
         'numberOfAnimalsQuantity-2': '40',
-        // Fish takes no package count — a smuggled value must not persist.
+        // 01063300 takes no package count — a smuggled value must not persist.
         'numberOfPackages-2': '9'
       }
     })
