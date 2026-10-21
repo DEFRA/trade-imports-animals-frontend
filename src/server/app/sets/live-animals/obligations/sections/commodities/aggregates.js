@@ -14,12 +14,6 @@ const cphReason = {
     'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }
 
-// -----------------------------------------------------------------------------
-// CPH — notification-level single, aggregated across commodity lines. Asked
-// unless every line's code is one of the exempt codes, so a code new to the
-// picker is asked rather than let off.
-// -----------------------------------------------------------------------------
-
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'countyParishHoldingCph',
