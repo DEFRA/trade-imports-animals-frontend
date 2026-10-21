@@ -53,8 +53,7 @@ const seedLines = () => ({
   ]
 })
 
-// Cow (0102) holds two species, Dog and Cat share commodity code 01061900 —
-// the code the design lists species by species.
+// 0102 holds two species; 01061900 lists its species individually.
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     {
