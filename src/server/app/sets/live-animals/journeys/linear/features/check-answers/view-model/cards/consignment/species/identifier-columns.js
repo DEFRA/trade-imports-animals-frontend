@@ -13,8 +13,8 @@ const copy = copyFor({ en, cy })
 // answers reads them back in the order the identification page asked for
 // them. Only identifiers a unit actually carries get a column here — this is
 // a read-back of what was entered, not a list of what was asked for.
-export const identifierColumns = (units, commodity) => [
-  ...scopedFields(commodity)
+export const identifierColumns = (units, commodityCode) => [
+  ...scopedFields(commodityCode)
     .filter(({ id }) => units.some((unit) => !isBlank(unit[id])))
     .map(({ id }) => [id, IDENTIFIER_LABELS[id]]),
   ...(units.some((unit) => !isBlank(unit.permanentAddress?.name))

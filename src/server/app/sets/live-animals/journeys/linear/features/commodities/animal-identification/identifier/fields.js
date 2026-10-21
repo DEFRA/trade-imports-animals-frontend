@@ -11,10 +11,10 @@ const copy = copyFor({ en, cy }).identification
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
 const IDENTIFIER_MAX_LENGTH = 58
-export const scopedFields = (commodity) =>
+export const scopedFields = (commodityCode) =>
   commodities
-    .identifiersFor(commodity)
-    .filter((id) => appliesForGateValue(id, commodity))
+    .identifiersFor(commodityCode)
+    .filter((id) => appliesForGateValue(id, commodityCode))
     .map((id) => ({ id, ...copy.typeFields[id] }))
 
 export const PERMANENT_ADDRESS = 'permanentAddress'
@@ -22,9 +22,9 @@ export const PERMANENT_ADDRESS = 'permanentAddress'
 export const permanentAddressApplies = (species) =>
   appliesForGateValue(PERMANENT_ADDRESS, species)
 
-export const identifierChecksFor = (commodity, index) =>
+export const identifierChecksFor = (commodityCode, index) =>
   compose(
-    ...scopedFields(commodity).map((field) =>
+    ...scopedFields(commodityCode).map((field) =>
       maxText(
         fieldName(field.id, index),
         IDENTIFIER_MAX_LENGTH,
@@ -33,13 +33,13 @@ export const identifierChecksFor = (commodity, index) =>
     )
   )
 
-export const identifierValuesFromPayload = (payload, commodity, index) =>
+export const identifierValuesFromPayload = (payload, commodityCode, index) =>
   Object.fromEntries(
-    scopedFields(commodity).map((field) => [
+    scopedFields(commodityCode).map((field) => [
       field.id,
       (payload[fieldName(field.id, index)] ?? '').trim()
     ])
   )
 
-export const blankValuesFor = (commodity) =>
-  Object.fromEntries(scopedFields(commodity).map((field) => [field.id, '']))
+export const blankValuesFor = (commodityCode) =>
+  Object.fromEntries(scopedFields(commodityCode).map((field) => [field.id, '']))

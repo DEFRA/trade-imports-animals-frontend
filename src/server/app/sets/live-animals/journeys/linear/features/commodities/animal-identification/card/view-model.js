@@ -71,10 +71,16 @@ const saveButtonTextFor = (cap, records) => {
   return cap - records === 1 ? copy.saveAndFinish : copy.saveAndAddAnother
 }
 
-const visibleIdentifierFields = (atMax, commodity, index, values, errors) =>
+const visibleIdentifierFields = (
+  atMax,
+  commodityCode,
+  index,
+  values,
+  errors
+) =>
   atMax
     ? []
-    : scopedFields(commodity).map((field) => ({
+    : scopedFields(commodityCode).map((field) => ({
         ...field,
         id: fieldName(field.id, index),
         value: values[field.id] ?? '',
@@ -92,14 +98,14 @@ const visibleAddressFields = (
 
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
-  const commodity = entry.commodityCode
+  const commodityCode = entry.commodityCode
   const units = entry.animalIdentifiers ?? []
   const { cap, atMax, overBy } = capacityStateFor(answers, index, units.length)
   const species = speciesLatinNameOf(entry)
-  const values = form?.values ?? blankValuesFor(commodity)
+  const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
   const showAddress = permanentAddressApplies(entry.speciesLatinName)
-  const columns = identifierColumns(commodity, entry.speciesLatinName)
+  const columns = identifierColumns(commodityCode, entry.speciesLatinName)
   return {
     index,
     anchor: `identification-card-${index}`,
@@ -119,7 +125,13 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
     identifierColumns: columns.map(([, label]) => label),
     units: unitEntries(index, species, columns, units),
     hasUnits: units.length > 0,
-    fields: visibleIdentifierFields(atMax, commodity, index, values, errors),
+    fields: visibleIdentifierFields(
+      atMax,
+      commodityCode,
+      index,
+      values,
+      errors
+    ),
     showAddress: showAddress && !atMax,
     addressFields: visibleAddressFields(
       showAddress,
