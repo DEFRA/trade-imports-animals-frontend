@@ -78,13 +78,12 @@ describe('#documentUploads', () => {
   })
 
   describe('#findByCorrelationId', () => {
-    it('Should pick the notification document carrying that correlationId', async () => {
+    it('Should answer the session the notification opened under that correlationId', async () => {
       fetchMocker.mockResponse(
         JSON.stringify({
-          items: [
-            { uploadId: UPLOAD_ID, correlationId: CORRELATION_ID },
-            { uploadId: OTHER_UPLOAD_ID, correlationId: OTHER_CORRELATION_ID }
-          ]
+          notificationReferenceNumber: JOURNEY_ID,
+          uploadId: OTHER_UPLOAD_ID,
+          correlationId: OTHER_CORRELATION_ID
         })
       )
 
@@ -93,14 +92,18 @@ describe('#documentUploads', () => {
           journeyId: JOURNEY_ID,
           correlationId: OTHER_CORRELATION_ID
         })
-      ).resolves.toEqual({
-        uploadId: OTHER_UPLOAD_ID,
-        correlationId: OTHER_CORRELATION_ID
-      })
+      ).resolves.toMatchObject({ uploadId: OTHER_UPLOAD_ID })
+      expect(fetchMocker.mock.calls[0][0]).toBe(
+        `${BACKEND_URL}/notifications/${JOURNEY_ID}/document-upload-sessions/${OTHER_CORRELATION_ID}`
+      )
     })
 
-    it('Should answer nothing when no document carries that correlationId', async () => {
-      fetchMocker.mockResponse(JSON.stringify({ items: [] }))
+    /**
+     * A handle this notification never opened is an ordinary outcome — a stale or hand-edited
+     * return link — so it answers nothing rather than throwing.
+     */
+    it('Should answer nothing when the notification has no session under that correlationId', async () => {
+      fetchMocker.mockResponse(() => ({ status: 404, body: NOT_FOUND_BODY }))
 
       await expect(
         documentUploads.findByCorrelationId({
@@ -108,6 +111,17 @@ describe('#documentUploads', () => {
           correlationId: CORRELATION_ID
         })
       ).resolves.toBeUndefined()
+    })
+
+    it('Should throw with the response status when the session cannot be read', async () => {
+      fetchMocker.mockResponse(() => ({ status: 503, body: 'Unavailable' }))
+
+      await expect(
+        documentUploads.findByCorrelationId({
+          journeyId: JOURNEY_ID,
+          correlationId: CORRELATION_ID
+        })
+      ).rejects.toMatchObject({ status: 503 })
     })
   })
 

@@ -22,6 +22,8 @@ const traceHeaders = (contentType) => ({
 const rejectionReasonOf = (files) =>
   files?.find((file) => file.hasError)?.errorMessage ?? null
 
+const HTTP_NOT_FOUND = 404
+
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
     const response = await backendFetch(
@@ -53,14 +55,16 @@ export const documentUploads = {
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
+      `${backendBaseUrl}/notifications/${journeyId}/document-upload-sessions/${correlationId}`,
       { method: 'GET', headers: traceHeaders() }
     )
-    if (!response.ok) {
-      throw failed('list document uploads', response)
+    if (response.status === HTTP_NOT_FOUND) {
+      return undefined
     }
-    const { items } = await response.json()
-    return items.find((item) => item.correlationId === correlationId)
+    if (!response.ok) {
+      throw failed('get document upload session', response)
+    }
+    return response.json()
   },
 
   scanStatus: async ({ uploadId }) => {
