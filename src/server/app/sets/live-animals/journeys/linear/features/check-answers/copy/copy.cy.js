@@ -44,7 +44,7 @@ export const copy = {
   },
   groups: {
     whereFrom: 'O ble mae’r llwyth hwn yn dod?',
-    mainReasonForImport: 'Prif reswm dros fewnforio',
+    mainImportReason: 'Prif reswm mewnforio',
     commodityDetails: 'Manylion y nwyddau',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',

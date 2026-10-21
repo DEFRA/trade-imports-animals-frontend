@@ -60,6 +60,7 @@ const typeAheads = [
     label: originCopy.country.label,
     labelSize: 'm',
     selectText: originCopy.country.selectText,
+    emptyBoxText: originCopy.country.searchPlaceholder,
     open: startNotificationAtOrigin
   }),
   portCase({
@@ -86,6 +87,7 @@ const revealedTypeAheads = [
     inputId: 'transhipmentDestinationCountry',
     label: importReasonCopy.country.label,
     selectText: importReasonCopy.country.placeholder,
+    emptyBoxText: importReasonCopy.country.placeholder,
     open: openReveal('transhipmentOrOnwardTravel')
   }),
   portCase({
@@ -93,6 +95,7 @@ const revealedTypeAheads = [
     inputId: 'transitPortOfExit',
     label: importReasonCopy.port.label,
     selectText: importReasonCopy.port.placeholder,
+    emptyBoxText: importReasonCopy.port.placeholder,
     open: openReveal('transit')
   }),
   countryCase({
@@ -100,6 +103,7 @@ const revealedTypeAheads = [
     inputId: 'transitDestinationCountry',
     label: importReasonCopy.country.label,
     selectText: importReasonCopy.country.placeholder,
+    emptyBoxText: importReasonCopy.country.placeholder,
     open: openReveal('transit')
   }),
   portCase({
@@ -107,6 +111,7 @@ const revealedTypeAheads = [
     inputId: 'temporaryAdmissionPortOfExit',
     label: importReasonCopy.port.label,
     selectText: importReasonCopy.port.placeholder,
+    emptyBoxText: importReasonCopy.port.placeholder,
     open: openReveal('temporaryAdmissionHorses')
   })
 ]
@@ -141,6 +146,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     suggestion,
     bold,
     selectText,
+    emptyBoxText,
     open
   } = typeAhead
 
@@ -148,6 +154,14 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     test.beforeEach(async ({ page }) => {
       await signIn(page)
       await open(page)
+    })
+
+    test('shows the empty search box text and no value', async ({ page }) => {
+      test.skip(emptyBoxText === undefined)
+      const input = inputFor(page, inputId)
+
+      await expect(input).toHaveAttribute('placeholder', emptyBoxText)
+      await expect(input).toHaveValue('')
     })
 
     test('shows the joined blue magnifying glass button flush with the box and no dropdown arrow', async ({
@@ -207,7 +221,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
   test.describe(`${name} type-ahead without JavaScript`, () => {
     test.use({ javaScriptEnabled: false })
 
-    test('is a native select found by its label, whose first option is the page select text, with no button', async ({
+    test('is a native select found by its label, whose first option is the page select text and is selected, with no button', async ({
       page
     }) => {
       await signIn(page)
@@ -220,6 +234,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
 
       await expect(select).toHaveJSProperty('tagName', 'SELECT')
       await expect(select).toBeVisible()
+      await expect(select).toHaveValue('')
       await expect(select.locator('option').first()).toHaveText(selectText)
       await expect(select.locator('option').first()).toHaveJSProperty(
         'value',

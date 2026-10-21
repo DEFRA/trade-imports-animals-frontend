@@ -106,6 +106,23 @@ const lineSeed = {
   ]
 }
 
+const postBreedingInternalMarketReason = async (runRecordForJourney) => {
+  const journey = await store.create()
+  await store.seedAnswers(journey.journeyId, lineSeed)
+  const h = captureH()
+  await postHandlerOf(importReason)(
+    buildRequest(journey.journeyId, {
+      payload: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      record: runRecordForJourney(journey.journeyId)
+    }),
+    h
+  )
+  return { journey, h }
+}
+
 // A consignment of Atlantic salmon: Fish is on none of the identifier
 // allowlists, so the identification page has nothing to ask of this line.
 const fishLineSeed = {
@@ -188,7 +205,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(pagePath(journey.journeyId, 'commodities'))
   })
 
-  it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
+  it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
     const inRun = await store.create()
     await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
     const h = captureH()
@@ -269,19 +286,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send import reason on to the consignment details mid-run', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(importReason)(
-      buildRequest(journey.journeyId, {
-        payload: {
-          reasonForImport: 'internalMarket',
-          purposeInInternalMarket: 'breeding'
-        },
-        record: active(journey.journeyId)
-      }),
-      h
-    )
+    const { journey, h } = await postBreedingInternalMarketReason(active)
     expect(h.captured.redirect).toBe(
       pagePath(journey.journeyId, CONSIGNMENT_DETAILS_SLUG)
     )
@@ -641,20 +646,8 @@ describe('the opening run', () => {
   describe('a page opened from its overview task returns to the overview', () => {
     const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
 
-    it('Should send the main reason for import to the overview, not on to the additional details', async () => {
-      const journey = await store.create()
-      await store.seedAnswers(journey.journeyId, lineSeed)
-      const h = captureH()
-      await postHandlerOf(importReason)(
-        buildRequest(journey.journeyId, {
-          payload: {
-            reasonForImport: 'internalMarket',
-            purposeInInternalMarket: 'breeding'
-          },
-          record: complete(journey.journeyId)
-        }),
-        h
-      )
+    it('Should send the main import reason to the overview, not on to the additional details', async () => {
+      const { journey, h } = await postBreedingInternalMarketReason(complete)
       expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
 

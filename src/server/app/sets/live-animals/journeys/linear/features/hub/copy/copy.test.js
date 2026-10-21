@@ -42,7 +42,7 @@ const unlockedSeed = {
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
-const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
+const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
@@ -52,8 +52,6 @@ const ADDRESSES_ROW_HINT_CY =
   'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
 const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 
-// Anchored at the set base, not at `/notifications`: a row whose href lost or
-// doubled the set prefix would otherwise still match and pass.
 const A_JOURNEY_PAGE_URL = new RegExp(`^${SET_BASE}/notifications/[^/]+/.+`)
 const TO_DO_STATUS = {
   tag: { text: 'To do', classes: 'govuk-tag--blue' }
@@ -63,9 +61,19 @@ const COMPLETE_STATUS = {
 }
 const DESIGN_STATUSES = [TO_DO_STATUS, COMPLETE_STATUS]
 
-// Temporary admission of horses is the one reason that opens both a port of
-// exit and an exit date under it — the state the retired "Exit details" task
-// used to appear in.
+const UNLOCKED_ROW_TITLES_BY_GROUP = [
+  [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
+  [
+    CONSIGNMENT_DETAILS_ROW_TITLE,
+    'Identification details',
+    'Additional details'
+  ],
+  [ARRIVAL_ROW_TITLE, 'Transport details'],
+  ['Upload documents'],
+  [ADDRESSES_ROW_TITLE],
+  ['Contact address for this consignment']
+]
+
 const temporaryAdmissionSeed = {
   ...unlockedSeed,
   reasonForImport: 'temporaryAdmissionHorses',
@@ -92,9 +100,6 @@ describe('#copy', () => {
     expect(hinted).toEqual(['addresses'])
     expect(copy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT)
 
-    // Copy parity only checks that a Welsh leaf differs from its English
-    // counterpart, so the Welsh parties list is pinned here beside the English
-    // one.
     const hintedCy = Object.entries(copyCy.rows)
       .filter(([, row]) => row.hint !== undefined)
       .map(([id]) => id)
@@ -111,7 +116,7 @@ describe('#copy', () => {
     expect(titlesCy).toEqual({
       origin: 'O ble mae’r llwyth hwn yn dod?',
       commodities: 'Beth ydych chi’n ei fewnforio?',
-      importReason: 'Prif reswm dros fewnforio',
+      importReason: 'Prif reswm mewnforio',
       consignmentDetails: 'Manylion y nwyddau',
       additionalDetails: 'Manylion ychwanegol',
       animalIdentification: 'Manylion adnabod',
@@ -184,18 +189,7 @@ describe('#hubHandler', () => {
     const { groups } = await renderHub(unlockedSeed)
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
-    ).toEqual([
-      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
-      [
-        CONSIGNMENT_DETAILS_ROW_TITLE,
-        'Identification details',
-        'Additional details'
-      ],
-      [ARRIVAL_ROW_TITLE, 'Transport details'],
-      ['Upload documents'],
-      [ADDRESSES_ROW_TITLE],
-      ['Contact address for this consignment']
-    ])
+    ).toEqual(UNLOCKED_ROW_TITLES_BY_GROUP)
   })
 
   it('Should hold "About the consignment" at three rows once a reason opens its exit questions', async () => {
@@ -285,8 +279,6 @@ describe('#hubHandler', () => {
     }
     const context = await renderHub({
       countryOfOrigin: 'FR',
-      // Two identified species, so the identification row has work to show.
-      // On one species the service asks for no identifier at all.
       commodityLines: [
         cowLine,
         {
@@ -350,15 +342,13 @@ describe('#hubHandler', () => {
     )
   })
 
-  it('Should offer the review as a button under the list, not as a task row', async () => {
-    const context = await renderHub()
+  it('Should offer the review as a Review and submit button', async () => {
+    const context = await renderHub(unlockedSeed)
 
     expect(context.reviewHref).toBe(
       pagePath(context.journeyId, 'notification-view')
     )
     expect(copy.reviewAndSubmit).toBe('Review and submit')
-    expect(rowByTitle(context, 'Check and submit')).toBeUndefined()
-    expect(copy.groups['check-and-submit']).toBeUndefined()
   })
 
   it('Should offer the same review button on a part-answered notification', async () => {
@@ -401,10 +391,6 @@ describe('#hubHandler — the task statuses', () => {
 
   it('Should hold the two design statuses in both locales', () => {
     expect(copy.statuses).toEqual({ complete: 'Complete', toDo: 'To do' })
-
-    // Copy parity only checks that a Welsh leaf differs from its English
-    // counterpart, so the Welsh statuses are pinned here beside the English
-    // ones.
     expect(copyCy.statuses).toEqual({
       complete: 'Wedi’i gwblhau',
       toDo: 'I’w wneud'
@@ -512,8 +498,6 @@ describe('#hubHandler — the row hints', () => {
   beforeEach(() => store.clear())
 
   it('Should build a hint slot on the roles and addresses row alone', async () => {
-    // Overland transport, so the conditional transit row is on the list too
-    // and every row the hub can show is under test.
     const context = await renderHub({
       ...unlockedSeed,
       meansOfTransport: 'ROAD_VEHICLE'

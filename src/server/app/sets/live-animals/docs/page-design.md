@@ -52,6 +52,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The documents card always shows, because documents are part of the
   notification even when none are uploaded. With none, it says so.
 - A submitted notification's review shows no form.
+- Each card's Change link ends, for screen readers, with the card's title in
+  lower-case words.
+- The review ends with the Continue button alone, because its label carries
+  the whole instruction, so no heading and no sentence stand above it.
+- An unfinished card's line is the same in the error summary and in the card,
+  so a trader reading either sees the same words.
 
 ## Submitted page
 
@@ -98,6 +104,34 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   so a country the reference data no longer offers is named on the page.
 - The overview origin task reads Complete only when a country is chosen and
   the region of origin code question is answered (Yes with a code, or No).
+
+## Main import reason
+
+- A question two reasons ask has a form field per reason, because two inputs
+  cannot share a name. Both map back to the one answer.
+- The reason a reveal belongs to carries the explanation, so its follow-up
+  questions ask with a label alone, and the exit date keeps only its worked
+  example.
+- The unreadable-date message does not repeat the field name that the label
+  already gives.
+- The destination country and port of exit are type-ahead searches using the
+  shared search control, with the look the origin and port of entry searches
+  share: a bold label and full width.
+- Origin and port of entry differ on label size and empty-box text, so this
+  page sets those itself: the small label, as port of entry and as a follow-up
+  question, and "Select one" in both the empty box and the select's first
+  option.
+- The exit date takes the prototype's date picker styling: a regular-weight
+  label, and a GOV.UK margin override on its form group. GOV.UK Frontend zeroes
+  the bottom margin of the last form group nested in another, which would leave
+  the date box touching "Port of exit".
+
+## Additional details
+
+- The certification hint names the ITAHC because a trader holds several
+  certificates, so "the health certificate" does not say which one the
+  certification purposes are copied from. The abbreviation matches the
+  documents and review pages.
 
 ## Identification
 

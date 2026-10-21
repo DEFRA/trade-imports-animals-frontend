@@ -11,6 +11,7 @@ import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
+import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
 import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js'
 import { copy as importReasonCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.en.js'
@@ -422,6 +423,26 @@ export const startNotificationAtImportReason = async (page) => {
   ).toBeVisible()
 }
 
+/**
+ * Starts a notification and carries the opening run through the origin and
+ * commodity pages to the import reason page.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const carryOpeningRunToImportReason = async (page) => {
+  await startNotificationAtOrigin(page)
+
+  await answerOriginDetails(page)
+  await expect(
+    page.getByRole('heading', { name: commoditiesCopy.search.title })
+  ).toBeVisible()
+
+  await answerWhatYouAreImporting(page)
+  await expect(
+    page.getByRole('heading', { name: importReasonCopy.title })
+  ).toBeVisible()
+}
+
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
@@ -758,7 +779,7 @@ export const completeAnswerSections = async (
     await expectOverview(page)
   }
 
-  await task('Main reason for import')
+  await task(hubCopy.rows.importReason.title)
   await answerImportReason(page)
   await expectOverview(page)
   await task('Additional details')

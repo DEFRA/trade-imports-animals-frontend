@@ -36,15 +36,13 @@ describe('additional-details copy module', () => {
     expect(copyCy.title).toBe('Manylion ychwanegol')
   })
 
-  // A trader arrives holding several certificates, so "the health certificate"
-  // does not say which one the certification purposes are copied off. The hint
-  // names the document — the ITAHC — and the abbreviation is the same one the
-  // documents and check-answers features already show unexpanded.
-  it('Should name the ITAHC as the source of the certification purpose', () => {
+  it('Should name the ITAHC as the source of the certification purpose, in English and Welsh', () => {
     expect(copy.certified.hint).toBe(
-      'This information can be found on the ITAHC.'
+      'You can find this information on the ITAHC.'
     )
-    expect(copyCy.certified.hint).toContain('ITAHC')
+    expect(copyCy.certified.hint).toBe(
+      "Gallwch ddod o hyd i'r wybodaeth hon ar yr ITAHC."
+    )
   })
 })
 

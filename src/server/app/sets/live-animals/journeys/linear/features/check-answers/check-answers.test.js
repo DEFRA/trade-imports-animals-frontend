@@ -357,7 +357,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
       )
     ).toEqual([
       'Where is this consignment coming from?',
-      'Main reason for import',
+      'Main import reason',
       'Commodity details',
       'Additional details',
       ARRIVAL_DETAILS_CARD,
@@ -380,7 +380,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ).toEqual([
       [
         'about-the-consignment',
-        ['Where is this consignment coming from?', 'Main reason for import']
+        ['Where is this consignment coming from?', 'Main import reason']
       ],
       ['description-of-the-goods', ['Commodity details', 'Additional details']],
       [
