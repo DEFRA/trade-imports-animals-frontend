@@ -1,8 +1,7 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 
 {# One block per commodity group: heading, then per-species quantity inputs
-   for every line of that commodity (design 01-14/15, "same animal different
-   genus" renders one sub-block per species).
+   for every line of that commodity, one sub-block per species.
 
    The commodity heading is set at the page-heading size on purpose: the
    commodity blocks are the substance of the page and the h1 above them only
