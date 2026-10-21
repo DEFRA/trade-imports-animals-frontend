@@ -196,23 +196,14 @@ describe('save actions — hub exit semantics', () => {
     })
     expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
 
-    const add = await drivePost(postHandlerOf(documents), {
-      payload: {
-        action: 'add',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          headers: { 'content-type': 'application/pdf' },
-          payload: Buffer.from('pdf-bytes')
-        }
-      }
+    const removal = await drivePost(postHandlerOf(documents), {
+      payload: { action: 'remove:0' },
+      seed: { documents: [{ accompanyingDocumentReference: 'GBHC1234567890' }] }
     })
-    expect(add.response).toEqual({
-      redirect: pagePath(add.journeyId, 'accompanying-documents')
+    expect(removal.response).toEqual({
+      redirect: pagePath(removal.journeyId, 'accompanying-documents')
     })
-    expect(add.after.documents).toHaveLength(1)
+    expect(removal.after.documents ?? []).toHaveLength(0)
   })
 
   it('Should let the hub exit win over a return-to-addresses entry context', async () => {

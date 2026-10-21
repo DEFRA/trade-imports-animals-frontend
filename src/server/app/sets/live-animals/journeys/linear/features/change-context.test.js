@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -20,6 +20,8 @@ import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
+import { documentUploads } from '../../../../../services/document-uploads/index.js'
+import { documentUploadSessions } from '../../../../../services/cdp-uploader/index.js'
 
 const drive = async (
   handler,
@@ -170,28 +172,44 @@ describe('change context — context survives the internal loop navigation', () 
     ).toBe('UK123456789')
   })
 
-  it('Should carry the context through a documents add-another PRG cycle with the entry committed', async () => {
-    const { journeyId, response, after } = await drive(
-      postHandlerOf(documents),
-      {
-        payload: {
-          action: 'add',
-          accompanyingDocumentReference: 'GBHC1234567890',
-          accompanyingDocumentType: 'ITAHC',
-          accompanyingDocumentDateOfIssue: '12/12/2025',
-          file: {
-            filename: 'itahc-certificate.pdf',
-            headers: { 'content-type': 'application/pdf' },
-            payload: Buffer.from('pdf-bytes')
-          }
-        },
-        query: change
+  it('Should carry the context through a documents upload-return cycle with the entry committed', async () => {
+    const found = vi
+      .spyOn(documentUploads, 'findByCorrelationId')
+      .mockResolvedValue({
+        uploadId: 'upload-session-1',
+        correlationId: 'correlation-1'
+      })
+    const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
+      uploadStatus: 'pending',
+      form: {
+        accompanyingDocumentReference: 'GBHC1234567890',
+        accompanyingDocumentType: 'ITAHC',
+        accompanyingDocumentDateOfIssue: '12/12/2025',
+        file: {
+          filename: 'itahc-certificate.pdf',
+          contentType: 'application/pdf',
+          hasError: false
+        }
       }
-    )
+    })
+    const claim = vi
+      .spyOn(documentUploads, 'claim')
+      .mockResolvedValue(undefined)
+    const documentsGet = documents.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+
+    const { journeyId, response, after } = await drive(documentsGet, {
+      query: { ...change, upload: 'correlation-1' }
+    })
+
     expect(response).toEqual({
       redirect: `${pagePath(journeyId, 'accompanying-documents')}?change=1`
     })
     expect(after.documents).toHaveLength(1)
+    found.mockRestore()
+    read.mockRestore()
+    claim.mockRestore()
   })
 
   it('Should carry the context through a documents remove round-trip', async () => {

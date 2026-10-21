@@ -117,6 +117,8 @@ export const copy = {
     typeRequired: 'Dewiswch fath o ddogfen',
     dateRequired: 'Rhowch ddyddiad cyhoeddi',
     fileRequired: 'Uwchlwythwch ddogfen',
+    notYetAdded:
+      'Dewiswch ‘Cadw ac ychwanegu un arall’ i ychwanegu’r ddogfen a ddewiswyd gennych',
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',

@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-
 const REJECTED_FILENAME = /virus/i
 const NEVER_SCANS_FILENAME = /never-scans/i
 
@@ -36,22 +34,30 @@ const settledStatus = (filename = '') => {
     : SCAN_STATUS_COMPLETE
 }
 
+const uploadIdsByCorrelationId = new Map()
+
 export const documentUploads = {
-  upload: async () => {
-    const uploadId = randomUUID()
+  register: async ({ uploadId, correlationId }) => {
+    uploadIdsByCorrelationId.set(correlationId, uploadId)
     awaitingRefresh.add(uploadId)
-    return uploadId
+  },
+
+  claim: async () => undefined,
+
+  findByCorrelationId: async ({ correlationId }) => {
+    const uploadId = uploadIdsByCorrelationId.get(correlationId)
+    return uploadId ? { uploadId, correlationId } : undefined
   },
 
   scanStatus: async ({ uploadId, filename, refresh }) => {
     if (!awaitingRefresh.has(uploadId)) {
-      return settledStatus(filename)
+      return { scanStatus: settledStatus(filename) }
     }
     if (!refresh) {
-      return SCAN_STATUS_PENDING
+      return { scanStatus: SCAN_STATUS_PENDING }
     }
     awaitingRefresh.delete(uploadId)
-    return settledStatus(filename)
+    return { scanStatus: settledStatus(filename) }
   },
 
   remove: async (uploadId) => {

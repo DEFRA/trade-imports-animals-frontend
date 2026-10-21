@@ -18,24 +18,25 @@ import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
 import { UPLOAD_ID_PATTERN, ownsUpload } from './contracts/upload-id.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { capacityExceededError, documentAddErrors } from './form/errors.js'
+import { returnedCorrelationId } from './contracts/upload-session.js'
+import {
+  capacityExceededError,
+  documentAddErrors,
+  notYetAddedError
+} from './form/errors.js'
 import {
   EMPTY_FORM,
   documentFromPayload,
-  pendingDocumentSaveFrom,
   startsADocument
 } from './form/payload.js'
+import { claimUpload } from './handlers/claim-upload.js'
 import { loadPage } from './handlers/load-page.js'
-import { fileResponse, uploadDetails } from './handlers/reads/download.js'
+import { openUploadSession } from './handlers/open-upload-session.js'
+import { fileResponse } from './handlers/reads/download.js'
 import { documentsPage as page } from './page.js'
 import { validation } from './validate.js'
 import { isStillSettling, scanned, withScanStatus } from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
-import {
-  MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE,
-  attachmentTypeFor
-} from './upload-config.js'
 import { render as renderView } from './view-model/render.js'
 
 export const meta = { ...page, collects: ['documents'], validation }
@@ -44,17 +45,52 @@ const view = `${TEMPLATES}/features/documents/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
-
 const HTTP_STATUS_NOT_FOUND = 404
-const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
+// Opening the session is needed only to prime the Add form, so a failure there
+// leaves the document list readable and refuses that form alone.
+const addFormTarget = async (request, journeyId) => {
+  try {
+    return await openUploadSession(request, journeyId)
+  } catch (err) {
+    request.logger.error(
+      { err, status: err.status, journeyId },
+      'Could not open an upload session'
+    )
+    return { uploadFormUnavailable: true }
+  }
+}
+
 const get = async (request, h) => {
   const pageState = await loadPage(request, h)
-  return render(request, h, pageState, EMPTY_FORM)
+  const correlationId = returnedCorrelationId(request)
+  if (correlationId) {
+    return claimReturnedUpload(request, h, pageState, correlationId)
+  }
+  const target = await addFormTarget(request, pageState.journey.journeyId)
+  return render(request, h, pageState, EMPTY_FORM, { extra: target })
+}
+
+// The upload service returns the browser with a GET, so the document is taken
+// on here and answered with a redirect: reloading the clean path cannot claim
+// the same upload twice.
+const claimReturnedUpload = async (request, h, pageState, correlationId) => {
+  const claimed = await claimUpload(request, correlationId, pageState)
+  if (claimed?.errors || claimed?.summaryErrors) {
+    const target = await addFormTarget(request, pageState.journey.journeyId)
+    return render(request, h, pageState, claimed.values, {
+      errors: claimed.errors ?? {},
+      summaryErrors: claimed.summaryErrors ?? [],
+      extra: target
+    }).code(HTTP_STATUS_BAD_REQUEST)
+  }
+  if (claimed?.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
+    await state.appendEntry(request, h, 'documents', claimed.entry)
+  }
+  return backToPage(request, h)
 }
 
 // The JSON leg the client bundle polls. A poll is the scripted equivalent of
@@ -79,17 +115,6 @@ const getFile = async (request, h) => {
   return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
 
-const uploadOutcome = async (pageState, entry, file, filename) => {
-  try {
-    const uploadId = await documentUploads.upload(
-      uploadDetails(pageState.journey, entry, file, filename)
-    )
-    return { uploadId }
-  } catch {
-    return { failed: true }
-  }
-}
-
 const pageHref = (request) =>
   kit.withChangeContext(request, pagePath(request.params.journeyId, page.slug))
 
@@ -97,84 +122,10 @@ const pageHref = (request) =>
 // added from, ready for the next one.
 const backToPage = (request, h) => h.redirect(pageHref(request))
 
-// `afterSave` is where a saved document lands the trader. Every successful
-// save redirects back to the page — the POST mutated state, so a reload must
-// not be able to replay it and append the document twice. Continue is then
-// pressed again from the fresh GET, once the scan has settled.
-const postAdd = async (request, h, payload, afterSave) => {
-  const pageState = await loadPage(request, h)
-  const bare = documentFromPayload(payload)
-  const pendingDocumentSave = pendingDocumentSaveFrom(payload)
-  if (!pendingDocumentSave && pageState.documents.length >= MAX_DOCUMENTS) {
-    return render(request, h, pageState, bare, {
-      summaryErrors: capacityExceededError()
-    }).code(HTTP_STATUS_BAD_REQUEST)
-  }
-  const allErrors = documentAddErrors(payload, bare, pendingDocumentSave)
-  if (Object.keys(allErrors).length > 0) {
-    return render(request, h, pageState, bare, { errors: allErrors }).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
-  }
-
-  const filename = pendingDocumentSave?.filename ?? payload.file.filename
-  const outcome = pendingDocumentSave
-    ? { uploadId: pendingDocumentSave.uploadId }
-    : await uploadOutcome(pageState, bare, payload.file, filename)
-  if (outcome.failed) {
-    return render(request, h, pageState, bare, {
-      errors: { file: UPLOAD_FAILURE_MESSAGE }
-    }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-  }
-
-  const savedEntry = {
-    ...bare,
-    accompanyingDocumentAttachmentType: attachmentTypeFor(filename),
-    uploadId: outcome.uploadId,
-    filename
-  }
-  return saveAddedDocument(request, h, pageState, savedEntry, bare, afterSave)
-}
-
 const isAlreadySaved = (pageState, uploadId) =>
   pageState.documents.some(
     ({ entry: document }) => document.uploadId === uploadId
   )
-
-const saveAddedDocument = async (
-  request,
-  h,
-  pageState,
-  savedEntry,
-  bare,
-  afterSave
-) => {
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      if (isAlreadySaved(pageState, savedEntry.uploadId)) {
-        await state.commit(request, h, {
-          documents: pageState.answers.documents ?? []
-        })
-      } else {
-        await state.appendEntry(request, h, 'documents', savedEntry)
-      }
-    },
-    () =>
-      render(request, h, pageState, bare, {
-        extra: {
-          recoverableError: true,
-          pendingDocumentSave: {
-            uploadId: savedEntry.uploadId,
-            filename: savedEntry.filename
-          }
-        }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-  )
-  if (failure) {
-    return failure
-  }
-  return afterSave()
-}
 
 const documentAt = (answers, evaluation, index) =>
   state.collectionView(answers, ['documents'], evaluation)[index]?.entry
@@ -265,13 +216,29 @@ const leavePage = async (request, h) => {
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }
 
-// Continue submits the add-a-document fields along with it, so a part-filled
-// form reaching here is a document the trader means to attach. Finish it —
-// save it and return them to the page, or say what is missing — rather than
-// drop it without a word. Continue is pressed again from that fresh page to
-// leave. The exit to the overview deliberately leaves the form behind.
+// Continue carries the add-a-document fields with it, so a part-filled form
+// reaching here is a document the trader means to attach. Their answers are
+// never dropped: what is missing is said, and a form that only lacks the add
+// step asks for it, because the file itself can only go to the upload service.
 const continuesADocument = (request, payload) =>
   !kit.hubExitTarget(request) && startsADocument(payload)
+
+const finishTheDocument = async (request, h, payload) => {
+  const pageState = await loadPage(request, h)
+  const values = documentFromPayload(payload)
+  if (pageState.documents.length >= MAX_DOCUMENTS) {
+    return render(request, h, pageState, values, {
+      summaryErrors: capacityExceededError()
+    }).code(HTTP_STATUS_BAD_REQUEST)
+  }
+  const errors = documentAddErrors(payload, values)
+  const target = await addFormTarget(request, pageState.journey.journeyId)
+  return render(request, h, pageState, values, {
+    errors,
+    summaryErrors: Object.keys(errors).length ? [] : notYetAddedError(),
+    extra: target
+  }).code(HTTP_STATUS_BAD_REQUEST)
+}
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
@@ -284,33 +251,13 @@ const post = async (request, h) => {
       retryUploadId: payload.retryRemoveUploadId
     })
   }
-  if (action === 'add') {
-    return postAdd(request, h, payload, () => backToPage(request, h))
-  }
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action))
   }
   if (continuesADocument(request, payload)) {
-    return postAdd(request, h, payload, () => backToPage(request, h))
+    return finishTheDocument(request, h, payload)
   }
   return leavePage(request, h)
-}
-
-const isOversizeBoom = (request) =>
-  request.response?.isBoom &&
-  request.response.output?.statusCode === HTTP_STATUS_PAYLOAD_TOO_LARGE
-
-export const handleOversizePayload = async (request, h) => {
-  if (!isOversizeBoom(request)) {
-    return h.continue
-  }
-  const pageState = await loadPage(request, h)
-  const crumb =
-    request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)
-  return render(request, h, pageState, EMPTY_FORM, {
-    errors: { file: OVERSIZE_FILE_MESSAGE },
-    extra: { crumb }
-  }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
 export const routes = [
@@ -323,17 +270,7 @@ export const routes = [
   {
     method: 'POST',
     path: pageRoutePath(page.slug),
-    options: {
-      ...routeOptions,
-      payload: {
-        maxBytes: MAX_PAYLOAD_BYTES,
-        parse: true,
-        multipart: { output: 'annotated' }
-      },
-      ext: {
-        onPreResponse: { method: handleOversizePayload }
-      }
-    },
+    options: routeOptions,
     handler: post
   },
   {

@@ -118,6 +118,7 @@ export const copy = {
     typeRequired: 'Select a document type',
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
+    notYetAdded: 'Select ‘Save and add another’ to add the document you chose',
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     uploadFailed: 'The file could not be uploaded. Try again.',

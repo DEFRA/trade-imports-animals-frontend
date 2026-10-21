@@ -5,12 +5,7 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import {
-  FILE_TYPE_MESSAGE,
-  OVERSIZE_FILE_MESSAGE,
-  attachmentTypeFor,
-  exceedsMaxFileSize
-} from '../upload-config.js'
+import { FILE_TYPE_MESSAGE, OVERSIZE_FILE_MESSAGE } from '../upload-config.js'
 import { fields } from './payload.js'
 
 const copy = copyFor({ en, cy })
@@ -27,17 +22,34 @@ export const presenceErrors = (entry) => ({
     : {})
 })
 
-export const fileErrors = (file) => {
-  if (!file?.payload?.length) {
+const FILE_EMPTY = 'FILE_EMPTY'
+const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
+const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
+
+const MESSAGE_BY_FILE_ERROR_CODE = {
+  [FILE_EMPTY]: copy.errors.fileRequired,
+  [FILE_TOO_LARGE]: OVERSIZE_FILE_MESSAGE,
+  [FILE_INVALID_TYPE]: FILE_TYPE_MESSAGE
+}
+
+/**
+ * What to tell the trader about a file the upload service would not take. Its own wording is not
+ * shown: the reasons it refuses are the ones already stated above the file input, so the page
+ * repeats those rather than a second phrasing of them.
+ *
+ * @param {object} [file] - the file entry the upload service returned
+ * @returns {object|null} a file error to render, or null when the file was taken
+ */
+export const submittedFileError = (file) => {
+  if (!file?.filename) {
     return { file: copy.errors.fileRequired }
   }
-  if (exceedsMaxFileSize(file.payload.length)) {
-    return { file: OVERSIZE_FILE_MESSAGE }
+  if (!file.hasError) {
+    return null
   }
-  if (!attachmentTypeFor(file.filename ?? '')) {
-    return { file: FILE_TYPE_MESSAGE }
+  return {
+    file: MESSAGE_BY_FILE_ERROR_CODE[file.errorCode] ?? copy.errors.uploadFailed
   }
-  return {}
 }
 
 // The error summary lists the fields in the order it is handed them, and the
@@ -58,13 +70,9 @@ const inFieldOrder = (errors) =>
     ])
   )
 
-export const documentAddErrors = (payload, bare, pendingDocumentSave) => {
+export const documentAddErrors = (payload, bare, fileError = null) => {
   const { errors } = validate(fields(), payload)
-  return inFieldOrder({
-    ...errors,
-    ...presenceErrors(bare),
-    ...(pendingDocumentSave ? {} : fileErrors(payload.file))
-  })
+  return inFieldOrder({ ...errors, ...presenceErrors(bare), ...fileError })
 }
 
 export const capacityExceededError = () => [
@@ -72,4 +80,8 @@ export const capacityExceededError = () => [
     text: copy.errors.maxDocuments(MAX_DOCUMENTS),
     href: DOCUMENTS_ADDED_ANCHOR
   }
+]
+
+export const notYetAddedError = () => [
+  { text: copy.errors.notYetAdded, href: '#file' }
 ]

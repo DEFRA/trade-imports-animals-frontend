@@ -461,7 +461,10 @@ test.describe('document upload oversize validation', () => {
     await expect(uploadControl(page)).toBeFocused()
   })
 
-  test('file validation: server rejects an oversize multipart payload', async ({
+  // The browser's own check is the only thing that can refuse a file before it
+  // is uploaded. With that check disabled the file reaches the upload service,
+  // which refuses it on receipt and returns the trader the same message.
+  test('file validation: an oversize file past the browser check is refused on receipt', async ({
     page
   }) => {
     test.slow()
@@ -472,8 +475,11 @@ test.describe('document upload oversize validation', () => {
       Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
     )
     await page.evaluate(() =>
-      document.querySelector('form[data-max-file-size]').submit()
+      document
+        .querySelector('form[data-max-file-size]')
+        .removeAttribute('data-max-file-size')
     )
+    await submitAdd(page)
 
     const link = errorLink(page, OVERSIZE_FILE_MESSAGE)
     await expect(link).toBeVisible()
@@ -484,27 +490,35 @@ test.describe('document upload oversize validation', () => {
 })
 
 // Continue posts the add-a-document fields with it, so a trader who fills the
-// form and presses the primary button has to end up with the document saved or
-// told what is missing — never carried on with the file quietly dropped.
+// form and presses the primary button is never carried on with their answers
+// quietly dropped: they are told what is missing, or which action attaches the
+// file. Only the add action can attach it — the file goes to the upload
+// service, and Continue posts to this page.
 test.describe('document upload continue', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openDocuments(page)
   })
 
-  test('continue saves the document the trader filled in, then leaves once it is scanned', async ({
+  test('continue keeps a filled-in form and asks for the add action', async ({
     page
   }) => {
     test.slow()
     await fillDocument(page)
     await submitContinue(page)
 
+    await expect(errorLink(page, copy.errors.notYetAdded)).toBeVisible()
+    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
+      validDocument.accompanyingDocumentReference
+    )
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    // A re-rendered page never carries the chosen file back — no browser
+    // repopulates a file input — so the trader picks it again and adds it.
+    await setUploadFile(page, validDocument.filename)
+    await submitAdd(page)
     const row = rowFor(page, validDocument.accompanyingDocumentReference)
     await expect(row).toContainText(copy.types.ITAHC)
-    await expect(row).toContainText(copy.scanTags.complete)
-
-    await submitContinue(page)
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('continue with a document type and nothing else says what is missing', async ({
@@ -517,7 +531,6 @@ test.describe('document upload continue', () => {
 
     await expect(errorLink(page, copy.errors.referenceRequired)).toBeVisible()
     await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 

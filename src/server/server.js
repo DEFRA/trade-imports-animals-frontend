@@ -9,6 +9,7 @@ import { csrf } from '../plugins/csrf.js'
 import { authPlugin } from '../plugins/auth.js'
 import { authRoutes } from './auth/index.js'
 import { stubSignInRoutes } from './auth/stub-sign-in.js'
+import { stubUploadRoutes } from './app/services/cdp-uploader/stub.js'
 import { config } from '../config/config.js'
 import { isStubMode } from './common/services/mode.js'
 import { pulse } from './common/helpers/pulse.js'
@@ -81,6 +82,7 @@ export async function createServer() {
     ...(authEnabled
       ? [authPlugin, isStubMode() ? stubSignInRoutes : authRoutes]
       : []),
+    ...(isStubMode() ? [stubUploadRoutes] : []),
     router // Register all the controllers/routes defined in src/server/router.js
   ])
 

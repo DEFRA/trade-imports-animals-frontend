@@ -56,15 +56,14 @@
     html: additionalDocumentsHtml
   }) }}
 
-  <form method="post" enctype="multipart/form-data" novalidate
+  {# One form, two targets. Save and add another carries the file, so it posts
+     to the upload service; every other action posts to the page and carries
+     the typed fields alone, which is why the page takes no multipart body. #}
+  <form method="post" novalidate
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {% if pendingDocumentSave %}
-      <input type="hidden" name="retryUploadId" value="{{ pendingDocumentSave.uploadId }}" />
-      <input type="hidden" name="retryFilename" value="{{ pendingDocumentSave.filename }}" />
-    {% endif %}
     {% if pendingDocumentRemoval %}
       <input type="hidden" name="retryRemoveIndex" value="{{ pendingDocumentRemoval.index }}" />
       <input type="hidden" name="retryRemoveUploadId" value="{{ pendingDocumentRemoval.uploadId }}" />
@@ -128,8 +127,20 @@
           text: copy.addAnother,
           classes: "govuk-button--secondary",
           name: "action",
-          value: "add"
+          value: "add",
+          disabled: uploadFormUnavailable,
+          attributes: {
+            formaction: uploadPath,
+            formenctype: "multipart/form-data"
+          } if uploadPath
         }) }}
+
+        {% if uploadFormUnavailable %}
+          <p class="govuk-error-message">
+            <span class="govuk-visually-hidden">{{ copy.errors.hiddenPrefix }}</span>
+            {{ copy.errors.uploadFailed }}
+          </p>
+        {% endif %}
 
         {% if hasDocuments %}
           <div id="documents-added">

@@ -35,16 +35,15 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 
 export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
 
-// MAX_PAYLOAD_BYTES must stay inside the ingress request-body cap, which on
-// CDP is nginx's 10 MiB default.
-const MAX_FILE_SIZE_MB = 10
+// The file reaches the upload service through the ingress bypass rather than
+// through this service, so the ingress request-body cap no longer bounds it.
+// This is the figure the upload service is asked to enforce, and the one the
+// page states and checks before a trader spends time uploading.
+const MAX_FILE_SIZE_MB = 50
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
 export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
 export const OVERSIZE_FILE_MESSAGE = en.errors.oversize(MAX_FILE_SIZE_LABEL)
-
-const MULTIPART_OVERHEAD_BYTES = 1024
-export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
 
 export const exceedsMaxFileSize = (byteCount, limit = MAX_FILE_SIZE_BYTES) =>
   Number.isFinite(byteCount) && Number.isFinite(limit) && byteCount > limit

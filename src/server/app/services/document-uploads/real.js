@@ -19,59 +19,48 @@ const traceHeaders = (contentType) => ({
   [tracingHeader]: getTraceId() ?? ''
 })
 
-const initiate = async ({
-  journeyId,
-  documentType,
-  documentReference,
-  dateOfIssue,
-  maxFileSize,
-  mimeTypes
-}) => {
-  const response = await backendFetch(
-    `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
-    {
-      method: 'POST',
-      headers: traceHeaders('application/json'),
-      body: JSON.stringify({
-        documentType,
-        documentReference,
-        dateOfIssue,
-        maxFileSize,
-        mimeTypes
-      })
-    }
-  )
-  if (!response.ok) {
-    throw failed('initiate document upload', response)
-  }
-  return response.json()
-}
-
-const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
-  const formData = new FormData()
-  formData.append(
-    'file',
-    new Blob([bytes], { type: contentType ?? 'application/octet-stream' }),
-    filename ?? 'upload'
-  )
-  const response = await backendFetch(
-    `${backendBaseUrl}/document-uploads/${uploadId}/file`,
-    {
-      method: 'POST',
-      headers: traceHeaders(),
-      body: formData
-    }
-  )
-  if (!response.ok) {
-    throw failed('upload document file', response)
-  }
-}
+const rejectionReasonOf = (files) =>
+  files?.find((file) => file.hasError)?.errorMessage ?? null
 
 export const documentUploads = {
-  upload: async (details) => {
-    const { uploadId } = await initiate(details)
-    await uploadFile(uploadId, details)
-    return uploadId
+  register: async ({ journeyId, uploadId, correlationId }) => {
+    const response = await backendFetch(
+      `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
+      {
+        method: 'POST',
+        headers: traceHeaders('application/json'),
+        body: JSON.stringify({ uploadId, correlationId })
+      }
+    )
+    if (!response.ok) {
+      throw failed('register document upload', response)
+    }
+  },
+
+  claim: async ({ uploadId, documentType, documentReference, dateOfIssue }) => {
+    const response = await backendFetch(
+      `${backendBaseUrl}/document-uploads/${uploadId}/claim`,
+      {
+        method: 'POST',
+        headers: traceHeaders('application/json'),
+        body: JSON.stringify({ documentType, documentReference, dateOfIssue })
+      }
+    )
+    if (!response.ok) {
+      throw failed('claim document upload', response)
+    }
+  },
+
+  findByCorrelationId: async ({ journeyId, correlationId }) => {
+    const response = await backendFetch(
+      `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
+      { method: 'GET', headers: traceHeaders() }
+    )
+    if (!response.ok) {
+      throw failed('list document uploads', response)
+    }
+    const { items } = await response.json()
+    return items.find((item) => item.correlationId === correlationId)
   },
 
   scanStatus: async ({ uploadId }) => {
@@ -82,8 +71,8 @@ export const documentUploads = {
     if (!response.ok) {
       throw failed('get document upload status', response)
     }
-    const { scanStatus } = await response.json()
-    return scanStatus
+    const { scanStatus, files } = await response.json()
+    return { scanStatus, rejectionReason: rejectionReasonOf(files) }
   },
 
   remove: async (uploadId) => {

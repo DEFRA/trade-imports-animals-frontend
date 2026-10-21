@@ -130,7 +130,9 @@ const contextFor = async (handler, journeyId, answers) => {
   if (!context) {
     return context
   }
-  const { concurrencyToken: _token, ...rest } = context
+  // Both are minted per render rather than read from the answers, so comparing
+  // them would compare two mintings, not the context the answers build.
+  const { concurrencyToken: _token, uploadPath: _uploadPath, ...rest } = context
   return rest
 }
 

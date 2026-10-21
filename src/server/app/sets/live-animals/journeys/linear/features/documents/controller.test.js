@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
@@ -16,12 +17,11 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
   postHandlerOf,
-  registerTestSessionAuth,
-  stubH
+  registerTestSessionAuth
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
+import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
@@ -31,7 +31,6 @@ import { documents as manifestDocuments } from '../../../../obligations/index.js
 import {
   FILE_TYPE_MESSAGE,
   MAX_FILE_SIZE_BYTES,
-  MAX_PAYLOAD_BYTES,
   OVERSIZE_FILE_MESSAGE
 } from './upload-config.js'
 
@@ -73,7 +72,9 @@ const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
 
-const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
+const PDF_FILENAME = 'itahc-certificate.pdf'
+
+const pdfFile = (filename = PDF_FILENAME, size = 8) => ({
   filename,
   headers: { 'content-type': 'application/pdf' },
   payload: Buffer.alloc(size, 1)
@@ -101,6 +102,73 @@ const storedDocument = (overrides = {}) => ({
   ...overrides
 })
 
+// What the browser returns with after posting its file to the upload service:
+// the correlation handle in the query, and the submitted fields readable from
+// the session it was posted to. Both are stubbed at the service boundary, which
+// is what the page actually depends on.
+const UPLOAD_ID = 'upload-session-1'
+const CORRELATION_ID = 'correlation-1'
+
+const submittedFile = (overrides = {}) => ({
+  filename: PDF_FILENAME,
+  contentType: 'application/pdf',
+  contentLength: 8,
+  fileStatus: 'complete',
+  hasError: false,
+  ...overrides
+})
+
+const returningFromUpload = (form, { uploadId = UPLOAD_ID } = {}) => {
+  const found = vi
+    .spyOn(documentUploads, 'findByCorrelationId')
+    .mockResolvedValue({ uploadId, correlationId: CORRELATION_ID })
+  const read = vi
+    .spyOn(documentUploadSessions, 'read')
+    .mockResolvedValue({ uploadStatus: 'pending', form })
+  const claim = vi.spyOn(documentUploads, 'claim').mockResolvedValue(undefined)
+  return () => {
+    found.mockRestore()
+    read.mockRestore()
+    claim.mockRestore()
+  }
+}
+
+/** Drives the page the way the upload service returns the browser to it. */
+const driveClaim = async (form, options = {}) => {
+  const restore = returningFromUpload(form, options)
+  try {
+    return await driveHandler(get, {
+      ...options,
+      query: { upload: CORRELATION_ID }
+    })
+  } finally {
+    restore()
+  }
+}
+
+const submittedDocument = (overrides = {}) => ({
+  ...validDocument,
+  file: submittedFile(),
+  ...overrides
+})
+
+// An upload the notification has registered, so the scan lifecycle a stored
+// document's row reads from is live for it.
+let nextUploadSession = 0
+const registeredUpload = async (filename) => {
+  nextUploadSession += 1
+  const uploadId = randomUUID()
+  await documentUploads.register({
+    journeyId: 'journey-1',
+    uploadId,
+    correlationId: `correlation-${nextUploadSession}`
+  })
+  // The stub settles a scan from the filename, so the row's lifecycle follows
+  // the file the test named.
+  await documentUploads.scanStatus({ uploadId, filename })
+  return uploadId
+}
+
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
@@ -110,18 +178,15 @@ const configureEngine = () => {
   buildDispatch(SET_ID, dispatchPages)
 }
 
-describe('documents — real upload leg on the single-page loop', () => {
+describe('documents — taking on an upload the browser returns with', () => {
   beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        action: 'add',
-        file: pdfFile(),
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentDateOfIssue: '31/2/2000'
-      }
+    const result = await driveClaim({
+      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentDateOfIssue: '31/2/2000',
+      file: submittedFile()
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
@@ -130,10 +195,9 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should require a document reference, a document type and a date of issue at add time', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'add', file: pdfFile() }
-    })
+  it('Should require a document reference, a document type and a date of issue', async () => {
+    const result = await driveClaim({ file: submittedFile() })
+
     expect(result.view.context.errors.accompanyingDocumentReference).toBe(
       'Enter a document reference'
     )
@@ -146,27 +210,36 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should list the add errors in the order the fields appear on the page', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'add' }
+  it('Should list the errors in the order the fields appear on the page', async () => {
+    const result = await driveClaim({ file: submittedFile() })
+
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'accompanyingDocumentReference',
+      'accompanyingDocumentType',
+      'accompanyingDocumentDateOfIssue'
+    ])
+  })
+
+  // A trader who got both the fields and the file wrong is told everything at
+  // once, not one fault and then the next.
+  it('Should name a refused file alongside the missing fields, in page order', async () => {
+    const result = await driveClaim({
+      file: submittedFile({ hasError: true, errorCode: 'FILE_TOO_LARGE' })
     })
+
     expect(Object.keys(result.view.context.errors)).toEqual([
       'accompanyingDocumentReference',
       'accompanyingDocumentType',
       'accompanyingDocumentDateOfIssue',
       'file'
     ])
+    expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        action: 'add',
-        ...validDocument,
-        accompanyingDocumentType: UNOFFERED_TYPE,
-        file: pdfFile()
-      }
-    })
+    const result = await driveClaim(
+      submittedDocument({ accompanyingDocumentType: UNOFFERED_TYPE })
+    )
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
       'Select a document type'
@@ -174,141 +247,128 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should not upload or persist an otherwise-started document with any mandatory form field blank', async () => {
-    const upload = vi.spyOn(documentUploads, 'upload')
-    const incompletePayloads = [
-      {
-        payload: {
-          action: 'add',
-          file: pdfFile(),
-          accompanyingDocumentType: 'ITAHC',
-          accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
-        },
-        errorField: 'accompanyingDocumentReference'
-      },
-      {
-        payload: {
-          action: 'add',
-          file: pdfFile(),
-          accompanyingDocumentReference: 'GBHC1234567890',
-          accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
-        },
-        errorField: 'accompanyingDocumentType'
-      },
-      {
-        payload: {
-          action: 'add',
-          file: pdfFile(),
-          accompanyingDocumentReference: 'GBHC1234567890',
-          accompanyingDocumentType: 'ITAHC'
-        },
-        errorField: 'accompanyingDocumentDateOfIssue'
-      }
-    ]
-
-    for (const { payload, errorField } of incompletePayloads) {
-      const result = await driveHandler(post, { payload })
-      expect(result.response.statusCode).toBe(400)
-      expect(result.view.context.errors[errorField]).toBeDefined()
-      expect(result.after).toEqual(result.before)
-    }
-    expect(upload).not.toHaveBeenCalled()
-    upload.mockRestore()
-  })
-
-  it('Should append the uploaded document with the chosen type and the attachment type derived from the filename, then redirect', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
-    })
+  it('Should append the document with the chosen type and the attachment type derived from the filename, then redirect', async () => {
+    const result = await driveClaim(
+      submittedDocument({ file: submittedFile({ filename: 'itahc.pdf' }) })
+    )
     expect(result.response.redirect).toBeDefined()
     const [entry] = result.after.documents
     expect(entry.accompanyingDocumentAttachmentType).toBe('PDF')
     expect(entry.filename).toBe('itahc.pdf')
-    expect(entry.uploadId).toBeDefined()
+    expect(entry.uploadId).toBe(UPLOAD_ID)
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
-  it('Should hand the upload service the date of issue as YYYY-MM-DD, not the date parts the form collected', async () => {
-    const upload = vi.spyOn(documentUploads, 'upload')
+  it('Should hand the claim the date of issue as YYYY-MM-DD, not the date parts the form collected', async () => {
+    const claim = vi.spyOn(documentUploads, 'claim')
+    const found = vi
+      .spyOn(documentUploads, 'findByCorrelationId')
+      .mockResolvedValue({
+        uploadId: UPLOAD_ID,
+        correlationId: CORRELATION_ID
+      })
+    const read = vi
+      .spyOn(documentUploadSessions, 'read')
+      .mockResolvedValue({ uploadStatus: 'pending', form: submittedDocument() })
 
-    const result = await driveHandler(post, {
-      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
+    const result = await driveHandler(get, {
+      query: { upload: CORRELATION_ID }
     })
 
     expect(result.response.redirect).toBeDefined()
     // The whole value, pinned: `12/12/2025` goes out as a date with no time and
     // no offset, so a substring or a shape check would pass on the instant
     // form the API now rejects.
-    expect(upload).toHaveBeenCalledWith(
+    expect(claim).toHaveBeenCalledWith(
       expect.objectContaining({ dateOfIssue: '2025-12-12' })
     )
-    upload.mockRestore()
+    claim.mockRestore()
+    found.mockRestore()
+    read.mockRestore()
   })
 
   it('Should store the chosen type whatever the filename says', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        action: 'add',
-        ...validDocument,
+    const result = await driveClaim(
+      submittedDocument({
         accompanyingDocumentType: 'COMMERCIAL_INVOICE',
-        file: pdfFile('itahc-certificate.pdf')
-      }
-    })
+        file: submittedFile({ filename: PDF_FILENAME })
+      })
+    )
     const [entry] = result.after.documents
     expect(entry.accompanyingDocumentType).toBe('COMMERCIAL_INVOICE')
   })
 
-  it('Should refuse an add without a file and append nothing', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'add', ...validDocument }
-    })
+  it('Should refuse a return carrying no file and append nothing', async () => {
+    const result = await driveClaim({ ...validDocument })
+
     expect(result.view.context.errors.file).toBe('Upload a document')
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should refuse a file type outside the allow-list', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'add', ...validDocument, file: pdfFile('notes.zip') }
-    })
+  it('Should refuse a file the upload service rejected for its type, naming the accepted types', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({
+          filename: 'notes.zip',
+          hasError: true,
+          errorCode: 'FILE_INVALID_TYPE'
+        })
+      })
+    )
     expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should refuse a file over the 10MB limit', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        action: 'add',
-        ...validDocument,
-        file: pdfFile('big.pdf', MAX_FILE_SIZE_BYTES + 1)
-      }
-    })
+  it('Should refuse a file the upload service rejected for its size, naming the limit', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({
+          filename: 'big.pdf',
+          hasError: true,
+          errorCode: 'FILE_TOO_LARGE'
+        })
+      })
+    )
     expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should answer 500 when the upload service fails, re-rendering the failure and appending nothing', async () => {
-    const spy = vi
-      .spyOn(documentUploads, 'upload')
-      .mockRejectedValueOnce(new Error('upload service unavailable'))
-    const result = await driveHandler(post, {
-      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
-    })
-    expect(result.response.statusCode).toBe(500)
-    expect(result.view.context.errors.file).toBeDefined()
+  it('Should refuse a file the upload service rejected for a reason the page does not know', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({ hasError: true, errorCode: 'FILE_SOMETHING_NEW' })
+      })
+    )
+    expect(result.view.context.errors.file).toBe(
+      'The file could not be uploaded. Try again.'
+    )
     expect(result.after).toEqual(result.before)
-    spy.mockRestore()
   })
 
-  it('Should answer 400 from the oversize-payload safety net rather than a bare 413', async () => {
-    const journey = await store.create()
-    const h = stubH()
-    const request = journeyRequest(journey.journeyId, {
-      response: { isBoom: true, output: { statusCode: 413 } },
-      state: { crumb: 'test-crumb' }
+  it('Should append nothing for a return whose upload this notification never registered', async () => {
+    const found = vi
+      .spyOn(documentUploads, 'findByCorrelationId')
+      .mockResolvedValue(undefined)
+
+    const result = await driveHandler(get, {
+      query: { upload: 'correlation-of-another-notification' }
     })
-    const response = await documents.handleOversizePayload(request, h)
-    expect(response.statusCode).toBe(400)
-    expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+    found.mockRestore()
+  })
+
+  it('Should append the document once when the same return is replayed', async () => {
+    const first = await driveClaim(submittedDocument())
+    expect(first.after.documents).toHaveLength(1)
+
+    const replayed = await driveClaim(submittedDocument(), {
+      seed: { documents: first.after.documents }
+    })
+
+    expect(replayed.response.redirect).toBeDefined()
+    expect(replayed.after.documents).toHaveLength(1)
   })
 })
 
@@ -363,7 +423,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should show Scanning for virus on every render of a fresh upload until a refresh-link GET settles it to Check completed', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     }
@@ -387,7 +447,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should block Continue while a scan is PENDING, naming the reason', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(post, {
       seed: {
         documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -402,9 +462,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
-    const uploadId = await documentUploads.upload({
-      filename: VIRUS_NOTES_FILENAME
-    })
+    const uploadId = await registeredUpload(VIRUS_NOTES_FILENAME)
     await documentUploads.scanStatus({
       uploadId,
       filename: VIRUS_NOTES_FILENAME,
@@ -425,7 +483,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should let the hub exit leave the page while a scan is PENDING', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(post, {
       seed: {
         documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -436,7 +494,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should remove the named document and its upload session on the remove POST, leaving the others', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(post, {
       seed: {
         documents: [
@@ -490,19 +548,32 @@ describe('documents — listing, scanning and removing', () => {
     expect(prefetched.statusCode).toBe(404)
   })
 
-  it('Should refuse a document past the cap with the maximum message and append nothing', async () => {
+  it('Should refuse a returning upload past the cap with the maximum message and append nothing', async () => {
     const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
-    const result = await driveHandler(post, {
-      seed: { documents: documentsAtCapacity },
-      payload: { action: 'add', ...validDocument, file: pdfFile() }
+    const result = await driveClaim(submittedDocument(), {
+      seed: { documents: documentsAtCapacity }
     })
     expect(result.response.statusCode).toBe(400)
     expect(summaryTexts(result)).toContain(
       `You can upload a maximum of ${MAX_DOCUMENTS} files`
     )
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
+  })
+
+  it('Should refuse a Continue past the cap with the maximum message', async () => {
+    const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
+      storedDocument()
+    )
+    const result = await driveHandler(post, {
+      seed: { documents: documentsAtCapacity },
+      payload: { action: 'continue', ...validDocument }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(summaryTexts(result)).toContain(
+      `You can upload a maximum of ${MAX_DOCUMENTS} files`
+    )
   })
 
   it('Should derive the controller cap from the manifest, not a copied number', () => {
@@ -528,24 +599,22 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should save the document Continue carries rather than discard it', async () => {
+  // The file itself can only go to the upload service, so Continue cannot
+  // attach it. The trader keeps every answer they typed and is told which
+  // action does attach it.
+  it('Should keep the answers Continue carries and ask for the add action, appending nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { action: 'continue', ...validDocument, file: pdfFile() }
+      payload: { action: 'continue', ...validDocument }
     })
-    const [entry] = result.after.documents
-    expect(entry.accompanyingDocumentReference).toBe('GBHC1234567890')
-    expect(entry.accompanyingDocumentType).toBe('ITAHC')
-    expect(entry.uploadId).toBeDefined()
-  })
-
-  // A Continue that saves has mutated state, so it must end in a redirect —
-  // a reload of the POST would otherwise append the document a second time.
-  it('Should redirect back to the page after saving the document Continue carries', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'continue', ...validDocument, file: pdfFile() }
-    })
-    expect(result.response.redirect).toContain('accompanying-documents')
-    expect(result.after.documents).toHaveLength(1)
+    expect(result.response.statusCode).toBe(400)
+    expect(summaryTexts(result)).toContain(
+      'Select ‘Save and add another’ to add the document you chose'
+    )
+    expect(result.view.context.values.accompanyingDocumentReference).toBe(
+      'GBHC1234567890'
+    )
+    expect(result.view.context.errors).toEqual({})
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should name what is missing when Continue carries a type and nothing else, appending nothing', async () => {
@@ -555,8 +624,7 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.response.statusCode).toBe(400)
     expect(Object.keys(result.view.context.errors)).toEqual([
       'accompanyingDocumentReference',
-      'accompanyingDocumentDateOfIssue',
-      'file'
+      'accompanyingDocumentDateOfIssue'
     ])
     expect(result.after).toEqual(result.before)
   })
@@ -606,7 +674,7 @@ describe('documents — scan-status poll and view context', () => {
   beforeEach(() => store.clear())
 
   it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(statusRoute.handler, {
       seed: {
         documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -618,7 +686,7 @@ describe('documents — scan-status poll and view context', () => {
   })
 
   it('Should settle a pending scan through the poll leg, as the refresh link does', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     }
@@ -635,7 +703,7 @@ describe('documents — scan-status poll and view context', () => {
   })
 
   it('Should report a rejected scan so the client can rewrite the tag', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'virus.pdf' })
+    const uploadId = await registeredUpload('virus.pdf')
     const result = await driveHandler(statusRoute.handler, {
       seed: {
         documents: [storedDocument({ uploadId, filename: 'virus.pdf' })]
@@ -654,7 +722,7 @@ describe('documents — scan-status poll and view context', () => {
   })
 
   it('Should tag every uploaded row with its upload id and current scan status', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(get, {
       seed: {
         documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -699,7 +767,7 @@ describe('documents — scan-status poll and view context', () => {
   })
 
   it('Should offer View file only once a scan has settled clean, alongside Remove', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     }
@@ -767,11 +835,15 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
 
-  it('Should register the multipart POST route with the 10MB payload cap', async () => {
+  // The file goes to the upload service, never to this route, so the route
+  // takes no multipart body and raises no cap of its own: hapi's 1 MB default
+  // stands, far below any document a trader attaches.
+  it('Should register the POST route with no multipart body, on hapi’s default cap', async () => {
     const server = await serverWithDocumentRoutes()
     const route = server.table().find((entry) => entry.method === 'post')
-    expect(route.settings.payload.maxBytes).toBe(MAX_PAYLOAD_BYTES)
-    expect(route.settings.payload.multipart).toEqual({ output: 'annotated' })
+    expect(route.settings.payload.multipart).toBeFalsy()
+    expect(route.settings.payload.maxBytes).toBe(1048576)
+    expect(route.settings.payload.maxBytes).toBeLessThan(MAX_FILE_SIZE_BYTES)
   })
 })
 
@@ -805,7 +877,7 @@ describe('documents — reading an uploaded file back', () => {
     })
 
   it('Should stream an owned upload with its content type, disposition and nosniff', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const held = await journeyHolding(uploadId)
 
     const response = await readFile(held, uploadId)
@@ -820,7 +892,7 @@ describe('documents — reading an uploaded file back', () => {
   })
 
   it('Should answer 404 for a well-formed upload id the journey does not hold', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const held = await journeyHolding(uploadId)
 
     const response = await readFile(held, 'somebody-elses-upload-id')
@@ -829,7 +901,7 @@ describe('documents — reading an uploaded file back', () => {
   })
 
   it("Should not expose journey A's upload through journey B's URL in one session", async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const heldByA = await journeyHolding(uploadId)
     const journeyB = await store.create()
 
@@ -843,7 +915,7 @@ describe('documents — reading an uploaded file back', () => {
   })
 
   it('Should refuse a malformed upload id before it reaches the upload service', async () => {
-    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const uploadId = await registeredUpload('itahc.pdf')
     const held = await journeyHolding(uploadId)
 
     const response = await readFile(held, 'up_1234%20')

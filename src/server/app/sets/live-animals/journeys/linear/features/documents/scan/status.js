@@ -6,11 +6,12 @@ export const scanStatusOf = async (entry, refresh) => {
     return SCAN_STATUS.COMPLETE
   }
   try {
-    return await documentUploads.scanStatus({
+    const { scanStatus } = await documentUploads.scanStatus({
       uploadId: entry.uploadId,
       filename: entry.filename,
       refresh
     })
+    return scanStatus
   } catch {
     return SCAN_STATUS.PENDING
   }

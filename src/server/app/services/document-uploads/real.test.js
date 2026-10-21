@@ -8,71 +8,144 @@ fetchMocker.enableMocks()
 
 const BACKEND_URL = 'http://localhost:8085'
 const PDF_CONTENT_TYPE = 'application/pdf'
-
-const uploadDetails = {
-  journeyId: 'GBN-1',
-  filename: 'invoice.pdf',
-  contentType: PDF_CONTENT_TYPE,
-  bytes: Buffer.from('pdf-bytes'),
-  documentType: 'ITAHC',
-  documentReference: 'GBHC1234567890',
-  dateOfIssue: '2025-12-12',
-  maxFileSize: 10000000,
-  mimeTypes: [PDF_CONTENT_TYPE]
-}
+const UPLOAD_ID = 'up-1'
+const CORRELATION_ID = 'corr-1'
+const JOURNEY_ID = 'GBN-1'
+const SCAN_COMPLETE = 'COMPLETE'
+const OTHER_UPLOAD_ID = 'up-2'
+const OTHER_CORRELATION_ID = 'corr-2'
+const NOT_FOUND_BODY = 'Not Found'
 
 describe('#documentUploads', () => {
-  describe('#upload', () => {
-    it('Should initiate against the notification then post the file to the returned uploadId', async () => {
-      fetchMocker.mockResponses(JSON.stringify({ uploadId: 'up-1' }), [
-        '',
-        { status: 202 }
-      ])
+  describe('#register', () => {
+    it('Should record the session against the notification by both of its ids', async () => {
+      fetchMocker.mockResponse('', { status: 201 })
 
-      const uploadId = await documentUploads.upload(uploadDetails)
-
-      expect(uploadId).toBe('up-1')
-      const [initiateUrl, initiateOptions] = fetchMocker.mock.calls[0]
-      expect(initiateUrl).toBe(
-        `${BACKEND_URL}/notifications/GBN-1/document-uploads`
-      )
-      expect(JSON.parse(initiateOptions.body)).toEqual({
-        documentType: 'ITAHC',
-        documentReference: 'GBHC1234567890',
-        dateOfIssue: '2025-12-12',
-        maxFileSize: 10000000,
-        mimeTypes: [PDF_CONTENT_TYPE]
+      await documentUploads.register({
+        journeyId: JOURNEY_ID,
+        uploadId: UPLOAD_ID,
+        correlationId: CORRELATION_ID
       })
-      const [fileUrl, fileOptions] = fetchMocker.mock.calls[1]
-      expect(fileUrl).toBe(`${BACKEND_URL}/document-uploads/up-1/file`)
-      expect(fileOptions.body).toBeInstanceOf(FormData)
-      const file = fileOptions.body.get('file')
-      expect(file.name).toBe('invoice.pdf')
-      expect(file.type).toBe(PDF_CONTENT_TYPE)
+
+      const [url, options] = fetchMocker.mock.calls[0]
+      expect(url).toBe(`${BACKEND_URL}/notifications/GBN-1/document-uploads`)
+      expect(JSON.parse(options.body)).toEqual({
+        uploadId: UPLOAD_ID,
+        correlationId: CORRELATION_ID
+      })
     })
 
-    it('Should throw with the response status when initiate fails, without posting the file', async () => {
-      fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
+    it('Should throw with the response status when the session cannot be recorded', async () => {
+      fetchMocker.mockResponse(() => ({ status: 409, body: 'Conflict' }))
 
-      await expect(documentUploads.upload(uploadDetails)).rejects.toMatchObject(
-        {
-          status: 404
-        }
+      await expect(
+        documentUploads.register({
+          journeyId: JOURNEY_ID,
+          uploadId: UPLOAD_ID,
+          correlationId: CORRELATION_ID
+        })
+      ).rejects.toMatchObject({ status: 409 })
+    })
+  })
+
+  describe('#claim', () => {
+    it('Should send the validated details to the upload it claims', async () => {
+      fetchMocker.mockResponse(JSON.stringify({ claimed: true }))
+
+      await documentUploads.claim({
+        uploadId: UPLOAD_ID,
+        documentType: 'ITAHC',
+        documentReference: 'GBHC1234567890',
+        dateOfIssue: '2025-12-12'
+      })
+
+      const [url, options] = fetchMocker.mock.calls[0]
+      expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1/claim`)
+      expect(JSON.parse(options.body)).toEqual({
+        documentType: 'ITAHC',
+        documentReference: 'GBHC1234567890',
+        dateOfIssue: '2025-12-12'
+      })
+    })
+
+    it('Should throw with the response status when the upload cannot be claimed', async () => {
+      fetchMocker.mockResponse(() => ({ status: 404, body: NOT_FOUND_BODY }))
+
+      await expect(
+        documentUploads.claim({ uploadId: UPLOAD_ID })
+      ).rejects.toMatchObject({ status: 404 })
+    })
+  })
+
+  describe('#findByCorrelationId', () => {
+    it('Should pick the notification document carrying that correlationId', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          items: [
+            { uploadId: UPLOAD_ID, correlationId: CORRELATION_ID },
+            { uploadId: OTHER_UPLOAD_ID, correlationId: OTHER_CORRELATION_ID }
+          ]
+        })
       )
-      expect(fetchMocker.mock.calls).toHaveLength(1)
+
+      await expect(
+        documentUploads.findByCorrelationId({
+          journeyId: JOURNEY_ID,
+          correlationId: OTHER_CORRELATION_ID
+        })
+      ).resolves.toEqual({
+        uploadId: OTHER_UPLOAD_ID,
+        correlationId: OTHER_CORRELATION_ID
+      })
+    })
+
+    it('Should answer nothing when no document carries that correlationId', async () => {
+      fetchMocker.mockResponse(JSON.stringify({ items: [] }))
+
+      await expect(
+        documentUploads.findByCorrelationId({
+          journeyId: JOURNEY_ID,
+          correlationId: CORRELATION_ID
+        })
+      ).resolves.toBeUndefined()
     })
   })
 
   describe('#scanStatus', () => {
     it('Should read scanStatus from the upload session', async () => {
-      fetchMocker.mockResponse(JSON.stringify({ scanStatus: 'COMPLETE' }))
+      fetchMocker.mockResponse(JSON.stringify({ scanStatus: SCAN_COMPLETE }))
 
-      expect(await documentUploads.scanStatus({ uploadId: 'up-1' })).toBe(
-        'COMPLETE'
+      expect(await documentUploads.scanStatus({ uploadId: UPLOAD_ID })).toEqual(
+        {
+          scanStatus: SCAN_COMPLETE,
+          rejectionReason: null
+        }
       )
       expect(fetchMocker.mock.calls[0][0]).toBe(
         `${BACKEND_URL}/document-uploads/up-1`
       )
+    })
+
+    it('Should report why a rejected upload was rejected', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          scanStatus: 'REJECTED',
+          files: [
+            { hasError: false, errorMessage: null },
+            {
+              hasError: true,
+              errorMessage: 'The selected file contains a virus'
+            }
+          ]
+        })
+      )
+
+      await expect(
+        documentUploads.scanStatus({ uploadId: UPLOAD_ID })
+      ).resolves.toEqual({
+        scanStatus: 'REJECTED',
+        rejectionReason: 'The selected file contains a virus'
+      })
     })
   })
 
@@ -80,7 +153,7 @@ describe('#documentUploads', () => {
     it('Should DELETE the upload session on remove', async () => {
       fetchMocker.mockResponse('', { status: 200 })
 
-      await documentUploads.remove('up-1')
+      await documentUploads.remove(UPLOAD_ID)
 
       const [url, options] = fetchMocker.mock.calls[0]
       expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1`)
@@ -88,9 +161,11 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when remove fails', async () => {
-      fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
+      fetchMocker.mockResponse(() => ({ status: 404, body: NOT_FOUND_BODY }))
 
-      await expect(documentUploads.remove('up-2')).rejects.toMatchObject({
+      await expect(
+        documentUploads.remove(OTHER_UPLOAD_ID)
+      ).rejects.toMatchObject({
         status: 404
       })
     })
@@ -105,7 +180,7 @@ describe('#documentUploads', () => {
         }
       })
 
-      const response = await documentUploads.streamFile('up-1')
+      const response = await documentUploads.streamFile(UPLOAD_ID)
 
       const [url, options] = fetchMocker.mock.calls[0]
       expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1/file`)
@@ -118,9 +193,11 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the file is not there', async () => {
-      fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
+      fetchMocker.mockResponse(() => ({ status: 404, body: NOT_FOUND_BODY }))
 
-      await expect(documentUploads.streamFile('up-2')).rejects.toMatchObject({
+      await expect(
+        documentUploads.streamFile(OTHER_UPLOAD_ID)
+      ).rejects.toMatchObject({
         status: 404
       })
     })

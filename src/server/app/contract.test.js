@@ -1,5 +1,5 @@
 import { SET_ID } from './sets/live-animals/set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
 import {
@@ -25,6 +25,8 @@ import {
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
+import { documentUploads } from './services/document-uploads/index.js'
+import { documentUploadSessions } from './services/cdp-uploader/index.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
@@ -264,24 +266,44 @@ describe('controller <-> model commit contract', () => {
     })
   })
 
-  it('Should commit documents via its own add action on the single-page loop', async () => {
+  it('Should commit documents when the browser returns from the upload service', async () => {
     expect(documents.meta.collects).toEqual(['documents'])
-    const result = await drive(postHandlerOf(documents), {
-      payload: {
-        action: 'add',
+    const found = vi
+      .spyOn(documentUploads, 'findByCorrelationId')
+      .mockResolvedValue({
+        uploadId: 'upload-session-1',
+        correlationId: 'correlation-1'
+      })
+    const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
+      uploadStatus: 'pending',
+      form: {
         accompanyingDocumentType: 'ITAHC',
         accompanyingDocumentReference: 'GBHC1234567890',
         accompanyingDocumentDateOfIssue: '12/12/2025',
         file: {
           filename: 'itahc-certificate.pdf',
-          headers: { 'content-type': 'application/pdf' },
-          payload: Buffer.from('pdf-bytes')
+          contentType: 'application/pdf',
+          hasError: false
         }
       }
     })
+    const claim = vi
+      .spyOn(documentUploads, 'claim')
+      .mockResolvedValue(undefined)
+
+    const documentsGet = documents.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await drive(documentsGet, {
+      query: { upload: 'correlation-1' }
+    })
+
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documents.meta.collects))
     )
+    found.mockRestore()
+    read.mockRestore()
+    claim.mockRestore()
   })
 
   it('Should append an animal identifier unit at depth-2 via the identification surface, writing only the commodity-gated fields', async () => {

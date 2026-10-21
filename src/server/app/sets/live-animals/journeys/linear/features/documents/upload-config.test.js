@@ -8,7 +8,6 @@ import {
   attachmentTypeFor,
   exceedsMaxFileSize,
   MAX_FILE_SIZE_BYTES,
-  MAX_PAYLOAD_BYTES,
   OVERSIZE_FILE_MESSAGE
 } from './upload-config.js'
 
@@ -48,11 +47,10 @@ describe('#upload-config', () => {
     expect(listed).toEqual(accepted)
   })
 
-  it('Should hold the 10MB decimal limit with multipart headroom on the route cap', () => {
-    expect(MAX_FILE_SIZE_BYTES).toBe(10000000)
-    expect(MAX_PAYLOAD_BYTES).toBe(10001024)
+  it('Should hold the 50MB decimal limit the upload service is asked to enforce', () => {
+    expect(MAX_FILE_SIZE_BYTES).toBe(50000000)
     expect(OVERSIZE_FILE_MESSAGE).toBe(
-      'The selected file must be smaller than 10MB'
+      'The selected file must be smaller than 50MB'
     )
   })
 
