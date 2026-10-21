@@ -21,7 +21,6 @@ export const linesWithUnlistedSpecies = async (lines) => {
   }
   return callReferenceData({
     stubCall: () => lines.filter((line) => !listedInStub(line)),
-    realCall: async () => (await checkSpecies(lines)).missing ?? [],
-    failureLog: 'Species check failed'
+    realCall: async () => (await checkSpecies(lines)).missing ?? []
   })
 }

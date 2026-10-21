@@ -7,17 +7,13 @@ const baseUrl =
 
 export const referenceDataUrl = (path) => new URL(`${baseUrl}${path}`)
 
-export const requestReferenceData = async (url, init, failureMessage) => {
+const fetchJson = async (url, init, failureMessage) => {
   const response = await fetch(url.toString(), {
     ...init,
     headers: { 'Content-Type': 'application/json' }
   })
 
   if (!response.ok) {
-    logger.error(
-      { url: url.toString(), status: response.status },
-      failureMessage
-    )
     throw Object.assign(new Error(failureMessage), {
       status: response.status,
       statusText: response.statusText
@@ -25,4 +21,13 @@ export const requestReferenceData = async (url, init, failureMessage) => {
   }
 
   return response.json()
+}
+
+export const requestReferenceData = async (url, init, failureMessage) => {
+  try {
+    return await fetchJson(url, init, failureMessage)
+  } catch (err) {
+    logger.error({ err, url: url.toString() }, failureMessage)
+    throw err
+  }
 }

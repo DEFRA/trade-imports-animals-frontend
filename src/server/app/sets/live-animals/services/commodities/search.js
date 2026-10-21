@@ -13,6 +13,5 @@ import { searchCommodities } from './stub.js'
 export const search = (term, { page = 0, size }) =>
   callReferenceData({
     stubCall: () => searchCommodities(term, { page, size }),
-    realCall: () => fetchCommodities(term, { page, size }),
-    failureLog: 'Commodity search failed'
+    realCall: () => fetchCommodities(term, { page, size })
   })
