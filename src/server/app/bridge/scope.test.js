@@ -28,7 +28,7 @@ const resolveRegion = (answers) => ({
   ...answers
 })
 
-const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commodityCode'
+const FIRST_LINE_COMMODITY_CODE = 'commodityLines[0].commodityCode'
 
 const line = (commodity, units) => ({
   commodityCode: commodity,
@@ -108,14 +108,14 @@ describe('scope bridge — per-gate scoping', () => {
         ]
       })
     )
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
     expect(scope.has('commodityLines[1].commodityCode')).toBe(true)
   })
 
   it('Should keep the group node in scope for an empty required collection', () => {
     const scope = makeScope(resolveRegion({ commodityLines: [] }))
     expect(scope.has('commodityLines')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(false)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(false)
   })
 })
 
@@ -162,7 +162,7 @@ describe('scope bridge — makeScope shape parity', () => {
   it('Should read the projected inScope set via has(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.has('countryOfOrigin')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
     expect(scope.has('nonExistent')).toBe(false)
   })
 
