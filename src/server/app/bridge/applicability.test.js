@@ -2,14 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { appliesForGateValue, gateAdmits } from './applicability.js'
 
 describe('#appliesForGateValue', () => {
-  it('Should apply an allowListed obligation for a commodity in its list', () => {
+  it('Should apply horseName and passport for commodity code 0101', () => {
     expect(appliesForGateValue('horseName', '0101')).toBe(true)
     expect(appliesForGateValue('animalIdentifierPassport', '0101')).toBe(true)
+  })
+
+  it('Should apply permanentAddress for the species Felis catus', () => {
     expect(appliesForGateValue('permanentAddress', 'Felis catus')).toBe(true)
   })
 
-  it('Should not apply an allowListed obligation for a commodity outside its list', () => {
+  it('Should not apply horseName for commodity code 0102', () => {
     expect(appliesForGateValue('horseName', '0102')).toBe(false)
+  })
+
+  it('Should not apply permanentAddress for the species Felis', () => {
     expect(appliesForGateValue('permanentAddress', 'Felis')).toBe(false)
   })
 
@@ -22,7 +28,7 @@ describe('#appliesForGateValue', () => {
     expect(appliesForGateValue('countyParishHoldingCph', '0101')).toBe(false)
   })
 
-  it('Should apply no identifier to a commodity on none of the identifier lists', () => {
+  it('Should apply no identifier for commodity code 01063300', () => {
     for (const identifier of [
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
@@ -34,12 +40,15 @@ describe('#appliesForGateValue', () => {
     }
   })
 
-  it('Should treat an unknown commodity as outside every allowlist', () => {
+  it('Should not apply horseName for an unknown commodity code', () => {
     expect(appliesForGateValue('horseName', 'no-such-commodity')).toBe(false)
+  })
+
+  it('Should not apply permanentAddress for an unknown species', () => {
     expect(appliesForGateValue('permanentAddress', 'Unicorn')).toBe(false)
   })
 
-  it('Should never apply for an obligation with no commodity gate', () => {
+  it('Should never apply an obligation that has no gate', () => {
     expect(appliesForGateValue('countryOfOrigin', '0102')).toBe(false)
     expect(appliesForGateValue('no-such-obligation', '0102')).toBe(false)
   })
