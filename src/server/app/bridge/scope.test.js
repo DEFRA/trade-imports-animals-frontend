@@ -28,11 +28,11 @@ const resolveRegion = (answers) => ({
   ...answers
 })
 
-const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commoditySelection'
+const FIRST_LINE_COMMODITY_CODE = 'commodityLines[0].commodityCode'
 
 const line = (commodity, units) => ({
-  commoditySelection: commodity,
-  speciesSelection: '1148346',
+  commodityCode: commodity,
+  speciesLatinName: 'Bos taurus',
   numberOfAnimalsQuantity: String(units.length),
   animalIdentifiers: units
 })
@@ -100,22 +100,22 @@ describe('scope bridge — per-gate scoping', () => {
     const scope = makeScope(
       resolveRegion({
         commodityLines: [
-          line('Cow', [
+          line('0102', [
             { animalIdentifierEarTag: 'UK111' },
             { animalIdentifierEarTag: 'UK222' }
           ]),
-          line('Horse', [{ horseName: 'Dobbin' }])
+          line('0101', [{ horseName: 'Dobbin' }])
         ]
       })
     )
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
-    expect(scope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
+    expect(scope.has('commodityLines[1].commodityCode')).toBe(true)
   })
 
   it('Should keep the group node in scope for an empty required collection', () => {
     const scope = makeScope(resolveRegion({ commodityLines: [] }))
     expect(scope.has('commodityLines')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(false)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(false)
   })
 })
 
@@ -162,14 +162,14 @@ describe('scope bridge — makeScope shape parity', () => {
   it('Should read the projected inScope set via has(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.has('countryOfOrigin')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
     expect(scope.has('nonExistent')).toBe(false)
   })
 
   it('Should read whether an obligation instance is answered via answered(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.answered('countryOfOrigin')).toBe(true)
-    expect(scope.answered('commoditySelection')).toBe(true)
+    expect(scope.answered('commodityCode')).toBe(true)
     expect(scope.answered('portOfEntry')).toBe(true)
   })
 })

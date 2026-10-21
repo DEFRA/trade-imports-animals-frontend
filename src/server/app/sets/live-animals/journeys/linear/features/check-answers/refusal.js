@@ -7,8 +7,37 @@ import { SCAN_STATUS } from '../documents/scan-poll.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from '../documents/copy/copy.en.js'
 import { copy as cy } from '../documents/copy/copy.cy.js'
+import { copy as reviewEn } from './copy/copy.en.js'
+import { copy as reviewCy } from './copy/copy.cy.js'
+import { linesWithUnlistedSpecies } from '../../../../services/commodities/species-check.js'
 
 const documentsCopy = copyFor({ en, cy })
+const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
+
+const chosenSpecies = (answers) =>
+  [answers.commodityLines ?? []]
+    .flat()
+    .filter((line) => line?.commodityCode && line?.speciesLatinName)
+    .map((line) => ({
+      code: line.commodityCode,
+      latinName: line.speciesLatinName
+    }))
+
+export const speciesCardErrors = async (journey, answers) => {
+  if (journey.status !== state.DRAFT) {
+    return {}
+  }
+  const unlisted = await linesWithUnlistedSpecies(chosenSpecies(answers))
+  if (unlisted.length === 0) {
+    return {}
+  }
+  const speciesWithCodes = unlisted
+    .map(({ code, latinName }) => `${latinName} (${code})`)
+    .join(', ')
+  return {
+    species: reviewCopy.errors.cards.speciesNoLongerOffered(speciesWithCodes)
+  }
+}
 
 const documentScanStatuses = async (answers) => {
   const documents = [answers.documents ?? []].flat()
@@ -58,5 +87,8 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(invalidCardErrors).length > 0) {
     return true
   }
-  return Object.keys(await documentScanCardErrors(answers)).length > 0
+  if (Object.keys(await documentScanCardErrors(answers)).length > 0) {
+    return true
+  }
+  return Object.keys(await speciesCardErrors(journey, answers)).length > 0
 }

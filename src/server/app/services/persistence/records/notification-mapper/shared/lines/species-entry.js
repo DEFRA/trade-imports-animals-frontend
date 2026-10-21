@@ -1,4 +1,3 @@
-import { speciesLabel } from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
@@ -24,20 +23,20 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: permanentAddressFrom(unit.permanentAddress)
   })
 
-// The scalar identifier fields carry the line's first identifier unit;
-// `animalIdentifiers` carries every unit on the line.
 export const speciesEntryFromLine = (line) => {
-  const units = line.animalIdentifiers ?? []
-  const unit = units[0] ?? {}
+  const identifierUnits = line.animalIdentifiers ?? []
+  const firstUnit = identifierUnits[0] ?? {}
   return compact({
-    value: line.speciesSelection,
-    text: speciesLabel(line.speciesSelection) ?? line.speciesSelection,
+    value: line.speciesLatinName,
+    text: line.speciesLatinName,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
-    earTag: unit.animalIdentifierEarTag,
-    passport: unit.animalIdentifierPassport,
-    microchip: unit.animalIdentifierMicrochip,
+    earTag: firstUnit.animalIdentifierEarTag,
+    passport: firstUnit.animalIdentifierPassport,
+    microchip: firstUnit.animalIdentifierMicrochip,
     animalIdentifiers:
-      units.length > 0 ? units.map(animalIdentifierFrom) : undefined
+      identifierUnits.length > 0
+        ? identifierUnits.map(animalIdentifierFrom)
+        : undefined
   })
 }

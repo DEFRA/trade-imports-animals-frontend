@@ -15,9 +15,9 @@ import { emptyCollectionSatisfiesFloor } from './invariants.js'
 
 const line = { id: 'line-group', name: 'commodityLines' }
 
-const commoditySelection = {
-  id: 'commodity-selection',
-  name: 'commoditySelection',
+const commodityCode = {
+  id: 'commodity-code',
+  name: 'commodityCode',
   within: line,
   status: 'mandatory'
 }
@@ -28,7 +28,7 @@ const allowListedLeaf = {
   id: 'allow-listed-leaf',
   name: 'allowListedLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'unit-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'unit-group' })
 }
 
 // A shape `gateAdmits` cannot read: no `values`, no gated parent group.
@@ -37,8 +37,8 @@ const equalsGateLeaf = {
   name: 'equalsGateLeaf',
   status: 'optional',
   applyTo: equalsGate(
-    commoditySelection,
-    'Cow',
+    commodityCode,
+    '0102',
     { inScope: true },
     { inScope: false }
   )
@@ -50,7 +50,7 @@ const fannedElsewhereLeaf = {
   id: 'elsewhere-leaf',
   name: 'elsewhereLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'other-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'other-group' })
 }
 
 const unitGroupWith = (anyOfIds) => ({
@@ -65,14 +65,14 @@ const collection = { requiredAtLeastOne: true }
 const LINE_1 = 'line1'
 
 const stateWithCommodity = (value) => ({
-  fulfilments: { [commoditySelection.id]: { [LINE_1]: value } }
+  fulfilments: { [commodityCode.id]: { [LINE_1]: value } }
 })
 
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
     configureObligationSet(SET_ID, {
       obligations: [
-        commoditySelection,
+        commodityCode,
         allowListedLeaf,
         equalsGateLeaf,
         fannedElsewhereLeaf
@@ -91,7 +91,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         { requiredAtLeastOne: false },
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(true)
   })
@@ -102,7 +102,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(false)
   })
@@ -113,7 +113,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(true)
   })
@@ -130,7 +130,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([equalsGateLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
@@ -142,7 +142,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         collection,
         unitGroupWith([fannedElsewhereLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
@@ -161,7 +161,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
 
     const twoLines = {
       fulfilments: {
-        [commoditySelection.id]: { line1: 'Cow', line2: 'Cow' }
+        [commodityCode.id]: { line1: '0102', line2: '0102' }
       }
     }
 
@@ -169,32 +169,28 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })
 
-    // The gate is in scope and names the two Horse lines, not this one,
-    // while `allowListedLeaf` could still apply on a Cow line — so only
+    // The gate is in scope and names the two 0101 lines, not this 0102 one,
+    // while `allowListedLeaf` could still apply on a 0102 line — so only
     // the gate's own index list can stand the floor down here.
     it('Should stand the floor down for a parent the in-scope gate does not name', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Horse'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0101'], null))),
           LINE_1,
           {
             fulfilments: {
-              [commoditySelection.id]: {
-                line1: 'Cow',
-                line2: 'Horse',
-                line3: 'Horse'
+              [commodityCode.id]: {
+                line1: '0102',
+                line2: '0101',
+                line3: '0101'
               }
             }
           }
@@ -206,9 +202,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
           twoLines
         )
@@ -221,9 +215,9 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(allowListed(commoditySelection, ['Horse'], null)),
+          gatedGroup(allowListed(commodityCode, ['0101'], null)),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })

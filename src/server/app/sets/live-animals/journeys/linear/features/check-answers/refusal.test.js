@@ -10,8 +10,23 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { AMEND, DRAFT } from '../../../../../../engine/index.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
-import { documentScanCardErrors, isReviewRefused } from './refusal.js'
+import { copy as reviewEn } from './copy/copy.en.js'
+import {
+  documentScanCardErrors,
+  isReviewRefused,
+  speciesCardErrors
+} from './refusal.js'
+
+const LISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos taurus'
+}
+const UNLISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos spp.'
+}
 
 const PENDING_FILENAME = 'notes-never-scans.pdf'
 const REJECTED_FILENAME = 'virus-alert.pdf'
@@ -142,6 +157,53 @@ describe('#isReviewRefused', () => {
     )
 
     expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+
+  it('Should refuse a draft holding a species MDM no longer lists under its code', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [UNLISTED_SPECIES_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(true)
+  })
+
+  it('Should not refuse a draft whose species MDM still lists', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+})
+
+describe('#speciesCardErrors', () => {
+  it('Should name each species of a draft MDM no longer lists, with its code', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] }
+      )
+    ).toEqual({
+      species: reviewEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)')
+    })
+  })
+
+  it('Should return no species error for an amendment holding an unlisted species', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: AMEND },
+        { commodityLines: [UNLISTED_SPECIES_LINE] }
+      )
+    ).toEqual({})
+  })
+
+  it('Should return no species error for a line with no species', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [{ commodityCode: '0102' }] }
+      )
+    ).toEqual({})
   })
 })
 

@@ -234,10 +234,13 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
+const tickFirstExactSpeciesMatch = (page, name) =>
+  page.getByRole('checkbox', { name, exact: true }).first().check()
+
 export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
     await searchCommodities(page, name)
-    await page.getByRole('checkbox', { name }).check()
+    await tickFirstExactSpeciesMatch(page, name)
   }
 }
 

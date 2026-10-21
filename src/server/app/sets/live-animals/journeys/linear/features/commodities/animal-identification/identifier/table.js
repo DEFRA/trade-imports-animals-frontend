@@ -1,23 +1,25 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { permanentAddressApplies, scopedFields } from './fields.js'
+import {
+  PERMANENT_ADDRESS,
+  permanentAddressApplies,
+  scopedFields
+} from './fields.js'
 
 const copy = copyFor({ en, cy }).identification
 
 export const IDENTIFIER_LABELS = copy.identifierLabels
 
-const PERMANENT_ADDRESS = 'permanentAddress'
-
 // One column per identifier the COMMODITY declares — not per identifier the
 // trader happened to fill — so the header row says which identifiers this line
 // expects and an empty cell shows which are still missing (design 01-16/17).
-export const identifierColumns = (commodity) => [
-  ...scopedFields(commodity).map((field) => [
+export const identifierColumns = (commodityCode, species) => [
+  ...scopedFields(commodityCode).map((field) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),
-  ...(permanentAddressApplies(commodity)
+  ...(permanentAddressApplies(species)
     ? [[PERMANENT_ADDRESS, copy.table.permanentAddressColumn]]
     : [])
 ]

@@ -14,14 +14,14 @@ import { stubH, journeyRequest } from './test-support.js'
 // Every entry mutation now rebuilds and evaluates the canonical snapshot.
 // These tests pin that the old stale-answer window has closed.
 
-// horseName is gated on commodity 0101 (Horse); a Cow (0102) line holding a
+// horseName is gated on commodity 0101; a 0102 line holding a
 // stored horseName is the simulated stale window.
-const STALE_COW_LINE = {
+const STALE_0102_LINE = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
         { animalIdentifierEarTag: 'UK123', horseName: 'Dobbin' }
@@ -34,8 +34,8 @@ const HORSE_LINE = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Horse',
-      speciesSelection: '822332',
+      commodityCode: '0101',
+      speciesLatinName: 'Equus cabalus',
       numberOfAnimalsQuantity: '1',
       animalIdentifiers: [{ horseName: 'Dobbin' }]
     }
@@ -65,7 +65,7 @@ describe('entry-write canonical purge', () => {
   })
 
   it('Should keep an out-of-scope stored value invisible to scope', () => {
-    const scope = makeScope(STALE_COW_LINE)
+    const scope = makeScope(STALE_0102_LINE)
     expect(scope.inScope.has(STALE_HORSE_NAME_KEY)).toBe(false)
     expect(
       scope.inScope.has(
@@ -75,7 +75,7 @@ describe('entry-write canonical purge', () => {
   })
 
   it('Should name the stale value in the wipe set', () => {
-    expect(wipeOf(STALE_COW_LINE)).toContain(STALE_HORSE_NAME_KEY)
+    expect(wipeOf(STALE_0102_LINE)).toContain(STALE_HORSE_NAME_KEY)
   })
 
   it('Should destroy an out-of-scope value in the same updateEntryAt snapshot', async () => {
@@ -85,7 +85,7 @@ describe('entry-write canonical purge', () => {
       stubH(),
       ['commodityLines'],
       0,
-      STALE_COW_LINE.commodityLines[0]
+      STALE_0102_LINE.commodityLines[0]
     )
     const answers = await durable()
     expect(

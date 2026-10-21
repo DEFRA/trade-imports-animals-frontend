@@ -212,16 +212,16 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     // A service-backed list that failed to prime arrives empty. The rule must
     // still refuse, rather than degrading to "any non-empty string".
     const noDomain = requiredOneOf(
-      'commoditySelection',
+      'commodityCode',
       [],
       COMMODITY_REQUIRED_MESSAGE
     )
 
-    expect(run(noDomain, { commoditySelection: 'Cow' }).errors).toEqual({
-      commoditySelection: COMMODITY_REQUIRED_MESSAGE
+    expect(run(noDomain, { commodityCode: '0102' }).errors).toEqual({
+      commodityCode: COMMODITY_REQUIRED_MESSAGE
     })
-    expect(run(noDomain, { commoditySelection: '' }).errors).toEqual({
-      commoditySelection: COMMODITY_REQUIRED_MESSAGE
+    expect(run(noDomain, { commodityCode: '' }).errors).toEqual({
+      commodityCode: COMMODITY_REQUIRED_MESSAGE
     })
   })
 })

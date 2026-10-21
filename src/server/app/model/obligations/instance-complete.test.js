@@ -30,9 +30,9 @@ const earTag = {
   within: unit,
   status: 'optional'
 }
-const commoditySelection = {
-  id: 'commoditySelection',
-  name: 'commoditySelection',
+const commodityCode = {
+  id: 'commodityCode',
+  name: 'commodityCode',
   within: line,
   status: 'mandatory'
 }
@@ -41,7 +41,7 @@ const line1FulfilmentIndex = 'line1'
 const line1Unit1FulfilmentIndex = 'line1.unit1'
 
 const syntheticSet = {
-  obligations: [line, unit, passport, earTag, commoditySelection],
+  obligations: [line, unit, passport, earTag, commodityCode],
   groups: [line, unit]
 }
 
@@ -67,7 +67,7 @@ describe('#instanceComplete', () => {
   it('reads a fully-populated instance as complete', () => {
     const st = state({
       fulfilments: {
-        [commoditySelection.id]: { [line1FulfilmentIndex]: 'Cow' },
+        [commodityCode.id]: { [line1FulfilmentIndex]: '0102' },
         [passport.id]: { [line1Unit1FulfilmentIndex]: 'P-1' }
       },
       obligations: impls([
@@ -86,7 +86,7 @@ describe('#instanceComplete', () => {
           }
         },
         {
-          id: commoditySelection.id,
+          id: commodityCode.id,
           implication: {
             inScope: true,
             fulfilmentIndexes: [line1FulfilmentIndex]
@@ -106,7 +106,7 @@ describe('#instanceComplete', () => {
   })
 
   it('reads an instance missing a mandatory direct-child leaf as incomplete', () => {
-    // commoditySelection is a mandatory direct child of line but has no
+    // commodityCode is a mandatory direct child of line but has no
     // fulfilmentIndex for line1 — the direct-child requirement fires.
     const st = state({
       fulfilments: {},
@@ -119,7 +119,7 @@ describe('#instanceComplete', () => {
           }
         },
         {
-          id: commoditySelection.id,
+          id: commodityCode.id,
           implication: { inScope: true, fulfilmentIndexes: [] }
         },
         { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },
@@ -136,7 +136,7 @@ describe('#instanceComplete', () => {
   it('reads a unit with no identifier stored as incomplete via anyOfIds', () => {
     const st = state({
       fulfilments: {
-        [commoditySelection.id]: { [line1FulfilmentIndex]: 'Cow' }
+        [commodityCode.id]: { [line1FulfilmentIndex]: '0102' }
       },
       obligations: impls([
         {
@@ -154,7 +154,7 @@ describe('#instanceComplete', () => {
           }
         },
         {
-          id: commoditySelection.id,
+          id: commodityCode.id,
           implication: {
             inScope: true,
             fulfilmentIndexes: [line1FulfilmentIndex]
@@ -193,7 +193,7 @@ describe('#instanceComplete', () => {
           }
         },
         {
-          id: commoditySelection.id,
+          id: commodityCode.id,
           implication: { inScope: true, fulfilmentIndexes: [] }
         },
         { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },
@@ -208,7 +208,7 @@ describe('#instanceComplete', () => {
   })
 
   it('does not block on out-of-scope leaves', () => {
-    // commoditySelection is out of scope — the direct-child requirement is
+    // commodityCode is out of scope — the direct-child requirement is
     // gated behind inScope, so the missing fulfilmentIndex is ignored.
     const st = state({
       fulfilments: {},
@@ -221,7 +221,7 @@ describe('#instanceComplete', () => {
           }
         },
         {
-          id: commoditySelection.id,
+          id: commodityCode.id,
           implication: { inScope: false, fulfilmentIndexes: [] }
         },
         { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },

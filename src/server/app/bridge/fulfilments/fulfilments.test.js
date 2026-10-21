@@ -4,6 +4,8 @@ import { assembleFulfilments } from '../assemble-fulfilments.js'
 import { projectAnswers } from './index.js'
 import { createObligationEvaluator } from '../../model/obligations/evaluator.js'
 import { obligationSet } from '../../model/obligations/manifest.js'
+const BISON_BISON = 'Bison bison'
+const BOS_TAURUS = 'Bos taurus'
 
 const {
   countryOfOrigin,
@@ -19,7 +21,7 @@ const {
   animalsCertifiedFor,
   commodityLine,
   commodityCode,
-  species,
+  speciesLatinName,
   numberOfAnimals,
   numberOfPackages,
   cph,
@@ -78,16 +80,16 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '25',
-          speciesSelection: ['1148346'],
+          speciesLatinName: [BOS_TAURUS],
           animalIdentifiers: [
             { animalIdentifierEarTag: 'A' },
             { animalIdentifierEarTag: 'B' }
           ]
         },
         {
-          commoditySelection: 'Horse',
+          commodityCode: '0101',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ horseName: 'Silver' }]
         }
@@ -102,9 +104,9 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     })
   })
 
-  it('Should round-trip every commodity name exactly', () => {
-    for (const name of ['Cow', 'Horse', 'Fish', 'Cat', 'Dog']) {
-      const answers = { commodityLines: [{ commoditySelection: name }] }
+  it('Should round-trip every commodity code exactly', () => {
+    for (const code of ['0102', '0101', '01063300', '01061900']) {
+      const answers = { commodityLines: [{ commodityCode: code }] }
       expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
     }
   })
@@ -187,7 +189,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
     {
       name: 'deeper',
       fulfilments: {
-        [commodityCode.id]: { 'line0.unit0': 'Cow' }
+        [commodityCode.id]: { 'line0.unit0': '0102' }
       }
     },
     {
@@ -217,8 +219,8 @@ describe('#fulfilments — page projection validation and ordering', () => {
 
   it('Should accept out-of-order records and canonicalise arrays by numeric index', () => {
     const fulfilments = {
-      [commodityCode.id]: { line1: 'Horse', line0: 'Cow' },
-      [species.id]: { line1: '716661', line0: '1148346' },
+      [commodityCode.id]: { line1: '0101', line0: '0102' },
+      [speciesLatinName.id]: { line1: BISON_BISON, line0: BOS_TAURUS },
       [earTag.id]: {
         'line1.unit1': 'horse-2',
         'line0.unit0': 'cow-1',
@@ -230,13 +232,13 @@ describe('#fulfilments — page projection validation and ordering', () => {
     expect(projectAnswers(fulfilments)).toEqual({
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           animalIdentifiers: [{ animalIdentifierEarTag: 'cow-1' }]
         },
         {
-          commoditySelection: 'Horse',
-          speciesSelection: '716661',
+          commodityCode: '0101',
+          speciesLatinName: BISON_BISON,
           animalIdentifiers: [
             { animalIdentifierEarTag: 'horse-1' },
             { animalIdentifierEarTag: 'horse-2' }
@@ -251,13 +253,13 @@ describe('#fulfilments — page projection validation and ordering', () => {
     {
       name: 'top-level collection',
       fulfilments: {
-        [commodityCode.id]: { line0: 'Cow', line2: 'Horse' }
+        [commodityCode.id]: { line0: '0102', line2: '0101' }
       }
     },
     {
       name: 'nested collection',
       fulfilments: {
-        [commodityCode.id]: { line0: 'Cow' },
+        [commodityCode.id]: { line0: '0102' },
         [earTag.id]: {
           'line0.unit0': 'first',
           'line0.unit2': 'third'
@@ -271,13 +273,13 @@ describe('#fulfilments — page projection validation and ordering', () => {
   it('Should determine density across partial leaves, not per obligation records-map', () => {
     expect(
       projectAnswers({
-        [commodityCode.id]: { line0: 'Cow' },
-        [species.id]: { line1: '716661' }
+        [commodityCode.id]: { line0: '0102' },
+        [speciesLatinName.id]: { line1: BISON_BISON }
       })
     ).toEqual({
       commodityLines: [
-        { commoditySelection: 'Cow' },
-        { speciesSelection: '716661' }
+        { commodityCode: '0102' },
+        { speciesLatinName: BISON_BISON }
       ]
     })
   })
@@ -289,11 +291,11 @@ describe('#fulfilments — page projection validation and ordering', () => {
 // ---------------------------------------------------------------------------
 
 describe('#fulfilments — stored values pass through', () => {
-  it('Should store the picker name for a commodity selection', () => {
+  it('Should store the commodity code of a commodity line', () => {
     const fulfilments = assembleFulfilments({
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     })
-    expect(fulfilments[commodityCode.id]).toEqual({ line0: 'Cow' })
+    expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
   })
 
   it('Should store reasonForImport, transporterType and portOfEntry as the pages submit them', () => {
@@ -313,14 +315,14 @@ describe('#fulfilments — stored values pass through', () => {
       animalsCertifiedFor: 'slaughter',
       meansOfTransport: 'ROAD_VEHICLE',
       transitedCountries: ['FR', 'BE'],
-      commodityLines: [{ speciesSelection: ['1148346'] }]
+      commodityLines: [{ speciesLatinName: [BOS_TAURUS] }]
     }
     const fulfilments = assembleFulfilments(answers)
     expect(fulfilments[purposeInInternalMarket.id]).toBe('breeding')
     expect(fulfilments[animalsCertifiedFor.id]).toBe('slaughter')
     expect(fulfilments[meansOfTransport.id]).toBe('ROAD_VEHICLE')
     expect(fulfilments[transitedCountries.id]).toEqual(['FR', 'BE'])
-    expect(fulfilments[species.id]).toEqual({ line0: ['1148346'] })
+    expect(fulfilments[speciesLatinName.id]).toEqual({ line0: [BOS_TAURUS] })
   })
 
   it('Should keep an unparseable animal count raw for controller-side validation', () => {
@@ -411,8 +413,8 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
   const fulfilments = assembleFulfilments(happyPath)
   const result = evaluator.evaluate(fulfilments)
 
-  it('Should store the commodity name the gates compare', () => {
-    expect(fulfilments[commodityCode.id]).toEqual({ line0: 'Cow' })
+  it('Should store the commodity code the gates compare', () => {
+    expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
   })
 
   it('Should fire commodity-gated notification obligations (cph mandatory)', () => {

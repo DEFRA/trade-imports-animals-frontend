@@ -8,7 +8,7 @@
  * Scope mechanism: every obligation with a conditional scope uses
  * `applyTo(fulfilments, fulfilmentIndexesByObligationId)`. Common gate
  * shapes are provided as pure helper functions in `helpers.js` —
- * `allowListed`, `notInUnionOf`, `anyAllowListed`, `matches`,
+ * `allowListed`, `notInUnionOf`, `anyAllowListed`, `anyNotInUnionOf`, `matches`,
  * `equalsGate`, `presentGate`, `includesGate`, `alwaysInScope` (and
  * `branchedGate` as an escape hatch for genuinely opaque predicates,
  * unused on the manifest today) — that build applyTo functions with
@@ -73,9 +73,10 @@ import {
   commodityCode,
   commodityLine,
   commodityType,
+  commonName,
   numberOfAnimals,
   numberOfPackages,
-  species
+  speciesLatinName
 } from './sections/commodities/lines.js'
 import {
   accompanyingDocumentAttachmentType,
@@ -133,6 +134,7 @@ export {
   commodityLine,
   commodityType,
   commercialTransporter,
+  commonName,
   consignee,
   consignor,
   contactAddress,
@@ -165,7 +167,7 @@ export {
   reasonForImport,
   regionCode,
   regionCodeRequirement,
-  species,
+  speciesLatinName,
   tattoo,
   transitedCountries,
   transportDocumentReference,
@@ -211,7 +213,8 @@ export const obligations = [
   commodityLine,
   commodityCode,
   commodityType,
-  species,
+  speciesLatinName,
+  commonName,
   numberOfAnimals,
   numberOfPackages,
   cph,

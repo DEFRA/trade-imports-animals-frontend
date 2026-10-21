@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { validation } from './validate.js'
 
-const UNWEANED_COMMODITY_LINE = { commoditySelection: 'Cow' }
-const NON_UNWEANED_COMMODITY_LINE = { commoditySelection: 'Cat' }
+const UNWEANED_COMMODITY_LINE = { commodityCode: '0102' }
+const NON_UNWEANED_COMMODITY_LINE = { commodityCode: '01061900' }
 
 describe('#validation for additional-details — onSubmit', () => {
   it('Should accept a valid certification with the unweaned answer when the reveal is open', async () => {

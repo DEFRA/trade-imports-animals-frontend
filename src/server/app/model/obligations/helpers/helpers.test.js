@@ -3,6 +3,7 @@ import {
   allowListed,
   alwaysInScope,
   anyAllowListed,
+  anyNotInUnionOf,
   branchedGate,
   equalsGate,
   includesGate,
@@ -244,6 +245,56 @@ describe('anyAllowListed', () => {
     const gate = anyAllowListed(codeObl, ['yes'], whenTrue, whenFalse)
     expect(gate({ [codeObl.id]: 'yes' })).toEqual(whenTrue)
     expect(gate({ [codeObl.id]: 'no' })).toEqual(whenFalse)
+  })
+})
+
+describe('anyNotInUnionOf', () => {
+  const whenTrue = { inScope: true, status: 'mandatory' }
+  const whenFalse = { inScope: false }
+  const exempt = ['0101', '01061900']
+
+  it('Should return whenTrue when any stored value is outside the union', () => {
+    const gate = anyNotInUnionOf(codeObl, exempt, whenTrue, whenFalse)
+    expect(gate({ [codeObl.id]: { k1: '0101', k2: '0103' } })).toEqual(whenTrue)
+  })
+
+  it('Should return whenFalse when every stored value is in the union', () => {
+    const gate = anyNotInUnionOf(codeObl, exempt, whenTrue, whenFalse)
+    expect(gate({ [codeObl.id]: { k1: '0101', k2: '01061900' } })).toEqual(
+      whenFalse
+    )
+  })
+
+  it('Should return whenFalse when nothing is stored at all', () => {
+    const gate = anyNotInUnionOf(codeObl, exempt, whenTrue, whenFalse)
+    expect(gate({})).toEqual(whenFalse)
+  })
+
+  it('Should ignore a line with no value yet', () => {
+    const gate = anyNotInUnionOf(codeObl, exempt, whenTrue, whenFalse)
+    expect(gate({ [codeObl.id]: { k1: '0101', k2: null, k3: '' } })).toEqual(
+      whenFalse
+    )
+  })
+
+  it('Should handle unindexed stored values (not just maps)', () => {
+    const gate = anyNotInUnionOf(codeObl, exempt, whenTrue, whenFalse)
+    expect(gate({ [codeObl.id]: '0102' })).toEqual(whenTrue)
+    expect(gate({ [codeObl.id]: '0101' })).toEqual(whenFalse)
+  })
+
+  it('Should expose the derived union of several lists on its metadata', () => {
+    const gate = anyNotInUnionOf(
+      codeObl,
+      () => [['0101'], ['01061900', '0101']],
+      whenTrue,
+      whenFalse
+    )
+    expect(gate.metadata).toMatchObject({
+      gateType: 'anyNotInUnionOf',
+      obligationId: codeObl.id,
+      values: ['0101', '01061900']
+    })
   })
 })
 
@@ -595,11 +646,11 @@ describe('alwaysInScope', () => {
 // ---------------------------------------------------------------------------
 
 describe('moreThanOne', () => {
-  const inner = allowListed(codeObl, ['Cow'], null)
+  const inner = allowListed(codeObl, ['0102'], null)
 
   it('Should hand back the inner decision where it admits more than one entry', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Cow' } })).toEqual({
+    expect(gate({ [codeObl.id]: { line1: '0102', line2: '0102' } })).toEqual({
       inScope: true,
       fulfilmentIndexes: ['line1', 'line2']
     })
@@ -607,14 +658,16 @@ describe('moreThanOne', () => {
 
   it('Should stand the inner gate down on a single admitted entry', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Fish' } })).toEqual({
+    expect(
+      gate({ [codeObl.id]: { line1: '0102', line2: '01063300' } })
+    ).toEqual({
       inScope: false
     })
   })
 
   it('Should stay out of scope where the inner gate admits nothing', () => {
     const gate = moreThanOne(inner)
-    expect(gate({ [codeObl.id]: { line1: 'Fish' } })).toEqual({
+    expect(gate({ [codeObl.id]: { line1: '01063300' } })).toEqual({
       inScope: false
     })
   })

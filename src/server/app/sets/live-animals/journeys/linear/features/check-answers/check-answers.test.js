@@ -2,7 +2,6 @@ import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { commodityCodeFor } from '../../../../services/commodities/index.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   AMEND,
@@ -161,7 +160,7 @@ const copyOf = (id) =>
 // A copy that breaks the address-book rules — no address line, town or
 // postcode — but still has a name to show.
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
-const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
+const CATTLE_CARD_TITLE = '0102 — Bos taurus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -193,8 +192,9 @@ const fullSeed = {
   internalReferenceNumber: 'Imports456GB',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
+      commonName: 'Cattle or Cow',
       commodityType: '16',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
@@ -453,16 +453,16 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should render one species card per commodity line with the design rows', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
-    expect(valueOf(card.rows, 'Common name')).toBe('Cow')
+    expect(valueOf(card.rows, 'Common name')).toBe('Cattle or Cow')
     expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
     expect(valueOf(card.rows, 'Number of animals')).toBe('25')
     expect(valueOf(card.rows, PACKAGES_KEY)).toBe('5')
   })
 
   it('Should render a read-only identifier table inside the species card', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Ear tag',
@@ -586,11 +586,11 @@ describe(`${SUITE} — fully-populated notification`, () => {
 
     expect(hiddenTextOf(IMPORT_DETAILS_CARD)).toBe('import details')
     expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
-    expect(hiddenTextOf(COW_CARD_TITLE)).toBe('commodity 1')
+    expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
   })
 
   it('Should point the species-card Change action at the consignment-details page with a change flag', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
       /\/consignment-details\?change=1$/
@@ -701,7 +701,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   const gatedOffSeed = {
     regionOfOriginCodeRequirement: 'no',
     reasonForImport: 'transit',
-    commodityLines: [{ commoditySelection: 'Fish' }],
+    commodityLines: [{ commodityCode: '01063300' }],
     meansOfTransport: 'AIRPLANE',
     transporterType: 'Private',
     privateTransporter: { name: 'Jean Dupont' }
@@ -736,7 +736,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       rowsOf(
         await sectionsFor({
           ...gatedOffSeed,
-          commodityLines: [{ commoditySelection: 'Horse' }]
+          commodityLines: [{ commodityCode: '0101' }]
         })
       )
     )
@@ -744,7 +744,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 
   it('Should omit the packages row when the commodity is off the package-count list', async () => {
-    const card = cardByTitle(await sectionsFor(gatedOffSeed), 'Fish (0301)')
+    const card = cardByTitle(await sectionsFor(gatedOffSeed), '01063300')
     expect(keysOf(card.rows)).not.toContain(PACKAGES_KEY)
   })
 
@@ -766,7 +766,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
 
   it('Should omit the identifier table when the commodity holds no entry', async () => {
     const sections = await sectionsFor(gatedOffSeed)
-    expect(cardByTitle(sections, 'Fish (0301)').identifierTable).toBeNull()
+    expect(cardByTitle(sections, '01063300').identifierTable).toBeNull()
   })
 
   // Documents are optional, so an empty collection is the ordinary case. The
@@ -918,7 +918,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
   setupCheckAnswersEngine()
 
   const reasonSeed = (answers) => ({
-    commodityLines: [{ commoditySelection: 'Fish' }],
+    commodityLines: [{ commodityCode: '01063300' }],
     ...answers
   })
 
@@ -1333,21 +1333,17 @@ describe(`${SUITE} — Continue on an amend review`, () => {
 })
 
 // The CYA commodity gates (packages / unweaned / CPH) read the obligation
-// `.metadata.values` (CN codes), normalising the stored commodity name to a
-// code. This matrix pins the gate outcome per selectable species
-// (Cow/Horse/Cat/Dog/Fish).
-describe(`${SUITE} — commodity-gate render matrix — model metadata per selectable species`, () => {
+// `.metadata.values` (CN codes) and compare the stored code directly. This
+// matrix pins the gate outcome per code.
+describe(`${SUITE} — commodity-gate render matrix — model metadata per code`, () => {
   setupCheckAnswersEngine()
 
   const gatesFor = async (commodity) => {
     const sections = await sectionsFor({
-      commodityLines: [{ commoditySelection: commodity }]
+      commodityLines: [{ commodityCode: commodity }]
     })
     const allKeys = keysOf(rowsOf(sections))
-    const speciesCard = cardByTitle(
-      sections,
-      `${commodity} (${commodityCodeFor(commodity)})`
-    )
+    const speciesCard = cardByTitle(sections, commodity)
     return {
       packages: keysOf(speciesCard.rows).includes(PACKAGES_KEY),
       unweaned: allKeys.includes(UNWEANED_KEY),
@@ -1356,11 +1352,11 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
   }
 
   const MATRIX = [
-    { commodity: 'Cow', packages: true, unweaned: true, cph: true },
-    { commodity: 'Horse', packages: true, unweaned: false, cph: false },
-    { commodity: 'Cat', packages: true, unweaned: false, cph: false },
-    { commodity: 'Dog', packages: true, unweaned: false, cph: false },
-    { commodity: 'Fish', packages: false, unweaned: false, cph: true }
+    { commodity: '0102', packages: true, unweaned: true, cph: true },
+    { commodity: '0103', packages: true, unweaned: true, cph: true },
+    { commodity: '0101', packages: true, unweaned: false, cph: false },
+    { commodity: '01061900', packages: true, unweaned: false, cph: false },
+    { commodity: '01063300', packages: false, unweaned: false, cph: true }
   ]
 
   it.each(MATRIX)(
@@ -1440,6 +1436,38 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     })
 
     expect(response).toEqual(refusedContinue(journeyId))
+  })
+
+  const SPECIES_MDM_DOES_NOT_LIST = 'Bos spp.'
+  const withUnlistedSpecies = () => ({
+    ...fullSeed,
+    commodityLines: [
+      {
+        ...fullSeed.commodityLines[0],
+        speciesLatinName: SPECIES_MDM_DOES_NOT_LIST
+      }
+    ]
+  })
+
+  it('Should refuse Continue on a draft holding a species MDM no longer lists, naming it', async () => {
+    const view = await reviewAfterRefusal(withUnlistedSpecies())
+
+    expect(view.context.errorSummary.errorList).toEqual([
+      {
+        text: copyEn.errors.cards.speciesNoLongerOffered(
+          `${SPECIES_MDM_DOES_NOT_LIST} (0102)`
+        ),
+        href: '#description-of-the-goods'
+      }
+    ])
+  })
+
+  it('Should not name a species MDM no longer lists until Continue is refused', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: withUnlistedSpecies()
+    })
+
+    expect(view.context.errorSummary).toBeNull()
   })
 
   it('Should refuse Continue on a brand-new draft, naming what is outstanding', async () => {
@@ -1585,10 +1613,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     // Two lines, the second barely started: species cards are built for both,
     // and the species rows stay outstanding.
     const seed = {
-      commodityLines: [
-        fullSeed.commodityLines[0],
-        { commoditySelection: 'Cow' }
-      ]
+      commodityLines: [fullSeed.commodityLines[0], { commodityCode: '0102' }]
     }
 
     expect(await textsFor(seed)).toContain(SPECIES_INCOMPLETE)

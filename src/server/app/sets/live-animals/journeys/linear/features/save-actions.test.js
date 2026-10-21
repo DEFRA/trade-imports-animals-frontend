@@ -76,7 +76,7 @@ describe('save actions — hub exit semantics', () => {
   // (additional-details) is reachable for the no-exit contrast.
   const reasonPrerequisites = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat' }]
+    commodityLines: [{ commodityCode: '01061900' }]
   }
   const internalMarketPayload = {
     reasonForImport: 'internalMarket',
@@ -157,8 +157,8 @@ describe('save actions — hub exit semantics', () => {
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cat',
-          speciesSelection: '923501',
+          commodityCode: '01061900',
+          speciesLatinName: 'Felis catus',
           numberOfAnimalsQuantity: '',
           numberOfPackages: ''
         }
@@ -180,7 +180,7 @@ describe('save actions — hub exit semantics', () => {
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
-        seed: { commodityLines: [{ commoditySelection: 'Cat' }] }
+        seed: { commodityLines: [{ commodityCode: '01061900' }] }
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })
@@ -218,7 +218,7 @@ describe('save actions — hub exit semantics', () => {
   it('Should let the hub exit win over a return-to-addresses entry context', async () => {
     // The CPH obligation is anyItem-gated on a CPH-triggering commodity line.
     const cphInScope = {
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
     const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
     const returned = await drivePost(postHandlerOf(cphNumber), {
@@ -250,7 +250,7 @@ describe('save actions — amend endings', () => {
 
   const reasonPrerequisites = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat' }]
+    commodityLines: [{ commodityCode: '01061900' }]
   }
   const internalMarketPayload = {
     reasonForImport: 'internalMarket',

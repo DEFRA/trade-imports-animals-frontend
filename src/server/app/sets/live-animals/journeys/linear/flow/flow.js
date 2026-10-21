@@ -20,7 +20,7 @@ import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
 
-export const FLOW_ONLY_KEYS = ['declaration']
+export const FLOW_ONLY_KEYS = ['declaration', 'commoditySearchRows']
 
 export const sections = [
   {

@@ -33,7 +33,7 @@ const copy = copyFor({ en, cy }).identification
 const identifiedLines = (answers, evaluation) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
-    .filter(({ entry }) => scopedFields(entry.commoditySelection).length > 0)
+    .filter(({ entry }) => scopedFields(entry.commodityCode).length > 0)
 
 const render = (
   request,

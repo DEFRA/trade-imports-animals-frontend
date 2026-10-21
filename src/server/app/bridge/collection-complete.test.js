@@ -4,6 +4,7 @@ import { collectionCapAt } from '../engine/evaluate/cardinality.js'
 import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
 import { evaluateAnswers } from './evaluation.js'
+const BOS_TAURUS = 'Bos taurus'
 
 // Per-instance completeness (entryComplete), pinned against the manifest. The
 // two known structural divergences are pinned here so a regression fails
@@ -24,8 +25,8 @@ const address = {
 }
 
 const completeLine = {
-  commoditySelection: 'Cow',
-  speciesSelection: ['1148346'],
+  commodityCode: '0102',
+  speciesLatinName: [BOS_TAURUS],
   commodityType: '16',
   numberOfAnimalsQuantity: '1',
   animalIdentifiers: [
@@ -33,7 +34,7 @@ const completeLine = {
   ]
 }
 
-const partialLine = { commoditySelection: 'Cow' }
+const partialLine = { commodityCode: '0102' }
 
 const emptyLine = {}
 
@@ -59,8 +60,8 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cat',
-          speciesSelection: ['923501'],
+          commodityCode: '01061900',
+          speciesLatinName: ['Felis catus'],
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [
             { animalIdentifierPassport: 'P-1', permanentAddress: address },
@@ -94,12 +95,12 @@ describe('#entryComplete', () => {
   // scopes each concern precisely, so these read complete; a future change that
   // flips them fails loudly.
 
-  it('Should read a Cow unit without permanentAddress as complete (scoped to 01061900)', () => {
+  it('Should read a 0102 unit without permanentAddress as complete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: ['1148346'],
+          commodityCode: '0102',
+          speciesLatinName: [BOS_TAURUS],
           commodityType: '16',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -116,8 +117,8 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: ['1148346'],
+          commodityCode: '0102',
+          speciesLatinName: [BOS_TAURUS],
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{}]
         }

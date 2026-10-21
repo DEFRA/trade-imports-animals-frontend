@@ -11,7 +11,7 @@ import { totalOf } from '../shared/lines/total.js'
 // typeOfCommodity is the payload text of the line's stored commodityType id,
 // omitted when that type's text is blank (the single-type commodities).
 export const typeTextForLine = (line) => {
-  const text = typeTextForId(line.commoditySelection, line.commodityType)
+  const text = typeTextForId(line.commodityCode, line.commodityType)
   return text === '' ? undefined : text
 }
 
@@ -30,7 +30,7 @@ export const commodityFromLinesA = (lines) => {
     return undefined
   }
   return {
-    name: lines[0].commoditySelection,
+    name: lines[0].commodityCode,
     commodityComplement: groupLinesByCommodity(lines).map(
       baseComplementFromGroup
     )

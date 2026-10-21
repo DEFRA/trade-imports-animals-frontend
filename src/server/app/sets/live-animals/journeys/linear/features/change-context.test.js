@@ -48,8 +48,8 @@ const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 const lineSeed = {
   commodityLines: [
     {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
+      commodityCode: '01061900',
+      speciesLatinName: 'Felis catus',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
     }
@@ -107,7 +107,12 @@ describe('change context — context survives the internal loop navigation', () 
     const { journeyId, response, after } = await drive(
       postHandlerOf(commoditiesSearch),
       {
-        payload: { species: ['Cat|923501'] },
+        seed: {
+          commodityLines: [
+            { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
+          ]
+        },
+        payload: { species: ['01061900|Felis catus'] },
         query: change
       }
     )

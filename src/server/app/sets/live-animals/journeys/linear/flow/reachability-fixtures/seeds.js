@@ -15,8 +15,8 @@ export const submitReadySeed = {
   countyParishHoldingCph: '12/345/6789',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -97,8 +97,8 @@ export const seedVariants = () => [
       ...submitReadySeed,
       commodityLines: [
         {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
+          commodityCode: '0101',
+          speciesLatinName: 'Equus cabalus',
           numberOfPackages: '2',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0001' }]
@@ -113,8 +113,8 @@ export const seedVariants = () => [
       ...submitReadySeed,
       commodityLines: [
         {
-          commoditySelection: 'Cat',
-          speciesSelection: '923501',
+          commodityCode: '01061900',
+          speciesLatinName: 'Felis catus',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0002' }]
@@ -130,8 +130,8 @@ export const seedVariants = () => [
       ...submitReadySeed,
       commodityLines: [
         {
-          commoditySelection: 'Fish',
-          speciesSelection: '801204',
+          commodityCode: '01063300',
+          speciesLatinName: 'Struthio',
           numberOfAnimalsQuantity: '40'
         }
       ]

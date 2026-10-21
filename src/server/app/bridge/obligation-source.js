@@ -37,7 +37,7 @@ export const SYSTEM_POPULATED = new SystemPopulated()
 
 export const ENFORCED_AT_CONTINUE = new Set([
   'countryOfOrigin',
-  'commoditySelection'
+  'commodityCode'
 ])
 
 // Collection admission-control cap: a collection's entry count is

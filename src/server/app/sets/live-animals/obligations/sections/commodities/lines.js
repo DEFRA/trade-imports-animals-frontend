@@ -1,4 +1,4 @@
-import { packageCountCommodities } from '../../../services/commodities/index.js'
+import { packageCountCommodityCodes } from '../../../services/commodities/index.js'
 import { allowListed } from '../../../../../model/obligations/helpers/index.js'
 
 const numberOfPackagesReason = {
@@ -33,7 +33,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -49,13 +49,18 @@ export const commodityType = {
   status: 'mandatory'
 }
 
-// Multi-select; stored value is an array of species strings per line.
-// The obligation model treats the array opaquely.
-export const species = {
+export const speciesLatinName = {
   id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
-  name: 'speciesSelection',
+  name: 'speciesLatinName',
   within: commodityLine,
   status: 'mandatory'
+}
+
+export const commonName = {
+  id: 'c8824345-0a1a-421d-8f35-f932fa1874f7',
+  name: 'commonName',
+  within: commodityLine,
+  status: 'optional'
 }
 
 export const numberOfAnimals = {
@@ -71,14 +76,13 @@ export const numberOfAnimals = {
 // with `null` gatedParentGroup (NOT `includesGate`) — see helpers.js
 // taxonomy: the gate `commodityCode` is `within: commodityLine`, so
 // `fulfilments[commodityCode.id]` is a records-map, not a scalar.
-// The allowlist is the service's package-count list; only entries that
-// are picker names can ever match a stored selection.
+// The allowlist is the service's package-count list of CN codes.
 export const numberOfPackages = {
   id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, packageCountCommodities, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }

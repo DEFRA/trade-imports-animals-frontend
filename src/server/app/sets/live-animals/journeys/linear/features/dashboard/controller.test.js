@@ -150,14 +150,14 @@ describe('dashboard notifications list', () => {
         arrivalDateAtPort: { day: '5', month: '3', year: '2026' },
         consignor: { name: 'Consignor Ltd' },
         consignee: { name: 'Consignee Ltd' },
-        commodityLines: [{ commoditySelection: 'Cow' }]
+        commodityLines: [{ commodityCode: '0102' }]
       })
     )
 
     const context = await renderList({ knownJourneyIds: [draft.journeyId] })
 
     expect(context.notificationRows[0]).toMatchObject({
-      commodity: 'Cow',
+      commodity: '0102',
       origin: 'France',
       arrival: '5 Mar 2026',
       consignor: 'Consignor Ltd',

@@ -28,8 +28,8 @@ const extraMapCorpus = [
       },
       [reasonForImport.id]: 'internalMarket',
       [commodityCode.id]: {
-        line1: 'Horse',
-        line0: 'Cow'
+        line1: '0101',
+        line0: '0102'
       }
     }
   },
@@ -79,8 +79,8 @@ describe('persisted fulfilment codec', () => {
       },
       {
         records: [
-          { value: 'Cow', fulfilmentId: 'line1' },
-          { value: 'Horse', fulfilmentId: 'line0' }
+          { value: '0102', fulfilmentId: 'line1' },
+          { value: '0101', fulfilmentId: 'line0' }
         ],
         obligationId: commodityCode.id
       }
@@ -99,8 +99,8 @@ describe('persisted fulfilment codec', () => {
         {
           obligationId: commodityCode.id,
           records: [
-            { fulfilmentId: 'line1', value: 'Cow' },
-            { fulfilmentId: 'line0', value: 'Horse' }
+            { fulfilmentId: 'line1', value: '0102' },
+            { fulfilmentId: 'line0', value: '0101' }
           ]
         }
       ])
@@ -143,8 +143,8 @@ describe('persisted fulfilment codec', () => {
         {
           obligationId: commodityCode.id,
           records: [
-            { fulfilmentId: 'line0', value: 'Cow' },
-            { fulfilmentId: 'line0', value: 'Horse' }
+            { fulfilmentId: 'line0', value: '0102' },
+            { fulfilmentId: 'line0', value: '0101' }
           ]
         }
       ],
@@ -156,7 +156,7 @@ describe('persisted fulfilment codec', () => {
         {
           obligationId: reasonForImport.id,
           value: 'transit',
-          records: [{ fulfilmentId: 'line0', value: 'Cow' }]
+          records: [{ fulfilmentId: 'line0', value: '0102' }]
         }
       ],
       error: /exactly one of value or records/
@@ -183,7 +183,7 @@ describe('persisted fulfilment codec', () => {
     },
     {
       name: 'value for a current grouped obligation',
-      persisted: [{ obligationId: commodityCode.id, value: 'Cow' }],
+      persisted: [{ obligationId: commodityCode.id, value: '0102' }],
       error: /must use records/
     },
     {
@@ -191,7 +191,7 @@ describe('persisted fulfilment codec', () => {
       persisted: [
         {
           obligationId: commodityCode.id,
-          records: [{ fulfilmentId: 'line0.unit0', value: 'Cow' }]
+          records: [{ fulfilmentId: 'line0.unit0', value: '0102' }]
         }
       ],
       error: /requires depth 1/

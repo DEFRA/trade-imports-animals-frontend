@@ -28,8 +28,9 @@ export const obligationMetadata = (obligation) => {
  * Per-helper rules for recovering `dependsOn` from a gate helper's
  * metadata. Extending the helper library means updating this table.
  *
- *   - `allowListed` / `anyAllowListed` / `notInUnionOf` / `matches` /
- *     `equalsGate` / `presentGate` / `includesGate`
+ *   - `allowListed` / `anyAllowListed` / `anyNotInUnionOf` /
+ *     `notInUnionOf` / `matches` / `equalsGate` / `presentGate` /
+ *     `includesGate`
  *          → `[metadata.obligationId]` (all name a single gate obligation)
  *   - `branchedGate`
  *          → `[metadata.predicateMeta.obligationId]` when annotated;
@@ -43,6 +44,7 @@ export const obligationMetadata = (obligation) => {
 const SINGLE_GATE_TYPES = new Set([
   'allowListed',
   'anyAllowListed',
+  'anyNotInUnionOf',
   'notInUnionOf',
   'matches',
   'equalsGate',

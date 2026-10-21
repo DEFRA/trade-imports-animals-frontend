@@ -3,25 +3,17 @@ import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
-import { splitKey } from '../selection/keys.js'
 import { lineKey } from '../selection/line-key.js'
+import { clearStoredSearchRows } from '../selection/rows.js'
 
-// The line's type is its species' owning type id — always non-blank, so every
-// line completes. Multi-type commodities (Cow) carry the type determined by
-// the checked species; single-type commodities collapse to their one type id.
-export const seedLine = (key) => {
-  const [commoditySelection, speciesSelection] = splitKey(key)
-  return {
-    commoditySelection,
-    speciesSelection,
-    commodityType: commodities.typeIdForSpecies(
-      commoditySelection,
-      speciesSelection
-    ),
-    numberOfPackages: '',
-    numberOfAnimalsQuantity: ''
-  }
-}
+export const seedLine = ({ commodityCode, speciesLatinName, commonName }) => ({
+  commodityCode,
+  speciesLatinName,
+  ...(commonName ? { commonName } : {}),
+  commodityType: commodities.typeIdFor(commodityCode, speciesLatinName),
+  numberOfPackages: '',
+  numberOfAnimalsQuantity: ''
+})
 
 const detailsPath = (request) =>
   kit.withChangeContext(
@@ -35,14 +27,15 @@ const selectionTarget = async (request, scope) =>
     ? detailsPath(request)
     : await kit.nextTarget(request, commoditiesPage, scope))
 
-export const commitSelection = async (request, h, selected) => {
+export const commitSelection = async (request, h, rows) => {
   await state.reconcileEntriesAt(
     request,
     h,
     ['commodityLines'],
     lineKey,
-    selected.map(seedLine)
+    rows.map(seedLine)
   )
+  await clearStoredSearchRows(request, h)
   const { scope } = await state.get(request, h)
   return h.redirect(await selectionTarget(request, scope))
 }

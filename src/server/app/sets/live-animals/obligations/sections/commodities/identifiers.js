@@ -1,17 +1,17 @@
 import {
-  earTagCommodities,
-  horseNameCommodities,
-  identifiedCommodities,
-  microchipCommodities,
-  passportCommodities,
-  permanentAddressCommodities,
-  tattooCommodities
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  identifiedCommodityCodes,
+  microchipCommodityCodes,
+  passportCommodityCodes,
+  permanentAddressSpecies,
+  tattooCommodityCodes
 } from '../../../services/commodities/index.js'
 import {
   allowListed,
   moreThanOne
 } from '../../../../../model/obligations/helpers/index.js'
-import { commodityCode, commodityLine } from './lines.js'
+import { commodityCode, commodityLine, speciesLatinName } from './lines.js'
 
 const microchipReason = {
   code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
@@ -45,7 +45,7 @@ const horseNameReason = {
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
-    'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose species requires per-animal permanent address'
 }
 
 // -----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ export const unitRecord = {
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
     floorAppliesToParent: moreThanOne(
-      allowListed(commodityCode, identifiedCommodities, null)
+      allowListed(commodityCode, identifiedCommodityCodes, null)
     )
   }
 }
@@ -104,7 +104,7 @@ export const unitRecord = {
 // `allowListed` with projection to unitRecord's instance-paths.
 // The evaluator's pre-purge enumeration supplies the paths; the
 // obligation code doesn't enumerate them itself. Allowlists come from
-// the commodities service in the stored picker-name vocabulary.
+// the commodities service as CN codes.
 // -----------------------------------------------------------------------------
 
 export const microchip = {
@@ -112,7 +112,7 @@ export const microchip = {
   name: 'animalIdentifierMicrochip',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, microchipCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, microchipCommodityCodes, unitRecord, [
     microchipReason
   ])
 }
@@ -122,7 +122,7 @@ export const passport = {
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, passportCommodityCodes, unitRecord, [
     passportReason
   ])
   // Note: `unitRecord` is a structural gatedParentGroup (the closure's
@@ -136,7 +136,7 @@ export const tattoo = {
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, tattooCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, tattooCommodityCodes, unitRecord, [
     tattooReason
   ])
 }
@@ -146,7 +146,7 @@ export const earTag = {
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, earTagCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, earTagCommodityCodes, unitRecord, [
     earTagReason
   ])
 }
@@ -156,7 +156,7 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, horseNameCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, horseNameCommodityCodes, unitRecord, [
     horseNameReason
   ])
 }
@@ -166,7 +166,7 @@ export const permanentAddress = {
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(commodityCode, permanentAddressCommodities, unitRecord, [
+  applyTo: allowListed(speciesLatinName, permanentAddressSpecies, unitRecord, [
     permanentAddressReason
   ])
 }

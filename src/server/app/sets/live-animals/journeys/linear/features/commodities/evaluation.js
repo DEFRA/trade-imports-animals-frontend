@@ -6,6 +6,7 @@ import {
   commodityCode,
   commodityLine,
   commodityType,
+  commonName,
   earTag,
   horseName,
   microchip,
@@ -13,7 +14,7 @@ import {
   numberOfPackages,
   passport,
   permanentAddress,
-  species,
+  speciesLatinName,
   tattoo,
   unitRecord
 } from '../../../../obligations/index.js'
@@ -45,9 +46,10 @@ const toNumberWhenParses = (value) => {
 }
 
 export const evaluationBindings = feature('commodities', [
-  lineLeaf('commoditySelection', commodityCode),
+  lineLeaf('commodityCode', commodityCode),
   lineLeaf('commodityType', commodityType),
-  lineLeaf('speciesSelection', species),
+  lineLeaf('speciesLatinName', speciesLatinName),
+  lineLeaf('commonName', commonName),
   lineLeaf('numberOfAnimalsQuantity', numberOfAnimals, {
     convert: toNumberWhenParses
   }),

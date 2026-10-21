@@ -35,6 +35,7 @@ import {
   allowListed,
   alwaysInScope,
   anyAllowListed,
+  anyNotInUnionOf,
   branchedGate,
   equalsGate,
   includesGate,
@@ -65,11 +66,14 @@ const SELF_LOOP_ID = 'acc-doc-type'
 //     scope at the graph level; other gated obligations legitimately
 //     depend on their ids, so they must appear as seed nodes.
 const manifestRecords = () =>
-  obligations.map((o) => {
-    if (typeof o.applyTo === 'function') {
-      return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }
+  obligations.map((obligation) => {
+    if (typeof obligation.applyTo === 'function') {
+      return {
+        id: obligation.id,
+        dependsOn: obligationMetadata(obligation).dependsOn
+      }
     }
-    return { id: o.id, dependsOn: [] }
+    return { id: obligation.id, dependsOn: [] }
   })
 
 // ---------------------------------------------------------------------------
@@ -140,7 +144,7 @@ describe('#proveReachability — unreachable detection', () => {
       record('seed', [])
     ])
     expect(result.reachable).toContain('seed')
-    expect(result.errors.map((e) => e.obligationId)).toContain(
+    expect(result.errors.map((error) => error.obligationId)).toContain(
       ROOT_UNREACHABLE_ID
     )
   })
@@ -227,14 +231,14 @@ describe('#proveReachability — defensive against dangling ids', () => {
 // closure and return `inScope: true` — that's the fidelity assertion.
 // ---------------------------------------------------------------------------
 
-const codeObl = { id: 'code-obl' }
-const boolObl = { id: 'bool-obl' }
+const codeObl = { id: 'code-obligation' }
+const boolObl = { id: 'bool-obligation' }
 
 describe('#synthesiseWitness — per-helper metadata inversion', () => {
   it('Should return the first allowlist entry as witness for allowListed', () => {
     const gate = allowListed(codeObl, ['a', 'b', 'c'])
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toMatchObject({
       kind: WITNESS_KIND.WITNESS,
       obligationId: codeObl.id,
@@ -243,7 +247,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     // gatedParentGroupId defaults to null for depth-1 allowListed.
     expect(witness.gatedParentGroupId).toBeNull()
     // Fidelity — inject the witness and run the actual closure.
-    const decision = obl.applyTo(
+    const decision = obligation.applyTo(
       { [witness.obligationId]: { k1: witness.value } },
       new Map()
     )
@@ -251,7 +255,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
   })
 
   it('Should carry the gatedParentGroupId when allowListed has a gatedParentGroup', () => {
-    const groupObl = { id: 'group-obl' }
+    const groupObl = { id: 'group-obligation' }
     const gate = allowListed(codeObl, ['a'], groupObl)
     const witness = synthesiseWitness({ id: 'gated', applyTo: gate })
     expect(witness).toEqual({
@@ -269,27 +273,51 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
       { inScope: true, status: 'mandatory' },
       { inScope: false }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toEqual({
       kind: WITNESS_KIND.WITNESS,
       obligationId: codeObl.id,
       value: 'x'
     })
-    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('Should return a value outside the union as witness for anyNotInUnionOf', () => {
+    const gate = anyNotInUnionOf(
+      codeObl,
+      ['0101', '01061900'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
+    expect(witness).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObl.id,
+      value: '__witness_not_in_union__'
+    })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
     expect(decision.inScope).toBe(true)
   })
 
   it('Should return metadata.value as witness for matches', () => {
     const gate = matches(boolObl, 'yes')
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toEqual({
       kind: WITNESS_KIND.WITNESS,
       obligationId: boolObl.id,
       value: 'yes'
     })
-    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
     expect(decision.inScope).toBe(true)
   })
 
@@ -305,19 +333,19 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
 
   it('Should synthesise a witness that opens the gate for branchedGate with predicateMeta.equals', () => {
     const gate = branchedGate(
-      (f) => f[boolObl.id] === 'yes',
+      (answers) => answers[boolObl.id] === 'yes',
       { inScope: true, status: 'mandatory' },
       { inScope: false },
       { operator: 'equals', obligationId: boolObl.id, value: 'yes' }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toEqual({
       kind: WITNESS_KIND.WITNESS,
       obligationId: boolObl.id,
       value: 'yes'
     })
-    const decision = obl.applyTo(
+    const decision = obligation.applyTo(
       { [witness.obligationId]: witness.value },
       new Map()
     )
@@ -326,17 +354,17 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
 
   it('Should fire the closure with a witness for branchedGate with predicateMeta.includes', () => {
     const gate = branchedGate(
-      (f) => ['a', 'b'].includes(f[codeObl.id]),
+      (answers) => ['a', 'b'].includes(answers[codeObl.id]),
       { inScope: true, status: 'optional' },
       { inScope: false },
       { operator: 'includes', obligationId: codeObl.id, values: ['a', 'b'] }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     expect(witness.obligationId).toBe(codeObl.id)
     expect(['a', 'b']).toContain(witness.value)
-    const decision = obl.applyTo(
+    const decision = obligation.applyTo(
       { [witness.obligationId]: witness.value },
       new Map()
     )
@@ -364,14 +392,14 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
       ['a', 'b'],
       ['c', 'd']
     ])
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     expect(witness.obligationId).toBe(codeObl.id)
     // The synthesised value must NOT be in the derived union.
     expect(['a', 'b', 'c', 'd']).not.toContain(witness.value)
     // Fidelity — the witness actually opens the closure.
-    const decision = obl.applyTo(
+    const decision = obligation.applyTo(
       { [witness.obligationId]: { k1: witness.value } },
       new Map()
     )
@@ -379,7 +407,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
   })
 
   it('Should carry the gatedParentGroupId when notInUnionOf has a gatedParentGroup', () => {
-    const groupObl = { id: 'group-obl' }
+    const groupObl = { id: 'group-obligation' }
     const gate = notInUnionOf(codeObl, [['a']], groupObl)
     const witness = synthesiseWitness({ id: 'gated', applyTo: gate })
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
@@ -417,14 +445,16 @@ describe('#synthesiseWitness — meta-first gate helpers', () => {
       { inScope: true, status: 'mandatory' },
       { inScope: false }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toEqual({
       kind: WITNESS_KIND.WITNESS,
       obligationId: boolObl.id,
       value: 'yes'
     })
-    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
     expect(decision.inScope).toBe(true)
   })
 
@@ -447,11 +477,13 @@ describe('#synthesiseWitness — meta-first gate helpers', () => {
       { inScope: true, status: 'mandatory' },
       { inScope: false }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     expect(witness.obligationId).toBe(boolObl.id)
-    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
     expect(decision.inScope).toBe(true)
   })
 
@@ -472,12 +504,14 @@ describe('#synthesiseWitness — meta-first gate helpers', () => {
       { inScope: true, status: 'optional' },
       { inScope: false }
     )
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     expect(witness.obligationId).toBe(codeObl.id)
     expect(['a', 'b']).toContain(witness.value)
-    const decision = obl.applyTo({ [witness.obligationId]: witness.value })
+    const decision = obligation.applyTo({
+      [witness.obligationId]: witness.value
+    })
     expect(decision.inScope).toBe(true)
   })
 
@@ -494,11 +528,14 @@ describe('#synthesiseWitness — meta-first gate helpers', () => {
 
   it('Should classify alwaysInScope as trivial (no read; gate always open)', () => {
     const gate = alwaysInScope('mandatory')
-    const obl = { id: 'gated', applyTo: gate }
-    const witness = synthesiseWitness(obl)
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
     expect(witness).toEqual({ kind: WITNESS_KIND.TRIVIAL })
     // Fidelity — the closure still returns the expected decision.
-    expect(obl.applyTo({})).toEqual({ inScope: true, status: 'mandatory' })
+    expect(obligation.applyTo({})).toEqual({
+      inScope: true,
+      status: 'mandatory'
+    })
   })
 })
 
@@ -513,7 +550,9 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
   it('Should classify regionCode (status-swap equalsGate) as trivial — both branches in scope', () => {
     // Retain-value shape: whenTrue mandatory, whenFalse optional — every
     // input opens the gate, so no witness is needed.
-    const regionCode = obligations.find((o) => o.name === 'regionOfOriginCode')
+    const regionCode = obligations.find(
+      (obligation) => obligation.name === 'regionOfOriginCode'
+    )
     const witness = synthesiseWitness(regionCode)
     expect(witness.kind).toBe(WITNESS_KIND.TRIVIAL)
     const decision = regionCode.applyTo(
@@ -529,7 +568,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     // predicateMeta declares operator: 'equals' + value: 'internalMarket'.
     // This is the load-bearing fidelity check for annotated call sites.
     const purposeInInternalMarketObl = obligations.find(
-      (o) => o.name === 'purposeInInternalMarket'
+      (obligation) => obligation.name === 'purposeInInternalMarket'
     )
     const witness = synthesiseWitness(purposeInInternalMarketObl)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
@@ -543,7 +582,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
 
   it('Should open the closure with an includes-shape witness for transitedCountries', () => {
     const transitedCountriesObl = obligations.find(
-      (o) => o.name === 'transitedCountries'
+      (obligation) => obligation.name === 'transitedCountries'
     )
     const witness = synthesiseWitness(transitedCountriesObl)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
@@ -556,7 +595,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
 
   it('Should open the closure with a commodity-code witness for numberOfPackages (allowListed)', () => {
     const numberOfPackagesObl = obligations.find(
-      (o) => o.name === 'numberOfPackages'
+      (obligation) => obligation.name === 'numberOfPackages'
     )
     const witness = synthesiseWitness(numberOfPackagesObl)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
@@ -568,8 +607,10 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     expect(decision.inScope).toBe(true)
   })
 
-  it('Should open the closure with a scalar witness for cph (anyAllowListed)', () => {
-    const cph = obligations.find((o) => o.name === 'countyParishHoldingCph')
+  it('Should open the closure with a scalar witness for cph (anyNotInUnionOf)', () => {
+    const cph = obligations.find(
+      (obligation) => obligation.name === 'countyParishHoldingCph'
+    )
     const witness = synthesiseWitness(cph)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     const decision = cph.applyTo({
@@ -613,7 +654,7 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
     // Every commodity-gated identifier is witness-synthesisable from its
     // own allowlist.
     const synthesisableNames = result.witnesses.synthesisable.map(
-      (id) => obligations.find((o) => o.id === id).name
+      (id) => obligations.find((obligation) => obligation.id === id).name
     )
     expect(synthesisableNames).toContain('animalIdentifierEarTag')
     expect(synthesisableNames).toContain('horseName')
@@ -626,9 +667,9 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
     // branchedGate's predicate body without updating predicateMeta,
     // this fires.
     const result = proveWithWitnesses(obligations)
-    expect(result.errors.filter((e) => /did not open/.test(e.reason))).toEqual(
-      []
-    )
+    expect(
+      result.errors.filter((error) => /did not open/.test(error.reason))
+    ).toEqual([])
   })
 })
 
@@ -651,7 +692,8 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
 // ---------------------------------------------------------------------------
 
 describe('migration fidelity — 9 sites round-trip', () => {
-  const findOblByName = (name) => obligations.find((o) => o.name === name)
+  const findObligationByName = (name) =>
+    obligations.find((obligation) => obligation.name === name)
 
   // Non-total: whenTrue in scope, whenFalse out. Witness synth returns
   // a real WITNESS; fidelity injects and confirms decision.inScope.
@@ -664,10 +706,10 @@ describe('migration fidelity — 9 sites round-trip', () => {
   ])(
     '%s: witness opens the migrated closure with status=%s',
     (name, status) => {
-      const obl = findOblByName(name)
-      const witness = synthesiseWitness(obl)
+      const obligation = findObligationByName(name)
+      const witness = synthesiseWitness(obligation)
       expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
-      const decision = obl.applyTo(
+      const decision = obligation.applyTo(
         { [witness.obligationId]: witness.value },
         new Map()
       )
@@ -685,11 +727,13 @@ describe('migration fidelity — 9 sites round-trip', () => {
   // the fidelity check exercises the closure with both values to prove
   // the status flip is preserved (mandatory on 'yes', optional on 'no').
   it('regionCode: matching value → mandatory + reason, non-matching → optional in scope', () => {
-    const rc = findOblByName('regionOfOriginCode')
+    const rc = findObligationByName('regionOfOriginCode')
     const witness = synthesiseWitness(rc)
     expect(witness.kind).toBe(WITNESS_KIND.TRIVIAL)
     // regionCodeRequirement === 'yes' → mandatory with reason.
-    const regionCodeRequirement = findOblByName('regionOfOriginCodeRequirement')
+    const regionCodeRequirement = findObligationByName(
+      'regionOfOriginCodeRequirement'
+    )
     const mand = rc.applyTo({ [regionCodeRequirement.id]: 'yes' }, new Map())
     expect(mand).toMatchObject({
       inScope: true,
@@ -711,7 +755,7 @@ describe('migration fidelity — 9 sites round-trip', () => {
     'accompanyingDocumentReference',
     'accompanyingDocumentDateOfIssue'
   ])('%s is a plain mandatory document field (no applyTo)', (name) => {
-    const field = findOblByName(name)
+    const field = findObligationByName(name)
     expect(field.applyTo).toBeUndefined()
     expect(field.status).toBe('mandatory')
     expect(synthesiseWitness(field).kind).toBe(WITNESS_KIND.TRIVIAL)
@@ -732,9 +776,14 @@ describe('migration fidelity — 9 sites round-trip', () => {
       'exitDate'
     ]
     const stragglers = migratedNames
-      .map(findOblByName)
-      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.gateType))
-      .map((o) => `${o.name} → ${o.applyTo?.metadata?.gateType}`)
+      .map(findObligationByName)
+      .filter(
+        (obligation) => !META_FIRST.has(obligation.applyTo?.metadata?.gateType)
+      )
+      .map(
+        (obligation) =>
+          `${obligation.name} → ${obligation.applyTo?.metadata?.gateType}`
+      )
     expect(stragglers).toEqual([])
   })
 })
@@ -751,14 +800,19 @@ describe('#proveReachability — graph-level backwards compat', () => {
     // out a specific gate to prove the graph-level behaviour is
     // UNCHANGED — the witness pass tightens on top of it, it does not
     // replace it.
-    const records = obligations.map((o) => {
-      if (typeof o.applyTo === 'function') {
-        return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }
+    const records = obligations.map((obligation) => {
+      if (typeof obligation.applyTo === 'function') {
+        return {
+          id: obligation.id,
+          dependsOn: obligationMetadata(obligation).dependsOn
+        }
       }
-      return { id: o.id, dependsOn: [] }
+      return { id: obligation.id, dependsOn: [] }
     })
     const result = proveReachability(records)
-    const nop = obligations.find((o) => o.name === 'numberOfPackages')
-    expect(result.reachable).toContain(nop.id)
+    const numberOfPackages = obligations.find(
+      (obligation) => obligation.name === 'numberOfPackages'
+    )
+    expect(result.reachable).toContain(numberOfPackages.id)
   })
 })

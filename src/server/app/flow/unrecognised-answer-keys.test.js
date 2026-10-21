@@ -31,7 +31,7 @@ describe('#unrecognisedAnswerKeys', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Horse',
+          commodityCode: '0101',
           animalIdentifiers: [{ animalIdentifierHorseName: 'Dobbin' }]
         }
       ]

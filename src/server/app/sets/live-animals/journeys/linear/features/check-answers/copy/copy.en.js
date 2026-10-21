@@ -149,6 +149,8 @@ export const copy = {
       reasonForImport: 'Complete reason for import',
       additionalAnimalDetails: 'Complete additional animal details',
       species: 'Complete species details',
+      speciesNoLongerOffered: (speciesWithCodes) =>
+        `${speciesWithCodes} can no longer be selected. Choose the species again`,
       arrivalDetails: 'Complete arrival details',
       transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',

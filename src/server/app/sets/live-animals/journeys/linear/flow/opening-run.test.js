@@ -98,8 +98,8 @@ const lineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
+      commodityCode: '01061900',
+      speciesLatinName: 'Felis catus',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
     }
@@ -112,8 +112,8 @@ const fishLineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
     {
-      commoditySelection: 'Fish',
-      speciesSelection: '801204',
+      commodityCode: '01063300',
+      speciesLatinName: 'Struthio',
       numberOfAnimalsQuantity: '3',
       numberOfPackages: ''
     }
@@ -189,12 +189,18 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
+    const withCat = {
+      countryOfOrigin: 'FR',
+      commodityLines: [
+        { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
+      ]
+    }
     const inRun = await store.create()
-    await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
+    await store.seedAnswers(inRun.journeyId, withCat)
     const h = captureH()
     await postHandlerOf(commoditiesSearch)(
       buildRequest(inRun.journeyId, {
-        payload: { species: ['Cat|923501'] },
+        payload: { species: ['01061900|Felis catus'] },
         record: active(inRun.journeyId)
       }),
       h
@@ -202,8 +208,8 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(pagePath(inRun.journeyId, 'import-reason'))
 
     const outside = await drive(postHandlerOf(commoditiesSearch), {
-      payload: { species: ['Cat|923501'] },
-      seed: { countryOfOrigin: 'FR' }
+      payload: { species: ['01061900|Felis catus'] },
+      seed: withCat
     })
     expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
   })

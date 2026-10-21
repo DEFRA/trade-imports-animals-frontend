@@ -36,7 +36,7 @@ const rowByTitle = (context, title) =>
 
 const unlockedSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat' }]
+  commodityLines: [{ commodityCode: '01061900' }]
 }
 
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
@@ -277,8 +277,8 @@ describe('#hubHandler', () => {
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
     const cowLine = {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: 'Bos taurus',
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25'
@@ -290,8 +290,8 @@ describe('#hubHandler', () => {
       commodityLines: [
         cowLine,
         {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
+          commodityCode: '0101',
+          speciesLatinName: 'Equus cabalus',
           commodityType: '2',
           numberOfPackages: '3',
           numberOfAnimalsQuantity: '4'
@@ -431,17 +431,17 @@ describe('#hubHandler — the commodity totals', () => {
     const { commodityTotals } = await renderHub({
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '25',
           numberOfPackages: '5'
         },
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '3',
           numberOfPackages: ''
         },
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '',
           numberOfPackages: '2'
         }
@@ -462,7 +462,7 @@ describe('#hubHandler — the Commodity details row', () => {
   it('Should lead the second group with a Commodity details row linking to the consignment-details page', async () => {
     const context = await renderHub({
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     })
     const [firstItem] = context.groups[1].items
 
@@ -478,8 +478,8 @@ describe('#hubHandler — the Commodity details row', () => {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: '0102',
+          speciesLatinName: 'Bos taurus',
           commodityType: '16',
           ...entry
         }

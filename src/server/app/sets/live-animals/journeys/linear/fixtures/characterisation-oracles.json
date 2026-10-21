@@ -107,16 +107,16 @@
       "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
       "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-        "line0": "Cow",
-        "line1": "Cow"
+        "line0": "0102",
+        "line1": "0102"
       },
       "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
         "line0": "16",
         "line1": "16"
       },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-        "line0": "1148346",
-        "line1": "716661"
+        "line0": "Bos taurus",
+        "line1": "Bison bison"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 2,
@@ -274,16 +274,16 @@
         "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
         "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "line0": "Cow",
-          "line1": "Cow"
+          "line0": "0102",
+          "line1": "0102"
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "line0": "16",
           "line1": "16"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-          "line0": "1148346",
-          "line1": "716661"
+          "line0": "Bos taurus",
+          "line1": "Bison bison"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 2,
@@ -492,6 +492,11 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0", "line1"]
         },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0", "line1"]
+        },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
           "status": "mandatory",
@@ -514,7 +519,7 @@
           "reasons": [
             {
               "code": "obligation.cph.applicable.becauseCphCommodity",
-              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
             }
           ]
         },
@@ -700,9 +705,9 @@
       "animalsCertifiedFor": "slaughter",
       "commodityLines": [
         {
-          "commoditySelection": "Cow",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "1148346",
+          "speciesLatinName": "Bos taurus",
           "numberOfAnimalsQuantity": 2,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -726,9 +731,9 @@
           ]
         },
         {
-          "commoditySelection": "Cow",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "716661",
+          "speciesLatinName": "Bison bison",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -859,7 +864,7 @@
         "transitedCountries": ["FR", "BE"]
       },
       "commodity": {
-        "name": "Cow",
+        "name": "0102",
         "commodityComplement": [
           {
             "typeOfCommodity": "Domestic",
@@ -867,7 +872,7 @@
             "totalNoOfPackages": 2,
             "species": [
               {
-                "value": "1148346",
+                "value": "Bos taurus",
                 "text": "Bos taurus",
                 "noOfAnimals": "2",
                 "noOfPackages": "1",
@@ -894,7 +899,7 @@
                 ]
               },
               {
-                "value": "716661",
+                "value": "Bison bison",
                 "text": "Bison bison",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
@@ -915,7 +920,7 @@
     "fulfilments": {
       "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-        "line0": "Cow"
+        "line0": "0102"
       },
       "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
         "line0": "ITAHC"
@@ -931,7 +936,7 @@
       "fulfilments": {
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "line0": "Cow"
+          "line0": "0102"
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "line0": "ITAHC"
@@ -1074,6 +1079,11 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
         },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"]
+        },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
           "status": "mandatory",
@@ -1096,7 +1106,7 @@
           "reasons": [
             {
               "code": "obligation.cph.applicable.becauseCphCommodity",
-              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
             }
           ]
         },
@@ -1162,7 +1172,7 @@
       "countryOfOrigin": "",
       "commodityLines": [
         {
-          "commoditySelection": "Cow"
+          "commodityCode": "0102"
         }
       ],
       "documents": [
@@ -1178,7 +1188,7 @@
         "countryCode": ""
       },
       "commodity": {
-        "name": "Cow",
+        "name": "0102",
         "commodityComplement": [{}]
       }
     }
@@ -1311,6 +1321,11 @@
           "status": "mandatory",
           "fulfilmentIndexes": []
         },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": []
+        },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
           "status": "mandatory",
@@ -1388,13 +1403,13 @@
       "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
       "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-        "line0": "Cow"
+        "line0": "0102"
       },
       "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
         "line0": "16"
       },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-        "line0": "1148346"
+        "line0": "Bos taurus"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
@@ -1411,13 +1426,13 @@
         "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
         "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "line0": "Cow"
+          "line0": "0102"
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "line0": "16"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-          "line0": "1148346"
+          "line0": "Bos taurus"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -1567,6 +1582,11 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
         },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"]
+        },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
           "status": "mandatory",
@@ -1589,7 +1609,7 @@
           "reasons": [
             {
               "code": "obligation.cph.applicable.becauseCphCommodity",
-              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
             }
           ]
         },
@@ -1672,9 +1692,9 @@
       "purposeInInternalMarket": "breeding",
       "commodityLines": [
         {
-          "commoditySelection": "Cow",
+          "commodityCode": "0102",
           "commodityType": "16",
-          "speciesSelection": "1148346",
+          "speciesLatinName": "Bos taurus",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1689,7 +1709,7 @@
       "reasonForImport": "internalMarket",
       "purposeInInternalMarket": "breeding",
       "commodity": {
-        "name": "Cow",
+        "name": "0102",
         "commodityComplement": [
           {
             "typeOfCommodity": "Domestic",
@@ -1697,7 +1717,7 @@
             "totalNoOfPackages": 1,
             "species": [
               {
-                "value": "1148346",
+                "value": "Bos taurus",
                 "text": "Bos taurus",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
@@ -1719,13 +1739,13 @@
       "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "transit",
       "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-        "line0": "Fish"
+        "line0": "01063300"
       },
       "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-        "line0": "0301"
+        "line0": "2"
       },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-        "line0": "801204"
+        "line0": "Struthio"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
@@ -1741,13 +1761,13 @@
       "fulfilments": {
         "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "transit",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "line0": "Fish"
+          "line0": "01063300"
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "line0": "0301"
+          "line0": "2"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-          "line0": "801204"
+          "line0": "Struthio"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -1891,6 +1911,11 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
         },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"]
+        },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
           "status": "mandatory",
@@ -1905,7 +1930,7 @@
           "reasons": [
             {
               "code": "obligation.cph.applicable.becauseCphCommodity",
-              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
             }
           ]
         },
@@ -1972,9 +1997,9 @@
       "purposeInInternalMarket": "breeding",
       "commodityLines": [
         {
-          "commoditySelection": "Fish",
-          "commodityType": "0301",
-          "speciesSelection": "801204",
+          "commodityCode": "01063300",
+          "commodityType": "2",
+          "speciesLatinName": "Struthio",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1989,15 +2014,15 @@
       "reasonForImport": "transit",
       "purposeInInternalMarket": "breeding",
       "commodity": {
-        "name": "Fish",
+        "name": "01063300",
         "commodityComplement": [
           {
             "totalNoOfAnimals": 1,
             "totalNoOfPackages": 1,
             "species": [
               {
-                "value": "801204",
-                "text": "Salmo salar",
+                "value": "Struthio",
+                "text": "Struthio",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
                 "earTag": "UK123456789012",

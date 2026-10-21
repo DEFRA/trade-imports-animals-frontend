@@ -7,8 +7,8 @@
     "internalReferenceNumber": "Imports456GB",
     "commodityLines": [
       {
-        "commoditySelection": "Cow",
-        "speciesSelection": "1148346",
+        "commodityCode": "0102",
+        "speciesLatinName": "Bos taurus",
         "commodityType": "16",
         "numberOfPackages": "5",
         "numberOfAnimalsQuantity": "1",

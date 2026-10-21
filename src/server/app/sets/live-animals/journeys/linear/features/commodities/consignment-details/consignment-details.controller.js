@@ -118,7 +118,7 @@ const post = async (request, h) => {
     await state.updateEntryAt(request, h, ['commodityLines'], index, {
       ...entry,
       numberOfAnimalsQuantity: values[animalsField(index)],
-      ...(packagesApply(entry.commoditySelection)
+      ...(packagesApply(entry.commodityCode)
         ? { numberOfPackages: values[packagesField(index)] }
         : {})
     })

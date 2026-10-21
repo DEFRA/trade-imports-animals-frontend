@@ -4,4 +4,4 @@
 // array, per-species counts and complement-level totals — so both mappers
 // group lines by commodity and consolidate counts UP to the complement total.
 export const groupLinesByCommodity = (lines) =>
-  Object.values(Object.groupBy(lines, (line) => line.commoditySelection))
+  Object.values(Object.groupBy(lines, (line) => line.commodityCode))
