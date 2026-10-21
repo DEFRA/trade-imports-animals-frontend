@@ -95,7 +95,7 @@ describe('#entryComplete', () => {
   // scopes each concern precisely, so these read complete; a future change that
   // flips them fails loudly.
 
-  it('Should read a Cow unit without permanentAddress as complete (scoped to 01061900)', () => {
+  it('Should read a 0102 unit without permanentAddress as complete', () => {
     const answers = {
       commodityLines: [
         {
