@@ -3,29 +3,28 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: (example) =>
-        `The expected date of arrival at the port of entry. For example, ${example}`
+      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026'
     },
     port: {
       label: 'Port of entry',
-      hint: 'Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select port of entry',
+      hint: 'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
+      placeholder: 'Select a port',
       noResults: 'No ports found'
     },
     means: {
       label: 'Means of transport to the port of entry',
       placeholder: 'Select one',
       options: {
-        AIRPLANE: 'Airplane',
-        RAILWAY: 'Railway',
-        ROAD_VEHICLE: 'Road Vehicle',
-        VESSEL: 'Vessel'
+        AIRPLANE: 'Air',
+        RAILWAY: 'Rail',
+        ROAD_VEHICLE: 'Road',
+        VESSEL: 'Sea'
       }
     },
     identification: {
       label: 'Transport identification',
       hint: {
-        lead: 'To identify the means of transport, enter (one of the following):',
+        lead: 'Enter one of the following:',
         items: [
           'flight number',
           'train number',

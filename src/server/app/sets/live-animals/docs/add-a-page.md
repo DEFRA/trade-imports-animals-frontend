@@ -238,8 +238,13 @@ do; its coverage invariant fails if you forget.
 
 ## 7. Add check-answers and backend mapping when needed
 
-Add the page's fields to the matching check-answers card and both
-check-answers copy bundles. Rows carry no Change link — `row(key, value)` is a
+Add the page's rows to the matching check-answers card and their row labels to
+both check-answers copy bundles. A value label that the page itself already
+shows is read from that feature's label function (for example
+`meansOfTransportLabel`), never copied into the check-answers copy. Value
+labels only the review shows go in the check-answers copy bundles.
+
+Rows carry no Change link — `row(key, value)` is a
 key and a value. If the page's fields go into a NEW card, the card needs one
 `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
 `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf in BOTH

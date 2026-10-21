@@ -51,7 +51,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   species answers but marks no species card.
 - The documents card always shows, because documents are part of the
   notification even when none are uploaded. With none, it says so.
-- A submitted notification's review shows no form.
+- A submitted notification's review shows no form, no Change links and no
+  document scan errors.
+- The means of transport row reads the arrival page's own label for the
+  stored code, so the two cannot differ.
+- An answer the reference data has since retired is named on the review with
+  the message its own page gives. An unfinished card says "complete" instead
+  of the stale answer's message.
+- A party never answered raises no address error. Its card is unfinished.
+- The reason-for-import card carries the exit answers, and its one Change
+  link reaches the page that collects them.
+- A summary entry for a card that is out of scope is absent, so every entry
+  links to an anchor the page carries.
 - Each card's Change link ends, for screen readers, with the card's title in
   lower-case words.
 - The review ends with the Continue button alone, because its label carries
@@ -117,10 +128,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The destination country and port of exit are type-ahead searches using the
   shared search control, with the look the origin and port of entry searches
   share: a bold label and full width.
-- Origin and port of entry differ on label size and empty-box text, so this
-  page sets those itself: the small label, as port of entry and as a follow-up
-  question, and "Select one" in both the empty box and the select's first
-  option.
+- Origin and port of entry share the medium label, but this page asks its
+  searches as follow-up questions, so it sets the small label itself, and
+  "Select one" in both the empty box and the select's first option.
 - The exit date takes the prototype's date picker styling: a regular-weight
   label, and a GOV.UK margin override on its form group. GOV.UK Frontend zeroes
   the bottom margin of the last form group nested in another, which would leave
@@ -189,8 +199,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Transport
 
-- The arrival date hint is a worked example of the format. The date picker's
-  bounds and the out-of-range error police the window.
+- The arrival date hint gives a fixed date showing the format, not a date tied
+  to the window. The date picker's bounds and the out-of-range error police
+  the window.
+- The port search shows its select text, "Select a port", in its empty box as
+  well as in the no-JavaScript list's first entry.
+- The means of transport options read Air, Rail, Road and Sea, and each stores
+  its reference code (AIRPLANE, RAILWAY, ROAD_VEHICLE, VESSEL).
 - The transport identification hint is a lead-in and one bullet per
   alternative, so the number of choices shows at a glance.
 - The transit countries cap is not stated up front. The search goes when the

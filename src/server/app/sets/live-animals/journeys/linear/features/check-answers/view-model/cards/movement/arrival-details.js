@@ -3,6 +3,7 @@ import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { portOfEntryPage } from '../../../../transport/page.js'
+import { meansOfTransportLabel } from '../../../../transport/means-of-transport-label.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { dateText } from '../../rows/value-text.js'
@@ -29,7 +30,10 @@ export const arrivalDetailsCard = async (journeyId, answers, readOnly) => ({
       (await ports.label(answers.portOfEntry)) ?? answers.portOfEntry
     ),
     row(copy.rows.arrivalDate, dateText(answers.arrivalDateAtPort)),
-    row(copy.rows.meansOfTransport, copy.means[answers.meansOfTransport] ?? ''),
+    row(
+      copy.rows.meansOfTransport,
+      meansOfTransportLabel(answers.meansOfTransport)
+    ),
     row(copy.rows.transportIdentification, answers.transportIdentification),
     row(
       copy.rows.transportDocumentReference,

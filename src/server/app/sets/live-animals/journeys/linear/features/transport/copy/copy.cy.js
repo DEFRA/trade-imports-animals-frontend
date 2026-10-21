@@ -4,29 +4,28 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: (example) =>
-        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, ${example}`
+      hint: 'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
     },
     port: {
       label: 'Porthladd mynediad',
       hint: 'Dewiswch ble bydd y cludwr yn dod i mewn gyda’r llwyth. Dechreuwch deipio i chwilio yn ôl enw neu god y porthladd neu’r maes awyr.',
-      placeholder: 'Dewiswch borthladd mynediad',
+      placeholder: 'Dewiswch borthladd',
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
       label: 'Cyfrwng cludo i’r porthladd mynediad',
       placeholder: 'Dewiswch un',
       options: {
-        AIRPLANE: 'Awyren',
+        AIRPLANE: 'Awyr',
         RAILWAY: 'Rheilffordd',
-        ROAD_VEHICLE: 'Cerbyd ffordd',
-        VESSEL: 'Llong'
+        ROAD_VEHICLE: 'Ffordd',
+        VESSEL: 'Môr'
       }
     },
     identification: {
       label: 'Adnabod y cludiant',
       hint: {
-        lead: 'I adnabod y cyfrwng cludo, rhowch (un o’r canlynol):',
+        lead: 'Rhowch un o’r canlynol:',
         items: [
           'rhif hediad',
           'rhif trên',

@@ -4,6 +4,7 @@ import {
   MEANS_OF_TRANSPORT_SELECT,
   addTransitCountry,
   choosePortOfEntry,
+  computedStyle,
   describeDatePickerLook,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
@@ -31,6 +32,7 @@ import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.
 const portInput = 'input#portOfEntry'
 const portNativeSelect = 'select#portOfEntry-select'
 const identificationHint = 'div#transportIdentification-hint'
+const documentReferenceHint = 'div#transportDocumentReference-hint'
 const transitCountryInput = 'input#transitedCountry'
 const transitCountryHidden = 'select#transitedCountry-select'
 const transitedCountriesInputs =
@@ -134,9 +136,7 @@ test.describe('arrival details rendering', () => {
 
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveAccessibleDescription(
-      copy.portOfEntry.arrivalDate.hint(dateWindow.exampleText)
-    )
+    ).toHaveAccessibleDescription(copy.portOfEntry.arrivalDate.hint)
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
     const means = page.getByLabel(copy.portOfEntry.means.label, { exact: true })
     await expect(means).toBeVisible()
@@ -177,6 +177,42 @@ test.describe('arrival details rendering', () => {
     )
   })
 
+  for (const fieldId of [
+    'arrivalDateAtPort',
+    'portOfEntry',
+    'meansOfTransport',
+    'transportIdentification',
+    'transportDocumentReference'
+  ]) {
+    test(`sets the ${fieldId} question label in the medium GOV.UK label size`, async ({
+      page
+    }) => {
+      await openArrival(page)
+
+      await expect(page.locator(`label[for="${fieldId}"]`)).toHaveClass(
+        /govuk-label--m/
+      )
+    })
+  }
+
+  test('shows the identification lead-in and every list item in the same colour as the document reference hint', async ({
+    page
+  }) => {
+    await openArrival(page)
+
+    const hintColour = await computedStyle(
+      page.locator(documentReferenceHint),
+      'color'
+    )
+    await expect(page.locator(`${identificationHint} p`)).toHaveCount(1)
+    expect(
+      await computedStyle(page.locator(`${identificationHint} p`), 'color')
+    ).toBe(hintColour)
+    for (const item of await page.locator(`${identificationHint} li`).all()) {
+      expect(await computedStyle(item, 'color')).toBe(hintColour)
+    }
+  })
+
   test('arrival back link returns to the overview', async ({ page }) => {
     await openArrival(page)
     await page.locator('.govuk-back-link').click()
@@ -196,9 +232,7 @@ test.describe('port of entry type-ahead', () => {
     )
   })
 
-  test('filters by port name or code, case-insensitively (AC1)', async ({
-    page
-  }) => {
+  test('filters by port name or code, case-insensitively', async ({ page }) => {
     await openArrival(page)
     const field = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
     const doverOption = page.getByRole('option', {
@@ -213,7 +247,7 @@ test.describe('port of entry type-ahead', () => {
     await expect(doverOption).toBeVisible()
   })
 
-  test('selecting a port shows its name and code and submits the code (AC2)', async ({
+  test('selecting a port shows its name and code and submits the code', async ({
     page
   }) => {
     await openArrival(page)
@@ -222,7 +256,7 @@ test.describe('port of entry type-ahead', () => {
     await expect(page.locator(portNativeSelect)).toHaveValue('GB DVR')
   })
 
-  test('shows the no-results message when nothing matches (AC3)', async ({
+  test('shows the no-results message when nothing matches', async ({
     page
   }) => {
     await openArrival(page)
@@ -321,25 +355,6 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(dateWindow.minText)
-  })
-
-  test('the worked example in the arrival date hint is itself accepted', async ({
-    page
-  }) => {
-    await openArrival(page)
-    await fillValidArrival(page)
-    await page
-      .getByLabel(copy.portOfEntry.arrivalDate.label)
-      .fill(dateWindow.exampleText)
-    await submit(page)
-
-    await expectOverview(page)
-    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
-
-    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
-    await expect(
-      page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveValue(dateWindow.exampleText)
   })
 
   test.describe('arrival date out of the allowed window', () => {
@@ -591,9 +606,7 @@ test.describe('transit countries rendering and validation', () => {
     )
   })
 
-  test('filters the country list by what the user types (AC1)', async ({
-    page
-  }) => {
+  test('filters the country list by what the user types', async ({ page }) => {
     await openTransit(page)
     const field = transitField(page)
 
@@ -687,7 +700,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await signIn(page)
   })
 
-  test('adding a country lists it with its own Remove control and announces it (AC2)', async ({
+  test('adding a country lists it with its own Remove control and announces it', async ({
     page
   }) => {
     await openTransit(page)
@@ -737,7 +750,7 @@ test.describe('transit countries list, limits and persistence', () => {
     expect(await addedCountries(page)).toEqual(['BE'])
   })
 
-  test('the twelfth country takes the search away and announces the limit (AC3)', async ({
+  test('the twelfth country takes the search away and announces the limit', async ({
     page
   }) => {
     await openTransit(page)

@@ -96,7 +96,7 @@ const documentTop = (locator) =>
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
 
-const computedStyle = (locator, property) =>
+export const computedStyle = (locator, property) =>
   locator.evaluate(
     (el, name) => window.getComputedStyle(el).getPropertyValue(name),
     property

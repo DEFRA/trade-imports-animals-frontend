@@ -68,7 +68,9 @@ const typeAheads = [
     inputId: 'portOfEntry',
     label: transportCopy.portOfEntry.port.label,
     hint: transportCopy.portOfEntry.port.hint,
+    labelSize: 'm',
     selectText: transportCopy.portOfEntry.port.placeholder,
+    emptyBoxText: transportCopy.portOfEntry.port.placeholder,
     open: openArrival
   }),
   countryCase({
