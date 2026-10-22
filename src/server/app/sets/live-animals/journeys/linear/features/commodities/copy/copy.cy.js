@@ -33,15 +33,18 @@ export const copy = {
       selectCommodity: 'Dewiswch nwydd'
     }
   },
+  selectedCommodities: {
+    caption: 'Nwyddau a ddewiswyd',
+    commodityCode: 'Cod nwyddau',
+    commonName: 'Enw cyffredin',
+    species: 'Rhywogaeth',
+    numberOfAnimals: 'Nifer yr anifeiliaid',
+    actionsHidden: ACTIONS_HIDDEN
+  },
   consignmentDetails: {
     title: 'Manylion y nwyddau',
     addAnother: 'Ychwanegu nwydd arall',
     table: {
-      caption: 'Nwyddau a ddewiswyd',
-      commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
-      species: 'Rhywogaeth',
-      actionsHidden: ACTIONS_HIDDEN,
       remove: 'Tynnu'
     },
     animals: {
@@ -66,11 +69,6 @@ export const copy = {
     addAnotherCommodity: 'Ychwanegu nwydd arall',
     changeAnimalCount: 'Newid nifer yr anifeiliaid',
     summary: {
-      caption: 'Nwyddau a ddewiswyd',
-      commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
-      numberOfAnimals: 'Nifer yr anifeiliaid',
-      actionsHidden: ACTIONS_HIDDEN,
       change: 'Newid'
     },
     identifierLabels: {
@@ -85,32 +83,10 @@ export const copy = {
       permanentAddressColumn: 'Cyfeiriad parhaol',
       actionsHidden: ACTIONS_HIDDEN
     },
-    typeFields: {
-      animalIdentifierMicrochip: {
-        label: 'Rhif microsglodyn',
-        hint: 'Er enghraifft, 900123456789012'
-      },
-      animalIdentifierPassport: {
-        label: 'Pasbort',
-        hint: 'Er enghraifft, UK123456789'
-      },
-      animalIdentifierTattoo: {
-        label: 'Tatŵ',
-        hint: 'Er enghraifft, AB1234'
-      },
-      animalIdentifierEarTag: {
-        label: 'Tag clust',
-        hint: 'Er enghraifft, UK123456789012'
-      },
-      horseName: { label: 'Enw’r ceffyl' }
-    },
-    counterNoCap: (species) => `Rhowch fanylion ar gyfer ${species}`,
     counter: (species, next, cap) =>
       `Rhowch fanylion ar gyfer ${species} ${next} o ${cap}`,
     overCount: (cap, species, entered, overBy) =>
       `Mae’r llinell nwyddau hon yn rhestru ${cap} anifail ${species} ond rydych wedi nodi manylion ar gyfer ${entered}. Tynnwch ${overBy} i barhau.`,
-    allEntered: (cap, species) =>
-      `Rydych wedi nodi manylion ar gyfer pob un o’r ${cap} anifail ${species}. Tynnwch gofnod os oes angen i chi ei ddisodli.`,
     animalRow: (number) => `Anifail ${number}`,
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Tynnu',

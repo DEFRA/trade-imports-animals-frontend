@@ -18,7 +18,10 @@ import {
 } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { postHandlerOf } from '../../../../../engine/test-support.js'
+import {
+  postHandlerOf,
+  recordingLogger
+} from '../../../../../engine/test-support.js'
 import { STUB_BOOK } from '../../../../../services/address-book/stub/index.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -77,6 +80,7 @@ const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
   params: journeyId ? { journeyId } : {},
   query: {},
   headers: {},
+  logger: recordingLogger(),
   state: {
     ...(journeyId ? { [knownJourneysCookie()]: [journeyId] } : {}),
     ...(record ? { [openingRunCookie()]: record } : {})
@@ -268,21 +272,29 @@ const saveAndContinueFollowsTheRunSequence = () => {
   // Pins where the no-identifiers guard sends the request, not merely that it
   // redirects: mid-run it has to carry the person on to the next question,
   // which a bare hop to the hub would not do.
-  it('Should carry a consignment with nothing to identify on to additional details mid-run', async () => {
+  it('Should log the skip and carry a consignment with nothing to identify on to additional details mid-run', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, fishLineSeed)
     const h = captureH()
     const getHandler = animalIdentification.routes.find(
       (route) => route.method === 'GET'
     ).handler
-    await getHandler(
-      buildRequest(journey.journeyId, { record: active(journey.journeyId) }),
-      h
-    )
+    const request = buildRequest(journey.journeyId, {
+      record: active(journey.journeyId)
+    })
+    await getHandler(request, h)
     expect(h.captured.redirect).toBe(
       pagePath(journey.journeyId, 'additional-details')
     )
     expect(h.captured.view).toBeUndefined()
+    expect(request.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: journey.journeyId },
+        message:
+          'Animal identification skipped: nothing on the consignment carries an identifier'
+      }
+    ])
   })
 
   it('Should send import reason on to the consignment details mid-run', async () => {

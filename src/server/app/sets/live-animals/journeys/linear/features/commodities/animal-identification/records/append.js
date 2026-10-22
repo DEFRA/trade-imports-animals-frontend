@@ -3,6 +3,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { addressRecordProvided } from '../address/fields.js'
+import { identifierCapOf } from '../line-cap.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -27,11 +28,11 @@ const unitFromForm = (form) => {
 
 const recordCapFailure = async (request, h, index) => {
   const { answers: current } = await state.get(request, h)
-  const cap = state.collectionCapAt(current, [
-    'commodityLines',
-    index,
-    'animalIdentifiers'
-  ])
+  const cap = identifierCapOf(current, index)
+  request.logger.info(
+    { journeyId: request.params.journeyId, lineIndex: index, cap },
+    'Animal identification refused: the engine rejected the record at the cap'
+  )
   return { index, text: copy.errors.capReached(cap) }
 }
 

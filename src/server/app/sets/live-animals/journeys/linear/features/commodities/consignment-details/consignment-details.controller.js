@@ -16,7 +16,7 @@ import {
   packagesApply,
   packagesField
 } from './fields.js'
-import { linesOf } from './lines.js'
+import { linesOf } from '../lines.js'
 import {
   isRemoveAction,
   isRemoveSpeciesAction,
@@ -27,13 +27,27 @@ import { postRemove, postRemoveSpecies } from './remove/post-remove.js'
 import { countDropIssues } from './validation/count-drop.js'
 import { buildGroups } from './view-model/groups.js'
 import { buildSelectedRows } from './view-model/selected-rows.js'
+import { buildSelectedCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { payloadValues, storedValues } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-details`
 
-const copy = copyFor({ en, cy }).consignmentDetails
+const localisedCopy = copyFor({ en, cy })
+const copy = localisedCopy.consignmentDetails
+const selectedCommoditiesCopy = localisedCopy.selectedCommodities
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+
+const selectedCommoditiesContext = (lines) => {
+  const selectedRows = buildSelectedRows(lines)
+  return {
+    selectedRows,
+    selectedTable: buildSelectedCommoditiesTable(
+      selectedRows,
+      selectedCommoditiesCopy
+    )
+  }
+}
 
 const render = (
   request,
@@ -52,12 +66,13 @@ const render = (
       page
     }),
     copy,
+    selectedCommoditiesCopy,
     addHref: kit.withChangeContext(
       request,
       pagePath(request.params.journeyId, commoditiesPage.slug)
     ),
     groups: buildGroups(lines, values, errors),
-    selectedRows: buildSelectedRows(lines),
+    ...selectedCommoditiesContext(lines),
     errors,
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })

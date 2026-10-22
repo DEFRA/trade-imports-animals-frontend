@@ -79,7 +79,7 @@ export const submitReadySeed = {
  * the pages store. `fish-line` is the inverse case rather than a
  * gate-opener: Fish is on none of the identifier allowlists, so its line
  * carries no identifier obligation and no animal records, which makes it the
- * corpus's only design-release-1 consignment with no identification panel at
+ * corpus's only design-release-1 consignment with no identification card at
  * all.
  *
  * Both provers run every variant × every scope state, so page reachability

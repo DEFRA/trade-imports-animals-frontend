@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { buildSelectedCommodities } from './selected-commodities.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
 
 const BOS_TAURUS = '1148346'
 const BISON_BISON = '716661'
+const BOS_TAURUS_LATIN = 'Bos taurus'
 
 const linesOf = (...triples) =>
   triples.map(
@@ -17,10 +17,8 @@ const linesOf = (...triples) =>
     })
   )
 
-afterEach(() => vi.restoreAllMocks())
-
 describe('#buildSelectedCommodities', () => {
-  it('Should give every commodity line its own summary row so the table pairs with the cards', () => {
+  it('Should give a commodity one row listing every species under it and the total of their animals', () => {
     expect(
       buildSelectedCommodities(
         linesOf(
@@ -30,9 +28,18 @@ describe('#buildSelectedCommodities', () => {
         )
       )
     ).toEqual([
-      { code: '0102', name: 'Domestic cattle', animals: '2' },
-      { code: '0102', name: 'American bison', animals: '5' },
-      { code: '0301', name: 'Atlantic salmon', animals: '1' }
+      {
+        code: '0102',
+        name: 'Cow',
+        latinNames: [BOS_TAURUS_LATIN, 'Bison bison'],
+        animals: '7'
+      },
+      {
+        code: '0301',
+        name: 'Fish',
+        latinNames: ['Salmo salar'],
+        animals: '1'
+      }
     ])
   })
 
@@ -44,21 +51,48 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual(['25', '7'])
   })
 
-  it('Should show nothing rather than a placeholder for a line with no count yet', () => {
+  it('Should show nothing rather than a placeholder for a commodity whose lines have no count yet', () => {
     expect(
       buildSelectedCommodities(linesOf(['Cow', BOS_TAURUS, undefined]))
-    ).toEqual([{ code: '0102', name: 'Domestic cattle', animals: '' }])
+    ).toEqual([
+      {
+        code: '0102',
+        name: 'Cow',
+        latinNames: [BOS_TAURUS_LATIN],
+        animals: ''
+      }
+    ])
   })
 
-  it('Should name each row from the species own common name, not from its commodity', () => {
-    const commonName = vi
-      .spyOn(commodities, 'speciesCommonName')
-      .mockReturnValue('Domestic dog')
-
-    expect(buildSelectedCommodities(linesOf(['Dog', '923502', 1]))).toEqual([
-      { code: '01061900', name: 'Domestic dog', animals: '1' }
+  it('Should give each species of a commodity on code 01061900 its own row counted on its own', () => {
+    expect(
+      buildSelectedCommodities(
+        linesOf(['Dog', '923502', 1], ['Cat', '923501', 4])
+      ).map(({ code, name, latinNames, animals }) => [
+        code,
+        name,
+        latinNames,
+        animals
+      ])
+    ).toEqual([
+      ['01061900', 'Dog', ['Canis lupus familiaris'], '1'],
+      ['01061900', 'Cat', ['Felis catus'], '4']
     ])
-    expect(commonName).toHaveBeenCalledWith('Dog', '923502')
+  })
+
+  it('Should total only the counted lines of a commodity', () => {
+    expect(
+      buildSelectedCommodities(
+        linesOf(['Cow', BOS_TAURUS, '2'], ['Cow', BISON_BISON, ''])
+      )
+    ).toEqual([
+      {
+        code: '0102',
+        name: 'Cow',
+        latinNames: [BOS_TAURUS_LATIN, 'Bison bison'],
+        animals: '2'
+      }
+    ])
   })
 
   it('Should leave the code blank for a commodity the catalogue holds no code for', () => {

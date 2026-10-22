@@ -4,7 +4,7 @@ import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { commoditiesPage, consignmentDetailsPage as page } from '../../page.js'
-import { commodityNamesOf, linesOf } from '../lines.js'
+import { commodityNamesOf, linesOf } from '../../lines.js'
 
 export const groupNames = (answers, evaluation) =>
   commodityNamesOf(linesOf(answers, evaluation))

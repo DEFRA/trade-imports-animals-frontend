@@ -6,17 +6,20 @@
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
-  {% include "shared/error-summary.njk" %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      {% include "shared/error-summary.njk" %}
 
-  {{ sectionCaption(caption) }}
-  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+      {{ sectionCaption(caption) }}
+      <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {{ govukInsetText({
-    text: copy.inset
-  }) }}
+      {{ govukInsetText({
+        text: copy.inset
+      }) }}
+    </div>
+  </div>
 
-  {# A page with no identifiable line never renders: the controller carries the request on instead. #}
-  {{ selectedCommoditiesSummary(selectedCommodities, addHref, copy.summary) }}
+  {{ selectedCommoditiesSummary(selectedCommodities, selectedTable, addHref, selectedCommoditiesCopy, copy.summary) }}
 
   <p class="govuk-body">
     <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnotherCommodity }}</a>
@@ -28,8 +31,11 @@
 
     <button type="submit" name="action" value="finish" class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ copy.saveAndFinish }}</button>
 
-    {% for card in cards %}
-      {{ identificationCard(card, copy) }}
+    {% for section in sections %}
+      <h2 class="govuk-heading-l">{{ section.heading }}</h2>
+      {% for card in section.cards %}
+        {{ identificationCard(card, copy) }}
+      {% endfor %}
     {% endfor %}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}

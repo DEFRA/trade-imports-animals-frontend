@@ -257,6 +257,31 @@ export const contentWidthOf = (locator) =>
     )
   })
 
+const withinGridColumn = (locator, widthClass) =>
+  locator.locator(
+    `xpath=ancestor::*[contains(@class,"govuk-grid-column-${widthClass}")]`
+  )
+
+/**
+ * The two-thirds grid column holding a locator, matching nothing when the
+ * locator sits outside one.
+ *
+ * @param {import('@playwright/test').Locator} locator
+ * @returns {import('@playwright/test').Locator}
+ */
+export const withinTwoThirdsColumn = (locator) =>
+  withinGridColumn(locator, 'two-thirds')
+
+/**
+ * The full-width grid column holding a locator, matching nothing when the
+ * locator sits outside one.
+ *
+ * @param {import('@playwright/test').Locator} locator
+ * @returns {import('@playwright/test').Locator}
+ */
+export const withinFullWidthColumn = (locator) =>
+  withinGridColumn(locator, 'full')
+
 /** Selects the page's journey form. */
 export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
 

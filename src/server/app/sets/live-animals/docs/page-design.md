@@ -168,14 +168,37 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Identification
 
+- The page uses the full-width surface so the tables and cards fit. The error
+  summary, caption, heading and inset text keep a two-thirds reading width.
+- Identification is grouped by commodity: one section per commodity headed
+  "<commodity name> (<commodity code>)", holding one card per species. The
+  card is built from GOV.UK summary card styling and `govukTable`, not the
+  prototype's custom CSS and div grid, so tables keep their meaning and
+  reflow at 390px.
+- The saved-animals and Selected commodities tables set
+  `app-table__cell--break-anywhere` on their cells. It is a deliberate custom
+  class so long unbroken identifiers and commodity names wrap inside table
+  cells at 390px.
+- A species with no number of animals has no card, and a consignment whose
+  identified species all lack a count shows the summary and no cards.
+- The card title is the species name, with "Change number of animals" beside
+  it naming the species. The link keeps the change context, so Continue on
+  Commodity details returns to where the trader came from.
+- While animals remain the card shows the entry form, then the in-card button,
+  then the saved-animals table. A finished species shows its saved animals
+  alone, with no form, no button and no completion message. A count lowered
+  below its saved records still shows the over-count message.
 - The in-card button says what pressing it does next: "Save and add another"
-  while more than one animal is outstanding, "Save and finish" on the last.
-  A line of one animal has no in-card button; the page's own "Save and
-  continue" saves it.
-- Each card links back to the page that sets the declared animal count, with
-  no query or change context.
+  while more than one animal is outstanding, "Save and finish" on the last,
+  and it is a primary button. It saves only its own species' current animal
+  and reloads with that form empty. A line of one animal has no in-card
+  button.
+- "Save and continue", "Save and return to overview" and the amend buttons
+  save only the forms of species with one animal. Values typed into the form
+  of a species with more animals are neither validated nor saved by them.
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading.
+  saved-animals column heading, and no identifier field has a hint. Labels
+  are regular weight.
 - The saved-animals table has one column per identifier the commodity
   declares, not per identifier the trader filled. The header row says which
   identifiers the line expects, and an empty cell shows which are still
@@ -191,7 +214,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   sent back with the form as a hidden value.
 - Commodity code 01061900 covers several commodities and hundreds of species.
   Each chosen species gets its own Selected commodities row, named by the
-  species.
+  species, on both Commodity details and Identification.
 - The commodity heading on Commodity details is set at the larger size because
   the commodity blocks are the substance of the page. The type steps down from
   commodity to species to quantity labels, and the labels carry a size so they

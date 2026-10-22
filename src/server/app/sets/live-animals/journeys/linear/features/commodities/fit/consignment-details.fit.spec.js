@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   expectSpeciesSelected,
   journeyUrl,
@@ -76,19 +77,17 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     const table = page.locator(GOVUK_TABLE)
-    await expect(table).toContainText(copy.consignmentDetails.table.caption)
-    await expect(table).toContainText(
-      copy.consignmentDetails.table.commodityCode
-    )
+    await expect(table).toContainText(copy.selectedCommodities.caption)
+    await expect(table).toContainText(copy.selectedCommodities.commodityCode)
     await expect(table).toContainText('Cow')
     await expect(table).toContainText('0102')
     await expect(table).toContainText('Cat')
     await expect(table).toContainText('01061900')
     await expect(table.getByRole('columnheader')).toHaveText([
-      copy.consignmentDetails.table.commodityCode,
-      copy.consignmentDetails.table.commonName,
-      copy.consignmentDetails.table.species,
-      copy.consignmentDetails.table.actionsHidden
+      copy.selectedCommodities.commodityCode,
+      copy.selectedCommodities.commonName,
+      copy.selectedCommodities.species,
+      copy.selectedCommodities.actionsHidden
     ])
     await expect(table.getByRole('row', { name: /Cow/ })).toContainText(
       BOS_TAURUS
@@ -403,6 +402,24 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectNoSeriousOrCriticalViolations(
       page,
       'Commodity details with errors'
+    )
+  })
+})
+
+test.describe('commodity consignment details on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDetails(page)
+  })
+
+  test('keeps the selected commodities table inside the screen width', async ({
+    page
+  }) => {
+    await expectNoHorizontalOverflow(
+      page.getByRole('table', { name: copy.selectedCommodities.caption }),
+      'Selected commodities table'
     )
   })
 })

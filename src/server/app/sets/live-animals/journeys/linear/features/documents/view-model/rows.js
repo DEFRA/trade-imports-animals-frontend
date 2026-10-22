@@ -1,3 +1,4 @@
+import { BREAK_ANYWHERE_CELL } from '../../../../../../../../common/constants/table-cells.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
@@ -45,7 +46,7 @@ export const documentRows = (documents, journeyId) =>
   documents.map(({ index, entry, scanStatus }) => [
     {
       text: cellText(entry.accompanyingDocumentReference),
-      classes: 'app-table__cell--break-anywhere'
+      classes: BREAK_ANYWHERE_CELL
     },
     { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },

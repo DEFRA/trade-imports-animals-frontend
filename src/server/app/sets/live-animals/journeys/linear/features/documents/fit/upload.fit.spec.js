@@ -7,7 +7,9 @@ import {
   openDocuments,
   setUploadFile,
   signIn,
-  values
+  values,
+  withinFullWidthColumn,
+  withinTwoThirdsColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -47,16 +49,6 @@ const expectNoDocumentsAdded = async (page) => {
     new RegExp(`${escapeRegExp(copy.addAnother)}\\s*$`)
   )
 }
-
-const withinTwoThirdsColumn = (locator) =>
-  locator.locator(
-    'xpath=ancestor::*[contains(@class,"govuk-grid-column-two-thirds")]'
-  )
-
-const withinFullWidthColumn = (locator) =>
-  locator.locator(
-    'xpath=ancestor::*[contains(@class,"govuk-grid-column-full")]'
-  )
 
 const expectSaveAndContinueOutsideCard = async (page) => {
   await expect(
