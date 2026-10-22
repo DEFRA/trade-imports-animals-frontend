@@ -84,8 +84,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The file field is labelled "Attachment", the noun the review also uses.
 - The Status column reports the virus check ("Scanning for virus", "Check
   completed"), not a verdict on the file.
-- A chosen document type means a document is on its way, so Continue finishes
-  a part-filled form rather than dropping it.
+- A chosen document type means a document is on its way, and only the add
+  action attaches a file. So Continue keeps every answer typed and names the
+  action that attaches it, rather than dropping the part-filled form.
 - The file size limit is held at 50 MB. "Save and add another" posts the file
   to the upload service's `/upload-and-scan` session rather than to this
   service, and that session is opened with the limit to enforce, so the CDP
