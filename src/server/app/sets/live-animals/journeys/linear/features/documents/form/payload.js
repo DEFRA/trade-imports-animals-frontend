@@ -9,8 +9,6 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { offeredDocumentTypes } from '../contracts/document-type-options.js'
-import { UPLOAD_ID_PATTERN } from '../contracts/upload-id.js'
-import { attachmentTypeFor } from '../upload-config.js'
 
 const copy = copyFor({ en, cy })
 
@@ -56,12 +54,4 @@ export const EMPTY_FORM = {
   accompanyingDocumentReference: '',
   accompanyingDocumentType: '',
   accompanyingDocumentDateOfIssue: {}
-}
-
-export const pendingDocumentSaveFrom = (payload) => {
-  const uploadId = payload.retryUploadId ?? ''
-  const filename = payload.retryFilename ?? ''
-  return UPLOAD_ID_PATTERN.test(uploadId) && attachmentTypeFor(filename)
-    ? { uploadId, filename }
-    : null
 }

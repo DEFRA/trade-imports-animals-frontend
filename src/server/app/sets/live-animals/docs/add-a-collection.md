@@ -199,35 +199,53 @@ controller builds its own rows over those facts.
 [`journeys/linear/features/documents/controller.js`](../journeys/linear/features/documents/controller.js) is
 the page the flow knows about. It declares the group it collects and renders
 both the entry form and the read-back table on one page, with a per-row Remove
-link:
+button:
 
 ```js
 export const meta = { ...page, collects: ['documents'] }
 ```
 
-Its POST branches on the submit button. `action === 'add'` validates the entry
-fields, appends, and redirects back to the page for the next one. Continue
-posts the same entry fields with it, so it appends too when the payload holds
-a started entry — `startsADocument` in
-[`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
-keys that on the trader having chosen a document type — and otherwise advances
-with no write. Both saving paths run through the same `postAdd`, which takes an
-`afterSave` callback, so every successful append ends in a redirect rather than
-a render: the POST mutated state and a reload must not replay it. The append
-creates the snapshot-local position — until that POST the draft lives only in
-the payload, never a half-created instance in the store:
+This loop's Add button does not post to this service at all. The entry carries
+a file, so Add posts to a session on the upload service, opened as the page is
+rendered by
+[`handlers/open-upload-session.js`](../journeys/linear/features/documents/handlers/open-upload-session.js),
+which also registers that session against the notification. The controller
+calls it through `openSessionOrReportUnavailable`, which reports an
+unavailable form rather than failing the page when no session can be opened:
+the document list stays readable and the Add form alone is refused, with its
+own message.
+
+The upload service then returns the browser to this page on a GET carrying the
+correlation handle the session was opened under. That GET is where the entry
+is taken on: `claimReturnedUpload` reads back what was submitted, refuses it
+by the page's own rules — the field rules, the file, and the collection's cap
+— and otherwise appends it and redirects to the page's clean path. The
+redirect is what makes a write on a GET safe: the handle is spent once
+claimed, so the page the trader lands on cannot claim the same upload again.
 
 ```js
-await state.appendEntry(request, h, 'documents', entry)
+await state.appendEntry(request, h, 'documents', claimed.entry)
 ```
 
-A leaf-less entry has no canonical record from which to infer an instance and
-is therefore not persisted. Collection forms should commit an entry only after
+The append creates the snapshot-local position — until it runs the entry lives
+only in the upload session, never a half-created instance in the store. A
+leaf-less entry has no canonical record from which to infer an instance and is
+therefore not persisted. Collection forms should commit an entry only after
 validation has produced at least one bound leaf.
 
-Remove is a third branch of the same POST — a submit button named
+Continue appends nothing. It posts the entry fields with it, so a payload
+holding a started entry — `startsADocument` in
+[`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
+keys that on the trader having chosen a document type — is refused rather than
+dropped: `refuseUnaddedDocument` keeps every answer typed, says what is
+missing, and asks for the add step on the file field, because only Add can
+attach the file. Where no session could be opened there is nothing to press,
+so the page's unavailable message stands in place of that ask. A payload that
+holds no started entry advances with no write.
+
+Remove is a branch of the same POST — a submit button named
 `action` with a `remove:<index>` value, so the page form's crumb travels
-with it and no GET can trigger a delete. It splices the instance out and
+with it and no GET removes an entry. It splices the instance out and
 reconciles, so anything left dangling out of scope is pruned too:
 
 ```js
@@ -347,8 +365,10 @@ what it declares. Add a case shaped like the matching layout:
 1. Assert the loop page's declaration — for the single-page loop,
    `documents.meta.collects` equals `['documents']`; for the batch split, the
    search page's meta collects `['commodityLines']`.
-2. Drive the committing handler with a valid payload — the `action === 'add'`
-   POST for a single-page loop, or the reconcile save for a batch split.
+2. Drive the committing handler with a valid payload — the add POST for a
+   single-page loop that collects its entry in this service, the GET the upload
+   service returns the browser to for the documents loop, or the reconcile save
+   for a batch split.
 3. If the collection is conditionally scoped, seed the gating answer so it stays
    in scope — otherwise reconcile wipes the fresh write. Always-in-scope groups
    need no seed.

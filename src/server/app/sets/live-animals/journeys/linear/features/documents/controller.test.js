@@ -102,6 +102,10 @@ const FILE_REQUIRED_MESSAGE = 'Upload a document'
 const FILE_EMPTY_MESSAGE = 'The selected file is empty'
 const NOT_YET_ADDED_MESSAGE =
   'Choose a file and select ‘Save and add another’ to add this document'
+const CONTINUE_AT_CAPACITY_LINE =
+  'Continue refused: the notification is at its document capacity'
+const CONTINUE_NOT_ADDED_LINE =
+  'Continue refused: the document has not been added'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // A value the select never carries: only a tampered form could send it.
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
@@ -200,6 +204,9 @@ const registeredUpload = async (filename) => {
 
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
+
+const linesLogged = (result, message) =>
+  result.logger.entries.filter((entry) => entry.message === message)
 
 const configureEngine = () => {
   configureRecords(SET_ID, recordsStub)
@@ -770,7 +777,7 @@ describe('documents — listing, scanning and removing', () => {
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
   })
 
-  it('Should refuse a Continue past the cap with the maximum message, which is the only refusal the page states', async () => {
+  it('Should refuse a Continue past the cap with the maximum message, which is the only refusal the page states, and log that refusal once', async () => {
     const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
@@ -783,6 +790,13 @@ describe('documents — listing, scanning and removing', () => {
       `You can upload a maximum of ${MAX_DOCUMENTS} files`
     ])
     expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(linesLogged(result, CONTINUE_AT_CAPACITY_LINE)).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId },
+        message: CONTINUE_AT_CAPACITY_LINE
+      }
+    ])
   })
 
   it('Should derive the controller cap from the manifest, not a copied number', () => {
@@ -816,7 +830,7 @@ describe('documents — Continue finishes a part-filled document', () => {
    * links to the file input, and the input takes its message from the field errors, so a
    * summary-only entry led to a control with nothing on it saying why.
    */
-  it('Should keep the answers Continue carries and ask for the add action on the file, appending nothing', async () => {
+  it('Should keep the answers Continue carries, ask for the add action on the file and log that refusal once with the field it names, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument }
     })
@@ -827,6 +841,13 @@ describe('documents — Continue finishes a part-filled document', () => {
       'GBHC1234567890'
     )
     expect(result.after).toEqual(result.before)
+    expect(linesLogged(result, CONTINUE_NOT_ADDED_LINE)).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, fields: ['file'] },
+        message: CONTINUE_NOT_ADDED_LINE
+      }
+    ])
   })
 
   /**

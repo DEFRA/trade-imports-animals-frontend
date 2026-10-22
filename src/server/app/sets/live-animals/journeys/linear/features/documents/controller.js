@@ -53,8 +53,7 @@ const HTTP_STATUS_NOT_FOUND = 404
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
-// Where the Add form posts its file, or nothing when no session could be opened.
-const addFormTarget = async (request, journeyId) => {
+const openSessionOrReportUnavailable = async (request, journeyId) => {
   try {
     return await openUploadSession(request, journeyId)
   } catch (err) {
@@ -72,21 +71,24 @@ const get = async (request, h) => {
   if (correlationId) {
     return claimReturnedUpload(request, h, pageState, correlationId)
   }
-  const target = await addFormTarget(request, pageState.journey.journeyId)
-  return render(request, h, pageState, EMPTY_FORM, { extra: target })
+  const addForm = await openSessionOrReportUnavailable(
+    request,
+    pageState.journey.journeyId
+  )
+  return render(request, h, pageState, EMPTY_FORM, { extra: addForm })
 }
 
 const renderTakeOnFailure = async (request, h, pageState, values) =>
   render(request, h, pageState, values, {
     extra: {
       recoverableError: true,
-      ...(await addFormTarget(request, pageState.journey.journeyId))
+      ...(await openSessionOrReportUnavailable(
+        request,
+        pageState.journey.journeyId
+      ))
     }
   }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
-// The upload service returns the browser with a GET, so the document is taken
-// on here and answered with a redirect: reloading the clean path cannot claim
-// the same upload twice.
 const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   const claimed = await claimUpload(request, correlationId, pageState)
   if (claimed?.takeOnFailed) {
@@ -98,11 +100,14 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
     )
   }
   if (claimed?.errors || claimed?.summaryErrors) {
-    const target = await addFormTarget(request, pageState.journey.journeyId)
+    const addForm = await openSessionOrReportUnavailable(
+      request,
+      pageState.journey.journeyId
+    )
     return render(request, h, pageState, claimed.values, {
       errors: claimed.errors ?? {},
       summaryErrors: claimed.summaryErrors ?? [],
-      extra: target
+      extra: addForm
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
   if (claimed?.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
@@ -182,7 +187,10 @@ const retryProjectionSave = async (
         extra: {
           recoverableError: true,
           pendingDocumentRemoval,
-          ...(await addFormTarget(request, pageState.journey.journeyId))
+          ...(await openSessionOrReportUnavailable(
+            request,
+            pageState.journey.journeyId
+          ))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -230,7 +238,10 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
             index,
             uploadId: entry.uploadId
           },
-          ...(await addFormTarget(request, pageState.journey.journeyId))
+          ...(await openSessionOrReportUnavailable(
+            request,
+            pageState.journey.journeyId
+          ))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -248,42 +259,45 @@ const leavePage = async (request, h) => {
   if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
     return render(request, h, pageState, EMPTY_FORM, {
       summaryErrors: settlingSummaryErrors(pageState.documents),
-      extra: await addFormTarget(request, pageState.journey.journeyId)
+      extra: await openSessionOrReportUnavailable(
+        request,
+        pageState.journey.journeyId
+      )
     })
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }
 
-// Continue carries the add-a-document fields with it, so a part-filled form
-// reaching here is a document the trader means to attach. Their answers are
-// never dropped: what is missing is said, and a form that only lacks the add
-// step asks for it, because the file itself can only go to the upload service.
 const continuesADocument = (request, payload) =>
   !kit.hubExitTarget(request) && startsADocument(payload)
 
-const finishTheDocument = async (request, h, payload) => {
+const refuseUnaddedDocument = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
+  const journeyId = pageState.journey.journeyId
   const values = documentFromPayload(payload)
-  const target = await addFormTarget(request, pageState.journey.journeyId)
+  const addForm = await openSessionOrReportUnavailable(request, journeyId)
   if (pageState.documents.length >= MAX_DOCUMENTS) {
+    request.logger.info(
+      { journeyId },
+      'Continue refused: the notification is at its document capacity'
+    )
     return render(request, h, pageState, values, {
       summaryErrors: capacityExceededError(),
-      extra: target
+      extra: addForm
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
-  // The file is always outstanding here: continuing never carries one, and this
-  // runs only once the add form has been started. So it is reported alongside
-  // whatever else is missing, which is what continuing has to say. Where no
-  // session opened there is nothing to press, and the page already refuses the
-  // form with its own message, so the file is left out of that one.
   const errors = documentAddErrors(
     payload,
     values,
-    target.uploadPath ? notYetAddedFileError() : null
+    addForm.uploadPath ? notYetAddedFileError() : null
+  )
+  request.logger.info(
+    { journeyId, fields: Object.keys(errors) },
+    'Continue refused: the document has not been added'
   )
   return render(request, h, pageState, values, {
     errors,
-    extra: target
+    extra: addForm
   }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
@@ -302,7 +316,7 @@ const post = async (request, h) => {
     return postRemove(request, h, removeIndexOf(action))
   }
   if (continuesADocument(request, payload)) {
-    return finishTheDocument(request, h, payload)
+    return refuseUnaddedDocument(request, h, payload)
   }
   return leavePage(request, h)
 }
