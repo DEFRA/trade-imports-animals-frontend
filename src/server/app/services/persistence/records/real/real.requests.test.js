@@ -200,8 +200,8 @@ describe('real records adapter — fulfilment writes', () => {
       }
     })
     expect(
-      (await jsonOf(requests[0])).notification.commodity.commodityComplement[0]
-        .species[0].noOfAnimals
+      (await jsonOf(requests[0])).notification.commodities[0].species[0]
+        .noOfAnimals
     ).toBe('5')
     expect(saved.fulfilment).toEqual(snapshot)
   })

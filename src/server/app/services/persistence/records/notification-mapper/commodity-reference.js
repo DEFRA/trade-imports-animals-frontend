@@ -15,3 +15,12 @@ export const speciesLatinName = (...args) =>
   reference().speciesLatinName(...args)
 
 export const typeTextForId = (...args) => reference().typeTextForId(...args)
+
+export const commodityNameFor = (...args) =>
+  reference().commodityNameFor(...args)
+
+export const commodityDescriptionFor = (...args) =>
+  reference().commodityDescriptionFor(...args)
+
+export const speciesCommonName = (...args) =>
+  reference().speciesCommonName(...args)

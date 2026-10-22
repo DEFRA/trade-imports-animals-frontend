@@ -165,40 +165,42 @@ const groupedLines = () => [
 
 describe('Mapper A — current backend notification (as-is)', () => {
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
-    const { commodity } = currentNotificationFrom(mappedAnswers())
-    expect(commodity).toEqual({
-      name: 'Cow',
-      commodityComplement: [
-        {
-          typeOfCommodity: 'Domestic',
-          totalNoOfAnimals: 25,
-          totalNoOfPackages: 5,
-          species: [
-            {
-              value: '1148346',
-              text: BOS_TAURUS,
-              noOfAnimals: '25',
-              noOfPackages: '5',
-              earTag: 'UK123456789012',
-              passport: 'UK123456789',
-              animalIdentifiers: [
-                { earTag: 'UK123456789012', passport: 'UK123456789' }
-              ]
-            }
-          ]
-        }
-      ]
-    })
+    const { commodities } = currentNotificationFrom(mappedAnswers())
+    expect(commodities).toEqual([
+      {
+        name: 'Cow',
+        commodityCode: '0102',
+        typeOfCommodity: 'Domestic',
+        totalNoOfAnimals: 25,
+        totalNoOfPackages: 5,
+        species: [
+          {
+            value: '1148346',
+            text: BOS_TAURUS,
+            noOfAnimals: '25',
+            noOfPackages: '5',
+            earTag: 'UK123456789012',
+            passport: 'UK123456789',
+            animalIdentifiers: [
+              { earTag: 'UK123456789012', passport: 'UK123456789' }
+            ]
+          }
+        ]
+      }
+    ])
   })
 
   test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
-    const { commodity } = currentNotificationFrom({
+    const { commodities } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
-    expect(commodity.name).toBe('Cow')
-    expect(commodity.commodityComplement).toHaveLength(2)
+    expect(commodities).toHaveLength(2)
 
-    const [cow, cat] = commodity.commodityComplement
+    const [cow, cat] = commodities
+    expect(cow.name).toBe('Cow')
+    expect(cow.commodityCode).toBe('0102')
+    expect(cat.name).toBe('Cat')
+    expect(cat.commodityCode).toBe('01061900')
     expect(cow.totalNoOfAnimals).toBe(35)
     expect(cow.totalNoOfPackages).toBe(7)
     expect(cow.species.map((entry) => entry.value)).toEqual([
@@ -223,10 +225,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
-    const { commodity } = currentNotificationFrom({
+    const { commodities } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
-    const [cow, cat] = commodity.commodityComplement
+    const [cow, cat] = commodities
     expect(cow.typeOfCommodity).toBe('Domestic')
     expect('typeOfCommodity' in cat).toBe(false)
   })
@@ -272,7 +274,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       address: { addressLine1: '7 Route One' },
       type: 'Commercial'
     })
-    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+    expect(notification.commodities[0].species[0]).toEqual({
       value: '1148346',
       text: BOS_TAURUS,
       noOfAnimals: '25',
@@ -334,10 +336,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
       transportDocumentReference: 'CMR-2026-884721',
       transitedCountries: ['France', 'Belgium']
     })
-    expect(
-      'commodityCode' in notification.commodity.commodityComplement[0]
-    ).toBe(false)
-    expect('name' in notification.commodity.commodityComplement[0]).toBe(false)
+    expect(notification.commodities[0].commodityCode).toBe('0102')
+    expect(notification.commodities[0].name).toBe('Cow')
   })
 })
 
@@ -346,7 +346,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 describe('Mapper A — per-unit animal identifiers', () => {
   test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
-    const species = notification.commodity.commodityComplement[0].species[0]
+    const species = notification.commodities[0].species[0]
 
     expect(species).toEqual({
       value: '1148346',
@@ -395,7 +395,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
       ]
     })
 
-    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+    expect(notification.commodities[0].species[0]).toEqual({
       value: '923501',
       text: 'Felis catus',
       noOfAnimals: '2',
@@ -427,7 +427,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
       ]
     })
 
-    const species = notification.commodity.commodityComplement[0].species[0]
+    const species = notification.commodities[0].species[0]
     expect(species).toMatchObject(firstUnit)
     expect(species.animalIdentifiers).toEqual([firstUnit, secondUnit])
   })
@@ -451,7 +451,7 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
       ]
     })
 
-    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+    expect(notification.commodities[0].species[0]).toEqual({
       value: '801204',
       text: SALMO_SALAR,
       noOfAnimals: '40',

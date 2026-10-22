@@ -1,4 +1,8 @@
-import { speciesLatinName } from '../../commodity-reference.js'
+import {
+  commodityNameFor,
+  speciesCommonName,
+  speciesLatinName
+} from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
@@ -24,14 +28,43 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: permanentAddressFrom(unit.permanentAddress)
   })
 
+const speciesValueFrom = (line) =>
+  line.speciesLatinName ?? line.speciesSelection
+
+const speciesTextFrom = (line) => {
+  if (line.speciesLatinName) {
+    return line.speciesLatinName
+  }
+  if (line.speciesSelection) {
+    return speciesLatinName(line.speciesSelection)
+  }
+  return undefined
+}
+
+const commonNameFrom = (line) => {
+  if (line.commonName) {
+    return line.commonName
+  }
+  if (line.commoditySelection) {
+    return speciesCommonName(line.commoditySelection, speciesValueFrom(line))
+  }
+  const commodityName = commodityNameFor(line.commodityCode)
+  if (commodityName) {
+    return speciesCommonName(commodityName, speciesValueFrom(line))
+  }
+  return undefined
+}
+
 // The scalar identifier fields carry the line's first identifier unit;
 // `animalIdentifiers` carries every unit on the line.
-export const speciesEntryFromLine = (line) => {
+export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
   const units = line.animalIdentifiers ?? []
   const unit = units[0] ?? {}
   return compact({
-    value: line.speciesSelection,
-    text: speciesLatinName(line.speciesSelection),
+    value: speciesValueFrom(line),
+    text: speciesTextFrom(line),
+    commonName: commonNameFrom(line),
+    typeOfCommodity,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
     earTag: unit.animalIdentifierEarTag,
