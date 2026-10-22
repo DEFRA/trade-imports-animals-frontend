@@ -43,6 +43,7 @@ import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
+  ALLOWED_MIME_TYPES,
   FILE_TYPE_MESSAGE,
   MAX_FILE_SIZE_BYTES,
   OVERSIZE_FILE_MESSAGE
@@ -118,8 +119,6 @@ const storedDocument = (overrides = {}) => ({
   ...overrides
 })
 
-const UPLOAD_ID = 'upload-session-1'
-const CORRELATION_ID = randomUUID()
 const UNREGISTERED_CORRELATION_ID = randomUUID()
 const TRAVERSING_CORRELATION_ID = '../../notifications/another-notification'
 
@@ -132,40 +131,51 @@ const submittedFile = (overrides = {}) => ({
   ...overrides
 })
 
-const returningFromUpload = (
+const registeredSession = async (journeyId) => {
+  const correlationId = randomUUID()
+  const { uploadId } = await documentUploadSessions.open({
+    journeyId,
+    correlationId,
+    maxFileSize: MAX_FILE_SIZE_BYTES,
+    mimeTypes: ALLOWED_MIME_TYPES
+  })
+  await documentUploads.register({ journeyId, uploadId, correlationId })
+  return { journeyId, correlationId, uploadId }
+}
+
+/**
+ * Drives the page the way the upload service returns the browser to it: a session opened and
+ * registered against the notification through the stub adapters, and the submitted form read
+ * back from it. Only the read is stood in for, because the stand-in service cannot produce
+ * every file entry cdp-uploader can — an empty-file code and an absent file entry among them.
+ *
+ * @param {object} form - the form the session answers with
+ * @param {object} [options] - `driveHandler` options, plus `session` to replay one and
+ *   `claimError` to refuse the claim
+ * @returns {Promise<object>} what `driveHandler` reports, plus the `session` it drove
+ */
+const driveClaim = async (
   form,
-  { uploadId = UPLOAD_ID, claimError = null } = {}
+  { claimError = null, session = null, ...options } = {}
 ) => {
-  const found = vi
-    .spyOn(documentUploads, 'findByCorrelationId')
-    .mockResolvedValue({ uploadId, correlationId: CORRELATION_ID })
+  const { journeyId, correlationId, uploadId } =
+    session ?? (await registeredSession((await store.create()).journeyId))
   const read = vi
     .spyOn(documentUploadSessions, 'read')
     .mockResolvedValue({ uploadStatus: 'pending', form })
-  const claim = vi
-    .spyOn(documentUploads, 'claim')
-    .mockImplementation(async () => {
-      if (claimError) {
-        throw claimError
-      }
-    })
-  return () => {
-    found.mockRestore()
-    read.mockRestore()
-    claim.mockRestore()
-  }
-}
-
-/** Drives the page the way the upload service returns the browser to it. */
-const driveClaim = async (form, options = {}) => {
-  const restore = returningFromUpload(form, options)
+  const claim = claimError
+    ? vi.spyOn(documentUploads, 'claim').mockRejectedValue(claimError)
+    : null
   try {
-    return await driveHandler(get, {
+    const result = await driveHandler(get, {
       ...options,
-      query: { upload: CORRELATION_ID }
+      journeyId,
+      query: { upload: correlationId }
     })
+    return { ...result, session: { journeyId, correlationId, uploadId } }
   } finally {
-    restore()
+    read.mockRestore()
+    claim?.mockRestore()
   }
 }
 
@@ -283,7 +293,7 @@ describe('documents — taking on an upload the browser returns with', () => {
     const [entry] = result.after.documents
     expect(entry.accompanyingDocumentAttachmentType).toBe('PDF')
     expect(entry.filename).toBe('itahc.pdf')
-    expect(entry.uploadId).toBe(UPLOAD_ID)
+    expect(entry.uploadId).toBe(result.session.uploadId)
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
@@ -415,6 +425,7 @@ describe('documents — refusing an upload the browser returns with', () => {
     expect(first.after.documents).toHaveLength(1)
 
     const replayed = await driveClaim(submittedDocument(), {
+      session: first.session,
       seed: { documents: first.after.documents }
     })
 
@@ -504,8 +515,8 @@ describe('documents — taking on a returned upload a service refuses', () => {
         err: refusal,
         status: SERVICE_UNAVAILABLE,
         journeyId: result.journeyId,
-        uploadId: UPLOAD_ID,
-        correlationId: CORRELATION_ID
+        uploadId: result.session.uploadId,
+        correlationId: result.session.correlationId
       },
       message: TAKE_ON_FAILED_MESSAGE
     })
@@ -534,8 +545,8 @@ describe('documents — taking on a returned upload a service refuses', () => {
       fields: {
         err: saveFailure,
         journeyId: result.journeyId,
-        uploadId: UPLOAD_ID,
-        correlationId: CORRELATION_ID
+        uploadId: result.session.uploadId,
+        correlationId: result.session.correlationId
       },
       message: 'Took on the returned upload but could not save the document'
     })
