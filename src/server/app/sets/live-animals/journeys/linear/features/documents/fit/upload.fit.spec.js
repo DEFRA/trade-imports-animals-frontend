@@ -403,7 +403,7 @@ test.describe('document upload file validation', () => {
     await setUploadFile(page, 'itahc-empty.pdf', Buffer.alloc(0))
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.fileRequired)
+    const link = errorLink(page, copy.errors.fileEmpty)
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()

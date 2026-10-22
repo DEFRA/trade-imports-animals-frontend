@@ -99,6 +99,9 @@ const DATE_OF_ISSUE_TEXT = '12/12/2025'
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
 const FILE_REQUIRED_MESSAGE = 'Upload a document'
+const FILE_EMPTY_MESSAGE = 'The selected file is empty'
+const NOT_YET_ADDED_MESSAGE =
+  'Choose a file and select ‘Save and add another’ to add this document'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // A value the select never carries: only a tampered form could send it.
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
@@ -336,7 +339,7 @@ describe('documents — taking on an upload the browser returns with', () => {
       submittedDocument({ file: submittedFile({ contentLength: 0 }) })
     )
 
-    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expect(result.view.context.errors.file).toBe(FILE_EMPTY_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
@@ -351,7 +354,7 @@ describe('documents — taking on an upload the browser returns with', () => {
       })
     )
 
-    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expect(result.view.context.errors.file).toBe(FILE_EMPTY_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
@@ -788,19 +791,34 @@ describe('documents — Continue finishes a part-filled document', () => {
   // The file itself can only go to the upload service, so Continue cannot
   // attach it. The trader keeps every answer they typed and is told which
   // action does attach it.
-  it('Should keep the answers Continue carries and ask for the add action, appending nothing', async () => {
+  /**
+   * The add step is reported on the file field, not as a summary line of its own: the summary
+   * links to the file input, and the input takes its message from the field errors, so a
+   * summary-only entry led to a control with nothing on it saying why.
+   */
+  it('Should keep the answers Continue carries and ask for the add action on the file, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(summaryTexts(result)).toContain(
-      'Select ‘Save and add another’ to add the document you chose'
-    )
+    expect(result.view.context.errors.file).toBe(NOT_YET_ADDED_MESSAGE)
+    expect(summaryTexts(result)).toContain(NOT_YET_ADDED_MESSAGE)
     expect(result.view.context.values.accompanyingDocumentReference).toBe(
       'GBHC1234567890'
     )
-    expect(result.view.context.errors).toEqual({})
     expect(result.after).toEqual(result.before)
+  })
+
+  /**
+   * The message cannot claim a file was chosen. Continuing never carries one and no browser puts
+   * one back into the input, so the trader who chose a file and the trader who did not read the
+   * same line — and the one who did not would be told to add a document they never picked.
+   */
+  it('Should not claim a file was chosen when Continue asks for the add action', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue', ...validDocument }
+    })
+    expect(result.view.context.errors.file).not.toMatch(/you chose/i)
   })
 
   it('Should name what is missing when Continue carries a type and nothing else, appending nothing', async () => {
@@ -810,7 +828,8 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.response.statusCode).toBe(400)
     expect(Object.keys(result.view.context.errors)).toEqual([
       'accompanyingDocumentReference',
-      'accompanyingDocumentDateOfIssue'
+      'accompanyingDocumentDateOfIssue',
+      'file'
     ])
     expect(result.after).toEqual(result.before)
   })

@@ -22,7 +22,7 @@ import { returnedCorrelationId } from './contracts/upload-session.js'
 import {
   capacityExceededError,
   documentAddErrors,
-  notYetAddedError
+  notYetAddedFileError
 } from './form/errors.js'
 import {
   EMPTY_FORM,
@@ -270,12 +270,18 @@ const finishTheDocument = async (request, h, payload) => {
       extra: target
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
-  const errors = documentAddErrors(payload, values)
-  const onlyTheAddStepIsMissing =
-    !Object.keys(errors).length && Boolean(target.uploadPath)
+  // The file is always outstanding here: continuing never carries one, and this
+  // runs only once the add form has been started. So it is reported alongside
+  // whatever else is missing, which is what continuing has to say. Where no
+  // session opened there is nothing to press, and the page already refuses the
+  // form with its own message, so the file is left out of that one.
+  const errors = documentAddErrors(
+    payload,
+    values,
+    target.uploadPath ? notYetAddedFileError() : null
+  )
   return render(request, h, pageState, values, {
     errors,
-    summaryErrors: onlyTheAddStepIsMissing ? notYetAddedError() : [],
     extra: target
   }).code(HTTP_STATUS_BAD_REQUEST)
 }

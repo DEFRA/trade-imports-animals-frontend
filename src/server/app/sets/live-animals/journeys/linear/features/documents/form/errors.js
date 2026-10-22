@@ -28,7 +28,7 @@ const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
 const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
 
 const MESSAGE_BY_FILE_ERROR_CODE = {
-  [FILE_EMPTY]: copy.errors.fileRequired,
+  [FILE_EMPTY]: copy.errors.fileEmpty,
   [FILE_TOO_LARGE]: OVERSIZE_FILE_MESSAGE,
   [FILE_INVALID_TYPE]: FILE_TYPE_MESSAGE
 }
@@ -53,7 +53,7 @@ export const submittedFileError = (file) => {
     }
   }
   if (file.contentLength === 0) {
-    return { file: copy.errors.fileRequired }
+    return { file: copy.errors.fileEmpty }
   }
   return null
 }
@@ -88,9 +88,15 @@ export const capacityExceededError = () => [
   }
 ]
 
-export const notYetAddedError = () => [
-  { text: copy.errors.notYetAdded, href: '#file' }
-]
+/**
+ * The add step itself is what is outstanding. Returned as an error on the file field rather than
+ * as a summary line of its own, so the summary entry leads to a control that says what is wrong —
+ * the file input takes its message from the field errors, so a summary-only entry pointed a
+ * trader at an input with nothing on it.
+ *
+ * @returns {object} a file error to merge with the field rules
+ */
+export const notYetAddedFileError = () => ({ file: copy.errors.notYetAdded })
 
 export const uploadUnavailableError = () => [
   { text: copy.errors.uploadUnavailable, href: ADD_DOCUMENT_ANCHOR }

@@ -117,8 +117,9 @@ export const copy = {
     typeRequired: 'Dewiswch fath o ddogfen',
     dateRequired: 'Rhowch ddyddiad cyhoeddi',
     fileRequired: 'Uwchlwythwch ddogfen',
+    fileEmpty: 'Mae’r ffeil a ddewiswyd yn wag',
     notYetAdded:
-      'Dewiswch ‘Cadw ac ychwanegu un arall’ i ychwanegu’r ddogfen a ddewiswyd gennych',
+      'Dewiswch ffeil, ac yna dewiswch ‘Cadw ac ychwanegu un arall’ i ychwanegu’r ddogfen hon',
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',

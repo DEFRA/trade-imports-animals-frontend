@@ -121,7 +121,12 @@ export const copy = {
     typeRequired: 'Select a document type',
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
-    notYetAdded: 'Select ‘Save and add another’ to add the document you chose',
+    fileEmpty: 'The selected file is empty',
+    // Says what is left to do and claims nothing about what was chosen. No file
+    // reaches the page on continue and no browser puts one back into the input,
+    // so a trader who chose one and a trader who did not are indistinguishable.
+    notYetAdded:
+      'Choose a file and select ‘Save and add another’ to add this document',
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     uploadFailed: 'The file could not be uploaded. Try again.',
