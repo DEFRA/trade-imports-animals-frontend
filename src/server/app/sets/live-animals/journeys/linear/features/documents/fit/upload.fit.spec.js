@@ -480,24 +480,18 @@ test.describe('document upload oversize validation', () => {
     await expect(uploadControl(page)).toBeFocused()
   })
 
-  // The browser's own check is the only thing that can refuse a file before it
-  // is uploaded. With that check disabled the file reaches the upload service,
-  // which refuses it on receipt and returns the trader the same message.
-  test('file validation: an oversize file past the browser check is refused on receipt', async ({
+  // The upload service decides for itself whether to take a file, and the page
+  // has to render the refusal it sends back. The file here is deliberately
+  // small, so the browser's own size check never fires and cannot be what
+  // produces the message: the stand-in refuses it on its name, the way
+  // cdp-uploader refuses one that arrives over the cap, and the wording comes
+  // from mapping the service's FILE_TOO_LARGE verdict.
+  test('file validation: a file the upload service refuses as too large is reported on receipt', async ({
     page
   }) => {
     test.slow()
-    await fillDocument(page)
-    await setUploadFile(
-      page,
-      OVERSIZE_FILENAME,
-      Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
-    )
-    await page.evaluate(() =>
-      document
-        .querySelector('form[data-max-file-size]')
-        .removeAttribute('data-max-file-size')
-    )
+    await fillMetadata(page)
+    await setUploadFile(page, OVERSIZE_FILENAME)
     await submitAdd(page)
 
     const link = errorLink(page, OVERSIZE_FILE_MESSAGE)
