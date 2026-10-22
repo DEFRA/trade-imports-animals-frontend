@@ -1,25 +1,9 @@
-import { getTraceId } from '@defra/hapi-tracing'
 import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
+import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
+import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
-const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
-
-const failed = (action, response) => {
-  const error = new Error(
-    `Failed to ${action}: ${response.status} ${response.statusText}`
-  )
-  error.status = response.status
-  error.statusText = response.statusText
-  return error
-}
-
-const traceHeaders = (contentType) => ({
-  ...(contentType ? { 'Content-Type': contentType } : {}),
-  [tracingHeader]: getTraceId() ?? ''
-})
-
-const HTTP_NOT_FOUND = 404
 
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
@@ -32,7 +16,7 @@ export const documentUploads = {
       }
     )
     if (!response.ok) {
-      throw failed('register document upload', response)
+      throw failedResponse('register document upload', response)
     }
   },
 
@@ -46,7 +30,7 @@ export const documentUploads = {
       }
     )
     if (!response.ok) {
-      throw failed('claim document upload', response)
+      throw failedResponse('claim document upload', response)
     }
   },
 
@@ -55,11 +39,11 @@ export const documentUploads = {
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
       { method: 'GET', headers: traceHeaders() }
     )
-    if (response.status === HTTP_NOT_FOUND) {
+    if (response.status === HTTP_STATUS_NOT_FOUND) {
       return undefined
     }
     if (!response.ok) {
-      throw failed('get document upload session', response)
+      throw failedResponse('get document upload session', response)
     }
     return response.json()
   },
@@ -70,7 +54,7 @@ export const documentUploads = {
       { method: 'GET', headers: traceHeaders() }
     )
     if (!response.ok) {
-      throw failed('get document upload status', response)
+      throw failedResponse('get document upload status', response)
     }
     const { scanStatus } = await response.json()
     return { scanStatus }
@@ -82,7 +66,7 @@ export const documentUploads = {
       { method: 'DELETE', headers: traceHeaders() }
     )
     if (!response.ok) {
-      throw failed('delete document upload', response)
+      throw failedResponse('delete document upload', response)
     }
   },
 
@@ -92,7 +76,7 @@ export const documentUploads = {
       { method: 'GET', headers: traceHeaders() }
     )
     if (!response.ok) {
-      throw failed('stream document file', response)
+      throw failedResponse('stream document file', response)
     }
     return response
   }

@@ -1,14 +1,12 @@
 import { randomUUID } from 'node:crypto'
 
+import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
+import { FILE_INVALID_TYPE, FILE_TOO_LARGE } from './file-error-codes.js'
+
 // The one rule a stub run cannot reach honestly, so a test asks for it by name:
 // the browser's own check refuses an oversize file before it is ever posted, and
 // a test that wants the service's refusal instead has no way to provoke it.
 const OVERSIZE_FILENAME = /oversize|too-?big/i
-
-const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
-const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
-
-const HTTP_STATUS_NOT_FOUND = 404
 
 // The transport ceiling for the stand-in route, not the file cap. cdp-uploader
 // answers an oversize file with a rejected file entry, not by refusing the

@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import hapi from '@hapi/hapi'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
 import { config } from '../../../../config/config.js'
+import { callCounts } from '../../../common/helpers/call-counts/call-counts.js'
+import { callCountsRoutes } from '../../../common/helpers/call-counts/call-counts-routes.js'
+import { clearCallCountTotals } from '../../../common/helpers/call-counts/call-count-totals.js'
 import { documentUploadSessions } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -22,7 +26,10 @@ beforeEach(() => {
   config.set('cdpUploader.baseUrl', UPLOADER_URL)
   config.set('cdpUploader.scanResultCallbackUrl', CALLBACK_URL)
   config.set('cdpUploader.documentsBucket', DOCUMENTS_BUCKET)
+  vi.spyOn(console, 'log').mockImplementation(() => {})
 })
+
+afterEach(() => vi.restoreAllMocks())
 
 const jsonOf = (request) => request.clone().json()
 
@@ -164,6 +171,37 @@ describe('#documentUploadSessions', () => {
         status: 404,
         message: expect.stringContaining('read an upload session')
       })
+    })
+  })
+
+  describe('#accounting', () => {
+    it('Should account a session read outside this service, not as a journey-backend call', async () => {
+      clearCallCountTotals()
+      fetchMocker.mockResponse(
+        JSON.stringify({ uploadStatus: 'pending', form: {} })
+      )
+      const server = hapi.server()
+      await server.register([callCounts, callCountsRoutes])
+      server.route({
+        method: 'GET',
+        path: '/page',
+        handler: async () => {
+          await documentUploadSessions.read(UPLOAD_ID)
+          return 'page'
+        }
+      })
+
+      await server.inject({ method: 'GET', url: '/page' })
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/call-counts'
+      })
+
+      expect(result.totals).toMatchObject({
+        backendCalls: 0,
+        externalCalls: { 'cdp-uploader': { status: 1 } }
+      })
+      await server.stop({ timeout: 0 })
     })
   })
 })

@@ -1,6 +1,11 @@
 import { isBlank } from '../../../../../../../lib/answered.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import {
+  FILE_EMPTY,
+  FILE_INVALID_TYPE,
+  FILE_TOO_LARGE
+} from '../../../../../../../services/cdp-uploader/file-error-codes.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { ADD_DOCUMENT_ANCHOR } from '../contracts/add-document-anchor.js'
@@ -22,10 +27,6 @@ export const presenceErrors = (entry) => ({
     ? { accompanyingDocumentDateOfIssue: copy.errors.dateRequired }
     : {})
 })
-
-const FILE_EMPTY = 'FILE_EMPTY'
-const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
-const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
 
 const MESSAGE_BY_FILE_ERROR_CODE = {
   [FILE_EMPTY]: copy.errors.fileEmpty,

@@ -1,25 +1,15 @@
-import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../../../config/config.js'
-import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
+import { measureExternalCall } from '../../../common/helpers/external-call-metrics.js'
+import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 
 const uploaderBaseUrl = () => config.get('cdpUploader.baseUrl')
 const scanResultCallbackUrl = () =>
   config.get('cdpUploader.scanResultCallbackUrl')
 const documentsBucket = () => config.get('cdpUploader.documentsBucket')
-const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 
-const failed = (action, response) => {
-  const error = new Error(
-    `Failed to ${action}: ${response.status} ${response.statusText}`
-  )
-  error.status = response.status
-  error.statusText = response.statusText
-  return error
-}
-
-const traceHeaders = (contentType) => ({
-  ...(contentType ? { 'Content-Type': contentType } : {}),
-  [tracingHeader]: getTraceId() ?? ''
+const UPLOADER_CALLS = Object.freeze({
+  openSession: { dependency: 'cdp-uploader', operation: 'initiate' },
+  readSession: { dependency: 'cdp-uploader', operation: 'status' }
 })
 
 export const documentUploadSessions = {
@@ -41,23 +31,28 @@ export const documentUploadSessions = {
     maxFileSize,
     mimeTypes
   }) => {
-    const response = await backendFetch(`${uploaderBaseUrl()}/initiate`, {
-      method: 'POST',
-      headers: traceHeaders('application/json'),
-      body: JSON.stringify({
-        redirect: returnPath,
-        callback: scanResultCallbackUrl(),
-        s3Bucket: documentsBucket(),
-        s3Path: journeyId,
-        maxFileSize,
-        mimeTypes,
-        metadata: { correlationId, notificationReferenceNumber: journeyId }
-      })
-    })
-    if (!response.ok) {
-      throw failed('open an upload session', response)
-    }
-    const { uploadId } = await response.json()
+    const { uploadId } = await measureExternalCall(
+      UPLOADER_CALLS.openSession,
+      async () => {
+        const response = await fetch(`${uploaderBaseUrl()}/initiate`, {
+          method: 'POST',
+          headers: traceHeaders('application/json'),
+          body: JSON.stringify({
+            redirect: returnPath,
+            callback: scanResultCallbackUrl(),
+            s3Bucket: documentsBucket(),
+            s3Path: journeyId,
+            maxFileSize,
+            mimeTypes,
+            metadata: { correlationId, notificationReferenceNumber: journeyId }
+          })
+        })
+        if (!response.ok) {
+          throw failedResponse('open an upload session', response)
+        }
+        return response.json()
+      }
+    )
     return { uploadId, uploadPath: `/upload-and-scan/${uploadId}` }
   },
 
@@ -69,14 +64,15 @@ export const documentUploadSessions = {
    * @param {string} uploadId - the session's id
    * @returns {Promise<{uploadStatus: string, form: object}>} the submitted form and its state
    */
-  read: async (uploadId) => {
-    const response = await backendFetch(
-      `${uploaderBaseUrl()}/status/${uploadId}`,
-      { method: 'GET', headers: traceHeaders() }
-    )
-    if (!response.ok) {
-      throw failed('read an upload session', response)
-    }
-    return response.json()
-  }
+  read: async (uploadId) =>
+    measureExternalCall(UPLOADER_CALLS.readSession, async () => {
+      const response = await fetch(`${uploaderBaseUrl()}/status/${uploadId}`, {
+        method: 'GET',
+        headers: traceHeaders()
+      })
+      if (!response.ok) {
+        throw failedResponse('read an upload session', response)
+      }
+      return response.json()
+    })
 }

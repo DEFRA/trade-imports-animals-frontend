@@ -1,0 +1,3 @@
+export const FILE_EMPTY = 'FILE_EMPTY'
+export const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
+export const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
