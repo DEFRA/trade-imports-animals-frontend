@@ -17,8 +17,6 @@ import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       const text = sampleText(value, ['sample', 'sample'])
@@ -55,11 +53,39 @@ describe('#copy', () => {
     expect(copy.hub.title).toBe('Consignment addresses')
   })
 
-  it('Should word the CPH hub row and its hint in lower case with "number" after the abbreviation', () => {
+  it('Should word the CPH section, its hint and its add link in lower case with "number" after the abbreviation', () => {
     expect(copy.hub.cph.title).toBe('County parish holding (CPH) number')
     expect(copy.hub.cph.hint).toBe(
       'The county parish holding (CPH) number identifies the holding where the animals will be kept.'
     )
+    expect(copy.hub.cph.add).toBe('Add a CPH number')
+  })
+
+  it('Should introduce the page and warn about false addresses without a closing full stop', () => {
+    expect(copy.hub.intro).toBe(
+      'Add all the addresses that are involved in the consignment.'
+    )
+    expect(copy.hub.warning).toBe(
+      'Providing a false address is an act of fraud'
+    )
+    expect(copyCy.hub.warning).toBe(
+      'Mae darparu cyfeiriad ffug yn weithred o dwyll'
+    )
+  })
+
+  it('Should call the consignor Consignor in English and Anfonwr in Welsh', () => {
+    expect(copy.parties.consignor.title).toBe('Consignor')
+    expect(copyCy.parties.consignor.title).toBe('Anfonwr')
+  })
+
+  it('Should name each party in its add link', () => {
+    expect(PARTIES.map(({ id }) => copy.parties[id].add)).toEqual([
+      'Add a place of origin',
+      'Add a consignor',
+      'Add a consignee',
+      'Add an importer',
+      'Add a place of destination'
+    ])
   })
 
   it('Should feed every party spoke its title, hint and error from the module', () => {
@@ -82,6 +108,8 @@ describe('GET consignment addresses — copy reaches the view', () => {
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
       'Save and continue'
     )
-    expect(result.view.context.rows.at(0).value.text).toBe(copy.hub.notAddedYet)
+    expect(result.view.context.sections.at(0).addLink.text).toBe(
+      copy.parties.placeOfOrigin.add
+    )
   })
 })

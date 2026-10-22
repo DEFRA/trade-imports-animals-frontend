@@ -184,6 +184,25 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Consignment addresses pages
 
+- The consignment addresses page gives each party its own section: a medium
+  heading, its hint, then either a named "Add a …" link or the chosen address
+  in an inset text with Change and Edit details under it. The trader sees
+  which full address they chose, name and every address line. The county
+  parish holding number follows the same section shape, with its stored value
+  on one line and no Edit details.
+- Each section is a region named by its heading, so a screen reader lists the
+  parties. The add link names the party, so it needs no visually hidden
+  suffix. Change and Edit details keep a visually hidden suffix naming the
+  party, because two sections would otherwise offer the same link names.
+- The inset shows the name in bold, then each street line on its own line.
+  The locality, county, postcode and country join into the last line, as in
+  "Hull, HU9 5PX, United Kingdom". The country is the name held on the
+  notification's copy of the party, so the page never asks the address book.
+- Every party link carries the change context. A trader sent here from check
+  your answers goes out to the picker or the edit page and has to come back
+  here, and this page's Continue then returns them to check your answers.
+  The county parish holding link does not: its route already carries
+  `return=addresses`.
 - Each party picker searches the address book from the submitted search box:
   a medium "Search" label, the hint "Name, address or country", and a square
   GOV.UK blue icon button joined to the box. The button is named "Search" for

@@ -4,7 +4,7 @@ import {
   answerOriginEntry,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
-  openCphNumberFromRow,
+  openCphNumberFromAddLink,
   selectSpecies,
   startNotificationAtOrigin,
   urlUnderBase
@@ -41,7 +41,7 @@ const startAtCphNumber = async (page) => {
   )
 
   await page.goto(commodityUrl.replace(/\/commodities$/, '/addresses'))
-  await openCphNumberFromRow(page)
+  await openCphNumberFromAddLink(page)
   await expect(page).toHaveURL(/\/cph-number\?return=addresses$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
@@ -53,15 +53,10 @@ test.describe('cph-number feature', () => {
   })
 
   test('renders the CPH copy', async ({ page }) => {
-    // The page heading is an instruction in its own right, directly under the
-    // caption — the group of boxes beneath it carries the shorter legend, so the
-    // two are separate strings rather than one label doubling as the heading.
     await expect(
       page.locator('span.govuk-caption-l + h1.govuk-heading-l')
     ).toHaveText(copy.title)
 
-    // The question's name is a legend, not the heading: a revert to
-    // `isPageHeading: true` would put it back into a second h1.
     await expect(
       page.getByRole('heading', { name: copy.cph.legend })
     ).toHaveCount(0)
@@ -77,8 +72,6 @@ test.describe('cph-number feature', () => {
   }) => {
     const boxes = partBoxes(page)
 
-    // The widths and the maxlengths are what teach the 2/3/4 shape — they are
-    // the reason the page needs no copy to explain how the digits divide up.
     await expect(boxes.county).toHaveClass(/govuk-input--width-2/)
     await expect(boxes.county).toHaveAttribute('maxlength', '2')
     await expect(boxes.parish).toHaveClass(/govuk-input--width-3/)
@@ -110,8 +103,6 @@ test.describe('cph-number feature', () => {
   test('describes the whole number once, in the real 2/3/4 grouping', async ({
     page
   }) => {
-    // The hint sits on the group rather than on any one box, because it
-    // explains the whole number. 123/456/789 is a grouping no CPH number uses.
     await expect(
       page.getByRole('group', { name: copy.cph.legend })
     ).toHaveAccessibleDescription(copy.cph.hint)
@@ -124,13 +115,9 @@ test.describe('cph-number feature', () => {
     const summary = page.getByText(copy.help.summary, { exact: true })
     await expect(summary).toBeVisible()
 
-    // Collapsed by default: the help costs a trader who already knows what a
-    // CPH number is nothing but a line of summary text.
     await expect(page.getByText(copy.help.definition)).toBeHidden()
     await expect(page.getByText(copy.help.whereToFind)).toBeHidden()
 
-    // Above the input, not below it — the explanation has to arrive before the
-    // question it explains.
     await expect(
       page.locator('details').filter({ hasText: copy.help.summary })
     ).toHaveCount(1)
@@ -274,8 +261,6 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    // One red bar on the question, not three inside the row of boxes — the
-    // date-input pattern the layout is borrowed from keeps the boxes aligned.
     await expect(page.locator('form > .govuk-form-group--error')).toHaveCount(1)
     await expect(
       page.locator('.govuk-date-input__item .govuk-error-message')

@@ -1,16 +1,11 @@
-import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  postHandlerOf,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 
@@ -23,15 +18,8 @@ const get = importReason.routes.find((route) => route.method === 'GET').handler
 const EXIT_DATE_TEXT = '20/12/2026'
 const EXIT_DATE_PARTS = { day: '20', month: '12', year: '2026' }
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe('POST import-reason — invalid payload', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should answer 400 and re-render an out-of-list reason, committing nothing', async () => {
     const result = await driveHandler(post, {
@@ -222,8 +210,7 @@ describe('POST import-reason — invalid payload', () => {
 })
 
 describe('POST import-reason — the reveal the reason opens', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should commit the transit reveal as the two answers behind its fields', async () => {
     const result = await driveHandler(post, {
@@ -305,8 +292,7 @@ describe('POST import-reason — the reveal the reason opens', () => {
 })
 
 describe('GET import-reason — the reveals prefill from the one answer behind them', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should offer a stored port of exit to both reveals that ask for it', async () => {
     const result = await driveHandler(get, {
@@ -363,8 +349,7 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
 // from the captured ports fixture, so each doubles as a stale stored value.
 
 describe('GET import-reason — a stored destination country the reader no longer offers', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the stale country in both country reveals so both selects render unselected', async () => {
     const result = await driveHandler(get, {
@@ -433,8 +418,7 @@ describe('GET import-reason — a stored destination country the reader no longe
 })
 
 describe('GET import-reason — a stored port of exit the reader no longer offers', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the stale port in both port reveals so both selects render unselected', async () => {
     const result = await driveHandler(get, {
@@ -488,8 +472,7 @@ describe('GET import-reason — a stored port of exit the reader no longer offer
 })
 
 describe('POST import-reason — a stale destination country submitted verbatim reads the same as empty', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should reject a payload with the stale code using the standard countryRequired copy', async () => {
     const result = await driveHandler(post, {
@@ -511,8 +494,7 @@ describe('POST import-reason — a stale destination country submitted verbatim 
 })
 
 describe('POST import-reason — Save and return to overview', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should save a transit reason with its port and country left blank and go to the overview', async () => {
     const result = await driveHandler(post, {

@@ -149,6 +149,14 @@ const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
+export const addressBookInsetText = (party) => {
+  const {
+    name,
+    address: { addressLine1, townOrCity, postcode, country }
+  } = STUB_BOOK.find((record) => record.name === partyPickerName(party))
+  return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
+}
+
 const JOURNEY_ID_IN_URL = new RegExp(`^${BASE}/notifications/([^/]+)`)
 
 export const journeyIdFromPage = (page) => {
@@ -727,25 +735,23 @@ export const answerAdditionalDetails = async (page) => {
   await save(page)
 }
 
+export const addressesSection = (page, heading) =>
+  page.getByRole('region', { name: heading, exact: true })
+
 export const answerRolesAndAddresses = async (page) => {
   const parties = [
-    ['Consignor or exporter', partyPickerName(values.consignor)],
-    ['Place of destination', partyPickerName(values.placeOfDestination)],
-    ['Place of origin', partyPickerName(values.placeOfOrigin)],
-    ['Consignee', partyPickerName(values.consignee)],
-    ['Importer', partyPickerName(values.importer)]
+    ['Add a consignor', partyPickerName(values.consignor)],
+    ['Add a place of destination', partyPickerName(values.placeOfDestination)],
+    ['Add a place of origin', partyPickerName(values.placeOfOrigin)],
+    ['Add a consignee', partyPickerName(values.consignee)],
+    ['Add an importer', partyPickerName(values.importer)]
   ]
-  for (const [label, name] of parties) {
-    await page
-      .locator('.govuk-summary-list__row', {
-        has: page.getByText(label, { exact: true })
-      })
-      .getByRole('link', { name: 'Add' })
-      .click()
+  for (const [addLink, name] of parties) {
+    await page.getByRole('link', { name: addLink, exact: true }).click()
     await page.getByRole('radio', { name }).check()
     await save(page)
   }
-  await answerCphNumberFromRow(page)
+  await answerCphNumberFromAddLink(page)
   await save(page)
 }
 
@@ -766,17 +772,14 @@ export const answerCphNumber = async (page) => {
   await save(page)
 }
 
-export const openCphNumberFromRow = async (page) => {
+export const openCphNumberFromAddLink = async (page) => {
   await page
-    .locator('.govuk-summary-list__row', {
-      has: page.getByText('County parish holding (CPH) number', { exact: true })
-    })
-    .getByRole('link', { name: 'Add' })
+    .getByRole('link', { name: 'Add a CPH number', exact: true })
     .click()
 }
 
-export const answerCphNumberFromRow = async (page) => {
-  await openCphNumberFromRow(page)
+export const answerCphNumberFromAddLink = async (page) => {
+  await openCphNumberFromAddLink(page)
   await answerCphNumber(page)
   await expect(
     page.getByRole('heading', { name: 'Consignment addresses' })
