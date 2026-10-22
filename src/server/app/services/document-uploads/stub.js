@@ -77,8 +77,6 @@ export const documentUploads = {
     sessionKeysByUploadId.delete(uploadId)
   },
 
-  // The stub keeps no bytes — an upload here is only a scan lifecycle — so
-  // every download serves the same canned one-page PDF.
   streamFile: async () =>
     new Response(PLACEHOLDER_PDF, {
       headers: {

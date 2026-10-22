@@ -41,6 +41,10 @@ upload session the browser posts the file to and reads back what it submitted;
 backend and claims it once the trader has answered the document's own
 questions.
 
+A stub run holds the scan lifecycle and nothing else — no uploaded bytes — so
+downloading a document there serves the same placeholder PDF whichever document
+is asked for.
+
 [`set-context`](../services/set-context/index.js) is not an IO service: it
 re-exports the active set id so the model can read it without crossing the
 `model-import-boundary` rule in `.dependency-cruiser.cjs`.
