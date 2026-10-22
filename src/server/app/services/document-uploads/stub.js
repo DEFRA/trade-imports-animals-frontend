@@ -41,10 +41,13 @@ const settledStatus = (filename = '') => {
 const sessionKey = (journeyId, correlationId) => `${journeyId}/${correlationId}`
 
 const uploadIdsBySession = new Map()
+const sessionKeysByUploadId = new Map()
 
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
-    uploadIdsBySession.set(sessionKey(journeyId, correlationId), uploadId)
+    const key = sessionKey(journeyId, correlationId)
+    uploadIdsBySession.set(key, uploadId)
+    sessionKeysByUploadId.set(uploadId, key)
     awaitingRefresh.add(uploadId)
   },
 
@@ -70,6 +73,8 @@ export const documentUploads = {
 
   remove: async (uploadId) => {
     awaitingRefresh.delete(uploadId)
+    uploadIdsBySession.delete(sessionKeysByUploadId.get(uploadId))
+    sessionKeysByUploadId.delete(uploadId)
   },
 
   // The stub keeps no bytes — an upload here is only a scan lifecycle — so

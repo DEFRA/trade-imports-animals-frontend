@@ -178,5 +178,24 @@ describe('#documentUploads', () => {
         await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).toEqual({ scanStatus: 'COMPLETE' })
     })
+
+    it('Should answer nothing for the correlationId of a removed upload', async () => {
+      const uploadId = randomUUID()
+      const correlationId = randomUUID()
+      await documentUploads.register({
+        journeyId: 'journey-1',
+        uploadId,
+        correlationId
+      })
+
+      await documentUploads.remove(uploadId)
+
+      await expect(
+        documentUploads.findByCorrelationId({
+          journeyId: 'journey-1',
+          correlationId
+        })
+      ).resolves.toBeUndefined()
+    })
   })
 })
