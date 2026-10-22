@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto'
 
-const REJECTED_FILENAME = /oversize|too-?big/i
-const WRONG_TYPE_FILENAME = /\.(txt|zip|exe)$/i
+// The one rule a stub run cannot reach honestly, so a test asks for it by name:
+// the browser's own check refuses an oversize file before it is ever posted, and
+// a test that wants the service's refusal instead has no way to provoke it.
+const OVERSIZE_FILENAME = /oversize|too-?big/i
 
 const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
 const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
@@ -18,13 +20,24 @@ const ROUTE_BODY_CEILING_MB = 64
 const BYTES_PER_MEGABYTE = 1_000_000
 const ROUTE_BODY_CEILING_BYTES = ROUTE_BODY_CEILING_MB * BYTES_PER_MEGABYTE
 
+export const STUB_UPLOAD_PATH = '/stub-upload-and-scan'
+
 const sessions = new Map()
 
-const fileErrorCodeFor = ({ filename, contentLength, maxFileSize }) => {
-  if (WRONG_TYPE_FILENAME.test(filename)) {
+const fileErrorCodeFor = ({
+  filename,
+  contentType,
+  contentLength,
+  maxFileSize,
+  mimeTypes
+}) => {
+  // Judged on the type the browser declared and the limits the session was
+  // opened with, as cdp-uploader judges it — not on the extension. A stub
+  // that applied rules of its own would take a file cdp-uploader refuses.
+  if (Array.isArray(mimeTypes) && !mimeTypes.includes(contentType)) {
     return FILE_INVALID_TYPE
   }
-  if (REJECTED_FILENAME.test(filename)) {
+  if (OVERSIZE_FILENAME.test(filename)) {
     return FILE_TOO_LARGE
   }
   const overCap =
@@ -49,9 +62,15 @@ const fileEntryFor = (upload) => {
 }
 
 export const documentUploadSessions = {
-  open: async ({ correlationId, returnPath, maxFileSize }) => {
+  open: async ({ correlationId, returnPath, maxFileSize, mimeTypes }) => {
     const uploadId = randomUUID()
-    sessions.set(uploadId, { correlationId, returnPath, maxFileSize, form: {} })
+    sessions.set(uploadId, {
+      correlationId,
+      returnPath,
+      maxFileSize,
+      mimeTypes,
+      form: {}
+    })
     return { uploadId, uploadPath: `${STUB_UPLOAD_PATH}/${uploadId}` }
   },
 
@@ -66,19 +85,18 @@ export const documentUploadSessions = {
   }
 }
 
-export const STUB_UPLOAD_PATH = '/stub-upload-and-scan'
-
 const textFieldsOf = (payload) =>
   Object.fromEntries(
     Object.entries(payload).filter(([, value]) => typeof value === 'string')
   )
 
-// Stands in for the platform's /upload-and-scan bypass, which no stub run has
-// in front of it: it takes the browser's multipart POST, remembers the fields
-// alongside the file, and returns the browser the way cdp-uploader does.
 const takeUpload = (request, h) => {
   const session = sessions.get(request.params.uploadId)
   if (!session) {
+    request.logger.info(
+      { uploadId: request.params.uploadId },
+      'Upload posted to a session that was never opened'
+    )
     return h.response().code(HTTP_STATUS_NOT_FOUND)
   }
   const payload = request.payload ?? {}
@@ -89,8 +107,19 @@ const takeUpload = (request, h) => {
       filename: file.filename ?? '',
       contentType: file.headers?.['content-type'],
       contentLength: file.payload?.length ?? 0,
-      maxFileSize: session.maxFileSize
+      maxFileSize: session.maxFileSize,
+      mimeTypes: session.mimeTypes
     })
+  }
+  if (session.form.file.hasError) {
+    request.logger.info(
+      {
+        uploadId: request.params.uploadId,
+        correlationId: session.correlationId,
+        errorCode: session.form.file.errorCode
+      },
+      'Upload refused by the stand-in upload service'
+    )
   }
   return h.redirect(session.returnPath)
 }
