@@ -512,18 +512,13 @@ test.describe('document upload oversize validation', () => {
   })
 })
 
-// Continue posts the add-a-document fields with it, so a trader who fills the
-// form and presses the primary button is never carried on with their answers
-// quietly dropped: they are told what is missing, or which action attaches the
-// file. Only the add action can attach it — the file goes to the upload
-// service, and Continue posts to this page.
 test.describe('document upload continue', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openDocuments(page)
   })
 
-  test('continue keeps a filled-in form and asks for the add action', async ({
+  test('continue keeps the answers and asks for the add action, and adding the re-picked file saves a row showing the chosen type', async ({
     page
   }) => {
     test.slow()
@@ -531,13 +526,9 @@ test.describe('document upload continue', () => {
     await submitContinue(page)
 
     await expect(errorLink(page, copy.errors.notYetAdded)).toBeVisible()
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      validDocument.accompanyingDocumentReference
-    )
+    await expectPreservedMetadata(page)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    // A re-rendered page never carries the chosen file back — no browser
-    // repopulates a file input — so the trader picks it again and adds it.
     await setUploadFile(page, validDocument.filename)
     await submitAdd(page)
     const row = rowFor(page, validDocument.accompanyingDocumentReference)

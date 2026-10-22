@@ -84,15 +84,23 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The file field is labelled "Attachment", the noun the review also uses.
 - The Status column reports the virus check ("Scanning for virus", "Check
   completed"), not a verdict on the file.
+- The status tag carries no text but the status itself, so a visually hidden
+  label naming the document's reference is read out ahead of it. Without it a
+  screen reader hears "Check completed" with nothing saying what was checked.
+- The drop zone's choose-file button, drop instruction, no-file-chosen text and
+  drag status take the design system's own wording, so the control reads the
+  way traders meet it elsewhere on GOV.UK.
 - A chosen document type means a document is on its way, and only the add
   action attaches a file. So Continue keeps every answer typed and names the
   action that attaches it, rather than dropping the part-filled form.
-- The file size limit is held at 50 MB. "Save and add another" posts the file
-  to the upload service's `/upload-and-scan` session rather than to this
-  service, and that session is opened with the limit to enforce, so the CDP
-  ingress body cap does not bound it. The page states the same figure and
-  checks it in the browser, so a trader learns a file is too large before
-  spending time uploading it.
+- The file size limit is whatever `MAX_FILE_SIZE_MB` in
+  `journeys/linear/features/documents/upload-config.js` holds; nothing else
+  states a figure. "Save and add another" posts the file to the upload
+  service's `/upload-and-scan` session rather than to this service, and that
+  session is opened with that limit to enforce, so the CDP ingress body cap
+  does not bound it. The page states the same figure and checks it in the
+  browser, so a trader learns a file is too large before spending time
+  uploading it.
 
 ## Transport
 
