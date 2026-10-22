@@ -50,8 +50,7 @@ const HTTP_STATUS_NOT_FOUND = 404
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
-// Opening the session is needed only to prime the Add form, so a failure there
-// leaves the document list readable and refuses that form alone.
+// Where the Add form posts its file, or nothing when no session could be opened.
 const addFormTarget = async (request, journeyId) => {
   try {
     return await openUploadSession(request, journeyId)
@@ -60,7 +59,7 @@ const addFormTarget = async (request, journeyId) => {
       { err, status: err.status, journeyId },
       'Could not open an upload session'
     )
-    return { uploadFormUnavailable: true }
+    return {}
   }
 }
 
@@ -142,11 +141,12 @@ const retryProjectionSave = async (
         documents: pageState.answers.documents ?? []
       })
     },
-    () =>
+    async () =>
       render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
-          pendingDocumentRemoval
+          pendingDocumentRemoval,
+          ...(await addFormTarget(request, pageState.journey.journeyId))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -186,14 +186,15 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
-    () =>
+    async () =>
       render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
           pendingDocumentRemoval: {
             index,
             uploadId: entry.uploadId
-          }
+          },
+          ...(await addFormTarget(request, pageState.journey.journeyId))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -210,7 +211,8 @@ const leavePage = async (request, h) => {
   const pageState = await loadPage(request, h)
   if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
     return render(request, h, pageState, EMPTY_FORM, {
-      summaryErrors: settlingSummaryErrors(pageState.documents)
+      summaryErrors: settlingSummaryErrors(pageState.documents),
+      extra: await addFormTarget(request, pageState.journey.journeyId)
     })
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
@@ -226,16 +228,19 @@ const continuesADocument = (request, payload) =>
 const finishTheDocument = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
   const values = documentFromPayload(payload)
+  const target = await addFormTarget(request, pageState.journey.journeyId)
   if (pageState.documents.length >= MAX_DOCUMENTS) {
     return render(request, h, pageState, values, {
-      summaryErrors: capacityExceededError()
+      summaryErrors: capacityExceededError(),
+      extra: target
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
   const errors = documentAddErrors(payload, values)
-  const target = await addFormTarget(request, pageState.journey.journeyId)
+  const onlyTheAddStepIsMissing =
+    !Object.keys(errors).length && Boolean(target.uploadPath)
   return render(request, h, pageState, values, {
     errors,
-    summaryErrors: Object.keys(errors).length ? [] : notYetAddedError(),
+    summaryErrors: onlyTheAddStepIsMissing ? notYetAddedError() : [],
     extra: target
   }).code(HTTP_STATUS_BAD_REQUEST)
 }

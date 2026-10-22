@@ -9,6 +9,7 @@ import {
   OVERSIZE_FILE_MESSAGE
 } from '../upload-config.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
+import { uploadUnavailableError } from '../form/errors.js'
 import { documentsPage as page } from '../page.js'
 import { rejectedErrors } from '../scan/summary-errors.js'
 import { documentTypeItems } from './fragments/document-type.js'
@@ -30,10 +31,12 @@ export const render = ({
   const anyPending = documents.some(
     (item) => item.scanStatus === SCAN_STATUS.PENDING
   )
+  const uploadFormUnavailable = !extra.uploadPath
   const errorList = [
     ...rejectedErrors(documents),
     ...summaryErrors,
-    ...(kit.errorSummary(errors)?.errorList ?? [])
+    ...(kit.errorSummary(errors)?.errorList ?? []),
+    ...(uploadFormUnavailable ? uploadUnavailableError() : [])
   ]
   return h.view(view, {
     ...kit.base(copy.title, {
@@ -43,6 +46,9 @@ export const render = ({
       page
     }),
     ...extra,
+    // Written after the spread, so only a session that was opened can open the
+    // add form.
+    uploadFormUnavailable,
     copy,
     rows: documentRows(documents, journey.journeyId),
     hasDocuments: documents.length > 0,

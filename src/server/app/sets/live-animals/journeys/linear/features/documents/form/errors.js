@@ -3,6 +3,7 @@ import { validate } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { ADD_DOCUMENT_ANCHOR } from '../contracts/add-document-anchor.js'
 import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { FILE_TYPE_MESSAGE, OVERSIZE_FILE_MESSAGE } from '../upload-config.js'
@@ -84,4 +85,8 @@ export const capacityExceededError = () => [
 
 export const notYetAddedError = () => [
   { text: copy.errors.notYetAdded, href: '#file' }
+]
+
+export const uploadUnavailableError = () => [
+  { text: copy.errors.uploadUnavailable, href: ADD_DOCUMENT_ANCHOR }
 ]

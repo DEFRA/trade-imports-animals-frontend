@@ -123,24 +123,31 @@
           errorMessage: errors.file and { text: errors.file }
         }) }}
 
-        {{ govukButton({
-          text: copy.addAnother,
-          classes: "govuk-button--secondary",
-          name: "action",
-          value: "add",
-          disabled: uploadFormUnavailable,
-          attributes: {
-            formaction: uploadPath,
-            formenctype: "multipart/form-data"
-          } if uploadPath
-        }) }}
+        {# The reason comes before the control it refuses, and the button keeps
+           its place in the tab order so the error summary can reach it. #}
+        <div class="govuk-form-group{{ ' govuk-form-group--error' if uploadFormUnavailable }}">
+          {% if uploadFormUnavailable %}
+            <p id="add-document-error" class="govuk-error-message">
+              <span class="govuk-visually-hidden">{{ copy.errors.hiddenPrefix }}</span>
+              {{ copy.errors.uploadUnavailable }}
+            </p>
+          {% endif %}
 
-        {% if uploadFormUnavailable %}
-          <p class="govuk-error-message">
-            <span class="govuk-visually-hidden">{{ copy.errors.hiddenPrefix }}</span>
-            {{ copy.errors.uploadFailed }}
-          </p>
-        {% endif %}
+          {{ govukButton({
+            id: "add-document",
+            text: copy.addAnother,
+            classes: "govuk-button--secondary",
+            name: "action",
+            value: "add",
+            attributes: {
+              "aria-disabled": "true",
+              "aria-describedby": "add-document-error"
+            } if uploadFormUnavailable else {
+              formaction: uploadPath,
+              formenctype: "multipart/form-data"
+            }
+          }) }}
+        </div>
 
         {% if hasDocuments %}
           <div id="documents-added">

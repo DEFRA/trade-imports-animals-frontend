@@ -2,8 +2,10 @@ import { randomUUID } from 'node:crypto'
 import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
+import { load } from 'cheerio'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -17,8 +19,11 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  journeyRequest,
   postHandlerOf,
-  registerTestSessionAuth
+  recordingLogger,
+  registerTestSessionAuth,
+  stubH
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
@@ -26,6 +31,7 @@ import * as documentTypes from '../../../../../../services/document-types/index.
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
@@ -462,7 +468,7 @@ describe('documents — listing, scanning and removing', () => {
     expect(settled.response.redirect).toBeDefined()
   })
 
-  it('Should block Continue while a scan is PENDING, naming the reason', async () => {
+  it('Should block Continue while a scan is PENDING, naming the reason and leaving the add form open', async () => {
     const uploadId = await registeredUpload('itahc.pdf')
     const result = await driveHandler(post, {
       seed: {
@@ -475,6 +481,8 @@ describe('documents — listing, scanning and removing', () => {
     expect(summaryTexts(result)).toContain(
       'You cannot continue until all documents have been scanned or removed'
     )
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(result.view.context.uploadPath).toBeDefined()
   })
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
@@ -578,7 +586,7 @@ describe('documents — listing, scanning and removing', () => {
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
   })
 
-  it('Should refuse a Continue past the cap with the maximum message', async () => {
+  it('Should refuse a Continue past the cap with the maximum message, which is the only refusal the page states', async () => {
     const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
@@ -587,9 +595,10 @@ describe('documents — listing, scanning and removing', () => {
       payload: { action: 'continue', ...validDocument }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(summaryTexts(result)).toContain(
+    expect(summaryTexts(result)).toEqual([
       `You can upload a maximum of ${MAX_DOCUMENTS} files`
-    )
+    ])
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
   })
 
   it('Should derive the controller cap from the manifest, not a copied number', () => {
@@ -950,5 +959,120 @@ describe('documents — reading an uploaded file back', () => {
     })
 
     expect(response.statusCode).toBe(404)
+  })
+})
+
+describe('documents — the add form when no upload session can be opened', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+
+  const environment = nunjucksConfig.options.compileOptions.environment
+  // Pinned as a literal rather than read from copy, so a reworded or reused
+  // message fails here.
+  const UPLOAD_UNAVAILABLE_MESSAGE =
+    'Documents cannot be uploaded at the moment. Reload the page or come back later.'
+  const SERVICE_UNAVAILABLE = 503
+
+  const uploaderError = () =>
+    Object.assign(
+      new Error('Failed to open an upload session: 503 Service Unavailable'),
+      { status: SERVICE_UNAVAILABLE }
+    )
+
+  // driveHandler keeps its request to itself, and what was logged is part of
+  // what this proves, so the page is driven with a logger the test can read.
+  const driveGet = async (seed) => {
+    const { journeyId } = await store.create()
+    await store.seedAnswers(journeyId, seed)
+    const logger = recordingLogger()
+    const request = journeyRequest(journeyId, { logger })
+    const h = stubH(request)
+    const response = await get(request, h)
+    return { journeyId, response, view: h.captured.view, logger }
+  }
+
+  const pageOf = ({ view: { view, context } }) =>
+    load(
+      environment.render(`${view}.njk`, {
+        ...context,
+        userSession: { isAuthenticated: true, displayName: 'Sam Example' },
+        getAssetPath: (asset) => `/assets/${asset}`
+      })
+    )
+
+  it('Should refuse the add form with its reason above a still-focusable button, name that reason in the error summary, keep the saved documents and log the failure', async () => {
+    const err = uploaderError()
+    const open = vi.spyOn(documentUploadSessions, 'open').mockRejectedValue(err)
+    const saved = storedDocument()
+
+    try {
+      const result = await driveGet({ documents: [saved] })
+
+      expect(result.response.statusCode).toBe(200)
+      expect(result.view.context.uploadFormUnavailable).toBe(true)
+      expect(result.view.context.uploadPath).toBeUndefined()
+      expect(summaryTexts(result)).toContain(UPLOAD_UNAVAILABLE_MESSAGE)
+      expect(
+        result.logger.entries.filter(({ level }) => level === 'error')
+      ).toEqual([
+        {
+          level: 'error',
+          fields: {
+            err,
+            status: SERVICE_UNAVAILABLE,
+            journeyId: result.journeyId
+          },
+          message: 'Could not open an upload session'
+        }
+      ])
+
+      const $ = pageOf(result)
+      const addButton = $('button[name="action"][value="add"]')
+      expect(addButton.attr('formaction')).toBeUndefined()
+      expect(addButton.attr('formenctype')).toBeUndefined()
+      expect(addButton.attr('disabled')).toBeUndefined()
+      expect(addButton.attr('aria-disabled')).toBe('true')
+      expect(`#${addButton.attr('id')}`).toBe(ADD_DOCUMENT_ANCHOR)
+
+      const reason = $(`#${addButton.attr('aria-describedby')}`)
+      expect(reason.text()).toContain(UPLOAD_UNAVAILABLE_MESSAGE)
+      expect(reason.next().attr('id')).toBe(addButton.attr('id'))
+
+      const summaryLink = $('.govuk-error-summary')
+        .find('a')
+        .filter(
+          (_, link) => $(link).text().trim() === UPLOAD_UNAVAILABLE_MESSAGE
+        )
+      expect(summaryLink.attr('href')).toBe(ADD_DOCUMENT_ANCHOR)
+
+      expect($('#documents-added').text()).toContain(
+        saved.accompanyingDocumentReference
+      )
+    } finally {
+      open.mockRestore()
+    }
+  })
+
+  // Pressing the refused button is still reachable from the keyboard, and the
+  // add step it would ask for is the one that cannot be taken.
+  it('Should state only the upload failure when Continue carries a document and no session can be opened, keeping the answers', async () => {
+    const open = vi
+      .spyOn(documentUploadSessions, 'open')
+      .mockRejectedValue(uploaderError())
+
+    try {
+      const result = await driveHandler(post, {
+        payload: { action: 'continue', ...validDocument }
+      })
+
+      expect(result.response.statusCode).toBe(400)
+      expect(summaryTexts(result)).toEqual([UPLOAD_UNAVAILABLE_MESSAGE])
+      expect(result.view.context.values.accompanyingDocumentReference).toBe(
+        validDocument.accompanyingDocumentReference
+      )
+      expect(result.after).toEqual(result.before)
+    } finally {
+      open.mockRestore()
+    }
   })
 })

@@ -122,6 +122,8 @@ export const copy = {
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',
+    uploadUnavailable:
+      'Ni ellir uwchlwytho dogfennau ar hyn o bryd. Ail-lwythwch y dudalen neu dewch yn ôl yn nes ymlaen.',
     maxDocuments: (max) => `Gallwch uwchlwytho uchafswm o ${max} ffeil`,
     fileFallbackName: 'Mae’r ffeil',
     virusFound: (filename) =>

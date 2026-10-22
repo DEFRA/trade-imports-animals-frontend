@@ -122,6 +122,8 @@ export const copy = {
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     uploadFailed: 'The file could not be uploaded. Try again.',
+    uploadUnavailable:
+      'Documents cannot be uploaded at the moment. Reload the page or come back later.',
     maxDocuments: (max) => `You can upload a maximum of ${max} files`,
     fileFallbackName: 'The file',
     virusFound: (filename) =>
