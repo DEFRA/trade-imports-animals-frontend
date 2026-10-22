@@ -86,8 +86,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   completed"), not a verdict on the file.
 - A chosen document type means a document is on its way, so Continue finishes
   a part-filled form rather than dropping it.
-- The file size limit is held at 10 MB so the request stays inside the CDP
-  ingress body cap.
+- The file size limit is held at 50 MB. "Save and add another" posts the file
+  to the upload service's `/upload-and-scan` session rather than to this
+  service, and that session is opened with the limit to enforce, so the CDP
+  ingress body cap does not bound it. The page states the same figure and
+  checks it in the browser, so a trader learns a file is too large before
+  spending time uploading it.
 
 ## Transport
 
