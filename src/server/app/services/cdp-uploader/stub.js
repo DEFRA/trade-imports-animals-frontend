@@ -8,17 +8,34 @@ const FILE_INVALID_TYPE = 'FILE_INVALID_TYPE'
 
 const HTTP_STATUS_NOT_FOUND = 404
 
+// The transport ceiling for the stand-in route, not the file cap. cdp-uploader
+// answers an oversize file with a rejected file entry, not by refusing the
+// request, so the body has to reach the handler for the stub to answer the same
+// way. Without a cap here hapi's 1 MB default stands and every document a
+// trader attaches is refused with a 413 before the handler runs. The file cap
+// is whatever the session was opened with, enforced in fileErrorCodeFor.
+const ROUTE_BODY_CEILING_MB = 64
+const BYTES_PER_MEGABYTE = 1_000_000
+const ROUTE_BODY_CEILING_BYTES = ROUTE_BODY_CEILING_MB * BYTES_PER_MEGABYTE
+
 const sessions = new Map()
 
-const fileErrorCodeFor = (filename) => {
+const fileErrorCodeFor = ({ filename, contentLength, maxFileSize }) => {
   if (WRONG_TYPE_FILENAME.test(filename)) {
     return FILE_INVALID_TYPE
   }
-  return REJECTED_FILENAME.test(filename) ? FILE_TOO_LARGE : undefined
+  if (REJECTED_FILENAME.test(filename)) {
+    return FILE_TOO_LARGE
+  }
+  const overCap =
+    Number.isFinite(maxFileSize) &&
+    Number.isFinite(contentLength) &&
+    contentLength > maxFileSize
+  return overCap ? FILE_TOO_LARGE : undefined
 }
 
 const fileEntryFor = (upload) => {
-  const errorCode = fileErrorCodeFor(upload.filename)
+  const errorCode = fileErrorCodeFor(upload)
   return {
     fileId: randomUUID(),
     filename: upload.filename,
@@ -32,9 +49,9 @@ const fileEntryFor = (upload) => {
 }
 
 export const documentUploadSessions = {
-  open: async ({ correlationId, returnPath }) => {
+  open: async ({ correlationId, returnPath, maxFileSize }) => {
     const uploadId = randomUUID()
-    sessions.set(uploadId, { correlationId, returnPath, form: {} })
+    sessions.set(uploadId, { correlationId, returnPath, maxFileSize, form: {} })
     return { uploadId, uploadPath: `${STUB_UPLOAD_PATH}/${uploadId}` }
   },
 
@@ -71,7 +88,8 @@ const takeUpload = (request, h) => {
     file: fileEntryFor({
       filename: file.filename ?? '',
       contentType: file.headers?.['content-type'],
-      contentLength: file.payload?.length ?? 0
+      contentLength: file.payload?.length ?? 0,
+      maxFileSize: session.maxFileSize
     })
   }
   return h.redirect(session.returnPath)
@@ -87,7 +105,11 @@ export const stubUploadRoutes = {
         options: {
           auth: false,
           plugins: { crumb: false },
-          payload: { parse: true, multipart: { output: 'annotated' } }
+          payload: {
+            parse: true,
+            multipart: { output: 'annotated' },
+            maxBytes: ROUTE_BODY_CEILING_BYTES
+          }
         },
         handler: takeUpload
       })

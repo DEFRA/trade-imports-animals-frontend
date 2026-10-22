@@ -5,13 +5,19 @@ import {
   documentUploadSessions,
   stubUploadRoutes
 } from './stub.js'
+// The cap the page states is what this stand-in has to be able to take: in a
+// stub run the browser posts the file straight to it.
+import { MAX_FILE_SIZE_BYTES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const RETURN_PATH = '/live-animals/notifications/j-1/accompanying-documents'
+const CORRELATION_ID = 'correlation-1'
+const SESSION_CAP_BYTES = 1000
 
-const openSession = () =>
+const openSession = (maxFileSize) =>
   documentUploadSessions.open({
-    correlationId: 'correlation-1',
-    returnPath: RETURN_PATH
+    correlationId: CORRELATION_ID,
+    returnPath: RETURN_PATH,
+    maxFileSize
   })
 
 const takeUploadHandler = () => {
@@ -116,6 +122,46 @@ describe('#documentUploadSessions (stub)', () => {
       expect(form.file.hasError).toBe(true)
       expect(form.file.errorCode).toBe('FILE_TOO_LARGE')
       expect(form.file.fileStatus).toBe('rejected')
+    })
+
+    // The page states a 50MB cap and the browser posts the file straight to
+    // this route in a stub run, so hapi's 1 MB default would refuse every real
+    // document with a 413 before the handler ran.
+    it('Should take a body larger than the cap the page states', () => {
+      const route = takeUploadHandler()
+
+      expect(route.options.payload.maxBytes).toBeGreaterThan(
+        MAX_FILE_SIZE_BYTES
+      )
+    })
+
+    it('Should reject a file over the cap its session was opened with, with the too-large code', async () => {
+      const { uploadId } = await openSession(SESSION_CAP_BYTES)
+      const handler = takeUploadHandler().handler
+
+      handler(
+        uploadRequest(uploadId, pdf('cert.pdf', SESSION_CAP_BYTES + 1)),
+        toolkit()
+      )
+
+      const { form } = await documentUploadSessions.read(uploadId)
+      expect(form.file.hasError).toBe(true)
+      expect(form.file.errorCode).toBe('FILE_TOO_LARGE')
+      expect(form.file.fileStatus).toBe('rejected')
+    })
+
+    it('Should accept a file at exactly the cap its session was opened with', async () => {
+      const { uploadId } = await openSession(SESSION_CAP_BYTES)
+      const handler = takeUploadHandler().handler
+
+      handler(
+        uploadRequest(uploadId, pdf('cert.pdf', SESSION_CAP_BYTES)),
+        toolkit()
+      )
+
+      const { form } = await documentUploadSessions.read(uploadId)
+      expect(form.file.hasError).toBe(false)
+      expect(form.file.fileStatus).toBe('complete')
     })
 
     it('Should refuse a file whose extension is not an accepted type', async () => {
