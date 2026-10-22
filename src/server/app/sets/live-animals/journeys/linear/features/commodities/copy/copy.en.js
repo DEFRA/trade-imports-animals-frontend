@@ -10,6 +10,8 @@ export const copy = {
       'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
     searchButton: 'Search',
     noResults: 'No results found',
+    resultCount: (count) =>
+      count === 1 ? '1 result available' : `${count} results available`,
     selected: {
       heading: (count) => `${count} selected`,
       clearAll: 'Clear all'

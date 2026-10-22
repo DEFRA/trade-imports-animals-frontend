@@ -1,0 +1,58 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+
+{% macro emphasised(parts) -%}
+  {%- for part in parts -%}
+    {%- if part.matched %}<strong>{{ part.text }}</strong>{% else %}{{ part.text }}{% endif -%}
+  {%- endfor -%}
+{%- endmacro %}
+
+<div id="commodity-search-results" data-live-search-slot="results" data-live-search-message="{{ resultStatus }}">
+  {% for group in commodityGroups %}
+    {% set items = [] %}
+    {% for item in group.items %}
+      {% set items = (items.push({ value: item.value, checked: item.checked, html: emphasised(item.textParts) }), items) %}
+    {% endfor %}
+    {{ govukCheckboxes({
+      idPrefix: "species" if loop.first else "species-group-" + loop.index,
+      name: "species",
+      classes: "govuk-checkboxes--small",
+      fieldset: { legend: { html: emphasised(group.legendParts) } },
+      errorMessage: loop.first and errors.species and { text: errors.species },
+      items: items
+    }) }}
+  {% else %}
+    {% if noResults %}
+      <p class="govuk-body">{{ copy.noResults }}</p>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{# A choice made under an earlier query has no tick box on screen, so it
+   rides back with the form as a hidden value. #}
+<div data-live-search-slot="carried">
+  {% for key in carriedKeys %}
+    <input type="hidden" name="selection" value="{{ key }}" />
+  {% endfor %}
+</div>
+
+<div data-live-search-slot="selection">
+  {% if selectedSummary.count %}
+    <div id="commodity-selection">
+      <h2 class="govuk-heading-s">{{ selectedSummary.heading }}</h2>
+      <ul class="govuk-list govuk-!-margin-bottom-4">
+        {% for group in selectedSummary.groups %}
+          <li>
+            <span class="govuk-!-font-weight-bold">{{ group.legend }}</span>: {{ group.items | join(", ") }}
+          </li>
+        {% endfor %}
+      </ul>
+      {{ govukButton({
+        text: copy.selected.clearAll,
+        classes: "govuk-button--secondary",
+        name: "action",
+        value: "clear"
+      }) }}
+    </div>
+  {% endif %}
+</div>

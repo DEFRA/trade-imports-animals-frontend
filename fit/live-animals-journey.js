@@ -234,6 +234,20 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
+const isResultsRequestFor = (query) => (response) => {
+  const url = new URL(response.url())
+  return (
+    url.pathname.endsWith('/commodities/results') &&
+    url.searchParams.get('commoditySearch') === query
+  )
+}
+
+export const typeCommoditySearch = async (page, query) => {
+  const results = page.waitForResponse(isResultsRequestFor(query))
+  await page.getByLabel('Search for a commodity').fill(query)
+  await results
+}
+
 export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
     await searchCommodities(page, name)

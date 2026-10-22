@@ -196,7 +196,13 @@ export const driveHandler = async (
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler
 
-export const postHandlerEndingWith = (featureModule, pathSuffix) =>
+const handlerEndingWith = (featureModule, method, pathSuffix) =>
   featureModule.routes.find(
-    (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
+    (route) => route.method === method && route.path.endsWith(pathSuffix)
   ).handler
+
+export const postHandlerEndingWith = (featureModule, pathSuffix) =>
+  handlerEndingWith(featureModule, 'POST', pathSuffix)
+
+export const getHandlerEndingWith = (featureModule, pathSuffix) =>
+  handlerEndingWith(featureModule, 'GET', pathSuffix)

@@ -60,6 +60,24 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Documents are not required to submit, so a notification with none lists
   them as still owed.
 
+## What are you importing?
+
+- The search is a submit on the page's own form, so the page works without
+  JavaScript. With JavaScript, the results, the hidden carried choices and
+  the selection panel update as the trader types or ticks, and a status
+  message reports how many results there are.
+- The results are rendered on the server, by the same template with and
+  without JavaScript. Matching, grouping, labels and the minimum query length
+  live in one place and stay there when the catalogue grows.
+- Ticking a result refreshes the selection panel but not the results, so
+  focus stays on the tick box.
+- The text a query matched is in bold, in the commodity heading or the
+  species label it matched. The commodity heading is not bold of its own,
+  so the matched part shows.
+- The search button is a magnifying glass inside the box, as the design has
+  it. The icon is drawn inline in the current text colour, so it stays
+  visible in forced-colours mode.
+
 ## Identification
 
 - The in-card button says what pressing it does next: "Save and add another"

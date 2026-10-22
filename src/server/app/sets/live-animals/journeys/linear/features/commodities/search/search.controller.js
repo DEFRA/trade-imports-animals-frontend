@@ -1,4 +1,8 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
+import {
+  hubPath,
+  pagePath,
+  pageRoutePath
+} from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -8,15 +12,16 @@ import { commoditiesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { commitSelection } from './actions/commit-selection.js'
-import { isSearchable, normaliseQuery } from './matching.js'
+import { normaliseQuery } from './matching.js'
 import { mergedKeysFromPayload, storedKeys } from './selection/selected-keys.js'
-import { commodityGroups } from './view-model/commodity-groups.js'
-import { selectedSummary } from './view-model/selected-summary.js'
+import { searchResults } from './view-model/search-results.js'
 
 export { lineKey } from './selection/line-key.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search/search`
+const resultsView = `${TEMPLATES}/features/commodities/search/_results`
+const resultsSlug = `${page.slug}/results`
 
 const copy = copyFor({ en, cy }).search
 
@@ -24,13 +29,11 @@ const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
 const render = (h, journey, { selected, query = '', errorText = null }) => {
-  const groups = commodityGroups(selected, query)
-  const onScreen = new Set(
-    groups.flatMap((group) => group.items.map((item) => item.value))
-  )
+  const results = searchResults(selected, query)
   // The error belongs on the control the trader must fix: the tick boxes when
   // results are listed, the search box when there is nothing yet to tick.
-  const errorField = groups.length > 0 ? 'species' : 'commoditySearch'
+  const errorField =
+    results.commodityGroups.length > 0 ? 'species' : 'commoditySearch'
   const errors = errorText ? { [errorField]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
@@ -41,12 +44,19 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
     }),
     copy,
     query,
-    commodityGroups: groups,
-    noResults: isSearchable(query) && groups.length === 0,
-    carriedKeys: selected.filter((key) => !onScreen.has(key)),
-    selectedSummary: selectedSummary(selected),
+    resultsHref: pagePath(journey.journeyId, resultsSlug),
+    ...results,
     errors,
     errorSummary: kit.errorSummary(errors)
+  })
+}
+
+const getResults = (request, h) => {
+  const query = normaliseQuery(request.query.commoditySearch)
+  return h.view(resultsView, {
+    copy,
+    errors: {},
+    ...searchResults(mergedKeysFromPayload(request.query), query)
   })
 }
 
@@ -86,4 +96,12 @@ const post = async (request, h) => {
   return commitSelection(request, h, selected)
 }
 
-export const routes = kit.pageRoutes(page, { get, post })
+export const routes = [
+  ...kit.pageRoutes(page, { get, post }),
+  {
+    method: 'GET',
+    path: pageRoutePath(resultsSlug),
+    options: kit.routeOptions,
+    handler: getResults
+  }
+]

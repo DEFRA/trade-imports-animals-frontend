@@ -18,6 +18,8 @@ export const copy = {
       'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
+    resultCount: (count) =>
+      count === 1 ? '1 canlyniad ar gael' : `${count} o ganlyniadau ar gael`,
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan'

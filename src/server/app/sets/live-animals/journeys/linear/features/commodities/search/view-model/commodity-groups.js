@@ -1,6 +1,12 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { isSearchable, matchesCode, matchesWords } from '../matching.js'
-import { legendFor } from './legend.js'
+import {
+  isSearchable,
+  matchesCode,
+  matchesWords,
+  wordMatchRanges
+} from '../matching.js'
+import { emphasisParts } from './emphasis.js'
+import { legendFor, legendPartsFor } from './legend.js'
 import { speciesLabelFor } from './species-label.js'
 
 const commodityMatches = (name, query) =>
@@ -21,9 +27,11 @@ const speciesMatching = (name, query) =>
 const itemsFor = (name, query, selected) =>
   speciesMatching(name, query).map((option) => {
     const key = `${name}|${option.value}`
+    const text = speciesLabelFor(name, option)
     return {
       value: key,
-      text: speciesLabelFor(name, option),
+      text,
+      textParts: emphasisParts(text, wordMatchRanges(text, query)),
       checked: selected.includes(key)
     }
   })
@@ -31,11 +39,12 @@ const itemsFor = (name, query, selected) =>
 /**
  * The results panel: the commodities whose species the query reaches, each with
  * a tick box per matching species. Empty until the query is long enough — the
- * page lists nothing of its own accord.
+ * page lists nothing of its own accord. Each legend and label also comes in
+ * parts marking the text the query matched.
  *
  * @param {string[]} selected - the selection keys already chosen.
  * @param {string} query - what the trader typed into the search box.
- * @returns {Array<{legend: string, items: object[]}>} the matching groups.
+ * @returns {Array<{legend: string, legendParts: object[], items: object[]}>} the matching groups.
  */
 export const commodityGroups = (selected, query) => {
   if (!isSearchable(query)) {
@@ -45,6 +54,7 @@ export const commodityGroups = (selected, query) => {
     .list()
     .map((name) => ({
       legend: legendFor(name),
+      legendParts: legendPartsFor(name, query),
       items: itemsFor(name, query, selected)
     }))
     .filter((group) => group.items.length > 0)

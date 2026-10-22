@@ -9,6 +9,7 @@ import {
 } from 'govuk-frontend'
 import { DatePicker } from '@ministryofjustice/frontend'
 import AccessibleAutocomplete from './components/accessible-autocomplete.js'
+import LiveSearch from './components/live-search.js'
 import StatusAnnouncer from './components/status-announcer.js'
 
 createAll(Button)
@@ -19,4 +20,5 @@ createAll(ServiceNavigation)
 createAll(SkipLink)
 createAll(DatePicker)
 createAll(AccessibleAutocomplete)
+createAll(LiveSearch)
 createAll(StatusAnnouncer)

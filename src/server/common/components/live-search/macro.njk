@@ -1,0 +1,68 @@
+{#
+  appLiveSearch — a search box whose results the server re-renders as the
+  trader types.
+
+  Without JavaScript the search button submits the form, and the page renders
+  the results itself. The live-search client component enhances it: it sends
+  the fields inside this macro to `resultsHref` and swaps the returned slots
+  into place. The macro knows nothing of what is searched, so any page can use
+  it.
+
+  The caller block holds the slots. Each slot is an element carrying
+  `data-live-search-slot="<name>"`, and `resultsHref` must answer with the same
+  slots. A slot may carry `data-live-search-message`, which is announced
+  through the status region when that slot is swapped in.
+
+  Params:
+    input        the govukInput params: id, name, label, hint, value,
+                 errorMessage
+    width        a govuk width class for the box and its button together
+    button.text  the search button's accessible name
+    button.name  the name the button submits
+    button.value the value the button submits
+    resultsHref  where the component asks for the slots
+    resultsId    the id of the slot the search box controls
+    status       a message to announce once the page has loaded
+
+  Usage:
+  {% from "live-search/macro.njk" import appLiveSearch %}
+  {% call appLiveSearch({
+    input: { id: "q", name: "q", label: { text: "Search" } },
+    width: "govuk-!-width-three-quarters",
+    button: { text: "Search", name: "action", value: "search" },
+    resultsHref: resultsHref, resultsId: "q-results", status: resultStatus
+  }) %}
+    <div id="q-results" data-live-search-slot="results">…</div>
+  {% endcall %}
+#}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{% macro appLiveSearch(params) %}
+  {% set buttonHtml %}
+    <button type="submit" class="app-live-search__button" name="{{ params.button.name }}" value="{{ params.button.value }}">
+      <span class="govuk-visually-hidden">{{ params.button.text }}</span>
+      <svg class="app-live-search__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20.3765 20" width="20" height="20" aria-hidden="true" focusable="false">
+        <path d="M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z" stroke="currentColor" stroke-width="2.22222" fill="none"></path>
+        <path d="M13.2347 12.8583L19.5908 19.2143" stroke="currentColor" stroke-width="2.22222" fill="none"></path>
+      </svg>
+    </button>
+  {% endset %}
+  <div class="app-live-search" data-module="app-live-search" data-results-href="{{ params.resultsHref }}">
+    {{ govukInput({
+      id: params.input.id,
+      name: params.input.name,
+      type: "search",
+      label: params.input.label,
+      hint: params.input.hint,
+      value: params.input.value,
+      errorMessage: params.input.errorMessage,
+      autocomplete: "off",
+      spellcheck: false,
+      attributes: { "aria-controls": params.resultsId },
+      inputWrapper: { classes: ("app-live-search__wrapper " + (params.width or "")) | trim },
+      formGroup: { afterInput: { html: buttonHtml } }
+    }) }}
+    <div class="govuk-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-module="app-status-announcer" data-message="{{ params.status }}" data-live-search-status></div>
+    {{ caller() }}
+  </div>
+{% endmacro %}

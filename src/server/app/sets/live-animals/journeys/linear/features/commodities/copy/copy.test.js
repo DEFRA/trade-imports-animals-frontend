@@ -116,6 +116,13 @@ describe('#copy', () => {
     ).toContain('1 identifier record for')
   })
 
+  it('Should count search results as one result or several', () => {
+    expect(copy.search.resultCount(1)).toBe('1 result available')
+    expect(copy.search.resultCount(11)).toBe('11 results available')
+    expect(copyCy.search.resultCount(1)).toBe('1 canlyniad ar gael')
+    expect(copyCy.search.resultCount(11)).toBe('11 o ganlyniadau ar gael')
+  })
+
   it('Should interpolate counter', () => {
     expect(copy.identification.counter(BOS_TAURUS, 2, 2)).toBe(
       'Enter details for Bos taurus 2 of 2'

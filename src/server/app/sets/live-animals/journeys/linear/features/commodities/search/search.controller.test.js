@@ -9,6 +9,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  getHandlerEndingWith,
   postHandlerOf
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -68,14 +69,33 @@ describe('commodity search', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should group the species a species-name query reaches under their commodity', async () => {
+  it('Should group the species a species-name query reaches under their commodity, marking the text it matched', async () => {
     const result = await searchFor('Bos')
     expect(groupsOf(result)).toEqual([
       {
         legend: COW_LEGEND,
+        legendParts: [{ text: COW_LEGEND, matched: false }],
         items: [
-          { value: 'Cow|1388624', text: BOS_SPP, checked: false },
-          { value: COW_BOS_TAURUS_KEY, text: BOS_TAURUS, checked: false }
+          {
+            value: 'Cow|1388624',
+            text: BOS_SPP,
+            textParts: [
+              { text: 'Cattle (', matched: false },
+              { text: 'Bos', matched: true },
+              { text: ' spp.)', matched: false }
+            ],
+            checked: false
+          },
+          {
+            value: COW_BOS_TAURUS_KEY,
+            text: BOS_TAURUS,
+            textParts: [
+              { text: 'Domestic cattle (', matched: false },
+              { text: 'Bos', matched: true },
+              { text: ' taurus)', matched: false }
+            ],
+            checked: false
+          }
         ]
       }
     ])
@@ -141,6 +161,68 @@ describe('commodity search', () => {
     const unticked = await searchFor('Bos')
     expect(ticked.view.context.selectedSummary.count).toBe(1)
     expect(unticked.view.context.selectedSummary.count).toBe(0)
+  })
+})
+
+describe('commodity search — results as the trader types', () => {
+  const getResults = getHandlerEndingWith(search, '/commodities/results')
+  const resultsFor = (query) => driveHandler(getResults, { query })
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render only the results template, with the groups, ticks, carried keys and panel for the query and selection', async () => {
+    const result = await resultsFor({
+      commoditySearch: ' Bos ',
+      species: COW_BOS_TAURUS_KEY,
+      selection: CAT_FELIS_CATUS_KEY
+    })
+    expect(result.view.view).toBe(
+      'live-animals/journeys/linear/features/commodities/search/_results'
+    )
+    expect(legendsOf(result)).toEqual([COW_LEGEND])
+    const items = groupsOf(result).flatMap((group) => group.items)
+    expect(
+      items.filter((item) => item.checked).map((item) => item.value)
+    ).toEqual([COW_BOS_TAURUS_KEY])
+    expect(result.view.context.carriedKeys).toEqual([CAT_FELIS_CATUS_KEY])
+    expect(result.view.context.selectedSummary.heading).toBe('2 selected')
+    expect(result.view.context.resultStatus).toBe('2 results available')
+    expect(result.view.context.errors).toEqual({})
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should list nothing and announce nothing for a query shorter than three characters', async () => {
+    const result = await resultsFor({ commoditySearch: 'Bo' })
+    expect(groupsOf(result)).toEqual([])
+    expect(result.view.context.noResults).toBe(false)
+    expect(result.view.context.resultStatus).toBe('')
+  })
+
+  it('Should announce that nothing was found for a long-enough query that matches nothing', async () => {
+    const result = await resultsFor({ commoditySearch: 'zzz' })
+    expect(result.view.context.noResults).toBe(true)
+    expect(result.view.context.resultStatus).toBe('No results found')
+  })
+
+  it('Should drop a selection key the catalogue does not hold', async () => {
+    const result = await resultsFor({
+      commoditySearch: 'Felis',
+      selection: ['Wolf|999', COW_BOS_TAURUS_KEY]
+    })
+    expect(result.view.context.carriedKeys).toEqual([COW_BOS_TAURUS_KEY])
+  })
+
+  it('Should give the page the address it asks for results at', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.resultsHref).toBe(
+      `/live-animals/notifications/${result.journeyId}/commodities/results`
+    )
+    expect(result.view.context.resultStatus).toBe('')
   })
 })
 

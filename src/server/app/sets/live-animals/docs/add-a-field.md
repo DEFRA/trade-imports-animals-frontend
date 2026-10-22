@@ -177,7 +177,22 @@ an explicit omission assertion. Do not invent a payload property.
 
 ## 7. Register client JavaScript when the field needs it
 
-Prefer server-rendered controls. If the page needs a new client bundle:
+Prefer server-rendered controls. A control that any page could reuse is a
+shared component, not a bundle:
+
+1. Put its module in `src/client/javascripts/components/`, with a static
+   `moduleName`, and register it with `createAll` in
+   `src/client/javascripts/application.js`. That file is already the
+   `application` entry, so the component needs no entry of its own.
+2. Put its macro, and any stylesheet, in a folder of its own under
+   `src/server/common/components/`, following
+   [`live-search/macro.njk`](../../../../common/components/live-search/macro.njk)
+   or [`accessible-autocomplete/macro.njk`](../../../../common/components/accessible-autocomplete/macro.njk).
+   `@use` the stylesheet from `src/client/stylesheets/components/_index.scss`.
+3. Pass everything about the page through the macro as `data-*` attributes, so
+   the module names no set, journey or field.
+
+If the page needs a client bundle of its own:
 
 1. Put its entry module under the feature, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
