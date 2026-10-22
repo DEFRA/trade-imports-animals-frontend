@@ -1,16 +1,10 @@
-{% from "govuk/components/input/macro.njk" import govukInput %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "submitted-search/macro.njk" import appSubmittedSearch %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
 
-{# Search + paginated results table with a radio per row (design 05-03..06).
-   The whole picker is one form: the search button and Save and continue are
-   both submits, told apart by their `action` value. Paging is a link, so the
-   selection travels in the link's query string and in a hidden field — no
-   client JS anywhere. #}
 {% macro addressPickerResults(picker, copy) %}
   {% set rows = [] %}
   {% for row in picker.rows %}
@@ -81,20 +75,14 @@
       <input type="hidden" name="selected" value="{{ picker.selected.id }}" />
     {% endif %}
 
-    {{ govukInput({
+    {{ appSubmittedSearch({
       id: "q",
       name: "q",
-      classes: "govuk-!-width-two-thirds",
-      label: { text: copy.search.label, classes: "govuk-label--s" },
+      value: picker.query,
+      label: { text: copy.search.label },
       hint: { text: copy.search.hint },
-      value: picker.query
-    }) }}
-
-    {{ govukButton({
-      text: copy.search.button,
-      classes: "govuk-button--secondary",
-      name: "action",
-      value: "search"
+      button: { text: copy.search.button },
+      wrapperClasses: "govuk-!-width-one-half"
     }) }}
 
     {% if picker.selected %}
@@ -113,15 +101,11 @@
       <p class="govuk-body">{{ copy.noMatches }}</p>
     {% endif %}
 
-    {# A picker is reached from the consignment addresses page, not from the
-       hub, so it ends with the primary alone — but the ending comes out of the
-       shared macro like every other page's. The primary keeps its own `action`
-       value so the form can tell it from the search submit above. #}
     {{ saveActions(
       hubHref,
       { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
       saveActionsCopy,
-      false,
+      showReturnControls = false,
       amend = amend
     ) }}
   </form>

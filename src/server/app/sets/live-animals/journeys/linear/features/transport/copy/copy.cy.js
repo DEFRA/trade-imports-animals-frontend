@@ -129,6 +129,8 @@ export const copy = {
       button: 'Chwilio'
     },
     noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
+    shownCount: (count) =>
+      `${count} cludwr ${count === 1 ? 'wedi’i ddangos' : 'wedi’u dangos'}`,
     add: 'Ychwanegu cludwr',
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr',

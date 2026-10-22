@@ -8,3 +8,8 @@ the simple numeric style rather than risk wrong mutations. A translator must
 review the count and pluralisation strings in
 `journeys/linear/features/commodities/copy/copy.cy.js`, which are written as
 functions.
+
+The transporter list's Welsh "shown count" message is a machine draft too. A
+translator must review its singular and plural wording in
+`journeys/linear/features/transport/copy/copy.cy.js`, which is a function of
+the count.

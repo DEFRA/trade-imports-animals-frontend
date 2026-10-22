@@ -128,6 +128,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The destination country and port of exit are type-ahead searches using the
   shared search control, with the look the origin and port of entry searches
   share: a bold label and full width.
+- Type-ahead suggestions match ignoring accents as well as case, so plain
+  letters find "Côte d'Ivoire".
 - Origin and port of entry share the medium label, but this page asks its
   searches as follow-up questions, so it sets the small label itself, and
   "Select one" in both the empty box and the select's first option.
@@ -179,6 +181,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a trader who does not read Latin can tell the tick boxes apart.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
+
+## Consignment addresses pages
+
+- Each party picker searches the address book from the submitted search box:
+  a medium "Search" label, the hint "Name, address or country", and a square
+  GOV.UK blue icon button joined to the box. The button is named "Search" for
+  screen readers and is the form's first submit, so Enter in the box runs the
+  search. The box and button are half the content column wide.
+- The picker is one form. The search and Save and continue are told apart by
+  their `action` value. Paging is a link, so the selection travels in the
+  link's query string and in a hidden field, with no client JavaScript.
+- A picker is reached from the consignment addresses page, not from the hub,
+  so it ends with the primary alone.
 
 ## CPH number
 
@@ -240,9 +255,26 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   last country is added, and the status message says why.
 - The transporter list shows its facts in headed columns, with a status tag:
   green for approved, magenta for newly added.
-- The list search matches name, address and approval number, ignoring case
-  and accents. It is a submit on the page's own form, so it works without
-  JavaScript.
+- The list search matches name, address, approval number, type and status,
+  ignoring case and accents, so a trader typing plain letters finds an
+  accented name.
+- With JavaScript the list narrows in the page as the trader types, because
+  the page already holds the whole list and needs no endpoint. The matching
+  letters in each shown cell are bold, and a polite live region says how many
+  rows are shown. Pressing the search button or Enter runs the same filter and
+  posts nothing, so the page keeps the whole list to filter again.
+- Without JavaScript the search is a submit on the page's own form, and the
+  server returns the narrowed list. The pick travels through a search in a
+  hidden `selected` field, and search and save are told apart by their
+  `action` value.
+- A transporter picked and then filtered out of view stays picked: the
+  filter hides rows and never unchecks a radio.
+- A term that runs across two cells, such as an address into an approval
+  number, still finds its row. No single cell holds the whole term, so
+  nothing is bold.
+- "Add a transporter" sits on the search row, right-aligned, above the table,
+  and drops below the search on a phone. The tab order is the search box, the
+  search button, "Add a transporter", then the radios.
 - "Choose a transporter type" warns that adding is a last resort. Private
   comes first and has no hint; Commercial explains the Northern Ireland
   condition.

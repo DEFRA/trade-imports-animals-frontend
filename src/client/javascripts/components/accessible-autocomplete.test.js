@@ -23,6 +23,7 @@ const SELECT_WITH_COUNTRIES = `
       <option value="">Select a country</option>
       <option value="FR">France</option>
       <option value="DE">Germany</option>
+      <option value="CI">Côte d'Ivoire</option>
     </select>
   </form>
 `
@@ -78,6 +79,18 @@ describe('AccessibleAutocomplete', () => {
       config.source('  FR ', (results) => listed.push(...results))
 
       expect(listed).toEqual(['France'])
+    })
+
+    it('Should offer an accented option for plain letters and bold its accented letters', () => {
+      const { config } = enhanceCountrySelect()
+      const listed = []
+
+      config.source('cote', (results) => listed.push(...results))
+
+      expect(listed).toEqual(["Côte d'Ivoire"])
+      expect(config.templates.suggestion("Côte d'Ivoire")).toBe(
+        '<strong class="app-autocomplete__match">Côte</strong> d&#39;Ivoire'
+      )
     })
 
     it('Should bold the typed letters in the case the suggestion is written in', () => {

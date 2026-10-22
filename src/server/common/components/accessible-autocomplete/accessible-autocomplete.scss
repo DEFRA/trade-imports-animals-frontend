@@ -2,7 +2,6 @@
 @use '../../../../client/stylesheets/helpers';
 @use 'accessible-autocomplete/src/autocomplete.css';
 
-$app-autocomplete-button-size: 2.5rem;
 $app-autocomplete-icon-size: 1.25rem;
 $app-autocomplete-search-icon: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20.3765 20%27%3E%3Cpath d=%27M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z%27 stroke=%27%23000000%27 stroke-width=%272.22222%27 fill=%27none%27/%3E%3Cpath d=%27M13.2347 12.8583L19.5908 19.2143%27 stroke=%27%23000000%27 stroke-width=%272.22222%27 fill=%27none%27/%3E%3C/svg%3E');
 
@@ -18,7 +17,7 @@ $app-autocomplete-search-icon: url('data:image/svg+xml,%3Csvg xmlns=%27http://ww
 }
 
 .autocomplete__input {
-  padding-right: $app-autocomplete-button-size;
+  padding-right: helpers.$app-square-icon-button-size;
 }
 
 .app-autocomplete {
@@ -26,13 +25,10 @@ $app-autocomplete-search-icon: url('data:image/svg+xml,%3Csvg xmlns=%27http://ww
 }
 
 .app-autocomplete__button {
-  @extend %blue-icon-button;
-  box-sizing: border-box;
+  @extend %blue-square-icon-button;
   position: absolute;
   top: 0;
   right: 0;
-  width: $app-autocomplete-button-size;
-  height: $app-autocomplete-button-size;
 
   &::before {
     content: '';

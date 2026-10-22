@@ -212,20 +212,110 @@ export const openDatePicker = async (page, label) => {
   return dialog
 }
 
-const expectDateToggleLook = async (page, label) => {
-  const toggle = dateToggleOf(page, label)
-  await expect(toggle).toHaveCSS('background-color', GOVUK_BLUE)
-  await expect(toggle).toHaveCSS('color', WHITE)
-  await expect(toggle).toHaveCSS('border-bottom-width', '0px')
-  await expect(toggle).toHaveCSS('box-shadow', BLUE_ICON_BUTTON_EDGE)
+/**
+ * Fails unless the button is GOV.UK blue with a white icon, darkens on hover
+ * and turns the GOV.UK focus yellow when focused.
+ *
+ * @param {import('@playwright/test').Locator} button
+ */
+export const expectBlueIconButtonLook = async (button) => {
+  await expect(button).toHaveCSS('background-color', GOVUK_BLUE)
+  await expect(button).toHaveCSS('color', WHITE)
+  await expect(button).toHaveCSS('border-bottom-width', '0px')
+  await expect(button).toHaveCSS('box-shadow', BLUE_ICON_BUTTON_EDGE)
 
-  await toggle.hover()
-  await expect(toggle).toHaveCSS('background-color', GOVUK_BLUE_SHADE_25)
-  await expect(toggle).toHaveCSS('color', WHITE)
+  await button.hover()
+  await expect(button).toHaveCSS('background-color', GOVUK_BLUE_SHADE_25)
+  await expect(button).toHaveCSS('color', WHITE)
 
-  await toggle.focus()
-  await expect(toggle).toHaveCSS('background-color', GOVUK_FOCUS)
-  await expect(toggle).toHaveCSS('color', GOVUK_FOCUS_TEXT)
+  await button.focus()
+  await expect(button).toHaveCSS('background-color', GOVUK_FOCUS)
+  await expect(button).toHaveCSS('color', GOVUK_FOCUS_TEXT)
+}
+
+/**
+ * The width of an element's content box, without its padding.
+ *
+ * @param {import('@playwright/test').Locator} locator
+ * @returns {Promise<number>}
+ */
+export const contentWidthOf = (locator) =>
+  locator.evaluate((el) => {
+    const style = window.getComputedStyle(el)
+    return (
+      el.clientWidth -
+      Number.parseFloat(style.paddingLeft) -
+      Number.parseFloat(style.paddingRight)
+    )
+  })
+
+/** Selects the page's journey form. */
+export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
+
+/**
+ * The page's journey form, the one that posts the page's answers.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
+
+const MEDIUM_LABEL_FONT_SIZE = '24px'
+const BOLD_FONT_WEIGHT = '700'
+const WIDTH_TOLERANCE_PX = 1
+
+/**
+ * Fails unless the page's submitted search box has a medium label, its hint,
+ * and a joined GOV.UK blue icon button named as the copy says, together
+ * `expectedWidth` wide.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ search: { label: string, hint: string, button: string }, expectedWidth: number }} options
+ */
+export const expectSubmittedSearchLook = async (
+  page,
+  { search, expectedWidth }
+) => {
+  const box = page.getByLabel(search.label, { exact: true })
+  const button = page.getByRole('button', {
+    name: search.button,
+    exact: true
+  })
+  const wrapper = page.locator('.moj-search__input-wrapper', { has: box })
+  const label = box.locator(FORM_GROUP_ANCESTOR_XPATH).locator('label')
+
+  await expect(box).toHaveAccessibleDescription(search.hint)
+  await expect(label).toHaveCSS('font-size', MEDIUM_LABEL_FONT_SIZE)
+  await expect(label).toHaveCSS('font-weight', BOLD_FONT_WEIGHT)
+  await expect(wrapper.getByRole('button')).toHaveCount(1)
+  await expect(button.locator('svg')).toBeVisible()
+  await expectBlueIconButtonLook(button)
+
+  const boxEdge = await box.evaluate((el) => el.getBoundingClientRect().right)
+  const buttonEdge = await button.evaluate(
+    (el) => el.getBoundingClientRect().left
+  )
+  expect(buttonEdge).toBeCloseTo(boxEdge, 0)
+
+  const { width } = await wrapper.boundingBox()
+  expect(Math.abs(width - expectedWidth)).toBeLessThanOrEqual(
+    WIDTH_TOLERANCE_PX
+  )
+}
+
+/**
+ * Presses Enter in the box with JavaScript off and fails unless the server
+ * keeps the term and refuses nothing.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ search: { label: string }, term: string }} options
+ */
+export const searchByPressingEnter = async (page, { search, term }) => {
+  const box = page.getByLabel(search.label, { exact: true })
+  await box.fill(term)
+  await Promise.all([page.waitForEvent('load'), box.press('Enter')])
+  await expect(box).toHaveValue(term)
+  await expect(page.getByRole('alert')).toHaveCount(0)
 }
 
 const expectCalendarEndsAboveNextQuestion = async (
@@ -300,7 +390,7 @@ export const describeDatePickerLook = ({
   test(`the ${fieldName} button that opens the calendar is GOV.UK blue with a white icon, darkens on hover and turns yellow when focused`, async ({
     page
   }) => {
-    await expectDateToggleLook(page, label)
+    await expectBlueIconButtonLook(dateToggleOf(page, label))
   })
 
   test(`the ${fieldName} calendar ends above the next question`, async ({

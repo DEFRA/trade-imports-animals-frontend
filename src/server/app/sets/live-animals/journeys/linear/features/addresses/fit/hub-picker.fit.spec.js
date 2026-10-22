@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test'
 import {
+  contentWidthOf,
   expectNoSeriousOrCriticalViolations,
+  expectSubmittedSearchLook,
+  journeyFormOf,
   partyPickerName,
+  searchByPressingEnter,
   signIn,
   startNotification,
   unlockSections,
@@ -154,8 +158,6 @@ test.describe('party picker per role', () => {
     }) => {
       await openPartyPicker(page, party)
 
-      // The selector pins placement: the section name is the element directly
-      // above the role heading, not text floating elsewhere on the page.
       await expect(
         page.locator('span.govuk-caption-l + h1.govuk-heading-l')
       ).toHaveText(party.title)
@@ -257,6 +259,51 @@ test.describe('party picker search', () => {
     await link.click()
     await expect(search).toBeFocused()
     await expect(search).toHaveValue(NO_MATCH_QUERY)
+  })
+
+  test('picker search box is medium-labelled, hinted, half the column wide and joined to a blue icon button', async ({
+    page
+  }) => {
+    const columnWidth = await contentWidthOf(journeyFormOf(page))
+
+    await expectSubmittedSearchLook(page, {
+      search: copy.picker.search,
+      expectedWidth: columnWidth / 2
+    })
+  })
+
+  test('picker has no serious or critical axe violations empty, searched and with no matches', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Address picker')
+    await searchAddresses(page, 'Denmark')
+    await expectNoSeriousOrCriticalViolations(page, 'Address picker searched')
+    await searchAddresses(page, NO_MATCH_QUERY)
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Address picker with no matches'
+    )
+  })
+})
+
+test.describe('party picker search without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openAddresses(page)
+    await openPartyPicker(page, CONSIGNOR)
+  })
+
+  test('pressing Enter in the search box narrows the address book on the server', async ({
+    page
+  }) => {
+    await searchByPressingEnter(page, {
+      search: copy.picker.search,
+      term: 'Denmark'
+    })
+
+    await expect(page.getByText(copy.picker.resultsCaption(2, 2))).toBeVisible()
   })
 })
 

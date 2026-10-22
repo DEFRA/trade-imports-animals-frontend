@@ -19,3 +19,12 @@
     background-color: govuk-functional-colour(focus);
   }
 }
+
+$app-square-icon-button-size: 2.5rem;
+
+%blue-square-icon-button {
+  @extend %blue-icon-button;
+  box-sizing: border-box;
+  width: $app-square-icon-button-size;
+  height: $app-square-icon-button-size;
+}

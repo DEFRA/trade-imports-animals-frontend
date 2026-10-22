@@ -38,6 +38,27 @@ describe('transport copy module', () => {
     )
   })
 
+  test.each([
+    {
+      language: 'English',
+      bundle: copy,
+      one: '1 transporter shown',
+      several: '3 transporters shown'
+    },
+    {
+      language: 'Welsh',
+      bundle: copyCy,
+      one: '1 cludwr wedi’i ddangos',
+      several: '3 cludwr wedi’u dangos'
+    }
+  ])(
+    'Should word the number of transporters shown for one and for several in $language',
+    ({ bundle, one, several }) => {
+      expect(bundle.transporters.shownCount(1)).toBe(one)
+      expect(bundle.transporters.shownCount(3)).toBe(several)
+    }
+  )
+
   test('Should interpolate transitCountries.added, removed and alreadyAdded with the country', () => {
     expect(copy.transitCountries.added('France')).toBe('France added.')
     expect(copy.transitCountries.removed('France')).toBe('France removed.')

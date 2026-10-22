@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  JOURNEY_FORM_SELECTOR,
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -184,16 +185,19 @@ test.describe('declaration reached only from the review', () => {
     await page.goto(journeyUrl(page, 'origin'))
     const declarationPath = new URL(journeyUrl(page, 'declaration'), page.url())
       .pathname
-    await page.evaluate((action) => {
-      const form = document.querySelector('form[method="post"]')
-      form.action = action
-      const step = document.createElement('input')
-      step.type = 'hidden'
-      step.name = 'step'
-      step.value = 'review'
-      form.append(step)
-      form.submit()
-    }, declarationPath)
+    await page.evaluate(
+      ({ action, formSelector }) => {
+        const form = document.querySelector(formSelector)
+        form.action = action
+        const step = document.createElement('input')
+        step.type = 'hidden'
+        step.name = 'step'
+        step.value = 'review'
+        form.append(step)
+        form.submit()
+      },
+      { action: declarationPath, formSelector: JOURNEY_FORM_SELECTOR }
+    )
 
     await expect(page).toHaveURL(REVIEW_URL)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)

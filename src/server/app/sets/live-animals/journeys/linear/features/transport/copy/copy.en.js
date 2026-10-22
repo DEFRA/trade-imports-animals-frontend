@@ -128,6 +128,8 @@ export const copy = {
       button: 'Search'
     },
     noMatches: 'No transporters match your search.',
+    shownCount: (count) =>
+      `${count} ${count === 1 ? 'transporter' : 'transporters'} shown`,
     add: 'Add a transporter',
     errors: {
       transporterRequired: 'Select a transporter from the list',

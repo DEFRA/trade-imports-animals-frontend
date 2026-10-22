@@ -204,9 +204,7 @@ describe('/transporters', () => {
     expect(rowFor(response.context, GARCIA_ID).checked).toBe(true)
   })
 
-  // The search survives the outage too: coming back to the whole register
-  // under an error banner loses the trader the filtering they had done.
-  it('Should keep the search on the page after a recoverable save failure', async () => {
+  it('Should keep the search term in the box and send the whole list after a recoverable save failure', async () => {
     const response = await driveSaveFailure({
       action: 'save',
       search: 'aberdeen',
@@ -215,9 +213,9 @@ describe('/transporters', () => {
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(response.context.query).toBe('aberdeen')
-    expect(response.context.transporterRows.map((row) => row.id)).toEqual([
-      ABERDEEN_ID
-    ])
+    expect(response.context.transporterRows.map((row) => row.id)).toEqual(
+      expect.arrayContaining([ABERDEEN_ID, GARCIA_ID])
+    )
   })
 })
 
@@ -332,13 +330,16 @@ describe('/transporters — searching the list', () => {
     expect(result.view.context.transporterRows).toEqual([])
   })
 
-  it('Should keep the search on the page when the pick fails validation', async () => {
+  it('Should keep the search term in the box and send the whole list when the pick fails validation', async () => {
     const result = await driveHandler(postHandler, {
       payload: { search: 'aberdeen', transporter: NOT_ON_THE_LIST }
     })
 
     expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.view.context.query).toBe('aberdeen')
+    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual(
+      expect.arrayContaining([ABERDEEN_ID, GARCIA_ID])
+    )
   })
 
   // A search that matches nothing leaves no radio to link to, so the summary
@@ -354,7 +355,6 @@ describe('/transporters — searching the list', () => {
       }
     })
 
-    expect(result.view.context.transporterRows).toEqual([])
     expect(result.view.context.errorSummary.errorList[0].href).toBe('#search')
   })
 
