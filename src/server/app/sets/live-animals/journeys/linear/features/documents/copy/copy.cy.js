@@ -99,15 +99,15 @@ export const copy = {
   notProvided: 'Heb ei ddarparu',
   scanTags: {
     complete: 'Gwiriad wedi’i gwblhau',
-    virusFound: 'Firws wedi’i ganfod',
+    rejected: 'Gwrthodwyd',
     scanning: 'Yn sganio am firws',
     unknown: 'Anhysbys'
   },
   scanStatusHidden: (reference) => `Statws gwirio firws ar gyfer ${reference}`,
   announce: {
     safe: 'Sgan y ddogfen wedi’i gwblhau: mae’r ffeil yn ddiogel i’w defnyddio',
-    virusFound:
-      'Methodd sgan y ddogfen: canfuwyd firws. Tynnwch y ffeil a rhowch gynnig arall arni.'
+    rejected:
+      'Methodd gwiriad y ddogfen: ni allwch ddefnyddio’r ffeil. Tynnwch hi a rhowch gynnig arall arni.'
   },
   errors: {
     hiddenPrefix: 'Gwall:',
@@ -126,8 +126,8 @@ export const copy = {
       'Ni ellir uwchlwytho dogfennau ar hyn o bryd. Ail-lwythwch y dudalen neu dewch yn ôl yn nes ymlaen.',
     maxDocuments: (max) => `Gallwch uwchlwytho uchafswm o ${max} ffeil`,
     fileFallbackName: 'Mae’r ffeil',
-    virusFound: (filename) =>
-      `${filename} yn cynnwys firws. Tynnwch hi a rhowch gynnig arall arni gyda ffeil wahanol.`,
+    rejected: (filename) =>
+      `Ni allwch ddefnyddio ${filename}. Tynnwch hi a rhowch gynnig arall arni gyda ffeil wahanol.`,
     fileType: (allowedTypesHint) =>
       `Rhaid i’r ffeil a ddewiswyd fod yn ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>

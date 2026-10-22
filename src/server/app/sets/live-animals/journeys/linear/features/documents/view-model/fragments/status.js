@@ -12,9 +12,9 @@ export const SCAN_STATUS_TAGS = {
     announcement: copy.announce.safe
   },
   REJECTED: {
-    text: copy.scanTags.virusFound,
+    text: copy.scanTags.rejected,
     classes: 'govuk-tag--red',
-    announcement: copy.announce.virusFound
+    announcement: copy.announce.rejected
   },
   PENDING: { text: copy.scanTags.scanning, classes: 'govuk-tag--blue' }
 }

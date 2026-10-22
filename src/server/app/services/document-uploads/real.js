@@ -19,9 +19,6 @@ const traceHeaders = (contentType) => ({
   [tracingHeader]: getTraceId() ?? ''
 })
 
-const rejectionReasonOf = (files) =>
-  files?.find((file) => file.hasError)?.errorMessage ?? null
-
 const HTTP_NOT_FOUND = 404
 
 export const documentUploads = {
@@ -75,8 +72,8 @@ export const documentUploads = {
     if (!response.ok) {
       throw failed('get document upload status', response)
     }
-    const { scanStatus, files } = await response.json()
-    return { scanStatus, rejectionReason: rejectionReasonOf(files) }
+    const { scanStatus } = await response.json()
+    return { scanStatus }
   },
 
   remove: async (uploadId) => {

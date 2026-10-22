@@ -132,25 +132,26 @@ describe('#documentUploads', () => {
       fetchMocker.mockResponse(JSON.stringify({ scanStatus: SCAN_COMPLETE }))
 
       expect(await documentUploads.scanStatus({ uploadId: UPLOAD_ID })).toEqual(
-        {
-          scanStatus: SCAN_COMPLETE,
-          rejectionReason: null
-        }
+        { scanStatus: SCAN_COMPLETE }
       )
       expect(fetchMocker.mock.calls[0][0]).toBe(
         `${BACKEND_URL}/document-uploads/up-1`
       )
     })
 
-    it('Should report why a rejected upload was rejected', async () => {
+    /**
+     * The rejection carries no cause the page can act on. cdp-uploader sends a message
+     * of its own wording and no code, so nothing here reads the per-file detail — and a
+     * field computed for no reader is the defect this replaced.
+     */
+    it('Should answer the status alone for a rejected upload', async () => {
       fetchMocker.mockResponse(
         JSON.stringify({
           scanStatus: 'REJECTED',
           files: [
-            { hasError: false, errorMessage: null },
             {
               hasError: true,
-              errorMessage: 'The selected file contains a virus'
+              errorMessage: 'File rejected by antivirus scan'
             }
           ]
         })
@@ -158,10 +159,7 @@ describe('#documentUploads', () => {
 
       await expect(
         documentUploads.scanStatus({ uploadId: UPLOAD_ID })
-      ).resolves.toEqual({
-        scanStatus: 'REJECTED',
-        rejectionReason: 'The selected file contains a virus'
-      })
+      ).resolves.toEqual({ scanStatus: 'REJECTED' })
     })
   })
 

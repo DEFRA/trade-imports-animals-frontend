@@ -115,9 +115,9 @@ test.describe('document scan-status rendering', () => {
     await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.scanning)
-    await expect(row).toContainText(copy.scanTags.virusFound)
+    await expect(row).toContainText(copy.scanTags.rejected)
     await expect(
-      errorSummaryLink(page, copy.errors.virusFound(document.filename))
+      errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
@@ -128,7 +128,7 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(
-      errorSummaryLink(page, copy.errors.virusFound(document.filename))
+      errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await row
       .getByRole('button', {

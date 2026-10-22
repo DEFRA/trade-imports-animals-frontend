@@ -12,7 +12,7 @@ export const rejectedErrors = (documents) =>
   documents
     .filter((item) => item.scanStatus === SCAN_STATUS.REJECTED)
     .map((item) => ({
-      text: copy.errors.virusFound(
+      text: copy.errors.rejected(
         item.entry.filename ?? copy.errors.fileFallbackName
       ),
       href: DOCUMENTS_ADDED_ANCHOR

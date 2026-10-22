@@ -661,9 +661,9 @@ describe('documents — listing, scanning and removing', () => {
       payload: { action: 'continue' }
     })
     expect(result.response.redirect).toBeUndefined()
-    expect(result.view.context.rows[0][3].html).toContain('Virus found')
+    expect(result.view.context.rows[0][3].html).toContain('Rejected')
     expect(summaryTexts(result)).toContain(
-      'virus-notes.pdf contains a virus. Remove it and try again with a different file.'
+      'virus-notes.pdf cannot be used. Remove it and try again with a different file.'
     )
   })
 
@@ -942,10 +942,10 @@ describe('documents — scan-status poll and view context', () => {
         announcement: 'Document scan complete: the file is safe to use'
       },
       REJECTED: {
-        text: 'Virus found',
+        text: 'Rejected',
         classes: 'govuk-tag--red',
         announcement:
-          'Document scan failed: a virus was found. Remove the file and try again.'
+          'Document check failed: the file cannot be used. Remove it and try again.'
       },
       PENDING: { text: TAG_SCANNING, classes: 'govuk-tag--blue' },
       UNKNOWN: { text: 'Unknown', classes: 'govuk-tag--grey' }

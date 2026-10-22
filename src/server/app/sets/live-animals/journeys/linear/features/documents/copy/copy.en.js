@@ -95,9 +95,12 @@ export const copy = {
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
+  // The check names no cause when it fails. cdp-uploader reports a rejection as
+  // a message of its own wording and no code, so the page cannot tell a virus
+  // from any other refusal the scan makes, and must not claim one.
   scanTags: {
     complete: 'Check completed',
-    virusFound: 'Virus found',
+    rejected: 'Rejected',
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
@@ -107,8 +110,8 @@ export const copy = {
   scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',
-    virusFound:
-      'Document scan failed: a virus was found. Remove the file and try again.'
+    rejected:
+      'Document check failed: the file cannot be used. Remove it and try again.'
   },
   errors: {
     hiddenPrefix: 'Error:',
@@ -126,8 +129,8 @@ export const copy = {
       'Documents cannot be uploaded at the moment. Reload the page or come back later.',
     maxDocuments: (max) => `You can upload a maximum of ${max} files`,
     fileFallbackName: 'The file',
-    virusFound: (filename) =>
-      `${filename} contains a virus. Remove it and try again with a different file.`,
+    rejected: (filename) =>
+      `${filename} cannot be used. Remove it and try again with a different file.`,
     fileType: (allowedTypesHint) =>
       `The selected file must be a ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>
