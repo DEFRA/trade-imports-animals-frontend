@@ -34,18 +34,26 @@ const settledStatus = (filename = '') => {
     : SCAN_STATUS_COMPLETE
 }
 
-const uploadIdsByCorrelationId = new Map()
+// Keyed on the notification as well as the handle, because that is the rule the
+// backend enforces: a handle reaches only the session its own notification
+// opened. Keyed on the handle alone, a stub run would resolve one
+// notification's upload from another and never show the refusal.
+const sessionKey = (journeyId, correlationId) => `${journeyId}/${correlationId}`
+
+const uploadIdsBySession = new Map()
 
 export const documentUploads = {
-  register: async ({ uploadId, correlationId }) => {
-    uploadIdsByCorrelationId.set(correlationId, uploadId)
+  register: async ({ journeyId, uploadId, correlationId }) => {
+    uploadIdsBySession.set(sessionKey(journeyId, correlationId), uploadId)
     awaitingRefresh.add(uploadId)
   },
 
   claim: async () => undefined,
 
-  findByCorrelationId: async ({ correlationId }) => {
-    const uploadId = uploadIdsByCorrelationId.get(correlationId)
+  findByCorrelationId: async ({ journeyId, correlationId }) => {
+    const uploadId = uploadIdsBySession.get(
+      sessionKey(journeyId, correlationId)
+    )
     return uploadId ? { uploadId, correlationId } : undefined
   },
 

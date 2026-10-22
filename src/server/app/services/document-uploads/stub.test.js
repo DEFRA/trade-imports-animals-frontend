@@ -129,6 +129,27 @@ describe('#documentUploads', () => {
         })
       ).resolves.toBeUndefined()
     })
+
+    /**
+     * The scoping the backend enforces, so a stub run shows it too. Stub mode is what the whole
+     * unit and fit suite runs against, so a stub resolving a handle across notifications would
+     * leave that refusal exercised by nothing at all.
+     */
+    it('Should answer nothing for a handle another notification registered', async () => {
+      const correlationId = randomUUID()
+      await documentUploads.register({
+        journeyId: 'journey-1',
+        uploadId: randomUUID(),
+        correlationId
+      })
+
+      await expect(
+        documentUploads.findByCorrelationId({
+          journeyId: 'journey-2',
+          correlationId
+        })
+      ).resolves.toBeUndefined()
+    })
   })
 
   describe('#streamFile', () => {

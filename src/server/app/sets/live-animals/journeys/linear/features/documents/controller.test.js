@@ -483,13 +483,14 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   it('Should hold the trader on the page with the problem banner when the upload session cannot be read, appending nothing and logging the failure once', async () => {
     const correlationId = randomUUID()
-    await documentUploads.register({
-      journeyId: 'journey-1',
-      uploadId: UNOPENED_UPLOAD_ID,
-      correlationId
-    })
+    // Answered here rather than registered through the stub, which scopes a
+    // handle to its notification and so needs the journey this drive creates.
+    const found = vi
+      .spyOn(documentUploads, 'findByCorrelationId')
+      .mockResolvedValue({ uploadId: UNOPENED_UPLOAD_ID, correlationId })
 
     const result = await driveHandler(get, { query: { upload: correlationId } })
+    found.mockRestore()
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.response.redirect).toBeUndefined()
