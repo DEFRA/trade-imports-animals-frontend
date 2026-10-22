@@ -26,12 +26,13 @@ const animalIdentifierFrom = (unit) =>
 
 // The scalar identifier fields carry the line's first identifier unit;
 // `animalIdentifiers` carries every unit on the line.
-export const speciesEntryFromLine = (line) => {
+export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
   const units = line.animalIdentifiers ?? []
   const unit = units[0] ?? {}
   return compact({
     value: line.speciesSelection,
     text: speciesLabel(line.speciesSelection) ?? line.speciesSelection,
+    typeOfCommodity,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
     earTag: unit.animalIdentifierEarTag,

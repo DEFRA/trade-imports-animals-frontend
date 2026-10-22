@@ -117,26 +117,25 @@ describe('Mapper A PUT /notifications contract', () => {
         transportDocumentReference: 'CMR-2026-884721',
         transitedCountries: ['FR', 'BE']
       },
-      commodity: {
-        name: 'Cow',
-        commodityComplement: [
-          {
-            typeOfCommodity: 'Domestic',
-            totalNoOfAnimals: 1,
-            totalNoOfPackages: 5,
-            species: [
-              {
-                value: '1148346',
-                text: 'Bos taurus',
-                noOfAnimals: '1',
-                noOfPackages: '5',
-                earTag: 'UK123456789012',
-                animalIdentifiers: [{ earTag: 'UK123456789012' }]
-              }
-            ]
-          }
-        ]
-      }
+      commodities: [
+        {
+          name: 'Cow',
+          commodityCode: '0102',
+          typeOfCommodity: 'Domestic',
+          totalNoOfAnimals: 1,
+          totalNoOfPackages: 5,
+          species: [
+            {
+              value: '1148346',
+              text: 'Bos taurus',
+              noOfAnimals: '1',
+              noOfPackages: '5',
+              earTag: 'UK123456789012',
+              animalIdentifiers: [{ earTag: 'UK123456789012' }]
+            }
+          ]
+        }
+      ]
     })
   })
 

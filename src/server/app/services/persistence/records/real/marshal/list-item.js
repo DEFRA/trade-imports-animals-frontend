@@ -1,3 +1,4 @@
+import { commodityFieldForListRow } from '../../notification-mapper/commodity-field-for-list-row.js'
 import { mapStatus } from '../status.js'
 
 /** Maps one NotificationDto (main's /notifications list content shape) to the
@@ -11,7 +12,7 @@ export const marshalListItem = (notification) => ({
   submittedAt: null,
   concurrencyToken: notification.concurrencyToken ?? null,
   reference: notification.referenceNumber,
-  commodity: notification.commodity ?? null,
+  commodity: commodityFieldForListRow(notification),
   originCountryCode:
     notification.origin?.countrySubdivisionCode ??
     notification.origin?.countryCode ??
