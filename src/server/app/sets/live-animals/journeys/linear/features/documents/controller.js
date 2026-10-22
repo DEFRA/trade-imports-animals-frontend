@@ -181,8 +181,16 @@ const retryProjectionSave = async (
         documents: pageState.answers.documents ?? []
       })
     },
-    async () =>
-      render(request, h, pageState, EMPTY_FORM, {
+    async (err) => {
+      request.logger.error(
+        {
+          err,
+          journeyId: pageState.journey.journeyId,
+          uploadId: pendingDocumentRemoval.uploadId
+        },
+        'Could not save the retried document removal'
+      )
+      return render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
           pendingDocumentRemoval,
@@ -192,6 +200,7 @@ const retryProjectionSave = async (
           ))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
   )
   if (failure) {
     return failure
@@ -229,8 +238,16 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
-    async () =>
-      render(request, h, pageState, EMPTY_FORM, {
+    async (err) => {
+      request.logger.error(
+        {
+          err,
+          journeyId: pageState.journey.journeyId,
+          uploadId: entry.uploadId
+        },
+        'Removed the upload but could not save the document removal'
+      )
+      return render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
           pendingDocumentRemoval: {
@@ -243,6 +260,7 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
           ))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
   )
   if (failure) {
     return failure

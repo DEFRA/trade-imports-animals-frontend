@@ -212,6 +212,17 @@ const summaryTexts = (result) =>
 const linesLogged = (result, message) =>
   result.logger.entries.filter((entry) => entry.message === message)
 
+const errorEntries = ({ logger }) =>
+  logger.entries.filter(({ level }) => level === 'error')
+
+const SERVICE_UNAVAILABLE = 503
+
+const backendRefusal = () =>
+  new BackendRequestError('save answers', {
+    status: SERVICE_UNAVAILABLE,
+    statusText: 'Service Unavailable'
+  })
+
 const configureEngine = () => {
   configureRecords(SET_ID, recordsStub)
   configureSession(SET_ID, sessionStub)
@@ -439,7 +450,6 @@ describe('documents — taking on a returned upload a service refuses', () => {
   beforeEach(() => store.clear())
   afterEach(() => vi.restoreAllMocks())
 
-  const SERVICE_UNAVAILABLE = 503
   const NOT_FOUND = 404
   // Pinned as a literal rather than read from the handler, so a reworded line
   // fails here.
@@ -453,9 +463,6 @@ describe('documents — taking on a returned upload a service refuses', () => {
       new Error('Failed to claim document upload: 503 Service Unavailable'),
       { status: SERVICE_UNAVAILABLE }
     )
-
-  const errorEntries = ({ logger }) =>
-    logger.entries.filter(({ level }) => level === 'error')
 
   it('Should hold the trader on the page with the problem banner when the upload session cannot be read, appending nothing and logging the failure once', async () => {
     const correlationId = randomUUID()
@@ -1190,7 +1197,6 @@ describe('documents — the add form when no upload session can be opened', () =
   // message fails here.
   const UPLOAD_UNAVAILABLE_MESSAGE =
     'Documents cannot be uploaded at the moment. Reload the page or come back later.'
-  const SERVICE_UNAVAILABLE = 503
 
   const uploaderError = () =>
     Object.assign(
@@ -1316,5 +1322,70 @@ describe('documents — the add form when no upload session can be opened', () =
     } finally {
       open.mockRestore()
     }
+  })
+})
+
+describe('documents — a removal the backend cannot save', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  // Pinned as literals rather than read from the controller, so a reworded
+  // line fails here.
+  const REMOVAL_SAVE_FAILED_LINE =
+    'Removed the upload but could not save the document removal'
+  const RETRIED_REMOVAL_SAVE_FAILED_LINE =
+    'Could not save the retried document removal'
+
+  it('Should hold the trader on the page with the problem banner when a removal cannot be saved, delete nothing and log it once with the journey and the upload', async () => {
+    const refusal = backendRefusal()
+    vi.spyOn(state, 'removeEntry').mockRejectedValue(refusal)
+    const uploadId = await registeredUpload(PDF_FILENAME)
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: PDF_FILENAME })]
+    }
+
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:0' }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(seed)
+    expect(errorEntries(result)).toEqual([
+      {
+        level: 'error',
+        fields: { err: refusal, journeyId: result.journeyId, uploadId },
+        message: REMOVAL_SAVE_FAILED_LINE
+      }
+    ])
+  })
+
+  it('Should hold the trader on the page with the problem banner when the retried removal cannot be saved, and log that failure once', async () => {
+    const refusal = backendRefusal()
+    vi.spyOn(state, 'commit').mockRejectedValue(refusal)
+    const seed = { documents: [storedDocument()] }
+
+    const result = await driveHandler(post, {
+      seed,
+      payload: { retryRemoveUploadId: 'upload-session-1' }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(seed)
+    expect(errorEntries(result)).toEqual([
+      {
+        level: 'error',
+        fields: {
+          err: refusal,
+          journeyId: result.journeyId,
+          uploadId: 'upload-session-1'
+        },
+        message: RETRIED_REMOVAL_SAVE_FAILED_LINE
+      }
+    ])
   })
 })
