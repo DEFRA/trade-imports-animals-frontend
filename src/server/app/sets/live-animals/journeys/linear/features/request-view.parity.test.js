@@ -10,7 +10,11 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
-import { journeyRequest, stubH } from '../../../../../engine/test-support.js'
+import {
+  getHandlerOf,
+  journeyRequest,
+  stubH
+} from '../../../../../engine/test-support.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -37,9 +41,6 @@ import * as animalIdentification from './commodities/animal-identification/anima
 import * as documents from './documents/controller.js'
 import * as hub from './hub/controller.js'
 import * as checkAnswers from './check-answers/controller.js'
-
-const getHandlerOf = (feature) =>
-  feature.routes.find((route) => route.method === 'GET').handler
 
 const declarationFromReview = { routes: declarationRoutesFromReview }
 
@@ -121,19 +122,18 @@ const canonicalViewOf = (answers) =>
     )
   )
 
-// Each seed is a save, so the token differs between the two renders by design.
+const withoutKeysThatChangePerSave = ({
+  concurrencyToken: _token,
+  uploadPath: _uploadPath,
+  ...rest
+}) => rest
+
 const contextFor = async (handler, journeyId, answers) => {
   await store.seedAnswers(journeyId, answers)
   const h = stubH()
   await handler(journeyRequest(journeyId), h)
   const context = h.captured.view?.context
-  if (!context) {
-    return context
-  }
-  // Both are minted per render rather than read from the answers, so comparing
-  // them would compare two mintings, not the context the answers build.
-  const { concurrencyToken: _token, uploadPath: _uploadPath, ...rest } = context
-  return rest
+  return context ? withoutKeysThatChangePerSave(context) : context
 }
 
 const expectContextParity = async (feature, answers = parityFixture) => {

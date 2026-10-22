@@ -154,9 +154,10 @@ const requestLocation = (pathOf, journeyId, query) => {
 }
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after, alongside the lines the handler logged. `amend` submits the
- * journey and opens an amendment first; `pathOf(journeyId)` gives the request
- * the path it was made to. */
+ * and after, alongside the lines the handler logged. `journeyId` drives an
+ * existing journey rather than creating one; `amend` submits the journey and
+ * opens an amendment first; `pathOf(journeyId)` gives the request the path it
+ * was made to. */
 export const driveHandler = async (
   handler,
   {
@@ -166,10 +167,11 @@ export const driveHandler = async (
     query = {},
     state = {},
     amend = false,
+    journeyId,
     pathOf
   } = {}
 ) => {
-  const journey = await store.create()
+  const journey = journeyId ? { journeyId } : await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (amend) {
     await store.submit(journey.journeyId)
@@ -201,4 +203,12 @@ export const postHandlerOf = (featureModule) =>
 export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
+  ).handler
+
+export const getHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'GET').handler
+
+export const getHandlerEndingWith = (featureModule, pathSuffix) =>
+  featureModule.routes.find(
+    (route) => route.method === 'GET' && route.path.endsWith(pathSuffix)
   ).handler

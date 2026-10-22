@@ -1,6 +1,5 @@
-import { randomUUID } from 'node:crypto'
 import { SET_ID } from './sets/live-animals/set.js'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
 import {
@@ -26,8 +25,7 @@ import {
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
-import { documentUploads } from './services/document-uploads/index.js'
-import { documentUploadSessions } from './services/cdp-uploader/index.js'
+import { driveReturnFromUpload } from './sets/live-animals/journeys/linear/features/documents/test-support.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
@@ -50,8 +48,6 @@ import * as contactSelect from './sets/live-animals/journeys/linear/features/con
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 
 const drive = driveHandler
-
-const RETURNED_CORRELATION_ID = randomUUID()
 
 // Today, derived from the window itself rather than from a second guess at the
 // rule. Today stays inside the window even if the day ticks over mid-run.
@@ -271,42 +267,12 @@ describe('controller <-> model commit contract', () => {
 
   it('Should commit documents when the browser returns from the upload service', async () => {
     expect(documents.meta.collects).toEqual(['documents'])
-    const found = vi
-      .spyOn(documentUploads, 'findByCorrelationId')
-      .mockResolvedValue({
-        uploadId: 'upload-session-1',
-        correlationId: RETURNED_CORRELATION_ID
-      })
-    const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
-      uploadStatus: 'pending',
-      form: {
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          contentType: 'application/pdf',
-          hasError: false
-        }
-      }
-    })
-    const claim = vi
-      .spyOn(documentUploads, 'claim')
-      .mockResolvedValue(undefined)
 
-    const documentsGet = documents.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-    const result = await drive(documentsGet, {
-      query: { upload: RETURNED_CORRELATION_ID }
-    })
+    const result = await driveReturnFromUpload()
 
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documents.meta.collects))
     )
-    found.mockRestore()
-    read.mockRestore()
-    claim.mockRestore()
   })
 
   it('Should append an animal identifier unit at depth-2 via the identification surface, writing only the commodity-gated fields', async () => {

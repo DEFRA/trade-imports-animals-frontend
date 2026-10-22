@@ -90,18 +90,9 @@ const textFieldsOf = (payload) =>
     Object.entries(payload).filter(([, value]) => typeof value === 'string')
   )
 
-const takeUpload = (request, h) => {
-  const session = sessions.get(request.params.uploadId)
-  if (!session) {
-    request.logger.info(
-      { uploadId: request.params.uploadId },
-      'Upload posted to a session that was never opened'
-    )
-    return h.response().code(HTTP_STATUS_NOT_FOUND)
-  }
-  const payload = request.payload ?? {}
+const formFromSubmission = (session, payload) => {
   const file = payload.file ?? {}
-  session.form = {
+  return {
     ...textFieldsOf(payload),
     file: fileEntryFor({
       filename: file.filename ?? '',
@@ -111,6 +102,36 @@ const takeUpload = (request, h) => {
       mimeTypes: session.mimeTypes
     })
   }
+}
+
+/**
+ * Records against an opened session what the add-a-document form submitted to it, judging the
+ * file by the limits the session was opened with.
+ *
+ * @param {string} uploadId - the session the form posted to
+ * @param {object} payload - the submitted fields, `file` as hapi's annotated multipart entry
+ * @returns {object|undefined} the form `read` will answer with, or nothing for a session that was
+ *   never opened
+ */
+export const recordSubmittedUpload = (uploadId, payload) => {
+  const session = sessions.get(uploadId)
+  if (!session) {
+    return undefined
+  }
+  session.form = formFromSubmission(session, payload)
+  return session.form
+}
+
+const takeUpload = (request, h) => {
+  const session = sessions.get(request.params.uploadId)
+  if (!session) {
+    request.logger.info(
+      { uploadId: request.params.uploadId },
+      'Upload posted to a session that was never opened'
+    )
+    return h.response().code(HTTP_STATUS_NOT_FOUND)
+  }
+  recordSubmittedUpload(request.params.uploadId, request.payload ?? {})
   if (session.form.file.hasError) {
     request.logger.info(
       {

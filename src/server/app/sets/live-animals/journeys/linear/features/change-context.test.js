@@ -1,6 +1,5 @@
-import { randomUUID } from 'node:crypto'
 import { SET_ID } from '../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -10,8 +9,8 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
-  stubH,
-  journeyRequest,
+  driveHandler,
+  getHandlerOf,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
 import { dispatchPages } from './index.js'
@@ -21,30 +20,7 @@ import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
-import { documentUploads } from '../../../../../services/document-uploads/index.js'
-import { documentUploadSessions } from '../../../../../services/cdp-uploader/index.js'
-
-const RETURNED_CORRELATION_ID = randomUUID()
-
-const drive = async (
-  handler,
-  { payload = {}, query = {}, seed = {}, params = {} } = {}
-) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, seed)
-  const h = stubH()
-  const response = await handler(
-    journeyRequest(journey.journeyId, { payload, query, params }),
-    h
-  )
-  const after = (await store.get(journey.journeyId)).answers
-  return {
-    journeyId: journey.journeyId,
-    response,
-    after,
-    view: h.captured.view
-  }
-}
+import { driveReturnFromUpload } from './documents/test-support.js'
 
 const change = { change: '1' }
 const TEST_JOURNEY_ID = 'journey-1'
@@ -109,7 +85,7 @@ describe('change context — context survives the internal loop navigation', () 
   beforeEach(() => store.clear())
 
   it('Should carry the context from the search save into the consignment details page', async () => {
-    const { journeyId, response, after } = await drive(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
         payload: { species: ['Cat|923501'] },
@@ -123,17 +99,12 @@ describe('change context — context survives the internal loop navigation', () 
   })
 
   it('Should carry the context on the details page Add-another affordance', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = stubH()
-    const getHandler = consignmentDetails.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-    await getHandler(journeyRequest(journey.journeyId, { query: change }), h)
-    const { addHref, groups } = h.captured.view.context
-    expect(addHref).toBe(
-      `${pagePath(journey.journeyId, 'commodities')}?change=1`
+    const { journeyId, view } = await driveHandler(
+      getHandlerOf(consignmentDetails),
+      { seed: lineSeed, query: change }
     )
+    const { addHref, groups } = view.context
+    expect(addHref).toBe(`${pagePath(journeyId, 'commodities')}?change=1`)
     expect(groups[0].index).toBe(0)
   })
 
@@ -141,7 +112,7 @@ describe('change context — context survives the internal loop navigation', () 
   // user goes back to the commodity question rather than to an empty details
   // page. The context has to travel with that redirect too.
   it('Should carry the context through a commodity remove round-trip', async () => {
-    const { journeyId, response, after } = await drive(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
         payload: { action: 'remove:0' },
@@ -156,7 +127,7 @@ describe('change context — context survives the internal loop navigation', () 
   })
 
   it('Should carry the context through an identifier Save-and-add-another PRG cycle with the unit committed', async () => {
-    const { journeyId, response, after } = await drive(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
         payload: {
@@ -176,47 +147,18 @@ describe('change context — context survives the internal loop navigation', () 
   })
 
   it('Should carry the context through a documents upload-return cycle with the entry committed', async () => {
-    const found = vi
-      .spyOn(documentUploads, 'findByCorrelationId')
-      .mockResolvedValue({
-        uploadId: 'upload-session-1',
-        correlationId: RETURNED_CORRELATION_ID
-      })
-    const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
-      uploadStatus: 'pending',
-      form: {
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          contentType: 'application/pdf',
-          hasError: false
-        }
-      }
-    })
-    const claim = vi
-      .spyOn(documentUploads, 'claim')
-      .mockResolvedValue(undefined)
-    const documentsGet = documents.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-
-    const { journeyId, response, after } = await drive(documentsGet, {
-      query: { ...change, upload: RETURNED_CORRELATION_ID }
+    const { journeyId, response, after } = await driveReturnFromUpload({
+      query: change
     })
 
     expect(response).toEqual({
       redirect: `${pagePath(journeyId, 'accompanying-documents')}?change=1`
     })
     expect(after.documents).toHaveLength(1)
-    found.mockRestore()
-    read.mockRestore()
-    claim.mockRestore()
   })
 
   it('Should carry the context through a documents remove round-trip', async () => {
-    const { journeyId, response, after } = await drive(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(documents),
       {
         query: change,
@@ -236,7 +178,7 @@ describe('change context — only the collection exit repoints to check your ans
   beforeEach(() => store.clear())
 
   it('Should send the consignment details save back to check your answers under change context', async () => {
-    const { journeyId, response } = await drive(
+    const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
         payload: lineCountPayload,
@@ -248,7 +190,7 @@ describe('change context — only the collection exit repoints to check your ans
   })
 
   it('Should send the identification Save-and-finish back to check your answers under change context', async () => {
-    const { journeyId, response } = await drive(
+    const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
         payload: { action: 'finish' },
@@ -260,14 +202,17 @@ describe('change context — only the collection exit repoints to check your ans
   })
 
   it('Should send the documents Continue back to check your answers under change context', async () => {
-    const { journeyId, response } = await drive(postHandlerOf(documents), {
-      query: change
-    })
+    const { journeyId, response } = await driveHandler(
+      postHandlerOf(documents),
+      {
+        query: change
+      }
+    )
     expect(response).toEqual({ redirect: cya(journeyId) })
   })
 
   it('Should keep the consignment details save on the flow target without change context', async () => {
-    const { journeyId, response } = await drive(
+    const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
         payload: lineCountPayload,
@@ -278,7 +223,7 @@ describe('change context — only the collection exit repoints to check your ans
   })
 
   it('Should keep the identification Save-and-finish on the section flow (the hub) without change context', async () => {
-    const { journeyId, response } = await drive(
+    const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
         payload: { action: 'finish' },
@@ -289,7 +234,7 @@ describe('change context — only the collection exit repoints to check your ans
   })
 
   it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
-    const details = await drive(postHandlerOf(consignmentDetails), {
+    const details = await driveHandler(postHandlerOf(consignmentDetails), {
       payload: { ...lineCountPayload, exit: 'hub' },
       query: change,
       seed: lineSeed
@@ -298,11 +243,14 @@ describe('change context — only the collection exit repoints to check your ans
       redirect: hubPath(details.journeyId)
     })
 
-    const identifiers = await drive(postHandlerOf(animalIdentification), {
-      payload: { exit: 'hub', action: 'finish' },
-      query: change,
-      seed: lineSeed
-    })
+    const identifiers = await driveHandler(
+      postHandlerOf(animalIdentification),
+      {
+        payload: { exit: 'hub', action: 'finish' },
+        query: change,
+        seed: lineSeed
+      }
+    )
     expect(identifiers.response).toEqual({
       redirect: hubPath(identifiers.journeyId)
     })
