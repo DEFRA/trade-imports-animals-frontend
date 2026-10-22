@@ -18,6 +18,9 @@ import { PARTIES } from '../parties.js'
 
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
+const NOT_IN_THE_BOOK = 'not-in-this-book'
+const ADDRESS_BOOK_SIZE = 13
+const PAGE_SIZE = 5
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 
@@ -26,13 +29,24 @@ const rowFor = (page, title) =>
     has: page.getByText(title, { exact: true })
   })
 
+const expectBackOnTheAddressesPage = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.hub.title })
+  ).toBeVisible()
+}
+
+const expectConsignorNotAddedYet = async (page) => {
+  await expectBackOnTheAddressesPage(page)
+  await expect(rowFor(page, CONSIGNOR.title)).toContainText(
+    copy.hub.notAddedYet
+  )
+}
+
 const openAddresses = async (page, species) => {
   await startNotification(page)
   await unlockSections(page, species)
   await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
-  await expect(
-    page.getByRole('heading', { name: copy.hub.title })
-  ).toBeVisible()
+  await expectBackOnTheAddressesPage(page)
 }
 
 const openPartyPicker = async (page, party) => {
@@ -59,6 +73,23 @@ const saveAndContinue = (page) =>
       exact: true
     })
     .click()
+
+const resultsHeading = (page) =>
+  page.getByRole('heading', { name: copy.picker.resultsHeading, level: 2 })
+
+const resultsSummary = (page) =>
+  resultsHeading(page).locator('xpath=following-sibling::*[1][self::p]')
+
+const postAnIdNotInTheBook = async (page) => {
+  await page
+    .getByRole('radio')
+    .first()
+    .evaluate((input, id) => {
+      input.value = id
+      input.checked = true
+    }, NOT_IN_THE_BOOK)
+  await saveAndContinue(page)
+}
 
 test.describe('addresses hub', () => {
   test.beforeEach(async ({ page }) => {
@@ -179,17 +210,17 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
     })
 
-    test(`${party.title} validation: no selection links to and focuses the first address`, async ({
+    test(`${party.title} picker offers no add-address control in stub mode`, async ({
       page
     }) => {
       await openPartyPicker(page, party)
-      await saveAndContinue(page)
 
-      const link = pickerErrorLink(page, party.error)
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.getByRole('radio').first()).toBeFocused()
-      await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+      await expect(
+        page.getByRole('link', { name: copy.picker.addNewAddress })
+      ).toHaveCount(0)
+      await expect(
+        page.getByRole('button', { name: copy.picker.addNewAddress })
+      ).toHaveCount(0)
     })
 
     test(`${party.title} selection saves and persists`, async ({ page }) => {
@@ -199,9 +230,7 @@ test.describe('party picker per role', () => {
       const selectedName = partyPickerName(selected)
       await page.getByRole('radio', { name: selectedName }).check()
       await saveAndContinue(page)
-      await expect(
-        page.getByRole('heading', { name: copy.hub.title })
-      ).toBeVisible()
+      await expectBackOnTheAddressesPage(page)
       await expect(row).toContainText(selectedName)
       await expect(
         row.getByRole('link', { name: copy.hub.editDetails })
@@ -217,6 +246,86 @@ test.describe('party picker per role', () => {
   }
 })
 
+test.describe('party picker layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openAddresses(page)
+    await openPartyPicker(page, CONSIGNOR)
+  })
+
+  test('picker puts the results heading after the search box, with the count straight under it', async ({
+    page
+  }) => {
+    const searchBox = await page
+      .getByLabel(copy.picker.search.label)
+      .boundingBox()
+    const headingTop = (await resultsHeading(page).boundingBox()).y
+
+    expect(headingTop).toBeGreaterThan(searchBox.y + searchBox.height)
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+    )
+  })
+
+  test('picker offers its addresses as one group named by the results heading', async ({
+    page
+  }) => {
+    const group = page.getByRole('group', { name: copy.picker.resultsHeading })
+
+    await expect(group.getByRole('radio')).toHaveCount(PAGE_SIZE)
+    await expect(page.getByRole('radio')).toHaveCount(PAGE_SIZE)
+  })
+
+  test('picker shows the no-matches message in the place of the count after a search that finds nothing', async ({
+    page
+  }) => {
+    await searchAddresses(page, NO_MATCH_QUERY)
+
+    await expect(resultsSummary(page)).toHaveText(copy.picker.noMatches)
+  })
+})
+
+test.describe('party picker save', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openAddresses(page)
+    await openPartyPicker(page, CONSIGNOR)
+  })
+
+  test('saving with nothing ticked returns to the addresses page with the consignor not added yet', async ({
+    page
+  }) => {
+    await saveAndContinue(page)
+
+    await expectConsignorNotAddedYet(page)
+  })
+
+  test('saving with nothing ticked after a search that matched nothing returns to the addresses page with the consignor not added yet', async ({
+    page
+  }) => {
+    await searchAddresses(page, NO_MATCH_QUERY)
+    await saveAndContinue(page)
+
+    await expectConsignorNotAddedYet(page)
+  })
+
+  test('an address that is not in the book is refused, linking to and focusing the first address while the search stays', async ({
+    page
+  }) => {
+    await searchAddresses(page, 'Denmark')
+    await postAnIdNotInTheBook(page)
+
+    const link = pickerErrorLink(page, CONSIGNOR.error)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.getByRole('radio').first()).toBeFocused()
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+    await expect(page.getByLabel(copy.picker.search.label)).toHaveValue(
+      'Denmark'
+    )
+  })
+})
+
 test.describe('party picker search', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -228,7 +337,9 @@ test.describe('party picker search', () => {
     page
   }) => {
     await searchAddresses(page, 'Denmark')
-    await expect(page.getByText(copy.picker.resultsCaption(2, 2))).toBeVisible()
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(2, 2)
+    )
     await expect(
       page.getByRole('radio', { name: 'Jutland Swine ApS' })
     ).toBeVisible()
@@ -245,20 +356,6 @@ test.describe('party picker search', () => {
     await expect(page.getByLabel(copy.picker.search.label)).toHaveValue(
       NO_MATCH_QUERY
     )
-  })
-
-  test('picker validation after no matches links to and focuses the preserved search', async ({
-    page
-  }) => {
-    const search = page.getByLabel(copy.picker.search.label)
-    await searchAddresses(page, NO_MATCH_QUERY)
-    await saveAndContinue(page)
-
-    const link = pickerErrorLink(page, CONSIGNOR.error)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(search).toBeFocused()
-    await expect(search).toHaveValue(NO_MATCH_QUERY)
   })
 
   test('picker search box is medium-labelled, hinted, half the column wide and joined to a blue icon button', async ({
@@ -284,6 +381,15 @@ test.describe('party picker search', () => {
       'Address picker with no matches'
     )
   })
+
+  test('picker has no serious or critical axe violations once an address not in the book is refused', async ({
+    page
+  }) => {
+    await postAnIdNotInTheBook(page)
+    await expect(pickerErrorLink(page, CONSIGNOR.error)).toBeVisible()
+
+    await expectNoSeriousOrCriticalViolations(page, 'Address picker refused')
+  })
 })
 
 test.describe('party picker search without JavaScript', () => {
@@ -303,7 +409,9 @@ test.describe('party picker search without JavaScript', () => {
       term: 'Denmark'
     })
 
-    await expect(page.getByText(copy.picker.resultsCaption(2, 2))).toBeVisible()
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(2, 2)
+    )
   })
 })
 
@@ -317,8 +425,9 @@ test.describe('party picker details and pagination', () => {
   test('picker expands an address to show its full details', async ({
     page
   }) => {
-    const showingFive = /Showing 5 of \d+ addresses/
-    await expect(page.getByText(showingFive)).toBeVisible()
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+    )
     const detailedRow = page.getByRole('row', {
       name: /Tech Imports Ltd/
     })

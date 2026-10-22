@@ -194,6 +194,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   link's query string and in a hidden field, with no client JavaScript.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
+- "Add a new address" is a secondary button beside the heading, shown only
+  outside stub mode. It leaves the journey for the address book, so it sits
+  with the page and not inside the search form.
+- The results sit under the heading "Select an address", with the count
+  "Showing 5 out of 13 results" straight under it. The table is one fieldset
+  whose visually hidden legend repeats the heading, so a screen reader names
+  the group of addresses. With no matches the message takes the place of the
+  count.
+- A save with nothing chosen leaves without refusing and commits nothing, so
+  the role stays empty or keeps the address it held. An address that is not
+  in the book, or no longer in it, is refused with the role's error. A
+  missing or deleted selection travels as no selection, and a Change link's
+  context is kept on every way out of the picker.
 
 ## CPH number
 

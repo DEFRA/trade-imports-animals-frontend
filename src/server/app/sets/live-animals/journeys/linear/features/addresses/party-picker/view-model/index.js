@@ -14,7 +14,7 @@ export const pickerViewModel = (
     page: found.page,
     error,
     selected,
-    resultsCaption: copy.resultsCaption(found.results.length, found.total),
+    resultsCount: copy.resultsCount(found.results.length, found.total),
     rows: found.results.map((record, index) => ({
       id: record.id,
       idPrefix: index === 0 ? 'party' : `party-${from + index + 1}`,

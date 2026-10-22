@@ -27,12 +27,18 @@ describe('#copy', () => {
     }
   })
 
-  it('Should interpolate the results caption', () => {
-    expect(copy.picker.resultsCaption(5, 40)).toBe('Showing 5 of 40 addresses')
+  it('Should word the results heading and interpolate the results count', () => {
+    expect(copy.picker.resultsHeading).toBe('Select an address')
+    expect(copy.picker.resultsCount(5, 40)).toBe('Showing 5 out of 40 results')
   })
 
-  // A picker has no page id for `sectionCaptionOf` to resolve, so it holds
-  // its own copy of the section name.
+  it('Should word the Welsh results heading and count', () => {
+    expect(copyCy.picker.resultsHeading).toBe('Dewiswch gyfeiriad')
+    expect(copyCy.picker.resultsCount(5, 40)).toBe(
+      'Yn dangos 5 allan o 40 canlyniad'
+    )
+  })
+
   it.each([
     ['en', copy, sectionCaptionsEn],
     ['cy', copyCy, sectionCaptionsCy]

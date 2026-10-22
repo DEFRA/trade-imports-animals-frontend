@@ -51,7 +51,9 @@ export const copy = {
     selectedAddressPrefix: 'Cyfeiriad a ddewiswyd:',
     errorPrefix: 'Gwall:',
     noMatches: 'Nid oes unrhyw gyfeiriadau’n cyfateb i’ch chwiliad.',
-    resultsCaption: (shown, total) => `Yn dangos ${shown} o ${total} cyfeiriad`,
+    resultsHeading: 'Dewiswch gyfeiriad',
+    resultsCount: (shown, total) =>
+      `Yn dangos ${shown} allan o ${total} canlyniad`,
     table: {
       selectHidden: 'Dewis',
       name: 'Enw',

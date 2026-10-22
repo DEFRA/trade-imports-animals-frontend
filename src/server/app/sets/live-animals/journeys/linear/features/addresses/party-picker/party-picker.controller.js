@@ -38,15 +38,9 @@ const render = async (
   party,
   { query, page, selectedId, error, recoverableError = false, addAddressHref }
 ) => {
-  // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
   const selected = await chosenPartyFor(orgId, selectedId)
-  // A deleted/missing record must not travel as "Selected: …" or in
-  // pagination links — treat it as no selection.
   const effectiveSelectedId = selected ? selected.id : ''
-  // Reached from a Change link, every way back out of the picker — Back,
-  // paging, the save — has to keep the context, or the trader is dropped into
-  // the section flow instead of the summary they came from.
   const changing = kit.changeContext(request)
 
   return h.view(view, {
@@ -100,7 +94,6 @@ const get = (party) => async (request, h) => {
   })
 }
 
-/** Where a saved picker goes: the review when an amendment saved from a Change link, else the addresses page. */
 const savedTarget = async (request, h) =>
   kit.amendReviewTarget(request, (await state.get(request, h)).journey) ??
   kit.withChangeContext(
@@ -150,17 +143,25 @@ const post = (party) => async (request, h) => {
     })
   }
 
-  // Saving without choosing keeps the address already on the notification.
   if (!selectedId) {
-    const { answers } = await state.get(request, h)
-    if (answers[party.id]) {
-      return h.redirect(await savedTarget(request, h))
-    }
+    request.logger.info(
+      { journeyId: request.params.journeyId, role: party.id },
+      'Address picker saved with no address chosen, nothing committed'
+    )
+    return h.redirect(await savedTarget(request, h))
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
     const { journey } = await state.get(request, h)
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        role: party.id,
+        addressId: selectedId
+      },
+      'Address picker refused an address that is not in the address book'
+    )
     return (
       await render(request, h, orgId, journey, party, {
         query,

@@ -50,7 +50,8 @@ export const copy = {
     selectedAddressPrefix: 'Selected address:',
     errorPrefix: 'Error:',
     noMatches: 'No addresses match your search.',
-    resultsCaption: (shown, total) => `Showing ${shown} of ${total} addresses`,
+    resultsHeading: 'Select an address',
+    resultsCount: (shown, total) => `Showing ${shown} out of ${total} results`,
     table: {
       selectHidden: 'Select',
       name: 'Name',

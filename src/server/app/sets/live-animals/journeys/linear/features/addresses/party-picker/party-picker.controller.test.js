@@ -6,6 +6,7 @@ import { store } from '../../../../../../../engine/store.js'
 import {
   driveHandler,
   addressBookAnswering,
+  expectOneLogged,
   restoreAddressBookAfterTests,
   restoreStubModeAndConfigAfterTests,
   unavailableBackendError,
@@ -24,6 +25,7 @@ const ALPINE_DAIRY_ID = 'alpine-dairy'
 const ALPINE_DAIRY_NAME = 'Alpine Dairy GmbH'
 const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
+const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
@@ -70,7 +72,7 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
     expect(picker.page).toBe(1)
-    expect(picker.resultsCaption).toBe('Showing 5 of 13 addresses')
+    expect(picker.resultsCount).toBe('Showing 5 out of 13 results')
     expect(idsOf(picker)).toEqual([
       'astra-rosales',
       'tech-imports-ltd',
@@ -126,7 +128,7 @@ describe('GET /consignors/select', () => {
       await driveHandler(getConsignor, { query: { q: 'denmark' } })
     )
 
-    expect(picker.resultsCaption).toBe('Showing 2 of 2 addresses')
+    expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, 'jutland-swine-aps'])
     expect(picker.pagination).toBeNull()
   })
@@ -262,9 +264,36 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
   })
 
-  it('Should reject a save with nothing selected, anchoring the error on the first row', async () => {
+  it('Should return to the addresses page with the consignor still empty when saved with nothing selected', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', page: '2' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor).toBeUndefined()
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: { journeyId: result.journeyId, role: 'consignor' },
+      message: 'Address picker saved with no address chosen, nothing committed'
+    })
+  })
+
+  it('Should return to the addresses page when saved with nothing selected after a search that matched nothing', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', q: 'no such trader' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor).toBeUndefined()
+  })
+
+  it('Should refuse an id that is not in the organisation book, logging the refused id', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: NOT_IN_THE_BOOK }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -272,26 +301,30 @@ describe('POST /consignors/select', () => {
     expect(result.view.context.errorSummary.errorList).toEqual([
       { text: SELECT_A_CONSIGNOR_ERROR, href: '#party' }
     ])
-    expect(result.view.context.picker.page).toBe(2)
     expect(result.after.consignor).toBeUndefined()
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        role: 'consignor',
+        addressId: NOT_IN_THE_BOOK
+      },
+      message:
+        'Address picker refused an address that is not in the address book'
+    })
   })
 
-  it('Should anchor the error on the search box when the search matched nothing to select', async () => {
+  it('Should anchor the refusal on the search box when the search matched nothing to select', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', q: 'no such trader' }
+      payload: {
+        action: 'save',
+        q: 'no such trader',
+        party: NOT_IN_THE_BOOK
+      }
     })
 
     expect(result.view.context.errorSummary.errorList[0].href).toBe('#q')
     expect(result.view.context.picker.rows).toEqual([])
-  })
-
-  it('Should refuse an id that is not in the organisation book', async () => {
-    const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: 'not-in-this-book' }
-    })
-
-    expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
-    expect(result.after.consignor).toBeUndefined()
   })
 
   it('Should refuse a soft-deleted address id on save', async () => {
@@ -326,7 +359,21 @@ describe('The five spokes share the one picker', () => {
     }
   })
 
-  it('Should offer the same records whichever spoke is being filled (D3)', async () => {
+  it('Should return every spoke to the addresses page, committing nothing, when saved with nothing selected', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('POST', party.slug), {
+        payload: { action: 'save' }
+      })
+
+      expect(result.after[party.id]).toBeUndefined()
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'addresses')
+      })
+    }
+  })
+
+  it('Should offer the same records whichever spoke is being filled', async () => {
     const seen = []
     for (const party of PARTIES) {
       const result = await driveHandler(handlerFor('GET', party.slug))

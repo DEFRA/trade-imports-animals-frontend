@@ -13,3 +13,8 @@ The transporter list's Welsh "shown count" message is a machine draft too. A
 translator must review its singular and plural wording in
 `journeys/linear/features/transport/copy/copy.cy.js`, which is a function of
 the count.
+
+The address pickers' Welsh results count is a machine draft as well. A
+translator must review it in
+`journeys/linear/features/addresses/copy/copy.cy.js`, where it is a function of
+the number shown and the total.
