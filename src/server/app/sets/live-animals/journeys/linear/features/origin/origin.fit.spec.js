@@ -379,11 +379,12 @@ test.describe('origin region of origin code and internal reference', () => {
     await expect(regionCodePrefix(page)).toHaveAttribute('aria-hidden', 'true')
   })
 
-  test('the region code box is named by its label and described by its hint', async ({
+  test('the region code box is named by its label and described by its hint, with its prefix hidden from screen readers', async ({
     page
   }) => {
     await chooseYesForRegionCode(page)
 
+    await expect(regionCodePrefix(page)).toHaveAttribute('aria-hidden', 'true')
     await expect(regionCodeField(page)).toHaveAccessibleName(
       copy.regionCode.label
     )
@@ -427,18 +428,12 @@ test.describe('origin region of origin code and internal reference', () => {
     await expect(regionCodePrefix(page)).toHaveText('')
   })
 
-  test('a refused page shows the submitted country code as the prefix', async ({
+  test('a refused page shows the submitted country code as the prefix, and choosing another country changes it', async ({
     page
   }) => {
     await submitRefusedOriginWithFrance(page)
 
     await expectRegionCodePrefix(page, france.code)
-  })
-
-  test('choosing another country on a refused page changes the prefix', async ({
-    page
-  }) => {
-    await submitRefusedOriginWithFrance(page)
 
     await chooseCountryOfOrigin(page, netherlands.name)
     await expect(regionCodePrefix(page)).toHaveText(netherlands.code)
