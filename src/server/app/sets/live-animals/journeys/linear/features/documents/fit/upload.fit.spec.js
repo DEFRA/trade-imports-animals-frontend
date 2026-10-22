@@ -449,7 +449,7 @@ test.describe('document upload file validation', () => {
     await expectPreservedMetadata(page)
   })
 
-  test('file validation: unsupported type links to and focuses the upload while preserving metadata', async ({
+  test('file validation: unsupported type links to and focuses the upload while preserving metadata, and adds no document', async ({
     page
   }) => {
     await fillMetadata(page)
@@ -467,6 +467,7 @@ test.describe('document upload file validation', () => {
     await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
+    await expectNoDocumentsAdded(page)
   })
 })
 
@@ -476,7 +477,7 @@ test.describe('document upload oversize validation', () => {
     await openDocuments(page)
   })
 
-  test('file validation: client-side oversize error focuses the summary and retains metadata', async ({
+  test('file validation: client-side oversize error focuses the summary and retains metadata, and adds no document', async ({
     page
   }) => {
     test.slow()
@@ -511,6 +512,7 @@ test.describe('document upload oversize validation', () => {
       )
     ).toHaveCount(1)
     await expectPreservedMetadata(page)
+    await expectNoDocumentsAdded(page)
   })
 
   test('file validation: the client-side oversize summary link focuses the upload control', async ({
