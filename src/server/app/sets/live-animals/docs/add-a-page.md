@@ -98,8 +98,9 @@ Use `collects: []` only when the page owns no obligation or edits a collection
 whose root another page already owns.
 
 Use one `render()` helper for GET and POST errors. Build the common view with
-`kit.base()`. Pass `journey` so the shared reference strip renders, and `page`
-so the section caption does. The normal back link is
+`kit.base()`. Pass `journey` so the shared reference strip renders. A page that
+shows no status strip still passes `journey`, with `showJourneyStrip: false`.
+Pass `page` so the section caption renders. The normal back link is
 `hubPath(journey.journeyId)`.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
@@ -238,8 +239,13 @@ do; its coverage invariant fails if you forget.
 
 ## 7. Add check-answers and backend mapping when needed
 
-Add the page's fields to the matching check-answers card and both
-check-answers copy bundles. Rows carry no Change link — `row(key, value)` is a
+Add the page's rows to the matching check-answers card and their row labels to
+both check-answers copy bundles. A value label that the page itself already
+shows is read from that feature's label function (for example
+`meansOfTransportLabel`), never copied into the check-answers copy. Value
+labels only the review shows go in the check-answers copy bundles.
+
+Rows carry no Change link — `row(key, value)` is a
 key and a value. If the page's fields go into a NEW card, the card needs one
 `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
 `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf in BOTH
@@ -348,11 +354,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 

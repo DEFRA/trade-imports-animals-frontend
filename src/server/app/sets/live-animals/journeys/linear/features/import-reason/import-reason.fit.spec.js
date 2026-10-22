@@ -6,7 +6,6 @@ import {
   describeDatePickerLook,
   expectNoSeriousOrCriticalViolations,
   openDatePicker,
-  renderedCountriesIn,
   startNotificationAtImportReason,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -15,7 +14,10 @@ import {
   portsOfEntry
 } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -51,16 +53,30 @@ const irelandMatches = countryAndSubdivisionEntriesNamedWithCountry().filter(
   ({ name }) => /ire/i.test(name)
 )
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
+const EXIT_DATE_LABEL = 'label[for="temporaryAdmissionExitDate"]'
+const REGULAR_FONT_WEIGHT = '400'
+const ARIA_CONTROLS = 'aria-controls'
 const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
 const temporaryAdmissionPortHidden =
   'select#temporaryAdmissionPortOfExit-select'
+
+const expectExitDateLabelRegularWeight = async (page) => {
+  await expect(page.locator(EXIT_DATE_LABEL)).toHaveText(copy.date.label)
+  await expect(page.locator(EXIT_DATE_LABEL)).toHaveCSS(
+    'font-weight',
+    REGULAR_FONT_WEIGHT
+  )
+}
 
 const radioFor = (page, value) =>
   page.locator(`${REASON_INPUT_SELECTOR}[value="${value}"]`)
 
 const revealFor = async (page, value) => {
-  const controls = await radioFor(page, value).getAttribute('aria-controls')
-  expect(controls, `${value} controls a reveal`).toBeTruthy()
+  await expect(
+    radioFor(page, value),
+    `${value} controls a reveal`
+  ).toHaveAttribute(ARIA_CONTROLS, /.+/)
+  const controls = await radioFor(page, value).getAttribute(ARIA_CONTROLS)
   return page.locator(`#${controls}`)
 }
 
@@ -97,21 +113,34 @@ const chooseTemporaryAdmissionPort = (page) =>
     inputId: 'temporaryAdmissionPortOfExit'
   })
 
-const renderedPortsIn = (select) =>
+const everyOptionIn = (select) =>
   select.locator('option').evaluateAll((options) =>
     options.map((option) => ({
-      code: option.value,
+      value: option.value,
       label: option.textContent
     }))
   )
 
 const expectedExitPortOptions = () => [
-  { code: '', label: copy.port.placeholder },
+  { value: '', label: copy.port.placeholder },
   ...portsOfEntry.map((port) => ({
-    code: port.code,
+    value: port.code,
     label: `${port.name} - ${port.code}`
   }))
 ]
+
+const expectedDestinationCountryOptions = () => [
+  { value: '', label: copy.country.placeholder },
+  ...countryAndSubdivisionEntriesNamedWithCountry().map(({ code, name }) => ({
+    value: code,
+    label: name
+  }))
+]
+
+const expectSelectOpensOnPlaceholder = async (select, expectedOptions) => {
+  await expect(select).toHaveValue('')
+  expect(await everyOptionIn(select)).toEqual(expectedOptions)
+}
 
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
@@ -119,15 +148,15 @@ test.describe('import-reason feature', () => {
     await startNotificationAtImportReason(page)
   })
 
-  test('heads the page with its name and keeps the question as a legend only a screen reader meets', async ({
+  test('titles the browser tab and heads the page with its name alone, keeping the question as a legend only a screen reader meets', async ({
     page
   }) => {
-    await expect(
-      page.getByRole('heading', { level: 1, name: copy.title, exact: true })
-    ).toBeVisible()
-    await expect(page.getByRole('heading', { name: copy.legend })).toHaveCount(
-      0
+    await expect(page).toHaveTitle(
+      `${copy.title} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
     )
+    await expect(page.getByRole('main').getByRole('heading')).toHaveText([
+      copy.title
+    ])
 
     await expect(
       page.locator('legend').filter({ hasText: copy.legend })
@@ -228,7 +257,7 @@ test.describe('import-reason reveals', () => {
 
     await radioFor(page, 'reEntry').check()
     await expect(transitReveal).toBeHidden()
-    await expect(radioFor(page, 'reEntry')).not.toHaveAttribute('aria-controls')
+    await expect(radioFor(page, 'reEntry')).not.toHaveAttribute(ARIA_CONTROLS)
   })
 
   test('asks the internal-market purpose under its own radio', async ({
@@ -268,16 +297,18 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitPortInput)).toHaveAccessibleName(
       copy.port.label
     )
-    expect(await renderedPortsIn(page.locator(transitPortHidden))).toEqual(
+    await expectSelectOpensOnPlaceholder(
+      page.locator(transitPortHidden),
       expectedExitPortOptions()
     )
     await expect(page.locator(transitCountryHidden)).toBeAttached()
     await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    expect(
-      await renderedCountriesIn(page.locator(transitCountryHidden))
-    ).toEqual(countryAndSubdivisionEntriesNamedWithCountry())
+    await expectSelectOpensOnPlaceholder(
+      page.locator(transitCountryHidden),
+      expectedDestinationCountryOptions()
+    )
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -297,13 +328,15 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(temporaryAdmissionPortInput)
     ).toHaveAccessibleName(copy.port.label)
-    expect(
-      await renderedPortsIn(page.locator(temporaryAdmissionPortHidden))
-    ).toEqual(expectedExitPortOptions())
+    await expectSelectOpensOnPlaceholder(
+      page.locator(temporaryAdmissionPortHidden),
+      expectedExitPortOptions()
+    )
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
     ])
+    await expectExitDateLabelRegularWeight(page)
   })
 
   test('asks transhipment for the destination country alone', async ({
@@ -318,9 +351,10 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    expect(
-      await renderedCountriesIn(page.locator(transhipmentCountryHidden))
-    ).toEqual(countryAndSubdivisionEntriesNamedWithCountry())
+    await expectSelectOpensOnPlaceholder(
+      page.locator(transhipmentCountryHidden),
+      expectedDestinationCountryOptions()
+    )
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({
@@ -598,6 +632,17 @@ test.describe('import-reason temporary admission port type-ahead', () => {
 
 test.describe('import-reason port and country without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
+
+  test('shows the exit date label in regular weight under temporary admission', async ({
+    page
+  }) => {
+    await signIn(page)
+    await startNotificationAtImportReason(page)
+
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+
+    await expectExitDateLabelRegularWeight(page)
+  })
 
   test('native selects submit and persist port and country codes', async ({
     page

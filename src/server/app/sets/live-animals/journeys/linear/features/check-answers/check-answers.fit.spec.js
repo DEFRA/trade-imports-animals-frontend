@@ -156,11 +156,9 @@ test.describe('check-answers feature section structure', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    // Every group carries a heading, so each card title drops to level 4 and
-    // the level-3 headings are exactly the subsection headings.
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
       copy.groups.whereFrom,
-      copy.groups.mainReasonForImport,
+      copy.groups.mainImportReason,
       copy.groups.additionalDetails,
       copy.groups.arrivalDetails,
       copy.groups.transportDetails,

@@ -279,8 +279,10 @@ changes.
 
 Add a section or cards for the feature under
 [`journeys/linear/features/check-answers/view-model/`](../journeys/linear/features/check-answers/view-model/index.js).
-Add English and Welsh headings, row labels and value labels to the
-check-answers copy bundles.
+Add English and Welsh headings and row labels to the check-answers copy
+bundles. A value label that the feature's own page already shows is read from
+that feature's label function, never copied into the check-answers copy. Value
+labels only the review shows go in the check-answers copy bundles.
 
 Rows carry no Change link — `row(key, value)` is a key and a value. Each new
 card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
@@ -358,11 +360,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 

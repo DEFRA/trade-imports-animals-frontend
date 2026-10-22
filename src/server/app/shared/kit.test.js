@@ -105,6 +105,16 @@ describe('#base — amending', () => {
     ).toBeUndefined()
   })
 
+  it('Should leave the status strip off when showJourneyStrip is false and still carry the journey concurrency token', () => {
+    const view = base('t', {
+      journey: { journeyId: 'j', status: DRAFT, concurrencyToken: 7 },
+      showJourneyStrip: false
+    })
+
+    expect(view.journeyStrip).toBeNull()
+    expect(view.concurrencyToken).toBe(7)
+  })
+
   const ORIGIN_PATH = '/n/j-1/origin'
   const originRequest = {
     path: ORIGIN_PATH,

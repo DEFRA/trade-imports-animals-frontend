@@ -185,6 +185,18 @@ describe('kit surfaces', () => {
     expect(base('Any page').contentColumnClass).toBe(SURFACES.form)
   })
 
+  it('Should build answering-page chrome at the full container when asked for the display surface', () => {
+    expect(base('Any page', { surface: 'display' }).contentColumnClass).toBe(
+      SURFACES.display
+    )
+  })
+
+  it('Should reject an unknown surface passed to the chrome', () => {
+    expect(() => base('Any page', { surface: 'widescreen' })).toThrow(
+      /Unknown surface 'widescreen'/
+    )
+  })
+
   it('Should give display pages the full container', () => {
     expect(surfaceClass('display')).toBe(SURFACES.display)
   })

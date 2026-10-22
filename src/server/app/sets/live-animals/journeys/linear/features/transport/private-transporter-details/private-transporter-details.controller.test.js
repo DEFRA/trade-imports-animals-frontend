@@ -1,27 +1,21 @@
 import { SET_ID } from '../../../../../set.js'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   authenticatedCredentials,
   driveHandler,
-  journeyRequest,
-  stubH
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   NEW,
-  PRIVATE,
-  forgetAddedTransporters,
-  parties,
-  partiesFor
+  PRIVATE
 } from '../../../../../../../services/transporters/index.js'
+import {
+  addedTransportersOf,
+  expectRecoverableSaveFailureKeepingValues,
+  forgetAddedTransportersAroundEachTest
+} from '../test-support.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 
@@ -41,6 +35,25 @@ const RECORD = {
   email: 'movements@aberdeen-livestock.example.com'
 }
 
+const STALE_COUNTRY = 'Zedland'
+
+const staleSeed = {
+  transporterType: PRIVATE,
+  privateTransporter: {
+    name: RECORD.nameOrOrganisationName,
+    address: {
+      addressLine1: RECORD.addressLine1,
+      addressLine2: RECORD.addressLine2,
+      townOrCity: RECORD.townOrCity,
+      county: RECORD.county,
+      postcode: RECORD.postcode,
+      country: STALE_COUNTRY,
+      phone: RECORD.phone,
+      email: RECORD.email
+    }
+  }
+}
+
 const handlerFor = (method) =>
   privateTransporterDetails.routes.find((route) => route.method === method)
     .handler
@@ -48,39 +61,8 @@ const handlerFor = (method) =>
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
-/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
- * so the form comes back with the banner rather than throwing. */
-const driveSaveFailure = async (payload) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, { transporterType: PRIVATE })
-  const h = stubH()
-  configureRecords(SET_ID, {
-    ...recordsStub,
-    replaceFulfilment: () => {
-      throw new BackendRequestError('save the transporter', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    }
-  })
-  try {
-    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
-  } finally {
-    configureRecords(SET_ID, recordsStub)
-  }
-}
-
-// The private form is a spoke off the type question, so Back points at that
-// question and a save hands the journey on from the list the add route began at.
 describe('/transporters/add/private', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should point Back at the type question', async () => {
     const result = await driveHandler(getHandler, {
@@ -126,8 +108,6 @@ describe('/transporters/add/private', () => {
     expect(result.view.context.values).toEqual(RECORD)
   })
 
-  // The mandates apply once any of the record is given, so a part-filled form
-  // names what is still missing rather than saving half a transporter.
   it('Should name the missing mandatory fields on a part-filled record', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
@@ -161,8 +141,6 @@ describe('/transporters/add/private', () => {
     expect(result.response.redirect).not.toContain(ADD_SLUG)
   })
 
-  // The mandates only bite once some of the record is given, so an untouched
-  // form saves through unfilled rather than blocking the trader.
   it('Should walk on without saving when the form is left blank', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
@@ -175,47 +153,42 @@ describe('/transporters/add/private', () => {
   })
 
   it('Should re-render the form at 500 with the answers kept after a recoverable save failure', async () => {
-    const response = await driveSaveFailure(RECORD)
+    const { response } = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: RECORD,
+      saveFailure: unavailableBackendError('save the transporter')
+    })
 
-    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(response.context.recoverableError).toBe(true)
-    expect(response.context.values).toEqual(RECORD)
+    expectRecoverableSaveFailureKeepingValues(response, RECORD)
   })
 })
 
-// Saving has to leave the transporter somewhere other than the notification, or
-// the same nine fields are typed again on the next one.
 describe('/transporters/add/private keeps the transporter for the organisation', () => {
   const ORG = authenticatedCredentials.organisationId
 
-  // Not a name the service ships, so a row under it can only have been added.
-  const HAULIER = { ...RECORD, nameOrOrganisationName: 'Dupont Transport SARL' }
+  const UNSHIPPED_HAULIER = {
+    ...RECORD,
+    nameOrOrganisationName: 'Dupont Transport SARL'
+  }
 
-  const added = () =>
-    partiesFor(ORG).filter(
-      (record) => !parties().some((shipped) => shipped.id === record.id)
-    )
+  const added = () => addedTransportersOf(ORG)
 
-  beforeAll(configure)
-  beforeEach(() => {
-    store.clear()
-    forgetAddedTransporters()
-  })
-  afterEach(forgetAddedTransporters)
+  useStubbedJourney(SET_ID, dispatchPages)
+  forgetAddedTransportersAroundEachTest()
 
   it('Should put a saved transporter on the organisation list, private and not yet approved', async () => {
     await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
-      payload: HAULIER
+      payload: UNSHIPPED_HAULIER
     })
 
     expect(added()).toHaveLength(1)
     const [kept] = added()
-    expect(kept.name).toBe(HAULIER.nameOrOrganisationName)
+    expect(kept.name).toBe(UNSHIPPED_HAULIER.nameOrOrganisationName)
     expect(kept.type).toBe(PRIVATE)
     expect(kept.status).toBe(NEW)
-    expect(kept.address.postcode).toBe(HAULIER.postcode)
-    expect(kept.address.email).toBe(HAULIER.email)
+    expect(kept.address.postcode).toBe(UNSHIPPED_HAULIER.postcode)
+    expect(kept.address.email).toBe(UNSHIPPED_HAULIER.email)
   })
 
   it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {
@@ -227,39 +200,19 @@ describe('/transporters/add/private keeps the transporter for the organisation',
     expect(added()).toHaveLength(0)
   })
 
-  // A transporter kept after a failed save would be on the list without being
-  // on the notification the trader thought they had saved it to.
   it('Should keep nothing when the notification refuses the save', async () => {
-    await driveSaveFailure(HAULIER)
+    await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: UNSHIPPED_HAULIER,
+      saveFailure: unavailableBackendError('save the transporter')
+    })
 
     expect(added()).toHaveLength(0)
   })
 })
 
-// "Zedland" is not in the captured origin-countries fixture, so seeding
-// address.country to it puts the stored country outside the current
-// addressCountries reader.
 describe('GET /transporters/add/private — a stored country the reader no longer offers', () => {
-  const STALE_COUNTRY = 'Zedland'
-  const staleSeed = {
-    transporterType: PRIVATE,
-    privateTransporter: {
-      name: RECORD.nameOrOrganisationName,
-      address: {
-        addressLine1: RECORD.addressLine1,
-        addressLine2: RECORD.addressLine2,
-        townOrCity: RECORD.townOrCity,
-        county: RECORD.county,
-        postcode: RECORD.postcode,
-        country: STALE_COUNTRY,
-        phone: RECORD.phone,
-        email: RECORD.email
-      }
-    }
-  }
-
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the country in values so the select renders unselected, without adding the stale option', async () => {
     const result = await driveHandler(getHandler, { seed: staleSeed })
@@ -289,26 +242,7 @@ describe('GET /transporters/add/private — a stored country the reader no longe
 })
 
 describe('POST /transporters/add/private — an empty country from a part-filled record is refused, not silently wiped', () => {
-  const STALE_COUNTRY = 'Zedland'
-  const staleSeed = {
-    transporterType: PRIVATE,
-    privateTransporter: {
-      name: RECORD.nameOrOrganisationName,
-      address: {
-        addressLine1: RECORD.addressLine1,
-        addressLine2: RECORD.addressLine2,
-        townOrCity: RECORD.townOrCity,
-        county: RECORD.county,
-        postcode: RECORD.postcode,
-        country: STALE_COUNTRY,
-        phone: RECORD.phone,
-        email: RECORD.email
-      }
-    }
-  }
-
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should refuse the save with a country-required error and preserve the stored transporter', async () => {
     const result = await driveHandler(postHandler, {

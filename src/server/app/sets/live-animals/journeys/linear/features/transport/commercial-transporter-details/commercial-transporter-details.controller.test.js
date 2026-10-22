@@ -1,27 +1,21 @@
 import { SET_ID } from '../../../../../set.js'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   authenticatedCredentials,
   driveHandler,
-  journeyRequest,
-  stubH
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
-  NEW,
-  forgetAddedTransporters,
-  parties,
-  partiesFor
+  NEW
 } from '../../../../../../../services/transporters/index.js'
+import {
+  addedTransportersOf,
+  expectRecoverableSaveFailureKeepingValues,
+  forgetAddedTransportersAroundEachTest
+} from '../test-support.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 import { dispatchPages } from '../../index.js'
@@ -52,39 +46,8 @@ const handlerFor = (method) =>
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
-/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
- * so the form comes back with the banner rather than throwing. */
-const driveSaveFailure = async (payload) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, { transporterType: COMMERCIAL })
-  const h = stubH()
-  configureRecords(SET_ID, {
-    ...recordsStub,
-    replaceFulfilment: () => {
-      throw new BackendRequestError('save the transporter', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    }
-  })
-  try {
-    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
-  } finally {
-    configureRecords(SET_ID, recordsStub)
-  }
-}
-
-// The commercial form is a spoke off the type question, so Back points at that
-// question and a save hands the journey on from the list the add route began at.
 describe('/transporters/add/commercial', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should point Back at the type question', async () => {
     const result = await driveHandler(getHandler, {
@@ -107,8 +70,6 @@ describe('/transporters/add/commercial', () => {
     )
   })
 
-  // The authorisation rules are the transporter list's own sentences, shown
-  // again here rather than written out a second time.
   it('Should carry the transporter-authorisation guidance and the fixed country', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: COMMERCIAL }
@@ -142,8 +103,6 @@ describe('/transporters/add/commercial', () => {
     expect(result.view.context.values).toEqual(RECORD)
   })
 
-  // The mandates apply once any of the record is given, so a part-filled form
-  // names what is still missing rather than saving half a transporter.
   it('Should name the missing mandatory fields on a part-filled record', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
@@ -180,8 +139,6 @@ describe('/transporters/add/commercial', () => {
     expect(result.after.commercialTransporter).toBeUndefined()
   })
 
-  // The country is fixed rather than asked, so anything but Northern Ireland
-  // has been tampered with on its way back.
   it('Should refuse a country the page did not offer', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
@@ -218,9 +175,7 @@ describe('/transporters/add/commercial', () => {
     expect(result.response.redirect).not.toContain(ADD_SLUG)
   })
 
-  // A trader who reached this form by clicking Change on Check your answers is
-  // returned there once they have saved, rather than dropped back into the run.
-  it('Should hand a save while changing back to the summary', async () => {
+  it('Should return to Check your answers after a save made from its Change link', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
@@ -232,8 +187,6 @@ describe('/transporters/add/commercial', () => {
     })
   })
 
-  // The mandates only bite once some of the record is given, so an untouched
-  // form saves through unfilled rather than blocking the trader.
   it('Should walk on without saving when the form is left blank', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
@@ -246,19 +199,16 @@ describe('/transporters/add/commercial', () => {
   })
 
   it('Should re-render the form at 500 with the answers kept after a recoverable save failure', async () => {
-    const response = await driveSaveFailure({
-      ...RECORD,
-      country: NORTHERN_IRELAND
+    const { response } = await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: { ...RECORD, country: NORTHERN_IRELAND },
+      saveFailure: unavailableBackendError('save the transporter')
     })
 
-    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(response.context.recoverableError).toBe(true)
-    expect(response.context.values).toEqual(RECORD)
+    expectRecoverableSaveFailureKeepingValues(response, RECORD)
   })
 })
 
-// Saving has to leave the transporter somewhere other than the notification, or
-// the same fields are typed again on the next one.
 describe('/transporters/add/commercial keeps the transporter for the organisation', () => {
   const ORG = authenticatedCredentials.organisationId
 
@@ -269,17 +219,10 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
     country: NORTHERN_IRELAND
   }
 
-  const added = () =>
-    partiesFor(ORG).filter(
-      (record) => !parties().some((shipped) => shipped.id === record.id)
-    )
+  const added = () => addedTransportersOf(ORG)
 
-  beforeAll(configure)
-  beforeEach(() => {
-    store.clear()
-    forgetAddedTransporters()
-  })
-  afterEach(forgetAddedTransporters)
+  useStubbedJourney(SET_ID, dispatchPages)
+  forgetAddedTransportersAroundEachTest()
 
   it('Should put a saved transporter on the organisation list, commercial and not yet approved', async () => {
     await driveHandler(postHandler, {
@@ -306,10 +249,12 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
     expect(added()).toHaveLength(0)
   })
 
-  // A transporter kept after a failed save would be on the list without being
-  // on the notification the trader thought they had saved it to.
   it('Should keep nothing when the notification refuses the save', async () => {
-    await driveSaveFailure(HAULIER)
+    await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: HAULIER,
+      saveFailure: unavailableBackendError('save the transporter')
+    })
 
     expect(added()).toHaveLength(0)
   })

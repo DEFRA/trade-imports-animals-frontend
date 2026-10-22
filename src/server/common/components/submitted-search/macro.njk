@@ -1,0 +1,56 @@
+{#
+  appSubmittedSearch — a text box with a joined blue icon button that submits
+  the page's form with action=search.
+
+  Params:
+    id             (string)  the box's id
+    name           (string)  the box's name
+    value          (string)  the term to show in the box
+    label.text     (string)  the medium label
+    hint.text      (string)  optional: the hint under the label
+    button.text    (string)  the button's accessible name
+    wrapperClasses (string)  classes on the box and button together, such as
+                             "govuk-!-width-one-half"
+
+  Usage:
+  {% from "submitted-search/macro.njk" import appSubmittedSearch %}
+  {{ appSubmittedSearch({
+    id: "q", name: "q", value: query,
+    label: { text: "Search" }, hint: { text: "Name, address or country" },
+    button: { text: "Search" },
+    wrapperClasses: "govuk-!-width-one-half"
+  }) }}
+#}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% macro appSubmittedSearch(params) %}
+  {% set iconHtml %}
+    <svg width="20" height="20" viewBox="0 0 21 20" fill="none" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8.90102 14.4683C12.385 14.4683 15.2093 11.644 15.2093 8.16005C15.2093 4.6761 12.385 1.85181 8.90102 1.85181C5.41707 1.85181 2.59277 4.6761 2.59277 8.16005C2.59277 11.644 5.41707 14.4683 8.90102 14.4683Z" stroke="currentColor" stroke-width="2.22222"/>
+      <path d="M13.2349 12.8584L19.5909 19.2144" stroke="currentColor" stroke-width="2.22222"/>
+    </svg>
+    <span class="govuk-visually-hidden">{{ params.button.text }}</span>
+  {% endset %}
+  {% set searchButton %}
+    {{ govukButton({
+      html: iconHtml,
+      classes: "moj-search__button moj-search__button--icon app-submitted-search__button",
+      name: "action",
+      value: "search"
+    }) }}
+  {% endset %}
+  {{ govukInput({
+    id: params.id,
+    name: params.name,
+    value: params.value,
+    label: { text: params.label.text, classes: "govuk-label--m" },
+    hint: ({ text: params.hint.text } if params.hint else undefined),
+    inputWrapper: {
+      classes: "moj-search__input-wrapper " + (params.wrapperClasses | default(""))
+    },
+    formGroup: {
+      afterInput: { html: searchButton }
+    }
+  }) }}
+{% endmacro %}

@@ -11,7 +11,11 @@ import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { transporterAnswer } from './transporter-record.js'
-import { matchingTransporters, transporterRows } from './rows.js'
+import {
+  matchingTransporters,
+  shownCountMessages,
+  transporterRows
+} from './rows.js'
 import { validation } from './validate.js'
 
 /** The transporter list — the journey's one transporter step.
@@ -48,10 +52,13 @@ const render = (
   { errors = {}, recoverableError = false } = {}
 ) => {
   const query = String(values.query ?? '')
+  const available = availableTransporters(request)
   const rows = transporterRows(
-    matchingTransporters(availableTransporters(request), query),
+    matchingTransporters(available, String(values.narrowBy ?? '')),
     { selectedId: values.selectedId }
   )
+  const queryMatchesNothing =
+    matchingTransporters(available, query).length === 0
   return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
@@ -62,12 +69,8 @@ const render = (
     }),
     copy,
     errors,
-    // A search that matches nothing leaves no radio for the summary to link
-    // to, so the entry sends the trader to the only control they can act on —
-    // the search box. The address picker switches its anchor the same way
-    // (addresses/party-picker/view-model/error-summary.js).
     errorSummary: kit.errorSummary(errors, {
-      href: (field) => (rows.length ? `#${field}` : '#search')
+      href: (field) => (queryMatchesNothing ? '#search' : `#${field}`)
     }),
     // Reached from a Change link, the add route has to keep the context or
     // the trader is dropped into the journey instead of the summary.
@@ -77,6 +80,7 @@ const render = (
     ),
     query,
     selectedId: values.selectedId,
+    shownMessages: shownCountMessages(rows.length),
     transporterRows: rows
   })
 }
@@ -132,6 +136,7 @@ const post = async (request, h) => {
     const { journey, answers } = await state.get(request, h)
     return render(request, h, journey, {
       query,
+      narrowBy: query,
       selectedId:
         payload.transporter ||
         payload.selected ||

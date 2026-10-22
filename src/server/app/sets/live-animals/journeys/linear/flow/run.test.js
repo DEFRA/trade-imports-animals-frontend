@@ -203,8 +203,7 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 describe('the run covers the journey', () => {
   // Pages deliberately outside the run: the dashboard sits before a
   // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run. The CPH number page is reached only
-  // from its row on the roles and addresses page.
+  // the review page has ended the run.
   const OUTSIDE_THE_RUN = [
     'dashboard',
     'cphNumber',

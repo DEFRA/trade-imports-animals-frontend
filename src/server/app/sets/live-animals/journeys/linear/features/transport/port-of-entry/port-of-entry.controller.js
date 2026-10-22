@@ -11,6 +11,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import * as transportReference from '../../../../../../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from '../page.js'
+import { meansOfTransportLabel } from '../means-of-transport-label.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { arrivalWindow } from './arrival-window.js'
@@ -31,6 +32,8 @@ const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
 
+const QUESTION_LABEL_CLASSES = 'govuk-label--m'
+
 const portItems = async (selected) => [
   { value: '', text: copy.port.placeholder },
   ...(await ports.portOptions()).map((option) => ({
@@ -43,7 +46,7 @@ const meansItems = (selected) => [
   { value: '', text: copy.means.placeholder },
   ...transportReference.meansOfTransport().map((code) => ({
     value: code,
-    text: copy.means.options[code],
+    text: meansOfTransportLabel(code),
     selected: code === selected
   }))
 ]
@@ -64,6 +67,7 @@ const render = async (
       recoverableError
     }),
     copy,
+    questionLabelClasses: QUESTION_LABEL_CLASSES,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -71,7 +75,8 @@ const render = async (
     meansItems: meansItems(values.meansOfTransport),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
-      hint: copy.arrivalDate.hint(dateWindow.exampleText),
+      hint: copy.arrivalDate.hint,
+      labelClasses: QUESTION_LABEL_CLASSES,
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,

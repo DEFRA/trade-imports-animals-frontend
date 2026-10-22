@@ -14,7 +14,7 @@ export const copy = {
     email: 'Email address'
   },
   phoneHint: 'For international numbers include the country code',
-  countryPlaceholder: 'Select a country',
+  countrySelectText: 'Select a country',
   save: 'Save changes',
   cancel: 'Cancel',
   errors: {

@@ -18,7 +18,10 @@ import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
 import { UPLOAD_ID_PATTERN, ownsUpload } from './contracts/upload-id.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { capacityExceededError, documentAddErrors } from './form/errors.js'
+import {
+  capacityExceededFieldErrors,
+  documentAddErrors
+} from './form/errors.js'
 import {
   EMPTY_FORM,
   documentFromPayload,
@@ -29,7 +32,12 @@ import { loadPage } from './handlers/load-page.js'
 import { fileResponse, uploadDetails } from './handlers/reads/download.js'
 import { documentsPage as page } from './page.js'
 import { validation } from './validate.js'
-import { isStillSettling, scanned, withScanStatus } from './scan/status.js'
+import {
+  hasDocumentsNotClearedByScan,
+  scanned,
+  scansNotCleared,
+  withScanStatus
+} from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import {
   MAX_PAYLOAD_BYTES,
@@ -57,8 +65,6 @@ const get = async (request, h) => {
   return render(request, h, pageState, EMPTY_FORM)
 }
 
-// The JSON leg the client bundle polls. A poll is the scripted equivalent of
-// the refresh link, so it asks the upload service for a fresh status.
 const getStatus = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
@@ -68,24 +74,30 @@ const getStatus = async (request, h) => {
   return h.response({ documents: scanned(documents) })
 }
 
-// A well-formed id belonging to somebody else's journey is answered 404, not
-// 403 — the journey never confirms an upload it does not own exists.
 const getFile = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
-  const { uploadId } = request.params
+  const { journeyId, uploadId } = request.params
   if (!ownsUpload(answers, evaluation, uploadId)) {
+    request.logger.info(
+      { journeyId, uploadId },
+      'Document file refused: upload not held by the journey'
+    )
     return h.response().code(HTTP_STATUS_NOT_FOUND)
   }
   return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
 
-const uploadOutcome = async (pageState, entry, file, filename) => {
+const uploadOutcome = async (request, pageState, entry, file, filename) => {
   try {
     const uploadId = await documentUploads.upload(
       uploadDetails(pageState.journey, entry, file, filename)
     )
     return { uploadId }
-  } catch {
+  } catch (err) {
+    request.logger.warn(
+      { journeyId: request.params.journeyId, err },
+      'Document upload failed'
+    )
     return { failed: true }
   }
 }
@@ -93,21 +105,23 @@ const uploadOutcome = async (pageState, entry, file, filename) => {
 const pageHref = (request) =>
   kit.withChangeContext(request, pagePath(request.params.journeyId, page.slug))
 
-// The single-page loop: a saved document leaves the trader on the page it was
-// added from, ready for the next one.
 const backToPage = (request, h) => h.redirect(pageHref(request))
 
-// `afterSave` is where a saved document lands the trader. Every successful
-// save redirects back to the page — the POST mutated state, so a reload must
-// not be able to replay it and append the document twice. Continue is then
-// pressed again from the fresh GET, once the scan has settled.
 const postAdd = async (request, h, payload, afterSave) => {
   const pageState = await loadPage(request, h)
   const bare = documentFromPayload(payload)
   const pendingDocumentSave = pendingDocumentSaveFrom(payload)
   if (!pendingDocumentSave && pageState.documents.length >= MAX_DOCUMENTS) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        documentsHeld: pageState.documents.length,
+        maxDocuments: MAX_DOCUMENTS
+      },
+      'Document refused: notification holds the maximum number of documents'
+    )
     return render(request, h, pageState, bare, {
-      summaryErrors: capacityExceededError()
+      errors: capacityExceededFieldErrors()
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
   const allErrors = documentAddErrors(payload, bare, pendingDocumentSave)
@@ -120,7 +134,7 @@ const postAdd = async (request, h, payload, afterSave) => {
   const filename = pendingDocumentSave?.filename ?? payload.file.filename
   const outcome = pendingDocumentSave
     ? { uploadId: pendingDocumentSave.uploadId }
-    : await uploadOutcome(pageState, bare, payload.file, filename)
+    : await uploadOutcome(request, pageState, bare, payload.file, filename)
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
       errors: { file: UPLOAD_FAILURE_MESSAGE }
@@ -159,8 +173,16 @@ const saveAddedDocument = async (
         await state.appendEntry(request, h, 'documents', savedEntry)
       }
     },
-    () =>
-      render(request, h, pageState, bare, {
+    (err) => {
+      request.logger.warn(
+        {
+          journeyId: request.params.journeyId,
+          uploadId: savedEntry.uploadId,
+          err
+        },
+        'Document not saved: backend unavailable, save left to retry'
+      )
+      return render(request, h, pageState, bare, {
         extra: {
           recoverableError: true,
           pendingDocumentSave: {
@@ -169,6 +191,7 @@ const saveAddedDocument = async (
           }
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
   )
   if (failure) {
     return failure
@@ -178,6 +201,12 @@ const saveAddedDocument = async (
 
 const documentAt = (answers, evaluation, index) =>
   state.collectionView(answers, ['documents'], evaluation)[index]?.entry
+
+const logRemovalLeftToRetry = (request, { index, uploadId }, err) =>
+  request.logger.warn(
+    { journeyId: request.params.journeyId, index, uploadId, err },
+    'Document not removed: backend unavailable, removal left to retry'
+  )
 
 const retryProjectionSave = async (
   request,
@@ -191,13 +220,15 @@ const retryProjectionSave = async (
         documents: pageState.answers.documents ?? []
       })
     },
-    () =>
-      render(request, h, pageState, EMPTY_FORM, {
+    (err) => {
+      logRemovalLeftToRetry(request, pendingDocumentRemoval, err)
+      return render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
           pendingDocumentRemoval
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
   )
   if (failure) {
     return failure
@@ -213,6 +244,10 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
       )
     : index
   if (retryUploadId && retryIndex === -1) {
+    request.logger.info(
+      { journeyId: request.params.journeyId, index, uploadId: retryUploadId },
+      'Document already removed: saving the notification without it'
+    )
     return retryProjectionSave(request, h, pageState, {
       index,
       uploadId: retryUploadId
@@ -221,30 +256,42 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
 
   const entry = documentAt(pageState.answers, pageState.evaluation, retryIndex)
   if (!entry) {
+    request.logger.info(
+      { journeyId: request.params.journeyId, index },
+      'Document removal refused: no document at the index'
+    )
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
   if (entry.uploadId && !retryUploadId) {
     try {
       await documentUploads.remove(entry.uploadId)
-    } catch {
+    } catch (err) {
+      request.logger.warn(
+        {
+          journeyId: request.params.journeyId,
+          uploadId: entry.uploadId,
+          err
+        },
+        'Document not removed: upload service failed, document kept'
+      )
       return backToPage(request, h)
     }
   }
+  const pendingDocumentRemoval = { index, uploadId: entry.uploadId }
   const { failure } = await kit.recoverableSave(
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
-    () =>
-      render(request, h, pageState, EMPTY_FORM, {
+    (err) => {
+      logRemovalLeftToRetry(request, pendingDocumentRemoval, err)
+      return render(request, h, pageState, EMPTY_FORM, {
         extra: {
           recoverableError: true,
-          pendingDocumentRemoval: {
-            index,
-            uploadId: entry.uploadId
-          }
+          pendingDocumentRemoval
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
   )
   if (failure) {
     return failure
@@ -253,11 +300,19 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
   return backToPage(request, h)
 }
 
-// Leaving the page, once nothing is left to save. A file still being checked
-// holds Continue back; the exit to the overview is a deliberate stop and goes.
 const leavePage = async (request, h) => {
   const pageState = await loadPage(request, h)
-  if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
+  if (
+    !kit.hubExitTarget(request) &&
+    hasDocumentsNotClearedByScan(pageState.documents)
+  ) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        scansNotCleared: scansNotCleared(pageState.documents)
+      },
+      'Continue refused: documents not cleared by the virus scan'
+    )
     return render(request, h, pageState, EMPTY_FORM, {
       summaryErrors: settlingSummaryErrors(pageState.documents)
     })
@@ -265,11 +320,6 @@ const leavePage = async (request, h) => {
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }
 
-// Continue submits the add-a-document fields along with it, so a part-filled
-// form reaching here is a document the trader means to attach. Finish it —
-// save it and return them to the page, or say what is missing — rather than
-// drop it without a word. Continue is pressed again from that fresh page to
-// leave. The exit to the overview deliberately leaves the form behind.
 const continuesADocument = (request, payload) =>
   !kit.hubExitTarget(request) && startsADocument(payload)
 
@@ -304,6 +354,10 @@ export const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) {
     return h.continue
   }
+  request.logger.info(
+    { journeyId: request.params.journeyId },
+    'Document refused: upload larger than the payload limit'
+  )
   const pageState = await loadPage(request, h)
   const crumb =
     request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)

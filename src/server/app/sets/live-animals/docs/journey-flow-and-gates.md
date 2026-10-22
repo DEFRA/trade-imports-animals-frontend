@@ -101,7 +101,7 @@ countries, the transporter, the uploaded documents, roles and addresses, the
 contact address and then the review page, so the primary button — "Save and
 continue" on every one of them but the review page, which ends with "Continue" —
 carries a new notification from the entry page to the review page in one pass.
-The CPH number page is not a step: it opens from its row on Roles and addresses
+The CPH number page is not a step: it opens from the CPH section's add link on Roles and addresses
 and saves back to it. Roles and addresses ends the run on the hub when every
 task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has

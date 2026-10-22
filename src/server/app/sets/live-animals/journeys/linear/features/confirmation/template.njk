@@ -33,9 +33,6 @@
   <p class="govuk-body">
     <a class="govuk-link" href="{{ dashboardHref }}">{{ copy.viewOrAmend.dashboardLink }}</a>
   </p>
-  {# Starting a notification is a POST (it creates a record), so this is a
-     form styled as a link rather than an anchor — same route and same idiom as
-     the dashboard's start action. #}
   <form method="post" action="{{ createAction }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <p class="govuk-body">
@@ -51,8 +48,8 @@
     <li>{{ copy.help.emailPrefix }} <a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">APHAServiceDesk@apha.gov.uk</a></li>
   </ul>
   <p class="govuk-body">{{ copy.help.openingHours }}</p>
-  <p class="govuk-body">{{ copy.help.customsPrefix }} <a class="govuk-link" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries">{{ copy.help.customsLink }}</a>.</p>
+  <p class="govuk-body">{{ copy.help.customsPrefix }} <a class="govuk-link" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries" target="_blank" rel="noreferrer noopener">{{ copy.help.customsLink }}<span class="govuk-visually-hidden"> {{ copy.help.opensInNewTab }}</span></a>.</p>
   <p class="govuk-body">
-    <a class="govuk-link" href="https://www.gov.uk/call-charges">{{ copy.help.callCharges }}</a>
+    <a class="govuk-link" href="https://www.gov.uk/call-charges" target="_blank" rel="noreferrer noopener">{{ copy.help.callCharges }}<span class="govuk-visually-hidden"> {{ copy.help.opensInNewTab }}</span></a>
   </p>
 {% endblock %}

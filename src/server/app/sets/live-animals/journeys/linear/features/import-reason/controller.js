@@ -77,6 +77,8 @@ const render = async (
     portItems: await portItems(),
     exitDateField: kit.dateField(TEMPORARY_ADMISSION_DATE_FIELD, {
       label: copy.date.label,
+      labelClasses: '',
+      formGroupClasses: 'govuk-!-margin-bottom-6',
       hint: copy.date.hint,
       value: values[TEMPORARY_ADMISSION_DATE_FIELD],
       error: errors[TEMPORARY_ADMISSION_DATE_FIELD]

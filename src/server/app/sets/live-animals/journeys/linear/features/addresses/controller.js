@@ -8,6 +8,7 @@ import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
 import { partyEditHref } from './party-edit/edit-href.js'
+import { insetAddressLines } from './party-picker/view-model/address-lines.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
@@ -25,80 +26,69 @@ const view = `${TEMPLATES}/features/addresses/template`
 
 const copy = copyFor({ en, cy }).hub
 
-const CPH_ROW = {
-  ...copy.cph,
-  slug: 'cph-number?return=addresses'
-}
+const CPH_SLUG = 'cph-number?return=addresses'
 
-const hubRow = (href, { title, hint }, valueText, editHref) => ({
-  key: {
-    html: `<span>${title}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
-  },
-  value: { text: valueText ?? copy.notAddedYet },
-  actions: {
-    items: [
-      {
-        href,
-        text: valueText ? copy.change : copy.add,
-        visuallyHiddenText: title.toLowerCase()
-      },
-      ...(valueText && editHref
-        ? [
-            {
-              href: editHref,
-              text: copy.editDetails,
-              visuallyHiddenText: title.toLowerCase()
-            }
-          ]
-        : [])
-    ]
-  }
+const hubSection = ({ id, title, hint, add, chosen }) => ({
+  id,
+  title,
+  hint,
+  hiddenSuffix: title.toLowerCase(),
+  ...(chosen ? { chosen } : { addLink: add })
 })
 
-// A party row keeps change context so the picker and the edit page can hand
-// the trader back here and this page's Continue can return them to check your
-// answers. The CPH row does not: its slug already carries `?return=addresses`,
-// and it is a different obligation reached by its own route.
-const rows = (request, journeyId, answers, parties) => [
-  ...PARTIES.map((party) =>
-    hubRow(
-      kit.withChangeContext(request, pagePath(journeyId, party.slug)),
-      party,
-      parties[party.id]?.name,
-      partyEditHref(journeyId, party, 'addresses', {
+const partySectionBuilder = (request, journeyId, parties) => (party) => {
+  const held = parties[party.id]
+  const href = kit.withChangeContext(request, pagePath(journeyId, party.slug))
+  return hubSection({
+    id: party.id,
+    title: party.title,
+    hint: party.hint,
+    add: { href, text: party.add },
+    chosen: held && {
+      name: held.name,
+      lines: insetAddressLines(held),
+      changeHref: href,
+      editDetailsHref: partyEditHref(journeyId, party, 'addresses', {
         change: kit.changeContext(request)
       })
-    )
-  ),
-  ...(isCphApplicable(answers)
-    ? [
-        hubRow(
-          pagePath(journeyId, CPH_ROW.slug),
-          CPH_ROW,
-          answers.countyParishHoldingCph
-        )
-      ]
-    : [])
+    }
+  })
+}
+
+const cphSection = (journeyId, answers) => {
+  const href = pagePath(journeyId, CPH_SLUG)
+  const cphNumber = answers.countyParishHoldingCph
+  return hubSection({
+    id: 'cph',
+    title: copy.cph.title,
+    hint: copy.cph.hint,
+    add: { href, text: copy.cph.add },
+    chosen: cphNumber && { lines: [cphNumber], changeHref: href }
+  })
+}
+
+const sections = (request, journeyId, answers, parties) => [
+  ...PARTIES.map(partySectionBuilder(request, journeyId, parties)),
+  ...(isCphApplicable(answers) ? [cphSection(journeyId, answers)] : [])
 ]
+
+const backLinkOf = (request, journey) =>
+  kit.changeContext(request) && journey.status !== state.AMEND
+    ? pagePath(journey.journeyId, kit.CYA_SLUG)
+    : hubPath(journey.journeyId)
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const parties = await partiesFromStoredAnswers(answers)
-  // A draft reached from a Change link goes back to the summary that sent the
-  // trader here; an amendment never does, so Back is the task list.
-  const backLink =
-    kit.changeContext(request) && journey.status !== state.AMEND
-      ? pagePath(journey.journeyId, kit.CYA_SLUG)
-      : hubPath(journey.journeyId)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink,
+      backLink: backLinkOf(request, journey),
       journey,
       page
     }),
     copy,
-    rows: rows(request, journey.journeyId, answers, parties)
+    sections: sections(request, journey.journeyId, answers, parties)
   })
 }
 

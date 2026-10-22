@@ -27,8 +27,7 @@ const flowPageTarget = (page) => (scope, journeyId) =>
  * page through to the review page in one pass. The reason for import is asked
  * straight after what is being imported and before the commodity details.
  *
- * The CPH number page is not a step: it is reached only from its row on the
- * addresses page. The addresses step ends the run on the hub when nothing is
+ * The addresses step ends the run on the hub when nothing is
  * outstanding. Otherwise the run ends on the review page, which names what is
  * outstanding, whenever a commodity has been chosen. The transporter leg is
  * one step, the list; the add spokes behind it hand the run back at the

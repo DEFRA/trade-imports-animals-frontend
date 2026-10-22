@@ -147,8 +147,11 @@ copy test.
 
 Add the row to the matching card under
 [`journeys/linear/features/check-answers/view-model/cards/`](../journeys/linear/features/check-answers/view-model/index.js).
-Add its label and any displayed value labels to both check-answers copy
-bundles.
+Add its label to both check-answers copy bundles. A value label that the
+feature's own page already shows is read from that feature's label function
+(for example `meansOfTransportLabel` in the transport feature), never copied
+into the check-answers copy. Value labels only the review shows go in the
+check-answers copy bundles.
 
 Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
 heading carries the one link for every answer inside it, so adding a field to
@@ -230,11 +233,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 

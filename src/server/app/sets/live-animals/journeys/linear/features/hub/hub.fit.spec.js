@@ -4,6 +4,7 @@ import {
   answerArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
+  expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   openReviewFromHub,
   selectSpecies,
@@ -536,13 +537,7 @@ test.describe('hub feature — commodity totals', () => {
 
     expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
 
-    const horizontalOverflow = await page.evaluate(
-      () =>
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth
-    )
-
-    expect(horizontalOverflow).toBeLessThanOrEqual(0)
+    await expectNoHorizontalOverflow(page.locator('html'), 'Hub')
   })
 
   test('hub showing commodity totals has no serious or critical axe violations', async ({

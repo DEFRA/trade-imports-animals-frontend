@@ -1,16 +1,11 @@
-import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  postHandlerOf,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
@@ -30,12 +25,7 @@ const driveWithQuery = (handler, options = {}) =>
   driveHandler(handler, { seed: seed(), ...options })
 
 describe('POST cph-number — three parts joined into the nine stored digits', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should join the county, parish and holding parts into nine bare digits', async () => {
     const result = await driveHandler(postCph, {
@@ -129,12 +119,7 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
 })
 
 describe('GET cph-number — the stored number back in its parts', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should show three empty boxes when nothing is stored', async () => {
     const result = await driveHandler(getCph, { seed: seed() })
@@ -162,16 +147,11 @@ describe('GET cph-number — the stored number back in its parts', () => {
   })
 })
 
-describe('cph-number — addresses-hub entry (?return=addresses)', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+describe('cph-number — entry from the addresses page (?return=addresses)', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   describe('GET /cph-number', () => {
-    it('Should back-link to the addresses hub when entered from its CPH row', async () => {
+    it('Should back-link to the addresses page when entered from its CPH section add link', async () => {
       const result = await driveWithQuery(getCph, {
         query: { return: 'addresses' }
       })
@@ -180,14 +160,14 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       )
     })
 
-    it('Should back-link to the overview when entered other than from its row', async () => {
+    it('Should back-link to the overview when entered other than from the addresses page', async () => {
       const result = await driveWithQuery(getCph)
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     })
   })
 
   describe('POST /cph-number', () => {
-    it('Should save and return to the addresses hub when entered from its CPH row', async () => {
+    it('Should save and return to the addresses page when entered from its CPH section add link', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
         query: { return: 'addresses' }

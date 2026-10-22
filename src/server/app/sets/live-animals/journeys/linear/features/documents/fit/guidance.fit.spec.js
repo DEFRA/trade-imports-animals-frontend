@@ -67,6 +67,18 @@ test.describe('document upload guidance', () => {
     }
   })
 
+  test('states the file size and the allowed file types as the first two bullets of the file hint', async ({
+    page
+  }) => {
+    const hintBullets = page.locator('#file-hint li')
+    await expect(hintBullets.nth(0)).toHaveText(
+      'files that are smaller than 10MB'
+    )
+    await expect(hintBullets.nth(1)).toHaveText(
+      'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'
+    )
+  })
+
   test('links out to the GOV.UK guidance in a new tab', async ({ page }) => {
     await openExpander(page)
     const link = page.getByRole('link', { name: additional.linkText })

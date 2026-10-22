@@ -54,13 +54,13 @@ const render = (
   journey,
   reviewedConcurrencyToken,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, kit.CYA_SLUG),
       journey,
+      showJourneyStrip: false,
       recoverableError
     }),
     concurrencyToken: reviewedConcurrencyToken,
@@ -102,9 +102,9 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    return render(h, journey, reviewedConcurrencyToken, values, errors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return render(h, journey, reviewedConcurrencyToken, values, {
+      errors
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let result
@@ -117,9 +117,9 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
         })
       },
       () =>
-        render(h, journey, reviewedConcurrencyToken, values, {}, true).code(
-          HTTP_STATUS_INTERNAL_SERVER_ERROR
-        )
+        render(h, journey, reviewedConcurrencyToken, values, {
+          recoverableError: true
+        }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     )
     if (failure) {
       return failure
@@ -191,7 +191,6 @@ const post = async (request, h) => {
     })
   }
 
-  // Never pre-tick: a tick left by a submit refused as stale was given to older content.
   if (payload.step === STEP_REVIEW) {
     return render(h, journey, reviewedConcurrencyToken, {
       declaration: ''

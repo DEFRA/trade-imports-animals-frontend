@@ -1,5 +1,5 @@
 {% extends "shared/layout.njk" %}
-{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -8,9 +8,31 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
+  <p class="govuk-body">{{ copy.intro }}</p>
+
   {{ govukWarningText({ text: copy.warning }) }}
 
-  {{ govukSummaryList({ rows: rows }) }}
+  {% for section in sections %}
+    <section aria-labelledby="{{ section.id }}-heading">
+      <h2 class="govuk-heading-m" id="{{ section.id }}-heading">{{ section.title }}</h2>
+      <p class="govuk-hint">{{ section.hint }}</p>
+
+      {% if section.chosen %}
+        {% call govukInsetText() %}
+          {% if section.chosen.name %}<strong>{{ section.chosen.name }}</strong><br>{% endif %}
+          {% for line in section.chosen.lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+        {% endcall %}
+        <p class="govuk-body">
+          <a class="govuk-link govuk-!-margin-right-3" href="{{ section.chosen.changeHref }}">{{ copy.change }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
+          {% if section.chosen.editDetailsHref %}
+            <a class="govuk-link" href="{{ section.chosen.editDetailsHref }}">{{ copy.editDetails }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
+          {% endif %}
+        </p>
+      {% else %}
+        <p class="govuk-body"><a class="govuk-link" href="{{ section.addLink.href }}">{{ section.addLink.text }}</a></p>
+      {% endif %}
+    </section>
+  {% endfor %}
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />

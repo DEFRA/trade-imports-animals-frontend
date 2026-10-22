@@ -10,6 +10,7 @@ import {
   startNotification,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -92,6 +93,9 @@ test.describe('confirmation feature', () => {
     await page.goto(journeyUrl(page, 'confirmation'))
 
     await expect(page).toHaveURL(hubUrl)
+    await expect(
+      page.getByRole('heading', { level: 2, name: hubCopy.taskListHeading })
+    ).toBeVisible()
   })
 })
 

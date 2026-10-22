@@ -7,6 +7,10 @@ import { copy } from './copy/copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
+const CUSTOMS_ENQUIRIES_HREF =
+  'https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries'
+const CALL_CHARGES_HREF = 'https://www.gov.uk/call-charges'
+
 const render = (outstandingItems) =>
   environment.render(
     'live-animals/journeys/linear/features/confirmation/template.njk',
@@ -23,6 +27,17 @@ const render = (outstandingItems) =>
       crumb: 'test-crumb'
     }
   )
+
+const headingsOf = ($) =>
+  $('main h2')
+    .map((_, h) => $(h).text().trim())
+    .get()
+
+const SECTIONS_WITH_NOTHING_OUTSTANDING = [
+  copy.transporting.heading,
+  copy.viewOrAmend.heading,
+  copy.help.heading
+]
 
 describe('confirmation template panel', () => {
   it('Should follow the panel with what the trader still has to do', () => {
@@ -41,37 +56,41 @@ describe('confirmation template panel', () => {
     expect(afterPanel.text().trim()).toBe(copy.transporting.heading)
   })
 
-  it('Should not print a date of declaration', () => {
-    expect(load(render([])).text()).not.toMatch(/date of declaration/i)
+  it('Should show only the reference prefix and the reference number in the panel body', () => {
+    const $ = load(render([]))
+
+    expect($('.govuk-panel__body').text().trim()).toBe(
+      `${copy.panel.referencePrefix}ABC-123`
+    )
   })
 })
 
 describe('confirmation template outstanding-work section', () => {
   it('Should list what the trader still owes when something is outstanding', () => {
     const $ = load(render([copy.outstanding.documents]))
-    const headings = $('h2')
-      .map((_, h) => $(h).text().trim())
-      .get()
+    const intro = $('main h2').first().next()
 
-    expect(headings).toContain(copy.outstanding.heading)
-    expect($.text()).toContain(copy.outstanding.intro)
+    expect(headingsOf($)).toEqual([
+      copy.outstanding.heading,
+      ...SECTIONS_WITH_NOTHING_OUTSTANDING
+    ])
+    expect(intro.text().trim()).toBe(copy.outstanding.intro)
     expect(
-      $('li')
+      intro
+        .next('ul')
+        .find('li')
         .map((_, li) => $(li).text().trim())
         .get()
-    ).toContain(copy.outstanding.documents)
+    ).toEqual([copy.outstanding.documents])
   })
 
-  it('Should drop the section entirely when nothing is outstanding', () => {
-    const html = render([])
-
-    expect(html).not.toContain(copy.outstanding.heading)
-    expect(html).not.toContain(copy.outstanding.intro)
+  it('Should show only the transport, view-or-amend and help sections when nothing is outstanding', () => {
+    expect(headingsOf(load(render([])))).toEqual(
+      SECTIONS_WITH_NOTHING_OUTSTANDING
+    )
   })
 })
 
-// A trader with a second consignment to notify should not have to go back to
-// the dashboard to find the start button, so this section offers both routes.
 describe('confirmation template view-or-amend section', () => {
   it('Should link back to the dashboard', () => {
     const $ = load(render([]))
@@ -105,15 +124,22 @@ describe('confirmation template view-or-amend section', () => {
   })
 })
 
-// HMRC's contact index lists every tax and every helpline. A trader who has
-// just submitted an import notification wants one desk, so the link goes
-// straight to the customs, international trade and excise enquiries page.
 describe('confirmation template help section', () => {
-  it('Should send the customs link to HMRC customs enquiries, not the contact index', () => {
-    const $ = load(render([]))
+  it.each([
+    ['contact HMRC', copy.help.customsLink, CUSTOMS_ENQUIRIES_HREF],
+    ['call charges', copy.help.callCharges, CALL_CHARGES_HREF]
+  ])(
+    'Should open the %s link in a new tab and say so only to screen readers',
+    (_name, linkText, href) => {
+      const $ = load(render([]))
+      const link = $(`a:contains("${linkText}")`)
+      const hidden = link.find('.govuk-visually-hidden')
 
-    expect($(`a:contains("${copy.help.customsLink}")`).attr('href')).toBe(
-      'https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries'
-    )
-  })
+      expect(link.attr('href')).toBe(href)
+      expect(link.attr('target')).toBe('_blank')
+      expect(link.attr('rel')).toBe('noreferrer noopener')
+      expect(hidden.text().trim()).toBe(copy.help.opensInNewTab)
+      expect(link.clone().children().remove().end().text()).toBe(linkText)
+    }
+  )
 })

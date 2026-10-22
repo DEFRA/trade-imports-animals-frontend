@@ -60,6 +60,7 @@ const typeAheads = [
     label: originCopy.country.label,
     labelSize: 'm',
     selectText: originCopy.country.selectText,
+    emptyBoxText: originCopy.country.searchPlaceholder,
     open: startNotificationAtOrigin
   }),
   portCase({
@@ -67,7 +68,9 @@ const typeAheads = [
     inputId: 'portOfEntry',
     label: transportCopy.portOfEntry.port.label,
     hint: transportCopy.portOfEntry.port.hint,
+    labelSize: 'm',
     selectText: transportCopy.portOfEntry.port.placeholder,
+    emptyBoxText: transportCopy.portOfEntry.port.placeholder,
     open: openArrival
   }),
   countryCase({
@@ -75,7 +78,9 @@ const typeAheads = [
     inputId: 'transitedCountry',
     label: transportCopy.transitCountries.country.label,
     hint: transportCopy.transitCountries.country.hint,
-    selectText: transportCopy.transitCountries.country.placeholder,
+    labelSize: 'm',
+    selectText: transportCopy.transitCountries.country.selectText,
+    emptyBoxText: transportCopy.transitCountries.country.searchPlaceholder,
     open: openTransit
   })
 ]
@@ -86,6 +91,7 @@ const revealedTypeAheads = [
     inputId: 'transhipmentDestinationCountry',
     label: importReasonCopy.country.label,
     selectText: importReasonCopy.country.placeholder,
+    emptyBoxText: importReasonCopy.country.placeholder,
     open: openReveal('transhipmentOrOnwardTravel')
   }),
   portCase({
@@ -93,6 +99,7 @@ const revealedTypeAheads = [
     inputId: 'transitPortOfExit',
     label: importReasonCopy.port.label,
     selectText: importReasonCopy.port.placeholder,
+    emptyBoxText: importReasonCopy.port.placeholder,
     open: openReveal('transit')
   }),
   countryCase({
@@ -100,6 +107,7 @@ const revealedTypeAheads = [
     inputId: 'transitDestinationCountry',
     label: importReasonCopy.country.label,
     selectText: importReasonCopy.country.placeholder,
+    emptyBoxText: importReasonCopy.country.placeholder,
     open: openReveal('transit')
   }),
   portCase({
@@ -107,6 +115,7 @@ const revealedTypeAheads = [
     inputId: 'temporaryAdmissionPortOfExit',
     label: importReasonCopy.port.label,
     selectText: importReasonCopy.port.placeholder,
+    emptyBoxText: importReasonCopy.port.placeholder,
     open: openReveal('temporaryAdmissionHorses')
   })
 ]
@@ -141,6 +150,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     suggestion,
     bold,
     selectText,
+    emptyBoxText,
     open
   } = typeAhead
 
@@ -149,6 +159,16 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       await signIn(page)
       await open(page)
     })
+
+    if (emptyBoxText !== undefined) {
+      test('shows the empty search box text and no value', async ({ page }) => {
+        const input = inputFor(page, inputId)
+
+        await expect(input).toHaveAttribute('placeholder', emptyBoxText)
+        await expect(input).toHaveAccessibleName(label)
+        await expect(input).toHaveValue('')
+      })
+    }
 
     test('shows the joined blue magnifying glass button flush with the box and no dropdown arrow', async ({
       page
@@ -207,7 +227,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
   test.describe(`${name} type-ahead without JavaScript`, () => {
     test.use({ javaScriptEnabled: false })
 
-    test('is a native select found by its label, whose first option is the page select text, with no button', async ({
+    test('is a native select found by its label, whose first option is the page select text and is selected, with no button', async ({
       page
     }) => {
       await signIn(page)
@@ -220,6 +240,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
 
       await expect(select).toHaveJSProperty('tagName', 'SELECT')
       await expect(select).toBeVisible()
+      await expect(select).toHaveValue('')
       await expect(select.locator('option').first()).toHaveText(selectText)
       await expect(select.locator('option').first()).toHaveJSProperty(
         'value',
