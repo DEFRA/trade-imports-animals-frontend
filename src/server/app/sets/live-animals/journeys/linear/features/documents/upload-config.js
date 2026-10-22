@@ -35,10 +35,6 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 
 export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
 
-// The file reaches the upload service through the ingress bypass rather than
-// through this service, so the ingress request-body cap no longer bounds it.
-// This is the figure the upload service is asked to enforce, and the one the
-// page states and checks before a trader spends time uploading.
 const MAX_FILE_SIZE_MB = 50
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
