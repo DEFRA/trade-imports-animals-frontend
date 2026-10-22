@@ -11,6 +11,7 @@ import {
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -121,6 +122,22 @@ test.describe('cancel-amend feature', () => {
       page.getByText(values.internalReferenceNumber, { exact: true })
     ).toBeVisible()
     await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
+  })
+
+  test('Back from the restored submitted view opens the notification list', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.confirmButton }).click()
+    await expect(
+      page.getByText(checkAnswersCopy.cancelAmend.successBody)
+    ).toBeVisible()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(BASE)
+    await expect(
+      page.getByRole('heading', { name: dashboardCopy.notificationsHeading })
+    ).toBeVisible()
   })
 
   test('confirmation page has no serious or critical axe violations', async ({

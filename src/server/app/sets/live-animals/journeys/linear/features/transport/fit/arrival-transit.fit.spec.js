@@ -580,6 +580,16 @@ test.describe('transit countries rendering and validation', () => {
     await signIn(page)
   })
 
+  test('transit back link returns to the overview when the page was opened from its task', async ({
+    page
+  }) => {
+    await openTransit(page)
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expectOverview(page)
+  })
+
   test('transit page asks for one country at a time and shows no added-countries table while none is added', async ({
     page
   }) => {
