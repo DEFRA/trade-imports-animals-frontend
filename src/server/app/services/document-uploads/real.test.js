@@ -100,10 +100,6 @@ describe('#documentUploads', () => {
       )
     })
 
-    /**
-     * A handle this notification never opened is an ordinary outcome — a stale or hand-edited
-     * return link — so it answers nothing rather than throwing.
-     */
     it('Should answer nothing when the notification has no session under that correlationId', async () => {
       fetchMocker.mockResponse(() => ({ status: 404, body: NOT_FOUND_BODY }))
 
@@ -139,11 +135,6 @@ describe('#documentUploads', () => {
       )
     })
 
-    /**
-     * The rejection carries no cause the page can act on. cdp-uploader sends a message
-     * of its own wording and no code, so nothing here reads the per-file detail — and a
-     * field computed for no reader is the defect this replaced.
-     */
     it('Should answer the status alone for a rejected upload', async () => {
       fetchMocker.mockResponse(
         JSON.stringify({

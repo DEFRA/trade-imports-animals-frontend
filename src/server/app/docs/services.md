@@ -41,6 +41,12 @@ upload session the browser posts the file to and reads back what it submitted;
 backend and claims it once the trader has answered the document's own
 questions.
 
+A return link naming a handle the notification never opened is an ordinary
+outcome — a stale or hand-edited link — so the session lookup answers nothing
+rather than failing. A rejected scan reports its status alone: cdp-uploader
+gives the reason as prose of its own wording with no code, so the page names no
+cause.
+
 A stub run holds the scan lifecycle and nothing else — no uploaded bytes — so
 downloading a document there serves the same placeholder PDF whichever document
 is asked for.
