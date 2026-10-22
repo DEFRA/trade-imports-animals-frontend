@@ -107,7 +107,7 @@ test.describe('document scan-status rendering', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('renders Virus found and its per-file error until the document is removed', async ({
+  test('renders a rejected document and its per-file error until it is removed', async ({
     page
   }) => {
     test.slow()
