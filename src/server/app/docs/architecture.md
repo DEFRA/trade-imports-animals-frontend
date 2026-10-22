@@ -166,9 +166,11 @@ A branch that changes what a request does — a refusal, a redirect away from th
 normal next page, a retry or a fallback — logs once through `request.logger`,
 so the line carries the request's trace id. Log the ids support searches by:
 `journeyId` always, plus the reason and any token or code the decision turned
-on. Log a caught error as `{ err }`, never only its message. A validation 400
-that re-renders the page does not log, and nothing logs a request or response
-body at INFO.
+on. Log a caught error as `{ err }`, never only its message. A controller whose
+validation decides a named refusal reason (a validation 400, say) logs that
+reason once at info, with `journeyId` and the codes it turned on; the
+[transit countries controller](../sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js)
+is the example. Nothing logs a request or response body at INFO.
 
 The canonical example is the declaration refusal in
 [`declaration/controller.js`](../sets/live-animals/journeys/linear/features/declaration/controller.js):

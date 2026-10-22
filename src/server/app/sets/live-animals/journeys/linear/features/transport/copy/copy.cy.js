@@ -1,3 +1,5 @@
+const SELECT_A_COUNTRY = 'Dewiswch wlad'
+
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   portOfEntry: {
@@ -60,7 +62,8 @@ export const copy = {
     country: {
       label: 'Rhowch wlad',
       hint: 'Rhowch bob gwlad y bydd y llwyth yn teithio drwyddi',
-      placeholder: 'Chwiliwch am wlad',
+      selectText: SELECT_A_COUNTRY,
+      searchPlaceholder: 'Chwiliwch am wlad',
       noResults: 'Dim gwledydd wedi’u darganfod'
     },
     add: 'Ychwanegu gwlad',
@@ -71,7 +74,6 @@ export const copy = {
     },
     remove: 'Tynnu',
     removeHidden: (country) => country,
-    empty: 'Nid ydych wedi ychwanegu unrhyw wledydd eto.',
     added: (country) => `${country} wedi’i ychwanegu.`,
     removed: (country) => `${country} wedi’i dynnu.`,
     limitReached: (max) =>
@@ -222,13 +224,13 @@ export const copy = {
       phone: 'Rhif ffôn'
     },
     telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
-    countryPlaceholder: 'Dewiswch wlad',
+    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',
       addressLine1Required: 'Rhowch linell gyfeiriad 1',
       townOrCityRequired: 'Rhowch dref neu ddinas',
       postcodeRequired: 'Rhowch god post neu god zip',
-      countryRequired: 'Dewiswch wlad',
+      countryRequired: SELECT_A_COUNTRY,
       telephoneRequired: 'Rhowch rif ffôn',
       emailRequired: 'Rhowch gyfeiriad e-bost',
       nameMaxLength: 'Rhaid i’r enw neu enw’r sefydliad fod yn 255 nod neu lai',

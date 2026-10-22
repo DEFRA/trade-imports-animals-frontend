@@ -1,16 +1,17 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectOneLogged,
+  postHandlerOf,
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
@@ -21,6 +22,7 @@ import {
   MAX_TRANSITED_COUNTRIES
 } from './transit-countries.controller.js'
 import { REMOVE_ACTION_PREFIX } from './remove-action.js'
+import { TRANSIT_REFUSAL } from './validate.js'
 
 const get = transitCountries.routes.find(
   (route) => route.method === 'GET'
@@ -33,30 +35,26 @@ const codes = (await countries.originCountries()).map(
 const atCapacity = codes.slice(0, MAX_TRANSITED_COUNTRIES)
 const tooManyCodes = codes.slice(0, MAX_TRANSITED_COUNTRIES + 1)
 const seed = { meansOfTransport: 'ROAD_VEHICLE' }
-// The one message for a code the offered list does not contain, whichever
-// guard raises it.
-const FROM_LIST = 'Select countries from the list'
-
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
+const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
+const SELECT_TEXT = 'Select a country'
 
 describe('POST transit-countries — adding a country', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const refusals = [
     {
       name: 'nothing chosen in the search box',
       payload: { action: 'add', transitedCountries: ['FR'] },
-      message: 'Enter a country to add'
+      message: 'Enter a country to add',
+      reason: TRANSIT_REFUSAL.nothingChosen,
+      code: ''
     },
     {
       name: 'a country that is not in the list',
       payload: { action: 'add', transitedCountry: 'ZZ' },
-      message: FROM_LIST
+      message: NOT_ON_THE_LIST_MESSAGE,
+      reason: TRANSIT_REFUSAL.notOnList,
+      code: 'ZZ'
     },
     {
       name: 'a country that has already been added',
@@ -65,7 +63,9 @@ describe('POST transit-countries — adding a country', () => {
         transitedCountry: 'FR',
         transitedCountries: ['FR']
       },
-      message: 'You have already added France'
+      message: 'You have already added France',
+      reason: TRANSIT_REFUSAL.alreadyAdded,
+      code: 'FR'
     },
     {
       name: 'a thirteenth country',
@@ -74,7 +74,9 @@ describe('POST transit-countries — adding a country', () => {
         transitedCountry: codes[MAX_TRANSITED_COUNTRIES],
         transitedCountries: atCapacity
       },
-      message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
+      message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`,
+      reason: TRANSIT_REFUSAL.maxCountries,
+      code: codes[MAX_TRANSITED_COUNTRIES]
     }
   ]
 
@@ -82,10 +84,23 @@ describe('POST transit-countries — adding a country', () => {
     'Should refuse $name, keep the search box on the page and commit nothing',
     async ({ payload, message }) => {
       const result = await driveHandler(post, { seed, payload })
-      expect(result.response.statusCode).toBe(400)
+      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
       expect(result.view.context.errors[COUNTRY_FIELD]).toBe(message)
       expect(result.view.context.showCountryField).toBe(true)
       expect(result.after).toEqual(result.before)
+    }
+  )
+
+  it.each(refusals)(
+    'Should log the refusal of $name once at info with the journey id, the reason and the chosen code',
+    async ({ payload, reason, code }) => {
+      const result = await driveHandler(post, { seed, payload })
+
+      expectOneLogged(result.logger, {
+        level: 'info',
+        fields: { journeyId: result.journeyId, reason, code },
+        message: 'Transit country not added: refused'
+      })
     }
   )
 
@@ -121,6 +136,19 @@ describe('POST transit-countries — adding a country', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should log nothing when a country is added', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        action: 'add',
+        transitedCountry: 'BE',
+        transitedCountries: ['FR']
+      }
+    })
+
+    expect(result.logger.entries).toEqual([])
+  })
+
   it('Should take the search box away and announce the limit on the twelfth country', async () => {
     const result = await driveHandler(post, {
       seed,
@@ -135,30 +163,27 @@ describe('POST transit-countries — adding a country', () => {
     )
     expect(result.view.context.atLimit).toBe(true)
     expect(result.view.context.showCountryField).toBe(false)
-    // The country that reached the cap is said in the same breath as the cap,
-    // so the whole sentence is pinned, not just the limit half.
     const lastName = await countries.originLabel(atCapacity.at(-1))
     expect(result.view.context.status).toBe(
       `${lastName} added. Maximum of ${MAX_TRANSITED_COUNTRIES} countries reached. Remove a country to add another.`
     )
   })
 
-  // "United Kingdom" resolves through the address-form fallback but is never
-  // offered here — the copy above the control says the journey excludes it.
   it('Should refuse GB, which the label lookup resolves but the list never offers', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'GB', transitedCountries: [] }
     })
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(FROM_LIST)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(
+      NOT_ON_THE_LIST_MESSAGE
+    )
     expect(result.view.context.selectedCountries).toEqual([])
   })
 })
 
 describe('POST transit-countries — removing a country', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should drop the named country, announce it and commit nothing', async () => {
     const result = await driveHandler(post, {
@@ -188,53 +213,75 @@ describe('POST transit-countries — removing a country', () => {
 })
 
 describe('POST transit-countries — continuing', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const cases = [
     {
       name: 'a transited code not in the country list',
       payload: { transitedCountries: ['ZZ'] },
-      message: FROM_LIST
+      message: NOT_ON_THE_LIST_MESSAGE,
+      rendered: []
     },
     {
       name: `more than ${MAX_TRANSITED_COUNTRIES} transited countries`,
       payload: { transitedCountries: tooManyCodes },
-      message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
+      message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`,
+      rendered: tooManyCodes
     },
     {
-      // GB has a label but is not on the offered list, so a commit of it is
-      // refused the same way an unknown code is.
       name: 'a transited GB, which the list never offers',
       payload: { transitedCountries: ['GB'] },
-      message: FROM_LIST
+      message: NOT_ON_THE_LIST_MESSAGE,
+      rendered: []
     }
   ]
 
   it.each(cases)(
-    'Should re-render with the transitedCountry message for $name and commit nothing',
-    async ({ payload, message }) => {
+    'Should re-render with the transitedCountry message for $name, render back only the offered codes and commit nothing',
+    async ({ payload, message, rendered }) => {
       const result = await driveHandler(post, { seed, payload })
-      expect(result.response.statusCode).toBe(400)
+      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
       expect(result.view.context.errors[COUNTRY_FIELD]).toBe(message)
+      expect(result.view.context.selectedCountries).toEqual(rendered)
       expect(result.after).toEqual(result.before)
     }
   )
 
-  it('Should refuse a GB commit and render nothing back', async () => {
+  it('Should log a submitted code the page does not offer once at info with the journey id, the reason and the code', async () => {
     const result = await driveHandler(post, {
       seed,
-      payload: { transitedCountries: ['GB'] }
+      payload: { transitedCountries: ['ZZ'] }
     })
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(FROM_LIST)
-    expect(result.view.context.selectedCountries).toEqual([])
+
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        reason: TRANSIT_REFUSAL.notOnList,
+        codes: ['ZZ']
+      },
+      message: 'Transit countries not saved: list refused'
+    })
   })
 
-  // Only tampering puts a code the list does not contain into the form. The
-  // error is raised on the whole submitted list, but nothing unknown is
-  // rendered back — so a payload carrying markup never reaches the page.
-  it('Should drop a tampered code before rendering and keep the known one', async () => {
+  it('Should log a submitted list over the limit once at info with the journey id, the reason and the list length', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: tooManyCodes }
+    })
+
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        reason: TRANSIT_REFUSAL.maxCountries,
+        length: MAX_TRANSITED_COUNTRIES + 1
+      },
+      message: 'Transit countries not saved: list refused'
+    })
+  })
+
+  it('Should render only the offered codes back, so a tampered code carrying markup never reaches the page', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: {
@@ -255,9 +302,7 @@ describe('POST transit-countries — continuing', () => {
     expect(result.view.context.showCountryField).toBe(true)
   })
 
-  // The question is optional, so an empty list is an answer: it saves and the
-  // trader carries on rather than being sent back to the page.
-  it('Should commit an empty list and continue when no country was added', async () => {
+  it('Should commit an empty list and continue when no country was added, the question being optional', async () => {
     const result = await driveHandler(post, { seed, payload: {} })
     expect(result.after.transitedCountries).toEqual([])
     expect(result.response.redirect).toBeDefined()
@@ -272,11 +317,39 @@ describe('POST transit-countries — continuing', () => {
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
     expect(result.response.redirect).not.toContain('transit-countries')
   })
+
+  it('Should re-render at 500 with the recoverable-error flag when the backend is unavailable on save', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['FR'] },
+      saveFailure: unavailableBackendError('save answers')
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.recoverableError).toBe(true)
+  })
+
+  it('Should log the unavailable backend once at warn with the journey id and the error', async () => {
+    const failure = unavailableBackendError('save answers')
+
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['FR'] },
+      saveFailure: failure
+    })
+
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'warn',
+        fields: { journeyId: result.journeyId, err: failure },
+        message: 'Transit countries not saved: backend unavailable'
+      }
+    ])
+  })
 })
 
 describe('POST transit-countries — Save and return to overview', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should go to the overview without an error when saved and returned with no country chosen', async () => {
     const result = await driveHandler(post, {
@@ -288,13 +361,8 @@ describe('POST transit-countries — Save and return to overview', () => {
   })
 })
 
-// `ZZ` is absent from the captured countries fixture, so seeding it inside
-// the stored list puts one entry outside the current offered set — a
-// "stale" code the reader no longer offers.
-
-describe('GET transit-countries — a stored list containing a stale code', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+describe('GET transit-countries — a stored list containing a code the page no longer offers', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should filter the stale code out of the rendered rows', async () => {
     const result = await driveHandler(get, {
@@ -316,11 +384,35 @@ describe('GET transit-countries — a stored list containing a stale code', () =
     expect(result.view.context.errorSummary).not.toBeNull()
   })
 
+  it('Should log the stale code once at info with the journey id and the no-longer-available reason', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] }
+    })
+
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        reason: TRANSIT_REFUSAL.noLongerAvailable,
+        codes: ['ZZ']
+      },
+      message: 'Stored transit countries refused: banner shown'
+    })
+  })
+
   it('Should not surface the banner when every stored code is still offered', async () => {
     const result = await driveHandler(get, {
       seed: { ...seed, transitedCountries: ['FR', 'BE'] }
     })
     expect(result.view.context.errors).toEqual({})
+  })
+
+  it('Should log nothing when every stored code is still offered', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE'] }
+    })
+
+    expect(result.logger.entries).toEqual([])
   })
 
   it('Should leave the stored list intact on GET', async () => {
@@ -332,8 +424,7 @@ describe('GET transit-countries — a stored list containing a stale code', () =
 })
 
 describe('POST transit-countries — Continue silently drops stored stale codes via the filtered working list', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should commit only the codes the render filtered through', async () => {
     const result = await driveHandler(post, {
@@ -347,13 +438,12 @@ describe('POST transit-countries — Continue silently drops stored stale codes 
 })
 
 describe('GET transit-countries', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should offer every country in the search list behind a placeholder', async () => {
+  it('Should open the country list with an empty-valued entry reading "Select a country", then every origin country', async () => {
     const result = await driveHandler(get, { seed })
     const items = result.view.context.countryItems
-    expect(items[0]).toEqual({ value: '', text: 'Search for a country' })
+    expect(items[0]).toEqual({ value: '', text: SELECT_TEXT })
     expect(items.slice(1)).toEqual(await countries.originCountries())
   })
 
@@ -370,7 +460,7 @@ describe('GET transit-countries', () => {
     expect(result.view.context.status).toBe('')
   })
 
-  it('Should say the list is empty when nothing has been added', async () => {
+  it('Should give no rows and no table when nothing has been added', async () => {
     const result = await driveHandler(get, { seed })
     expect(result.view.context.hasCountries).toBe(false)
     expect(result.view.context.countryRows).toEqual([])

@@ -1,30 +1,26 @@
 import { SET_ID } from '../../../../../set.js'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   authenticatedCredentials,
   driveHandler,
-  journeyRequest,
-  stubH
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
   NEW,
   PRIVATE,
-  forgetAddedTransporters,
   parties,
   rememberTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
+import {
+  expectRecoverableSaveFailureKeepingValues,
+  forgetAddedTransportersAroundEachTest
+} from '../test-support.js'
 
 import * as transporters from './transporters.controller.js'
 
@@ -41,41 +37,14 @@ const handlerFor = (method) =>
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 const rowFor = (context, id) =>
   context.transporterRows.find((row) => row.id === id)
 
-/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
- * so the page comes back with the banner rather than throwing. */
-const driveSaveFailure = async (payload) => {
-  const journey = await store.create()
-  const h = stubH()
-  configureRecords(SET_ID, {
-    ...recordsStub,
-    replaceFulfilment: () => {
-      throw new BackendRequestError('save the transporter', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    }
-  })
-  try {
-    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
-  } finally {
-    configureRecords(SET_ID, recordsStub)
-  }
-}
+const checkedRowIdsOf = (context) =>
+  context.transporterRows.filter((row) => row.checked).map((row) => row.id)
 
-// The list is the journey's one transporter step: both kinds of transporter sit
-// on it, and the pick settles the type as well as the record.
 describe('/transporters', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should offer both kinds of transporter on the one list, each row saying which it is', async () => {
     const result = await driveHandler(getHandler)
@@ -112,8 +81,6 @@ describe('/transporters', () => {
     })
   })
 
-  // The error summary links to the field's own id, so the first radio has to
-  // carry it and the rest have to differ.
   it('Should give the first row the field id and every other row a unique one', async () => {
     const result = await driveHandler(getHandler)
 
@@ -187,8 +154,6 @@ describe('/transporters', () => {
     expect(result.response.redirect).toBeTruthy()
   })
 
-  // The page saves through unfilled, the way it did as a journey step: a trader
-  // who has not chosen yet still walks on.
   it('Should walk on without saving when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, { payload: {} })
 
@@ -197,18 +162,24 @@ describe('/transporters', () => {
   })
 
   it('Should re-render the list at 500 with the pick kept after a recoverable save failure', async () => {
-    const response = await driveSaveFailure({ transporter: GARCIA_ID })
+    const { response } = await driveHandler(postHandler, {
+      payload: { transporter: GARCIA_ID },
+      saveFailure: unavailableBackendError('save the transporter')
+    })
 
-    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(response.context.recoverableError).toBe(true)
-    expect(rowFor(response.context, GARCIA_ID).checked).toBe(true)
+    expectRecoverableSaveFailureKeepingValues(response, [GARCIA_ID], {
+      keptIn: checkedRowIdsOf
+    })
   })
 
   it('Should keep the search term in the box and send the whole list after a recoverable save failure', async () => {
-    const response = await driveSaveFailure({
-      action: 'save',
-      search: 'aberdeen',
-      transporter: ABERDEEN_ID
+    const { response } = await driveHandler(postHandler, {
+      payload: {
+        action: 'save',
+        search: 'aberdeen',
+        transporter: ABERDEEN_ID
+      },
+      saveFailure: unavailableBackendError('save the transporter')
     })
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -220,8 +191,7 @@ describe('/transporters', () => {
 })
 
 describe('/transporters — Save and return to overview', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should go to the overview, not the next page, and commit nothing when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
@@ -244,8 +214,7 @@ describe('/transporters — Save and return to overview', () => {
 })
 
 describe('/transporters — searching the list', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should filter the list to the transporters matching the search', async () => {
     const result = await driveHandler(postHandler, {
@@ -276,8 +245,6 @@ describe('/transporters — searching the list', () => {
     expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
   })
 
-  // The chosen radio is not posted once its row is filtered off, so the pick
-  // has to survive on the hidden carrier or the trader loses it silently.
   it('Should keep the pick when the search that filtered its row off is cleared', async () => {
     const result = await driveHandler(postHandler, {
       payload: { action: 'search', search: '', selected: GARCIA_ID }
@@ -287,8 +254,6 @@ describe('/transporters — searching the list', () => {
     expect(result.view.context.selectedId).toBe(GARCIA_ID)
   })
 
-  // A returning trader's saved row posts no radio once a search has filtered
-  // it off, so the notification is the only thing left to re-check it from.
   it('Should re-check the transporter already on the notification when the list is searched', async () => {
     const result = await driveHandler(postHandler, {
       seed: {
@@ -301,8 +266,6 @@ describe('/transporters — searching the list', () => {
     expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
   })
 
-  // The first row carries the field's own id so the error summary link lands
-  // on it — that has to hold for the filtered list too, not just the whole one.
   it('Should give the first matching row the field id', async () => {
     const result = await driveHandler(postHandler, {
       payload: { action: 'search', search: 'aberdeen' }
@@ -319,8 +282,6 @@ describe('/transporters — searching the list', () => {
     expect(result.view.context.transporterRows).toEqual([])
   })
 
-  // A repeated form key parses to an array; the search must fold it to a
-  // string rather than throwing out of the handler as a 500.
   it('Should survive a repeated search key rather than throwing', async () => {
     const result = await driveHandler(postHandler, {
       payload: { action: 'search', search: ['aberdeen', 'garcia'] }
@@ -342,10 +303,6 @@ describe('/transporters — searching the list', () => {
     )
   })
 
-  // A search that matches nothing leaves no radio to link to, so the summary
-  // has to send the trader to the search box instead of a dead anchor. An
-  // unpicked list is not what refuses the save — the page walks on through
-  // that — so the pick refused here is one that is not on the list.
   it('Should point the error summary at the search box when nothing matched', async () => {
     const result = await driveHandler(postHandler, {
       payload: {
@@ -380,8 +337,6 @@ describe('/transporters — searching the list', () => {
   })
 })
 
-// A transporter the organisation has added for itself is on the list beside the
-// ones the service ships, so it is picked rather than typed again.
 describe('/transporters with a transporter the organisation added', () => {
   const ORG = authenticatedCredentials.organisationId
   const ANOTHER_ORG = '5900002'
@@ -403,12 +358,8 @@ describe('/transporters with a transporter the organisation added', () => {
     }
   })
 
-  beforeAll(configure)
-  beforeEach(() => {
-    store.clear()
-    forgetAddedTransporters()
-  })
-  afterEach(forgetAddedTransporters)
+  useStubbedJourney(SET_ID, dispatchPages)
+  forgetAddedTransportersAroundEachTest()
 
   it('Should show it at the top of the list, typed and tagged like any other row', async () => {
     const kept = rememberTransporter(ORG, haulier())
@@ -471,8 +422,6 @@ describe('/transporters with a transporter the organisation added', () => {
     ])
   })
 
-  // Another organisation must not be offered it, and must not be able to pick
-  // it by guessing its id either.
   it('Should refuse a pick of a transporter another organisation added', async () => {
     const kept = rememberTransporter(ANOTHER_ORG, haulier())
 

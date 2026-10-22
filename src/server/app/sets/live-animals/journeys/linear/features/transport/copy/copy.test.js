@@ -122,6 +122,33 @@ describe('transport copy module', () => {
       language: 'English',
       bundle: copy,
       expected: {
+        selectText: 'Select a country',
+        searchPlaceholder: 'Search for a country'
+      }
+    },
+    {
+      language: 'Welsh',
+      bundle: copyCy,
+      expected: {
+        selectText: 'Dewiswch wlad',
+        searchPlaceholder: 'Chwiliwch am wlad'
+      }
+    }
+  ])(
+    'Should word the transit countries select text and search placeholder exactly in $language',
+    ({ bundle, expected }) => {
+      expect({
+        selectText: bundle.transitCountries.country.selectText,
+        searchPlaceholder: bundle.transitCountries.country.searchPlaceholder
+      }).toEqual(expected)
+    }
+  )
+
+  test.each([
+    {
+      language: 'English',
+      bundle: copy,
+      expected: {
         AIRPLANE: 'Air',
         RAILWAY: 'Rail',
         ROAD_VEHICLE: 'Road',

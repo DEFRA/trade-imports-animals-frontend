@@ -233,11 +233,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 

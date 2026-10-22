@@ -39,7 +39,7 @@ const returnHref = (request, party) => {
 }
 
 const countryItemsOf = (countries) => [
-  { value: '', text: copy.countryPlaceholder },
+  { value: '', text: copy.countrySelectText },
   ...countries.map(({ code, name }) => ({ value: code, text: name }))
 ]
 

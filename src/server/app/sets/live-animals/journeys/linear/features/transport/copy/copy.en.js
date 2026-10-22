@@ -1,3 +1,5 @@
+const SELECT_A_COUNTRY = 'Select a country'
+
 export const copy = {
   portOfEntry: {
     title: 'Arrival details',
@@ -59,7 +61,8 @@ export const copy = {
     country: {
       label: 'Enter a country',
       hint: 'Enter each country that the consignment will travel through',
-      placeholder: 'Search for a country',
+      selectText: SELECT_A_COUNTRY,
+      searchPlaceholder: 'Search for a country',
       noResults: 'No countries found'
     },
     add: 'Add country',
@@ -70,7 +73,6 @@ export const copy = {
     },
     remove: 'Remove',
     removeHidden: (country) => country,
-    empty: 'You have not added any countries yet.',
     added: (country) => `${country} added.`,
     removed: (country) => `${country} removed.`,
     limitReached: (max) =>
@@ -218,13 +220,13 @@ export const copy = {
       phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
-    countryPlaceholder: 'Select a country',
+    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
       postcodeRequired: 'Enter a postcode or Zip code',
-      countryRequired: 'Select a country',
+      countryRequired: SELECT_A_COUNTRY,
       telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
       nameMaxLength: 'Name or organisation name must be 255 characters or less',

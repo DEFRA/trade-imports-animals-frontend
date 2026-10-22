@@ -17,13 +17,14 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectOneLogged,
   journeyRequest,
   postHandlerOf,
   registerTestRequestLogger,
   registerTestSessionAuth,
-  stubH
+  stubH,
+  unavailableBackendError
 } from '../../../../../../engine/test-support.js'
-import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
@@ -96,17 +97,10 @@ const storedDocument = (overrides = {}) => ({
   ...overrides
 })
 
+const SAVE_ANSWERS = 'save answers'
+
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
-
-const unavailableBackend = () =>
-  new BackendRequestError('save answers', {
-    status: 503,
-    statusText: 'Service Unavailable'
-  })
-
-const expectOneLogged = (logger, { level, fields, message }) =>
-  expect(logger.entries).toEqual([{ level, fields, message }])
 
 const expectContinueRefusedLogged = (result, scansNotCleared) =>
   expectOneLogged(result.logger, {
@@ -935,7 +929,7 @@ describe('documents — backend and upload service failures', () => {
   }
 
   it('Should log the save left to retry with the backend error, keeping the uploaded file for the retry', async () => {
-    const failure = unavailableBackend()
+    const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
       payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
@@ -975,7 +969,7 @@ describe('documents — backend and upload service failures', () => {
 
   it('Should log the removal left to retry with the backend error, keeping the document', async () => {
     const { uploadId, seed } = await seededUpload()
-    const failure = unavailableBackend()
+    const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       seed,
       saveFailure: failure,
@@ -998,7 +992,7 @@ describe('documents — backend and upload service failures', () => {
   })
 
   it('Should log the retried removal left to retry again, with the backend error, when the notification still cannot be saved', async () => {
-    const failure = unavailableBackend()
+    const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
       payload: retryRemovalPayload

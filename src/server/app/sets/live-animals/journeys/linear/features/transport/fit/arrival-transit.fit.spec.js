@@ -23,7 +23,10 @@ import {
   addUtcDays,
   formatDateText
 } from '../../../../../../../lib/validate/calendar.js'
-import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../../shared/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
@@ -102,6 +105,24 @@ const addedCountries = (page) =>
   page
     .locator(transitedCountriesInputs)
     .evaluateAll((items) => items.map((item) => item.value))
+
+const listedCountryNames = (page) => page.locator('tbody tr td:first-child')
+
+const addedCountriesTable = (page) => page.getByRole('table')
+
+const expectEmptyTransitPage = async (page) => {
+  await expect(page.getByRole('main').getByRole('paragraph')).toHaveText([
+    copy.transitCountries.betweenCountries,
+    copy.transitCountries.excludesUk,
+    sharedCopy.saveActions.cancelAndReturnToHub
+  ])
+  await expect(page.locator('form').getByRole('button')).toHaveText([
+    copy.transitCountries.add,
+    sharedCopy.saveActions.saveAndContinue,
+    sharedCopy.saveActions.saveAndReturnToHub
+  ])
+  await expect(addedCountriesTable(page)).toHaveCount(0)
+}
 
 const submitTransitedCountriesTheFormCannotProduce = (page, codes) =>
   page.evaluate(
@@ -559,32 +580,19 @@ test.describe('transit countries rendering and validation', () => {
     await signIn(page)
   })
 
-  test('transit page asks for one country at a time and starts with an empty list', async ({
+  test('transit page asks for one country at a time and shows no added-countries table while none is added', async ({
     page
   }) => {
     await openTransit(page)
 
-    await expect(
-      page.getByText(copy.transitCountries.betweenCountries)
-    ).toBeVisible()
-    await expect(page.getByText(copy.transitCountries.excludesUk)).toBeVisible()
+    await expectEmptyTransitPage(page)
     await expect(transitField(page)).toBeVisible()
     await expect(
       page.getByText(copy.transitCountries.country.hint)
     ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: copy.transitCountries.add, exact: true })
-    ).toBeVisible()
-    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
-    await expect(page.getByRole('table')).toHaveCount(0)
-    await expect(
-      page.getByText(
-        copy.transitCountries.limitReached(MAX_TRANSITED_COUNTRIES)
-      )
-    ).toHaveCount(0)
   })
 
-  test('the transit type-ahead offers every captured country behind a search placeholder', async ({
+  test('the transit select opens on "Select a country" followed by every captured country', async ({
     page
   }) => {
     await openTransit(page)
@@ -599,7 +607,7 @@ test.describe('transit countries rendering and validation', () => {
       )
     expect(options[0]).toEqual({
       code: '',
-      label: copy.transitCountries.country.placeholder
+      label: copy.transitCountries.country.selectText
     })
     expect(options.slice(1)).toEqual(
       countriesOrigin.map(({ code, name }) => ({ code, label: name }))
@@ -631,7 +639,7 @@ test.describe('transit countries rendering and validation', () => {
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
-    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
+    await expectEmptyTransitPage(page)
     expect(await addedCountries(page)).toEqual([])
   })
 
@@ -660,6 +668,7 @@ test.describe('transit countries rendering and validation', () => {
       errorLink(page, copy.transitCountries.errors.alreadyAdded('France'))
     ).toBeVisible()
     expect(await addedCountries(page)).toEqual(['FR'])
+    await expect(page.locator(transitCountryInput)).toHaveValue('France')
   })
 
   test('transit validation: out-of-list country links to and focuses the search box', async ({
@@ -738,12 +747,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await addTransitCountry(page, 'Belgium')
     await removeControl(page, 'France').click()
 
-    await expect(
-      page.getByRole('cell', { name: 'France', exact: true })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('cell', { name: 'Belgium', exact: true })
-    ).toBeVisible()
+    await expect(listedCountryNames(page)).toHaveText(['Belgium'])
     await expect(page.locator(transitStatus)).toHaveText(
       copy.transitCountries.removed('France')
     )
@@ -808,13 +812,18 @@ test.describe('transit countries list, limits and persistence', () => {
     await expectOverview(page)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
-    await expect(
-      page.getByRole('cell', { name: 'France', exact: true })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('cell', { name: 'Belgium', exact: true })
-    ).toBeVisible()
+    await expect(listedCountryNames(page)).toHaveText(['France', 'Belgium'])
     await expect(page.locator(transitStatus)).toHaveText('')
+  })
+
+  test('each added country has its Remove control at the right-hand end of its row', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+
+    const removeCell = page.getByRole('cell', { name: 'Remove France' })
+    expect(await computedStyle(removeCell, 'text-align')).toBe('right')
   })
 })
 

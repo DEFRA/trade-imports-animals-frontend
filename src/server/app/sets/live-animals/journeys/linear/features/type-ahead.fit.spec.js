@@ -78,7 +78,9 @@ const typeAheads = [
     inputId: 'transitedCountry',
     label: transportCopy.transitCountries.country.label,
     hint: transportCopy.transitCountries.country.hint,
-    selectText: transportCopy.transitCountries.country.placeholder,
+    labelSize: 'm',
+    selectText: transportCopy.transitCountries.country.selectText,
+    emptyBoxText: transportCopy.transitCountries.country.searchPlaceholder,
     open: openTransit
   })
 ]
@@ -163,6 +165,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
         const input = inputFor(page, inputId)
 
         await expect(input).toHaveAttribute('placeholder', emptyBoxText)
+        await expect(input).toHaveAccessibleName(label)
         await expect(input).toHaveValue('')
       })
     }

@@ -1,20 +1,13 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
-  stubH
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
+import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 
 import * as transportersSelect from './transporters-select.controller.js'
@@ -28,40 +21,8 @@ const handlerFor = (method) =>
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
-/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
- * so the register comes back with the banner rather than throwing. */
-const driveSaveFailure = async (payload) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, { transporterType: 'Commercial' })
-  const h = stubH()
-  configureRecords(SET_ID, {
-    ...recordsStub,
-    replaceFulfilment: () => {
-      throw new BackendRequestError('save the transporter', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    }
-  })
-  try {
-    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
-  } finally {
-    configureRecords(SET_ID, recordsStub)
-  }
-}
-
-// The register is a spoke off the add route, not a journey step, so Back has to
-// point at the question that sent the trader here and keep the change context
-// the hub needs to take them home again.
 describe('/transporters/select', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should point Back at the add route', async () => {
     const result = await driveHandler(getHandler)
@@ -102,8 +63,6 @@ describe('/transporters/select', () => {
     expect(result.after.commercialTransporter).toBeUndefined()
   })
 
-  // The register saves through unfilled, the way the transporter pages always
-  // have: a trader who has not chosen yet still walks on.
   it('Should walk on without saving when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: 'Commercial' },
@@ -115,16 +74,17 @@ describe('/transporters/select', () => {
   })
 
   it('Should re-render the register at 500 with the pick kept after a recoverable save failure', async () => {
-    const response = await driveSaveFailure({
-      commercialTransporter: GARCIA_ID
+    const { response } = await driveHandler(postHandler, {
+      seed: { transporterType: 'Commercial' },
+      payload: { commercialTransporter: GARCIA_ID },
+      saveFailure: unavailableBackendError('save the transporter')
     })
 
-    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(response.context.recoverableError).toBe(true)
-    expect(
-      response.context.transporterOptions.find(
-        (option) => option.value === GARCIA_ID
-      ).checked
-    ).toBe(true)
+    expectRecoverableSaveFailureKeepingValues(response, [GARCIA_ID], {
+      keptIn: (context) =>
+        context.transporterOptions
+          .filter((option) => option.checked)
+          .map((option) => option.value)
+    })
   })
 })

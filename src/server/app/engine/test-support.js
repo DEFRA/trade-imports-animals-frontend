@@ -1,11 +1,13 @@
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
-import { afterAll, beforeAll, beforeEach, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 import { config } from '../../../config/config.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
+import { BackendRequestError } from '../services/persistence/records/errors.js'
 import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
@@ -181,6 +183,13 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
+/** The recoverable records error for a backend that answered 503 to `operation`. */
+export const unavailableBackendError = (operation) =>
+  new BackendRequestError(operation, {
+    status: 503,
+    statusText: 'Service Unavailable'
+  })
+
 const recordsRejectingSaves = (failure) => ({
   ...recordsStub,
   replaceFulfilment: async () => {
@@ -248,12 +257,19 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
 
-export const referenceDataServing = () => {
-  const originalMode = config.get('stubMode')
-  afterAll(() => {
+export const restoreStubModeAndConfigAfterTests = (...configKeys) => {
+  const originals = ['stubMode', ...configKeys].map((key) => [
+    key,
+    config.get(key)
+  ])
+  afterEach(() => {
     vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
+    originals.forEach(([key, value]) => config.set(key, value))
   })
+}
+
+export const referenceDataServing = () => {
+  restoreStubModeAndConfigAfterTests()
   return (rows) => {
     config.set('stubMode', false)
     vi.stubGlobal(
@@ -262,6 +278,53 @@ export const referenceDataServing = () => {
     )
   }
 }
+
+const addressBookFetchMock = createFetchMock(vi)
+
+const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'US', name: 'United States' }
+])
+
+/** Puts the address book on the network boundary: every request to its
+ * `/addresses` paths gets `addressResponse` (or, for a function, what it
+ * returns for the request) and the country list gets the United Kingdom,
+ * Switzerland and the United States. Call it inside a test; pair it with
+ * `restoreAddressBookAfterTests()` in the describe. */
+export const addressBookAnswering = (addressResponse) => {
+  const answerAddresses = (request) =>
+    typeof addressResponse === 'function'
+      ? addressResponse(request)
+      : addressResponse
+  addressBookFetchMock.enableMocks()
+  config.set('stubMode', false)
+  addressBookFetchMock.mockResponse(async (request) =>
+    request.url.includes('/addresses')
+      ? answerAddresses(request)
+      : { body: ADDRESS_BOOK_COUNTRY_LIST }
+  )
+}
+
+/** Serves the address book country list and refuses every address request. */
+export const addressBookCountriesServing = () =>
+  addressBookAnswering({ status: 500 })
+
+/** The urls of the address book requests made since `addressBookAnswering()`. */
+export const addressBookRequestUrls = () =>
+  addressBookFetchMock
+    .requests()
+    .map((request) => request.url)
+    .filter((url) => url.includes('/addresses'))
+
+export const restoreAddressBookAfterTests = (...configKeys) => {
+  restoreStubModeAndConfigAfterTests(...configKeys)
+  afterEach(() => addressBookFetchMock.resetMocks())
+}
+
+/** Asserts the logger holds exactly one line. */
+export const expectOneLogged = (logger, { level, fields, message }) =>
+  expect(logger.entries).toEqual([{ level, fields, message }])
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {

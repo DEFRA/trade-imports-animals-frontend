@@ -1,25 +1,18 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
-  stubH
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
   PRIVATE
 } from '../../../../../../../services/transporters/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
+import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
 
 import * as transporterAdd from './transporter-add.controller.js'
 
@@ -33,39 +26,8 @@ const handlerFor = (method) =>
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
-/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
- * so the question comes back with the banner rather than throwing. */
-const driveSaveFailure = async (payload) => {
-  const journey = await store.create()
-  const h = stubH()
-  configureRecords(SET_ID, {
-    ...recordsStub,
-    replaceFulfilment: () => {
-      throw new BackendRequestError('save the transporter type', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    }
-  })
-  try {
-    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
-  } finally {
-    configureRecords(SET_ID, recordsStub)
-  }
-}
-
-// The type question is a spoke off the list, asked only of a trader who could
-// not find their transporter on it, so Back and both onward arms point at the
-// add route's own pages rather than at journey steps.
 describe('/transporters/add', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should point Back at the transporter list', async () => {
     const result = await driveHandler(getHandler)
@@ -119,8 +81,6 @@ describe('/transporters/add', () => {
     })
   })
 
-  // An unanswered question adds nothing, so it hands the trader back to the
-  // list rather than into either arm of the add route.
   it('Should send an unanswered question back to the list', async () => {
     const result = await driveHandler(postHandler, { payload: {} })
 
@@ -151,10 +111,13 @@ describe('/transporters/add', () => {
   })
 
   it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {
-    const response = await driveSaveFailure({ transporterType: COMMERCIAL })
+    const { response } = await driveHandler(postHandler, {
+      payload: { transporterType: COMMERCIAL },
+      saveFailure: unavailableBackendError('save the transporter type')
+    })
 
-    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(response.context.recoverableError).toBe(true)
-    expect(response.context.values.transporterType).toBe(COMMERCIAL)
+    expectRecoverableSaveFailureKeepingValues(response, {
+      transporterType: COMMERCIAL
+    })
   })
 })

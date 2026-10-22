@@ -1,21 +1,18 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import * as state from '../../../../../../../engine/index.js'
-import { store } from '../../../../../../../engine/store.js'
 import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
+import {
+  addressBookAnswering,
+  driveHandler,
+  restoreAddressBookAfterTests,
+  unavailableBackendError,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { consignor } from '../../../../../obligations/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
-import * as addressBook from '../../../../../../../services/address-book/index.js'
 
 import * as addressReturn from './controller.js'
 
@@ -39,18 +36,20 @@ const handshakeState = (fulfilmentId = consignor.id) => ({
   }
 })
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
+const newAddressBody = () =>
+  JSON.stringify({
+    id: newAddressId,
+    name: 'New Farm',
+    deleted: false,
+    addressLine1: '1 Test Lane',
+    townOrCity: 'Carlisle',
+    postcode: 'CA1 1AA',
+    countryCode: 'GB'
+  })
 
 describe('GET /address-return', () => {
-  beforeAll(configure)
-  beforeEach(() => {
-    store.clear()
-    vi.restoreAllMocks()
-  })
+  useStubbedJourney(SET_ID, dispatchPages)
+  restoreAddressBookAfterTests()
 
   it('redirects to the party picker when no address id is supplied', async () => {
     const result = await driveHandler(handler, {
@@ -61,17 +60,7 @@ describe('GET /address-return', () => {
   })
 
   it('commits a copy of the returned address and redirects to the picker', async () => {
-    vi.spyOn(addressBook, 'party').mockResolvedValue({
-      id: newAddressId,
-      name: 'New Farm',
-      deleted: false,
-      address: {
-        addressLine1: '1 Test Lane',
-        townOrCity: 'Carlisle',
-        postcode: 'CA1 1AA',
-        country: 'United Kingdom'
-      }
-    })
+    addressBookAnswering({ body: newAddressBody() })
 
     const result = await driveHandler(handler, {
       query: {
@@ -113,7 +102,7 @@ describe('GET /address-return', () => {
   })
 
   it('redirects to the picker when the returned address id is not in the book', async () => {
-    vi.spyOn(addressBook, 'party').mockResolvedValue(undefined)
+    addressBookAnswering({ status: 404 })
 
     const result = await driveHandler(handler, {
       query: {
@@ -130,10 +119,11 @@ describe('GET /address-return', () => {
   })
 
   it('redirects to the picker when the address id belongs to another organisation', async () => {
-    vi.spyOn(addressBook, 'party').mockImplementation(async (orgId) => {
-      expect(orgId).toBe('5900001')
-      return undefined
-    })
+    addressBookAnswering((request) =>
+      request.url.includes('/organisation/5900001/addresses/other-org-address')
+        ? { status: 404 }
+        : { status: 503, statusText: 'Service Unavailable' }
+    )
 
     const result = await driveHandler(handler, {
       query: {
@@ -150,12 +140,7 @@ describe('GET /address-return', () => {
   })
 
   it('redirects to the picker when the address book is unavailable', async () => {
-    vi.spyOn(addressBook, 'party').mockRejectedValue(
-      new BackendRequestError('get address', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
+    addressBookAnswering({ status: 503, statusText: 'Service Unavailable' })
 
     const result = await driveHandler(handler, {
       query: {
@@ -172,30 +157,15 @@ describe('GET /address-return', () => {
   })
 
   it('redirects to the picker when saving the returned address fails', async () => {
-    vi.spyOn(addressBook, 'party').mockResolvedValue({
-      id: newAddressId,
-      name: 'New Farm',
-      deleted: false,
-      address: {
-        addressLine1: '1 Test Lane',
-        townOrCity: 'Carlisle',
-        postcode: 'CA1 1AA',
-        country: 'United Kingdom'
-      }
-    })
-    vi.spyOn(state, 'commit').mockRejectedValue(
-      new BackendRequestError('save answers', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
+    addressBookAnswering({ body: newAddressBody() })
 
     const result = await driveHandler(handler, {
       query: {
         ...handshakeQuery(),
         addressId: newAddressId
       },
-      state: handshakeState()
+      state: handshakeState(),
+      saveFailure: unavailableBackendError('save answers')
     })
 
     expect(result.response.redirect).toBe(

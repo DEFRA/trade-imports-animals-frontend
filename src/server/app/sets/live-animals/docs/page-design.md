@@ -253,6 +253,20 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   alternative, so the number of choices shows at a glance.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
+- The transit search's select text, "Select a country", and its empty-box
+  text, "Search for a country", differ because the select asks for a choice
+  and the box asks for a search.
+- Countries already added stay in the transit search list, and a repeat is
+  refused by name, which tells the trader more than a country quietly missing
+  from the list.
+- A stored transit list is checked against the page's own rules on GET, and a
+  banner names any country no longer offered before Continue saves the
+  filtered list.
+- The transit page offers the origin list, not every code the label lookup
+  resolves: GB has a label for address forms but is not offered here.
+- An empty transit list is a valid answer, because the question is optional. A
+  list holding a country not offered is refused: on submit as not from the
+  list, on a stored answer as no longer available.
 - The transporter list shows its facts in headed columns, with a status tag:
   green for approved, magenta for newly added.
 - The list search matches name, address, approval number, type and status,

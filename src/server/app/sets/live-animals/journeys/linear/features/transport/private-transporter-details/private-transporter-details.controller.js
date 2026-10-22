@@ -90,7 +90,7 @@ const missingMandatoryErrors = (values) => {
 }
 
 const countryItems = async (selected) => [
-  { value: '', text: copy.countryPlaceholder },
+  { value: '', text: copy.countrySelectText },
   { text: '──────────', disabled: true },
   ...(await countries.addressCountries()).map((name) => ({
     value: name,

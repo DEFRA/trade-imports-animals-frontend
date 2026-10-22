@@ -18,8 +18,6 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {# The working list travels with the page. Add and Remove rebuild it and
-       render it back; only Save and continue writes it. #}
     {% for code in selectedCountries %}
       <input type="hidden" name="transitedCountries" value="{{ code }}" />
     {% endfor %}
@@ -28,12 +26,17 @@
       {{ appAccessibleAutocomplete({
         id: "transitedCountry",
         name: "transitedCountry",
-        label: { text: copy.country.label, classes: "govuk-label--s" },
+        label: { text: copy.country.label, classes: "govuk-label--m" },
         hint: { text: copy.country.hint },
         value: chosenValue,
         errorMessage: errors.transitedCountry and { text: errors.transitedCountry },
         items: countryItems,
-        autocomplete: { showAllValues: true, noResults: copy.country.noResults, defaultValue: chosenLabel }
+        autocomplete: {
+          showAllValues: true,
+          noResults: copy.country.noResults,
+          placeholder: copy.country.searchPlaceholder,
+          defaultValue: chosenLabel
+        }
       }) }}
 
       {{ govukButton({
@@ -48,19 +51,10 @@
       <p class="govuk-body" id="transit-countries-limit">{{ limitMessage }}</p>
     {% endif %}
 
-    {# The record of the answer, read back as a short list rather than as ticks
-       down a long one. #}
     {% if hasCountries %}
       {{ addedCountriesTable(countryRows, copy) }}
-    {% else %}
-      <p class="govuk-body">{{ copy.empty }}</p>
     {% endif %}
 
-    {# Each addition and removal is announced as it happens, not left to be
-       found in the table. The message ships in the data
-       attribute and is written in just after load: a region that already holds
-       its text when the document is parsed is read as ordinary page content,
-       not announced. #}
     <div id="transit-countries-status" class="govuk-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-module="app-status-announcer" data-message="{{ status }}"></div>
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}

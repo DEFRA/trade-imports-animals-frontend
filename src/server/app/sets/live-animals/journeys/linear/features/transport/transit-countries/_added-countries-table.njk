@@ -1,7 +1,5 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 
-{# The Remove button is built here rather than in JS so the country name and
-   code are autoescaped. #}
 {% macro addedCountriesTable(countryRows, copy) %}
   {% set rows = [] %}
   {% for row in countryRows %}
@@ -10,7 +8,7 @@
     {% endset %}
     {% set ignored = rows.push([
       { text: row.name },
-      { html: removeCell }
+      { html: removeCell, classes: "govuk-!-text-align-right" }
     ]) %}
   {% endfor %}
   {{ govukTable({

@@ -11,47 +11,71 @@ const copy = copyFor({ en, cy }).transitCountries
 
 export const MAX_TRANSITED_COUNTRIES = 12
 
-// The trader adds and removes through the search box, so every error on this
-// page anchors to that control.
 export const COUNTRY_FIELD = 'transitedCountry'
 
-// The offered list, not the label lookup: GB resolves for address forms but
-// is not a country this page offers.
+export const TRANSIT_REFUSAL = Object.freeze({
+  nothingChosen: 'nothing-chosen',
+  notOnList: 'not-on-the-list',
+  noLongerAvailable: 'no-longer-available',
+  alreadyAdded: 'already-added',
+  maxCountries: 'max-countries'
+})
+
 export const offeredCodes = async () =>
   new Set((await countries.originCountries()).map(({ value }) => value))
 
-// Empty is fine — the question is optional. Too long or
-// holding a country the service no longer offers is not: on submit because
-// no rendering could have produced it, on stored because the list has moved.
-const listErrors = async (selected, stored) => {
+export const partitionByOffered = async (codes) => {
   const offered = await offeredCodes()
-  if (selected.some((code) => !offered.has(code))) {
-    return {
-      [COUNTRY_FIELD]: stored
-        ? copy.errors.someNoLongerAvailable
-        : copy.errors.fromList
-    }
+  return {
+    offered: codes.filter((code) => offered.has(code)),
+    notOffered: codes.filter((code) => !offered.has(code))
   }
-  if (selected.length > MAX_TRANSITED_COUNTRIES) {
-    return {
-      [COUNTRY_FIELD]: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
-    }
-  }
-  return {}
 }
 
-// The page carries its own working list in hidden inputs — nothing is saved
-// until Continue, so adding and removing costs no write.
+const listRefusal = async (codes, { stored = false } = {}) => {
+  const { notOffered } = await partitionByOffered(codes)
+  if (notOffered.length > 0) {
+    return {
+      reason: stored
+        ? TRANSIT_REFUSAL.noLongerAvailable
+        : TRANSIT_REFUSAL.notOnList,
+      codes: notOffered
+    }
+  }
+  if (codes.length > MAX_TRANSITED_COUNTRIES) {
+    return { reason: TRANSIT_REFUSAL.maxCountries, length: codes.length }
+  }
+  return null
+}
+
+export const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
+  [TRANSIT_REFUSAL.nothingChosen]: copy.errors.chooseCountry,
+  [TRANSIT_REFUSAL.notOnList]: copy.errors.fromList,
+  [TRANSIT_REFUSAL.noLongerAvailable]: copy.errors.someNoLongerAvailable,
+  [TRANSIT_REFUSAL.maxCountries]: copy.errors.maxCountries(
+    MAX_TRANSITED_COUNTRIES
+  )
+})
+
+const listErrors = (refusal) =>
+  refusal
+    ? { [COUNTRY_FIELD]: MESSAGES_NEEDING_NO_COUNTRY_LABEL[refusal.reason] }
+    : {}
+
+const withRefusal = (result, refusal) => ({
+  ...result,
+  refusal,
+  errors: listErrors(refusal)
+})
+
 const selectedFrom = (payload) => [
   ...new Set(
     [payload.transitedCountries ?? []].flat().filter((code) => code !== '')
   )
 ]
 
-export const validation = pageValidation({
-  // The answer is a list — measured whole by `checks` rather than field-by-field.
+const pageRules = pageValidation({
   fields: () => compose(),
-  checks: (values, { stored }) => listErrors(values.transitedCountries, stored),
   fromPayload: (payload) => ({
     transitedCountries: selectedFrom(payload)
   }),
@@ -59,3 +83,21 @@ export const validation = pageValidation({
     transitedCountries: [answers.transitedCountries ?? []].flat()
   })
 })
+
+export const validation = {
+  ...pageRules,
+
+  onSubmit: async (payload) => {
+    const submitted = await pageRules.onSubmit(payload)
+    const refusal = await listRefusal(submitted.values.transitedCountries)
+    return withRefusal(submitted, refusal)
+  },
+
+  onStored: async (answers) => {
+    const stored = await pageRules.onStored(answers)
+    const refusal = await listRefusal(stored.values.transitedCountries, {
+      stored: true
+    })
+    return withRefusal(stored, refusal)
+  }
+}
