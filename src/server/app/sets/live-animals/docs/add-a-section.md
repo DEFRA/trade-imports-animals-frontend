@@ -208,6 +208,10 @@ guard". Update
 [`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
 do; its coverage invariant fails if you forget.
 
+A step that applies only to some notifications also takes `offersBackWhen`, a
+function of the notification's answers that says when the step is a Back
+destination. See [`journey-flow-and-gates.md`](journey-flow-and-gates.md).
+
 ## 6. Add one task row and wire it to the hub
 
 Import the page identities in [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js) and
@@ -259,7 +263,7 @@ flow section or task row does not add a config entry.
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
-journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`,
+journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`,
 `FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no
@@ -271,7 +275,9 @@ Registration work for the feature group is therefore limited to:
 2. add its binding bundle to `featureEvaluationBindings`
 3. add page identities to `sections` and `taskRows`
 4. add task-row ids and copy to the hub
-5. add pages to `run.js` in journey order — the run is the whole notification
+5. add pages to `run.js` in journey order — the run is the whole notification —
+   and, on a step whose Back link should open an earlier step during the run, name
+   that step in its `backCandidates`
 
 Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
 the journey's template identity, cookie identity or injected policy surface itself

@@ -93,6 +93,13 @@ Dependency Cruiser scans all of `src/server/app`. Its error-level rules prevent:
 - model, bridge and flow imports that cross their allowed boundaries
 - circular dependencies
 
+The bridge reaches nothing in `flow`: the journey's flow-only keys are held in
+[`bridge/flow-only-keys.js`](../bridge/flow-only-keys.js) and forwarded there by
+`configureJourneyFlow`, and the check-your-answers readiness roll-up reaches
+[`bridge/readiness-config.js`](../bridge/readiness-config.js) by injection from
+the set's gateway, `routes-live-animals.js`. Unconfigured, that seam is
+fail-closed.
+
 Tests may compose real layers, but production code cannot use test exemptions.
 
 ## Feature folders
@@ -111,6 +118,7 @@ way:
 - errors: `errorSummary()`, `fieldError()` and `logRefusal()`
 - where a POST goes next: `hubExitTarget()`, `isHubExit()`, `exitTarget()`,
   `nextTarget()` and `amendReviewTarget()`
+- where a page's Back link goes: `runBackLink()`
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`
 

@@ -209,9 +209,11 @@ the path back from the registered mount and the names back from the configured
 session seam, so the cookies Hapi registers and the ones the set actually uses
 cannot drift apart. Call it inside the set context, after `registerSetMount`
 and `configureSession` — it throws if the session seam is not configured yet.
-At the end of set registration a completeness check compares the registered
-cookie names with the configured ones, which catches a gateway that skipped the
-call.
+`assertSetConfigured` is the gateway's last call. It stops the server on any
+unconfigured seam, the session cookie names included, because a seam's fallback
+otherwise answers at request time and some fallbacks answer silently. For the
+cookie names it compares the registered names with the configured ones, which
+catches a gateway that skipped the `registerJourneyCookie` call.
 
 ## 5. Mount it
 

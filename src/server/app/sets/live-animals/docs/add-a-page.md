@@ -100,7 +100,10 @@ whose root another page already owns.
 Use one `render()` helper for GET and POST errors. Build the common view with
 `kit.base()`. Pass `journey` so the shared reference strip renders, and `page`
 so the section caption does. The normal back link is
-`hubPath(journey.journeyId)`.
+`hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
+back link from `kit.runBackLink()`, which opens the previous run step while the
+run is active and falls back to the overview when the run is over or no named
+earlier step applies.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
 

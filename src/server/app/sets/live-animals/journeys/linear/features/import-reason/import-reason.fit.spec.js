@@ -1,10 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  carryOpeningRunToImportReason,
   chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
   describeDatePickerLook,
   expectNoSeriousOrCriticalViolations,
+  journeyUrl,
+  openPageFromOverview,
   openDatePicker,
   startNotificationAtImportReason,
   urlUnderBase
@@ -230,12 +233,15 @@ test.describe('import-reason feature', () => {
     ).toBeChecked()
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
-    const hubUrl = page.url().replace(/\/import-reason$/, '')
+  test('back link returns to the overview when the page is opened from the overview', async ({
+    page
+  }) => {
+    await carryOpeningRunToImportReason(page)
+    await openPageFromOverview(page, 'import-reason')
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(journeyUrl(page))
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

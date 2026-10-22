@@ -9,11 +9,14 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectBackLinkIsPage,
   postHandlerOf,
-  expectOneRefusalLogged
+  expectOneRefusalLogged,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 
 import * as search from './search.controller.js'
 
@@ -360,5 +363,27 @@ describe('commodity search — saving the selection', () => {
         (line) => `${line.commoditySelection}|${line.speciesSelection}`
       )
     ).toEqual([COW_BOS_TAURUS_KEY])
+  })
+})
+
+describe('commodity search — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back to the origin of the import while the opening run is on', async () => {
+    const result = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should keep Back on the origin of the import when the page is shown again by a search in the run', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'search', [search.SEARCH_FIELD]: 'cat' },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

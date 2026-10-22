@@ -21,6 +21,7 @@ import {
   carryOpeningRunToImportReason,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  expectSpeciesSelected,
   journeyUrl,
   openReviewFromHub,
   selectSpecies,
@@ -127,6 +128,32 @@ test.describe('live-animals journey glue', () => {
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
   })
 
+  test('following Back through the opening run and choosing Save and continue carries on to the next step, not the overview', async ({
+    page
+  }) => {
+    const heading = (name) => page.getByRole('heading', { name, exact: true })
+    const back = () =>
+      page.getByRole('link', { name: 'Back', exact: true }).click()
+    const saveAndContinue = () =>
+      page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await carryOpeningRunToImportReason(page)
+
+    await back()
+    await expect(heading(commoditiesCopy.search.title)).toBeVisible()
+    await expectSpeciesSelected(page, 'Bos taurus')
+
+    await saveAndContinue()
+    await expect(heading(importReasonCopy.title)).toBeVisible()
+
+    await back()
+    await back()
+    await expect(heading(originCopy.title)).toBeVisible()
+
+    await saveAndContinue()
+    await expect(heading(commoditiesCopy.search.title)).toBeVisible()
+  })
+
   test('the opening run ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
     page
   }) => {
@@ -186,8 +213,6 @@ test.describe('live-animals journey glue', () => {
 
     await openReviewFromHub(page)
 
-    // The review has no Change link to the identification page, so this leg
-    // opens it with the change flag directly.
     await page.goto(
       `${journeyUrl(page, 'commodities/identification')}?change=1`
     )
@@ -200,8 +225,6 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/
     )
-    // The line holds a single animal, so the card offers no button of its own
-    // — the page's Save and continue is what captures the replacement record.
     await page.getByLabel('Ear tag', { exact: true }).fill('UK000000000002')
     await expect(
       page.getByRole('button', { name: 'Save and add another' })

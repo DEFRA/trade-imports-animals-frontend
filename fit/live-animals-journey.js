@@ -530,6 +530,18 @@ export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
 
 /**
+ * Opens the notification's overview, then the page at `slug`, the way the
+ * trader reaches it from an overview task.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} slug - the page's slug within the notification.
+ */
+export const openPageFromOverview = async (page, slug) => {
+  await page.goto(journeyUrl(page))
+  await page.goto(journeyUrl(page, slug))
+}
+
+/**
  * Starts a notification, answers origin and stops on the overview.
  *
  * @param {import('@playwright/test').Page} page

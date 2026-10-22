@@ -19,7 +19,7 @@ import {
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 
-const identifiesAnAnimal = (answers) =>
+export const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
     (line) => identifiedCommodities().includes(line?.commoditySelection)
   )

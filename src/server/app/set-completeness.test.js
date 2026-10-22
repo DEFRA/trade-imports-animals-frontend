@@ -1,18 +1,3 @@
-/**
- * Boot-time completeness: a set that forgets a seam must not mount.
- *
- * Each seam still has its UNCONFIGURED fallback, untouched — this suite proves
- * the fallbacks can no longer be reached from a mounted set, because the mount
- * itself fails first. The three that matter most answer benignly rather than
- * throwing (`flow/journey-flow.js` returns no sections and no task rows,
- * `engine/persistence/session.js` returns the shared default cookie names, and
- * `bridge/readiness-config.js` answers false forever), so before this gate a
- * forgotten seam showed up as an empty dashboard or a jammed submit gate.
- *
- * The probes below are minimal gateways built here rather than in
- * `test/fixtures/second-set.js`: that fixture is a correctly wired set by
- * design, and these need to be wrong in one specific way each.
- */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -47,7 +32,6 @@ import {
 
 const APP_DIR = path.dirname(fileURLToPath(import.meta.url))
 
-/** Every seam a mounted set is required to fill, and the call that fills it. */
 const REQUIRED_SEAMS = [
   'Obligation set',
   'Fulfilment registry',
@@ -58,15 +42,6 @@ const REQUIRED_SEAMS = [
   'session'
 ]
 
-/**
- * The seams an otherwise complete install can leave out one at a time.
- *
- * `Obligation set` cannot: the fulfilment registry and the dispatch index both
- * validate themselves against it as they are built, so omitting it fails
- * earlier than the gate. `session` cannot either: `registerJourneyCookie`
- * refuses at its own point of use, which is covered on its own below. Both are
- * still covered by the "configures nothing" probe.
- */
 const OMITTABLE_SEAMS = REQUIRED_SEAMS.filter(
   (label) => label !== 'Obligation set' && label !== 'session'
 )
@@ -84,6 +59,7 @@ const journeyFlowFor = () => ({
   taskRows: [],
   rowStatus: () => 'notStarted',
   nextRunTarget: () => null,
+  previousRunTarget: () => null,
   flowOnlyKeys: [],
   entryGuardTarget: async () => null,
   layout: 'shared/layout.njk'
@@ -115,21 +91,6 @@ const installSeams = (setId, omitted) => {
   }
 }
 
-/**
- * A gateway shaped like the shipped one: mount, seams, journey cookies, and the
- * completeness gate as its last act.
- *
- * @param {string} setId - the probe's set id, unique per test so the shared
- * mount registry never sees the same set twice.
- * @param {object} [options] - what to get wrong.
- * @param {string} [options.omit] - a seam to leave unconfigured.
- * @param {boolean} [options.seams] - false to configure no seam at all.
- * @param {boolean} [options.cookies] - false to skip registering the journey
- * cookies, which is what a gateway that forgot the call looks like.
- * @param {boolean} [options.cookiesFirst] - true to register the journey
- * cookies before the session seam, which is the ordering the gate rejects.
- * @returns {object} a Hapi plugin.
- */
 const probeGateway = (
   setId,
   { omit, seams = true, cookies = true, cookiesFirst = false } = {}
@@ -171,8 +132,6 @@ describe('set completeness — a set that forgets a seam refuses to mount', () =
   it('Should refuse to mount a set that never configured the session seam', async () => {
     const setId = 'probe-no-session'
 
-    // Cookies skipped too: `registerJourneyCookie` refuses an unconfigured
-    // session at its own point of use, so the gate would never be reached.
     await expect(
       mount(probeGateway(setId, { omit: 'session', cookies: false }))
     ).rejects.toThrow(
@@ -186,9 +145,6 @@ describe('set completeness — a set that forgets a seam refuses to mount', () =
       probeGateway(setId, { seams: false, cookies: false })
     )
 
-    // The obligation set can only be missed this way: the fulfilment registry
-    // and the dispatch index both validate against it as they are built, so an
-    // otherwise complete install cannot leave it out.
     await expect(registration).rejects.toThrow(
       `Set "${setId}" mounted without configuring:`
     )
@@ -224,11 +180,6 @@ describe('set completeness — journey cookies come after the session seam', () 
   it('Should refuse a set that never registered its journey cookies', async () => {
     const setId = 'probe-no-cookies'
 
-    // Every seam configured, so the seam check passes and the cookie-name
-    // comparison is the only thing left to catch it. The point-of-use guard
-    // cannot: a call that never happens cannot refuse. Nothing else would
-    // either — the set reads cookies the server never registered, and loses
-    // drafts at request time.
     await expect(
       mount(probeGateway(setId, { cookies: false }))
     ).rejects.toThrow(
@@ -239,11 +190,6 @@ describe('set completeness — journey cookies come after the session seam', () 
   it('Should refuse a set that registered its journey cookies first', async () => {
     const setId = 'probe-cookies-first'
 
-    // registerJourneyCookie reads the names off the session seam, so running it
-    // first would silently register the shared defaults. It refuses at the
-    // point of use rather than waiting for the gate — the cookie-name
-    // comparison in set-completeness.js is the backstop for a gateway that
-    // skipped the call altogether, covered above.
     await expect(
       mount(probeGateway(setId, { cookiesFirst: true }))
     ).rejects.toThrow(
@@ -264,8 +210,6 @@ describe('set completeness — the seam list is the one the seams declare', () =
       path.resolve(APP_DIR, '../../../test/fixtures/second-set.js')
     ]
   ])('Should have %s call the gate', (_label, file) => {
-    // Source-level: a gateway that stopped calling the gate would still mount
-    // cleanly today and only fail once a set forgot a seam.
     expect(readFileSync(file, 'utf8')).toContain(
       'assertSetConfigured(server, SET_ID)'
     )

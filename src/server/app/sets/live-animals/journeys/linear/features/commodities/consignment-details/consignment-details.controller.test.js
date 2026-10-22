@@ -1,7 +1,8 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -11,10 +12,12 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import {
   crumbProtectedServerMounting,
   driveHandler,
+  expectBackLinkIsPage,
   expectOneRefusalLogged,
   postHandlerOf,
   journeyRequest,
-  stubH
+  stubH,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
@@ -554,5 +557,48 @@ describe('#consignmentDetailsController — the animal count must be answered be
       { href: '#numberOfPackages-1', text: PACKAGES_WHOLE_NUMBER_MESSAGE }
     ])
     expect(result.after.commodityLines).toHaveLength(2)
+  })
+})
+
+describe('#consignmentDetailsController — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ]
+  }
+
+  it('Should go Back to What are you importing? while the opening run is on', async () => {
+    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+      seed,
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+      seed
+    })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

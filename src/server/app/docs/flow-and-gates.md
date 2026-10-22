@@ -12,6 +12,7 @@ seam. `configureJourneyFlow()` receives:
 - `taskRows`
 - `rowStatus`
 - `nextRunTarget`
+- `previousRunTarget`
 - `flowOnlyKeys`
 - `entryGuardTarget`
 - `layout`
@@ -75,7 +76,11 @@ ready.
 
 [`src/server/app/flow/run-state.js`](../flow/run-state.js) stores whether a journey is
 in its opening run through the injected session port. The journey supplies
-`nextRunTarget`; shared controller helpers call it through the journey-flow seam.
+`nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
+the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
+`previousRunTarget` while the run is active, and with the page's own Back link
+otherwise. `previousRunTarget` receives the step id, the notification's scope and
+answers, and the journey id.
 
 For the current section order, task rows, authored review gate and opening run, see
 the [live-animals journey flow guide](../sets/live-animals/docs/journey-flow-and-gates.md).

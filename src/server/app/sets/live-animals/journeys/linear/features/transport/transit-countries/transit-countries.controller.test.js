@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectBackLinkIsPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -15,6 +16,7 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
@@ -458,5 +460,37 @@ describe('GET transit-countries', () => {
     const result = await driveHandler(get, { seed })
     expect(result.view.context.hasCountries).toBe(false)
     expect(result.view.context.countryRows).toEqual([])
+  })
+})
+
+describe('transit-countries — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const catSeed = {
+    ...seed,
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+  }
+
+  it('Should go Back to the arrival details while the opening run is on', async () => {
+    const result = await driveHandler(get, {
+      seed: catSeed,
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'port-of-entry')
+  })
+
+  it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
+    const result = await driveHandler(post, {
+      seed: catSeed,
+      payload: { action: 'add', transitedCountry: 'FR' },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'port-of-entry')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get, { seed: catSeed })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

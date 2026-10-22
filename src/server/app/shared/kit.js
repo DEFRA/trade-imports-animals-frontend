@@ -4,6 +4,7 @@ import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyPreviousRunTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -166,6 +167,21 @@ export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
+
+export const runBackLink = async (request, stepId, current) => {
+  const { journey, scope, answers } = current
+  const previousRunTarget = (await inOpeningRun(
+    request,
+    request.params.journeyId
+  ))
+    ? journeyPreviousRunTarget(
+        stepId,
+        { scope, answers },
+        request.params.journeyId
+      )
+    : null
+  return previousRunTarget ?? hubPath(journey.journeyId)
+}
 
 export const nextTarget = async (request, page, scope) =>
   exitTarget(

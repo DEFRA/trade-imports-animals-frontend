@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -46,16 +45,17 @@ const portItems = async () => [
 ]
 
 const render = async (
+  request,
   h,
-  journey,
+  current,
   values,
   { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
@@ -89,9 +89,11 @@ const putStoredAnswersThroughPageRules = (answers) =>
   validation.onStored(answers)
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const { values, errors } = await putStoredAnswersThroughPageRules(answers)
-  return render(h, journey, values, { errors })
+  const current = await state.get(request, h)
+  const { values, errors } = await putStoredAnswersThroughPageRules(
+    current.answers
+  )
+  return render(request, h, current, values, { errors })
 }
 
 const post = async (request, h) => {
@@ -101,8 +103,8 @@ const post = async (request, h) => {
   )
   if (hasErrors(errors)) {
     kit.logRefusal(request, { fieldErrors: errors })
-    const { journey } = await state.get(request, h)
-    return (await render(h, journey, values, { errors })).code(
+    const current = await state.get(request, h)
+    return (await render(request, h, current, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -114,9 +116,9 @@ const post = async (request, h) => {
       committed = await state.commit(request, h, answers)
     },
     async () => {
-      const { journey } = await state.get(request, h)
+      const current = await state.get(request, h)
       return (
-        await render(h, journey, values, { recoverableError: true })
+        await render(request, h, current, values, { recoverableError: true })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

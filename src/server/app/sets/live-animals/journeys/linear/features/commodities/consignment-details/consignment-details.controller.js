@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
@@ -35,10 +35,10 @@ const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-
 const copy = copyFor({ en, cy }).consignmentDetails
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const render = (
+const render = async (
   request,
   h,
-  journey,
+  current,
   lines,
   values,
   errors = {},
@@ -47,8 +47,8 @@ const render = (
   h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page
     }),
     copy,
@@ -63,7 +63,8 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
     return h.redirect(
@@ -73,11 +74,12 @@ const get = async (request, h) => {
       )
     )
   }
-  return render(request, h, journey, lines, storedValues(lines))
+  return render(request, h, current, lines, storedValues(lines))
 }
 
 const post = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
@@ -91,7 +93,7 @@ const post = async (request, h) => {
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) {
     kit.logRefusal(request, { fieldErrors: errors })
-    return render(request, h, journey, lines, values, errors)
+    return render(request, h, current, lines, values, errors)
   }
 
   const issues = countDropIssues(request, lines, values)
@@ -100,7 +102,7 @@ const post = async (request, h) => {
       issues.map((issue) => [issue.field, issue.text])
     )
     kit.logRefusal(request, { fieldErrors: countDropErrors })
-    return render(request, h, journey, lines, values, countDropErrors, {
+    return render(request, h, current, lines, values, countDropErrors, {
       titleText: sharedCopy.errorSummary.title,
       errorList: issues.map(({ text, href }) => ({ text, href }))
     })

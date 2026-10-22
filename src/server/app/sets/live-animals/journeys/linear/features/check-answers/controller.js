@@ -1,4 +1,8 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -67,6 +71,11 @@ const reviewErrorSummary = (
     }
   )
 
+const backLinkFor = (journey) =>
+  journey.status === state.SUBMITTED
+    ? dashboardPath()
+    : hubPath(journey.journeyId)
+
 const renderCya = async (
   h,
   journey,
@@ -118,7 +127,7 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    backLink: hubPath(journey.journeyId)
+    backLink: backLinkFor(journey)
   })
 }
 

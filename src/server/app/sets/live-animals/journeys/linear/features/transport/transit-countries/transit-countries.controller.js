@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import {
@@ -41,8 +40,9 @@ const countryItems = async () => [
 ]
 
 const render = async (
+  request,
   h,
-  journey,
+  current,
   selected,
   { errors = {}, status = '', chosen = '', recoverableError = false } = {}
 ) => {
@@ -56,9 +56,9 @@ const render = async (
   const chosenLabel = (await countries.originLabel(chosen)) ?? ''
   return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
@@ -113,7 +113,7 @@ const addRefusal = async (chosen, selected) => {
 
 const postAdd = async (request, h, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
-  const { journey } = await state.get(request, h)
+  const current = await state.get(request, h)
   const refusal = await addRefusal(chosen, selected)
   if (refusal) {
     const errors = { [COUNTRY_FIELD]: refusal.message }
@@ -122,39 +122,39 @@ const postAdd = async (request, h, selected) => {
       reason: refusal.reason,
       code: chosen
     })
-    return (await render(h, journey, selected, { errors, chosen })).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return (
+      await render(request, h, current, selected, { errors, chosen })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
   const chosenLabel = await countries.originLabel(chosen)
-  return render(h, journey, added, {
+  return render(request, h, current, added, {
     status: withLimitNotice(copy.added(chosenLabel), added)
   })
 }
 
 const postRemove = async (request, h, selected, code) => {
-  const { journey } = await state.get(request, h)
+  const current = await state.get(request, h)
   const remaining = selected.filter((entry) => entry !== code)
   const codeLabel = (await countries.originLabel(code)) ?? code
-  return render(h, journey, remaining, {
+  return render(request, h, current, remaining, {
     status: copy.removed(codeLabel)
   })
 }
 
 const renderSaveUnavailable = async (request, h, selected) => {
-  const { journey } = await state.get(request, h)
-  return (await render(h, journey, selected, { recoverableError: true })).code(
-    HTTP_STATUS_INTERNAL_SERVER_ERROR
-  )
+  const current = await state.get(request, h)
+  return (
+    await render(request, h, current, selected, { recoverableError: true })
+  ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 }
 
 const postContinue = async (request, h, payload, selected) => {
   const { answers, errors, refusal } = await validation.onSubmit(payload)
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
+    const current = await state.get(request, h)
     kit.logRefusal(request, { fieldErrors: errors, ...refusal })
-    return (await render(h, journey, selected, { errors })).code(
+    return (await render(request, h, current, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -175,15 +175,15 @@ const postContinue = async (request, h, payload, selected) => {
 }
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const { values, errors, refusal } = await validation.onStored(answers)
+  const current = await state.get(request, h)
+  const { values, errors, refusal } = await validation.onStored(current.answers)
   if (hasErrors(errors)) {
     request.logger.info(
-      { journeyId: journey.journeyId, ...refusal },
+      { journeyId: current.journey.journeyId, ...refusal },
       'Stored transit countries refused: banner shown'
     )
   }
-  return render(h, journey, values.transitedCountries, { errors })
+  return render(request, h, current, values.transitedCountries, { errors })
 }
 
 const post = async (request, h) => {

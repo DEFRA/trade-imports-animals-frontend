@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -24,7 +23,12 @@ export const SEARCH_FIELD = 'commoditySearch'
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
-const render = (h, journey, { selected, query = '', errorText = null }) => {
+const render = async (
+  request,
+  h,
+  current,
+  { selected, query = '', errorText = null }
+) => {
   const groups = commodityGroups(selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
@@ -32,9 +36,9 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page
     }),
     copy,
@@ -49,13 +53,15 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
 }
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  return render(h, journey, { selected: storedKeys(answers) })
+  const current = await state.get(request, h)
+  return render(request, h, current, {
+    selected: storedKeys(current.answers)
+  })
 }
 
 const rerender = async (request, h, { selected, query, errorText }) => {
-  const { journey } = await state.get(request, h)
-  return render(h, journey, { selected, query, errorText })
+  const current = await state.get(request, h)
+  return render(request, h, current, { selected, query, errorText })
 }
 
 const post = async (request, h) => {
