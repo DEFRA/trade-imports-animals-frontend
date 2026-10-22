@@ -108,7 +108,7 @@ function or a test helper — is fine.
 way:
 
 - page chrome: `base()`, `setlessBase()`, `journeyStrip()` and `SURFACES`
-- errors: `errorSummary()` and `fieldError()`
+- errors: `errorSummary()`, `fieldError()` and `logRefusal()`
 - where a POST goes next: `hubExitTarget()`, `isHubExit()`, `exitTarget()`,
   `nextTarget()` and `amendReviewTarget()`
 - saving: `recoverableSave()` and `pageRoutes()`
@@ -166,11 +166,25 @@ A branch that changes what a request does — a refusal, a redirect away from th
 normal next page, a retry or a fallback — logs once through `request.logger`,
 so the line carries the request's trace id. Log the ids support searches by:
 `journeyId` always, plus the reason and any token or code the decision turned
-on. Log a caught error as `{ err }`, never only its message. A controller whose
-validation decides a named refusal reason (a validation 400, say) logs that
-reason once at info, with `journeyId` and the codes it turned on; the
+on. Log a caught error as `{ err }`, never only its message.
+
+Every branch that refuses an answer and shows the page again calls
+`kit.logRefusal(request, { fieldErrors, ...details })` once, before it renders,
+whatever status code it answers with. `fieldErrors` is the map of field key to
+the message the page shows (empty when it shows none). The line is info, carries
+`journeyId`, the route and the error codes (the field keys, never the
+messages), and takes any named reason or ids the branch decided on as further
+keys of the options. No refusal is exempt. The
 [transit countries controller](../sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js)
-is the example. Nothing logs a request or response body at INFO.
+is the example of a refusal that passes its reason.
+
+`kit.recoverableSave()` takes the request and logs every save fallback once at
+warn, with `journeyId` and the caught error as `err`, plus any ids the page
+passes it. `recoverableSave` writes that line; a page's fallback callback only
+builds the response.
+
+A refusal answered by a redirect logs its own named line with the journey id
+and the reason.
 
 The canonical example is the declaration refusal in
 [`declaration/controller.js`](../sets/live-animals/journeys/linear/features/declaration/controller.js):
@@ -189,3 +203,5 @@ request.logger.info(
 
 `refusal` is one of the `DECLARATION_REFUSAL` values, so support can search for
 each reason by name.
+
+Nothing logs a request or response body at INFO.

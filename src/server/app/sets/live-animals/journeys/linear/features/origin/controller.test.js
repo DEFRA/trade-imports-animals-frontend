@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
   referenceDataServing,
   useStubbedJourney
@@ -60,6 +61,10 @@ describe('POST /origin — invalid payload', () => {
       expect(result.response.statusCode).toBe(400)
       expect(result.view.context.errors[field]).toBe(message)
       expect(result.after).toEqual(result.before)
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: [field]
+      })
     }
   )
 })

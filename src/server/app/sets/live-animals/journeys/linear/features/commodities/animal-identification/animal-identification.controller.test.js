@@ -10,6 +10,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectOneRefusalLogged,
   journeyRequest,
   postHandlerOf,
   crumbProtectedServerMounting,
@@ -185,8 +186,6 @@ describe(`${SUITE} — the in-card save button`, () => {
     expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
   })
 
-  // Two animals still outstanding on a line that has already saved one: the
-  // wording has to follow what is left, not how many records exist.
   it('Should keep inviting another record when a saved line still has more than one animal outstanding', async () => {
     const [card] = await viewCards({
       commodityLines: [
@@ -213,8 +212,6 @@ describe(`${SUITE} — the in-card save button`, () => {
     expect(card.saveButtonText).toBe('Save and finish')
   })
 
-  // One animal has nothing to add after it, so the card offers no button of
-  // its own — the page's Save and continue captures the record.
   it('Should offer no in-card button on a line of one animal', async () => {
     const [card] = await viewCards({
       commodityLines: [cowLine({ numberOfAnimalsQuantity: '1' })]
@@ -244,8 +241,6 @@ describe(`${SUITE} — the in-card save button`, () => {
     expect(card.saveButtonText).toBeNull()
   })
 
-  // The button the single-animal line no longer has is not a lost route to
-  // saving: the page primary already captures the record it holds.
   it('Should still capture a one-animal record through the page primary', async () => {
     const result = await driveHandler(post, {
       seed: {
@@ -277,10 +272,6 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     ])
   })
 
-  // The link to the commodity question used to live only in the no-commodities
-  // branch of the template, so it vanished as soon as the page had cards. The
-  // href the summary and the Add another commodity link both use is the same
-  // one either way.
   it('Should offer the route back to the commodity question alongside the cards', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, { commodityLines: [catLine()] })
@@ -291,8 +282,6 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
   })
 
-  // A trader who miscounted has nowhere to go from the counter otherwise: the
-  // count lives on consignment details, and dropping it is refused outright.
   it('Should point every card at the consignment-details page to change the animal count', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
@@ -311,8 +300,6 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     ])
   })
 
-  // Arriving from check-your-answers, the way back to the count has to keep
-  // the change context or Continue on consignment details lands on the hub.
   it('Should keep the change context on every card link when the trader arrived from check your answers', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
@@ -459,20 +446,22 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should reject an empty Save and add another — never append a blank record', async () => {
+  it('Should reject an empty Save and add another — never append a blank record, and log the refused field', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [cowLine()] },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
     })
-    // The error anchors to the first box the commodity asks for, so the
-    // summary link lands a cow's trader on its ear tag.
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
       'Enter at least one identifier for this animal'
     )
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [EAR_TAG_FIELD_0]
+    })
   })
 
-  it('Should surface the engine cap rejection as a card-level error when a stale form posts at N = M', async () => {
+  it('Should surface the engine cap rejection as a card-level error when a stale form posts at N = M, and log the refusal', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
@@ -488,9 +477,13 @@ describe(`${SUITE} — Save and add another`, () => {
     const { errorSummary } = result.view.context
     expect(errorSummary.errorList).toHaveLength(1)
     expect(errorSummary.errorList[0].href).toBe('#identification-card-0')
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['identification-card-0']
+    })
   })
 
-  it('Should block a partial permanent address exactly as the retired entry page did', async () => {
+  it('Should block a partial permanent address with an Enter address line 1 error', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [catLine()] },
       payload: {
@@ -506,8 +499,6 @@ describe(`${SUITE} — Save and add another`, () => {
   })
 })
 
-// The page primary is the shared "Save and continue", so it carries no action
-// of its own — the post falls through to the save-and-move-on default.
 describe(`${SUITE} — Save and continue`, () => {
   setupIdentificationEngine()
 
@@ -648,12 +639,6 @@ describe(`${SUITE} — Remove`, () => {
   })
 })
 
-// The identifier-field render reads the `.metadata.values` (the coverage-gated
-// sidecar), normalising the selected commodity NAME to a CN code via
-// commodityCodeFor before comparing. This matrix pins the rendered fields per
-// selectable species that carries identifiers (Cow/Horse/Cat/Dog). Fish
-// carries none, so it is not in the matrix — it earns no panel at all, which
-// the "no commodity carries an identifier" suite below pins instead.
 describe(`${SUITE} — identifier render matrix — model metadata per selectable species`, () => {
   setupIdentificationEngine()
 
@@ -732,18 +717,12 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(context.cards.map((card) => card.title)).toEqual([
       'Cow (0102) — Bos taurus'
     ])
-    // The recap is the whole consignment: the fish line the page asks nothing
-    // of still has to appear, or the table misdescribes what was declared.
     expect(context.selectedCommodities).toEqual([
       { code: '0102', name: 'Domestic cattle', animals: '2' },
       { code: '0301', name: 'Atlantic salmon', animals: '3' }
     ])
   })
 
-  // The card keeps its own commodity-line index, not its position among the
-  // rendered cards: the anchor, the field names and the add action all address
-  // the line by index, and consignment-details' count-drop error points at the
-  // same anchor.
   it('Should keep a surviving card on its own commodity-line index when an earlier line is filtered out', async () => {
     const context = await viewContext({
       commodityLines: [
@@ -776,10 +755,6 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 
-  // A stale form posted against a consignment with nothing to identify is
-  // carried on rather than falling through to the add/remove handling. The
-  // store holds the declared count as a number once saved, so the untouched
-  // answers are stated outright rather than compared against the raw seed.
   const untouchedFishAnswers = {
     commodityLines: [fishLine({ numberOfAnimalsQuantity: 3 })]
   }

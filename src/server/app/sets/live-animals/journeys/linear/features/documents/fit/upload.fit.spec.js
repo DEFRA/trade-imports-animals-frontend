@@ -15,11 +15,11 @@ import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
 import {
   ACCEPT_ATTRIBUTE,
-  ALLOWED_FILE_TYPES_HINT,
   FILE_TYPE_MESSAGE,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE
+  OVERSIZE_FILE_MESSAGE,
+  allowedFileTypesHint
 } from '../upload-config.js'
 
 const HTTP_OK = 200
@@ -188,7 +188,7 @@ test.describe('document upload page', () => {
       })
     ).toBeVisible()
     await expect(
-      page.getByText(copy.file.allowedTypes(ALLOWED_FILE_TYPES_HINT), {
+      page.getByText(copy.file.allowedTypes(allowedFileTypesHint(copy)), {
         exact: true
       })
     ).toBeVisible()

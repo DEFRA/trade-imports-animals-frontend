@@ -114,6 +114,32 @@ export const errorSummary = (
 export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
+export const REFUSAL_LOG_MESSAGE = 'Answer refused, page shown again'
+export const SAVE_FALLBACK_LOG_MESSAGE =
+  'Save failed on a recoverable backend error, fallback response sent'
+
+/**
+ * Logs a refusal once at info. The error codes are the field keys, never the
+ * messages.
+ *
+ * @param {object} request - the request being answered.
+ * @param {object} [options]
+ * @param {object} [options.fieldErrors] - map of field key to the message the
+ * page shows (may be empty).
+ * @param {object} [options] - other keys: the named reason and ids the refusal
+ * turned on.
+ */
+export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
+  request.logger.info(
+    {
+      ...details,
+      journeyId: request.params.journeyId,
+      route: request.route?.path,
+      errorCodes: Object.keys(fieldErrors)
+    },
+    REFUSAL_LOG_MESSAGE
+  )
+
 export const hubExitTarget = (request) =>
   request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
@@ -213,7 +239,24 @@ export const setlessBase = (title) => ({
   contentColumnClass: SURFACES.form
 })
 
-export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
+/**
+ * Runs a save and answers a recoverable backend failure with the page's
+ * fallback, logging the failure once at warn.
+ *
+ * @param {object} request - the request being answered.
+ * @param {() => Promise<*>} saveThunk - makes the save.
+ * @param {() => *} onRecoverableFailure - builds the response for a
+ * recoverable backend failure.
+ * @param {object} [ids] - ids to log beside the journey id.
+ * @returns {Promise<{value: *}|{failure: *}>} the save's value, or the
+ * fallback's response as `failure`.
+ */
+export const recoverableSave = async (
+  request,
+  saveThunk,
+  onRecoverableFailure,
+  ids = {}
+) => {
   try {
     return { value: await saveThunk() }
   } catch (error) {
@@ -221,7 +264,16 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
       throw error
     }
     if (isRecoverableBackendError(error)) {
-      return { failure: await onRecoverableFailure(error) }
+      request.logger.warn(
+        {
+          ...ids,
+          journeyId: request.params.journeyId,
+          route: request.route?.path,
+          err: error
+        },
+        SAVE_FALLBACK_LOG_MESSAGE
+      )
+      return { failure: await onRecoverableFailure() }
     }
     throw error
   }

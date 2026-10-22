@@ -16,6 +16,8 @@ import { dispatchPages } from '../../index.js'
 import * as importReason from '../controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 const SELECT_ONE = 'Select one'
 const SELECT_ONE_CY = 'Dewiswch un'
@@ -86,9 +88,9 @@ describe('import-reason copy module', () => {
     expect(copyCy.title).toBe('Prif reswm mewnforio')
   })
 
-  it('Should hint the exit date with the worked example alone', () => {
-    expect(copy.date.hint).toBe('For example, 27/3/2026')
-    expect(copyCy.date.hint).toBe('Er enghraifft, 27/3/2026')
+  it('Should hint the exit date with the shared date example alone', () => {
+    expect(copy.date.hint).toBe(sharedEn.dateExample)
+    expect(copyCy.date.hint).toBe(sharedCy.dateExample)
   })
 
   it('Should ask for a destination country and a port of exit', () => {

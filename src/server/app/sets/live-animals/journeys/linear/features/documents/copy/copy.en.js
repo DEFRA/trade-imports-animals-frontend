@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 export const copy = {
   title: 'Upload documents',
   guidance: {
@@ -42,12 +44,13 @@ export const copy = {
   },
   dateOfIssue: {
     label: 'Date of issue',
-    hint: 'For example, 27/3/2026'
+    hint: sharedCopy.dateExample
   },
   file: {
     label: 'Attachment',
     mustBe: 'Your file must be:',
     smallerThan: (size) => `files that are smaller than ${size}`,
+    or: 'or',
     allowedTypes: (hint) => hint,
     upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',

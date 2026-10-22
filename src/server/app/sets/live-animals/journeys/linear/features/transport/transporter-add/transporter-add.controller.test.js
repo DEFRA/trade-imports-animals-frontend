@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -108,6 +109,10 @@ describe('/transporters/add', () => {
     expect(result.view.context.errors.transporterType).toBeTruthy()
     expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['transporterType']
+    })
   })
 
   it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {

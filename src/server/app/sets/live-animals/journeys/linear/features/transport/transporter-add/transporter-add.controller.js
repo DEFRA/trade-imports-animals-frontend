@@ -72,11 +72,13 @@ const post = async (request, h) => {
   const values = { transporterType: payload.transporterType ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return render(request, h, journey, values, { errors })
   }
 
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, values)
     },

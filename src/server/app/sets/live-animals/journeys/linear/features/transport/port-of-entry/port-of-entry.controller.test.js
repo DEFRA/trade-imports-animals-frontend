@@ -17,6 +17,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
   referenceDataServing
 } from '../../../../../../../engine/test-support.js'
@@ -52,6 +53,10 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['portOfEntry']
+    })
   })
 })
 

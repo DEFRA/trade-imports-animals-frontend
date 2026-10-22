@@ -106,13 +106,15 @@ GET calls `state.get()` once and prefills from `answers`. POST:
 
 1. reads raw payload values
 2. validates with [`src/server/app/lib/validate/index.js`](../../../lib/validate/index.js)
-3. re-renders raw values with status 400 on error
+3. calls `kit.logRefusal(request, { fieldErrors })`, then re-renders raw values with
+   status 400 on error (`fieldErrors` is the map of field key to the message the
+   page shows)
 4. commits cleaned values with `state.commit()`
 5. redirects through `await kit.nextTarget(request, page, committed.scope)`
 
-Wrap the write in `kit.recoverableSave()`. A marked persistence failure renders
-the same values with `recoverableError: true` and status 500. Unexpected errors
-must throw.
+Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
+failure is logged once by `recoverableSave`; render the same values with
+`recoverableError: true` and status 500. Unexpected errors must throw.
 
 "Save and return to overview" posts `exit=hub`. When the page has a required
 rule, opt in to saving a blank answer on that exit by passing

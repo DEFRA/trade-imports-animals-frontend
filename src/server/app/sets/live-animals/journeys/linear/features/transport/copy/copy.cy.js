@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 const SELECT_A_COUNTRY = 'Dewiswch wlad'
 
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
@@ -6,7 +8,7 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: 'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
+      hint: `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Porthladd mynediad',

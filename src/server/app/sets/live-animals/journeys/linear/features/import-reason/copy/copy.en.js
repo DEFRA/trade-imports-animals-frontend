@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 export const copy = {
   title: 'Main import reason',
   legend: 'What is the main reason for importing the animals?',
@@ -49,7 +51,7 @@ export const copy = {
   },
   date: {
     label: 'Exit date',
-    hint: 'For example, 27/3/2026'
+    hint: sharedCopy.dateExample
   },
   errors: {
     purposeRequired: 'Select a purpose in the internal market',

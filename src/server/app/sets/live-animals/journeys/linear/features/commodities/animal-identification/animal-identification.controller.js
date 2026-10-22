@@ -9,7 +9,7 @@ import {
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { summaryOf } from './card/error-summary.js'
+import { refusedFieldsOf, summaryOf } from './card/error-summary.js'
 import { buildCard } from './card/view-model.js'
 import {
   buildLineForms,
@@ -44,10 +44,11 @@ const render = (
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
   const lines = identifiedLines(answers, evaluation)
-  // The recap is the whole consignment, not just the lines with a panel: a
-  // line the page asks nothing of still exists, and hiding it invites the
-  // trader to add the commodity a second time.
-  const allLines = state.collectionView(answers, ['commodityLines'], evaluation)
+  const allCommodityLines = state.collectionView(
+    answers,
+    ['commodityLines'],
+    evaluation
+  )
   const changeCountHref = kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, consignmentDetailsPage.slug)
@@ -63,7 +64,7 @@ const render = (
     cards: lines.map((line) =>
       buildCard(answers, line, forms.get(line.index), errors, changeCountHref)
     ),
-    selectedCommodities: buildSelectedCommodities(allLines),
+    selectedCommodities: buildSelectedCommodities(allCommodityLines),
     addHref: kit.withChangeContext(
       request,
       pagePath(request.params.journeyId, 'commodities')
@@ -73,9 +74,20 @@ const render = (
   })
 }
 
-// Nothing on this consignment carries an identifier, so the page does not
-// exist for this person: send them on rather than showing an empty one. The
-// guard sits on both handlers, so a stale form posting to it moves on too.
+const logRefusalAndRender = (
+  request,
+  h,
+  journey,
+  answers,
+  evaluation,
+  options
+) => {
+  kit.logRefusal(request, {
+    fieldErrors: refusedFieldsOf(options.errors ?? {}, options.cardErrors ?? [])
+  })
+  return render(request, h, journey, answers, evaluation, options)
+}
+
 const noIdentifiersTarget = async (request, answers, evaluation, scope) =>
   identifiedLines(answers, evaluation).length === 0
     ? kit.nextTarget(request, page, scope)
@@ -111,7 +123,7 @@ const post = async (request, h) => {
   } = buildLineForms(payload, answers, lines)
 
   const capReached = capReachedResponse({
-    render,
+    render: logRefusalAndRender,
     request,
     h,
     journey,
@@ -128,7 +140,10 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    return render(request, h, journey, answers, evaluation, { forms, errors })
+    return logRefusalAndRender(request, h, journey, answers, evaluation, {
+      forms,
+      errors
+    })
   }
 
   const cardErrors = await appendLineRecords(request, h, forms)
@@ -138,9 +153,16 @@ const post = async (request, h) => {
       request,
       h
     )
-    return render(request, h, journey, current, currentEvaluation, {
-      cardErrors
-    })
+    return logRefusalAndRender(
+      request,
+      h,
+      journey,
+      current,
+      currentEvaluation,
+      {
+        cardErrors
+      }
+    )
   }
 
   if (addIndex !== null) {

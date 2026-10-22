@@ -89,6 +89,7 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey, answers: storedAnswers } = await state.get(request, h)
     return (
       await render(h, journey, values, { errors, answers: storedAnswers })
@@ -97,6 +98,7 @@ const post = async (request, h) => {
 
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = await state.commit(request, h, answers)
     },

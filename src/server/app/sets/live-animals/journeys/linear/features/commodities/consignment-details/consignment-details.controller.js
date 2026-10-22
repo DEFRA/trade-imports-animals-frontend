@@ -62,11 +62,6 @@ const render = (
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-// While a line is left the page still has quantities to collect. With none
-// left it has nothing to ask, so a load sends the user to the commodity
-// question — the same rule the removal applies on the way out, applied on
-// the way in, so a browser Back, a refresh or a bookmark cannot land on an
-// empty details page.
 const get = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
   const lines = linesOf(answers, evaluation)
@@ -95,23 +90,20 @@ const post = async (request, h) => {
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) {
+    kit.logRefusal(request, { fieldErrors: errors })
     return render(request, h, journey, lines, values, errors)
   }
 
   const issues = countDropIssues(request, lines, values)
   if (issues.length > 0) {
-    return render(
-      request,
-      h,
-      journey,
-      lines,
-      values,
-      Object.fromEntries(issues.map((issue) => [issue.field, issue.text])),
-      {
-        titleText: sharedCopy.errorSummary.title,
-        errorList: issues.map(({ text, href }) => ({ text, href }))
-      }
+    const countDropErrors = Object.fromEntries(
+      issues.map((issue) => [issue.field, issue.text])
     )
+    kit.logRefusal(request, { fieldErrors: countDropErrors })
+    return render(request, h, journey, lines, values, countDropErrors, {
+      titleText: sharedCopy.errorSummary.title,
+      errorList: issues.map(({ text, href }) => ({ text, href }))
+    })
   }
 
   for (const { index, entry } of lines) {

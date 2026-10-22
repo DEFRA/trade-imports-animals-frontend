@@ -8,6 +8,10 @@ import { currentSetId } from '../shared/set-context.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
+import {
+  REFUSAL_LOG_MESSAGE,
+  SAVE_FALLBACK_LOG_MESSAGE
+} from '../shared/kit.js'
 import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
@@ -325,6 +329,26 @@ export const restoreAddressBookAfterTests = (...configKeys) => {
 /** Asserts the logger holds exactly one line. */
 export const expectOneLogged = (logger, { level, fields, message }) =>
   expect(logger.entries).toEqual([{ level, fields, message }])
+
+const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
+  level: 'info',
+  message: REFUSAL_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, errorCodes, ...details })
+})
+
+export const expectOneRefusalLogged = (logger, refusal) =>
+  expectOneLogged(logger, refusalEntry(refusal))
+
+/** The log entry for a save fallback: the journey id, the caught error and
+ * any ids the page passed. */
+export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
+  level: 'warn',
+  message: SAVE_FALLBACK_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, ...ids, err })
+})
+
+export const expectOneSaveFallbackLogged = (logger, fallback) =>
+  expectOneLogged(logger, saveFallbackEntry(fallback))
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {

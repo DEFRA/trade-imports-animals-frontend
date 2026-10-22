@@ -9,7 +9,11 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
+  postHandlerOf,
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import { dispatchPages } from '../index.js'
@@ -33,6 +37,35 @@ describe('POST additional-details — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.animalsCertifiedFor).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['animalsCertifiedFor']
+    })
+  })
+})
+
+describe('POST additional-details — backend unavailable', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should re-render at 500 with the unweaned question still asked and log the save fallback once', async () => {
+    const failure = unavailableBackendError('save answers')
+
+    const result = await driveHandler(post, {
+      seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+      payload: {
+        animalsCertifiedFor: 'slaughter',
+        containsUnweanedAnimals: 'no'
+      },
+      saveFailure: failure
+    })
+
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.view.context.showUnweaned).toBe(true)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })
 

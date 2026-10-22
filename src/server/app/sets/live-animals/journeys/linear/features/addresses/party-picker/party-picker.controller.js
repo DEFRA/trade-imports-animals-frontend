@@ -103,6 +103,7 @@ const savedTarget = async (request, h) =>
 
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, {
         [party.id]: answerFor(party, chosen)
@@ -118,7 +119,8 @@ const commitSelection = async (request, h, party, chosen, form) => {
           addAddressHref: addAddressLinkFor(request, h, journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    },
+    { role: party.id, addressId: chosen.id }
   )
   if (failure) {
     return failure
@@ -154,14 +156,11 @@ const post = (party) => async (request, h) => {
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
     const { journey } = await state.get(request, h)
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        role: party.id,
-        addressId: selectedId
-      },
-      'Address picker refused an address that is not in the address book'
-    )
+    kit.logRefusal(request, {
+      fieldErrors: { party: party.error },
+      role: party.id,
+      addressId: selectedId
+    })
     return (
       await render(request, h, orgId, journey, party, {
         query,

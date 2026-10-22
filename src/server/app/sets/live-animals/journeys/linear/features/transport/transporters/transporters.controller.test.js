@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -129,6 +130,10 @@ describe('/transporters', () => {
     expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['transporter']
+    })
   })
 
   it('Should save the type off the record when a commercial transporter is picked', async () => {

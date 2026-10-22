@@ -12,12 +12,14 @@ import * as documents from '../controller.js'
 import {
   FILE_TYPE_MESSAGE,
   OVERSIZE_FILE_MESSAGE,
-  ALLOWED_FILE_TYPES_HINT,
-  MAX_FILE_SIZE_LABEL
+  MAX_FILE_SIZE_LABEL,
+  allowedFileTypesHint
 } from '../upload-config.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 import { leaves } from '../../../../../../../shared/copy-leaves.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 describe('#copy', () => {
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
@@ -91,9 +93,9 @@ describe('#copy', () => {
     expect(copyCy.reference).toEqual({ label: 'Cyfeirnod y ddogfen' })
   })
 
-  it('Should hint the date of issue with an example date in both locales', () => {
-    expect(copy.dateOfIssue.hint).toBe('For example, 27/3/2026')
-    expect(copyCy.dateOfIssue.hint).toBe('Er enghraifft, 27/3/2026')
+  it('Should hint the date of issue with the shared date example in both locales', () => {
+    expect(copy.dateOfIssue.hint).toBe(sharedEn.dateExample)
+    expect(copyCy.dateOfIssue.hint).toBe(sharedCy.dateExample)
   })
 
   it('Should state the file size as files smaller than the size it is given', () => {
@@ -108,6 +110,11 @@ describe('#copy', () => {
   it('Should state the file size and the allowed file types in Welsh', () => {
     expect(copyCy.file.smallerThan('10MB')).toBe('yn llai na 10MB')
     expect(copyCy.file.allowedTypes('PDF, DOC')).toBe('yn PDF, DOC')
+  })
+
+  it('Should word the list joiner for the file types in both locales', () => {
+    expect(copy.file.or).toBe('or')
+    expect(copyCy.file.or).toBe('neu')
   })
 
   it('Should name the hidden table header Action', () => {
@@ -144,7 +151,7 @@ describe('#copy', () => {
 
   it('Should build the upload-config messages from the copy templates', () => {
     expect(FILE_TYPE_MESSAGE).toBe(
-      copy.errors.fileType(ALLOWED_FILE_TYPES_HINT)
+      copy.errors.fileType(allowedFileTypesHint(copy))
     )
     expect(OVERSIZE_FILE_MESSAGE).toBe(
       copy.errors.oversize(MAX_FILE_SIZE_LABEL)

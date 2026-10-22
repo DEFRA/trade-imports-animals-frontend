@@ -7,6 +7,8 @@ import {
   driveHandler,
   addressBookAnswering,
   expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   restoreAddressBookAfterTests,
   restoreStubModeAndConfigAfterTests,
   unavailableBackendError,
@@ -302,15 +304,11 @@ describe('POST /consignors/select', () => {
       { text: SELECT_A_CONSIGNOR_ERROR, href: '#party' }
     ])
     expect(result.after.consignor).toBeUndefined()
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        role: 'consignor',
-        addressId: NOT_IN_THE_BOOK
-      },
-      message:
-        'Address picker refused an address that is not in the address book'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['party'],
+      role: 'consignor',
+      addressId: NOT_IN_THE_BOOK
     })
   })
 
@@ -460,14 +458,21 @@ describe('POST /consignors/select — recoverable save failure', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the picker when saving the selection fails', async () => {
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toBeUndefined()
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure,
+      role: 'consignor',
+      addressId: ALPINE_DAIRY_ID
+    })
   })
 })
 

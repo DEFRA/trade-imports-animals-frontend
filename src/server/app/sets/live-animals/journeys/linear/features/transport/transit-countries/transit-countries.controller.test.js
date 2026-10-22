@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
   driveHandler,
   expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   postHandlerOf,
   unavailableBackendError,
   useStubbedJourney
@@ -96,10 +98,11 @@ describe('POST transit-countries — adding a country', () => {
     async ({ payload, reason, code }) => {
       const result = await driveHandler(post, { seed, payload })
 
-      expectOneLogged(result.logger, {
-        level: 'info',
-        fields: { journeyId: result.journeyId, reason, code },
-        message: 'Transit country not added: refused'
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: [COUNTRY_FIELD],
+        reason,
+        code
       })
     }
   )
@@ -253,14 +256,11 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: ['ZZ'] }
     })
 
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        reason: TRANSIT_REFUSAL.notOnList,
-        codes: ['ZZ']
-      },
-      message: 'Transit countries not saved: list refused'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [COUNTRY_FIELD],
+      reason: TRANSIT_REFUSAL.notOnList,
+      codes: ['ZZ']
     })
   })
 
@@ -270,14 +270,11 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: tooManyCodes }
     })
 
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        reason: TRANSIT_REFUSAL.maxCountries,
-        length: MAX_TRANSITED_COUNTRIES + 1
-      },
-      message: 'Transit countries not saved: list refused'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [COUNTRY_FIELD],
+      reason: TRANSIT_REFUSAL.maxCountries,
+      length: MAX_TRANSITED_COUNTRIES + 1
     })
   })
 
@@ -338,13 +335,10 @@ describe('POST transit-countries — continuing', () => {
       saveFailure: failure
     })
 
-    expect(result.logger.entries).toEqual([
-      {
-        level: 'warn',
-        fields: { journeyId: result.journeyId, err: failure },
-        message: 'Transit countries not saved: backend unavailable'
-      }
-    ])
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })
 

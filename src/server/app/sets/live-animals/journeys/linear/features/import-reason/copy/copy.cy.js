@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Prif reswm mewnforio',
@@ -51,7 +53,7 @@ export const copy = {
   },
   date: {
     label: 'Dyddiad ymadael',
-    hint: 'Er enghraifft, 27/3/2026'
+    hint: sharedCopy.dateExample
   },
   errors: {
     purposeRequired: 'Dewiswch ddiben yn y farchnad fewnol',

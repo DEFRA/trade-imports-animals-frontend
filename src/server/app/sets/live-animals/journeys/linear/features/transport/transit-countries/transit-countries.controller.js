@@ -116,16 +116,15 @@ const postAdd = async (request, h, selected) => {
   const { journey } = await state.get(request, h)
   const refusal = await addRefusal(chosen, selected)
   if (refusal) {
-    request.logger.info(
-      { journeyId: journey.journeyId, reason: refusal.reason, code: chosen },
-      'Transit country not added: refused'
+    const errors = { [COUNTRY_FIELD]: refusal.message }
+    kit.logRefusal(request, {
+      fieldErrors: errors,
+      reason: refusal.reason,
+      code: chosen
+    })
+    return (await render(h, journey, selected, { errors, chosen })).code(
+      HTTP_STATUS_BAD_REQUEST
     )
-    return (
-      await render(h, journey, selected, {
-        errors: { [COUNTRY_FIELD]: refusal.message },
-        chosen
-      })
-    ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
   const chosenLabel = await countries.originLabel(chosen)
@@ -143,12 +142,8 @@ const postRemove = async (request, h, selected, code) => {
   })
 }
 
-const renderSaveUnavailable = async (request, h, selected, err) => {
+const renderSaveUnavailable = async (request, h, selected) => {
   const { journey } = await state.get(request, h)
-  request.logger.warn(
-    { journeyId: journey.journeyId, err },
-    'Transit countries not saved: backend unavailable'
-  )
   return (await render(h, journey, selected, { recoverableError: true })).code(
     HTTP_STATUS_INTERNAL_SERVER_ERROR
   )
@@ -158,10 +153,7 @@ const postContinue = async (request, h, payload, selected) => {
   const { answers, errors, refusal } = await validation.onSubmit(payload)
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
-    request.logger.info(
-      { journeyId: journey.journeyId, ...refusal },
-      'Transit countries not saved: list refused'
-    )
+    kit.logRefusal(request, { fieldErrors: errors, ...refusal })
     return (await render(h, journey, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
@@ -169,10 +161,11 @@ const postContinue = async (request, h, payload, selected) => {
 
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = await state.commit(request, h, answers)
     },
-    (err) => renderSaveUnavailable(request, h, selected, err)
+    () => renderSaveUnavailable(request, h, selected)
   )
   if (failure) {
     return failure

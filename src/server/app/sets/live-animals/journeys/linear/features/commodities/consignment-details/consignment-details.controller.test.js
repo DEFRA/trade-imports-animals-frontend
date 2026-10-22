@@ -11,6 +11,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import {
   crumbProtectedServerMounting,
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
   journeyRequest,
   stubH
@@ -20,6 +21,22 @@ import { dispatchPages } from '../../index.js'
 import * as consignmentDetails from './consignment-details.controller.js'
 
 const post = postHandlerOf(consignmentDetails)
+
+const cowLineHoldingThreeIdentifiers = () => ({
+  commodityLines: [
+    {
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      numberOfPackages: '',
+      numberOfAnimalsQuantity: '3',
+      animalIdentifiers: [
+        { animalIdentifierEarTag: 'UK1' },
+        { animalIdentifierEarTag: 'UK2' },
+        { animalIdentifierEarTag: 'UK3' }
+      ]
+    }
+  ]
+})
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
@@ -143,7 +160,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect('numberOfPackages' in lines[2]).toBe(false)
   })
 
-  it('Should re-render a non-numeric quantity against its own line and save nothing', async () => {
+  it('Should re-render a non-numeric quantity against its own line and save nothing, and log the refusal', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -156,24 +173,14 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'Enter a whole number greater than 0'
     )
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['numberOfAnimalsQuantity-1', 'numberOfAnimalsQuantity-2']
+    })
   })
 
-  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming', async () => {
-    const seed = {
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
-          numberOfPackages: '',
-          numberOfAnimalsQuantity: '3',
-          animalIdentifiers: [
-            { animalIdentifierEarTag: 'UK1' },
-            { animalIdentifierEarTag: 'UK2' },
-            { animalIdentifierEarTag: 'UK3' }
-          ]
-        }
-      ]
-    }
+  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming, and log the refusal', async () => {
+    const seed = cowLineHoldingThreeIdentifiers()
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '' }
@@ -187,6 +194,10 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'commodities/identification'
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['numberOfAnimalsQuantity-0']
+    })
     expect(result.after).toEqual({
       commodityLines: [
         {

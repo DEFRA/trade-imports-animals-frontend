@@ -54,8 +54,7 @@ const render = (
   journey,
   reviewedConcurrencyToken,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -102,14 +101,16 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    return render(h, journey, reviewedConcurrencyToken, values, errors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    kit.logRefusal(request, { fieldErrors: errors })
+    return render(h, journey, reviewedConcurrencyToken, values, {
+      errors
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let result
   try {
     const { failure } = await kit.recoverableSave(
+      request,
       async () => {
         await state.commit(request, h, values)
         result = await state.submitJourney(request, h, {
@@ -117,9 +118,9 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
         })
       },
       () =>
-        render(h, journey, reviewedConcurrencyToken, values, {}, true).code(
-          HTTP_STATUS_INTERNAL_SERVER_ERROR
-        )
+        render(h, journey, reviewedConcurrencyToken, values, {
+          recoverableError: true
+        }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     )
     if (failure) {
       return failure
@@ -191,7 +192,6 @@ const post = async (request, h) => {
     })
   }
 
-  // Never pre-tick: a tick left by a submit refused as stale was given to older content.
   if (payload.step === STEP_REVIEW) {
     return render(h, journey, reviewedConcurrencyToken, {
       declaration: ''

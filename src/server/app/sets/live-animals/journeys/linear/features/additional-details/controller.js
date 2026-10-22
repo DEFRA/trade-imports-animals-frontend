@@ -31,9 +31,7 @@ const render = (
   h,
   journey,
   values,
-  showUnweaned,
-  errors = {},
-  recoverableError = false
+  { showUnweaned, errors = {}, recoverableError = false }
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -65,7 +63,7 @@ const get = async (request, h) => {
   const { values, errors } = await validation.onStored(answers, {
     showUnweaned
   })
-  return render(h, journey, values, showUnweaned, errors)
+  return render(h, journey, values, { showUnweaned, errors })
 }
 
 const post = async (request, h) => {
@@ -76,17 +74,16 @@ const post = async (request, h) => {
     { showUnweaned }
   )
   if (hasErrors(errors)) {
-    return render(h, journey, values, showUnweaned, errors).code(
+    kit.logRefusal(request, { fieldErrors: errors })
+    return render(h, journey, values, { showUnweaned, errors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
-      // The reveal decides which of the two fields the notification carries —
-      // committing the unweaned answer under a commodity that does not ask for
-      // it would keep it around after a flip.
       committed = await state.commit(request, h, {
         animalsCertifiedFor: answers.animalsCertifiedFor,
         ...(showUnweaned
@@ -95,7 +92,7 @@ const post = async (request, h) => {
       })
     },
     () =>
-      render(h, journey, values, showUnweaned, {}, true).code(
+      render(h, journey, values, { showUnweaned, recoverableError: true }).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )

@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 const SELECT_A_COUNTRY = 'Select a country'
 
 export const copy = {
@@ -5,7 +7,7 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026'
+      hint: `The expected date of arrival at the port of entry. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Port of entry',

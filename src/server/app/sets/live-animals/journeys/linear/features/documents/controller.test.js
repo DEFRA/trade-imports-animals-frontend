@@ -18,10 +18,13 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   journeyRequest,
   postHandlerOf,
   registerTestRequestLogger,
   registerTestSessionAuth,
+  saveFallbackEntry,
   stubH,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
@@ -103,10 +106,10 @@ const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
 const expectContinueRefusedLogged = (result, scansNotCleared) =>
-  expectOneLogged(result.logger, {
-    level: 'info',
-    fields: { journeyId: result.journeyId, scansNotCleared },
-    message: 'Continue refused: documents not cleared by the virus scan'
+  expectOneRefusalLogged(result.logger, {
+    journeyId: result.journeyId,
+    errorCodes: ['documents'],
+    scansNotCleared
   })
 
 const configureEngine = () => {
@@ -155,12 +158,17 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add' }
     })
-    expect(Object.keys(result.view.context.errors)).toEqual([
+    const fieldOrder = [
       'accompanyingDocumentReference',
       'accompanyingDocumentType',
       'accompanyingDocumentDateOfIssue',
       'file'
-    ])
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(fieldOrder)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: fieldOrder
+    })
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
@@ -317,10 +325,9 @@ describe('documents — real upload leg on the single-page loop', () => {
     const response = await documents.handleOversizePayload(request, h)
     expect(response.statusCode).toBe(400)
     expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
-    expectOneLogged(request.logger, {
-      level: 'info',
-      fields: { journeyId: journey.journeyId },
-      message: 'Document refused: upload larger than the payload limit'
+    expectOneRefusalLogged(request.logger, {
+      journeyId: journey.journeyId,
+      errorCodes: ['file']
     })
   })
 })
@@ -519,15 +526,11 @@ describe('documents — listing, scanning and removing', () => {
       { text: limitMessage, href: '#file' }
     ])
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        documentsHeld: MAX_DOCUMENTS,
-        maxDocuments: MAX_DOCUMENTS
-      },
-      message:
-        'Document refused: notification holds the maximum number of documents'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['file'],
+      documentsHeld: MAX_DOCUMENTS,
+      maxDocuments: MAX_DOCUMENTS
     })
   })
 
@@ -906,8 +909,6 @@ describe('documents — backend and upload service failures', () => {
   beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
-  const REMOVAL_LEFT_TO_RETRY =
-    'Document not removed: backend unavailable, removal left to retry'
   const ALREADY_REMOVED_UPLOAD_ID = 'up-already-removed'
   const retryRemovalPayload = {
     action: 'continue',
@@ -928,7 +929,7 @@ describe('documents — backend and upload service failures', () => {
     }
   }
 
-  it('Should log the save left to retry with the backend error, keeping the uploaded file for the retry', async () => {
+  it('Should log the save fallback once with the upload id and the backend error, keeping the uploaded file for the retry', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
@@ -936,14 +937,10 @@ describe('documents — backend and upload service failures', () => {
     })
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
-    expectOneLogged(result.logger, {
-      level: 'warn',
-      fields: {
-        journeyId: result.journeyId,
-        uploadId: result.view.context.pendingDocumentSave.uploadId,
-        err: failure
-      },
-      message: 'Document not saved: backend unavailable, save left to retry'
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      uploadId: result.view.context.pendingDocumentSave.uploadId,
+      err: failure
     })
   })
 
@@ -967,7 +964,7 @@ describe('documents — backend and upload service failures', () => {
     spy.mockRestore()
   })
 
-  it('Should log the removal left to retry with the backend error, keeping the document', async () => {
+  it('Should log the removal save fallback once with the index, the upload id and the backend error, keeping the document', async () => {
     const { uploadId, seed } = await seededUpload()
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
@@ -978,10 +975,11 @@ describe('documents — backend and upload service failures', () => {
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after).toEqual(seed)
-    expectOneLogged(result.logger, {
-      level: 'warn',
-      fields: { journeyId: result.journeyId, index: 0, uploadId, err: failure },
-      message: REMOVAL_LEFT_TO_RETRY
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      index: 0,
+      uploadId,
+      err: failure
     })
   })
 
@@ -991,7 +989,7 @@ describe('documents — backend and upload service failures', () => {
     expectOneLogged(result.logger, alreadyRemovedEntry(result.journeyId))
   })
 
-  it('Should log the retried removal left to retry again, with the backend error, when the notification still cannot be saved', async () => {
+  it('Should log the retried removal save fallback once, with the backend error, when the notification still cannot be saved', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
@@ -1000,16 +998,12 @@ describe('documents — backend and upload service failures', () => {
     expect(result.response.statusCode).toBe(500)
     expect(result.logger.entries).toEqual([
       alreadyRemovedEntry(result.journeyId),
-      {
-        level: 'warn',
-        fields: {
-          journeyId: result.journeyId,
-          index: 0,
-          uploadId: ALREADY_REMOVED_UPLOAD_ID,
-          err: failure
-        },
-        message: REMOVAL_LEFT_TO_RETRY
-      }
+      saveFallbackEntry({
+        journeyId: result.journeyId,
+        index: 0,
+        uploadId: ALREADY_REMOVED_UPLOAD_ID,
+        err: failure
+      })
     ])
   })
 })

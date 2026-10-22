@@ -20,6 +20,7 @@ const view = `${TEMPLATES}/features/commodities/search/search`
 
 const copy = copyFor({ en, cy }).search
 
+export const SEARCH_FIELD = 'commoditySearch'
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
@@ -28,7 +29,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
-  const errors = errorText ? { commoditySearch: errorText } : {}
+  const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
@@ -59,7 +60,7 @@ const rerender = async (request, h, { selected, query, errorText }) => {
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const query = normaliseQuery(payload.commoditySearch)
+  const query = normaliseQuery(payload[SEARCH_FIELD])
 
   if (payload.action === CLEAR_ACTION) {
     return rerender(request, h, { selected: [], query })
@@ -72,6 +73,9 @@ const post = async (request, h) => {
   }
 
   if (selected.length === 0 && !kit.isHubExit(request)) {
+    kit.logRefusal(request, {
+      fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
+    })
     const response = await rerender(request, h, {
       selected,
       query,

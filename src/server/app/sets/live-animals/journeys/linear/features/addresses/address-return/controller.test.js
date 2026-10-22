@@ -5,6 +5,8 @@ import { addressHandshakeTokensCookie } from '../../../../../../../engine/persis
 import {
   addressBookAnswering,
   driveHandler,
+  expectOneLogged,
+  expectOneSaveFallbackLogged,
   restoreAddressBookAfterTests,
   unavailableBackendError,
   useStubbedJourney
@@ -116,6 +118,16 @@ describe('GET /address-return', () => {
       consignorPicker(result.journeyId, '?handshakeError=not-found')
     )
     expect(result.after.consignor).toBeUndefined()
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        role: 'consignor',
+        addressId: 'missing-address',
+        reason: 'address-not-found'
+      },
+      message: 'Returned address not found, picker shown again'
+    })
   })
 
   it('redirects to the picker when the address id belongs to another organisation', async () => {
@@ -154,10 +166,21 @@ describe('GET /address-return', () => {
       consignorPicker(result.journeyId, '?handshakeError=unavailable')
     )
     expect(result.after.consignor).toBeUndefined()
+    expectOneLogged(result.logger, {
+      level: 'warn',
+      fields: {
+        journeyId: result.journeyId,
+        role: 'consignor',
+        addressId: newAddressId,
+        err: expect.objectContaining({ status: 503 })
+      },
+      message: 'Returned address could not be read, picker shown again'
+    })
   })
 
   it('redirects to the picker when saving the returned address fails', async () => {
     addressBookAnswering({ body: newAddressBody() })
+    const failure = unavailableBackendError('save answers')
 
     const result = await driveHandler(handler, {
       query: {
@@ -165,7 +188,7 @@ describe('GET /address-return', () => {
         addressId: newAddressId
       },
       state: handshakeState(),
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: failure
     })
 
     expect(result.response.redirect).toBe(
@@ -173,5 +196,9 @@ describe('GET /address-return', () => {
     )
     expect(result.response.statusCode).toBeUndefined()
     expect(result.after.consignor).toBeUndefined()
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })

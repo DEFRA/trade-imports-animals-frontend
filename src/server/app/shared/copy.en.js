@@ -37,6 +37,7 @@ export const copy = {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
   },
+  dateExample: 'For example, 27/3/2026',
   errorPage: {
     notFound: 'Page not found',
     forbidden: 'Forbidden',

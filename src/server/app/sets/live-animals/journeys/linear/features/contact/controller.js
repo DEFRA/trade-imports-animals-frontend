@@ -142,6 +142,7 @@ const post = async (request, h) => {
     addressOptions: options
   })
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey, answers } = await state.get(request, h)
     return render(
       h,
@@ -165,6 +166,7 @@ const post = async (request, h) => {
     : undefined
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = chosen
         ? await state.commit(request, h, {

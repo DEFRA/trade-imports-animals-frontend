@@ -24,7 +24,7 @@ export const actionsCell = ({ entry, index, scanStatus, journeyId }) => ({
   html: isViewable(entry, scanStatus)
     ? `${viewFileLink(entry, index, journeyId)}${removeButton(index)}`
     : removeButton(index),
-  format: 'numeric',
+  classes: 'govuk-!-text-align-right',
   attributes: {
     'data-view-file-text': copy.viewFile,
     'data-view-file-hidden': copy.viewFileHidden(index + 1)

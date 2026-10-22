@@ -6,6 +6,8 @@ import {
   addressBookCountriesServing,
   addressBookRequestUrls,
   driveHandler,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   restoreAddressBookAfterTests,
   unavailableBackendError,
   useStubbedJourney
@@ -161,6 +163,10 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
     ])
     expect(result.view.context.values.postcode).toBe('')
     expect(result.after[party.id]).toEqual(STORED)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['postcode', 'email']
+    })
   })
 
   it('Should leave the copy unchanged on Cancel', async () => {
@@ -245,14 +251,19 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should re-render the form when saving fails', async () => {
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toEqual(STORED)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })

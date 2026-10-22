@@ -3,10 +3,10 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from '../scan-poll.js'
 import {
   ACCEPT_ATTRIBUTE,
-  ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE
+  OVERSIZE_FILE_MESSAGE,
+  allowedFileTypesHint
 } from '../upload-config.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { documentsPage as page } from '../page.js'
@@ -60,7 +60,7 @@ export const render = ({
     timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),
     acceptAttribute: ACCEPT_ATTRIBUTE,
-    allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
+    allowedFileTypesHint: allowedFileTypesHint(copy),
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     maxFileSize: MAX_FILE_SIZE_BYTES,
     maxDocuments: MAX_DOCUMENTS,

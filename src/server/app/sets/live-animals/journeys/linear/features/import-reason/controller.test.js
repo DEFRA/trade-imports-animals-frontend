@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -28,6 +29,10 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.reasonForImport).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['reasonForImport']
+    })
   })
 
   it('Should answer 400 for a reason that names an Object.prototype member, committing nothing', async () => {

@@ -69,7 +69,7 @@ const getStatus = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
     state.collectionView(answers, ['documents'], evaluation),
-    true
+    { refresh: true, request }
   )
   return h.response({ documents: scanned(documents) })
 }
@@ -112,20 +112,23 @@ const postAdd = async (request, h, payload, afterSave) => {
   const bare = documentFromPayload(payload)
   const pendingDocumentSave = pendingDocumentSaveFrom(payload)
   if (!pendingDocumentSave && pageState.documents.length >= MAX_DOCUMENTS) {
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        documentsHeld: pageState.documents.length,
-        maxDocuments: MAX_DOCUMENTS
-      },
-      'Document refused: notification holds the maximum number of documents'
+    const errors = capacityExceededFieldErrors()
+    kit.logRefusal(request, {
+      fieldErrors: errors,
+      reason: 'document-limit-reached',
+      documentsHeld: pageState.documents.length,
+      maxDocuments: MAX_DOCUMENTS
+    })
+    return render(request, h, pageState, bare, { errors }).code(
+      HTTP_STATUS_BAD_REQUEST
     )
-    return render(request, h, pageState, bare, {
-      errors: capacityExceededFieldErrors()
-    }).code(HTTP_STATUS_BAD_REQUEST)
   }
   const allErrors = documentAddErrors(payload, bare, pendingDocumentSave)
   if (Object.keys(allErrors).length > 0) {
+    kit.logRefusal(request, {
+      fieldErrors: allErrors,
+      reason: 'invalid-document-details'
+    })
     return render(request, h, pageState, bare, { errors: allErrors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
@@ -164,6 +167,7 @@ const saveAddedDocument = async (
   afterSave
 ) => {
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       if (isAlreadySaved(pageState, savedEntry.uploadId)) {
         await state.commit(request, h, {
@@ -173,16 +177,8 @@ const saveAddedDocument = async (
         await state.appendEntry(request, h, 'documents', savedEntry)
       }
     },
-    (err) => {
-      request.logger.warn(
-        {
-          journeyId: request.params.journeyId,
-          uploadId: savedEntry.uploadId,
-          err
-        },
-        'Document not saved: backend unavailable, save left to retry'
-      )
-      return render(request, h, pageState, bare, {
+    () =>
+      render(request, h, pageState, bare, {
         extra: {
           recoverableError: true,
           pendingDocumentSave: {
@@ -190,8 +186,8 @@ const saveAddedDocument = async (
             filename: savedEntry.filename
           }
         }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR),
+    { action: 'save-document', uploadId: savedEntry.uploadId }
   )
   if (failure) {
     return failure
@@ -202,11 +198,18 @@ const saveAddedDocument = async (
 const documentAt = (answers, evaluation, index) =>
   state.collectionView(answers, ['documents'], evaluation)[index]?.entry
 
-const logRemovalLeftToRetry = (request, { index, uploadId }, err) =>
-  request.logger.warn(
-    { journeyId: request.params.journeyId, index, uploadId, err },
-    'Document not removed: backend unavailable, removal left to retry'
-  )
+const renderRemovalLeftToRetry = (
+  request,
+  h,
+  pageState,
+  pendingDocumentRemoval
+) =>
+  render(request, h, pageState, EMPTY_FORM, {
+    extra: {
+      recoverableError: true,
+      pendingDocumentRemoval
+    }
+  }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
 const retryProjectionSave = async (
   request,
@@ -215,20 +218,15 @@ const retryProjectionSave = async (
   pendingDocumentRemoval
 ) => {
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, {
         documents: pageState.answers.documents ?? []
       })
     },
-    (err) => {
-      logRemovalLeftToRetry(request, pendingDocumentRemoval, err)
-      return render(request, h, pageState, EMPTY_FORM, {
-        extra: {
-          recoverableError: true,
-          pendingDocumentRemoval
-        }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    () =>
+      renderRemovalLeftToRetry(request, h, pageState, pendingDocumentRemoval),
+    { action: 'remove-document', ...pendingDocumentRemoval }
   )
   if (failure) {
     return failure
@@ -280,18 +278,13 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
   }
   const pendingDocumentRemoval = { index, uploadId: entry.uploadId }
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
-    (err) => {
-      logRemovalLeftToRetry(request, pendingDocumentRemoval, err)
-      return render(request, h, pageState, EMPTY_FORM, {
-        extra: {
-          recoverableError: true,
-          pendingDocumentRemoval
-        }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    () =>
+      renderRemovalLeftToRetry(request, h, pageState, pendingDocumentRemoval),
+    { action: 'remove-document', ...pendingDocumentRemoval }
   )
   if (failure) {
     return failure
@@ -306,13 +299,11 @@ const leavePage = async (request, h) => {
     !kit.hubExitTarget(request) &&
     hasDocumentsNotClearedByScan(pageState.documents)
   ) {
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        scansNotCleared: scansNotCleared(pageState.documents)
-      },
-      'Continue refused: documents not cleared by the virus scan'
-    )
+    kit.logRefusal(request, {
+      fieldErrors: { documents: copy.errors.cannotContinue },
+      reason: 'scans-not-cleared',
+      scansNotCleared: scansNotCleared(pageState.documents)
+    })
     return render(request, h, pageState, EMPTY_FORM, {
       summaryErrors: settlingSummaryErrors(pageState.documents)
     })
@@ -354,15 +345,16 @@ export const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) {
     return h.continue
   }
-  request.logger.info(
-    { journeyId: request.params.journeyId },
-    'Document refused: upload larger than the payload limit'
-  )
+  const errors = { file: OVERSIZE_FILE_MESSAGE }
+  kit.logRefusal(request, {
+    fieldErrors: errors,
+    reason: 'upload-over-size-limit'
+  })
   const pageState = await loadPage(request, h)
   const crumb =
     request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)
   return render(request, h, pageState, EMPTY_FORM, {
-    errors: { file: OVERSIZE_FILE_MESSAGE },
+    errors,
     extra: { crumb }
   }).code(HTTP_STATUS_BAD_REQUEST)
 }

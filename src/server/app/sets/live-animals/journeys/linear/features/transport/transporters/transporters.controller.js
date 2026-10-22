@@ -18,13 +18,6 @@ import {
 } from './rows.js'
 import { validation } from './validate.js'
 
-/** The transporter list — the journey's one transporter step.
- *
- * It declares all three transporter answers because picking a row settles all
- * of them: the record carries its own type, so the type is read off the pick
- * rather than asked in front of the list. The add spokes behind
- * "Add a transporter" write the same answers without declaring them, the way
- * the address pickers write the parties the addresses page declares. */
 export const meta = {
   ...page,
   collects: ['transporterType', 'commercialTransporter', 'privateTransporter'],
@@ -34,14 +27,9 @@ const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 
-/** The transporters this organisation can pick — the ones it has added for
- * itself as well as the ones the service ships. Per-organisation, so it is read
- * per request rather than held at module load. */
 const availableTransporters = (request) =>
   transporters.partiesFor(organisationIdOf(request))
 
-/** The search button and the page's own submits share the one form, told apart
- * by their `action` value — the address picker's shape. */
 const isSearchAction = (payload) => payload.action === 'search'
 
 const render = (
@@ -85,14 +73,6 @@ const render = (
   })
 }
 
-/** The record behind the answers already on the notification, so a returning
- * trader sees their pick still checked. Matched on name: the notification
- * stores the transporter's details, not the id of the row it came from.
- *
- * The match folds case and spacing the way the register does, so a record whose
- * spelling was corrected still resolves for a notification that recorded the
- * old one — re-adding a transporter overwrites its stored name, and an exact
- * match would leave the earlier notification with nothing checked. */
 const selectedIdFor = (request, answers) => {
   const chosenName =
     answers.commercialTransporter?.name ?? answers.privateTransporter?.name
@@ -147,6 +127,7 @@ const post = async (request, h) => {
   const records = availableTransporters(request)
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return render(request, h, journey, { query }, { errors })
   }
@@ -154,6 +135,7 @@ const post = async (request, h) => {
   const chosen = records.find((record) => record.id === payload.transporter)
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = await commitOrSkip(request, h, chosen)
     },

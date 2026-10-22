@@ -104,9 +104,12 @@ For a conditional field, use `scope.has(fieldName)` to decide whether to render
 and validate it. Do not commit a hidden value. The evaluator removes stored
 data when the obligation leaves scope.
 
-Wrap the write in `kit.recoverableSave()`. On a marked persistence failure,
-render the same values with `recoverableError: true` and return 500. Let other
-errors throw.
+Wrap the write in `kit.recoverableSave(request, …)`. On a marked persistence
+failure it logs the fallback once; render the same values with
+`recoverableError: true` and return 500. Let other errors throw. When
+validation fails, call `kit.logRefusal(request, { fieldErrors })` before you render the
+page again with status 400. `fieldErrors` is the map of field key to the message
+the page shows.
 
 Run `npm run test:live-animals`. `buildDispatch` should now pass. Update the existing
 case for this controller in

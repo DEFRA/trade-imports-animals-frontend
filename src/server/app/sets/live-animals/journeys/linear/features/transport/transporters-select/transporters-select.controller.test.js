@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -61,6 +62,10 @@ describe('/transporters/select', () => {
     expect(result.view.context.errors.commercialTransporter).toBeTruthy()
     expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.commercialTransporter).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['commercialTransporter']
+    })
   })
 
   it('Should walk on without saving when no transporter is picked', async () => {

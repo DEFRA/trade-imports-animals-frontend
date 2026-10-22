@@ -2,26 +2,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
 import { config } from '../../../../../../../../../config/config.js'
+import {
+  expectOneLogged,
+  journeyRequest
+} from '../../../../../../../engine/test-support.js'
 import { SCAN_STATUS } from '../scan-poll.js'
-
-const recorded = vi.hoisted(() => {
-  const entries = []
-  const recordAt = (level) => (fields, message) =>
-    entries.push({ level, fields, message })
-  return {
-    entries,
-    logger: {
-      debug: recordAt('debug'),
-      info: recordAt('info'),
-      warn: recordAt('warn'),
-      error: recordAt('error')
-    }
-  }
-})
-
-vi.mock('../../../../../../../../common/helpers/logging/logger.js', () => ({
-  createLogger: () => recorded.logger
-}))
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -37,23 +22,22 @@ describe('scanStatusOf', () => {
 
   afterAll(() => config.set('stubMode', originalStubMode))
 
-  it('Should show a document as pending and log a warning when the upload service call fails', async () => {
+  it('Should show a document as pending and log one warning with the journey id, the upload id and the error when the upload service call fails', async () => {
     const failure = new Error('upload service unavailable')
     fetchMocker.mockRejectOnce(failure)
+    const request = journeyRequest('journey-1')
 
     const status = await scanStatusOf(
       { uploadId: 'up-1', filename: 'itahc.pdf' },
-      true
+      { refresh: true, request }
     )
 
     expect(status).toBe(SCAN_STATUS.PENDING)
-    expect(recorded.entries).toEqual([
-      {
-        level: 'warn',
-        fields: { err: failure, uploadId: 'up-1' },
-        message:
-          'Scan status unavailable: upload service call failed, document shown as pending'
-      }
-    ])
+    expectOneLogged(request.logger, {
+      level: 'warn',
+      fields: { journeyId: 'journey-1', uploadId: 'up-1', err: failure },
+      message:
+        'Scan status unavailable: upload service call failed, document shown as pending'
+    })
   })
 })
