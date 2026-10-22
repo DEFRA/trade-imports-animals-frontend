@@ -7,8 +7,6 @@ const CLEAN_FILENAME = 'invoice.pdf'
 const VIRUS_FILENAME = 'virus-notes.pdf'
 const NEVER_SCANS_FILENAME = 'never-scans.pdf'
 
-// The stub tracks a scan lifecycle per registered upload, so a status read
-// needs one registered first.
 const registeredUploadId = async () => {
   const uploadId = randomUUID()
   await documentUploads.register({
@@ -22,9 +20,7 @@ const registeredUploadId = async () => {
 describe('#documentUploads', () => {
   describe('#scanStatus', () => {
     it('Should answer PENDING on every read after upload until a refresh read settles it', async () => {
-      const uploadId = await registeredUploadId({
-        filename: CLEAN_FILENAME
-      })
+      const uploadId = await registeredUploadId()
       expect(
         await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).toEqual({ scanStatus: 'PENDING' })
@@ -44,9 +40,7 @@ describe('#documentUploads', () => {
     })
 
     it('Should settle a filename containing "virus" as REJECTED on the refresh read, and stay REJECTED', async () => {
-      const uploadId = await registeredUploadId({
-        filename: VIRUS_FILENAME
-      })
+      const uploadId = await registeredUploadId()
       expect(
         await documentUploads.scanStatus({
           uploadId,
@@ -69,9 +63,7 @@ describe('#documentUploads', () => {
     })
 
     it('Should keep a filename containing "never-scans" PENDING even through refresh reads', async () => {
-      const uploadId = await registeredUploadId({
-        filename: NEVER_SCANS_FILENAME
-      })
+      const uploadId = await registeredUploadId()
       expect(
         await documentUploads.scanStatus({
           uploadId,
@@ -154,7 +146,7 @@ describe('#documentUploads', () => {
 
   describe('#streamFile', () => {
     it('Should serve a canned placeholder PDF, as the stub keeps no uploaded bytes', async () => {
-      const uploadId = await registeredUploadId({ filename: 'itahc.pdf' })
+      const uploadId = await registeredUploadId()
 
       const response = await documentUploads.streamFile(uploadId)
 
@@ -170,9 +162,7 @@ describe('#documentUploads', () => {
 
   describe('#remove', () => {
     it('Should settle a removed uploadId from its filename, not the lifecycle', async () => {
-      const uploadId = await registeredUploadId({
-        filename: CLEAN_FILENAME
-      })
+      const uploadId = await registeredUploadId()
       await documentUploads.remove(uploadId)
       expect(
         await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
