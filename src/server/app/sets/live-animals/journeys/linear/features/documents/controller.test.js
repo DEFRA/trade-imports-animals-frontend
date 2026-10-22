@@ -326,7 +326,9 @@ describe('documents — taking on an upload the browser returns with', () => {
     const [entry] = result.after.documents
     expect(entry.accompanyingDocumentType).toBe('COMMERCIAL_INVOICE')
   })
+})
 
+describe('documents — refusing an upload the browser returns with', () => {
   it('Should refuse a return whose session holds no file entry and append nothing', async () => {
     const result = await driveClaim({ ...validDocument })
 
@@ -340,6 +342,23 @@ describe('documents — taking on an upload the browser returns with', () => {
     )
 
     expect(result.view.context.errors.file).toBe(FILE_EMPTY_MESSAGE)
+    expect(result.after).toEqual(result.before)
+  })
+
+  /**
+   * The page stores an attachment type resolved from the extension, while the upload service
+   * judges the type the browser declared — so a file with an accepted content type and no
+   * extension satisfies the service and leaves this unresolved. Saved rather than refused, the
+   * null then blocks the whole collection with nothing saying which document or why.
+   */
+  it('Should refuse a file whose name resolves to no attachment type, and append nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({ filename: 'certificate-with-no-extension' })
+      })
+    )
+
+    expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 

@@ -8,23 +8,18 @@ import {
 } from '../form/errors.js'
 import { documentFromPayload } from '../form/payload.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import { attachmentTypeFor } from '../upload-config.js'
+import { FILE_TYPE_MESSAGE, attachmentTypeFor } from '../upload-config.js'
 
-/**
- * What the trader submitted to cdp-uploader, read back so the page can judge it by its own
- * rules. cdp-uploader keeps the text fields alongside the file and serves them while the scan
- * is still running, so the document can be taken on the moment the browser returns.
- */
 const submittedForm = async (uploadId) => {
   const { form } = await documentUploadSessions.read(uploadId)
   return form ?? {}
 }
 
-const entryFrom = (form, file) => ({
+const entryFrom = (form, upload) => ({
   ...documentFromPayload(form),
-  accompanyingDocumentAttachmentType: attachmentTypeFor(file.filename ?? ''),
-  uploadId: file.uploadId,
-  filename: file.filename
+  accompanyingDocumentAttachmentType: upload.attachmentType,
+  uploadId: upload.uploadId,
+  filename: upload.filename
 })
 
 const callOrRefuse = async (request, ids, call) => {
@@ -50,7 +45,9 @@ const callOrRefuse = async (request, ids, call) => {
  * @param {object} request - the returning request, carrying the correlation handle
  * @param {string} correlationId - the handle the upload was opened under
  * @param {object} pageState - the loaded page state
- * @returns {Promise<{values?: object, errors?: object, summaryErrors?: object[], takeOnFailed?: boolean}|{entry: object}|null>} what to do next
+ * @returns {Promise<object|null>} `{entry}` to add it; `{values, errors}` for a refusal by the
+ *   page's rules; `{values, summaryErrors}` when the notification is full; `{takeOnFailed, values}`
+ *   when a service could not be reached; `null` for a handle this notification never opened
  */
 export const claimUpload = async (request, correlationId, pageState) => {
   const journeyId = pageState.journey.journeyId
@@ -92,9 +89,21 @@ export const claimUpload = async (request, correlationId, pageState) => {
     return { values, summaryErrors: capacityExceededError() }
   }
 
+  // The page stores a document by its attachment type, resolved from the file's
+  // extension, while the upload service judges the type the browser declared. A
+  // file can satisfy the service and still leave this unresolved — one with no
+  // extension at all — so an unresolved type is a refusal here, not a null saved
+  // against the notification for a later reader to trip over.
+  const filename = form.file?.filename
+  const attachmentType = attachmentTypeFor(filename ?? '')
+  const fileError =
+    filename && !attachmentType
+      ? { file: FILE_TYPE_MESSAGE }
+      : submittedFileError(form.file)
+
   // Every fault at once, in the page's field order: a trader who got the file
   // and a field wrong is told both, not one and then the other.
-  const errors = documentAddErrors(form, values, submittedFileError(form.file))
+  const errors = documentAddErrors(form, values, fileError)
   if (Object.keys(errors).length > 0) {
     request.logger.info(
       { ...ids, fields: Object.keys(errors) },
@@ -105,7 +114,8 @@ export const claimUpload = async (request, correlationId, pageState) => {
 
   const entry = entryFrom(form, {
     uploadId: registered.uploadId,
-    filename: form.file?.filename
+    filename,
+    attachmentType
   })
   const claimed = await callOrRefuse(request, ids, () =>
     documentUploads.claim({
@@ -118,5 +128,6 @@ export const claimUpload = async (request, correlationId, pageState) => {
   if (claimed.takeOnFailed) {
     return { ...claimed, values }
   }
+  request.logger.info(ids, 'Took on the returned upload')
   return { entry }
 }
