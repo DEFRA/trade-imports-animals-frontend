@@ -44,12 +44,22 @@ const fileInput = (page) => page.locator('input[type="file"]')
 const uploadControl = (scope) =>
   scope.getByRole('button', { name: copy.file.label })
 
+// Handing a file to the input is one action, and `test.slow()` does not extend
+// an action's own deadline. The oversize cases have to send a genuinely
+// over-cap file — the browser check reads the limit once, at load, so a smaller
+// file cannot provoke it — and writing fifty megabytes through the browser
+// outlasts the default deadline on a machine running every worker at once.
+const SET_FILE_TIMEOUT_MS = 60_000
+
 const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
-  fileInput(page).setInputFiles({
-    name: filename,
-    mimeType,
-    buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
-  })
+  fileInput(page).setInputFiles(
+    {
+      name: filename,
+      mimeType,
+      buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
+    },
+    { timeout: SET_FILE_TIMEOUT_MS }
+  )
 
 const validDocument = {
   accompanyingDocumentReference: 'ITAHC-2026-0001',
