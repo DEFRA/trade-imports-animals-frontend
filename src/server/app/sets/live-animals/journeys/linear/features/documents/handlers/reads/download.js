@@ -1,10 +1,8 @@
 import { Readable } from 'node:stream'
-import { isoDateFromDateParts } from '../../../../../../../../lib/validate/index.js'
 import {
   resolveContentDisposition,
   resolveDownloadContentType
 } from '../../download-content-type.js'
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../../upload-config.js'
 
 export const fileResponse = (h, streamed) =>
   h
@@ -12,15 +10,3 @@ export const fileResponse = (h, streamed) =>
     .header('Content-Type', resolveDownloadContentType(streamed.headers))
     .header('Content-Disposition', resolveContentDisposition(streamed.headers))
     .header('X-Content-Type-Options', 'nosniff')
-
-export const uploadDetails = (journey, entry, file, filename) => ({
-  journeyId: journey.journeyId,
-  filename,
-  contentType: file.headers?.['content-type'],
-  bytes: file.payload,
-  documentType: entry.accompanyingDocumentType,
-  documentReference: entry.accompanyingDocumentReference,
-  dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue),
-  maxFileSize: MAX_FILE_SIZE_BYTES,
-  mimeTypes: ALLOWED_MIME_TYPES
-})

@@ -13,7 +13,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
-import { MAX_DOCUMENTS } from './contracts/max-documents.js'
+import { atDocumentCapacity } from './contracts/max-documents.js'
 import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
 import { UPLOAD_ID_PATTERN, ownsUpload } from './contracts/upload-id.js'
 import { copy as en } from './copy/copy.en.js'
@@ -276,7 +276,7 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   const journeyId = pageState.journey.journeyId
   const values = documentFromPayload(payload)
   const addForm = await openSessionOrReportUnavailable(request, journeyId)
-  if (pageState.documents.length >= MAX_DOCUMENTS) {
+  if (atDocumentCapacity(pageState.documents)) {
     request.logger.info(
       { journeyId },
       'Continue refused: the notification is at its document capacity'
@@ -289,7 +289,7 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   const errors = documentAddErrors(
     payload,
     values,
-    addForm.uploadPath ? notYetAddedFileError() : null
+    addForm.uploadPath ? notYetAddedFileError() : {}
   )
   request.logger.info(
     { journeyId, fields: Object.keys(errors) },

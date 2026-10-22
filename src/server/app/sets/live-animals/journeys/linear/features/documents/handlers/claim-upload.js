@@ -7,7 +7,7 @@ import {
   submittedFileError
 } from '../form/errors.js'
 import { documentFromPayload } from '../form/payload.js'
-import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
+import { atDocumentCapacity } from '../contracts/max-documents.js'
 import { FILE_TYPE_MESSAGE, attachmentTypeFor } from '../upload-config.js'
 
 const submittedForm = async (uploadId) => {
@@ -78,10 +78,7 @@ export const claimUpload = async (request, correlationId, pageState) => {
   const form = session.value
   const values = documentFromPayload(form)
 
-  // Capacity is judged here rather than before the upload: the file goes
-  // straight to the upload service, so this is the page's first chance to
-  // refuse one, and the trader keeps what they typed.
-  if (pageState.documents.length >= MAX_DOCUMENTS) {
+  if (atDocumentCapacity(pageState.documents)) {
     request.logger.info(
       ids,
       'Returned upload refused: the notification is at its document capacity'
@@ -89,11 +86,6 @@ export const claimUpload = async (request, correlationId, pageState) => {
     return { values, summaryErrors: capacityExceededError() }
   }
 
-  // The page stores a document by its attachment type, resolved from the file's
-  // extension, while the upload service judges the type the browser declared. A
-  // file can satisfy the service and still leave this unresolved — one with no
-  // extension at all — so an unresolved type is a refusal here, not a null saved
-  // against the notification for a later reader to trip over.
   const filename = form.file?.filename
   const attachmentType = attachmentTypeFor(filename ?? '')
   const fileError =
@@ -101,8 +93,6 @@ export const claimUpload = async (request, correlationId, pageState) => {
       ? { file: FILE_TYPE_MESSAGE }
       : submittedFileError(form.file)
 
-  // Every fault at once, in the page's field order: a trader who got the file
-  // and a field wrong is told both, not one and then the other.
   const errors = documentAddErrors(form, values, fileError)
   if (Object.keys(errors).length > 0) {
     request.logger.info(

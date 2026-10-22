@@ -34,13 +34,10 @@ const MESSAGE_BY_FILE_ERROR_CODE = {
 }
 
 /**
- * What to tell the trader about the file they submitted. The upload service's own wording for a
- * file it would not take is not shown: the reasons it refuses are the ones already stated above
- * the file input, so the page repeats those rather than a second phrasing of them. A file it took
- * but which carries no bytes is refused here, as a submission with no file at all is.
+ * What to tell the trader about the file they submitted.
  *
  * @param {object} [file] - the file entry the upload service returned
- * @returns {object|null} a file error to render, or null when the file can be taken on
+ * @returns {object} a file error to render, empty when the file can be taken on
  */
 export const submittedFileError = (file) => {
   if (!file?.filename) {
@@ -55,7 +52,7 @@ export const submittedFileError = (file) => {
   if (file.contentLength === 0) {
     return { file: copy.errors.fileEmpty }
   }
-  return null
+  return {}
 }
 
 // The error summary lists the fields in the order it is handed them, and the
@@ -76,7 +73,7 @@ const inFieldOrder = (errors) =>
     ])
   )
 
-export const documentAddErrors = (payload, bare, fileError = null) => {
+export const documentAddErrors = (payload, bare, fileError) => {
   const { errors } = validate(fields(), payload)
   return inFieldOrder({ ...errors, ...presenceErrors(bare), ...fileError })
 }

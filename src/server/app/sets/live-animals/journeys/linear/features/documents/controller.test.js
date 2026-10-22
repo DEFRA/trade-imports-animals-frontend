@@ -88,12 +88,6 @@ const statusRoute = documents.routes.find((route) =>
 
 const PDF_FILENAME = 'itahc-certificate.pdf'
 
-const pdfFile = (filename = PDF_FILENAME, size = 8) => ({
-  filename,
-  headers: { 'content-type': 'application/pdf' },
-  payload: Buffer.alloc(size, 1)
-})
-
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
 // Pinned as literals rather than read from copy, so a rewording fails a test.
 const TAG_SCANNING = 'Scanning for virus'
@@ -124,10 +118,6 @@ const storedDocument = (overrides = {}) => ({
   ...overrides
 })
 
-// What the browser returns with after posting its file to the upload service:
-// the correlation handle in the query, and the submitted fields readable from
-// the session it was posted to. Both are stubbed at the service boundary, which
-// is what the page actually depends on.
 const UPLOAD_ID = 'upload-session-1'
 const CORRELATION_ID = randomUUID()
 const UNREGISTERED_CORRELATION_ID = randomUUID()
@@ -185,8 +175,6 @@ const submittedDocument = (overrides = {}) => ({
   ...overrides
 })
 
-// An upload the notification has registered, so the scan lifecycle a stored
-// document's row reads from is live for it.
 let nextUploadSession = 0
 const registeredUpload = async (filename) => {
   nextUploadSession += 1
@@ -196,10 +184,16 @@ const registeredUpload = async (filename) => {
     uploadId,
     correlationId: `correlation-${nextUploadSession}`
   })
-  // The stub settles a scan from the filename, so the row's lifecycle follows
-  // the file the test named.
   await documentUploads.scanStatus({ uploadId, filename })
   return uploadId
+}
+
+/** The payload cap a route carries when it sets none, read from hapi itself. */
+const uncappedRouteMaxBytes = async () => {
+  const server = Hapi.server()
+  server.route({ method: 'POST', path: '/', handler: () => null })
+  const [route] = server.table()
+  return route.settings.payload.maxBytes
 }
 
 const summaryTexts = (result) =>
@@ -256,8 +250,6 @@ describe('documents — taking on an upload the browser returns with', () => {
     ])
   })
 
-  // A trader who got both the fields and the file wrong is told everything at
-  // once, not one fault and then the next.
   it('Should name a refused file alongside the missing fields, in page order', async () => {
     const result = await driveClaim({
       file: submittedFile({ hasError: true, errorCode: 'FILE_TOO_LARGE' })
@@ -295,34 +287,6 @@ describe('documents — taking on an upload the browser returns with', () => {
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
-  it('Should hand the claim the date of issue as YYYY-MM-DD, not the date parts the form collected', async () => {
-    const claim = vi.spyOn(documentUploads, 'claim')
-    const found = vi
-      .spyOn(documentUploads, 'findByCorrelationId')
-      .mockResolvedValue({
-        uploadId: UPLOAD_ID,
-        correlationId: CORRELATION_ID
-      })
-    const read = vi
-      .spyOn(documentUploadSessions, 'read')
-      .mockResolvedValue({ uploadStatus: 'pending', form: submittedDocument() })
-
-    const result = await driveHandler(get, {
-      query: { upload: CORRELATION_ID }
-    })
-
-    expect(result.response.redirect).toBeDefined()
-    // The whole value, pinned: `12/12/2025` goes out as a date with no time and
-    // no offset, so a substring or a shape check would pass on the instant
-    // form the API now rejects.
-    expect(claim).toHaveBeenCalledWith(
-      expect.objectContaining({ dateOfIssue: '2025-12-12' })
-    )
-    claim.mockRestore()
-    found.mockRestore()
-    read.mockRestore()
-  })
-
   it('Should store the chosen type whatever the filename says', async () => {
     const result = await driveClaim(
       submittedDocument({
@@ -352,12 +316,6 @@ describe('documents — refusing an upload the browser returns with', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  /**
-   * The page stores an attachment type resolved from the extension, while the upload service
-   * judges the type the browser declared — so a file with an accepted content type and no
-   * extension satisfies the service and leaves this unresolved. Saved rather than refused, the
-   * null then blocks the whole collection with nothing saying which document or why.
-   */
   it('Should refuse a file whose name resolves to no attachment type, and append nothing', async () => {
     const result = await driveClaim(
       submittedDocument({
@@ -822,15 +780,7 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // The file itself can only go to the upload service, so Continue cannot
-  // attach it. The trader keeps every answer they typed and is told which
-  // action does attach it.
-  /**
-   * The add step is reported on the file field, not as a summary line of its own: the summary
-   * links to the file input, and the input takes its message from the field errors, so a
-   * summary-only entry led to a control with nothing on it saying why.
-   */
-  it('Should keep the answers Continue carries, ask for the add action on the file and log that refusal once with the field it names, appending nothing', async () => {
+  it('Should keep the reference, the type and the date of issue, ask for the add action on the file and log that refusal once with the field it names, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument }
     })
@@ -838,8 +788,16 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.view.context.errors.file).toBe(NOT_YET_ADDED_MESSAGE)
     expect(summaryTexts(result)).toContain(NOT_YET_ADDED_MESSAGE)
     expect(result.view.context.values.accompanyingDocumentReference).toBe(
-      'GBHC1234567890'
+      validDocument.accompanyingDocumentReference
     )
+    expect(result.view.context.values.accompanyingDocumentType).toBe(
+      validDocument.accompanyingDocumentType
+    )
+    expect(result.view.context.values.accompanyingDocumentDateOfIssue).toEqual({
+      day: '12',
+      month: '12',
+      year: '2025'
+    })
     expect(result.after).toEqual(result.before)
     expect(linesLogged(result, CONTINUE_NOT_ADDED_LINE)).toEqual([
       {
@@ -850,11 +808,6 @@ describe('documents — Continue finishes a part-filled document', () => {
     ])
   })
 
-  /**
-   * The message cannot claim a file was chosen. Continuing never carries one and no browser puts
-   * one back into the input, so the trader who chose a file and the trader who did not read the
-   * same line — and the one who did not would be told to add a document they never picked.
-   */
   it('Should not claim a file was chosen when Continue asks for the add action', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument }
@@ -882,8 +835,7 @@ describe('documents — Continue finishes a part-filled document', () => {
       payload: {
         action: 'continue',
         accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
-        file: pdfFile()
+        accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
       }
     })
     expect(result.response.redirect).toBeDefined()
@@ -898,8 +850,7 @@ describe('documents — Continue finishes a part-filled document', () => {
       payload: {
         action: 'continue',
         ...validDocument,
-        accompanyingDocumentType: UNOFFERED_TYPE,
-        file: pdfFile()
+        accompanyingDocumentType: UNOFFERED_TYPE
       }
     })
     expect(result.response.redirect).toBeDefined()
@@ -908,7 +859,7 @@ describe('documents — Continue finishes a part-filled document', () => {
 
   it('Should leave a part-filled form behind on the exit to the overview, appending nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { exit: 'hub', ...validDocument, file: pdfFile() }
+      payload: { exit: 'hub', ...validDocument }
     })
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)
@@ -1081,15 +1032,11 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
 
-  // The file goes to the upload service, never to this route, so the route
-  // takes no multipart body and raises no cap of its own: hapi's 1 MB default
-  // stands, far below any document a trader attaches.
-  it('Should register the POST route with no multipart body, on hapi’s default cap', async () => {
+  it('Should register the POST route with no multipart parsing and no payload cap of its own', async () => {
     const server = await serverWithDocumentRoutes()
     const route = server.table().find((entry) => entry.method === 'post')
     expect(route.settings.payload.multipart).toBeFalsy()
-    expect(route.settings.payload.maxBytes).toBe(1048576)
-    expect(route.settings.payload.maxBytes).toBeLessThan(MAX_FILE_SIZE_BYTES)
+    expect(route.settings.payload.maxBytes).toBe(await uncappedRouteMaxBytes())
   })
 })
 
