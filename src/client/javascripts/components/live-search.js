@@ -81,27 +81,34 @@ class LiveSearch {
     this.inFlight = null
   }
 
-  async refresh(keptSlot) {
+  refresh(keptSlot) {
     this.inFlight?.abort()
     const request = new AbortController()
     this.inFlight = request
-    const html = await this.fetchSlots(request.signal)
-    if (html === null || request.signal.aborted) {
-      return
-    }
-    this.inFlight = null
-    this.swapSlots(parseHtml(html), keptSlot)
+    this.fetchSlots(request.signal).then(
+      (html) => this.applyResponse(request, html, keptSlot),
+      () => this.forget(request)
+    )
   }
 
   async fetchSlots(signal) {
-    try {
-      const response = await fetch(
-        `${this.resultsHref}?${queryStringOf(this.$module)}`,
-        { headers: { Accept: 'text/html' }, signal }
-      )
-      return response.ok ? await response.text() : null
-    } catch {
-      return null
+    const response = await fetch(
+      `${this.resultsHref}?${queryStringOf(this.$module)}`,
+      { headers: { Accept: 'text/html' }, signal }
+    )
+    return response.ok ? response.text() : null
+  }
+
+  applyResponse(request, html, keptSlot) {
+    this.forget(request)
+    if (html !== null && !request.signal.aborted) {
+      this.swapSlots(parseHtml(html), keptSlot)
+    }
+  }
+
+  forget(request) {
+    if (this.inFlight === request) {
+      this.inFlight = null
     }
   }
 

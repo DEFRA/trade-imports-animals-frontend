@@ -33,6 +33,10 @@ export const SKIPPED = new Map([
     'upload-scan polling endpoint — JSON, not a page'
   ],
   [
+    '/notifications/{journeyId}/commodities/results',
+    'live commodity search results — an HTML fragment the page swaps in, not a page; search.fit.spec.js audits the page with axe'
+  ],
+  [
     '/notifications/{journeyId}/accompanying-documents/{uploadId}/file',
     'file download — needs an uploadId that only a real upload produces'
   ],
