@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { pagePath, pageRoutePath } from '../../../../../../shared/paths.js'
+import { pageRoutePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -18,7 +18,10 @@ import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
 import { UPLOAD_ID_PATTERN, ownsUpload } from './contracts/upload-id.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { returnedCorrelationId } from './contracts/upload-session.js'
+import {
+  documentsPageHref,
+  returnedCorrelationId
+} from './contracts/upload-session.js'
 import {
   capacityExceededError,
   documentAddErrors,
@@ -149,12 +152,10 @@ const getFile = async (request, h) => {
   return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
 
-const pageHref = (request) =>
-  kit.withChangeContext(request, pagePath(request.params.journeyId, page.slug))
-
 // The single-page loop: a saved document leaves the trader on the page it was
 // added from, ready for the next one.
-const backToPage = (request, h) => h.redirect(pageHref(request))
+const backToPage = (request, h) =>
+  h.redirect(documentsPageHref(request, request.params.journeyId))
 
 const isAlreadySaved = (pageState, uploadId) =>
   pageState.documents.some(
