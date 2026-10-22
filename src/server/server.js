@@ -9,7 +9,7 @@ import { csrf } from '../plugins/csrf.js'
 import { authPlugin } from '../plugins/auth.js'
 import { authRoutes } from './auth/index.js'
 import { stubSignInRoutes } from './auth/stub-sign-in.js'
-import { stubUploadRoutes } from './app/services/cdp-uploader/stub.js'
+import { documentUploadRoutes } from './app/services/cdp-uploader/index.js'
 import { config } from '../config/config.js'
 import { isStubMode } from './common/services/mode.js'
 import { pulse } from './common/helpers/pulse.js'
@@ -82,8 +82,8 @@ export async function createServer() {
     ...(authEnabled
       ? [authPlugin, isStubMode() ? stubSignInRoutes : authRoutes]
       : []),
-    ...(isStubMode() ? [stubUploadRoutes] : []),
-    router // Register all the controllers/routes defined in src/server/router.js
+    ...documentUploadRoutes(),
+    router
   ])
 
   server.app.cache = server.cache({
@@ -92,10 +92,6 @@ export async function createServer() {
     expiresIn: config.get('session.cache.ttl')
   })
 
-  // Server-wide, and before routing: every request under a set's mount runs in
-  // that set's context from here on, whether or not it reaches a set route.
-  // Without it the error page and the view-render step depend on an `enterWith`
-  // from a set's own extension surviving, which it does not always do.
   server.ext(setContextExtension)
 
   server.ext('onPreResponse', catchAll)

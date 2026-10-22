@@ -1,7 +1,7 @@
 import { documentUploads } from '../../../../../../../services/document-uploads/index.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
-export const scanStatusOf = async (entry, refresh) => {
+export const scanStatusOf = async (entry, { refresh, request }) => {
   if (!entry.uploadId) {
     return SCAN_STATUS.COMPLETE
   }
@@ -12,16 +12,25 @@ export const scanStatusOf = async (entry, refresh) => {
       refresh
     })
     return scanStatus
-  } catch {
+  } catch (err) {
+    request.logger.warn(
+      {
+        err,
+        status: err.status,
+        journeyId: request.params.journeyId,
+        uploadId: entry.uploadId
+      },
+      'Could not read the document scan status, treating it as pending'
+    )
     return SCAN_STATUS.PENDING
   }
 }
 
-export const withScanStatus = (documents, refresh) =>
+export const withScanStatus = (documents, { refresh, request }) =>
   Promise.all(
     documents.map(async (item) => ({
       ...item,
-      scanStatus: await scanStatusOf(item.entry, refresh)
+      scanStatus: await scanStatusOf(item.entry, { refresh, request })
     }))
   )
 

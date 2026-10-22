@@ -1,5 +1,16 @@
 import { isStubMode } from '../../../common/services/mode.js'
-import { documentUploadSessions as stubSessions } from './stub.js'
+import {
+  documentUploadSessions as stubSessions,
+  stubUploadRoutes
+} from './stub.js'
 import { documentUploadSessions as realSessions } from './real.js'
 
-export const documentUploadSessions = isStubMode() ? stubSessions : realSessions
+const sessionService = () => (isStubMode() ? stubSessions : realSessions)
+
+export const documentUploadSessions = {
+  open: (session) => sessionService().open(session),
+  read: (uploadId) => sessionService().read(uploadId)
+}
+
+export const documentUploadRoutes = () =>
+  isStubMode() ? [stubUploadRoutes] : []

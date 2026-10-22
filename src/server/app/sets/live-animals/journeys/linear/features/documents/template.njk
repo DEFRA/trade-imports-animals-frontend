@@ -56,9 +56,8 @@
     html: additionalDocumentsHtml
   }) }}
 
-  {# One form, two targets. Save and add another carries the file, so it posts
-     to the upload service; every other action posts to the page and carries
-     the typed fields alone, which is why the page takes no multipart body. #}
+  {# No enctype: this form posts the typed fields alone. The add button carries
+     its own formaction and formenctype for the file. #}
   <form method="post" novalidate
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">

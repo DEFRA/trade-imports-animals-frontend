@@ -47,7 +47,7 @@ describe('#upload-config', () => {
     expect(listed).toEqual(accepted)
   })
 
-  it('Should hold the 50MB decimal limit the upload service is asked to enforce', () => {
+  it('Should hold the 50MB decimal limit and name it in the oversize message', () => {
     expect(MAX_FILE_SIZE_BYTES).toBe(50000000)
     expect(OVERSIZE_FILE_MESSAGE).toBe(
       'The selected file must be smaller than 50MB'

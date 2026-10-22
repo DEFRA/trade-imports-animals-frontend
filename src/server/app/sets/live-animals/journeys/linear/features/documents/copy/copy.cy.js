@@ -1,4 +1,6 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+const addAnother = 'Cadw ac ychwanegu un arall'
+
 export const copy = {
   title: 'Uwchlwytho dogfennau',
   guidance: {
@@ -63,7 +65,7 @@ export const copy = {
     enteredDropZone: 'Wedi mynd i mewn i’r parth gollwng',
     leftDropZone: 'Wedi gadael y parth gollwng'
   },
-  addAnother: 'Cadw ac ychwanegu un arall',
+  addAnother,
   table: {
     caption: 'Dogfennau rydych chi wedi’u hychwanegu',
     reference: 'Cyfeirnod y ddogfen',
@@ -118,8 +120,7 @@ export const copy = {
     dateRequired: 'Rhowch ddyddiad cyhoeddi',
     fileRequired: 'Uwchlwythwch ddogfen',
     fileEmpty: 'Mae’r ffeil a ddewiswyd yn wag',
-    notYetAdded:
-      'Dewiswch ffeil, ac yna dewiswch ‘Cadw ac ychwanegu un arall’ i ychwanegu’r ddogfen hon',
+    notYetAdded: `Dewiswch ffeil, ac yna dewiswch ‘${addAnother}’ i ychwanegu’r ddogfen hon`,
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',

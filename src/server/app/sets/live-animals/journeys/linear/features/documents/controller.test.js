@@ -882,6 +882,46 @@ describe('documents — scan-status poll and view context', () => {
     ])
   })
 
+  it('Should treat an unreadable scan status as pending and log it against the upload', async () => {
+    const uploadId = await registeredUpload('itahc.pdf')
+    const err = Object.assign(
+      new Error(
+        'Failed to get document upload status: 500 Internal Server Error'
+      ),
+      { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
+    )
+    const read = vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(err)
+
+    try {
+      const result = await driveHandler(statusRoute.handler, {
+        seed: {
+          documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+        }
+      })
+
+      expect(result.response.payload.documents).toEqual([
+        { uploadId, scanStatus: 'PENDING' }
+      ])
+      expect(
+        result.logger.entries.filter(({ level }) => level === 'warn')
+      ).toEqual([
+        {
+          level: 'warn',
+          fields: {
+            err,
+            status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+            journeyId: result.journeyId,
+            uploadId
+          },
+          message:
+            'Could not read the document scan status, treating it as pending'
+        }
+      ])
+    } finally {
+      read.mockRestore()
+    }
+  })
+
   it('Should settle a pending scan through the poll leg, as the refresh link does', async () => {
     const uploadId = await registeredUpload('itahc.pdf')
     const seed = {
@@ -1155,6 +1195,41 @@ describe('documents — the add form when no upload session can be opened', () =
         getAssetPath: (asset) => `/assets/${asset}`
       })
     )
+
+  it('Should log the ids of a session it opened but could not record against the notification, and still refuse only the add form', async () => {
+    const err = Object.assign(
+      new Error('Failed to register document upload: 503 Service Unavailable'),
+      { status: SERVICE_UNAVAILABLE }
+    )
+    const register = vi
+      .spyOn(documentUploads, 'register')
+      .mockRejectedValue(err)
+    const unrecorded =
+      'Could not record the upload session against the notification'
+
+    try {
+      const result = await driveHandler(get)
+
+      expect(result.view.context.uploadFormUnavailable).toBe(true)
+      expect(
+        result.logger.entries.filter(({ message }) => message === unrecorded)
+      ).toEqual([
+        {
+          level: 'error',
+          fields: {
+            err,
+            status: SERVICE_UNAVAILABLE,
+            journeyId: result.journeyId,
+            uploadId: expect.any(String),
+            correlationId: expect.any(String)
+          },
+          message: unrecorded
+        }
+      ])
+    } finally {
+      register.mockRestore()
+    }
+  })
 
   it('Should refuse the add form with its reason above a still-focusable button, name that reason in the error summary, keep the saved documents and log the failure', async () => {
     const err = uploaderError()

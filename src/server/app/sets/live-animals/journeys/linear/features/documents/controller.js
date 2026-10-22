@@ -141,7 +141,7 @@ const getStatus = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
     state.collectionView(answers, ['documents'], evaluation),
-    true
+    { refresh: true, request }
   )
   return h.response({ documents: scanned(documents) })
 }

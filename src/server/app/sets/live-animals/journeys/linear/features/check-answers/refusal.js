@@ -10,14 +10,14 @@ import { copy as cy } from '../documents/copy/copy.cy.js'
 
 const documentsCopy = copyFor({ en, cy })
 
-const documentScanStatuses = async (answers) => {
+const documentScanStatuses = async (answers, request) => {
   const documents = [answers.documents ?? []].flat()
   if (documents.length === 0) {
     return []
   }
   return withScanStatus(
     documents.map((entry) => ({ entry })),
-    false
+    { refresh: false, request }
   )
 }
 
@@ -25,9 +25,9 @@ const documentScanStatuses = async (answers) => {
  * so only an error when the trader has just been refused for it. */
 export const documentScanCardErrors = async (
   answers,
-  { includePending = true } = {}
+  { request, includePending = true } = {}
 ) => {
-  const withStatus = await documentScanStatuses(answers)
+  const withStatus = await documentScanStatuses(answers, request)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }
@@ -58,5 +58,7 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(invalidCardErrors).length > 0) {
     return true
   }
-  return Object.keys(await documentScanCardErrors(answers)).length > 0
+  return (
+    Object.keys(await documentScanCardErrors(answers, { request })).length > 0
+  )
 }

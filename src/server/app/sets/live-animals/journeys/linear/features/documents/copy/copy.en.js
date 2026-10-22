@@ -1,3 +1,5 @@
+const addAnother = 'Save and add another'
+
 export const copy = {
   title: 'Upload documents',
   guidance: {
@@ -52,16 +54,13 @@ export const copy = {
     a: 'a',
     upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',
-    // Wording for the JavaScript-enhanced drop zone. These match the design
-    // system's own defaults so the control reads the way traders meet it
-    // elsewhere on GOV.UK.
     chooseButton: 'Choose file',
     dropInstruction: 'or drop file',
     noFileChosen: 'No file chosen',
     enteredDropZone: 'Entered drop zone',
     leftDropZone: 'Left drop zone'
   },
-  addAnother: 'Save and add another',
+  addAnother,
   table: {
     caption: 'Documents you have added',
     reference: 'Document reference',
@@ -95,18 +94,12 @@ export const copy = {
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
-  // The check names no cause when it fails. cdp-uploader reports a rejection as
-  // a message of its own wording and no code, so the page cannot tell a virus
-  // from any other refusal the scan makes, and must not claim one.
   scanTags: {
     complete: 'Check completed',
     rejected: 'Rejected',
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
-  // Read out ahead of the tag so the status names the document it belongs to.
-  // The tag carries no other text, so without this a screen reader hears
-  // "Check completed" with nothing saying what was checked.
   scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',
@@ -122,11 +115,7 @@ export const copy = {
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
     fileEmpty: 'The selected file is empty',
-    // Says what is left to do and claims nothing about what was chosen. No file
-    // reaches the page on continue and no browser puts one back into the input,
-    // so a trader who chose one and a trader who did not are indistinguishable.
-    notYetAdded:
-      'Choose a file and select ‘Save and add another’ to add this document',
+    notYetAdded: `Choose a file and select ‘${addAnother}’ to add this document`,
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     uploadFailed: 'The file could not be uploaded. Try again.',
