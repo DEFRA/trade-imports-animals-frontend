@@ -3,7 +3,15 @@ import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { load } from 'cheerio'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
 
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { pagePath } from '../../../../../../shared/paths.js'
@@ -15,15 +23,15 @@ import {
 } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
+import * as state from '../../../../../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
   postHandlerOf,
-  recordingLogger,
-  registerTestSessionAuth,
-  stubH
+  registerTestSessionAuth
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
@@ -127,14 +135,23 @@ const submittedFile = (overrides = {}) => ({
   ...overrides
 })
 
-const returningFromUpload = (form, { uploadId = UPLOAD_ID } = {}) => {
+const returningFromUpload = (
+  form,
+  { uploadId = UPLOAD_ID, claimError = null } = {}
+) => {
   const found = vi
     .spyOn(documentUploads, 'findByCorrelationId')
     .mockResolvedValue({ uploadId, correlationId: CORRELATION_ID })
   const read = vi
     .spyOn(documentUploadSessions, 'read')
     .mockResolvedValue({ uploadStatus: 'pending', form })
-  const claim = vi.spyOn(documentUploads, 'claim').mockResolvedValue(undefined)
+  const claim = vi
+    .spyOn(documentUploads, 'claim')
+    .mockImplementation(async () => {
+      if (claimError) {
+        throw claimError
+      }
+    })
   return () => {
     found.mockRestore()
     read.mockRestore()
@@ -416,6 +433,125 @@ describe('documents — taking on an upload the browser returns with', () => {
 
     expect(replayed.response.redirect).toBeDefined()
     expect(replayed.after.documents).toHaveLength(1)
+  })
+})
+
+describe('documents — taking on a returned upload a service refuses', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  const SERVICE_UNAVAILABLE = 503
+  const NOT_FOUND = 404
+  // Pinned as a literal rather than read from the handler, so a reworded line
+  // fails here.
+  const TAKE_ON_FAILED_MESSAGE = 'Could not take on the returned upload'
+  // Registered against the notification but never opened with the upload
+  // service, so reading the session it names answers 404.
+  const UNOPENED_UPLOAD_ID = 'upload-session-never-opened'
+
+  const claimRefusal = () =>
+    Object.assign(
+      new Error('Failed to claim document upload: 503 Service Unavailable'),
+      { status: SERVICE_UNAVAILABLE }
+    )
+
+  const errorEntries = ({ logger }) =>
+    logger.entries.filter(({ level }) => level === 'error')
+
+  it('Should hold the trader on the page with the problem banner when the upload session cannot be read, appending nothing and logging the failure once', async () => {
+    const correlationId = randomUUID()
+    await documentUploads.register({
+      journeyId: 'journey-1',
+      uploadId: UNOPENED_UPLOAD_ID,
+      correlationId
+    })
+
+    const result = await driveHandler(get, { query: { upload: correlationId } })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(result.before)
+    // The add form is still live, so the page says the service failed without
+    // also claiming documents cannot be uploaded.
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(summaryTexts(result)).toEqual([])
+    expect(errorEntries(result)).toEqual([
+      {
+        level: 'error',
+        fields: {
+          err: expect.any(Error),
+          status: NOT_FOUND,
+          journeyId: result.journeyId,
+          uploadId: UNOPENED_UPLOAD_ID,
+          correlationId
+        },
+        message: TAKE_ON_FAILED_MESSAGE
+      }
+    ])
+  })
+
+  it('Should hold the trader on the page with the answers they submitted when the claim is refused, appending nothing and logging the failure once', async () => {
+    const refusal = claimRefusal()
+
+    const result = await driveClaim(submittedDocument(), {
+      claimError: refusal
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.view.context.values.accompanyingDocumentReference).toBe(
+      validDocument.accompanyingDocumentReference
+    )
+    expect(result.after).toEqual(result.before)
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(summaryTexts(result)).toEqual([])
+    expect(errorEntries(result)).toHaveLength(1)
+    const [logged] = errorEntries(result)
+    expect(logged).toEqual({
+      level: 'error',
+      fields: {
+        err: refusal,
+        status: SERVICE_UNAVAILABLE,
+        journeyId: result.journeyId,
+        uploadId: UPLOAD_ID,
+        correlationId: CORRELATION_ID
+      },
+      message: TAKE_ON_FAILED_MESSAGE
+    })
+    expect(logged.fields.err).toBe(refusal)
+  })
+
+  it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, so a reload tries the save again', async () => {
+    const saveFailure = new BackendRequestError('save answers', {
+      status: SERVICE_UNAVAILABLE,
+      statusText: 'Service Unavailable'
+    })
+    vi.spyOn(state, 'appendEntry').mockRejectedValue(saveFailure)
+
+    const result = await driveClaim(submittedDocument())
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(result.before)
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(summaryTexts(result)).toEqual([])
+    expect(errorEntries(result)).toHaveLength(1)
+    const [logged] = errorEntries(result)
+    expect(logged).toEqual({
+      level: 'error',
+      fields: {
+        err: saveFailure,
+        journeyId: result.journeyId,
+        uploadId: UPLOAD_ID,
+        correlationId: CORRELATION_ID
+      },
+      message: 'Took on the returned upload but could not save the document'
+    })
+    expect(logged.fields.err).toBe(saveFailure)
   })
 })
 
@@ -1004,18 +1140,6 @@ describe('documents — the add form when no upload session can be opened', () =
       { status: SERVICE_UNAVAILABLE }
     )
 
-  // driveHandler keeps its request to itself, and what was logged is part of
-  // what this proves, so the page is driven with a logger the test can read.
-  const driveGet = async (seed) => {
-    const { journeyId } = await store.create()
-    await store.seedAnswers(journeyId, seed)
-    const logger = recordingLogger()
-    const request = journeyRequest(journeyId, { logger })
-    const h = stubH(request)
-    const response = await get(request, h)
-    return { journeyId, response, view: h.captured.view, logger }
-  }
-
   const pageOf = ({ view: { view, context } }) =>
     load(
       environment.render(`${view}.njk`, {
@@ -1031,7 +1155,7 @@ describe('documents — the add form when no upload session can be opened', () =
     const saved = storedDocument()
 
     try {
-      const result = await driveGet({ documents: [saved] })
+      const result = await driveHandler(get, { seed: { documents: [saved] } })
 
       expect(result.response.statusCode).toBe(200)
       expect(result.view.context.uploadFormUnavailable).toBe(true)

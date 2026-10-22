@@ -154,8 +154,9 @@ const requestLocation = (pathOf, journeyId, query) => {
 }
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after. `amend` submits the journey and opens an amendment first;
- * `pathOf(journeyId)` gives the request the path it was made to. */
+ * and after, alongside the lines the handler logged. `amend` submits the
+ * journey and opens an amendment first; `pathOf(journeyId)` gives the request
+ * the path it was made to. */
 export const driveHandler = async (
   handler,
   {
@@ -189,7 +190,8 @@ export const driveHandler = async (
     before: seed,
     after,
     response,
-    view: h.captured.view
+    view: h.captured.view,
+    logger: request.logger
   }
 }
 

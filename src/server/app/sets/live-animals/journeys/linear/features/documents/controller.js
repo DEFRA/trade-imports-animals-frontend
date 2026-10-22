@@ -73,11 +73,27 @@ const get = async (request, h) => {
   return render(request, h, pageState, EMPTY_FORM, { extra: target })
 }
 
+const renderTakeOnFailure = async (request, h, pageState, values) =>
+  render(request, h, pageState, values, {
+    extra: {
+      recoverableError: true,
+      ...(await addFormTarget(request, pageState.journey.journeyId))
+    }
+  }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+
 // The upload service returns the browser with a GET, so the document is taken
 // on here and answered with a redirect: reloading the clean path cannot claim
 // the same upload twice.
 const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   const claimed = await claimUpload(request, correlationId, pageState)
+  if (claimed?.takeOnFailed) {
+    return renderTakeOnFailure(
+      request,
+      h,
+      pageState,
+      claimed.values ?? EMPTY_FORM
+    )
+  }
   if (claimed?.errors || claimed?.summaryErrors) {
     const target = await addFormTarget(request, pageState.journey.journeyId)
     return render(request, h, pageState, claimed.values, {
@@ -87,7 +103,26 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
   if (claimed?.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
-    await state.appendEntry(request, h, 'documents', claimed.entry)
+    const { failure } = await kit.recoverableSave(
+      async () => {
+        await state.appendEntry(request, h, 'documents', claimed.entry)
+      },
+      async (err) => {
+        request.logger.error(
+          {
+            err,
+            journeyId: pageState.journey.journeyId,
+            uploadId: claimed.entry.uploadId,
+            correlationId
+          },
+          'Took on the returned upload but could not save the document'
+        )
+        return renderTakeOnFailure(request, h, pageState, EMPTY_FORM)
+      }
+    )
+    if (failure) {
+      return failure
+    }
   }
   return backToPage(request, h)
 }

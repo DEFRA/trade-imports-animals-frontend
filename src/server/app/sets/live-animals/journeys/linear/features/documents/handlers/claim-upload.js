@@ -27,24 +27,42 @@ const entryFrom = (form, file) => ({
   filename: file.filename
 })
 
+const callOrRefuse = async (request, ids, call) => {
+  try {
+    return { value: await call() }
+  } catch (err) {
+    request.logger.error(
+      { err, status: err.status, ...ids },
+      'Could not take on the returned upload'
+    )
+    return { takeOnFailed: true }
+  }
+}
+
 /**
  * Takes on the document a returning browser just uploaded.
  *
  * Refusals add nothing and keep the trader's answers on the form: a file cdp-uploader would not
  * take, and a submission that breaks one of the page's own rules. The uploaded file is simply
- * never claimed.
+ * never claimed. A service that cannot be reached refuses the same way, as `takeOnFailed`, so the
+ * page is re-rendered for the trader to try again rather than the request ending in an error page.
  *
  * @param {object} request - the returning request, carrying the correlation handle
  * @param {string} correlationId - the handle the upload was opened under
  * @param {object} pageState - the loaded page state
- * @returns {Promise<{values: object, errors: object}|{entry: object}|null>} what to do next
+ * @returns {Promise<{values?: object, errors?: object, summaryErrors?: object[], takeOnFailed?: boolean}|{entry: object}|null>} what to do next
  */
 export const claimUpload = async (request, correlationId, pageState) => {
   const journeyId = pageState.journey.journeyId
-  const registered = await documentUploads.findByCorrelationId({
-    journeyId,
-    correlationId
-  })
+  const lookup = await callOrRefuse(
+    request,
+    { journeyId, uploadId: null, correlationId },
+    () => documentUploads.findByCorrelationId({ journeyId, correlationId })
+  )
+  if (lookup.takeOnFailed) {
+    return lookup
+  }
+  const registered = lookup.value
   if (!registered) {
     request.logger.info(
       { journeyId, correlationId },
@@ -53,7 +71,14 @@ export const claimUpload = async (request, correlationId, pageState) => {
     return null
   }
 
-  const form = await submittedForm(registered.uploadId)
+  const ids = { journeyId, uploadId: registered.uploadId, correlationId }
+  const session = await callOrRefuse(request, ids, () =>
+    submittedForm(registered.uploadId)
+  )
+  if (session.takeOnFailed) {
+    return session
+  }
+  const form = session.value
   const values = documentFromPayload(form)
 
   // Capacity is judged here rather than before the upload: the file goes
@@ -61,7 +86,7 @@ export const claimUpload = async (request, correlationId, pageState) => {
   // refuse one, and the trader keeps what they typed.
   if (pageState.documents.length >= MAX_DOCUMENTS) {
     request.logger.info(
-      { journeyId, uploadId: registered.uploadId, correlationId },
+      ids,
       'Returned upload refused: the notification is at its document capacity'
     )
     return { values, summaryErrors: capacityExceededError() }
@@ -72,12 +97,7 @@ export const claimUpload = async (request, correlationId, pageState) => {
   const errors = documentAddErrors(form, values, submittedFileError(form.file))
   if (Object.keys(errors).length > 0) {
     request.logger.info(
-      {
-        journeyId,
-        uploadId: registered.uploadId,
-        correlationId,
-        fields: Object.keys(errors)
-      },
+      { ...ids, fields: Object.keys(errors) },
       'Returned upload refused by the page rules'
     )
     return { values, errors }
@@ -87,11 +107,16 @@ export const claimUpload = async (request, correlationId, pageState) => {
     uploadId: registered.uploadId,
     filename: form.file?.filename
   })
-  await documentUploads.claim({
-    uploadId: registered.uploadId,
-    documentType: entry.accompanyingDocumentType,
-    documentReference: entry.accompanyingDocumentReference,
-    dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue)
-  })
+  const claimed = await callOrRefuse(request, ids, () =>
+    documentUploads.claim({
+      uploadId: registered.uploadId,
+      documentType: entry.accompanyingDocumentType,
+      documentReference: entry.accompanyingDocumentReference,
+      dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue)
+    })
+  )
+  if (claimed.takeOnFailed) {
+    return { ...claimed, values }
+  }
   return { entry }
 }

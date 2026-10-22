@@ -226,7 +226,7 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
       throw error
     }
     if (isRecoverableBackendError(error)) {
-      return { failure: await onRecoverableFailure() }
+      return { failure: await onRecoverableFailure(error) }
     }
     throw error
   }
