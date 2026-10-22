@@ -391,6 +391,25 @@ test.describe('document upload file validation', () => {
     // error state, so they can read why the archive was refused.
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
   })
+
+  // A file with nothing in it is the right type and under the size limit, so
+  // neither the browser's check nor the upload service stops it: the page is
+  // where it is refused, and nothing is added.
+  test('file validation: a file carrying no bytes is refused on receipt', async ({
+    page
+  }) => {
+    test.slow()
+    await fillMetadata(page)
+    await setUploadFile(page, 'itahc-empty.pdf', Buffer.alloc(0))
+    await submitAdd(page)
+
+    const link = errorLink(page, copy.errors.fileRequired)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(uploadControl(page)).toBeFocused()
+    await expectPreservedMetadata(page)
+    await expect(page.getByText(copy.empty)).toBeVisible()
+  })
 })
 
 test.describe('document upload oversize validation', () => {

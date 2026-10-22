@@ -34,23 +34,28 @@ const MESSAGE_BY_FILE_ERROR_CODE = {
 }
 
 /**
- * What to tell the trader about a file the upload service would not take. Its own wording is not
- * shown: the reasons it refuses are the ones already stated above the file input, so the page
- * repeats those rather than a second phrasing of them.
+ * What to tell the trader about the file they submitted. The upload service's own wording for a
+ * file it would not take is not shown: the reasons it refuses are the ones already stated above
+ * the file input, so the page repeats those rather than a second phrasing of them. A file it took
+ * but which carries no bytes is refused here, as a submission with no file at all is.
  *
  * @param {object} [file] - the file entry the upload service returned
- * @returns {object|null} a file error to render, or null when the file was taken
+ * @returns {object|null} a file error to render, or null when the file can be taken on
  */
 export const submittedFileError = (file) => {
   if (!file?.filename) {
     return { file: copy.errors.fileRequired }
   }
-  if (!file.hasError) {
-    return null
+  if (file.hasError) {
+    return {
+      file:
+        MESSAGE_BY_FILE_ERROR_CODE[file.errorCode] ?? copy.errors.uploadFailed
+    }
   }
-  return {
-    file: MESSAGE_BY_FILE_ERROR_CODE[file.errorCode] ?? copy.errors.uploadFailed
+  if (file.contentLength === 0) {
+    return { file: copy.errors.fileRequired }
   }
+  return null
 }
 
 // The error summary lists the fields in the order it is handed them, and the

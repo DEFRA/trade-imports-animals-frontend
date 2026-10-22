@@ -87,9 +87,10 @@ const pdfFile = (filename = PDF_FILENAME, size = 8) => ({
 })
 
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
-// Pinned as literals rather than read from copy, so a reworded tag fails a test.
+// Pinned as literals rather than read from copy, so a rewording fails a test.
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
+const FILE_REQUIRED_MESSAGE = 'Upload a document'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // A value the select never carries: only a tampered form could send it.
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
@@ -306,10 +307,34 @@ describe('documents — taking on an upload the browser returns with', () => {
     expect(entry.accompanyingDocumentType).toBe('COMMERCIAL_INVOICE')
   })
 
-  it('Should refuse a return carrying no file and append nothing', async () => {
+  it('Should refuse a return whose session holds no file entry and append nothing', async () => {
     const result = await driveClaim({ ...validDocument })
 
-    expect(result.view.context.errors.file).toBe('Upload a document')
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a file the upload service took but which carries no bytes, and append nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({ file: submittedFile({ contentLength: 0 }) })
+    )
+
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a file the upload service itself rejected as empty and append nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({
+          contentLength: 0,
+          hasError: true,
+          errorCode: 'FILE_EMPTY'
+        })
+      })
+    )
+
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
