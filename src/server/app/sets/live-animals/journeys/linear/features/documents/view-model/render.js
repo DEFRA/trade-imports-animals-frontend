@@ -5,7 +5,7 @@ import {
   ACCEPT_ATTRIBUTE,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE,
+  oversizeMessage,
   allowedFileTypesHint
 } from '../upload-config.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
@@ -64,7 +64,7 @@ export const render = ({
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     maxFileSize: MAX_FILE_SIZE_BYTES,
     maxDocuments: MAX_DOCUMENTS,
-    oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
+    oversizeFileMessage: oversizeMessage(copy),
     scanCopyJson,
     documentTypeItems: documentTypeItems(),
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {

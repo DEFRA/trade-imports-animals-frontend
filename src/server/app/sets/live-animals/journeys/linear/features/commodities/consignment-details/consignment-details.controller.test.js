@@ -14,6 +14,7 @@ import {
   driveHandler,
   expectBackLinkIsPage,
   expectOneRefusalLogged,
+  expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
   stubH,
@@ -121,7 +122,17 @@ const seedTwoSpeciesOfOneCommodity = () => ({
   ]
 })
 
-const getHandlerOf = (featureModule) =>
+const COMMODITY_REMOVAL_REFUSED = {
+  reason: 'no-commodity-at-index',
+  message: 'Commodity removal refused: no commodity at the index'
+}
+
+const SPECIES_REMOVAL_REFUSED = {
+  reason: 'no-species-at-index',
+  message: 'Species removal refused: no species at the index'
+}
+
+const pageGetHandlerOf = (featureModule) =>
   featureModule.routes.find(
     (route) => route.method === 'GET' && !route.path.includes('remove')
   ).handler
@@ -130,7 +141,10 @@ const contextOf = async (seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
-  await getHandlerOf(consignmentDetails)(journeyRequest(journey.journeyId), h)
+  await pageGetHandlerOf(consignmentDetails)(
+    journeyRequest(journey.journeyId),
+    h
+  )
   return h.captured.view.context
 }
 
@@ -276,7 +290,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] }
     })
     expect(result.response).toEqual({
@@ -286,7 +300,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
       query: { change: '1' }
     })
@@ -302,6 +316,10 @@ describe('#consignmentDetailsController — per-species quantities over every li
       payload: { action: 'remove:7' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: 7
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -312,6 +330,10 @@ describe('#consignmentDetailsController — per-species quantities over every li
       payload: { action: 'remove:../0' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -427,6 +449,10 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       payload: { action: 'remove-species:0' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 0
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -437,6 +463,10 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       payload: { action: 'remove-species:9' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 9
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -447,6 +477,10 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       payload: { action: 'remove-species:../0' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 })
@@ -576,7 +610,7 @@ describe('#consignmentDetailsController — the Back link', () => {
   }
 
   it('Should go Back to What are you importing? while the opening run is on', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed,
       openingRun: RUN_ACTIVE
     })
@@ -596,7 +630,7 @@ describe('#consignmentDetailsController — the Back link', () => {
   })
 
   it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed
     })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))

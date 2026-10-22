@@ -16,13 +16,13 @@ import {
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
+import { PAGE_SIZE } from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
 
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const ADDRESS_BOOK_SIZE = 13
-const PAGE_SIZE = 5
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 

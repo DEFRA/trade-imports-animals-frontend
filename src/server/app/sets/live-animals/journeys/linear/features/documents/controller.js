@@ -41,7 +41,7 @@ import {
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import {
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE,
+  oversizeMessage,
   attachmentTypeFor
 } from './upload-config.js'
 import { render as renderView } from './view-model/render.js'
@@ -345,7 +345,7 @@ export const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) {
     return h.continue
   }
-  const errors = { file: OVERSIZE_FILE_MESSAGE }
+  const errors = { file: oversizeMessage(copy) }
   kit.logRefusal(request, {
     fieldErrors: errors,
     reason: 'upload-over-size-limit'

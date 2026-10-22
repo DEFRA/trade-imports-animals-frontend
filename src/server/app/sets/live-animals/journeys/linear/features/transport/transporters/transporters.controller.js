@@ -1,7 +1,10 @@
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -60,8 +63,6 @@ const render = (
     errorSummary: kit.errorSummary(errors, {
       href: (field) => (queryMatchesNothing ? '#search' : `#${field}`)
     }),
-    // Reached from a Change link, the add route has to keep the context or
-    // the trader is dropped into the journey instead of the summary.
     addHref: kit.withChangeContext(
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
@@ -109,9 +110,6 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = String(payload.search ?? '')
 
-  // Searching filters the list in place: nothing is validated and nothing is
-  // committed, and the row the trader had picked stays picked if the search
-  // leaves it on the list.
   if (isSearchAction(payload)) {
     const { journey, answers } = await state.get(request, h)
     return render(request, h, journey, {
@@ -129,7 +127,13 @@ const post = async (request, h) => {
   if (hasErrors(errors)) {
     kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
-    return render(request, h, journey, { query }, { errors })
+    return render(
+      request,
+      h,
+      journey,
+      { query, narrowBy: query },
+      { errors }
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = records.find((record) => record.id === payload.transporter)
@@ -145,7 +149,7 @@ const post = async (request, h) => {
         request,
         h,
         journey,
-        { selectedId: chosen?.id, query },
+        { selectedId: chosen?.id, query, narrowBy: query },
         { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }

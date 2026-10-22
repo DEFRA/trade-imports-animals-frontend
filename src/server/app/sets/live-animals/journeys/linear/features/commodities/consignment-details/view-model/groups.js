@@ -16,11 +16,17 @@ export const groupLine = ({ index, entry }, values, errors) => ({
 export const linesForGroup = (lines, name, values, errors) =>
   linesOfCommodity(lines, name).map((line) => groupLine(line, values, errors))
 
-export const buildGroups = (lines, values, errors) =>
-  commodityNamesOf(lines).map((name, index) => ({
+const groupOf = (lines, values, errors) => (name, index) => {
+  const code = commodities.commodityCodeFor(name) ?? ''
+  return {
     index,
     name,
-    code: commodities.commodityCodeFor(name) ?? '',
+    code,
+    label: commodities.commodityLabel(name, code),
     showPackages: packagesApply(name),
     lines: linesForGroup(lines, name, values, errors)
-  }))
+  }
+}
+
+export const buildGroups = (lines, values, errors) =>
+  commodityNamesOf(lines).map(groupOf(lines, values, errors))

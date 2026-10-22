@@ -5,8 +5,8 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import {
-  FILE_TYPE_MESSAGE,
-  OVERSIZE_FILE_MESSAGE,
+  fileTypeMessage,
+  oversizeMessage,
   attachmentTypeFor,
   exceedsMaxFileSize
 } from '../upload-config.js'
@@ -28,10 +28,10 @@ export const fileErrors = (file) => {
     return { file: copy.errors.fileRequired }
   }
   if (exceedsMaxFileSize(file.payload.length)) {
-    return { file: OVERSIZE_FILE_MESSAGE }
+    return { file: oversizeMessage(copy) }
   }
   if (!attachmentTypeFor(file.filename ?? '')) {
-    return { file: FILE_TYPE_MESSAGE }
+    return { file: fileTypeMessage(copy) }
   }
   return {}
 }

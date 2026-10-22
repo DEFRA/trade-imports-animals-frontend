@@ -1,7 +1,5 @@
-import { containsTerm } from '../../../server/common/helpers/search-fold.js'
+import { containsTerm } from '../../common/helpers/search-fold.js'
 import { escapeAndBoldMatches } from '../../common/helpers/bold-matches.js'
-
-const MATCH_CLASS = 'govuk-!-font-weight-bold'
 
 const rowOf = (searchTextCell) => searchTextCell.closest('tr')
 
@@ -24,9 +22,7 @@ const readRows = ($module) =>
 
 const boldMatchesInEachCell = ({ words }, term) => {
   for (const { target, text } of words) {
-    target.innerHTML = escapeAndBoldMatches(text, term, {
-      matchClass: MATCH_CLASS
-    })
+    target.innerHTML = escapeAndBoldMatches(text, term)
   }
 }
 

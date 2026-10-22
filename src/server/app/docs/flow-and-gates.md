@@ -78,8 +78,8 @@ ready.
 in its opening run through the injected session port. The journey supplies
 `nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
 the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
-`previousRunTarget` while the run is active, and with the page's own Back link
-otherwise. `previousRunTarget` receives the step id, the notification's scope and
+`previousRunTarget` while the opening run is active, and with the overview
+otherwise, or when no named earlier step applies. `previousRunTarget` receives the step id, the notification's scope and
 answers, and the journey id.
 
 For the current section order, task rows, authored review gate and opening run, see

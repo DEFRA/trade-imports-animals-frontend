@@ -10,8 +10,8 @@ import { dispatchPages } from '../../index.js'
 
 import * as documents from '../controller.js'
 import {
-  FILE_TYPE_MESSAGE,
-  OVERSIZE_FILE_MESSAGE,
+  fileTypeMessage,
+  oversizeMessage,
   MAX_FILE_SIZE_LABEL,
   allowedFileTypesHint
 } from '../upload-config.js'
@@ -150,10 +150,10 @@ describe('#copy', () => {
   })
 
   it('Should build the upload-config messages from the copy templates', () => {
-    expect(FILE_TYPE_MESSAGE).toBe(
+    expect(fileTypeMessage(copy)).toBe(
       copy.errors.fileType(allowedFileTypesHint(copy))
     )
-    expect(OVERSIZE_FILE_MESSAGE).toBe(
+    expect(oversizeMessage(copy)).toBe(
       copy.errors.oversize(MAX_FILE_SIZE_LABEL)
     )
     expect(copy.errors.maxDocuments(10)).toBe(

@@ -8,7 +8,10 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
   NEW,
@@ -177,7 +180,7 @@ describe('/transporters', () => {
     })
   })
 
-  it('Should keep the search term in the box and send the whole list after a recoverable save failure', async () => {
+  it('Should keep the search term in the box and narrow the list to it after a recoverable save failure', async () => {
     const { response } = await driveHandler(postHandler, {
       payload: {
         action: 'save',
@@ -189,9 +192,9 @@ describe('/transporters', () => {
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(response.context.query).toBe('aberdeen')
-    expect(response.context.transporterRows.map((row) => row.id)).toEqual(
-      expect.arrayContaining([ABERDEEN_ID, GARCIA_ID])
-    )
+    expect(response.context.transporterRows.map((row) => row.id)).toEqual([
+      ABERDEEN_ID
+    ])
   })
 })
 
@@ -296,16 +299,16 @@ describe('/transporters — searching the list', () => {
     expect(result.view.context.transporterRows).toEqual([])
   })
 
-  it('Should keep the search term in the box and send the whole list when the pick fails validation', async () => {
+  it('Should keep the search term in the box and narrow the list to it when the pick fails validation', async () => {
     const result = await driveHandler(postHandler, {
       payload: { search: 'aberdeen', transporter: NOT_ON_THE_LIST }
     })
 
     expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.view.context.query).toBe('aberdeen')
-    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual(
-      expect.arrayContaining([ABERDEEN_ID, GARCIA_ID])
-    )
+    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual([
+      ABERDEEN_ID
+    ])
   })
 
   it('Should point the error summary at the search box when nothing matched', async () => {
@@ -329,6 +332,30 @@ describe('/transporters — searching the list', () => {
       }
     })
 
+    expect(result.view.context.errorSummary.errorList[0].href).toBe(
+      '#transporter'
+    )
+  })
+
+  it('Should refuse a no-JS save of a transporter not on the list when the search matches nothing, show no rows and link the summary to the search box', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { search: 'zzz', transporter: NOT_ON_THE_LIST }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.transporterRows).toEqual([])
+    expect(result.view.context.errorSummary.errorList[0].href).toBe('#search')
+  })
+
+  it('Should refuse a no-JS save of a transporter not on the list when the search matches one row, show only that row and link the summary to the transporters', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { search: 'aberdeen', transporter: NOT_ON_THE_LIST }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual([
+      ABERDEEN_ID
+    ])
     expect(result.view.context.errorSummary.errorList[0].href).toBe(
       '#transporter'
     )

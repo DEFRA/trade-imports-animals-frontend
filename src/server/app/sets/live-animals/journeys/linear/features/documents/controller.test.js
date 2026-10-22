@@ -1,22 +1,18 @@
 import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { pagePath } from '../../../../../../shared/paths.js'
 import { SURFACES } from '../../../../../../shared/kit.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   knownJourneysCookie,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  getHandlerOf,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -26,20 +22,22 @@ import {
   registerTestSessionAuth,
   saveFallbackEntry,
   stubH,
-  unavailableBackendError
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
-  FILE_TYPE_MESSAGE,
+  fileTypeMessage,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage
 } from './upload-config.js'
 
 const serverWithDocumentRoutes = async ({
@@ -66,7 +64,7 @@ const serverWithDocumentRoutes = async ({
 }
 
 const post = postHandlerOf(documents)
-const get = documents.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(documents)
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
@@ -112,15 +110,8 @@ const expectContinueRefusedLogged = (result, scansNotCleared) =>
     scansNotCleared
   })
 
-const configureEngine = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe('documents — real upload leg on the single-page loop', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
     const result = await driveHandler(post, {
@@ -280,7 +271,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('notes.zip') }
     })
-    expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(fileTypeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
@@ -292,7 +283,7 @@ describe('documents — real upload leg on the single-page loop', () => {
         file: pdfFile('big.pdf', MAX_FILE_SIZE_BYTES + 1)
       }
     })
-    expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(oversizeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
@@ -324,7 +315,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     const response = await documents.handleOversizePayload(request, h)
     expect(response.statusCode).toBe(400)
-    expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(h.captured.view.context.errors.file).toBe(oversizeMessage(copy))
     expectOneRefusalLogged(request.logger, {
       journeyId: journey.journeyId,
       errorCodes: ['file']
@@ -333,8 +324,7 @@ describe('documents — real upload leg on the single-page loop', () => {
 })
 
 describe('documents — listing, scanning and removing', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
@@ -546,8 +536,7 @@ describe('documents — listing, scanning and removing', () => {
 })
 
 describe('documents — Continue finishes a part-filled document', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should carry an untouched form past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
@@ -624,8 +613,7 @@ describe('documents — Continue finishes a part-filled document', () => {
 })
 
 describe('documents — scan-status poll and view context', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
@@ -704,7 +692,7 @@ describe('documents — scan-status poll and view context', () => {
   it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)
-    expect(result.view.context.oversizeFileMessage).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.oversizeFileMessage).toBe(oversizeMessage(copy))
     expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
       COMPLETE: {
         text: TAG_COMPLETE,
@@ -800,8 +788,7 @@ describe('documents — scan-status poll and view context', () => {
 })
 
 describe('documents — reading an uploaded file back', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const journeyHolding = async (uploadId) => {
     const server = await serverWithDocumentRoutes({ cookies: true })
@@ -906,8 +893,7 @@ describe('documents — reading an uploaded file back', () => {
 })
 
 describe('documents — backend and upload service failures', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const ALREADY_REMOVED_UPLOAD_ID = 'up-already-removed'
   const retryRemovalPayload = {

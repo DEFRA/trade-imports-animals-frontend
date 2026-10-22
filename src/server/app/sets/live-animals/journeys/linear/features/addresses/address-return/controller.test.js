@@ -7,7 +7,7 @@ import {
   driveHandler,
   expectOneLogged,
   expectOneSaveFallbackLogged,
-  restoreAddressBookAfterTests,
+  resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -51,7 +51,7 @@ const newAddressBody = () =>
 
 describe('GET /address-return', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   it('redirects to the party picker when no address id is supplied', async () => {
     const result = await driveHandler(handler, {

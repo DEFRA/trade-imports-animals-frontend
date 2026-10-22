@@ -336,10 +336,25 @@ Build test set-up from the shared helpers, and extend them rather than writing
 set-up in the test file:
 
 - controller tests:
-  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
-  seeds a journey, runs one handler and returns the answers before and after;
-  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
-  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+  [`engine/test-support.js`](../../../engine/test-support.js) exports:
+  - `driveHandler` seeds a journey, runs one handler and returns the answers
+    before and after, the response, the view, the cookies and the logger; its
+    `openingRun` option (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the
+    opening run, and `saveFailure` makes every save the handler makes fail with
+    the error it is given
+  - `getHandlerOf` returns the GET handler of a feature module
+  - `postHandlerOf` and `postHandlerEndingWith` return its POST handler
+  - `useStubbedJourney` registers the stub records, the stub session, the
+    dispatch and a cleared store for a describe
+  - `journeyRequest`, `stubH`, `recordingH` and `recordingLogger` build the
+    request, toolkit and logger
+  - `expectBackLinkIsPage` asserts the Back link is a page of the journey
+  - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
+  - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
+  - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
+  - `unavailableBackendError` builds the error a save failure is given
+  - `addressBookAnswering` puts the address book on the network boundary, and
+    `resetMocksAndConfigAfterTests` resets it after each test
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,

@@ -7,8 +7,6 @@
   <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-6">
     <h2 class="govuk-heading-m govuk-!-margin-bottom-2">{{ card.title }}</h2>
 
-    {# The counter below is the only mention of the number the trader is held
-       to, so the way to correct that number sits beside it. #}
     <p class="govuk-body">
       <a class="govuk-link" href="{{ card.changeCountHref }}">{{ copy.changeAnimalCount }}<span class="govuk-visually-hidden"> {{ card.title }}</span></a>
     </p>
@@ -61,9 +59,6 @@
         {% endfor %}
       {% endif %}
 
-      {# The wording says what is left on this line: "Save and finish" on the
-         last outstanding animal, and no button at all where the line holds a
-         single animal — the page's own Save and continue captures that one. #}
       {% if card.saveButtonText %}
         {{ govukButton({
           text: card.saveButtonText,

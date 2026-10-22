@@ -4,7 +4,7 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { addressSummary } from './transporter-record.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { containsTerm } from '../../../../../../../../common/helpers/search-fold.js'
+import { containsTerm } from '../../../../../../../../../client/common/helpers/search-fold.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 

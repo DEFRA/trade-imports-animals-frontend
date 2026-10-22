@@ -11,6 +11,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import {
   driveHandler,
   expectOneRefusalLogged,
+  expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
   crumbProtectedServerMounting,
@@ -601,6 +602,13 @@ describe(`${SUITE} — Remove`, () => {
       payload: { action: 'remove:5:0' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      lineIndex: 5,
+      unitIndex: 0,
+      reason: 'no-animal-identifier-at-index',
+      message:
+        'Animal identifier removal refused: no animal identifier at the index'
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -615,6 +623,13 @@ describe(`${SUITE} — Remove`, () => {
       payload: { action: 'remove:0:5' }
     })
     expect(result.response.statusCode).toBe(400)
+    expectRemovalRefusedLogged(result, {
+      lineIndex: 0,
+      unitIndex: 5,
+      reason: 'no-animal-identifier-at-index',
+      message:
+        'Animal identifier removal refused: no animal identifier at the index'
+    })
     expect(result.after).toEqual(seed)
   })
 

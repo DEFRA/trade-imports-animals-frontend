@@ -24,6 +24,15 @@ export const postRemove = async (request, h, action) => {
   const { answers } = await state.get(request, h)
   const { line, unit } = removeTargetOf(action)
   if (!unitAt(answers, line, unit)) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        lineIndex: line,
+        unitIndex: unit,
+        reason: 'no-animal-identifier-at-index'
+      },
+      'Animal identifier removal refused: no animal identifier at the index'
+    )
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
   await state.removeEntryAt(

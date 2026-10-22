@@ -16,7 +16,7 @@ export const speciesCardTitle = (entry) => {
     return NOT_APPLICABLE
   }
   const code = commodities.commodityCodeFor(name)
-  const commodity = code ? `${name} (${code})` : name
+  const commodity = commodities.commodityLabel(name, code)
   const species = speciesText(entry)
   return species ? `${commodity} — ${species}` : commodity
 }

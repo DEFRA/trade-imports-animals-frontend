@@ -8,7 +8,7 @@ import {
   driveHandler,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
-  restoreAddressBookAfterTests,
+  resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -54,7 +54,7 @@ const handlerFor = (method, party) =>
 
 describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   const get = handlerFor('GET', party)
   const post = handlerFor('POST', party)
@@ -184,7 +184,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
 
 describe('Edit address details — where the trader returns to', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   const consignor = PARTIES.find((party) => party.id === 'consignor')
   const get = handlerFor('GET', consignor)

@@ -1,22 +1,11 @@
 import { SET_ID } from '../../../../set.js'
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { pagePath } from '../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
   expectOneLogged,
@@ -26,7 +15,8 @@ import {
   recordingLogger,
   stubH,
   expectOneSaveFallbackLogged,
-  unavailableBackendError
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 
@@ -123,21 +113,14 @@ const editElsewhere = (journeyId) =>
 const CHANGED = '?staleAction=1'
 const REFUSED = '?refused=1'
 
-const setupDeclarationEngine = () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => {
-    store.clear()
-    configureReadyForCheckYourAnswers(SET_ID, () => true)
-  })
+const useReadyDeclarationJourney = () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  beforeEach(() => configureReadyForCheckYourAnswers(SET_ID, () => true))
   afterEach(() => vi.restoreAllMocks())
 }
 
 describe('#declaration', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('GET /declaration', () => {
     it('Should send a bookmark or typed URL back to the review', async () => {
@@ -260,7 +243,7 @@ describe('#declaration', () => {
 })
 
 describe('#declaration submit', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
@@ -410,7 +393,7 @@ describe('#declaration submit', () => {
 })
 
 describe('#declaration submit against the real records adapter', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('backend submit', () => {
     const backendResponds = (response) =>

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   driveHandler,
   expectOneRefusalLogged,
+  getHandlerOf,
   postHandlerOf,
   referenceDataServing,
   useStubbedJourney
@@ -17,7 +18,7 @@ import { copy } from './copy/copy.en.js'
 import { REGION_CODE_SUFFIX_MAX_LENGTH } from './validate.js'
 
 const post = postHandlerOf(origin)
-const get = origin.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(origin)
 
 const COUNTRY_CODE_OUTSIDE_THE_LIST = 'ZZ'
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'

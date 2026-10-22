@@ -20,7 +20,7 @@ const speciesTextOf = (entry) =>
 const cardTitleOf = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()
   const code = commodities.commodityCodeFor(name)
-  const commodity = code ? `${name} (${code})` : name
+  const commodity = commodities.commodityLabel(name, code)
   const species = speciesTextOf(entry)
   return species ? `${commodity} — ${species}` : commodity
 }

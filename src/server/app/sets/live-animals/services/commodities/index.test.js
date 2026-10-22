@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   commodityCodeFor,
+  commodityLabel,
   cphCommodities,
   cphExemptCommodityCodes,
   earTagCommodities,
@@ -127,5 +128,16 @@ describe('the CPH exemption', () => {
         !cphExemptCommodityCodes().includes(commodityCodeFor(commodity))
       )
     }
+  })
+})
+
+describe('#commodityLabel', () => {
+  it('Should append the code in brackets to the name when there is one', () => {
+    expect(commodityLabel('Bovine', '0102')).toBe('Bovine (0102)')
+  })
+
+  it('Should give the name alone when there is no code', () => {
+    expect(commodityLabel('Bovine', undefined)).toBe('Bovine')
+    expect(commodityLabel('Bovine', '')).toBe('Bovine')
   })
 })

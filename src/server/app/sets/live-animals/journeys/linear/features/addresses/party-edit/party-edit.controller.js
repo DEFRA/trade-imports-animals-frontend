@@ -69,7 +69,6 @@ const valuesFrom = (payload = {}) =>
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  // Nothing to edit until an address has been picked.
   if (!answers[party.id]) {
     return h.redirect(
       kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
@@ -87,7 +86,6 @@ const post = (party) => async (request, h) => {
   }
 
   const { journey, answers } = await state.get(request, h)
-  // Same guard as get: an edit can only change a copy the picker made.
   if (!answers[party.id]) {
     return h.redirect(
       kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))

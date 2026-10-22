@@ -22,6 +22,9 @@ export const list = () => COMMODITY_OPTIONS
 
 export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 
+export const commodityLabel = (name, code) =>
+  code ? `${name} (${code})` : name
+
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 

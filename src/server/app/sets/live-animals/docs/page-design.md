@@ -151,7 +151,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   while more than one animal is outstanding, "Save and finish" on the last.
   A line of one animal has no in-card button; the page's own "Save and
   continue" saves it.
-- Each card links back to the page that sets the declared animal count, with
+- The counter on each card is the only mention of the number the trader is held
+  to, so the card links back to the page that sets the declared animal count, with
   no query or change context.
 - An identifier has one name, used both on the entry field and as the
   saved-animals column heading.
@@ -211,6 +212,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The picker is one form. The search and Save and continue are told apart by
   their `action` value. Paging is a link, so the selection travels in the
   link's query string and in a hidden field, with no client JavaScript.
+- Edit details is offered only for an address the picker has copied onto the
+  notification, so with no address picked the edit page sends the trader to the
+  picker.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
 - "Add a new address" is a secondary button beside the heading, shown only
@@ -283,6 +287,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   its reference code (AIRPLANE, RAILWAY, ROAD_VEHICLE, VESSEL).
 - The transport identification hint is a lead-in and one bullet per
   alternative, so the number of choices shows at a glance.
+- The added-countries list names each country rather than its code, because
+  the list is the whole record of the answer the trader reads back.
+- Searching the transporters list filters it in place: nothing is validated or
+  committed, and a picked row stays picked when the search leaves it on the
+  list.
+- The add-transporter link keeps the change context, so a trader sent from
+  check your answers returns there and not into the journey.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
 - The transit search's select text, "Select a country", and its empty-box

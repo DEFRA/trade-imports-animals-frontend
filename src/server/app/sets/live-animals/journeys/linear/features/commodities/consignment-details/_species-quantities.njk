@@ -1,7 +1,7 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 
 {% macro speciesQuantityGroup(group, copy) %}
-  <h2 class="govuk-heading-l">{{ group.name }} ({{ group.code }})</h2>
+  <h2 class="govuk-heading-l">{{ group.label }}</h2>
   {% for line in group.lines %}
     <h3 class="govuk-heading-m">{{ line.latinName }}</h3>
 

@@ -124,11 +124,9 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
  * messages.
  *
  * @param {object} request - the request being answered.
- * @param {object} [options]
+ * @param {object} [options] - other keys (the named reason, ids) are logged as given.
  * @param {object} [options.fieldErrors] - map of field key to the message the
  * page shows (may be empty).
- * @param {object} [options] - other keys: the named reason and ids the refusal
- * turned on.
  */
 export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
   request.logger.info(

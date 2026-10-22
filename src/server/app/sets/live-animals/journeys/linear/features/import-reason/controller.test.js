@@ -4,6 +4,7 @@ import {
   driveHandler,
   expectBackLinkIsPage,
   expectOneRefusalLogged,
+  getHandlerOf,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -16,7 +17,7 @@ import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
 
 const post = postHandlerOf(importReason)
-const get = importReason.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(importReason)
 
 const EXIT_DATE_TEXT = '20/12/2026'
 const EXIT_DATE_PARTS = { day: '20', month: '12', year: '2026' }

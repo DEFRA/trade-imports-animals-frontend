@@ -276,29 +276,28 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
 
-export const restoreStubModeAndConfigAfterTests = (...configKeys) => {
+const fetchMock = createFetchMock(vi)
+
+export const resetMocksAndConfigAfterTests = (...configKeys) => {
   const originals = ['stubMode', ...configKeys].map((key) => [
     key,
     config.get(key)
   ])
   afterEach(() => {
+    fetchMock.resetMocks()
     vi.unstubAllGlobals()
     originals.forEach(([key, value]) => config.set(key, value))
   })
 }
 
 export const referenceDataServing = () => {
-  restoreStubModeAndConfigAfterTests()
+  resetMocksAndConfigAfterTests()
   return (rows) => {
     config.set('stubMode', false)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => rows }))
-    )
+    fetchMock.enableMocks()
+    fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
   }
 }
-
-const addressBookFetchMock = createFetchMock(vi)
 
 const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
   { code: 'GB', name: 'United Kingdom' },
@@ -310,15 +309,15 @@ const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
  * `/addresses` paths gets `addressResponse` (or, for a function, what it
  * returns for the request) and the country list gets the United Kingdom,
  * Switzerland and the United States. Call it inside a test; pair it with
- * `restoreAddressBookAfterTests()` in the describe. */
+ * `resetMocksAndConfigAfterTests()` in the describe. */
 export const addressBookAnswering = (addressResponse) => {
   const answerAddresses = (request) =>
     typeof addressResponse === 'function'
       ? addressResponse(request)
       : addressResponse
-  addressBookFetchMock.enableMocks()
+  fetchMock.enableMocks()
   config.set('stubMode', false)
-  addressBookFetchMock.mockResponse(async (request) =>
+  fetchMock.mockResponse(async (request) =>
     request.url.includes('/addresses')
       ? answerAddresses(request)
       : { body: ADDRESS_BOOK_COUNTRY_LIST }
@@ -331,15 +330,10 @@ export const addressBookCountriesServing = () =>
 
 /** The urls of the address book requests made since `addressBookAnswering()`. */
 export const addressBookRequestUrls = () =>
-  addressBookFetchMock
+  fetchMock
     .requests()
     .map((request) => request.url)
     .filter((url) => url.includes('/addresses'))
-
-export const restoreAddressBookAfterTests = (...configKeys) => {
-  restoreStubModeAndConfigAfterTests(...configKeys)
-  afterEach(() => addressBookFetchMock.resetMocks())
-}
 
 /** Asserts the logger holds exactly one line. */
 export const expectOneLogged = (logger, { level, fields, message }) =>
@@ -373,3 +367,13 @@ export const useStubbedJourney = (setId, dispatchPages) => {
   })
   beforeEach(() => store.clear())
 }
+
+export const expectRemovalRefusedLogged = (
+  { logger, journeyId },
+  { message, ...ids }
+) =>
+  expectOneLogged(logger, {
+    level: 'info',
+    fields: { journeyId, ...ids },
+    message
+  })

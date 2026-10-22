@@ -5,11 +5,12 @@ import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_TYPES,
   allowedFileTypesHint,
+  fileTypeMessage,
   attachmentTypeFor,
   exceedsMaxFileSize,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage
 } from './upload-config.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as copyCy } from './copy/copy.cy.js'
@@ -61,9 +62,21 @@ describe('#upload-config', () => {
   it('Should hold the 10MB decimal limit with multipart headroom on the route cap', () => {
     expect(MAX_FILE_SIZE_BYTES).toBe(10000000)
     expect(MAX_PAYLOAD_BYTES).toBe(10001024)
-    expect(OVERSIZE_FILE_MESSAGE).toBe(
+    expect(oversizeMessage(copyEn)).toBe(
       'The selected file must be smaller than 10MB'
     )
+  })
+
+  it('Should word the file type error in Welsh, listing the types joined with neu', () => {
+    expect(fileTypeMessage(copyCy)).toBe(
+      copyCy.errors.fileType('PDF, DOC, DOCX, JPEG, JPG, PNG, XLS neu XLSX')
+    )
+    expect(fileTypeMessage(copyCy)).not.toBe(fileTypeMessage(copyEn))
+  })
+
+  it('Should word the oversize error in Welsh with the size limit', () => {
+    expect(oversizeMessage(copyCy)).toBe(copyCy.errors.oversize('10MB'))
+    expect(oversizeMessage(copyCy)).not.toBe(oversizeMessage(copyEn))
   })
 
   it('Should judge a byte count against the shared limit, allowing exactly the limit', () => {

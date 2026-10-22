@@ -15,10 +15,10 @@ import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
 import {
   ACCEPT_ATTRIBUTE,
-  FILE_TYPE_MESSAGE,
+  fileTypeMessage,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE,
+  oversizeMessage,
   allowedFileTypesHint
 } from '../upload-config.js'
 
@@ -461,7 +461,7 @@ test.describe('document upload file validation', () => {
     )
     await submitAdd(page)
 
-    const link = errorLink(page, FILE_TYPE_MESSAGE)
+    const link = errorLink(page, fileTypeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -490,7 +490,7 @@ test.describe('document upload oversize validation', () => {
 
     await expect(
       page.locator('li[data-client-error="file-size-summary"]')
-    ).toContainText(OVERSIZE_FILE_MESSAGE)
+    ).toContainText(oversizeMessage(copy))
     await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
     await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
@@ -499,7 +499,7 @@ test.describe('document upload oversize validation', () => {
     const clientMessage = page.locator(
       '[data-client-error="file-size-message"]'
     )
-    await expect(clientMessage).toContainText(OVERSIZE_FILE_MESSAGE)
+    await expect(clientMessage).toContainText(oversizeMessage(copy))
     await expect(
       page.locator(
         '.govuk-file-upload-wrapper [data-client-error="file-size-message"]'
@@ -527,7 +527,7 @@ test.describe('document upload oversize validation', () => {
 
     const link = page
       .locator('li[data-client-error="file-size-summary"]')
-      .getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
+      .getByRole('link', { name: oversizeMessage(copy) })
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -547,7 +547,7 @@ test.describe('document upload oversize validation', () => {
       document.querySelector('form[data-max-file-size]').submit()
     )
 
-    const link = errorLink(page, OVERSIZE_FILE_MESSAGE)
+    const link = errorLink(page, oversizeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()

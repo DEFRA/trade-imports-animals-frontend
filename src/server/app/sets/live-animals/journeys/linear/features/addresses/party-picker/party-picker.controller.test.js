@@ -9,8 +9,7 @@ import {
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
-  restoreAddressBookAfterTests,
-  restoreStubModeAndConfigAfterTests,
+  resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -67,7 +66,7 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 describe('GET /consignors/select', () => {
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should render the first page of the book with a radio per row and pagination over the rest', async () => {
@@ -177,7 +176,7 @@ describe('GET /consignors/select', () => {
 })
 
 describe('POST /consignors/select', () => {
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the matches from page one on a search, saving nothing', async () => {
@@ -417,7 +416,7 @@ describe('GET /consignors/select — handshake return', () => {
 
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreStubModeAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',

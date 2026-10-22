@@ -6,7 +6,7 @@ import {
   driveHandler,
   expectOneRefusalLogged,
   postHandlerOf,
-  restoreStubModeAndConfigAfterTests,
+  resetMocksAndConfigAfterTests,
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
@@ -191,7 +191,7 @@ describe('POST contact — invalid payload', () => {
 
 describe('GET contact — INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreStubModeAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
     config.set('stubMode', false)

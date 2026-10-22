@@ -16,10 +16,10 @@ import { countryRows } from './rows.js'
 import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
-  MESSAGES_NEEDING_NO_COUNTRY_LABEL,
   TRANSIT_REFUSAL,
   offeredCodes,
   partitionByOffered,
+  refusalMessage,
   validation
 } from './validate.js'
 
@@ -101,14 +101,9 @@ const addRefusalReason = (chosen, selected, offered) => {
   return null
 }
 
-const addRefusalMessage = async (reason, chosen) =>
-  reason === TRANSIT_REFUSAL.alreadyAdded
-    ? copy.errors.alreadyAdded(await countries.originLabel(chosen))
-    : MESSAGES_NEEDING_NO_COUNTRY_LABEL[reason]
-
 const addRefusal = async (chosen, selected) => {
   const reason = addRefusalReason(chosen, selected, await offeredCodes())
-  return reason && { reason, message: await addRefusalMessage(reason, chosen) }
+  return reason && { reason, message: await refusalMessage(reason, chosen) }
 }
 
 const postAdd = async (request, h, selected) => {

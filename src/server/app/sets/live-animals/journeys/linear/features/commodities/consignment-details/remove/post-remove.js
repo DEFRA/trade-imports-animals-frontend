@@ -32,6 +32,14 @@ export const postRemove = async (request, h, index, lineKey) => {
   const { answers, evaluation } = await state.get(request, h)
   const name = groupNames(answers, evaluation)[index]
   if (name === undefined) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        index,
+        reason: 'no-commodity-at-index'
+      },
+      'Commodity removal refused: no commodity at the index'
+    )
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -54,6 +62,14 @@ export const postRemoveSpecies = async (request, h, index, lineKey) => {
     line === undefined ||
     !commodities.speciesListedIndividually(line.commoditySelection)
   ) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        index,
+        reason: 'no-species-at-index'
+      },
+      'Species removal refused: no species at the index'
+    )
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 

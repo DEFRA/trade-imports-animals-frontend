@@ -48,7 +48,7 @@ const listRefusal = async (codes, { stored = false } = {}) => {
   return null
 }
 
-export const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
+const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
   [TRANSIT_REFUSAL.nothingChosen]: copy.errors.chooseCountry,
   [TRANSIT_REFUSAL.notOnList]: copy.errors.fromList,
   [TRANSIT_REFUSAL.noLongerAvailable]: copy.errors.someNoLongerAvailable,
@@ -57,16 +57,18 @@ export const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
   )
 })
 
-const listErrors = (refusal) =>
-  refusal
-    ? { [COUNTRY_FIELD]: MESSAGES_NEEDING_NO_COUNTRY_LABEL[refusal.reason] }
-    : {}
+export const refusalMessage = async (reason, chosen) =>
+  reason === TRANSIT_REFUSAL.alreadyAdded
+    ? copy.errors.alreadyAdded(await countries.originLabel(chosen))
+    : MESSAGES_NEEDING_NO_COUNTRY_LABEL[reason]
 
-const withRefusal = (result, refusal) => ({
-  ...result,
-  refusal,
-  errors: listErrors(refusal)
-})
+const listChecks = async (refusal) =>
+  refusal
+    ? {
+        errors: { [COUNTRY_FIELD]: await refusalMessage(refusal.reason) },
+        refusal
+      }
+    : { errors: {} }
 
 const selectedFrom = (payload) => [
   ...new Set(
@@ -74,30 +76,15 @@ const selectedFrom = (payload) => [
   )
 ]
 
-const pageRules = pageValidation({
+export const validation = pageValidation({
   fields: () => compose(),
+  checks: async (values, { stored }) =>
+    listChecks(await listRefusal(values.transitedCountries, { stored })),
   fromPayload: (payload) => ({
     transitedCountries: selectedFrom(payload)
   }),
   fromAnswers: (answers) => ({
     transitedCountries: [answers.transitedCountries ?? []].flat()
-  })
+  }),
+  blanks: () => []
 })
-
-export const validation = {
-  ...pageRules,
-
-  onSubmit: async (payload) => {
-    const submitted = await pageRules.onSubmit(payload)
-    const refusal = await listRefusal(submitted.values.transitedCountries)
-    return withRefusal(submitted, refusal)
-  },
-
-  onStored: async (answers) => {
-    const stored = await pageRules.onStored(answers)
-    const refusal = await listRefusal(stored.values.transitedCountries, {
-      stored: true
-    })
-    return withRefusal(stored, refusal)
-  }
-}

@@ -1,5 +1,3 @@
-import { copy as en } from './copy/copy.en.js'
-
 export const ALLOWED_TYPES = [
   { ext: 'pdf', mime: 'application/pdf' },
   { ext: 'doc', mime: 'application/msword' },
@@ -37,13 +35,15 @@ const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.ext.toUpperCase())
 export const allowedFileTypesHint = (documentsCopy) =>
   `${allowedTypeLabels.slice(0, -1).join(', ')} ${documentsCopy.file.or} ${allowedTypeLabels.at(-1)}`
 
-export const FILE_TYPE_MESSAGE = en.errors.fileType(allowedFileTypesHint(en))
+export const fileTypeMessage = (documentsCopy) =>
+  documentsCopy.errors.fileType(allowedFileTypesHint(documentsCopy))
 
 const MAX_FILE_SIZE_MB = 10
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
 export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
-export const OVERSIZE_FILE_MESSAGE = en.errors.oversize(MAX_FILE_SIZE_LABEL)
+export const oversizeMessage = (documentsCopy) =>
+  documentsCopy.errors.oversize(MAX_FILE_SIZE_LABEL)
 
 const MULTIPART_OVERHEAD_BYTES = 1024
 export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES

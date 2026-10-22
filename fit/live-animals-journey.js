@@ -271,6 +271,7 @@ export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
 const MEDIUM_LABEL_FONT_SIZE = '24px'
 const BOLD_FONT_WEIGHT = '700'
 const WIDTH_TOLERANCE_PX = 1
+const SEARCH_ICON_SIZE = '20px'
 
 /**
  * Fails unless the page's submitted search box has a medium label, its hint,
@@ -296,7 +297,13 @@ export const expectSubmittedSearchLook = async (
   await expect(label).toHaveCSS('font-size', MEDIUM_LABEL_FONT_SIZE)
   await expect(label).toHaveCSS('font-weight', BOLD_FONT_WEIGHT)
   await expect(wrapper.getByRole('button')).toHaveCount(1)
-  await expect(button.locator('svg')).toBeVisible()
+  const icon = await button.evaluate((el) => {
+    const { maskImage, width, height } = window.getComputedStyle(el, '::before')
+    return { maskImage, width, height }
+  })
+  expect(icon.maskImage).toContain('svg')
+  expect(icon.width).toBe(SEARCH_ICON_SIZE)
+  expect(icon.height).toBe(SEARCH_ICON_SIZE)
   await expectBlueIconButtonLook(button)
 
   const boxEdge = await box.evaluate((el) => el.getBoundingClientRect().right)

@@ -551,7 +551,7 @@ test.describe('filtering the transporter list as the trader types', () => {
     await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
   })
 
-  test('finds a row the first term left out after a refused save', async ({
+  test('keeps the list narrowed to the term typed before a refused save', async ({
     page
   }) => {
     await openTransporterList(page)
@@ -562,11 +562,12 @@ test.describe('filtering the transporter list as the trader types', () => {
     await submit(page)
     await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
 
-    await searchBoxOf(page).fill('aberdeen')
-
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeVisible()
     await expect(
       page.getByRole('radio', { name: privateRecord.name })
-    ).toBeVisible()
+    ).toHaveCount(0)
   })
 
   test('says so and hides the table when nothing matches', async ({ page }) => {
