@@ -279,6 +279,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   legend would be harder to use than the single field they replace.
 - The help names APHA documents only. A link to GOV.UK holding details waits
   for a real destination.
+- The boxes set no character limit, so nothing typed or pasted is cut short.
+  When the county box holds nine digits, with or without spaces or slashes,
+  and parish and holding are empty, the number is split into its three parts
+  on save. Anything else, such as `1234` in the county box, goes through the
+  per-part checks unchanged and every box keeps what was typed.
+- Nothing moves focus between the boxes (WCAG 3.2.2; GOV.UK forms do not
+  auto-advance).
+- One error message belongs to the group, not to each box. The date-input row
+  classes only sit the boxes side by side.
 
 ## Documents
 

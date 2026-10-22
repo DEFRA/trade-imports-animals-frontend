@@ -24,7 +24,7 @@ const seed = () => ({
 const driveWithQuery = (handler, options = {}) =>
   driveHandler(handler, { seed: seed(), ...options })
 
-describe('POST cph-number — three parts joined into the nine stored digits', () => {
+describe('POST cph-number — the CPH number saved as nine digits or refused per part', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should join the county, parish and holding parts into nine bare digits', async () => {
@@ -78,11 +78,6 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
       cphParish: 'Parish must be 3 digits',
       cphHolding: 'Holding number must be 4 digits'
     })
-
-    // GDS: the summary lists errors in the order the boxes appear on the page.
-    // toEqual on the errors object above ignores key order, so reordering the
-    // three requiredExactDigits calls in compose() would silently invert the
-    // summary while every other assertion stayed green.
     expect(
       result.view.context.errorSummary.errorList.map(({ href }) => href)
     ).toEqual(['#cphCounty', '#cphParish', '#cphHolding'])
@@ -104,15 +99,30 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
     expect(result.after.countyParishHoldingCph).toBeUndefined()
   })
 
-  it('Should reject slashes typed into a part, so the parts stay the parts', async () => {
+  it('Should save a whole number with slashes typed into the county box as nine digits', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
       payload: { cphCounty: '12/345/6789', cphParish: '', cphHolding: '' }
     })
+    expect(result.view).toBeUndefined()
+    expect(result.after.countyParishHoldingCph).toBe('123456789')
+  })
+
+  it('Should name each part and echo what was typed when the county box holds fewer than nine digits', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { cphCounty: '1234', cphParish: '', cphHolding: '' }
+    })
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors).toEqual({
       cphCounty: 'County must be 2 digits',
       cphParish: 'Enter the parish',
       cphHolding: 'Enter the holding number'
+    })
+    expect(result.view.context.values).toEqual({
+      cphCounty: '1234',
+      cphParish: '',
+      cphHolding: ''
     })
     expect(result.after.countyParishHoldingCph).toBeUndefined()
   })
@@ -137,9 +147,7 @@ describe('GET cph-number — the stored number back in its parts', () => {
     expect(result.view.context.values).toEqual(VALID_PARTS)
   })
 
-  // Answers seeded by fixtures still carry the slashed form the page used to
-  // accept, so the split reads digits only rather than slicing the separators.
-  it('Should split a stored value that still carries slashes', async () => {
+  it('Should split a stored value written with slashes into its three parts', async () => {
     const result = await driveHandler(getCph, {
       seed: { ...seed(), countyParishHoldingCph: '12/345/6789' }
     })
