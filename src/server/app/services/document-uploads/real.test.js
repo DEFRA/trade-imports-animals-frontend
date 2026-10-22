@@ -15,6 +15,8 @@ const SCAN_COMPLETE = 'COMPLETE'
 const OTHER_UPLOAD_ID = 'up-2'
 const OTHER_CORRELATION_ID = 'corr-2'
 const NOT_FOUND_BODY = 'Not Found'
+const ID_WITH_SEPARATORS = '../../notifications/x'
+const ID_WITH_SEPARATORS_ENCODED = '..%2F..%2Fnotifications%2Fx'
 
 describe('#documentUploads', () => {
   describe('#register', () => {
@@ -216,4 +218,66 @@ describe('#documentUploads', () => {
       })
     })
   })
+})
+
+describe('#documentUploads — interpolated path segments', () => {
+  it.each([
+    [
+      'the notification a session is recorded against',
+      () =>
+        documentUploads.register({
+          journeyId: ID_WITH_SEPARATORS,
+          uploadId: UPLOAD_ID,
+          correlationId: CORRELATION_ID
+        }),
+      `${BACKEND_URL}/notifications/${ID_WITH_SEPARATORS_ENCODED}/document-uploads`
+    ],
+    [
+      'the upload a claim names',
+      () => documentUploads.claim({ uploadId: ID_WITH_SEPARATORS }),
+      `${BACKEND_URL}/document-uploads/${ID_WITH_SEPARATORS_ENCODED}/claim`
+    ],
+    [
+      'the notification a session is looked up on',
+      () =>
+        documentUploads.findByCorrelationId({
+          journeyId: ID_WITH_SEPARATORS,
+          correlationId: CORRELATION_ID
+        }),
+      `${BACKEND_URL}/notifications/${ID_WITH_SEPARATORS_ENCODED}/document-upload-sessions/${CORRELATION_ID}`
+    ],
+    [
+      'the handle a session is looked up by',
+      () =>
+        documentUploads.findByCorrelationId({
+          journeyId: JOURNEY_ID,
+          correlationId: ID_WITH_SEPARATORS
+        }),
+      `${BACKEND_URL}/notifications/${JOURNEY_ID}/document-upload-sessions/${ID_WITH_SEPARATORS_ENCODED}`
+    ],
+    [
+      'the upload a scan status is read from',
+      () => documentUploads.scanStatus({ uploadId: ID_WITH_SEPARATORS }),
+      `${BACKEND_URL}/document-uploads/${ID_WITH_SEPARATORS_ENCODED}`
+    ],
+    [
+      'the upload a remove names',
+      () => documentUploads.remove(ID_WITH_SEPARATORS),
+      `${BACKEND_URL}/document-uploads/${ID_WITH_SEPARATORS_ENCODED}`
+    ],
+    [
+      'the upload a file is streamed from',
+      () => documentUploads.streamFile(ID_WITH_SEPARATORS),
+      `${BACKEND_URL}/document-uploads/${ID_WITH_SEPARATORS_ENCODED}/file`
+    ]
+  ])(
+    'Should keep a separator out of the URL path at %s',
+    async (_segment, call, expectedUrl) => {
+      fetchMocker.mockResponse(JSON.stringify({}))
+
+      await call()
+
+      expect(fetchMocker.mock.calls[0][0]).toBe(expectedUrl)
+    }
+  )
 })

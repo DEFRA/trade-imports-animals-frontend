@@ -107,7 +107,9 @@ const storedDocument = (overrides = {}) => ({
 // the session it was posted to. Both are stubbed at the service boundary, which
 // is what the page actually depends on.
 const UPLOAD_ID = 'upload-session-1'
-const CORRELATION_ID = 'correlation-1'
+const CORRELATION_ID = randomUUID()
+const UNREGISTERED_CORRELATION_ID = randomUUID()
+const TRAVERSING_CORRELATION_ID = '../../notifications/another-notification'
 
 const submittedFile = (overrides = {}) => ({
   filename: PDF_FILENAME,
@@ -351,10 +353,24 @@ describe('documents — taking on an upload the browser returns with', () => {
       .mockResolvedValue(undefined)
 
     const result = await driveHandler(get, {
-      query: { upload: 'correlation-of-another-notification' }
+      query: { upload: UNREGISTERED_CORRELATION_ID }
     })
 
     expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+    found.mockRestore()
+  })
+
+  it('Should ask the service for nothing when the returning handle is not one the page mints, and offer the add form instead', async () => {
+    const found = vi.spyOn(documentUploads, 'findByCorrelationId')
+
+    const result = await driveHandler(get, {
+      query: { upload: TRAVERSING_CORRELATION_ID }
+    })
+
+    expect(found).not.toHaveBeenCalled()
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.uploadPath).toBeDefined()
     expect(result.after).toEqual(result.before)
     found.mockRestore()
   })

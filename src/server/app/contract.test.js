@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -49,6 +50,8 @@ import * as contactSelect from './sets/live-animals/journeys/linear/features/con
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 
 const drive = driveHandler
+
+const RETURNED_CORRELATION_ID = randomUUID()
 
 // Today, derived from the window itself rather than from a second guess at the
 // rule. Today stays inside the window even if the day ticks over mid-run.
@@ -272,7 +275,7 @@ describe('controller <-> model commit contract', () => {
       .spyOn(documentUploads, 'findByCorrelationId')
       .mockResolvedValue({
         uploadId: 'upload-session-1',
-        correlationId: 'correlation-1'
+        correlationId: RETURNED_CORRELATION_ID
       })
     const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
       uploadStatus: 'pending',
@@ -295,7 +298,7 @@ describe('controller <-> model commit contract', () => {
       (route) => route.method === 'GET'
     ).handler
     const result = await drive(documentsGet, {
-      query: { upload: 'correlation-1' }
+      query: { upload: RETURNED_CORRELATION_ID }
     })
 
     expect(new Set(committedIds(result))).toEqual(

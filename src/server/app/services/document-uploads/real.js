@@ -27,7 +27,7 @@ const HTTP_NOT_FOUND = 404
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
+      `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
       {
         method: 'POST',
         headers: traceHeaders('application/json'),
@@ -41,7 +41,7 @@ export const documentUploads = {
 
   claim: async ({ uploadId, documentType, documentReference, dateOfIssue }) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}/claim`,
+      `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/claim`,
       {
         method: 'POST',
         headers: traceHeaders('application/json'),
@@ -55,7 +55,7 @@ export const documentUploads = {
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/notifications/${journeyId}/document-upload-sessions/${correlationId}`,
+      `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
       { method: 'GET', headers: traceHeaders() }
     )
     if (response.status === HTTP_NOT_FOUND) {
@@ -69,7 +69,7 @@ export const documentUploads = {
 
   scanStatus: async ({ uploadId }) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}`,
+      `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
       { method: 'GET', headers: traceHeaders() }
     )
     if (!response.ok) {
@@ -81,7 +81,7 @@ export const documentUploads = {
 
   remove: async (uploadId) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}`,
+      `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
       { method: 'DELETE', headers: traceHeaders() }
     )
     if (!response.ok) {
@@ -91,7 +91,7 @@ export const documentUploads = {
 
   streamFile: async (uploadId) => {
     const response = await backendFetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}/file`,
+      `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/file`,
       { method: 'GET', headers: traceHeaders() }
     )
     if (!response.ok) {

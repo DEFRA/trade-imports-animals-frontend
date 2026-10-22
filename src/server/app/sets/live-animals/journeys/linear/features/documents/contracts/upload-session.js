@@ -5,6 +5,9 @@ import { documentsPage as page } from '../page.js'
 
 export const RETURNED_UPLOAD_QUERY = 'upload'
 
+const CORRELATION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
 export const newCorrelationId = () => randomUUID()
 
 /**
@@ -26,5 +29,17 @@ export const returnPath = (request, journeyId, correlationId) => {
   return `${base}${separator}${RETURNED_UPLOAD_QUERY}=${correlationId}`
 }
 
-export const returnedCorrelationId = (request) =>
-  request.query?.[RETURNED_UPLOAD_QUERY] || undefined
+/**
+ * The handle a returning request is recognised by, answered only for the UUID shape
+ * `newCorrelationId` mints. A separator, a dot segment or an encoded one is no handle this
+ * module ever issued, so it is answered as no handle at all.
+ *
+ * @param {object} request - the returning request
+ * @returns {string|undefined} the handle, or nothing when the query carries no handle of that shape
+ */
+export const returnedCorrelationId = (request) => {
+  const returned = request.query?.[RETURNED_UPLOAD_QUERY]
+  return typeof returned === 'string' && CORRELATION_ID_PATTERN.test(returned)
+    ? returned
+    : undefined
+}

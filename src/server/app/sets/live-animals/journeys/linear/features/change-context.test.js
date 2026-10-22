@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -22,6 +23,8 @@ import * as animalIdentification from './commodities/animal-identification/anima
 import * as documents from './documents/controller.js'
 import { documentUploads } from '../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../services/cdp-uploader/index.js'
+
+const RETURNED_CORRELATION_ID = randomUUID()
 
 const drive = async (
   handler,
@@ -177,7 +180,7 @@ describe('change context — context survives the internal loop navigation', () 
       .spyOn(documentUploads, 'findByCorrelationId')
       .mockResolvedValue({
         uploadId: 'upload-session-1',
-        correlationId: 'correlation-1'
+        correlationId: RETURNED_CORRELATION_ID
       })
     const read = vi.spyOn(documentUploadSessions, 'read').mockResolvedValue({
       uploadStatus: 'pending',
@@ -200,7 +203,7 @@ describe('change context — context survives the internal loop navigation', () 
     ).handler
 
     const { journeyId, response, after } = await drive(documentsGet, {
-      query: { ...change, upload: 'correlation-1' }
+      query: { ...change, upload: RETURNED_CORRELATION_ID }
     })
 
     expect(response).toEqual({
