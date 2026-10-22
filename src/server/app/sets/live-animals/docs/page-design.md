@@ -41,10 +41,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   only sometimes asked gets its own card and link.
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
-- A blank answer on a finished card reads "Not applicable". On a card that
-  still owes answers, every blank cell is empty and marked missing, required
-  or not. The empty mark is a flag on the cell, not its text, because a
-  trader can type "Not applicable" into a free-text answer.
+- A blank answer on a finished card reads "Not applicable", and the cell
+  carries an empty flag, not just that text, because a trader can type "Not
+  applicable" into a free-text answer. On a card that still owes answers,
+  every blank cell, required or not, has no visible text and no flag, and
+  "Missing" is announced only to a screen reader. The card's red left border
+  and "Complete ..." line are the only visible marking.
 - Every task row belongs to exactly one card, so "no unfinished card" and
   `readyForCheckYourAnswers` give the same verdict.
 - Species cards carry no card id, so the error summary names outstanding

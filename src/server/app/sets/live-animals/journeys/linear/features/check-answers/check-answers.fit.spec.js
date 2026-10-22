@@ -22,6 +22,15 @@ const INTERNAL_REFERENCE_LABEL =
 const SAVE_AND_CONTINUE = 'Save and continue'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
+const ARRIVAL_DETAILS_ROW_LABELS = [
+  copy.rows.portOfEntry,
+  copy.rows.arrivalDate,
+  copy.rows.meansOfTransport,
+  copy.rows.transportIdentification,
+  copy.rows.transportDocumentReference
+]
+const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
+const PHONE_VIEWPORT = { width: 360, height: 740 }
 
 const rowFor = (page, label) =>
   page
@@ -29,13 +38,16 @@ const rowFor = (page, label) =>
     .filter({ has: page.getByText(label, { exact: true }) })
     .locator('..')
 
-/** The mark an empty row carries inside a card that still has answers
- * outstanding: no text, and a visually hidden "Missing" in place of one. */
-const missingMarker = (page, label) =>
-  rowFor(page, label).locator('.app-summary-list__value--missing')
+const answerCellFor = (page, label) =>
+  rowFor(page, label).getByRole('definition')
 
-/** The one Change link a card carries in its heading, named the way a screen
- * reader reads it — "Change import details". */
+const expectOnlyHiddenMissing = async (answerCell) => {
+  await expect(answerCell).toHaveText(copy.missing)
+  await expect(answerCell.locator('xpath=./*')).toHaveClass(
+    'govuk-visually-hidden'
+  )
+}
+
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
 
@@ -56,7 +68,6 @@ test.describe('check-answers feature summary rows', () => {
     await openOrigin(page)
     await chooseCountryOfOrigin(page, 'France')
     await page.getByRole('radio', { name: 'Yes' }).check()
-    // Five characters after the prefix — the joined code is eight, which the old whole-code cap made impossible.
     await page
       .getByLabel('Enter the region of origin code', { exact: true })
       .fill('IDF75')
@@ -81,12 +92,10 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
     )
-    await expect(missingMarker(page, copy.rows.arrivalDate)).toHaveText(
-      copy.missing
-    )
+    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
   })
 
-  test('journey with only the entry page answered writes the settled blanks out and marks the outstanding ones', async ({
+  test('journey with only the entry page answered writes the settled blanks out and leaves the outstanding ones blank with a hidden Missing', async ({
     page
   }) => {
     await startNotification(page)
@@ -95,9 +104,7 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notApplicable
     )
-    await expect(missingMarker(page, copy.rows.arrivalDate)).toHaveText(
-      copy.missing
-    )
+    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
     await expect(rowFor(page, copy.rows.arrivalDate)).not.toContainText(
       copy.notApplicable
     )
@@ -113,9 +120,6 @@ test.describe('check-answers feature section structure', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    // Numbered, so the section headings are the level-2 headings that open
-    // with a number — the error summary and the footer's own level-2 headings
-    // are not part of the spine.
     await expect(
       page.getByRole('heading', { level: 2 }).filter({ hasText: /^\d\.\s/ })
     ).toHaveText([
@@ -141,8 +145,6 @@ test.describe('check-answers feature section structure', () => {
     const lastBlock = page.locator('.govuk-grid-column-two-thirds > *').last()
     await expect(lastBlock).toHaveJSProperty('tagName', 'FORM')
 
-    // Nothing sits between the last card and the form: a reinstated heading
-    // or explanatory sentence would land here and fail.
     await expect(
       lastBlock.locator('xpath=preceding-sibling::*[1]')
     ).toHaveClass(/govuk-summary-card/)
@@ -177,9 +179,6 @@ test.describe('check-answers feature documents section', () => {
     await signIn(page)
   })
 
-  // Documents are optional, so a journey with none is the ordinary case. The
-  // section has to stand anyway, or the review never mentions documents and
-  // offers no route to the upload page.
   test('shows the documents section and a Change route with nothing uploaded', async ({
     page
   }) => {
@@ -206,9 +205,6 @@ test.describe('check-answers feature documents section', () => {
   })
 })
 
-// The reason for import asks up to three further questions as conditional
-// reveals. Each answer has to read back on the review with a Change route to
-// the page that collected it.
 test.describe('check-answers feature exit answers', () => {
   const IMPORT_REASON_SLUG = 'import-reason'
   const EXIT_PORT_CODE = 'GB DVR'
@@ -251,9 +247,6 @@ test.describe('check-answers feature exit answers', () => {
       page.getByText(copy.rows.exitDate, { exact: true })
     ).toHaveCount(0)
 
-    // The exit answers sit in the Reason for import card, and that card — not
-    // the row — carries the one Change link. Every row on the card comes from
-    // the reason-for-import page, so the link reaches all of them.
     await expect(
       rowFor(page, copy.rows.destinationCountry).getByRole('link')
     ).toHaveCount(0)
@@ -399,17 +392,13 @@ test.describe('check-answers feature navigation and submission', () => {
     await expectNoSeriousOrCriticalViolations(page, 'Check answers')
   })
 
-  // An address error belongs to a reference that no longer resolves, not to a
-  // role nobody has reached yet. A new journey must read as unanswered.
   test('new journey shows no address error before a role has been answered', async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expect(missingMarker(page, copy.rows.consignor)).toHaveText(
-      copy.missing
-    )
+    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.consignor))
     await expect(
       page.getByRole('link', { name: copy.errors.parties.consignor })
     ).toBeHidden()
@@ -421,20 +410,41 @@ test.describe('check-answers feature unfinished notification', () => {
     await signIn(page)
   })
 
-  // The decision is per card, so every blank row inside a marked card loses its
-  // placeholder — the required arrival date and anything optional beside it
-  // alike. Only a screen reader is told the answer is missing.
-  test('gives every blank row in a marked card no text and a hidden Missing', async ({
+  test('leaves every blank answer of an unfinished card blank with a hidden Missing', async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     const card = page.locator(ARRIVAL_DETAILS_ANCHOR)
-    const markers = card.locator('.app-summary-list__value--missing')
 
     await expect(card.getByText(copy.notApplicable)).toHaveCount(0)
-    await expect(markers.first()).toHaveText(copy.missing)
+    for (const label of ARRIVAL_DETAILS_ROW_LABELS) {
+      await expectOnlyHiddenMissing(answerCellFor(page, label))
+    }
+  })
+
+  test('keeps the card marking and leaves the blank answer blank with a hidden Missing after a refused Continue at desktop and phone width', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    await page.goto(reviewUrl)
+    await page.getByRole('button', { name: copy.submit.button }).click()
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
+
+    for (const viewport of [DESKTOP_VIEWPORT, PHONE_VIEWPORT]) {
+      await page.setViewportSize(viewport)
+      await expect(page.locator(ARRIVAL_DETAILS_ANCHOR)).toHaveClass(
+        /app-summary-card--error/
+      )
+      await expect(
+        page
+          .locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
+          .getByText(copy.errors.cards.arrivalDetails)
+      ).toBeVisible()
+      await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
+    }
   })
 
   test('names every unfinished card and marks the card it names', async ({

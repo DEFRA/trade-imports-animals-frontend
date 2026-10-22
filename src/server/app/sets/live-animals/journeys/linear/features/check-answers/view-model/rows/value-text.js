@@ -32,16 +32,10 @@ export const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 
-/** The value cell of an empty row on a finished card: the placeholder, marked
- * `empty: true`. */
+/** The "Not applicable" placeholder cell, marked `empty: true`. */
 export const notApplicableCell = () => ({ text: NOT_APPLICABLE, empty: true })
 
-/** The value cell of an empty row inside a card that still has answers
- * outstanding: no visible text, and a visually hidden "missing" for a screen
- * reader. */
+/** A cell with no visible text and a visually hidden "Missing". */
 export const missingCell = () => ({
-  html:
-    '<span class="app-summary-list__value--missing">' +
-    `<span class="govuk-visually-hidden">${escapeHtml(copy.missing)}</span>` +
-    '</span>'
+  html: `<span class="govuk-visually-hidden">${escapeHtml(copy.missing)}</span>`
 })
