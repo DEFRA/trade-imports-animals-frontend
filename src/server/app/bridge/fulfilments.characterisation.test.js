@@ -43,6 +43,18 @@ describe('increment 0 golden boundary characterisation', () => {
     }
   )
 
+  test.each(
+    characterisationCorpus.filter(
+      ({ answers }) => answers.commodityLines?.length > 0
+    )
+  )(
+    'Should send the first commodity line CN code as the commodity name for $name',
+    ({ name, answers }) => {
+      const firstLineCode = answers.commodityLines[0].commodityCode
+      expect(oracles[name].mapperA.commodity.name).toBe(firstLineCode)
+    }
+  )
+
   test('Should pin a gate flip purging a scalar and a nested leaf', () => {
     const open = oracles['gate-open']
     const flipped = oracles['gate-flipped']

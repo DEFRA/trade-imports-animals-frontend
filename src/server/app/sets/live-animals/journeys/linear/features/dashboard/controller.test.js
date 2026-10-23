@@ -30,6 +30,7 @@ const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const ORIGIN_SLUG = 'origin'
+const CATTLE_CODE = '0102'
 
 const handlerOf = (method, pathSuffix) =>
   routes.find(
@@ -141,7 +142,7 @@ describe('dashboard notifications list', () => {
     ])
   })
 
-  it('Should build rich display fields using cached country and commodity reference data', async () => {
+  it('Should show the origin country by name and the commodity as the first line CN code', async () => {
     const draft = await startDraft()
     await records.replaceFulfilment(
       draft.journeyId,
@@ -150,14 +151,14 @@ describe('dashboard notifications list', () => {
         arrivalDateAtPort: { day: '5', month: '3', year: '2026' },
         consignor: { name: 'Consignor Ltd' },
         consignee: { name: 'Consignee Ltd' },
-        commodityLines: [{ commodityCode: '0102' }]
+        commodityLines: [{ commodityCode: CATTLE_CODE }]
       })
     )
 
     const context = await renderList({ knownJourneyIds: [draft.journeyId] })
 
     expect(context.notificationRows[0]).toMatchObject({
-      commodity: '0102',
+      commodity: CATTLE_CODE,
       origin: 'France',
       arrival: '5 Mar 2026',
       consignor: 'Consignor Ltd',

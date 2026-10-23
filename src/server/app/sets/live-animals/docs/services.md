@@ -66,6 +66,11 @@ so generic notification-mapper code does not import the set.
   text, which the backend payload drops.
 - MDM has no common name for some species, so a line's common name is
   optional.
+- A notification sends its first line's CN code (for example `0102`) as
+  `commodity.name`, until reference-data supplies commodity names. The backend
+  passes it to PIMS as each trade line's description and common name, and
+  both dashboards show it as the commodity. Each line stores MDM's common
+  name, which the notification mapper does not send.
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
   `commoditySearchRows`. They are never sent to the backend.
