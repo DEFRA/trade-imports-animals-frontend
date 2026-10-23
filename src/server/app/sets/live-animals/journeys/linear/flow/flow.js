@@ -19,8 +19,9 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
+import { SHOWN_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
 
-export const FLOW_ONLY_KEYS = ['declaration', 'commoditySearchRows']
+export const FLOW_ONLY_KEYS = ['declaration', SHOWN_SEARCH_ROWS]
 
 export const sections = [
   {
