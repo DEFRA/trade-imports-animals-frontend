@@ -22,10 +22,6 @@ export const TRANSIT_PORT_FIELD = 'transitPortOfExit'
 export const TEMPORARY_ADMISSION_PORT_FIELD = 'temporaryAdmissionPortOfExit'
 export const TEMPORARY_ADMISSION_DATE_FIELD = 'temporaryAdmissionExitDate'
 
-// Reveal-conditional fields. Two reasons ask the destination country and two
-// ask the port of exit — form inputs can't share a name, so each branch has
-// its own field mapping back to the one answer. In-scope is the obligations'
-// call (obligations/sections/import-reason.js); this says only where asked.
 export const REVEALS = Object.freeze({
   internalMarket: [{ field: PURPOSE_FIELD, answer: 'purposeInInternalMarket' }],
   transhipmentOrOnwardTravel: [
@@ -56,16 +52,13 @@ const FIELDS_BY_ANSWER = REVEALED_FIELDS.reduce((map, { field, answer }) => {
   return map
 }, {})
 
-// A stale answer must blank every field that prefills from it, across every
-// reveal — otherwise a reveal the trader isn't looking at still offers the
-// value the reader no longer recognises.
-const fieldsSharingAnswerWith = (field) =>
+const fieldsToBlankWhenStale = (field) =>
   FIELDS_BY_ANSWER[ANSWER_OF_FIELD[field]] ?? [field]
 
 const countryRule = async (field, stored) => {
-  const codes = (await countries.destinationCountryOptions()).map(
-    ({ value }) => value
-  )
+  const codes = (
+    await countries.countryAndSubdivisionOptionsNamedWithCountry()
+  ).map(({ value }) => value)
   return stored
     ? oneOf(field, codes, copy.errors.countryNoLongerAvailable)
     : requiredOneOf(field, codes, copy.errors.countryRequired)
@@ -78,10 +71,6 @@ const portRule = async (field, stored) => {
     : requiredOneOf(field, codes, copy.errors.portRequired)
 }
 
-// The reason radio itself is optional to proceed; the
-// reveal's questions are required on submit. Purpose and exit-date are the
-// service's own words rather than reference data, so neither can go stale —
-// the stored reading asks nothing of them.
 const RULES = Object.freeze({
   [PURPOSE_FIELD]: (stored) =>
     stored
@@ -107,8 +96,6 @@ const RULES = Object.freeze({
         })
 })
 
-// Only the current reason's reveal is measured; fields from other branches
-// arrive empty and are neither validated nor committed.
 const fields = async (values, { stored } = {}) =>
   compose(
     oneOf(
@@ -130,15 +117,11 @@ const fromPayload = (payload) => ({
   [TRANSIT_PORT_FIELD]: payload[TRANSIT_PORT_FIELD] ?? '',
   [TEMPORARY_ADMISSION_PORT_FIELD]:
     payload[TEMPORARY_ADMISSION_PORT_FIELD] ?? '',
-  // Date stays as dd/mm/yyyy text — the shape the rule reads and the field
-  // renders. `toAnswers` converts to the `{day,month,year}` object.
   [TEMPORARY_ADMISSION_DATE_FIELD]: String(
     payload[TEMPORARY_ADMISSION_DATE_FIELD] ?? ''
   ).trim()
 })
 
-// Prefill every branch, so flipping between reasons that share a question
-// keeps the answer in front of the user.
 const fromAnswers = (answers) => ({
   reasonForImport: answers.reasonForImport ?? '',
   [PURPOSE_FIELD]: answers.purposeInInternalMarket ?? '',
@@ -149,8 +132,6 @@ const fromAnswers = (answers) => ({
   [TEMPORARY_ADMISSION_DATE_FIELD]: dateTextOf(answers.exitDate)
 })
 
-// Commits only the current reveal's answers; the evaluator purges any
-// belonging to a reason no longer chosen.
 const toAnswers = (values) => ({
   reasonForImport: values.reasonForImport,
   ...Object.fromEntries(
@@ -168,5 +149,5 @@ export const validation = pageValidation({
   fromPayload,
   fromAnswers,
   toAnswers,
-  blanks: fieldsSharingAnswerWith
+  blanks: fieldsToBlankWhenStale
 })

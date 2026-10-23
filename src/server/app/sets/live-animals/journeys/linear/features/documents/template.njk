@@ -10,51 +10,46 @@
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
-  <div id="js-error-summary-container"
-       data-error-summary-title="{{ sharedCopy.errorSummary.title }}"
-       data-error-prefix="{{ copy.errors.hiddenPrefix }}">
-    {% include "shared/error-summary.njk" %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div id="js-error-summary-container"
+           data-error-summary-title="{{ sharedCopy.errorSummary.title }}"
+           data-error-prefix="{{ copy.errors.hiddenPrefix }}">
+        {% include "shared/error-summary.njk" %}
+      </div>
+
+      {{ sectionCaption(caption) }}
+      <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+      <p class="govuk-body">{{ copy.guidance.intro }}</p>
+      <p class="govuk-body">{{ copy.guidance.otherDocumentsLead }}</p>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for document in copy.guidance.otherDocuments %}
+          <li>{{ document }}</li>
+        {% endfor %}
+      </ul>
+
+      {% set additionalDocumentsHtml %}
+        {{ govukTable({
+          caption: copy.guidance.additional.caption,
+          captionClasses: "govuk-visually-hidden",
+          head: [
+            { text: copy.guidance.additional.consignment },
+            { text: copy.guidance.additional.documentsNeeded }
+          ],
+          rows: additionalDocumentRows
+        }) }}
+        <p class="govuk-body">
+          <a href="{{ copy.guidance.additional.linkHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.guidance.additional.linkText }}</a>
+        </p>
+      {% endset %}
+
+      {{ govukDetails({
+        summaryText: copy.guidance.additional.summary,
+        html: additionalDocumentsHtml
+      }) }}
+    </div>
   </div>
-
-  {{ sectionCaption(caption) }}
-  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
-
-  {# What to attach and why, before the form asks for it. #}
-  <p class="govuk-body">{{ copy.guidance.intro }}</p>
-  <p class="govuk-body">{{ copy.guidance.otherDocumentsLead }}</p>
-  <ul class="govuk-list govuk-list--bullet">
-    {% for document in copy.guidance.otherDocuments %}
-      <li>{{ document }}</li>
-    {% endfor %}
-  </ul>
-
-  {% set additionalRows = [] %}
-  {% for row in copy.guidance.additional.rows %}
-    {% set ignored = additionalRows.push([
-      { text: row.consignment },
-      { text: row.documents }
-    ]) %}
-  {% endfor %}
-
-  {% set additionalDocumentsHtml %}
-    {{ govukTable({
-      caption: copy.guidance.additional.caption,
-      captionClasses: "govuk-visually-hidden",
-      head: [
-        { text: copy.guidance.additional.consignment },
-        { text: copy.guidance.additional.documentsNeeded }
-      ],
-      rows: additionalRows
-    }) }}
-    <p class="govuk-body">
-      <a href="{{ copy.guidance.additional.linkHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.guidance.additional.linkText }}</a>
-    </p>
-  {% endset %}
-
-  {{ govukDetails({
-    summaryText: copy.guidance.additional.summary,
-    html: additionalDocumentsHtml
-  }) }}
 
   <form method="post" enctype="multipart/form-data" novalidate
         data-max-file-size="{{ maxFileSize }}"
@@ -75,61 +70,61 @@
         <h2 class="govuk-summary-card__title" id="file-upload-heading">{{ copy.fileUploadHeading }}</h2>
       </div>
       <div class="govuk-summary-card__content">
-        {{ govukInput({
-          id: "accompanyingDocumentReference",
-          name: "accompanyingDocumentReference",
-          label: { text: copy.reference.label, classes: "govuk-label--s" },
-          hint: { text: copy.reference.hint },
-          classes: "govuk-input--width-20",
-          value: values.accompanyingDocumentReference,
-          errorMessage: errors.accompanyingDocumentReference and { text: errors.accompanyingDocumentReference }
-        }) }}
+        <div class="govuk-grid-row">
+          <div class="govuk-grid-column-two-thirds">
+            {{ govukInput({
+              id: "accompanyingDocumentReference",
+              name: "accompanyingDocumentReference",
+              label: { text: copy.reference.label, classes: "govuk-label--s" },
+              classes: "govuk-input--width-20",
+              value: values.accompanyingDocumentReference,
+              errorMessage: errors.accompanyingDocumentReference and { text: errors.accompanyingDocumentReference }
+            }) }}
 
-        {{ govukSelect({
-          id: "accompanyingDocumentType",
-          name: "accompanyingDocumentType",
-          label: { text: copy.documentType.label, classes: "govuk-label--s" },
-          value: values.accompanyingDocumentType,
-          items: documentTypeItems,
-          errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType }
-        }) }}
+            {{ govukSelect({
+              id: "accompanyingDocumentType",
+              name: "accompanyingDocumentType",
+              label: { text: copy.documentType.label, classes: "govuk-label--s" },
+              value: values.accompanyingDocumentType,
+              items: documentTypeItems,
+              errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType }
+            }) }}
 
-        {{ mojDatePicker(dateOfIssue) }}
+            {{ mojDatePicker(dateOfIssue) }}
 
-        {%- set fileHintHtml -%}
-          <p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.file.mustBe }}</p>
-          <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
-            <li>{{ copy.file.smallerThan }} {{ maxFileSizeLabel }}</li>
-            <li>{{ copy.file.a }} {{ allowedFileTypesHint }}</li>
-            <li>{{ copy.file.upToMaximum(maxDocuments) }}</li>
-            <li>{{ copy.file.noZipFiles }}</li>
-          </ul>
-        {%- endset -%}
+            {%- set fileHintHtml -%}
+              <p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.file.mustBe }}</p>
+              <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
+                <li>{{ copy.file.smallerThan(maxFileSizeLabel) }}</li>
+                <li>{{ copy.file.allowedTypes(allowedFileTypesHint) }}</li>
+                <li>{{ copy.file.upToMaximum(maxDocuments) }}</li>
+                <li>{{ copy.file.noZipFiles }}</li>
+              </ul>
+            {%- endset -%}
 
-        {# javascript: true asks for the enhanced control — a drop zone with a
-           live region naming the chosen file. The plain
-           input stays behind it for a trader whose JavaScript does not run. #}
-        {{ govukFileUpload({
-          id: "file",
-          name: "file",
-          label: { text: copy.file.label, classes: "govuk-label--s" },
-          hint: { html: fileHintHtml },
-          attributes: { accept: acceptAttribute },
-          javascript: true,
-          chooseFilesButtonText: copy.file.chooseButton,
-          dropInstructionText: copy.file.dropInstruction,
-          noFileChosenText: copy.file.noFileChosen,
-          enteredDropZoneText: copy.file.enteredDropZone,
-          leftDropZoneText: copy.file.leftDropZone,
-          errorMessage: errors.file and { text: errors.file }
-        }) }}
+            {{ govukFileUpload({
+              id: "file",
+              name: "file",
+              label: { text: copy.file.label, classes: "govuk-label--s" },
+              hint: { html: fileHintHtml },
+              attributes: { accept: acceptAttribute },
+              javascript: true,
+              chooseFilesButtonText: copy.file.chooseButton,
+              dropInstructionText: copy.file.dropInstruction,
+              noFileChosenText: copy.file.noFileChosen,
+              enteredDropZoneText: copy.file.enteredDropZone,
+              leftDropZoneText: copy.file.leftDropZone,
+              errorMessage: errors.file and { text: errors.file }
+            }) }}
 
-        {{ govukButton({
-          text: copy.addAnother,
-          classes: "govuk-button--secondary",
-          name: "action",
-          value: "add"
-        }) }}
+            {{ govukButton({
+              text: copy.addAnother,
+              classes: "govuk-button--secondary",
+              name: "action",
+              value: "add"
+            }) }}
+          </div>
+        </div>
 
         {% if hasDocuments %}
           <div id="documents-added">
@@ -141,7 +136,7 @@
                 { text: copy.table.type },
                 { text: copy.table.dateOfIssue },
                 { text: copy.table.status },
-                { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
+                { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>', classes: "govuk-!-text-align-right" }
               ],
               rows: rows
             }) }}
@@ -152,13 +147,11 @@
             </p>
           {% endif %}
           <p id="js-timeout-message" class="govuk-hint" {% if not timedOut %}hidden{% endif %}>{{ copy.stillChecking }}</p>
-        {% else %}
-          <p class="govuk-body">{{ copy.empty }}</p>
         {% endif %}
       </div>
     </section>
 
-    {{ saveActions(hubHref, { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 
   <div id="js-scan-status-announcer"

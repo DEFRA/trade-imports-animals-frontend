@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 

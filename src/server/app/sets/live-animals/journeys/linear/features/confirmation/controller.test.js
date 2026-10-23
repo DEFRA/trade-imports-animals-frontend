@@ -65,9 +65,6 @@ describe('GET /confirmation', () => {
     expect(view.context).not.toHaveProperty('submissionDate')
   })
 
-  // Documents are optional at submission, so the trader can land here with the
-  // health certificate still to come — the submitted page is the last place the
-  // service can say so.
   it('Should list the outstanding documents when nothing has been uploaded', async () => {
     const view = await submittedView()
 
@@ -80,8 +77,6 @@ describe('GET /confirmation', () => {
     expect(view.context.outstandingItems).toEqual([])
   })
 
-  // The page offers a second way on: start another notification without going
-  // back to the dashboard first.
   it('Should supply the create-a-notification action alongside the dashboard link', async () => {
     const view = await submittedView()
 

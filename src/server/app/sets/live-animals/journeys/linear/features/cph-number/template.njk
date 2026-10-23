@@ -13,8 +13,6 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# Collapsed above the field, so it costs a trader who already knows nothing
-     and gives one who does not a definition and where to look. #}
   {% set cphHelpHtml %}
     <p class="govuk-body">{{ copy.help.definition }}</p>
     <p class="govuk-body">{{ copy.help.whereToFind }}</p>
@@ -29,20 +27,12 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {# One question in three boxes. The stepping widths and the maxlengths carry
-       the 2/3/4 shape of a CPH number without a word of copy, and each box keeps
-       a visible label so a trader knows which part they are in. The
-       govuk-date-input layout classes are the Design System's only shipped way
-       to sit inputs side by side; nothing here is a date. #}
     {% set cphPartsHtml %}
       {{ govukHint({
         id: "cph-hint",
         text: copy.cph.hint
       }) }}
 
-      {# One message for the whole question, as govukDateInput does it: a
-         block-level error inside a narrow .govuk-date-input__item would break
-         the row of boxes apart. #}
       {% if errorSummary %}
         {{ govukErrorMessage({ id: "cph-error", html: errorSummary.errorList | join("<br>", "text") }) }}
       {% endif %}
@@ -56,7 +46,6 @@
             classes: "govuk-input--width-2" + (" govuk-input--error" if errors.cphCounty else ""),
             inputmode: "numeric",
             spellcheck: false,
-            attributes: { maxlength: "2" },
             value: values.cphCounty
           }) }}
         </div>
@@ -69,7 +58,6 @@
             classes: "govuk-input--width-3" + (" govuk-input--error" if errors.cphParish else ""),
             inputmode: "numeric",
             spellcheck: false,
-            attributes: { maxlength: "3" },
             value: values.cphParish
           }) }}
         </div>
@@ -82,7 +70,6 @@
             classes: "govuk-input--width-4" + (" govuk-input--error" if errors.cphHolding else ""),
             inputmode: "numeric",
             spellcheck: false,
-            attributes: { maxlength: "4" },
             value: values.cphHolding
           }) }}
         </div>
@@ -98,6 +85,6 @@
       }) }}
     </div>
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false, amend: amend }) }}
   </form>
 {% endblock %}

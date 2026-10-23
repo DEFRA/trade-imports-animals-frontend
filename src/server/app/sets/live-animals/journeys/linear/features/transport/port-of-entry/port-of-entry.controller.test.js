@@ -1,23 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectNoRefusalLogged,
+  postHandlerOf,
+  referenceDataServing,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
@@ -29,7 +18,6 @@ import {
 
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow } from './arrival-window.js'
-import { config } from '../../../../../../../../../config/config.js'
 import * as portOfEntry from './port-of-entry.controller.js'
 
 const post = postHandlerOf(portOfEntry)
@@ -38,12 +26,7 @@ const get = portOfEntry.routes.find((route) => route.method === 'GET').handler
 const oneOfError = 'Select a valid option'
 
 describe('POST port-of-entry — port membership', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an out-of-list port with an error and commit nothing', async () => {
     const result = await driveHandler(post, {
@@ -52,16 +35,12 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
+    expectNoRefusalLogged(result.logger)
   })
 })
 
 describe('POST port-of-entry — means of transport on the merged page', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an out-of-list means with an error and commit nothing', async () => {
     const result = await driveHandler(post, {
@@ -72,7 +51,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should wipe the transited countries when the means changes off the overland set (scope-exit wipe survives the merge)', async () => {
+  it('Should wipe the transited countries when the means changes off the overland set', async () => {
     const result = await driveHandler(post, {
       seed: {
         meansOfTransport: 'ROAD_VEHICLE',
@@ -97,17 +76,12 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 })
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should supply an empty-value placeholder followed by name-plus-code options (no divider)', async () => {
+  it('Should supply an empty-value select text followed by name-plus-code options (no divider)', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.portItems
-    expect(items[0]).toEqual({ value: '', text: 'Select port of entry' })
+    expect(items[0]).toEqual({ value: '', text: 'Select a port' })
     const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
@@ -121,14 +95,14 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     })
   })
 
-  it('Should supply the means of transport as a placeholder followed by every reference code, none selected', async () => {
+  it('Should supply the means of transport as select text followed by every reference code, none selected', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.meansItems).toEqual([
       { value: '', text: 'Select one' },
-      { value: 'AIRPLANE', text: 'Airplane', selected: false },
-      { value: 'RAILWAY', text: 'Railway', selected: false },
-      { value: 'ROAD_VEHICLE', text: 'Road Vehicle', selected: false },
-      { value: 'VESSEL', text: 'Vessel', selected: false }
+      { value: 'AIRPLANE', text: 'Air', selected: false },
+      { value: 'RAILWAY', text: 'Rail', selected: false },
+      { value: 'ROAD_VEHICLE', text: 'Road', selected: false },
+      { value: 'VESSEL', text: 'Sea', selected: false }
     ])
   })
 
@@ -139,10 +113,36 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const selected = result.view.context.meansItems.filter(
       (item) => item.selected
     )
-    expect(selected).toEqual([
-      { value: 'VESSEL', text: 'Vessel', selected: true }
-    ])
+    expect(selected).toEqual([{ value: 'VESSEL', text: 'Sea', selected: true }])
   })
+
+  it('Should set the arrival date label in the medium GOV.UK label size', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.arrivalDate.label.classes).toBe('govuk-label--m')
+    expect(result.view.context.questionLabelClasses).toBe('govuk-label--m')
+  })
+
+  it.each([
+    ['AIRPLANE', 'Air'],
+    ['RAILWAY', 'Rail'],
+    ['ROAD_VEHICLE', 'Road'],
+    ['VESSEL', 'Sea']
+  ])(
+    'Should store %s when the user chooses %s, and offer it under that label',
+    async (code, label) => {
+      const saved = await driveHandler(post, {
+        payload: { meansOfTransport: code }
+      })
+      expect(saved.after.meansOfTransport).toBe(code)
+
+      const shown = await driveHandler(get, {
+        seed: { meansOfTransport: code }
+      })
+      expect(
+        shown.view.context.meansItems.filter((item) => item.selected)
+      ).toEqual([{ value: code, text: label, selected: true }])
+    }
+  )
 })
 
 describe('port-of-entry — the arrival-date window', () => {
@@ -158,26 +158,15 @@ describe('port-of-entry — the arrival-date window', () => {
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(now)
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
   afterAll(() => vi.useRealTimers())
 
-  it('Should hand the picker the window bounds so the calendar cannot offer a date outside it', async () => {
+  it('Should hand the picker the window bounds', async () => {
     const result = await driveHandler(get)
 
     expect(result.view.context.arrivalDate.minDate).toBe(dateWindow.minText)
     expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
-  })
-
-  it('Should mark the picker in-flow so an open calendar pushes the questions below it down rather than covering them', async () => {
-    const result = await driveHandler(get)
-
-    expect(result.view.context.arrivalDate.formGroup).toEqual({
-      classes: 'app-date-picker'
-    })
   })
 
   it.each([
@@ -191,8 +180,6 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.arrivalDateAtPort).toBe(outOfRangeError)
     expect(result.after).toEqual(result.before)
-    // The re-rendered picker keeps its bounds, so the calendar a user is sent
-    // back to still refuses what the server just refused.
     expect(result.view.context.arrivalDate.minDate).toBe(dateWindow.minText)
     expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
   })
@@ -255,15 +242,8 @@ describe('port-of-entry — the arrival-date window', () => {
   })
 })
 
-// `GB ZZZ` is absent from the captured ports fixture, so it doubles as an
-// out-of-list "stale" stored code.
 describe('GET port-of-entry — a stored port the reader no longer offers', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the port in values so the select renders unselected, without adding the stale option', async () => {
     const result = await driveHandler(get, {
@@ -286,7 +266,7 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
     )
   })
 
-  it('Should leave the stored port intact — GET only reshapes what the page renders', async () => {
+  it('Should leave the stored port intact', async () => {
     const result = await driveHandler(get, {
       seed: { portOfEntry: 'GB ZZZ' }
     })
@@ -297,14 +277,9 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
 })
 
 describe('POST port-of-entry — empty port overwrites a stored answer', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should replace a previously stored port with an empty string when the placeholder is submitted', async () => {
+  it('Should replace a previously stored port with an empty string when the select text is submitted', async () => {
     const result = await driveHandler(post, {
       seed: { portOfEntry: 'GB DVR' },
       payload: {
@@ -320,29 +295,12 @@ describe('POST port-of-entry — empty port overwrites a stored answer', () => {
 })
 
 describe('POST port-of-entry — port membership follows the primed list', () => {
-  const originalMode = config.get('stubMode')
+  const serveReferenceData = referenceDataServing()
 
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  afterAll(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-  })
-
-  it('Should validate against the list as primed at POST time, not as imported', async () => {
-    config.set('stubMode', false)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => [{ code: 'ZZ 001', name: 'Zedport' }]
-      }))
-    )
+  it('Should validate against the list as primed at POST time', async () => {
+    serveReferenceData([{ code: 'ZZ 001', name: 'Zedport' }])
     await ports.ensureLoaded()
 
     const accepted = await driveHandler(post, {

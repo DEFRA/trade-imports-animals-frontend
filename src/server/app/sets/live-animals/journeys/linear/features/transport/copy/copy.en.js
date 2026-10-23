@@ -1,31 +1,35 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
+const SELECT_A_COUNTRY = 'Select a country'
+
 export const copy = {
   portOfEntry: {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: (example) =>
-        `The expected date of arrival at the port of entry. For example, ${example}`
+      hint: `The expected date of arrival at the port of entry. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Port of entry',
-      hint: 'Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select port of entry',
+      hint: 'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
+      selectText: 'Select a port',
+      searchPlaceholder: 'Select a port',
       noResults: 'No ports found'
     },
     means: {
       label: 'Means of transport to the port of entry',
-      placeholder: 'Select one',
+      selectText: 'Select one',
       options: {
-        AIRPLANE: 'Airplane',
-        RAILWAY: 'Railway',
-        ROAD_VEHICLE: 'Road Vehicle',
-        VESSEL: 'Vessel'
+        AIRPLANE: 'Air',
+        RAILWAY: 'Rail',
+        ROAD_VEHICLE: 'Road',
+        VESSEL: 'Sea'
       }
     },
     identification: {
       label: 'Transport identification',
       hint: {
-        lead: 'To identify the means of transport, enter (one of the following):',
+        lead: 'Enter one of the following:',
         items: [
           'flight number',
           'train number',
@@ -60,7 +64,8 @@ export const copy = {
     country: {
       label: 'Enter a country',
       hint: 'Enter each country that the consignment will travel through',
-      placeholder: 'Search for a country',
+      selectText: SELECT_A_COUNTRY,
+      searchPlaceholder: 'Search for a country',
       noResults: 'No countries found'
     },
     add: 'Add country',
@@ -71,7 +76,6 @@ export const copy = {
     },
     remove: 'Remove',
     removeHidden: (country) => country,
-    empty: 'You have not added any countries yet.',
     added: (country) => `${country} added.`,
     removed: (country) => `${country} removed.`,
     limitReached: (max) =>
@@ -129,6 +133,8 @@ export const copy = {
       button: 'Search'
     },
     noMatches: 'No transporters match your search.',
+    shownCount: (count) =>
+      `${count} ${count === 1 ? 'transporter' : 'transporters'} shown`,
     add: 'Add a transporter',
     errors: {
       transporterRequired: 'Select a transporter from the list',
@@ -217,13 +223,13 @@ export const copy = {
       phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
-    countryPlaceholder: 'Select a country',
+    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
       postcodeRequired: 'Enter a postcode or Zip code',
-      countryRequired: 'Select a country',
+      countryRequired: SELECT_A_COUNTRY,
       telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
       nameMaxLength: 'Name or organisation name must be 255 characters or less',

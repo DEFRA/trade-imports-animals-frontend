@@ -8,12 +8,6 @@ import { copy as cy } from './copy/copy.cy.js'
 const partyCopy = copyFor({ en, cy }).parties
 const contactCopy = copyFor({ en: contactEn, cy: contactCy })
 
-/** The five consignment parties. Each is one obligation, one address-book role
- * and one page of copy — everything else about the five spokes is identical, so
- * they share ONE picker (party-picker.controller.js) and the hub builds its
- * rows from the same table.
- *
- * A party's details are edited in place on `editSlug`. */
 export const PARTIES = [
   {
     id: 'placeOfOrigin',
@@ -57,8 +51,6 @@ export const PARTIES = [
   }
 ]
 
-/** Contact picks from the same address book, but it is deliberately not a
- * consignment-address hub spoke and therefore does not belong in PARTIES. */
 export const CONTACT_PARTY = {
   id: 'contactAddress',
   role: 'contact',

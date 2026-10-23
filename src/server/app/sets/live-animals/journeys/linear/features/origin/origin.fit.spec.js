@@ -1,13 +1,17 @@
 import {
   BASE,
-  journeyUrl,
+  answerOriginDetails,
+  chooseCountryOfOrigin,
+  chooseOutOfListCountry,
+  expectNoSeriousOrCriticalViolations,
+  openNotificationView,
+  startNotificationAtOrigin,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   countriesOrigin,
-  originPageCountryEntries
+  countryAndSubdivisionEntriesNamedWithCountry
 } from '../../../../../../services/_capture/fixtures.js'
 import {
   copy as sharedCopy,
@@ -21,127 +25,126 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 const ireland = countriesOrigin.find(({ code }) => code === 'IE')
+const netherlands = countriesOrigin.find(({ code }) => code === 'NL')
 
-// accessible-autocomplete enhances the native <select>: the visible combobox
-// input keeps the original id and holds the country name, and the native select
-// is hidden and renamed with a "-select" suffix (it still submits the code).
 const countryInput = 'input#countryOfOrigin'
 const countryHidden = 'select#countryOfOrigin-select'
-const AUTOCOMPLETE_WRAPPER = '.autocomplete__wrapper'
-const AUTOCOMPLETE_OPTION = '.autocomplete__option'
+const REGION_CODE_PREFIX = '.govuk-input__prefix'
+const CANARY_ISLANDS_LABEL = 'Canary Islands (Spain)'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 const INTERNAL_REFERENCE = 'Imports456GB'
 const PUNCTUATED_INTERNAL_REFERENCE = 'ACME-2026/01 batch 2.'
-const OUT_OF_LIST_COUNTRY = 'XX'
 
 const countryField = (page) =>
   page.getByLabel(copy.country.label, { exact: true })
 
+const regionCodeField = (page) =>
+  page.getByLabel(copy.regionCode.label, { exact: true })
+
+const regionCodeOnReview = (page) =>
+  page
+    .getByRole('term')
+    .filter({
+      has: page.getByText(checkAnswersCopy.rows.regionCode, { exact: true })
+    })
+    .locator('..')
+
+const removeRegionCodeCap = (page) =>
+  regionCodeField(page).evaluate((input) => input.removeAttribute('maxlength'))
+
 const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
 
-const startAtOrigin = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+const regionCodePrefix = (page) => page.locator(REGION_CODE_PREFIX)
+
+const expectRegionCodePrefix = async (page, code) => {
+  await expect(regionCodePrefix(page)).toBeVisible()
+  await expect(regionCodePrefix(page)).toHaveText(code)
 }
 
-// Pick a country from the enhanced type-ahead, the way a user does: type part
-// of the name to filter, then pick the match. The combobox is addressed by its
-// own selector rather than by label, because the label points at the native
-// select until the client bundle has swapped the type-ahead in.
-const chooseCountry = async (page, { name }) => {
-  const field = page.locator(countryInput)
-  await field.click()
-  await field.fill(name)
-  await page.getByRole('option', { name, exact: true }).click()
+const expectNoRegionCodePrefix = async (page) => {
+  await expect(regionCodePrefix(page)).toHaveCount(1)
+  await expect(regionCodePrefix(page)).toBeHidden()
 }
 
-// Nothing in the type-ahead offers a value that is not a country, so the
-// out-of-list case is reached the only way it could be reached at all — by
-// putting the value into the select the form submits.
-const chooseOutOfListCountry = (page) =>
-  page.locator(countryHidden).evaluate((select, code) => {
-    select.add(new Option(code, code))
-    select.value = code
-  }, OUT_OF_LIST_COUNTRY)
-
-const fillOriginAnswers = async (page, { country = france, regionCode }) => {
-  await chooseCountry(page, country)
-  await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
-  await page.getByLabel(copy.regionCode.label, { exact: true }).fill(regionCode)
+const reopenOriginAfterSaving = async (page, details = {}) => {
+  const originUrl = page.url()
+  await answerOriginDetails(page, { regionCode: '75', ...details })
+  await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+  await page.goto(originUrl)
+  return originUrl
 }
 
-const isGovukConditionalRevealFalsePositive = (violation) =>
-  violation.id === 'aria-allowed-attr' &&
-  violation.nodes.every((node) =>
-    /govuk-(radios|checkboxes)__input/.test(node.html)
-  )
-
-const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
-
-  expect(
-    seriousOrCritical,
-    `${pageName} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
+const submitRefusedOriginWithFrance = async (page) => {
+  await chooseCountryOfOrigin(page, france.name)
+  await chooseYesForRegionCode(page)
+  await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+  await expect(page.getByRole('alert')).toBeVisible()
 }
+
+const chooseYesForRegionCode = (page) =>
+  page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
 
 test.describe('origin feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('renders the captured MDM country options and feature copy', async ({
     page
   }) => {
-    // The enhancement has run once the native select has been renamed, and the
-    // country label then names the search box rather than the select.
     await expect(page.locator(countryHidden)).toBeAttached()
     await expect(countryField(page)).toHaveAttribute('role', 'combobox')
-    await expect(page.getByText(copy.country.hint)).toBeVisible()
-    await expect(
-      page.getByRole('group', { name: copy.regionRequirement.legend })
-    ).toContainText(copy.regionRequirement.hint)
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeVisible()
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.no })
     ).toBeVisible()
-    await expect(
-      page.getByLabel(copy.internalReference.label)
-    ).toHaveAccessibleDescription(copy.internalReference.hint)
 
-    const select = page.locator(countryHidden)
-    await expect(select.locator('option').first()).toHaveText(
-      copy.country.placeholder
-    )
-    const renderedCountries = await select
-      .locator('option')
+    const rendered = await page
+      .locator(`${countryHidden} option`)
       .evaluateAll((options) =>
-        options.slice(1).map((option) => ({
+        options.map((option) => ({
           code: option.value,
           name: option.textContent
         }))
       )
-    expect(renderedCountries).toEqual(originPageCountryEntries())
+    expect(rendered).toEqual([
+      { code: '', name: copy.country.selectText },
+      ...countryAndSubdivisionEntriesNamedWithCountry()
+    ])
   })
 
-  // The page asks three questions under one h1, so all three have to carry the
-  // same weight — the size class is the whole of the behaviour here, which is
-  // why it is asserted directly rather than through a rendered role.
+  test('shows no hint under the country question and invites a search in the empty box', async ({
+    page
+  }) => {
+    await expect(page.locator(countryInput)).toHaveAttribute(
+      'placeholder',
+      copy.country.searchPlaceholder
+    )
+    await expect(page.locator(countryHidden)).toHaveAccessibleDescription('')
+  })
+
+  test("shows the region question's health-certificate hint and an internal reference hint with no length limit", async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('group', { name: copy.regionRequirement.legend })
+    ).toHaveAccessibleDescription(copy.regionRequirement.hint)
+    await expect(
+      page.getByLabel(copy.internalReference.label)
+    ).toHaveAccessibleDescription(copy.internalReference.hint)
+  })
+
+  test('names each territory with its country', async ({ page }) => {
+    await expect(
+      page.locator(`${countryHidden} option[value="ES-CN"]`)
+    ).toHaveText(CANARY_ISLANDS_LABEL)
+  })
+
   test('sets all three question labels at the same medium size', async ({
     page
   }) => {
@@ -158,9 +161,6 @@ test.describe('origin feature', () => {
     ).toHaveClass(/govuk-label--m/)
   })
 
-  // The strip is drawn from the first request, before anything is saved: the
-  // reference is minted when the notification is created, so the user starting
-  // one can read it off the page they land on.
   test('shows the draft status and the notification reference before any answer is saved', async ({
     page
   }) => {
@@ -183,10 +183,10 @@ test.describe('origin feature', () => {
   }) => {
     const originUrl = page.url()
 
-    await fillOriginAnswers(page, { regionCode: '75' })
-    await page.getByLabel(copy.internalReference.label).fill('Imports456_GB')
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-
+    await answerOriginDetails(page, {
+      regionCode: '75',
+      internalReference: 'Imports456_GB'
+    })
     await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
 
     await page.goto(originUrl)
@@ -195,84 +195,10 @@ test.describe('origin feature', () => {
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeChecked()
-    await expect(
-      page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toHaveValue('75')
+    await expect(regionCodeField(page)).toHaveValue('75')
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       'Imports456_GB'
     )
-  })
-
-  test('the region of origin code is still held and shown after it is made optional', async ({
-    page
-  }) => {
-    const originUrl = page.url()
-
-    await fillOriginAnswers(page, { regionCode: '75' })
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
-
-    await page.goto(originUrl)
-    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
-
-    await page.goto(originUrl)
-    await expect(
-      page.getByRole('radio', { name: copy.regionRequirement.no })
-    ).toBeChecked()
-    // The box lives in the Yes conditional and is hidden under No, so the
-    // label is not a reliable locator once the requirement has flipped.
-    await expect(page.locator('#regionOfOriginCodeSuffix')).toHaveValue('75')
-
-    await page.goto(journeyUrl(page, 'notification-view'))
-    await expect(
-      page
-        .getByRole('term')
-        .filter({
-          has: page.getByText(checkAnswersCopy.rows.regionCode, {
-            exact: true
-          })
-        })
-        .locator('..')
-    ).toContainText('FR-75')
-  })
-
-  test('shows the country already chosen as a fixed prefix beside the region code box', async ({
-    page
-  }) => {
-    const originUrl = page.url()
-
-    await fillOriginAnswers(page, { regionCode: '75' })
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await page.goto(originUrl)
-
-    const prefix = page.locator('.govuk-input__prefix')
-    await expect(prefix).toHaveText(france.code)
-    await expect(
-      page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toHaveValue('75')
-  })
-
-  test('the prefix follows the country the user chose', async ({ page }) => {
-    const originUrl = page.url()
-    await fillOriginAnswers(page, { country: ireland, regionCode: '75' })
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await page.goto(originUrl)
-
-    await expect(page.locator('.govuk-input__prefix')).toHaveText(ireland.code)
-  })
-
-  test('region code prefix has no serious or critical axe violations', async ({
-    page
-  }) => {
-    const originUrl = page.url()
-
-    await fillOriginAnswers(page, { regionCode: '75' })
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await page.goto(originUrl)
-
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin with prefix')
   })
 
   test('back link returns to the dashboard while the journey is unanswered', async ({
@@ -289,7 +215,7 @@ test.describe('origin feature', () => {
     const originUrl = page.url()
     const hubUrl = hubUrlOf(originUrl)
 
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await page.goto(originUrl)
@@ -312,14 +238,205 @@ test.describe('origin feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin')
+    await expectNoSeriousOrCriticalViolations(page, 'Origin')
+  })
+})
+
+test.describe('origin region of origin code and internal reference', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+  })
+
+  test('the region code box stops typing at five characters, with autocomplete and spellcheck off', async ({
+    page
+  }) => {
+    await chooseYesForRegionCode(page)
+    const box = regionCodeField(page)
+
+    await box.pressSequentially('ABCDEFG')
+
+    await expect(box).toHaveValue('ABCDE')
+    await expect(box).toHaveAttribute('autocomplete', 'off')
+    await expect(box).toHaveAttribute('spellcheck', 'false')
+  })
+
+  test('answering No clears a saved region code: the review shows Not applicable and Yes shows an empty box', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await answerOriginDetails(page, { regionCode: '75' })
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await page.goto(originUrl)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await openNotificationView(page)
+    await expect(regionCodeOnReview(page)).toContainText(
+      checkAnswersCopy.notApplicable
+    )
+
+    await page.goto(originUrl)
+    await chooseYesForRegionCode(page)
+    await expect(regionCodeField(page)).toHaveValue('')
+  })
+
+  test('a region code with no country is kept on the page', async ({
+    page
+  }) => {
+    await chooseYesForRegionCode(page)
+    await regionCodeField(page).fill('75')
+    await page
+      .getByLabel(copy.internalReference.label)
+      .fill('A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1))
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(regionCodeField(page)).toHaveValue('75')
+  })
+
+  test('a region code is saved once a country gives it its prefix', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    await chooseYesForRegionCode(page)
+    await regionCodeField(page).fill('75')
+    await page.getByLabel(copy.internalReference.label).fill(INTERNAL_REFERENCE)
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(hubUrlOf(originUrl))
+
+    await page.goto(originUrl)
+    await expect(regionCodeField(page)).toHaveValue('')
+
+    await answerOriginDetails(page, { regionCode: '75' })
+    await expect(page).toHaveURL(hubUrlOf(originUrl))
+
+    await openNotificationView(page)
+    await expect(regionCodeOnReview(page)).toContainText('FR-75')
+  })
+
+  test('shows the saved country code as the prefix beside the region code box when the page is shown again', async ({
+    page
+  }) => {
+    await reopenOriginAfterSaving(page)
+
+    await expectRegionCodePrefix(page, france.code)
+    await expect(regionCodeField(page)).toHaveValue('75')
+  })
+
+  test('choosing another country on a page shown again changes the prefix without leaving the page', async ({
+    page
+  }) => {
+    const originUrl = await reopenOriginAfterSaving(page)
+
+    await chooseCountryOfOrigin(page, netherlands.name)
+
+    await expect(regionCodePrefix(page)).toHaveText(netherlands.code)
+    await expect(page).toHaveURL(originUrl)
+  })
+
+  test('the prefix follows the country the user chose', async ({ page }) => {
+    await reopenOriginAfterSaving(page, { countryName: ireland.name })
+
+    await expectRegionCodePrefix(page, ireland.code)
+  })
+
+  test('before a country is chosen the revealed region code box has an empty prefix hidden from screen readers', async ({
+    page
+  }) => {
+    await chooseYesForRegionCode(page)
+
+    await expectRegionCodePrefix(page, '')
+    await expect(regionCodePrefix(page)).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  test('the region code box is named by its label and described by its hint, with its prefix hidden from screen readers', async ({
+    page
+  }) => {
+    await chooseYesForRegionCode(page)
+
+    await expect(regionCodePrefix(page)).toHaveAttribute('aria-hidden', 'true')
+    await expect(regionCodeField(page)).toHaveAccessibleName(
+      copy.regionCode.label
+    )
+    await expect(regionCodeField(page)).toHaveAccessibleDescription(
+      copy.regionCode.hint
+    )
+  })
+
+  test('choosing a country fills the prefix with its code as soon as it is picked, without leaving the page', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    await chooseYesForRegionCode(page)
+
+    await chooseCountryOfOrigin(page, france.name)
+    await expect(regionCodePrefix(page)).toHaveText(france.code)
+
+    await chooseCountryOfOrigin(page, netherlands.name)
+    await expect(regionCodePrefix(page)).toHaveText(netherlands.code)
+    await expect(page).toHaveURL(originUrl)
+  })
+
+  test("choosing a subdivision fills the prefix with its parent country's code", async ({
+    page
+  }) => {
+    await chooseYesForRegionCode(page)
+
+    await chooseCountryOfOrigin(page, CANARY_ISLANDS_LABEL)
+
+    await expect(regionCodePrefix(page)).toHaveText('ES')
+  })
+
+  test('clearing the country empties the prefix', async ({ page }) => {
+    await chooseYesForRegionCode(page)
+    await chooseCountryOfOrigin(page, france.name)
+    await expect(regionCodePrefix(page)).toHaveText(france.code)
+
+    await page.locator(countryInput).fill('')
+    await page.locator(countryInput).blur()
+
+    await expect(regionCodePrefix(page)).toHaveText('')
+  })
+
+  test('a refused page shows the submitted country code as the prefix, and choosing another country changes it', async ({
+    page
+  }) => {
+    await submitRefusedOriginWithFrance(page)
+
+    await expectRegionCodePrefix(page, france.code)
+
+    await chooseCountryOfOrigin(page, netherlands.name)
+    await expect(regionCodePrefix(page)).toHaveText(netherlands.code)
+  })
+
+  test('a submitted country value carrying markup is shown upper-cased as text, not as elements, in the prefix', async ({
+    page
+  }) => {
+    const markup = '<b>x</b>'
+    await chooseOutOfListCountry(page, markup)
+    await chooseYesForRegionCode(page)
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
+
+    await expect(regionCodePrefix(page)).toHaveText(markup.toUpperCase())
+  })
+
+  test('region code prefix has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await reopenOriginAfterSaving(page)
+
+    await expectNoSeriousOrCriticalViolations(page, 'Origin with prefix')
   })
 })
 
 test.describe('country of origin type-ahead', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('offers the whole country list on focus, without typing', async ({
@@ -331,7 +448,7 @@ test.describe('country of origin type-ahead', () => {
       page.getByRole('option', { name: france.name, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('option')).toHaveCount(
-      originPageCountryEntries().length
+      countryAndSubdivisionEntriesNamedWithCountry().length
     )
   })
 
@@ -340,22 +457,55 @@ test.describe('country of origin type-ahead', () => {
   }) => {
     const field = page.locator(countryInput)
 
-    await field.fill('fran')
-    await expect(
-      page.getByRole('option', { name: france.name, exact: true })
-    ).toBeVisible()
-    await expect(page.getByRole('option')).toHaveCount(1)
-
     await field.fill('IRELAND')
     await expect(
       page.getByRole('option', { name: ireland.name, exact: true })
     ).toBeVisible()
   })
 
+  test('offers France and each French territory followed by (France) when the user types fra', async ({
+    page
+  }) => {
+    const frenchTerritories = countryAndSubdivisionEntriesNamedWithCountry()
+      .filter(({ code }) => code.startsWith(`${france.code}-`))
+      .map(({ name }) => name)
+
+    await page.locator(countryInput).fill('fra')
+    await expect(
+      page.getByRole('option', { name: france.name, exact: true })
+    ).toBeVisible()
+
+    expect(await page.getByRole('option').allTextContents()).toEqual(
+      [france.name, ...frenchTerritories].sort((left, right) =>
+        left.localeCompare(right)
+      )
+    )
+  })
+
+  test("a chosen territory is saved by its code and shown back named with its country and with its country's code as the prefix", async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    const canaryIslands = countryAndSubdivisionEntriesNamedWithCountry().find(
+      ({ code }) => code === 'ES-CN'
+    )
+
+    await chooseCountryOfOrigin(page, canaryIslands.name)
+    await chooseYesForRegionCode(page)
+    await regionCodeField(page).fill('12')
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await page.goto(originUrl)
+    await expect(page.locator(countryInput)).toHaveValue(CANARY_ISLANDS_LABEL)
+    await expect(page.locator(countryHidden)).toHaveValue(canaryIslands.code)
+    await expectRegionCodePrefix(page, 'ES')
+  })
+
   test('leaves the chosen country visible in the box and submits its code', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
 
     await expect(page.locator(countryInput)).toHaveValue(france.name)
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
@@ -377,161 +527,21 @@ test.describe('country of origin type-ahead', () => {
       page.getByRole('option', { name: france.name, exact: true })
     ).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin results list')
-  })
-})
-
-test.describe('country of origin type-ahead styles', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await startAtOrigin(page)
-  })
-
-  test('uses GOV.UK typography for the enhanced input and its options', async ({
-    page
-  }) => {
-    const input = page.locator(countryInput)
-    await input.fill('Fr')
-    await expect(
-      page.getByRole('option', { name: france.name, exact: true })
-    ).toBeVisible()
-
-    const typography = await page.evaluate(
-      ({ inputSelector, optionSelector }) => {
-        const enhancedInput = document.querySelector(inputSelector)
-        const option = document.querySelector(optionSelector)
-        const reference = document.createElement('input')
-        reference.className = 'govuk-input'
-        document.body.append(reference)
-
-        const inputStyle = getComputedStyle(enhancedInput)
-        const optionStyle = getComputedStyle(option)
-        const referenceStyle = getComputedStyle(reference)
-        const result = {
-          inputFamily: inputStyle.fontFamily,
-          inputSize: inputStyle.fontSize,
-          optionFamily: optionStyle.fontFamily,
-          optionSize: optionStyle.fontSize,
-          referenceFamily: referenceStyle.fontFamily,
-          referenceSize: referenceStyle.fontSize
-        }
-        reference.remove()
-        return result
-      },
-      { inputSelector: countryInput, optionSelector: AUTOCOMPLETE_OPTION }
-    )
-
-    expect(typography.inputFamily).toBe(typography.referenceFamily)
-    expect(typography.optionFamily).toBe(typography.referenceFamily)
-    expect(typography.inputFamily).toMatch(/^"?GDS Transport/)
-    expect(typography.inputSize).toBe(typography.referenceSize)
-    expect(typography.optionSize).toBe(typography.referenceSize)
-  })
-
-  test('paints the search icon behind the interactive input', async ({
-    page
-  }) => {
-    const paintStack = await page
-      .locator(AUTOCOMPLETE_WRAPPER)
-      .first()
-      .evaluate((wrapper) => {
-        const input = wrapper.querySelector('.autocomplete__input')
-        const arrow = wrapper.querySelector(
-          '.autocomplete__dropdown-arrow-down'
-        )
-        const afterStyle = getComputedStyle(wrapper, '::after')
-        return {
-          arrowHidden: getComputedStyle(arrow).display === 'none',
-          searchIconBackground: afterStyle.backgroundImage,
-          searchIconZIndex: afterStyle.zIndex,
-          searchIconPointerEvents: afterStyle.pointerEvents,
-          inputPaddingRight: getComputedStyle(input).paddingRight,
-          wrapperZIndex: getComputedStyle(wrapper).zIndex
-        }
-      })
-
-    expect(paintStack.arrowHidden).toBe(true)
-    expect(paintStack.searchIconBackground).toContain('data:image/svg+xml')
-    expect(paintStack.searchIconZIndex).toBe('-1')
-    expect(paintStack.searchIconPointerEvents).toBe('none')
-    expect(paintStack.inputPaddingRight).toBe('35px')
-    expect(paintStack.wrapperZIndex).toBe('0')
-  })
-
-  test('keeps the upstream focus indicator on the enhanced input', async ({
-    page
-  }) => {
-    const input = page.locator(countryInput)
-
-    await input.focus()
-
-    const indicator = await input.evaluate((enhancedInput) => {
-      const reference = document.createElement('span')
-      reference.style.color = 'var(--govuk-focus-colour)'
-      document.body.append(reference)
-      const inputStyle = getComputedStyle(enhancedInput)
-      const result = {
-        boxShadow: inputStyle.boxShadow,
-        focusColour: getComputedStyle(reference).color,
-        outlineColour: inputStyle.outlineColor,
-        outlineWidth: inputStyle.outlineWidth
-      }
-      reference.remove()
-      return result
-    })
-
-    expect(indicator.outlineColour).toBe(indicator.focusColour)
-    expect(indicator.outlineWidth).toBe('3px')
-    expect(indicator.boxShadow).toContain('inset')
-  })
-
-  test('gives the enhanced input the standard GOV.UK error border', async ({
-    page
-  }) => {
-    await chooseOutOfListCountry(page)
-    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(
-      page.getByRole('alert').getByRole('link', {
-        name: copy.errors.countryFromList
-      })
-    ).toBeVisible()
-
-    const borders = await page.evaluate((inputSelector) => {
-      const enhancedInput = document.querySelector(inputSelector)
-      const errorMessage = document.querySelector('#countryOfOrigin-error')
-      const reference = document.createElement('input')
-      reference.className = 'govuk-input govuk-input--error'
-      document.body.append(reference)
-
-      const inputStyle = getComputedStyle(enhancedInput)
-      const errorStyle = getComputedStyle(errorMessage)
-      const referenceStyle = getComputedStyle(reference)
-      const result = {
-        inputColour: inputStyle.borderTopColor,
-        inputWidth: inputStyle.borderTopWidth,
-        errorColour: errorStyle.color,
-        referenceColour: referenceStyle.borderTopColor,
-        referenceWidth: referenceStyle.borderTopWidth
-      }
-      reference.remove()
-      return result
-    }, countryInput)
-
-    expect(borders.inputColour).toBe(borders.errorColour)
-    expect(borders.inputColour).toBe(borders.referenceColour)
-    expect(borders.inputWidth).toBe(borders.referenceWidth)
+    await expectNoSeriousOrCriticalViolations(page, 'Origin results list')
   })
 })
 
 test.describe('country of origin without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
 
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+  })
+
   test('native select submits and persists the country code', async ({
     page
   }) => {
-    await signIn(page)
-    await startAtOrigin(page)
     const originUrl = page.url()
 
     await countryField(page).selectOption(france.code)
@@ -544,18 +554,77 @@ test.describe('country of origin without JavaScript', () => {
       france.code
     )
   })
+
+  test('native select names each territory with its country', async ({
+    page
+  }) => {
+    await expect(
+      countryField(page).locator('option[value="ES-CN"]')
+    ).toHaveText(CANARY_ISLANDS_LABEL)
+  })
+
+  test('the region code box shows with its label and hint and no prefix on first view', async ({
+    page
+  }) => {
+    await expect(regionCodeField(page)).toBeVisible()
+    await expect(regionCodeField(page)).toHaveAccessibleName(
+      copy.regionCode.label
+    )
+    await expect(regionCodeField(page)).toHaveAccessibleDescription(
+      copy.regionCode.hint
+    )
+    await expectNoRegionCodePrefix(page)
+  })
+
+  test('a saved region code is shown again with no prefix', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    await answerOriginDetails(page, { regionCode: '75' })
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await page.goto(originUrl)
+
+    await expect(regionCodeField(page)).toHaveValue('75')
+    await expectNoRegionCodePrefix(page)
+  })
+
+  test('a refused page shows the region code error with no prefix', async ({
+    page
+  }) => {
+    await answerOriginDetails(page, { regionCode: '' })
+
+    await expect(
+      page
+        .getByRole('alert')
+        .getByRole('link', { name: copy.errors.regionCodeRequired })
+    ).toBeVisible()
+    await expect(page.locator('#regionOfOriginCodeSuffix-error')).toContainText(
+      copy.errors.regionCodeRequired
+    )
+    await expectNoRegionCodePrefix(page)
+  })
+
+  for (const typedRegionCode of ['75', 'FR-75']) {
+    test(`a region code typed as ${typedRegionCode} is saved as the joined code FR-75`, async ({
+      page
+    }) => {
+      await answerOriginDetails(page, { regionCode: typedRegionCode })
+      await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+      await openNotificationView(page)
+
+      await expect(regionCodeOnReview(page)).toContainText('FR-75')
+    })
+  }
 })
 
 test.describe('origin country and region validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
-  // The commodity search is asked for by country of origin, so with the
-  // country unanswered the opening run has no next page to offer and the user
-  // is set down on the hub. The point of the test is that the save went
-  // through at all: nothing on the page is thrown away.
   test('country: an unanswered country saves the rest of the page and moves on', async ({
     page
   }) => {
@@ -577,8 +646,6 @@ test.describe('origin country and region validation', () => {
     )
   })
 
-  // The country is mandatory for completeness even though it does not block
-  // the save, so the gap is shown on the hub rather than enforced at the page.
   test('country: an unanswered country leaves the origin task unfinished', async ({
     page
   }) => {
@@ -616,7 +683,7 @@ test.describe('origin country and region validation', () => {
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(
+    await expectNoSeriousOrCriticalViolations(
       page,
       'Origin out-of-list country error'
     )
@@ -625,7 +692,7 @@ test.describe('origin country and region validation', () => {
   test('region requirement validation: when the submitted option is invalid, links to and focuses the group', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page
       .locator('input[name="regionOfOriginCodeRequirement"]')
       .first()
@@ -653,8 +720,8 @@ test.describe('origin country and region validation', () => {
     page
   }) => {
     const originUrl = page.url()
-    await chooseCountry(page, france)
-    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await chooseCountryOfOrigin(page, france.name)
+    await chooseYesForRegionCode(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     await expect(page).toHaveURL(originUrl)
@@ -663,9 +730,7 @@ test.describe('origin country and region validation', () => {
       .getByRole('link', { name: copy.errors.regionCodeRequired })
     await expect(regionCodeError).toBeVisible()
     await regionCodeError.click()
-    await expect(
-      page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toBeFocused()
+    await expect(regionCodeField(page)).toBeFocused()
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeChecked()
@@ -675,7 +740,7 @@ test.describe('origin country and region validation', () => {
   test('region code validation: No leaves the empty box unasked for', async ({
     page
   }) => {
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -685,12 +750,12 @@ test.describe('origin country and region validation', () => {
   test('empty region code error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await chooseCountry(page, france)
-    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await chooseCountryOfOrigin(page, france.name)
+    await chooseYesForRegionCode(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousOrCriticalAxeViolations(
+    await expectNoSeriousOrCriticalViolations(
       page,
       'Origin empty region code error'
     )
@@ -699,9 +764,10 @@ test.describe('origin country and region validation', () => {
   test('region code validation: when over 5 characters, links to and focuses the preserved value', async ({
     page
   }) => {
-    await chooseCountry(page, france)
-    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
-    await page.getByLabel(copy.regionCode.label, { exact: true }).fill('ABCDEF')
+    await chooseCountryOfOrigin(page, france.name)
+    await chooseYesForRegionCode(page)
+    await removeRegionCodeCap(page)
+    await regionCodeField(page).fill('ABCDEF')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     const regionCodeError = page
@@ -709,12 +775,8 @@ test.describe('origin country and region validation', () => {
       .getByRole('link', { name: copy.errors.regionCodeMaxLength })
     await expect(regionCodeError).toBeVisible()
     await regionCodeError.click()
-    await expect(
-      page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toBeFocused()
-    await expect(
-      page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toHaveValue('ABCDEF')
+    await expect(regionCodeField(page)).toBeFocused()
+    await expect(regionCodeField(page)).toHaveValue('ABCDEF')
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
     await expect(page.locator(countryInput)).toHaveValue(france.name)
     await expect(
@@ -726,14 +788,14 @@ test.describe('origin country and region validation', () => {
 test.describe('origin internal reference validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtOrigin(page)
+    await startNotificationAtOrigin(page)
   })
 
   test('internal reference validation: when over 58 characters, links to and focuses the preserved value', async ({
     page
   }) => {
     const invalidReference = 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1)
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page.getByLabel(copy.internalReference.label).fill(invalidReference)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -748,15 +810,12 @@ test.describe('origin internal reference validation', () => {
     )
   })
 
-  // The reference belongs to the user's own records, so the punctuation those
-  // records use — hyphens, slashes, spaces, full stops — goes in as they hold
-  // it, and comes back the same when they return to the page.
   test('internal reference validation: saves a reference punctuated the way the user holds it', async ({
     page
   }) => {
     const originUrl = page.url()
 
-    await chooseCountry(page, france)
+    await chooseCountryOfOrigin(page, france.name)
     await page
       .getByLabel(copy.internalReference.label)
       .fill(PUNCTUATED_INTERNAL_REFERENCE)

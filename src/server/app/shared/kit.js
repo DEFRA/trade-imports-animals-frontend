@@ -4,6 +4,7 @@ import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyPreviousRunTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -83,7 +84,7 @@ export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
 const anchorHref = (field) => `#${field}`
 
 /**
- * The one error summary shape the service renders.
+ * The error summary view model.
  *
  * @param {object} [fieldErrors] - map of key to message. Empty means no summary.
  * @param {object} [options]
@@ -114,6 +115,30 @@ export const errorSummary = (
 export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
+export const REFUSAL_LOG_MESSAGE = 'Answer refused, page shown again'
+export const SAVE_FALLBACK_LOG_MESSAGE =
+  'Save failed on a recoverable backend error, fallback response sent'
+
+/**
+ * Logs a refusal once at info. The error codes are the field keys, never the
+ * messages.
+ *
+ * @param {object} request - the request being answered.
+ * @param {object} [options] - other keys (the named reason, ids) are logged as given.
+ * @param {object} [options.fieldErrors] - map of field key to the message the
+ * page shows (may be empty).
+ */
+export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
+  request.logger.info(
+    {
+      ...details,
+      journeyId: request.params.journeyId,
+      route: request.route?.path,
+      errorCodes: Object.keys(fieldErrors)
+    },
+    REFUSAL_LOG_MESSAGE
+  )
+
 export const hubExitTarget = (request) =>
   request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
@@ -141,6 +166,21 @@ export const runTarget = async (request, stepId, scope) =>
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
+export const runBackLink = async (request, stepId, current) => {
+  const { journey, scope, answers } = current
+  const previousRunTarget = (await inOpeningRun(
+    request,
+    request.params.journeyId
+  ))
+    ? journeyPreviousRunTarget(
+        stepId,
+        { scope, answers },
+        request.params.journeyId
+      )
+    : null
+  return previousRunTarget ?? hubPath(journey.journeyId)
+}
+
 export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,
@@ -159,7 +199,11 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.request] - the request being answered. Supply it
  * on a page that ends with `saveActions`, and the view gains `amend`: the two
  * form actions its save buttons carry while the journey is being amended, or
- * null otherwise. A template passes it on as `amend = amend`.
+ * null otherwise.
+ * @param {string} [options.surface] - a key of `SURFACES` naming the width of
+ * the content column. Defaults to `form`, the reading measure; an unknown
+ * surface throws.
+ * @param {boolean} [options.showJourneyStrip] - false leaves the status strip off the page.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -171,7 +215,9 @@ export const base = (
     page,
     recoverableError = false,
     offerCancelAmend = true,
-    request
+    showJourneyStrip = true,
+    request,
+    surface = 'form'
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -181,15 +227,12 @@ export const base = (
     pageTitle: title,
     caption: journeySectionCaption(page?.id),
     backLink,
-    // The chrome's home link, resolved in this request's set. Hardcoding `/`
-    // would send every set's service navigation to the default set's
-    // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
-    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
+    journeyStrip: showJourneyStrip
+      ? journeyStrip(journey, { offerCancelAmend })
+      : null,
     amending,
-    // Per request because an amend page's save buttons carry the page's own
-    // query, and the POST re-render needs the same URLs as the GET.
     amend:
       amending && request
         ? amendFormActions(request.path ?? '', request.url?.searchParams)
@@ -197,19 +240,15 @@ export const base = (
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
-    contentColumnClass: SURFACES.form
+    contentColumnClass: surfaceClass(surface)
   }
 }
 
-/** The shared layout, named here rather than read from a set's journey flow. */
 const SHARED_LAYOUT = 'shared/layout.njk'
 
 export const setlessBase = (title) => ({
   layout: SHARED_LAYOUT,
   pageTitle: title,
-  // No caption, back link or hub link: all three are journey chrome, and there
-  // is no journey here. The home link is the root, which redirects to the
-  // default set.
   homeUrl: '/',
   journeyStrip: null,
   concurrencyToken: null,
@@ -218,7 +257,24 @@ export const setlessBase = (title) => ({
   contentColumnClass: SURFACES.form
 })
 
-export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
+/**
+ * Runs a save and answers a recoverable backend failure with the page's
+ * fallback, logging the failure once at warn.
+ *
+ * @param {object} request - the request being answered.
+ * @param {() => Promise<*>} saveThunk - makes the save.
+ * @param {() => *} onRecoverableFailure - builds the response for a
+ * recoverable backend failure.
+ * @param {object} [ids] - ids to log beside the journey id.
+ * @returns {Promise<{value: *}|{failure: *}>} the save's value, or the
+ * fallback's response as `failure`.
+ */
+export const recoverableSave = async (
+  request,
+  saveThunk,
+  onRecoverableFailure,
+  ids = {}
+) => {
   try {
     return { value: await saveThunk() }
   } catch (error) {
@@ -226,6 +282,15 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
       throw error
     }
     if (isRecoverableBackendError(error)) {
+      request.logger.warn(
+        {
+          ...ids,
+          journeyId: request.params.journeyId,
+          route: request.route?.path,
+          err: error
+        },
+        SAVE_FALLBACK_LOG_MESSAGE
+      )
       return { failure: await onRecoverableFailure() }
     }
     throw error
@@ -284,10 +349,7 @@ export const readDate = (payload, name) => {
   return { day, month, year }
 }
 
-/** The inverse of `readDate`: a stored `{ day, month, year }` back as the
- * `d/m/yyyy` text the date field holds and the date rules read. A value that is
- * already text is its own answer — `readDate` hands back what it could not
- * split, so an unreadable date survives a round trip and is still refused. */
+/** A stored `{ day, month, year }` as `d/m/yyyy` text. Text is returned unchanged. */
 export const dateTextOf = (value) =>
   typeof value === 'string'
     ? value
@@ -297,31 +359,51 @@ export const dateTextOf = (value) =>
         .join('/')
 
 /**
+ * The view model for a date-picker text field. The form group always carries
+ * the house date-picker class.
+ *
  * @param {string} name
  * @param {object} [options]
- * @param {string} [options.minDate] - `d/m/yyyy` TEXT, not a Date: it goes
- * verbatim into `data-min-date`, and the MoJ picker parses nothing else. Pass
- * `arrivalWindow().minText`, never its sibling `min`.
- * @param {string} [options.maxDate] - `d/m/yyyy` text, same contract.
- * @param {string} [options.formGroupClasses] - classes for the field's form
- * group. The picker's client-side script inserts the calendar dialog inside
- * the form group, so a class here is the simplest stylesheet hook onto one
- * picker rather than all of them.
+ * @param {string} [options.label] - the label text.
+ * @param {string} [options.hint] - the hint text. No hint shows when absent.
+ * @param {string|{day?: string, month?: string, year?: string}} [options.value]
+ * the answer, shown as `d/m/yyyy` text.
+ * @param {string} [options.error] - the error message text. No error shows
+ * when absent.
+ * @param {string} [options.minDate] - the earliest date as `d/m/yyyy` text,
+ * never a Date.
+ * @param {string} [options.maxDate] - the latest date as `d/m/yyyy` text.
+ * @param {string} [options.formGroupClasses] - extra classes for the form
+ * group, added after the house date-picker class.
+ * @param {string} [options.labelClasses] - classes for the label. The GOV.UK
+ * small label unless the page asks for another.
+ * @returns {object} the view model for the MoJ date picker macro.
  */
 export const dateField = (
   name,
-  { label, hint, value = {}, error, minDate, maxDate, formGroupClasses } = {}
+  {
+    label,
+    hint,
+    value = {},
+    error,
+    minDate,
+    maxDate,
+    formGroupClasses,
+    labelClasses = 'govuk-label--s'
+  } = {}
 ) => {
   return {
     id: name,
     name,
     classes: 'govuk-input--width-10',
-    label: { text: label, classes: 'govuk-label--s' },
+    label: { text: label, classes: labelClasses },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
     value: dateTextOf(value),
     minDate,
     maxDate,
-    formGroup: formGroupClasses ? { classes: formGroupClasses } : undefined
+    formGroup: {
+      classes: ['app-date-picker', formGroupClasses].filter(Boolean).join(' ')
+    }
   }
 }

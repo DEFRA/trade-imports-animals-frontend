@@ -42,6 +42,6 @@
 
     {# Reached from the transporter list rather than from the hub, so it ends
        with the primary alone. #}
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
   </form>
 {% endblock %}

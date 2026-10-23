@@ -15,7 +15,7 @@ export const scopedFields = (commodity) =>
   commodities
     .identifiersFor(commodity)
     .filter((id) => appliesForCommodity(id, commodity))
-    .map((id) => ({ id, ...copy.typeFields[id] }))
+    .map((id) => ({ id, label: copy.identifierLabels[id] }))
 
 export const permanentAddressApplies = (commodity) =>
   appliesForCommodity('permanentAddress', commodity)

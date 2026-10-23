@@ -1,30 +1,18 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  documentRowFor,
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
-
-const rowFor = (page, reference) =>
-  page.locator('.govuk-table__row', { hasText: reference })
-
 const errorSummaryLink = (page, name) =>
   page.locator('.govuk-error-summary').getByRole('link', { name })
 
-// The enhanced upload hides the input behind a drop-zone button, so the file
-// goes to the input itself rather than to the labelled control.
 const fileInput = (page) => page.locator('input[type="file"]')
 
 const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
@@ -67,15 +55,13 @@ test.describe('document scan-status rendering', () => {
     test.slow()
     const document = documentNamed('SCAN-SAFE-0001', 'itahc-scan.pdf')
     await uploadDocument(page, document)
-    const row = rowFor(page, document.accompanyingDocumentReference)
+    const row = documentRowFor(page, document.accompanyingDocumentReference)
     const statusCell = row.locator('[data-upload-id]')
     await expect(statusCell).toHaveAttribute(
       'data-scan-status',
       SCAN_STATUS.PENDING
     )
     await expect(row).toContainText(copy.scanTags.scanning)
-    // The hidden label sits outside the tag the client rewrites, so it names
-    // the document for the pending state and for the settled one after it.
     await expect(statusCell).toContainText(
       copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
@@ -113,7 +99,7 @@ test.describe('document scan-status rendering', () => {
     test.slow()
     const document = documentNamed('SCAN-VIRUS-0001', 'virus-invoice.pdf')
     await uploadDocument(page, document)
-    const row = rowFor(page, document.accompanyingDocumentReference)
+    const row = documentRowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
@@ -153,7 +139,7 @@ test.describe('document scan-status rendering', () => {
     const document = documentNamed('SCAN-AXE-0001', 'itahc-axe.pdf')
     await uploadDocument(page, document)
     await expect(
-      rowFor(page, document.accompanyingDocumentReference)
+      documentRowFor(page, document.accompanyingDocumentReference)
     ).toContainText(copy.scanTags.complete)
 
     await expectNoSeriousOrCriticalViolations(page, 'Documents, scan complete')
@@ -175,8 +161,11 @@ test.describe('document scan-status polling', () => {
     await uploadDocument(page, settling)
     await uploadDocument(page, stuck)
 
-    const settlingRow = rowFor(page, settling.accompanyingDocumentReference)
-    const stuckRow = rowFor(page, stuck.accompanyingDocumentReference)
+    const settlingRow = documentRowFor(
+      page,
+      settling.accompanyingDocumentReference
+    )
+    const stuckRow = documentRowFor(page, stuck.accompanyingDocumentReference)
     await expect(settlingRow).toContainText(copy.scanTags.scanning)
     await expect(settlingRow).toContainText(copy.scanTags.complete)
     await expect(stuckRow).toContainText(copy.scanTags.scanning)

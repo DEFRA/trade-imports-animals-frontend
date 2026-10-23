@@ -1,13 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
 import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
-import { recordingLogger } from '../engine/test-support.js'
+import {
+  expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
+  journeyRequest,
+  recordingLogger,
+  unavailableBackendError
+} from '../engine/test-support.js'
 import {
   amendReviewTarget,
   base,
   dateField,
   isHubExit,
-  pageRoutes
+  logRefusal,
+  pageRoutes,
+  REFUSAL_LOG_MESSAGE,
+  recoverableSave
 } from './kit.js'
 
 describe('#isHubExit — the Save and return to overview submit', () => {
@@ -25,7 +35,7 @@ describe('#isHubExit — the Save and return to overview submit', () => {
 })
 
 describe('#dateField — MoJ date-picker view model', () => {
-  it('Should carry supplied bounds through verbatim so the macro emits the restriction attributes', () => {
+  it('Should carry supplied bounds and value as d/m/yyyy text', () => {
     const field = dateField('arrivalDateAtPort', {
       label: 'Arrival date at port of entry',
       value: { day: '3', month: '1', year: '2027' },
@@ -38,26 +48,39 @@ describe('#dateField — MoJ date-picker view model', () => {
     expect(field.value).toBe('3/1/2027')
   })
 
-  it('Should leave both bounds undefined when none are supplied, so an unrestricted picker stays unrestricted', () => {
+  it('Should leave both bounds undefined when none are supplied', () => {
     const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.minDate).toBeUndefined()
     expect(field.maxDate).toBeUndefined()
   })
 
-  it('Should carry form-group classes through, so a stylesheet can reach one picker rather than all of them', () => {
-    const field = dateField('arrivalDateAtPort', {
-      label: 'Arrival date at port of entry',
-      formGroupClasses: 'app-date-picker'
-    })
+  it('Should give the form group exactly the house date-picker class when the page passes no classes', () => {
+    const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.formGroup).toEqual({ classes: 'app-date-picker' })
   })
 
-  it('Should leave the form group undefined when no classes are supplied, so the macro emits the default markup', () => {
-    const field = dateField('exitDate', { label: 'Exit date' })
+  it('Should follow the house date-picker class with the classes the page passes', () => {
+    const field = dateField('exitDate', {
+      label: 'Exit date',
+      formGroupClasses: 'govuk-!-margin-bottom-6'
+    })
 
-    expect(field.formGroup).toBeUndefined()
+    expect(field.formGroup).toEqual({
+      classes: 'app-date-picker govuk-!-margin-bottom-6'
+    })
+  })
+
+  it('Should set the label in the size the page asks for, and small when it asks for none', () => {
+    const medium = dateField('entryDate', {
+      label: 'Entry date',
+      labelClasses: 'govuk-label--m'
+    })
+    const unasked = dateField('otherDate', { label: 'Other date' })
+
+    expect(medium.label.classes).toBe('govuk-label--m')
+    expect(unasked.label.classes).toBe('govuk-label--s')
   })
 })
 
@@ -90,6 +113,16 @@ describe('#base — amending', () => {
         offerCancelAmend: false
       }).journeyStrip.cancelAmend
     ).toBeUndefined()
+  })
+
+  it('Should leave the status strip off when showJourneyStrip is false and still carry the journey concurrency token', () => {
+    const view = base('t', {
+      journey: { journeyId: 'j', status: DRAFT, concurrencyToken: 7 },
+      showJourneyStrip: false
+    })
+
+    expect(view.journeyStrip).toBeNull()
+    expect(view.concurrencyToken).toBe(7)
   })
 
   const ORIGIN_PATH = '/n/j-1/origin'
@@ -170,5 +203,144 @@ describe('#pageRoutes — a save refused as stale', () => {
           'Save refused: the notification changed since the page was shown'
       }
     ])
+  })
+})
+
+describe('#recoverableSave', () => {
+  const fallbackResponse = { fallback: true }
+  const fallback = () => fallbackResponse
+
+  it('Should return the value of a save that succeeds and log nothing', async () => {
+    const request = journeyRequest('journey-1')
+
+    const outcome = await recoverableSave(
+      request,
+      async () => 'saved',
+      fallback
+    )
+
+    expect(outcome).toEqual({ value: 'saved' })
+    expect(request.logger.entries).toEqual([])
+  })
+
+  it('Should log one warning with the journey id and the error, then answer with the fallback, when the backend is unavailable', async () => {
+    const request = journeyRequest('journey-1')
+    const failure = unavailableBackendError('save answers')
+
+    const outcome = await recoverableSave(
+      request,
+      async () => {
+        throw failure
+      },
+      fallback
+    )
+
+    expect(outcome).toEqual({ failure: fallbackResponse })
+    expectOneSaveFallbackLogged(request.logger, {
+      journeyId: 'journey-1',
+      err: failure
+    })
+  })
+
+  it('Should log the ids the page passes beside the journey id', async () => {
+    const request = journeyRequest('journey-1')
+    const failure = unavailableBackendError('save answers')
+
+    await recoverableSave(
+      request,
+      async () => {
+        throw failure
+      },
+      fallback,
+      { uploadId: 'up-1' }
+    )
+
+    expectOneSaveFallbackLogged(request.logger, {
+      journeyId: 'journey-1',
+      uploadId: 'up-1',
+      err: failure
+    })
+  })
+
+  it('Should rethrow a stale concurrency token without logging it', async () => {
+    const request = journeyRequest('journey-1')
+    const stale = Object.assign(new Error('stale'), {
+      code: 'STALE_CONCURRENCY_TOKEN'
+    })
+
+    await expect(
+      recoverableSave(
+        request,
+        async () => {
+          throw stale
+        },
+        fallback
+      )
+    ).rejects.toBe(stale)
+    expect(request.logger.entries).toEqual([])
+  })
+
+  it('Should rethrow an error that is not a recoverable backend failure without logging it', async () => {
+    const request = journeyRequest('journey-1')
+    const bug = new Error('bug')
+
+    await expect(
+      recoverableSave(
+        request,
+        async () => {
+          throw bug
+        },
+        fallback
+      )
+    ).rejects.toBe(bug)
+    expect(request.logger.entries).toEqual([])
+  })
+})
+
+describe('#logRefusal', () => {
+  it('Should log one line with the journey id and the field keys, never the messages', () => {
+    const request = journeyRequest('journey-1')
+
+    logRefusal(request, {
+      fieldErrors: {
+        postcode: 'Enter a postcode',
+        email: 'Enter an email address'
+      }
+    })
+
+    expectOneLogged(request.logger, {
+      level: 'info',
+      fields: { journeyId: 'journey-1', errorCodes: ['postcode', 'email'] },
+      message: REFUSAL_LOG_MESSAGE
+    })
+  })
+
+  it('Should carry the named reason and ids the refusal turned on', () => {
+    const request = journeyRequest('journey-1')
+
+    logRefusal(request, {
+      fieldErrors: { file: 'Too big' },
+      reason: 'too-big',
+      size: 3
+    })
+
+    expectOneRefusalLogged(request.logger, {
+      journeyId: 'journey-1',
+      errorCodes: ['file'],
+      reason: 'too-big',
+      size: 3
+    })
+  })
+
+  it('Should log no error codes and the named reason when the page shows no errors', () => {
+    const request = journeyRequest('journey-1')
+
+    logRefusal(request, { reason: 'no-line' })
+
+    expectOneRefusalLogged(request.logger, {
+      journeyId: 'journey-1',
+      errorCodes: [],
+      reason: 'no-line'
+    })
   })
 })

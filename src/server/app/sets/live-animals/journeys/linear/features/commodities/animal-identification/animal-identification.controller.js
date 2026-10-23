@@ -9,8 +9,12 @@ import {
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { summaryOf } from './card/error-summary.js'
-import { buildCard } from './card/view-model.js'
+import { buildSections } from './card/view-model.js'
+import { linesOf } from '../lines.js'
+import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
+import { capAllowsEntry, identifierCapOf } from './line-cap.js'
 import {
   buildLineForms,
   capReachedResponse,
@@ -21,6 +25,7 @@ import { appendLineRecords } from './records/append.js'
 import { isRemoveAction, postRemove } from './remove/post-remove.js'
 import { buildSelectedCommodities } from './summary/selected-commodities.js'
 import { scopedFields } from './identifier/fields.js'
+import { needsIdentifying } from '../../../../../services/commodities/index.js'
 
 export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
@@ -28,12 +33,17 @@ export { scopedFields }
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`
 
-const copy = copyFor({ en, cy }).identification
+const localisedCopy = copyFor({ en, cy })
+const copy = localisedCopy.identification
+const selectedCommoditiesCopy = localisedCopy.selectedCommodities
 
 const identifiedLines = (answers, evaluation) =>
-  state
-    .collectionView(answers, ['commodityLines'], evaluation)
-    .filter(({ entry }) => scopedFields(entry.commoditySelection).length > 0)
+  linesOf(answers, evaluation).filter(({ entry }) => needsIdentifying(entry))
+
+const cardLines = (answers, evaluation) =>
+  identifiedLines(answers, evaluation).filter(({ index }) =>
+    capAllowsEntry(identifierCapOf(answers, index))
+  )
 
 const render = (
   request,
@@ -43,43 +53,80 @@ const render = (
   evaluation,
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
-  const lines = identifiedLines(answers, evaluation)
-  // The recap is the whole consignment, not just the lines with a panel: a
-  // line the page asks nothing of still exists, and hiding it invites the
-  // trader to add the commodity a second time.
-  const allLines = state.collectionView(answers, ['commodityLines'], evaluation)
   const changeCountHref = kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+  )
+  const selectedCommodities = buildSelectedCommodities(
+    linesOf(answers, evaluation)
+  )
+  const addHref = kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, 'commodities')
   )
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
       backLink: hubPath(journey.journeyId),
       journey,
-      page
+      page,
+      surface: 'display'
     }),
     copy,
-    cards: lines.map((line) =>
-      buildCard(answers, line, forms.get(line.index), errors, changeCountHref)
+    selectedCommoditiesCopy,
+    sections: buildSections(
+      answers,
+      cardLines(answers, evaluation),
+      forms,
+      errors,
+      changeCountHref
     ),
-    selectedCommodities: buildSelectedCommodities(allLines),
-    addHref: kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, 'commodities')
+    selectedCommodities,
+    selectedTable: buildChangeableCommoditiesTable(
+      selectedCommodities,
+      selectedCommoditiesCopy,
+      copy.summary,
+      addHref
     ),
+    addHref,
     errors,
     errorSummary: summaryOf(errors, cardErrors)
   })
 }
 
-// Nothing on this consignment carries an identifier, so the page does not
-// exist for this person: send them on rather than showing an empty one. The
-// guard sits on both handlers, so a stale form posting to it moves on too.
-const noIdentifiersTarget = async (request, answers, evaluation, scope) =>
-  identifiedLines(answers, evaluation).length === 0
-    ? kit.nextTarget(request, page, scope)
-    : null
+const renderRefused = (request, h, journey, answers, evaluation, options) =>
+  render(request, h, journey, answers, evaluation, options).code(
+    HTTP_STATUS_BAD_REQUEST
+  )
+
+const logCapRefusalsAndRender = (
+  request,
+  h,
+  journey,
+  answers,
+  evaluation,
+  options
+) => {
+  for (const { index, cap } of options.cardErrors) {
+    kit.logRefusal(request, {
+      reason: 'animal-identifier-cap-reached',
+      lineIndex: index,
+      cap
+    })
+  }
+  return renderRefused(request, h, journey, answers, evaluation, options)
+}
+
+const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
+  if (identifiedLines(answers, evaluation).length > 0) {
+    return null
+  }
+  request.logger.info(
+    { journeyId: request.params.journeyId },
+    'Animal identification skipped: nothing on the consignment carries an identifier'
+  )
+  return kit.nextTarget(request, page, scope)
+}
 
 const get = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
@@ -102,16 +149,14 @@ const post = async (request, h) => {
     return postRemove(request, h, action)
   }
   const addIndex = parseAddAction(action)
-  const lines = identifiedLines(answers, evaluation)
-
   const {
     forms,
-    atMaxByIndex,
+    capByLineAtCap,
     errors: formErrors
-  } = buildLineForms(payload, answers, lines)
+  } = buildLineForms(payload, answers, cardLines(answers, evaluation), action)
 
   const capReached = capReachedResponse({
-    render,
+    render: logCapRefusalsAndRender,
     request,
     h,
     journey,
@@ -119,7 +164,7 @@ const post = async (request, h) => {
     evaluation,
     forms,
     addIndex,
-    atMaxByIndex
+    capByLineAtCap
   })
   if (capReached) {
     return capReached
@@ -128,7 +173,10 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    return render(request, h, journey, answers, evaluation, { forms, errors })
+    return renderRefused(request, h, journey, answers, evaluation, {
+      forms,
+      errors
+    })
   }
 
   const cardErrors = await appendLineRecords(request, h, forms)
@@ -138,9 +186,16 @@ const post = async (request, h) => {
       request,
       h
     )
-    return render(request, h, journey, current, currentEvaluation, {
-      cardErrors
-    })
+    return logCapRefusalsAndRender(
+      request,
+      h,
+      journey,
+      current,
+      currentEvaluation,
+      {
+        cardErrors
+      }
+    )
   }
 
   if (addIndex !== null) {

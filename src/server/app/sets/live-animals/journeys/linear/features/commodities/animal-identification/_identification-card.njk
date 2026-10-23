@@ -3,79 +3,78 @@
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_saved-animals-table.njk" import savedAnimalsTable %}
 
-{# One card per species line (design 01-16/17): the entered-identifiers
-   table with per-row Remove, then the counter-driven entry form for the NEXT
-   record — replaced by the maximum-reached state at N = M. #}
 {% macro identificationCard(card, copy) %}
-  <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-6">
-    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">{{ card.title }}</h2>
+  <section id="{{ card.anchor }}" class="govuk-summary-card" aria-labelledby="{{ card.anchor }}-title">
+    <div class="govuk-summary-card__title-wrapper">
+      <h3 class="govuk-summary-card__title" id="{{ card.anchor }}-title">{{ card.title }}</h3>
+      <ul class="govuk-summary-card__actions">
+        <li class="govuk-summary-card__action">
+          <a class="govuk-link" href="{{ card.changeCountHref }}">{{ copy.changeAnimalCount }}<span class="govuk-visually-hidden"> {{ card.title }}</span></a>
+        </li>
+      </ul>
+    </div>
+    <div class="govuk-summary-card__content">
+      {% if card.counter %}
+        <div class="govuk-grid-row">
+          <div class="govuk-grid-column-two-thirds">
+            <h4 class="govuk-heading-s">{{ card.counter }}</h4>
 
-    {# The counter below is the only mention of the number the trader is held
-       to, so the way to correct that number sits beside it. #}
-    <p class="govuk-body">
-      <a class="govuk-link" href="{{ card.changeCountHref }}">{{ copy.changeAnimalCount }}<span class="govuk-visually-hidden"> {{ card.title }}</span></a>
-    </p>
+            {% for field in card.fields %}
+              {{ govukInput({
+                id: field.id,
+                name: field.id,
+                label: { text: field.label },
+                classes: "govuk-input--width-20",
+                value: field.value,
+                errorMessage: field.error and { text: field.error }
+              }) }}
+            {% endfor %}
 
-    {% if card.hasUnits %}
-      {{ savedAnimalsTable(card, copy) }}
-    {% endif %}
+            {% if card.showAddress %}
+              {{ govukWarningText({ text: copy.permanentAddress.warning }) }}
 
-    {% if card.atMax %}
-      <p class="govuk-body">{{ card.maxReachedText }}</p>
-    {% else %}
-      <h3 class="govuk-heading-s">{{ card.counter }}</h3>
+              <p class="govuk-body">{{ copy.permanentAddress.definitionLeadIn }}</p>
+              <ul class="govuk-list govuk-list--bullet">
+                {% for item in copy.permanentAddress.definitionItems %}
+                  <li>{{ item }}</li>
+                {% endfor %}
+              </ul>
 
-      {% for field in card.fields %}
-        {{ govukInput({
-          id: field.id,
-          name: field.id,
-          label: { text: field.label, classes: "govuk-label--s" },
-          hint: field.hint and { text: field.hint },
-          classes: "govuk-input--width-20",
-          value: field.value,
-          errorMessage: field.error and { text: field.error }
-        }) }}
-      {% endfor %}
+              <h4 class="govuk-heading-s">{{ copy.permanentAddress.question }}</h4>
 
-      {% if card.showAddress %}
-        {{ govukWarningText({ text: copy.permanentAddress.warning }) }}
+              {% for field in card.addressFields %}
+                {{ govukInput({
+                  id: field.id,
+                  name: field.id,
+                  label: { text: field.label },
+                  hint: field.hint and { text: field.hint },
+                  type: field.type,
+                  classes: field.classes,
+                  autocomplete: field.autocomplete,
+                  value: field.value,
+                  errorMessage: field.error and { text: field.error }
+                }) }}
+              {% endfor %}
+            {% endif %}
 
-        <p class="govuk-body">{{ copy.permanentAddress.definitionLeadIn }}</p>
-        <ul class="govuk-list govuk-list--bullet">
-          {% for item in copy.permanentAddress.definitionItems %}
-            <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-
-        <h3 class="govuk-heading-s">{{ copy.permanentAddress.question }}</h3>
-
-        {% for field in card.addressFields %}
-          {{ govukInput({
-            id: field.id,
-            name: field.id,
-            label: { text: field.label },
-            hint: field.hint and { text: field.hint },
-            type: field.type,
-            classes: field.classes,
-            autocomplete: field.autocomplete,
-            value: field.value,
-            errorMessage: field.error and { text: field.error }
-          }) }}
-        {% endfor %}
+            {% if card.saveButtonText %}
+              {{ govukButton({
+                text: card.saveButtonText,
+                name: "action",
+                value: "add:" ~ card.index
+              }) }}
+            {% endif %}
+          </div>
+        </div>
       {% endif %}
 
-      {# The wording says what is left on this line: "Save and finish" on the
-         last outstanding animal, and no button at all where the line holds a
-         single animal — the page's own Save and continue captures that one. #}
-      {% if card.saveButtonText %}
-        {{ govukButton({
-          text: card.saveButtonText,
-          classes: "govuk-button--secondary",
-          name: "action",
-          value: "add:" ~ card.index
-        }) }}
+      {% if card.overCountText %}
+        <p class="govuk-body">{{ card.overCountText }}</p>
       {% endif %}
-    {% endif %}
+
+      {% if card.hasUnits %}
+        {{ savedAnimalsTable(card) }}
+      {% endif %}
+    </div>
   </section>
-  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
 {% endmacro %}

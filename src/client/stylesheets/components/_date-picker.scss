@@ -1,64 +1,32 @@
 @use "../../../../node_modules/govuk-frontend" as *;
+@use "../helpers";
 
-// MoJ date picker — in-flow calendar (pushes content down, no overlay).
-//
-// The component ships an absolutely positioned dialog, so an open calendar
-// floats over whatever follows the date field. On the arrival details page
-// that hides "Port of entry" and "Means of transport to the port of entry"
-// behind the calendar, and the trader has to close it to read them again.
-//
-// Static positioning drops the dialog back into the flow of the page: the
-// questions after it move down instead of disappearing behind it. It also
-// makes the inline `top` and `right` offsets the component writes on every
-// open inert, so no script is needed to clear them.
-//
-// 7 day buttons of 44px plus the dialog's own govuk-spacing(4) padding on
-// each side is 348px, so the calendar never has to shrink or wrap.
-$app-date-picker-dialog-max-width: 360px;
+$app-date-picker-calendar-max-width: 360px;
 
 .app-date-picker .moj-datepicker__dialog {
   box-sizing: border-box;
   position: static;
   width: 100%;
-  max-width: $app-date-picker-dialog-max-width;
+  max-width: $app-date-picker-calendar-max-width;
   margin-top: govuk-spacing(2);
 }
 
-// MoJ date picker — the toggle reads as a button.
-//
-// The component ships the toggle in the same near-black as the body text, so
-// sitting flush against a black-bordered input it reads as part of the input
-// rather than as something to press. Design release 1 paints it as a GOV.UK
-// button in blue with a white icon, so the toggle announces itself.
-//
-// Blue rather than the button green because it opens a panel; green is the
-// service's colour for a call to action that moves the trader on.
-
 .app-date-picker .moj-datepicker__toggle {
-  border: 0;
-  // The bottom edge a GOV.UK button carries, drawn inset rather than as the
-  // component's own border, so the toggle keeps its 40px and stays level with
-  // the input beside it.
-  box-shadow: inset 0 (-$govuk-border-width-form-element) 0
-    govuk-colour("blue", $variant: "shade-50");
+  @extend %blue-icon-button;
+}
+
+.app-date-picker .moj-datepicker__button--selected:focus:not(:focus-visible) {
+  outline-color: transparent;
   color: govuk-colour("white");
   background-color: govuk-colour("blue");
 
-  &:hover {
-    border: 0;
-    color: govuk-colour("white");
-    background-color: govuk-colour("blue", $variant: "shade-25");
+  &::after {
+    background-color: govuk-colour("blue");
   }
+}
 
-  // These rules outrank the component's own focus styling — same specificity,
-  // later in the sheet — so the focus state has to be restated here or the
-  // yellow indicator is lost.
-  &:focus,
-  &:focus:hover {
-    border: 0;
-    box-shadow: inset 0 (-$govuk-border-width-form-element) 0
-      govuk-functional-colour(focus-text);
-    color: govuk-functional-colour(focus-text);
-    background-color: govuk-functional-colour(focus);
-  }
+.app-date-picker
+  .moj-datepicker__calendar
+  tbody:focus-within:not(:has(:focus-visible)) {
+  outline: none;
 }

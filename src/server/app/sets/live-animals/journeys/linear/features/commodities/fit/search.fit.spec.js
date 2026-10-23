@@ -1,19 +1,17 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   searchCommodities,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
-// Every option is offered as its common name with the scientific name in
-// brackets, so the trader who does not read Latin can tell the tick boxes apart.
 const BISON_BISON_LABEL = 'American bison (Bison bison)'
 const BOS_SPP_LABEL = 'Cattle (Bos spp.)'
 const BOS_TAURUS_LABEL = 'Domestic cattle (Bos taurus)'
@@ -22,6 +20,7 @@ const CANIS_LUPUS_LABEL = 'Dog (Canis lupus familiaris)'
 const COW_LEGEND = 'Cow (0102)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const BACK_LINK = '.govuk-back-link'
+const SEARCH_BOX_DESCRIPTION_WITH_ERROR = `${copy.search.searchHint} Error: ${copy.search.errors.selectCommodity}`
 
 const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
 const canonicalSelectionLabels = [
@@ -42,7 +41,14 @@ const openSelection = async (page) => {
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
-const selectionPanel = (page) => page.locator('#commodity-selection')
+const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
+
+const selectedSummary = (page) => page.locator('#commodity-selection')
+
+const expectSelectedHeading = (page, count) =>
+  expect(selectedSummary(page)).toContainText(
+    copy.search.selected.heading(count)
+  )
 
 const reopenSelection = async (page) => {
   await page.getByRole('link', { name: 'What are you importing?' }).click()
@@ -64,7 +70,7 @@ test.describe('commodity search', () => {
     await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
     await expect(page.getByText(copy.search.searchHint)).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(selectedSummary(page)).toHaveCount(0)
     await expect(
       page.getByText(copy.search.help.summary, { exact: true })
     ).toBeVisible()
@@ -78,9 +84,11 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.help.describes)).toBeVisible()
     await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
     const tradeTariff = page.getByRole('link', {
-      name: copy.search.help.lookupLink
+      name: `${copy.search.help.lookupLink} ${copy.search.help.lookupNewTab}`,
+      exact: true
     })
     await expect(tradeTariff).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupNewTab)).toBeVisible()
     await expect(tradeTariff).toHaveAttribute(
       'href',
       copy.search.help.lookupHref
@@ -158,16 +166,15 @@ test.describe('commodity search', () => {
   }) => {
     await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
     await searchCommodities(page, 'Salmo')
-    const panel = selectionPanel(page)
 
-    await expect(panel).toContainText(copy.search.selected.heading(2))
-    await expect(panel).toContainText(BOS_TAURUS_LABEL)
-    await expect(panel).toContainText(FELIS_CATUS_LABEL)
+    await expectSelectedHeading(page, 2)
+    await expect(selectedSummary(page)).toContainText(BOS_TAURUS_LABEL)
+    await expect(selectedSummary(page)).toContainText(FELIS_CATUS_LABEL)
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
       .click()
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(selectedSummary(page)).toHaveCount(0)
   })
 
   test('back link returns to the overview', async ({ page }) => {
@@ -182,9 +189,28 @@ test.describe('commodity search', () => {
 
     const link = errorLink(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
+    await expect(searchBox(page)).toHaveAccessibleDescription(
+      SEARCH_BOX_DESCRIPTION_WITH_ERROR
+    )
     await link.click()
-    await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(searchBox(page)).toBeFocused()
+    await expect(selectedSummary(page)).toHaveCount(0)
+  })
+
+  test('validation: with results listed, the error stays on the search box', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    await expect(
+      page.locator('.govuk-error-summary').getByRole('link')
+    ).toHaveText([copy.search.errors.selectCommodity])
+    await expect(searchBox(page)).toHaveAccessibleDescription(
+      SEARCH_BOX_DESCRIPTION_WITH_ERROR
+    )
+    await errorLink(page, copy.search.errors.selectCommodity).click()
+    await expect(searchBox(page)).toBeFocused()
   })
 
   test('saves pairs found under different queries, in canonical order', async ({
@@ -207,12 +233,13 @@ test.describe('commodity search', () => {
 
     await page.locator(BACK_LINK).click()
     await reopenSelection(page)
-    const panel = selectionPanel(page)
-    await expect(panel).toContainText(copy.search.selected.heading(3))
+    await expectSelectedHeading(page, 3)
     for (const label of canonicalSelectionLabels) {
-      await expect(panel).toContainText(label)
+      await expect(selectedSummary(page)).toContainText(label)
     }
-    await expect(panel).not.toContainText('Canis lupus familiaris')
+    await expect(selectedSummary(page)).not.toContainText(
+      'Canis lupus familiaris'
+    )
   })
 
   test('ticks a result that is already on the notification', async ({
@@ -228,10 +255,26 @@ test.describe('commodity search', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+
     await selectSpecies(page, [BOS_TAURUS])
     await searchCommodities(page, '0106')
-    // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
-    await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with results'
+    )
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(
+      errorLink(page, copy.search.errors.selectCommodity)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with error'
+    )
   })
 })

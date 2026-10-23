@@ -1,7 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
+  FORM_GROUP_ANCESTOR_XPATH,
+  PHONE_VIEWPORT,
+  contentWidthOf,
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
+  expectSearchBoxJoinedToItsButton,
+  journeyFormOf,
   journeyUrl,
+  searchByPressingEnter,
   signIn,
   startNotification,
   unlockSections,
@@ -15,7 +22,6 @@ import {
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { addressSummary } from '../transporters/transporter-record.js'
@@ -24,8 +30,11 @@ const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
 const REGISTER_SLUG = 'transporters/select'
+const TABLE = '.govuk-table'
 const BACK_LINK = '.govuk-back-link'
 const ERROR_SUMMARY = '.govuk-error-summary'
+const NO_MATCH_TERM = 'no such transporter'
+const INVALID_TRANSPORTER_ID = 'invalid-transporter'
 
 const transporterRecords = parties()
 const privateRecord = transporterRecords.find(
@@ -39,9 +48,6 @@ const approvedRecord = transporterRecords.find(
 )
 const newRecord = transporterRecords.find((record) => record.status === NEW)
 
-/** The one table row a transporter owns, found by the cell under Name. Matching
- * the row's text would also match the radio's visually hidden "Select <name>"
- * label, so an empty Name column would still find the row. */
 const transporterRow = (page, name) =>
   page
     .getByRole('row')
@@ -62,21 +68,35 @@ const openTransporterList = async (page) => {
   ).toBeVisible()
 }
 
-/** Search the list the way a trader does: type a term and submit. The search
- * is a submit on the page's own form, so nothing here depends on client JS. */
+const searchBoxOf = (page) =>
+  page.getByLabel(copy.transporters.search.label, { exact: true })
+
+const searchButtonOf = (page) =>
+  page.getByRole('button', {
+    name: copy.transporters.search.button,
+    exact: true
+  })
+
+const tickAsUnknownTransporter = (radio) =>
+  radio.evaluate((input, value) => {
+    input.value = value
+    input.checked = true
+  }, INVALID_TRANSPORTER_ID)
+
+const searchRowLeftHalfOf = (page) =>
+  page.locator('.govuk-grid-column-one-half').first()
+
+const addTransporterOf = (page) =>
+  page.getByRole('button', { name: copy.transporters.add })
+
 const searchTransporters = async (page, term) => {
-  await page
-    .getByLabel(copy.transporters.search.label, { exact: true })
-    .fill(term)
-  await page
-    .getByRole('button', { name: copy.transporters.search.button, exact: true })
-    .click()
+  await searchBoxOf(page).fill(term)
+  await searchButtonOf(page).click()
 }
 
 const openTransporterType = async (page) => {
   await openTransporterList(page)
-  // The govuk button macro renders an href as a link with role="button".
-  await page.getByRole('button', { name: copy.transporters.add }).click()
+  await addTransporterOf(page).click()
   await expect(
     page.getByRole('heading', { name: copy.transporterAdd.title })
   ).toBeVisible()
@@ -95,10 +115,6 @@ const openCommercialAdd = async (page) => {
   ).toBeVisible()
 }
 
-/** The approved commercial register, which nothing links to now that the add
- * route's commercial arm is the add-commercial form. Reached through that arm
- * so the transporter type is answered, which is what puts the commercial
- * answer the register writes in scope. */
 const openCommercialRegister = async (page) => {
   await openCommercialAdd(page)
   await page.goto(journeyUrl(page, REGISTER_SLUG))
@@ -133,7 +149,6 @@ const validPrivateTransporter = {
   email: 'jean.dupont@example.fr'
 }
 
-// Not on the fixture list, so it can only have come from the add form.
 const handTypedTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
   addressLine1: '12 Rue des Fermes',
@@ -269,9 +284,6 @@ const expectBranchOptions = async (page) => {
     copy.transporterAdd.options.Commercial.hint
   )
 
-  // A govuk fieldset-level hint renders as a direct child of the fieldset and
-  // hangs off its aria-describedby, so neither radio's own accessible
-  // description would see it come back — assert it is not there at all.
   await expect(page.locator('fieldset > .govuk-hint')).toHaveCount(0)
 }
 
@@ -303,7 +315,6 @@ test.describe('transporter list page', () => {
       ).toHaveCount(1)
     }
 
-    // Asserted by position, so swapped columns fail.
     for (const record of transporterRecords) {
       const row = transporterRow(page, record.name)
       await expect(row).toHaveCount(1)
@@ -312,7 +323,6 @@ test.describe('transporter list page', () => {
       await expect(row.getByRole('cell').nth(2)).toHaveText(
         addressSummary(record.address)
       )
-      // A private transporter has no approval number, so its cell stays blank.
       await expect(row.getByRole('cell').nth(3)).toHaveText(
         record.approvalNumber ?? ''
       )
@@ -325,8 +335,6 @@ test.describe('transporter list page', () => {
     }
   })
 
-  // The tag is what tells a trader at a glance that a transporter has been
-  // added but not approved yet.
   test('tags an approved transporter green and a newly added one pink', async ({
     page
   }) => {
@@ -362,14 +370,13 @@ test.describe('transporter list page', () => {
     await expect(
       page.getByRole('radio', { name: commercialRecord.name })
     ).toBeChecked()
-    // The pick lands on the commercial answer, so the register shows it too.
     await page.goto(journeyUrl(page, REGISTER_SLUG))
     await expect(
       page.getByRole('radio', { name: commercialRecord.name })
     ).toBeChecked()
   })
 
-  test('picking a private transporter saves it with its type and persists — the branch the old flow had no list for', async ({
+  test('picking a private transporter saves it with its type and persists', async ({
     page
   }) => {
     await openTransporterList(page)
@@ -381,8 +388,6 @@ test.describe('transporter list page', () => {
     await expect(
       page.getByRole('radio', { name: privateRecord.name })
     ).toBeChecked()
-    // The pick lands on the private answer, address and all, so nothing has to
-    // be typed in again.
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
     await expect(
       page.getByLabel(
@@ -397,16 +402,11 @@ test.describe('transporter list page', () => {
   test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
     page
   }) => {
-    // Through the add route, which is the only way a trader reaches the form —
-    // it is the answer to the type question that puts privateTransporter in
-    // scope, so a record typed without it would be purged before the save.
     await openPrivate(page)
     await fillPrivateTransporter(page, handTypedTransporter)
     await submit(page)
 
     await page.goto(journeyUrl(page, 'transporters'))
-    // The transporter joined the list on the way through, so it is the row the
-    // notification already names and the one that comes back checked.
     await expect(
       page.getByRole('radio', {
         name: handTypedTransporter.nameOrOrganisationName
@@ -429,12 +429,9 @@ test.describe('transporter list page', () => {
     page
   }) => {
     await openTransporterList(page)
-    await page
-      .getByRole('radio', { name: commercialRecord.name })
-      .evaluate((radio) => {
-        radio.value = 'invalid-transporter'
-        radio.checked = true
-      })
+    await tickAsUnknownTransporter(
+      page.getByRole('radio', { name: commercialRecord.name })
+    )
     await submit(page)
 
     const link = errorLink(page, copy.transporters.errors.transporterRequired)
@@ -449,45 +446,193 @@ test.describe('transporter list page', () => {
   })
 })
 
-test.describe('searching the transporter list', () => {
+test.describe('the transporter search box', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('carries a labelled search, hinted with what it matches, above the list', async ({
+  test('is a box hinted with what it matches, joined flush to its one search button, filling the left half of the search row', async ({
     page
   }) => {
     await openTransporterList(page)
 
-    const search = page.getByLabel(copy.transporters.search.label, {
-      exact: true
+    await expectSearchBoxJoinedToItsButton(page, {
+      search: copy.transporters.search,
+      expectedWidth: await contentWidthOf(searchRowLeftHalfOf(page))
     })
-    await expect(search).toBeVisible()
-    await expect(page.getByText(copy.transporters.search.hint)).toBeVisible()
-    await expect(
-      page.getByRole('button', {
-        name: copy.transporters.search.button,
-        exact: true
-      })
-    ).toBeVisible()
+  })
 
-    // Above the list, not below it: a search a trader meets after the rows is
-    // a search they have already scrolled past.
-    const searchPrecedesTable = await page.evaluate(() => {
-      const input = document.querySelector('#search')
-      const table = document.querySelector('.govuk-table')
-      // Neither element contains the other, so the comparison is the plain
-      // "comes after" flag — DOCUMENT_POSITION_FOLLOWING, 4 — rather than a
-      // mask of several. The constant is spelled out because this callback
-      // runs in the browser, where the linter cannot see `Node`.
-      const following = 4
-      return (
-        Boolean(input) &&
-        Boolean(table) &&
-        input.compareDocumentPosition(table) === following
-      )
+  test('has no serious or critical axe violations when empty', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await expectNoSeriousOrCriticalViolations(page, 'Transporter list')
+  })
+})
+
+test.describe('filtering the transporter list as the trader types', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('narrows the rows with no new page, keeps focus in the box and bolds the matching letters', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const listUrl = page.url()
+    await page.evaluate(() => {
+      window.documentMarker = 'same document'
     })
-    expect(searchPrecedesTable).toBe(true)
+    const searchBox = searchBoxOf(page)
+
+    await searchBox.click()
+    await searchBox.pressSequentially('garcia')
+
+    await expect(
+      page.getByRole('row').filter({ has: page.getByRole('radio') })
+    ).toHaveCount(1)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(1)
+    await expect(
+      transporterRow(page, commercialRecord.name).locator(
+        '.govuk-\\!-font-weight-bold'
+      )
+    ).toHaveText('García')
+    await expect(searchBox).toBeFocused()
+    expect(page.url()).toBe(listUrl)
+    expect(await page.evaluate(() => window.documentMarker)).toBe(
+      'same document'
+    )
+  })
+
+  test('a filtered list has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).fill(privateRecord.name)
+
+    await expectNoSeriousOrCriticalViolations(page, 'Filtered transporter list')
+  })
+
+  test('announces how many transporters are shown', async ({ page }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).fill(privateRecord.name)
+
+    await expect(page.getByRole('status')).toHaveText(
+      copy.transporters.shownCount(1)
+    )
+  })
+
+  test('narrows to a status when its word is typed', async ({ page }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).fill(copy.transporters.statuses[NEW])
+
+    await expect(transporterRow(page, newRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, approvedRecord.name)).toHaveCount(0)
+  })
+
+  test('shows a row hidden by the previous term when a different term is typed after the search button is pressed', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const urlBefore = page.url()
+    const searchBox = searchBoxOf(page)
+    await searchBox.fill(commercialRecord.name)
+    await searchButtonOf(page).click()
+    expect(page.url()).toBe(urlBefore)
+
+    await searchBox.fill(privateRecord.name)
+
+    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+  })
+
+  test('keeps the list narrowed to the term typed before a refused save', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchBoxOf(page).fill('garcia')
+    await tickAsUnknownTransporter(
+      page.getByRole('radio', { name: commercialRecord.name })
+    )
+    await submit(page)
+    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: privateRecord.name })
+    ).toHaveCount(0)
+  })
+
+  test('says so and hides the table when nothing matches', async ({ page }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).fill(NO_MATCH_TERM)
+
+    await expect(
+      page.getByText(copy.transporters.noMatches).first()
+    ).toBeVisible()
+    await expect(page.getByRole('status')).toHaveText(
+      copy.transporters.noMatches
+    )
+    await expect(page.locator(TABLE)).toBeHidden()
+  })
+
+  test('a list with no matches has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).fill(NO_MATCH_TERM)
+
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Transporter list, no match'
+    )
+  })
+
+  test('saves the transporter ticked before the list was filtered to hide it', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await page.getByRole('radio', { name: commercialRecord.name }).check()
+
+    await searchBoxOf(page).fill(privateRecord.name)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+    await submit(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+  })
+})
+
+test.describe('searching the transporter list without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('narrows the list on the server when Enter is pressed in the box', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await searchByPressingEnter(page, {
+      search: copy.transporters.search,
+      term: privateRecord.name
+    })
+
+    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
   })
 
   test('searching by name leaves only the matching transporter on the list', async ({
@@ -540,19 +685,71 @@ test.describe('searching the transporter list', () => {
     await searchTransporters(page, 'no such transporter')
 
     await expect(page.getByText(copy.transporters.noMatches)).toBeVisible()
-    await expect(page.locator('.govuk-table')).toHaveCount(0)
+    await expect(page.locator(TABLE)).toBeHidden()
   })
 
-  test('a searched list has no serious or critical axe violations', async ({
+  test('picks a transporter found by the search and saves it, landing on the overview with that transporter chosen', async ({
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, privateRecord.name)
+    await searchTransporters(page, commercialRecord.name)
+    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await submit(page)
 
-    await expectNoSeriousOrCriticalViolations(
-      page,
-      'Transporter list search results'
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+  })
+})
+
+test.describe('Add a transporter beside the search', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('comes before the table and shares the search row, right-aligned', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const searchGroup = searchBoxOf(page).locator(FORM_GROUP_ANCESTOR_XPATH)
+    const addBox = await addTransporterOf(page).boundingBox()
+    const searchGroupBox = await searchGroup.boundingBox()
+    const tableBox = await page.locator(TABLE).boundingBox()
+    const formBox = await journeyFormOf(page).boundingBox()
+
+    expect(addBox.y).toBeGreaterThanOrEqual(searchGroupBox.y)
+    expect(addBox.y).toBeLessThan(searchGroupBox.y + searchGroupBox.height)
+    expect(addBox.y + addBox.height).toBeLessThan(tableBox.y)
+    expect(addBox.x + addBox.width).toBeCloseTo(formBox.x + formBox.width, 0)
+  })
+
+  test('sits below the search box on a phone', async ({ page }) => {
+    await page.setViewportSize(PHONE_VIEWPORT)
+    await openTransporterList(page)
+    const searchGroupBox = await searchBoxOf(page)
+      .locator(FORM_GROUP_ANCESTOR_XPATH)
+      .boundingBox()
+    const addBox = await addTransporterOf(page).boundingBox()
+
+    expect(addBox.y).toBeGreaterThanOrEqual(
+      searchGroupBox.y + searchGroupBox.height
     )
+  })
+
+  test('is reached by Tab after the search box and its button, before the first transporter', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await searchBoxOf(page).focus()
+    await page.keyboard.press('Tab')
+    await expect(searchButtonOf(page)).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(addTransporterOf(page)).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('radio').first()).toBeFocused()
   })
 })
 
@@ -583,8 +780,6 @@ test.describe('adding a transporter that is not on the list', () => {
       sectionCaptionsCopy.sections.newTransporter
     )
     await expect(page.getByText(copy.transporterAdd.warning)).toBeVisible()
-    // The question still names the group for a screen reader, without
-    // competing with the heading.
     await expect(
       page.locator('legend').filter({ hasText: copy.transporterAdd.legend })
     ).toHaveClass(/govuk-visually-hidden/)
@@ -683,8 +878,6 @@ test.describe('adding a transporter that is not on the list', () => {
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    // A second notification, started from nothing. The transporter is on its
-    // list, carrying the address and the type it was added with.
     await openTransporterList(page)
     const row = transporterRow(page, reusedTransporter.nameOrOrganisationName)
     await expect(row).toHaveCount(1)
@@ -703,7 +896,6 @@ test.describe('adding a transporter that is not on the list', () => {
       copy.transporters.statuses[NEW]
     )
 
-    // Picking it fills the record in.
     await row.getByRole('radio').check()
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -749,10 +941,9 @@ test.describe('commercial transporter page', () => {
   }) => {
     await openCommercialRegister(page)
     const selected = values.commercialTransporter
-    await page.getByRole('radio', { name: selected.name }).evaluate((radio) => {
-      radio.value = 'invalid-transporter'
-      radio.checked = true
-    })
+    await tickAsUnknownTransporter(
+      page.getByRole('radio', { name: selected.name })
+    )
     await submit(page)
 
     const link = errorLink(

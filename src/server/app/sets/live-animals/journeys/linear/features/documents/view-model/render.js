@@ -3,10 +3,10 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from '../scan-poll.js'
 import {
   ACCEPT_ATTRIBUTE,
-  ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage,
+  allowedFileTypesHint
 } from '../upload-config.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { documentsPage as page } from '../page.js'
@@ -40,11 +40,16 @@ export const render = ({
       request,
       backLink: hubPath(journey.journeyId),
       journey,
-      page
+      page,
+      surface: 'display'
     }),
     ...extra,
     copy,
     rows: documentRows(documents, journey.journeyId),
+    additionalDocumentRows: copy.guidance.additional.rows.map((row) => [
+      { text: row.consignment },
+      { text: row.documents }
+    ]),
     hasDocuments: documents.length > 0,
     values,
     errors,
@@ -55,11 +60,11 @@ export const render = ({
     timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),
     acceptAttribute: ACCEPT_ATTRIBUTE,
-    allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
+    allowedFileTypesHint: allowedFileTypesHint(copy),
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     maxFileSize: MAX_FILE_SIZE_BYTES,
     maxDocuments: MAX_DOCUMENTS,
-    oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
+    oversizeFileMessage: oversizeMessage(copy),
     scanCopyJson,
     documentTypeItems: documentTypeItems(),
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {

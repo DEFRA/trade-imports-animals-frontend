@@ -1,55 +1,52 @@
 import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
+import { SURFACES } from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   knownJourneysCookie,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  getHandlerOf,
+  expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   journeyRequest,
   postHandlerOf,
+  registerTestRequestLogger,
   registerTestSessionAuth,
-  stubH
+  saveFallbackEntry,
+  stubH,
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
-  FILE_TYPE_MESSAGE,
+  fileTypeMessage,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage
 } from './upload-config.js'
 
-/**
- * Mounts the document routes the way the router does — under the set's prefix —
- * so an injected `pagePath()` URL reaches them. Registering them bare would
- * leave every prefixed inject 404ing.
- *
- * @param {object} [options]
- * @param {boolean} [options.cookies] - register this set's journey cookies.
- * @param {boolean} [options.crumb] - register CSRF protection, for the tests
- * that ask what an unprotected POST does.
- */
 const serverWithDocumentRoutes = async ({
   cookies = false,
   crumb = false
 } = {}) => {
   const server = Hapi.server()
+  registerTestRequestLogger(server)
   registerTestSessionAuth(server)
   if (cookies) {
     registerJourneyCookie(server)
@@ -68,10 +65,11 @@ const serverWithDocumentRoutes = async ({
 }
 
 const post = postHandlerOf(documents)
-const get = documents.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(documents)
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
+const fileRoute = documents.routes.find((route) => route.path.endsWith('/file'))
 
 const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
   filename,
@@ -79,12 +77,12 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
   payload: Buffer.alloc(size, 1)
 })
 
+const DOCUMENTS_SLUG = 'accompanying-documents'
+const UNHELD_UPLOAD_ID = 'somebody-elses-upload-id'
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
-// Pinned as literals rather than read from copy, so a reworded tag fails a test.
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
-// A value the select never carries: only a tampered form could send it.
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
 
 const validDocument = {
@@ -101,18 +99,20 @@ const storedDocument = (overrides = {}) => ({
   ...overrides
 })
 
+const SAVE_ANSWERS = 'save answers'
+
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
-const configureEngine = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
+const expectContinueRefusedLogged = (result, scansNotCleared) =>
+  expectOneRefusalLogged(result.logger, {
+    journeyId: result.journeyId,
+    errorCodes: ['documents'],
+    scansNotCleared
+  })
 
 describe('documents — real upload leg on the single-page loop', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
     const result = await driveHandler(post, {
@@ -150,12 +150,17 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add' }
     })
-    expect(Object.keys(result.view.context.errors)).toEqual([
+    const fieldOrder = [
       'accompanyingDocumentReference',
       'accompanyingDocumentType',
       'accompanyingDocumentDateOfIssue',
       'file'
-    ])
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(fieldOrder)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: fieldOrder
+    })
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
@@ -236,9 +241,6 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
 
     expect(result.response.redirect).toBeDefined()
-    // The whole value, pinned: `12/12/2025` goes out as a date with no time and
-    // no offset, so a substring or a shape check would pass on the instant
-    // form the API now rejects.
     expect(upload).toHaveBeenCalledWith(
       expect.objectContaining({ dateOfIssue: '2025-12-12' })
     )
@@ -270,7 +272,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('notes.zip') }
     })
-    expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(fileTypeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
@@ -282,20 +284,26 @@ describe('documents — real upload leg on the single-page loop', () => {
         file: pdfFile('big.pdf', MAX_FILE_SIZE_BYTES + 1)
       }
     })
-    expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(oversizeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
   it('Should answer 500 when the upload service fails, re-rendering the failure and appending nothing', async () => {
+    const failure = new Error('upload service unavailable')
     const spy = vi
       .spyOn(documentUploads, 'upload')
-      .mockRejectedValueOnce(new Error('upload service unavailable'))
+      .mockRejectedValueOnce(failure)
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
     })
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.errors.file).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectOneLogged(result.logger, {
+      level: 'warn',
+      fields: { journeyId: result.journeyId, err: failure },
+      message: 'Document upload failed'
+    })
     spy.mockRestore()
   })
 
@@ -308,13 +316,16 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     const response = await documents.handleOversizePayload(request, h)
     expect(response.statusCode).toBe(400)
-    expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(h.captured.view.context.errors.file).toBe(oversizeMessage(copy))
+    expectOneRefusalLogged(request.logger, {
+      journeyId: journey.journeyId,
+      errorCodes: ['file']
+    })
   })
 })
 
 describe('documents — listing, scanning and removing', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
@@ -331,10 +342,6 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should precede the status tag with a hidden label naming the document', async () => {
-    // The tag itself is two or three words with no context, so the hidden
-    // label is the only thing telling a screen-reader user which row's check
-    // it reports. It sits outside the tag, which the client rewrites in place
-    // on a poll, so it survives every status change.
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }
     })
@@ -345,8 +352,6 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should escape a document reference before putting it in the hidden label', async () => {
-    // The cell is built as HTML, so Nunjucks does not escape it for us and a
-    // reference is whatever the trader typed.
     const result = await driveHandler(get, {
       seed: {
         documents: [
@@ -394,11 +399,12 @@ describe('documents — listing, scanning and removing', () => {
       },
       payload: { action: 'continue' }
     })
-    expect(result.response.statusCode).toBe(200)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(summaryTexts(result)).toContain(
       'You cannot continue until all documents have been scanned or removed'
     )
+    expectContinueRefusedLogged(result, [{ uploadId, scanStatus: 'PENDING' }])
   })
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
@@ -417,11 +423,13 @@ describe('documents — listing, scanning and removing', () => {
       seed,
       payload: { action: 'continue' }
     })
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(result.view.context.rows[0][3].html).toContain('Virus found')
     expect(summaryTexts(result)).toContain(
       'virus-notes.pdf contains a virus. Remove it and try again with a different file.'
     )
+    expectContinueRefusedLogged(result, [{ uploadId, scanStatus: 'REJECTED' }])
   })
 
   it('Should let the hub exit leave the page while a scan is PENDING', async () => {
@@ -461,6 +469,11 @@ describe('documents — listing, scanning and removing', () => {
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.after).toEqual(seed)
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: { journeyId: result.journeyId, index: 7 },
+      message: 'Document removal refused: no document at the index'
+    })
   })
 
   it('Should refuse a remove whose index is not a number and delete nothing', async () => {
@@ -478,7 +491,7 @@ describe('documents — listing, scanning and removing', () => {
 
     const forged = await server.inject({
       method: 'POST',
-      url: pagePath('journey-1', 'accompanying-documents'),
+      url: pagePath('journey-1', DOCUMENTS_SLUG),
       payload: { action: 'remove:0' }
     })
     expect(forged.statusCode).toBe(403)
@@ -490,7 +503,7 @@ describe('documents — listing, scanning and removing', () => {
     expect(prefetched.statusCode).toBe(404)
   })
 
-  it('Should refuse a document past the cap with the maximum message and append nothing', async () => {
+  it('Should refuse a document past the cap with the maximum message on the file field, linked from the summary, appending nothing', async () => {
     const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
@@ -499,10 +512,18 @@ describe('documents — listing, scanning and removing', () => {
       payload: { action: 'add', ...validDocument, file: pdfFile() }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(summaryTexts(result)).toContain(
-      `You can upload a maximum of ${MAX_DOCUMENTS} files`
-    )
+    const limitMessage = `You can upload a maximum of ${MAX_DOCUMENTS} files`
+    expect(result.view.context.errors.file).toBe(limitMessage)
+    expect(result.view.context.errorSummary.errorList).toEqual([
+      { text: limitMessage, href: '#file' }
+    ])
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['file'],
+      documentsHeld: MAX_DOCUMENTS,
+      maxDocuments: MAX_DOCUMENTS
+    })
   })
 
   it('Should derive the controller cap from the manifest, not a copied number', () => {
@@ -517,8 +538,7 @@ describe('documents — listing, scanning and removing', () => {
 })
 
 describe('documents — Continue finishes a part-filled document', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should carry an untouched form past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
@@ -538,13 +558,11 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(entry.uploadId).toBeDefined()
   })
 
-  // A Continue that saves has mutated state, so it must end in a redirect —
-  // a reload of the POST would otherwise append the document a second time.
   it('Should redirect back to the page after saving the document Continue carries', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument, file: pdfFile() }
     })
-    expect(result.response.redirect).toContain('accompanying-documents')
+    expect(result.response.redirect).toContain(DOCUMENTS_SLUG)
     expect(result.after.documents).toHaveLength(1)
   })
 
@@ -561,8 +579,6 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // Uploading is optional, and the type is the whole of the signal: without one
-  // there is no document to finish, so the rest of the form goes with the page.
   it('Should carry a form with no document type chosen past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -576,9 +592,6 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // The signal is a type the page actually offers, not merely a non-empty
-  // select, so a Continue carrying a value the page never offered is carried
-  // past like any other form the trader did not start.
   it('Should carry a form whose document type the page does not offer past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -602,8 +615,7 @@ describe('documents — Continue finishes a part-filled document', () => {
 })
 
 describe('documents — scan-status poll and view context', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
@@ -666,10 +678,12 @@ describe('documents — scan-status poll and view context', () => {
     })
   })
 
+  it('Should render the page as a display surface', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.contentColumnClass).toBe(SURFACES.display)
+  })
+
   it('Should hand the view the document limit the hint states, straight from the obligation', async () => {
-    // The hint and the too-many error must name the same number. The view gets
-    // it from the same contract the error does, so raising the obligation's
-    // maxEntries moves both at once.
     const result = await driveHandler(get)
     expect(result.view.context.maxDocuments).toBe(MAX_DOCUMENTS)
     expect(result.view.context.maxDocuments).toBe(
@@ -680,7 +694,7 @@ describe('documents — scan-status poll and view context', () => {
   it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)
-    expect(result.view.context.oversizeFileMessage).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.oversizeFileMessage).toBe(oversizeMessage(copy))
     expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
       COMPLETE: {
         text: TAG_COMPLETE,
@@ -741,7 +755,7 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer all fourteen document types behind a placeholder, in the service order', async () => {
+  it('Should offer all fourteen document types behind the select text, in the service order', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })
@@ -776,8 +790,7 @@ describe('documents — scan-status poll and view context', () => {
 })
 
 describe('documents — reading an uploaded file back', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const journeyHolding = async (uploadId) => {
     const server = await serverWithDocumentRoutes({ cookies: true })
@@ -819,11 +832,27 @@ describe('documents — reading an uploaded file back', () => {
     expect(response.payload.startsWith('%PDF-')).toBe(true)
   })
 
+  it('Should log the refusal when the upload id is not held by the journey', async () => {
+    const result = await driveHandler(fileRoute.handler, {
+      params: { uploadId: UNHELD_UPLOAD_ID },
+      seed: { documents: [storedDocument({ uploadId: 'up-held' })] }
+    })
+    expect(result.response.statusCode).toBe(404)
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        uploadId: UNHELD_UPLOAD_ID
+      },
+      message: 'Document file refused: upload not held by the journey'
+    })
+  })
+
   it('Should answer 404 for a well-formed upload id the journey does not hold', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
     const held = await journeyHolding(uploadId)
 
-    const response = await readFile(held, 'somebody-elses-upload-id')
+    const response = await readFile(held, UNHELD_UPLOAD_ID)
 
     expect(response.statusCode).toBe(404)
   })
@@ -862,5 +891,107 @@ describe('documents — reading an uploaded file back', () => {
     })
 
     expect(response.statusCode).toBe(404)
+  })
+})
+
+describe('documents — backend and upload service failures', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const ALREADY_REMOVED_UPLOAD_ID = 'up-already-removed'
+  const retryRemovalPayload = {
+    action: 'continue',
+    retryRemoveIndex: '0',
+    retryRemoveUploadId: ALREADY_REMOVED_UPLOAD_ID
+  }
+  const alreadyRemovedEntry = (journeyId) => ({
+    level: 'info',
+    fields: { journeyId, index: 0, uploadId: ALREADY_REMOVED_UPLOAD_ID },
+    message: 'Document already removed: saving the notification without it'
+  })
+
+  const seededUpload = async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    return {
+      uploadId,
+      seed: { documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })] }
+    }
+  }
+
+  it('Should log the save fallback once with the upload id and the backend error, keeping the uploaded file for the retry', async () => {
+    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const result = await driveHandler(post, {
+      saveFailure: failure,
+      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
+    })
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.recoverableError).toBe(true)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      uploadId: result.view.context.pendingDocumentSave.uploadId,
+      err: failure
+    })
+  })
+
+  it('Should log the upload service failure and keep the document when its upload cannot be removed', async () => {
+    const { uploadId, seed } = await seededUpload()
+    const failure = new Error('upload service unavailable')
+    const spy = vi
+      .spyOn(documentUploads, 'remove')
+      .mockRejectedValueOnce(failure)
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:0' }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(seed)
+    expectOneLogged(result.logger, {
+      level: 'warn',
+      fields: { journeyId: result.journeyId, uploadId, err: failure },
+      message: 'Document not removed: upload service failed, document kept'
+    })
+    spy.mockRestore()
+  })
+
+  it('Should log the removal save fallback once with the index, the upload id and the backend error, keeping the document', async () => {
+    const { uploadId, seed } = await seededUpload()
+    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const result = await driveHandler(post, {
+      seed,
+      saveFailure: failure,
+      payload: { action: 'remove:0' }
+    })
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(seed)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      index: 0,
+      uploadId,
+      err: failure
+    })
+  })
+
+  it('Should log that a retried removal found the document already gone, then save the notification without it', async () => {
+    const result = await driveHandler(post, { payload: retryRemovalPayload })
+    expect(result.response.redirect).toContain(DOCUMENTS_SLUG)
+    expectOneLogged(result.logger, alreadyRemovedEntry(result.journeyId))
+  })
+
+  it('Should log the retried removal save fallback once, with the backend error, when the notification still cannot be saved', async () => {
+    const failure = unavailableBackendError(SAVE_ANSWERS)
+    const result = await driveHandler(post, {
+      saveFailure: failure,
+      payload: retryRemovalPayload
+    })
+    expect(result.response.statusCode).toBe(500)
+    expect(result.logger.entries).toEqual([
+      alreadyRemovedEntry(result.journeyId),
+      saveFallbackEntry({
+        journeyId: result.journeyId,
+        index: 0,
+        uploadId: ALREADY_REMOVED_UPLOAD_ID,
+        err: failure
+      })
+    ])
   })
 })

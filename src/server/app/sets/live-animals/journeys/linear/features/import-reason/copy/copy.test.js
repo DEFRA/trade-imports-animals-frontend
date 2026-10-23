@@ -1,13 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import * as ports from '../../../../../../../services/ports/index.js'
@@ -16,13 +14,11 @@ import { dispatchPages } from '../../index.js'
 import * as importReason from '../controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
+const SELECT_ONE = 'Select one'
+const SELECT_ONE_CY = 'Dewiswch un'
 
 describe('import-reason copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -55,31 +51,41 @@ describe('import-reason copy module', () => {
     }
   })
 
-  // The sale/gift hint also carried a wrong possessive, a comma splitting
-  // "aim" from what it governs, and "e.g." where GDS style wants the words.
-  it('Should write the sale or gift hint in plain, correct English', () => {
-    const hint = copy.purpose.hints['transfer-of-ownership-sale-gift']
-    expect(hint).toContain('has as its aim the sale of')
-    expect(hint).toContain('with no sale involved (for example a gift).')
-    expect(hint).not.toContain('e.g.')
-    expect(
-      copyCy.purpose.hints['transfer-of-ownership-sale-gift']
-    ).not.toContain('e.e.')
+  it('Should label each search and word its select text, search placeholder and no-results message', () => {
+    expect(copy.country).toEqual({
+      label: 'Destination country',
+      selectText: SELECT_ONE,
+      searchPlaceholder: SELECT_ONE,
+      noResults: 'No countries found'
+    })
+    expect(copy.port).toEqual({
+      label: 'Port of exit',
+      selectText: SELECT_ONE,
+      searchPlaceholder: SELECT_ONE,
+      noResults: 'No ports found'
+    })
+    expect(copyCy.country).toEqual({
+      label: 'Gwlad gyrchfan',
+      selectText: SELECT_ONE_CY,
+      searchPlaceholder: SELECT_ONE_CY,
+      noResults: 'Dim gwledydd wedi’u darganfod'
+    })
+    expect(copyCy.port).toEqual({
+      label: 'Porthladd ymadael',
+      selectText: SELECT_ONE_CY,
+      searchPlaceholder: SELECT_ONE_CY,
+      noResults: 'Dim porthladdoedd wedi’u darganfod'
+    })
   })
 
-  // The reason a reveal belongs to is where the explanation sits, so the
-  // follow-up questions ask with a label alone and the exit date keeps only
-  // its worked example.
-  it('Should ask the destination country and the port of exit without a hint', () => {
-    expect(copy.country.hint).toBeUndefined()
-    expect(copy.port.hint).toBeUndefined()
-    expect(copyCy.country.hint).toBeUndefined()
-    expect(copyCy.port.hint).toBeUndefined()
+  it('Should title the page in English and Welsh', () => {
+    expect(copy.title).toBe('Main import reason')
+    expect(copyCy.title).toBe('Prif reswm mewnforio')
   })
 
-  it('Should hint the exit date with the worked example alone', () => {
-    expect(copy.date.hint).toBe('For example, 27/3/2026')
-    expect(copyCy.date.hint).toBe('Er enghraifft, 27/3/2026')
+  it('Should hint the exit date with the shared date example alone', () => {
+    expect(copy.date.hint).toBe(sharedEn.dateExample)
+    expect(copyCy.date.hint).toBe(sharedCy.dateExample)
   })
 
   it('Should ask for a destination country and a port of exit', () => {
@@ -89,8 +95,6 @@ describe('import-reason copy module', () => {
     expect(copyCy.errors.portRequired).toBe('Dewiswch borthladd ymadael')
   })
 
-  // The unreadable-date message does not repeat the field name that is
-  // already the legend and the label above it.
   it('Should report an unreadable exit date without naming the field again', () => {
     expect(copy.errors.dateInvalid).toBe('Enter a real date')
     expect(copyCy.errors.dateInvalid).toBe('Rhowch ddyddiad go iawn')
@@ -98,12 +102,7 @@ describe('import-reason copy module', () => {
 })
 
 describe('GET import-reason — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module and hint every option from it', async () => {
     const get = importReason.routes.find(
@@ -120,22 +119,26 @@ describe('GET import-reason — copy reaches the view', () => {
     }
   })
 
-  it('Should carry the reveal placeholders, the port list labelled as the ports service labels it and the exit-date label into the view', async () => {
+  it('Should start each list with an empty Select one option followed directly by the served places or ports', async () => {
     const get = importReason.routes.find(
       (route) => route.method === 'GET'
     ).handler
-    const result = await driveHandler(get)
+    const { countryItems, portItems } = (await driveHandler(get)).view.context
 
-    expect(result.view.context.countryItems[0].text).toBe(
-      copy.country.placeholder
+    expect(countryItems[0]).toEqual({ value: '', text: SELECT_ONE })
+    expect(countryItems.slice(1)).toEqual(
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
     )
-    expect(result.view.context.countryItems.slice(1)).toEqual(
-      await countries.destinationCountryOptions()
-    )
-    expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
-    expect(result.view.context.portItems.slice(1)).toEqual(
-      await ports.portOptions()
-    )
-    expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)
+    expect(portItems[0]).toEqual({ value: '', text: SELECT_ONE })
+    expect(portItems.slice(1)).toEqual(await ports.portOptions())
+  })
+
+  it('Should carry the exit-date label into the view', async () => {
+    const get = importReason.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const { exitDateField } = (await driveHandler(get)).view.context
+
+    expect(exitDateField.label.text).toBe(copy.date.label)
   })
 })
