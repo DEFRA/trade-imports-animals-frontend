@@ -1,36 +1,21 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import createFetchMock from 'vitest-fetch-mock'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   resetModulesAndRunModeEachTest,
   switchToRealMode,
   switchToStubMode
 } from '../../../../../common/test-helpers/run-mode.js'
-
-const fetchMocker = createFetchMock(vi)
-
-const FERRET_RESULTS = {
-  total: 1,
-  page: 0,
-  size: 10,
-  groups: [
-    {
-      code: '01061900',
-      species: [{ latinName: 'Mustela putorius furo', commonName: 'Ferret' }]
-    }
-  ]
-}
+import {
+  FERRET_RESULTS,
+  fetchMocker,
+  firstRequest,
+  mockFetchEachTest,
+  respondWith,
+  respondWithJson
+} from './test-support.js'
 
 resetModulesAndRunModeEachTest()
-
-beforeEach(() => {
-  fetchMocker.enableMocks()
-  fetchMocker.resetMocks()
-})
-
-afterEach(() => {
-  fetchMocker.disableMocks()
-})
+mockFetchEachTest()
 
 describe('#search', () => {
   describe('in stub mode', () => {
@@ -48,13 +33,11 @@ describe('#search', () => {
     beforeEach(switchToRealMode)
 
     it('Should search through reference-data from the first page', async () => {
-      fetchMocker.mockResponse(JSON.stringify(FERRET_RESULTS))
+      respondWithJson(FERRET_RESULTS)
       const { search } = await import('./search.js')
 
       expect(await search('ferret', { size: 10 })).toEqual(FERRET_RESULTS)
-      expect(
-        new URL(fetchMocker.requests()[0].url).searchParams.get('page')
-      ).toBe('0')
+      expect(new URL(firstRequest().url).searchParams.get('page')).toBe('0')
     })
 
     it.each([
@@ -63,7 +46,7 @@ describe('#search', () => {
     ])(
       'Should report reference data as unavailable when the search answers %i',
       async (status, statusText) => {
-        fetchMocker.mockResponse(() => ({ status, statusText, body: '' }))
+        respondWith(status, statusText)
         const { search } = await import('./search.js')
 
         const error = await search('ferret', { size: 10 }).catch(
