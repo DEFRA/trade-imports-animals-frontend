@@ -54,8 +54,7 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
-// The add form's own fields, or none of them: a page whose session could not be opened shows the
-// documents it holds and refuses the add form alone.
+// The add form's own fields, or none of them when no session could be opened.
 const addFormFor = async (request, journeyId) => {
   try {
     return await addFormSession(request, journeyId)
@@ -78,9 +77,7 @@ const get = async (request, h) => {
   return render(request, h, pageState, EMPTY_FORM, { extra: addForm })
 }
 
-// The page a service failure leaves the trader on, with the add form still live. `unsavedDocument`
-// names the upload the service has taken on that the notification does not list, so the banner
-// says so and the next save retries it.
+// The page a service failure leaves the trader on, with the add form still live.
 const renderRecoverableFailure = async (
   request,
   h,
@@ -346,9 +343,6 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
-// The save the page offers for a document the service has taken on that the notification does
-// not list. Claiming twice replaces the details rather than adding a second document, so the
-// whole take-on runs again.
 const retryTakingOnTheUpload = async (request, h, correlationId) => {
   const pageState = await loadPage(request, h)
   request.logger.info(

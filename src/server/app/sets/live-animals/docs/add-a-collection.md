@@ -243,6 +243,22 @@ leaf-less entry has no canonical record from which to infer an instance and is
 therefore not persisted. Collection forms should commit an entry only after
 validation has produced at least one bound leaf.
 
+The claim and the append are two writes to two services, so they can part
+company: a claim that succeeds while the append fails leaves the upload service
+holding the document and the notification not listing it. The page recovers
+rather than reporting it. The failing render names the upload in
+`unsavedDocument`, which puts the handle in a hidden `retryAddCorrelationId`
+field, and a POST carrying that field runs the whole take-on again before any
+other action on the page — safe to repeat because the claim endpoint replaces a
+claimed document's details rather than adding a second document, and because
+`isAlreadySaved` stops a second append. Continue is held back until the
+notification lists every upload the service holds as claimed
+(`handlers/unsaved-claim.js`), so the two cannot disagree about what the
+notification contains while the trader carries on. Where the page cannot read
+what the service holds, it holds Continue back too: the gate exists to stop a
+document going missing, and trusting the collection alone is what let it go
+missing.
+
 Continue appends nothing. It posts the entry fields with it, so a payload
 holding a started entry — `startsADocument` in
 [`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
