@@ -10,12 +10,8 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
-import {
-  animalsField,
-  fieldsFor,
-  packagesApply,
-  packagesField
-} from './fields.js'
+import { packagesApply } from '../../check-answers/view-model/applicability.js'
+import { animalsField, fieldsFor, packagesField } from './fields.js'
 import { linesOf } from './lines.js'
 import {
   isRemoveAction,
