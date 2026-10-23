@@ -54,7 +54,7 @@ describe('#fetchCommodities', () => {
     expect(firstRequest().method).toBe('GET')
     expect(url.pathname).toBe('/commodities')
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      search: 'ferret',
+      q: 'ferret',
       page: '0',
       size: '10'
     })
@@ -81,7 +81,7 @@ describe('#linesWithUnlistedSpecies', () => {
     })
 
     it('Should ask reference-data which lines are not listed', async () => {
-      respondWithJson({ missing: [BOS_SPP] })
+      respondWithJson({ unlisted: [BOS_SPP] })
       const { linesWithUnlistedSpecies } = await import('./species-check.js')
 
       expect(await linesWithUnlistedSpecies([BOS_SPP])).toEqual([BOS_SPP])
@@ -93,18 +93,24 @@ describe('#linesWithUnlistedSpecies', () => {
       expect(await firstRequest().json()).toEqual({ lines: [BOS_SPP] })
     })
 
-    it('Should report reference data as unavailable when the check fails', async () => {
-      respondWith(503, 'Down')
-      const { linesWithUnlistedSpecies } = await import('./species-check.js')
+    it.each([
+      [400, 'Bad Request'],
+      [503, 'Service Unavailable']
+    ])(
+      'Should report reference data as unavailable when the check answers %i',
+      async (status, statusText) => {
+        respondWith(status, statusText)
+        const { linesWithUnlistedSpecies } = await import('./species-check.js')
 
-      const error = await linesWithUnlistedSpecies([BOS_SPP]).catch(
-        (caught) => caught
-      )
+        const error = await linesWithUnlistedSpecies([BOS_SPP]).catch(
+          (caught) => caught
+        )
 
-      expect(error.isBoom).toBe(true)
-      expect(error.output.statusCode).toBe(503)
-      expect(error.data.dataset).toBe('commodities')
-    })
+        expect(error.isBoom).toBe(true)
+        expect(error.output.statusCode).toBe(503)
+        expect(error.data.dataset).toBe('commodities')
+      }
+    )
   })
 })
 
@@ -125,17 +131,23 @@ describe('#search', () => {
       expect(new URL(firstRequest().url).searchParams.get('page')).toBe('0')
     })
 
-    it('Should report reference data as unavailable when the search fails', async () => {
-      respondWith(503, 'Down')
-      const commodities = await import('./search.js')
+    it.each([
+      [400, 'Bad Request'],
+      [503, 'Service Unavailable']
+    ])(
+      'Should report reference data as unavailable when the search answers %i',
+      async (status, statusText) => {
+        respondWith(status, statusText)
+        const commodities = await import('./search.js')
 
-      const error = await commodities
-        .search('ferret', { size: 10 })
-        .catch((caught) => caught)
+        const error = await commodities
+          .search('ferret', { size: 10 })
+          .catch((caught) => caught)
 
-      expect(error.isBoom).toBe(true)
-      expect(error.output.statusCode).toBe(503)
-      expect(error.data.dataset).toBe('commodities')
-    })
+        expect(error.isBoom).toBe(true)
+        expect(error.output.statusCode).toBe(503)
+        expect(error.data.dataset).toBe('commodities')
+      }
+    )
   })
 })

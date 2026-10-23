@@ -5,7 +5,7 @@ import {
 
 export const fetchCommodities = (term, { page, size }) => {
   const url = referenceDataUrl('/commodities')
-  url.searchParams.set('search', term)
+  url.searchParams.set('q', term)
   url.searchParams.set('page', String(page))
   url.searchParams.set('size', String(size))
   return requestReferenceData(
