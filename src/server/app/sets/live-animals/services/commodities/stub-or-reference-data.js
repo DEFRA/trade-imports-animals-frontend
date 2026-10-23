@@ -1,8 +1,6 @@
 import { isStubMode } from '../../../../../common/services/mode.js'
 import { referenceDataUnavailable } from '../../../../services/reference-data/request.js'
 
-const DATASET = 'commodities'
-
 export const commoditiesFromStubOrReferenceData = async ({
   stubCall,
   realCall
@@ -13,6 +11,6 @@ export const commoditiesFromStubOrReferenceData = async ({
   try {
     return await realCall()
   } catch (err) {
-    throw referenceDataUnavailable(DATASET, err)
+    throw referenceDataUnavailable('commodities', err)
   }
 }
