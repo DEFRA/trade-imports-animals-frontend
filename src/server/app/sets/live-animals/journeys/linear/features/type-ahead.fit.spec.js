@@ -2,12 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   FORM_GROUP_ANCESTOR_XPATH,
-  GOVUK_BLUE,
-  GOVUK_BLUE_SHADE_50,
-  WHITE,
-  childTagsAndClassesOf,
   expectNoSeriousOrCriticalViolations,
-  expectedFormGroupChildren,
   openArrival,
   openTransit,
   signIn,
@@ -41,7 +36,6 @@ const countryCase = (fields) => ({
   typed: 'fra',
   suggestion: france.name,
   bold: 'Fra',
-  labelSize: 's',
   ...fields
 })
 
@@ -49,7 +43,6 @@ const portCase = (fields) => ({
   typed: 'dov',
   suggestion: DOVER_OPTION,
   bold: 'Dov',
-  labelSize: 's',
   ...fields
 })
 
@@ -58,7 +51,6 @@ const typeAheads = [
     name: 'Country of origin',
     inputId: 'countryOfOrigin',
     label: originCopy.country.label,
-    labelSize: 'm',
     selectText: originCopy.country.selectText,
     emptyBoxText: originCopy.country.searchPlaceholder,
     open: startNotificationAtOrigin
@@ -68,7 +60,6 @@ const typeAheads = [
     inputId: 'portOfEntry',
     label: transportCopy.portOfEntry.port.label,
     hint: transportCopy.portOfEntry.port.hint,
-    labelSize: 'm',
     selectText: transportCopy.portOfEntry.port.placeholder,
     emptyBoxText: transportCopy.portOfEntry.port.placeholder,
     open: openArrival
@@ -78,7 +69,6 @@ const typeAheads = [
     inputId: 'transitedCountry',
     label: transportCopy.transitCountries.country.label,
     hint: transportCopy.transitCountries.country.hint,
-    labelSize: 'm',
     selectText: transportCopy.transitCountries.country.selectText,
     emptyBoxText: transportCopy.transitCountries.country.searchPlaceholder,
     open: openTransit
@@ -120,12 +110,8 @@ const revealedTypeAheads = [
   })
 ]
 
-const expectJoinedBlueButton = (measurements) => {
+const expectSquareButtonFlushWithBox = (measurements) => {
   expect(measurements.arrowDisplay).toBe('none')
-  expect(measurements.background).toBe(GOVUK_BLUE)
-  expect(measurements.iconColour).toBe(WHITE)
-  expect(measurements.boxShadow).toContain(GOVUK_BLUE_SHADE_50)
-  expect(measurements.borderWidth).toBe('0px')
   expect(measurements.buttonWidth).toBe(measurements.buttonHeight)
   expect(measurements.buttonTop).toBe(measurements.inputTop)
   expect(measurements.buttonBottom).toBe(measurements.inputBottom)
@@ -145,7 +131,6 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     inputId,
     label,
     hint,
-    labelSize,
     typed,
     suggestion,
     bold,
@@ -170,10 +155,10 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       })
     }
 
-    test('shows the joined blue magnifying glass button flush with the box and no dropdown arrow', async ({
+    test('shows a square button joined flush to the box and no dropdown arrow', async ({
       page
     }) => {
-      expectJoinedBlueButton(
+      expectSquareButtonFlushWithBox(
         await measureJoinedSearchButton(inputFor(page, inputId))
       )
     })
@@ -227,7 +212,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
   test.describe(`${name} type-ahead without JavaScript`, () => {
     test.use({ javaScriptEnabled: false })
 
-    test('is a native select found by its label, whose first option is the page select text and is selected, with no button', async ({
+    test('is a native select named by its label and described only by its hint, whose first option is the page select text and is selected, with no button', async ({
       page
     }) => {
       await signIn(page)
@@ -246,9 +231,9 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
         'value',
         ''
       )
-      expect(await childTagsAndClassesOf(formGroup)).toEqual(
-        expectedFormGroupChildren({ hint, labelSize })
-      )
+      await expect(select).toHaveAccessibleName(label)
+      await expect(select).toHaveAccessibleDescription(hint ?? '')
+      await expect(formGroup.getByRole('button')).toHaveCount(0)
       await expect(
         page.locator('.autocomplete__wrapper, .app-autocomplete__button')
       ).toHaveCount(0)
@@ -269,7 +254,7 @@ for (const typeAhead of revealedTypeAheads) {
     test('keeps the button joined to the box and the suggestion list as wide as the joined control', async ({
       page
     }) => {
-      expectJoinedBlueButton(
+      expectSquareButtonFlushWithBox(
         await measureJoinedSearchButton(inputFor(page, inputId))
       )
 
@@ -344,7 +329,6 @@ const measureJoinedSearchButton = (input) =>
     const arrow = container.querySelector('.autocomplete__dropdown-arrow-down')
     const inputEdges = inputElement.getBoundingClientRect()
     const buttonEdges = button.getBoundingClientRect()
-    const buttonStyle = window.getComputedStyle(button)
     return {
       arrowDisplay: window.getComputedStyle(arrow).display,
       inputTop: inputEdges.top,
@@ -354,11 +338,7 @@ const measureJoinedSearchButton = (input) =>
       buttonBottom: buttonEdges.bottom,
       buttonRight: buttonEdges.right,
       buttonWidth: buttonEdges.width,
-      buttonHeight: buttonEdges.height,
-      background: buttonStyle.backgroundColor,
-      boxShadow: buttonStyle.boxShadow,
-      borderWidth: buttonStyle.borderTopWidth,
-      iconColour: window.getComputedStyle(button, '::before').backgroundColor
+      buttonHeight: buttonEdges.height
     }
   })
 

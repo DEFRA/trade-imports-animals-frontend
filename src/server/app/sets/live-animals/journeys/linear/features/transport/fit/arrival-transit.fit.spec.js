@@ -5,7 +5,7 @@ import {
   addTransitCountry,
   choosePortOfEntry,
   computedStyle,
-  describeDatePickerLook,
+  describeCalendarPosition,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -318,7 +318,7 @@ test.describe('arrival date calendar', () => {
     await openArrival(page)
   })
 
-  describeDatePickerLook({
+  describeCalendarPosition({
     fieldName: 'arrival date',
     label: copy.portOfEntry.arrivalDate.label,
     nextQuestionLabel: (page) => page.locator('label[for="portOfEntry"]')

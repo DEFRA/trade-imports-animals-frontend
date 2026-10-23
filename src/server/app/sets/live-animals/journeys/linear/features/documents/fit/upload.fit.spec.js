@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
-  describeDatePickerLook,
+  describeCalendarPosition,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   openDatePicker,
@@ -286,7 +286,7 @@ test.describe('document upload page', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  describeDatePickerLook({
+  describeCalendarPosition({
     fieldName: 'date of issue',
     label: copy.dateOfIssue.label,
     nextQuestionLabel: (page) => page.locator('label[for="file"]')

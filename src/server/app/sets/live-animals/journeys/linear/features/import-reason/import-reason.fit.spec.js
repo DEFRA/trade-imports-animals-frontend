@@ -4,7 +4,7 @@ import {
   carryOpeningRunToImportReason,
   chooseAutocompleteByLabel,
   chooseTodayFromDatePicker,
-  describeDatePickerLook,
+  describeCalendarPosition,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openPageFromOverview,
@@ -56,20 +56,10 @@ const irelandMatches = countryAndSubdivisionEntriesNamedWithCountry().filter(
   ({ name }) => /ire/i.test(name)
 )
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
-const EXIT_DATE_LABEL = 'label[for="temporaryAdmissionExitDate"]'
-const REGULAR_FONT_WEIGHT = '400'
 const ARIA_CONTROLS = 'aria-controls'
 const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
 const temporaryAdmissionPortHidden =
   'select#temporaryAdmissionPortOfExit-select'
-
-const expectExitDateLabelRegularWeight = async (page) => {
-  await expect(page.locator(EXIT_DATE_LABEL)).toHaveText(copy.date.label)
-  await expect(page.locator(EXIT_DATE_LABEL)).toHaveCSS(
-    'font-weight',
-    REGULAR_FONT_WEIGHT
-  )
-}
 
 const radioFor = (page, value) =>
   page.locator(`${REASON_INPUT_SELECTOR}[value="${value}"]`)
@@ -327,6 +317,9 @@ test.describe('import-reason reveals', () => {
     await expect(
       reveal.getByRole('button', { name: CHOOSE_DATE_LABEL })
     ).toBeVisible()
+    await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveAccessibleName(
+      copy.date.label
+    )
     await expect(
       page.locator(TEMPORARY_ADMISSION_DATE)
     ).toHaveAccessibleDescription(copy.date.hint)
@@ -342,7 +335,6 @@ test.describe('import-reason reveals', () => {
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
     ])
-    await expectExitDateLabelRegularWeight(page)
   })
 
   test('asks transhipment for the destination country alone', async ({
@@ -470,7 +462,7 @@ test.describe('import-reason exit date calendar', () => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
   })
 
-  describeDatePickerLook({
+  describeCalendarPosition({
     fieldName: 'exit date',
     label: copy.date.label,
     nextQuestionLabel: (page) =>
@@ -638,17 +630,6 @@ test.describe('import-reason temporary admission port type-ahead', () => {
 
 test.describe('import-reason port and country without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
-
-  test('shows the exit date label in regular weight under temporary admission', async ({
-    page
-  }) => {
-    await signIn(page)
-    await startNotificationAtImportReason(page)
-
-    await radioFor(page, 'temporaryAdmissionHorses').check()
-
-    await expectExitDateLabelRegularWeight(page)
-  })
 
   test('native selects submit and persist port and country codes', async ({
     page

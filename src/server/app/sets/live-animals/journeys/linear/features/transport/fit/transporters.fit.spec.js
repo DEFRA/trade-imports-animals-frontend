@@ -4,7 +4,7 @@ import {
   contentWidthOf,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
-  expectSubmittedSearchLook,
+  expectSearchBoxJoinedToItsButton,
   journeyFormOf,
   journeyUrl,
   searchByPressingEnter,
@@ -452,12 +452,12 @@ test.describe('the transporter search box', () => {
     await signIn(page)
   })
 
-  test('is a medium-labelled box, hinted with what it matches, joined to a blue icon button, filling the left half of the search row', async ({
+  test('is a box hinted with what it matches, joined flush to its one search button, filling the left half of the search row', async ({
     page
   }) => {
     await openTransporterList(page)
 
-    await expectSubmittedSearchLook(page, {
+    await expectSearchBoxJoinedToItsButton(page, {
       search: copy.transporters.search,
       expectedWidth: await contentWidthOf(searchRowLeftHalfOf(page))
     })

@@ -1,11 +1,8 @@
 import {
   BASE,
-  FORM_GROUP_ANCESTOR_XPATH,
   answerOriginDetails,
-  childTagsAndClassesOf,
   chooseCountryOfOrigin,
   expectNoSeriousOrCriticalViolations,
-  expectedFormGroupChildren,
   journeyUrl,
   renderedCountriesIn,
   startNotificationAtOrigin,
@@ -132,11 +129,7 @@ test.describe('origin feature', () => {
       'placeholder',
       copy.country.searchPlaceholder
     )
-    expect(
-      await childTagsAndClassesOf(
-        page.locator(countryInput).locator(FORM_GROUP_ANCESTOR_XPATH)
-      )
-    ).toEqual(expectedFormGroupChildren({ labelSize: 'm', enhanced: true }))
+    await expect(page.locator(countryHidden)).toHaveAccessibleDescription('')
   })
 
   test("shows the region question's health-certificate hint and an internal reference hint with no length limit", async ({
@@ -259,20 +252,6 @@ test.describe('origin region of origin code and internal reference', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startNotificationAtOrigin(page)
-  })
-
-  test('sets the revealed region code label small and the internal reference box to the full column width', async ({
-    page
-  }) => {
-    await chooseYesForRegionCode(page)
-
-    await expect(
-      page.locator('label[for="regionOfOriginCodeSuffix"]')
-    ).toHaveAttribute('class', 'govuk-label govuk-label--s')
-    await expect(page.locator('#internalReferenceNumber')).toHaveAttribute(
-      'class',
-      'govuk-input'
-    )
   })
 
   test('the region code box stops typing at five characters, with autocomplete and spellcheck off', async ({

@@ -4,7 +4,7 @@ import {
   addressesSection,
   contentWidthOf,
   expectNoSeriousOrCriticalViolations,
-  expectSubmittedSearchLook,
+  expectSearchBoxJoinedToItsButton,
   journeyFormOf,
   partyPickerName,
   searchByPressingEnter,
@@ -488,12 +488,12 @@ test.describe('party picker search', () => {
     )
   })
 
-  test('picker search box is medium-labelled, hinted, half the column wide and joined to a blue icon button', async ({
+  test('picker search box is hinted, joined flush to its one search button and half the column wide', async ({
     page
   }) => {
     const columnWidth = await contentWidthOf(journeyFormOf(page))
 
-    await expectSubmittedSearchLook(page, {
+    await expectSearchBoxJoinedToItsButton(page, {
       search: copy.picker.search,
       expectedWidth: columnWidth / 2
     })
