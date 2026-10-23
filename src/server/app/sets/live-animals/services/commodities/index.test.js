@@ -2,22 +2,37 @@ import { describe, expect, it } from 'vitest'
 
 import {
   commodityCodeFor,
+  commodityLabel,
   cphCommodities,
   cphExemptCommodityCodes,
   earTagCommodities,
   horseNameCommodities,
   identifiedCommodities,
+  needsIdentifying,
   identifiersFor,
   list,
   microchipCommodities,
   passportCommodities,
   permanentAddressCommodities,
   speciesCommonName,
+  speciesLatinName,
   speciesListedIndividually,
   tattooCommodities
 } from './index.js'
 
 const NOT_A_COMMODITY = 'not-a-commodity'
+const NOT_IN_THE_CATALOGUE = 'not-in-the-catalogue'
+
+describe('#speciesLatinName', () => {
+  it("Should give the species' Latin name", () => {
+    expect(speciesLatinName('1148346')).toBe('Bos taurus')
+    expect(speciesLatinName('716661')).toBe('Bison bison')
+  })
+
+  it('Should give back the stored value where the catalogue holds no species for it', () => {
+    expect(speciesLatinName(NOT_IN_THE_CATALOGUE)).toBe(NOT_IN_THE_CATALOGUE)
+  })
+})
 
 describe('#speciesCommonName', () => {
   it("Should give the species' own common name", () => {
@@ -26,7 +41,7 @@ describe('#speciesCommonName', () => {
   })
 
   it('Should fall back to the commodity name where the catalogue holds no common name for the species', () => {
-    expect(speciesCommonName('Cow', 'not-in-the-catalogue')).toBe('Cow')
+    expect(speciesCommonName('Cow', NOT_IN_THE_CATALOGUE)).toBe('Cow')
     expect(speciesCommonName(NOT_A_COMMODITY, '1148346')).toBe(NOT_A_COMMODITY)
   })
 })
@@ -66,9 +81,6 @@ describe('#identifiersFor', () => {
   })
 })
 
-// The per-identifier allowlists the obligation gates read are derived from the
-// same per-commodity lists, so a commodity's identifiers and its gates are one
-// edit, not two that can disagree.
 describe('the identifier allowlists', () => {
   const derivations = [
     ['microchip', microchipCommodities, 'animalIdentifierMicrochip'],
@@ -87,9 +99,6 @@ describe('the identifier allowlists', () => {
     })
   }
 
-  // The list that gates the identification panel and the multi-species
-  // identifier floor. Asserted as a derivation, not a literal: a commodity's
-  // identifiers and whether it is asked to identify at all are one edit.
   it('Should hold exactly the commodities whose own list carries at least one identifier', () => {
     for (const commodity of list()) {
       expect(identifiedCommodities().includes(commodity)).toBe(
@@ -102,11 +111,12 @@ describe('the identifier allowlists', () => {
     )
   })
 
-  // `permanentAddress` is mandatory inside the same unitRecord group but its
-  // allowlist is hand-written, not derived. Both the identification panel and
-  // the multi-species identifier floor are gated on identifiedCommodities(),
-  // so a commodity asked for a permanent address that is missing from that list
-  // would collect nothing at all and still read as Fulfilled.
+  it('Should need identifying for a line of a species that carries identifiers and not for one that does not', () => {
+    expect(needsIdentifying({ commoditySelection: 'Cow' })).toBe(true)
+    expect(needsIdentifying({ commoditySelection: 'Fish' })).toBe(false)
+    expect(needsIdentifying(undefined)).toBe(false)
+  })
+
   it('Should hold every commodity that is asked for a permanent address', () => {
     for (const commodity of permanentAddressCommodities()) {
       expect(identifiedCommodities()).toContain(commodity)
@@ -125,5 +135,16 @@ describe('the CPH exemption', () => {
         !cphExemptCommodityCodes().includes(commodityCodeFor(commodity))
       )
     }
+  })
+})
+
+describe('#commodityLabel', () => {
+  it('Should append the code in brackets to the name when there is one', () => {
+    expect(commodityLabel('Bovine', '0102')).toBe('Bovine (0102)')
+  })
+
+  it('Should give the name alone when there is no code', () => {
+    expect(commodityLabel('Bovine', undefined)).toBe('Bovine')
+    expect(commodityLabel('Bovine', '')).toBe('Bovine')
   })
 })

@@ -1,4 +1,4 @@
-import { speciesLabel } from '../../commodity-reference.js'
+import { speciesLatinName } from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
@@ -31,7 +31,7 @@ export const speciesEntryFromLine = (line) => {
   const unit = units[0] ?? {}
   return compact({
     value: line.speciesSelection,
-    text: speciesLabel(line.speciesSelection) ?? line.speciesSelection,
+    text: speciesLatinName(line.speciesSelection),
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
     earTag: unit.animalIdentifierEarTag,

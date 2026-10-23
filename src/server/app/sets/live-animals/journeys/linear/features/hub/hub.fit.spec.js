@@ -1,10 +1,13 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
+  GOVUK_BLUE,
+  PHONE_VIEWPORT,
   answerArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
+  expectNoHorizontalOverflow,
+  expectNoSeriousOrCriticalViolations,
   openReviewFromHub,
   selectSpecies,
   signIn,
@@ -21,28 +24,12 @@ const taskRow = (page, title) =>
     has: page.getByText(title, { exact: true })
   })
 
-// Each hub group renders a task list of its own, and govukTaskList stamps the
-// group id on the status of every item in it, so a list can be named by the
-// group it belongs to rather than by where it sits on the page.
 const groupTaskList = (page, groupId) =>
   page
     .locator('ul.govuk-task-list')
     .filter({ has: page.locator(`[id^="${groupId}-"]`) })
 
 const taskRowTitles = (list) => list.locator('.govuk-task-list__link')
-
-const seriousOrCritical = (violations) =>
-  violations.filter(({ impact }) => ['serious', 'critical'].includes(impact))
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 const ANIMALS = '25'
 const PACKAGES = '5'
@@ -83,8 +70,6 @@ const openHubWithCommodityTotals = async (page) => {
   await expectHub(page)
 }
 
-// The commodity is chosen but its numbers are not entered: the hub state the
-// "Commodity details" row exists to report.
 const openHubOwingTheCommodityNumbers = async (page) => {
   await selectCommodityAndOpenDetails(page)
   await page
@@ -135,9 +120,6 @@ test.describe('hub feature', () => {
       commodities.getByRole('link', { name: copy.rows.commodities.title })
     ).toBeVisible()
 
-    // Nothing has been chosen to give details about yet, and the row is still
-    // a link: the details page sends the trader on to the commodity question
-    // rather than the hub refusing to open it.
     const consignmentDetails = taskRow(page, copy.rows.consignmentDetails.title)
     await expect(consignmentDetails).toContainText(copy.statuses.toDo)
     await expect(
@@ -156,8 +138,6 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { level: 2, name: copy.taskListHeading })
     ).toBeVisible()
 
-    // The commodity-total labels are h3s too, so the section headings are
-    // read off their own class rather than off the level alone.
     await expect(page.locator(SECTION_HEADING)).toHaveText(
       Object.values(copy.groups)
     )
@@ -168,8 +148,6 @@ test.describe('hub feature', () => {
   }) => {
     await startNotification(page)
 
-    // Identification and transit countries do not apply to a notification with
-    // nothing chosen, so these ten are the whole list.
     const openFromTheStart = [
       copy.rows.origin,
       copy.rows.commodities,
@@ -206,15 +184,11 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { name: transportCopy.portOfEntry.title })
     ).toBeVisible()
 
-    // A task opened from the overview returns to the overview when saved,
-    // even before a commodity is chosen.
     await answerArrivalDetails(page)
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
-  // Nothing has been chosen to give numbers for, so the consignment-details
-  // page asks the commodity question rather than drawing an empty table.
   test('the commodity details task opens the commodity question while nothing is chosen', async ({
     page
   }) => {
@@ -314,8 +288,6 @@ test.describe('hub feature — the Commodity details row', () => {
   test('stands as its own task, linking to the consignment-details page', async ({
     page
   }) => {
-    // The hub links straight to the details page now, so that page carries
-    // the return controls a trader needs to stop and leave.
     await openHubOwingTheCommodityNumbers(page)
 
     const details = taskRow(page, copy.rows.consignmentDetails.title)
@@ -327,7 +299,7 @@ test.describe('hub feature — the Commodity details row', () => {
       copy.statuses.complete
     )
 
-    await expectAxeClean(page, 'Partly-complete hub')
+    await expectNoSeriousOrCriticalViolations(page, 'Partly-complete hub')
   })
 
   test('reads Complete once the numbers are saved, leaving the other rows alone', async ({
@@ -419,13 +391,11 @@ test.describe('hub feature — the Review and submit button', () => {
   }) => {
     await startNotification(page)
 
-    // The commodity summary shows from the first visit, so this run covers the
-    // zero-total panels as well as the two buttons under the task list.
     await expect(
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()
 
-    await expectAxeClean(page, 'Hub')
+    await expectNoSeriousOrCriticalViolations(page, 'Hub')
   })
 })
 
@@ -504,42 +474,37 @@ test.describe('hub feature — commodity totals', () => {
 
     const box = boxes.first()
 
-    const styles = await box.evaluate((panel) => {
-      const value = panel.querySelector('.app-commodity-total__value')
-      const label = panel.querySelector('.app-commodity-total__label')
-      const caption = panel.querySelector('.app-commodity-total__caption')
-      return {
-        background: getComputedStyle(panel).backgroundColor,
-        valueColour: getComputedStyle(value).color,
-        valueFontSize: getComputedStyle(value).fontSize,
-        valueFontWeight: getComputedStyle(value).fontWeight,
-        labelColour: getComputedStyle(label).color,
-        labelFontSize: getComputedStyle(label).fontSize,
-        labelFontWeight: getComputedStyle(label).fontWeight,
-        labelMarginTop: getComputedStyle(label).marginTop,
-        captionFontSize: getComputedStyle(caption).fontSize,
-        captionColour: getComputedStyle(caption).color
+    const panelStyles = [
+      [box, { 'background-color': 'rgb(243, 243, 243)' }],
+      [
+        box.locator('.app-commodity-total__value'),
+        { color: GOVUK_BLUE, 'font-size': '48px', 'font-weight': '700' }
+      ],
+      [
+        box.locator('.app-commodity-total__label'),
+        {
+          color: GOVUK_BLUE,
+          'font-size': '24px',
+          'font-weight': '700',
+          'margin-top': '0px'
+        }
+      ],
+      [
+        box.locator('.app-commodity-total__caption'),
+        { 'font-size': '19px', color: 'rgb(11, 12, 12)' }
+      ]
+    ]
+    for (const [element, styles] of panelStyles) {
+      for (const [property, value] of Object.entries(styles)) {
+        await expect(element).toHaveCSS(property, value)
       }
-    })
-
-    expect(styles).toEqual({
-      background: 'rgb(243, 243, 243)',
-      valueColour: 'rgb(29, 112, 184)',
-      valueFontSize: '48px',
-      valueFontWeight: '700',
-      labelColour: 'rgb(29, 112, 184)',
-      labelFontSize: '24px',
-      labelFontWeight: '700',
-      labelMarginTop: '0px',
-      captionFontSize: '19px',
-      captionColour: 'rgb(11, 12, 12)'
-    })
+    }
   })
 
   test('the boxes stack with no horizontal overflow on a small screen', async ({
     page
   }) => {
-    await page.setViewportSize({ width: 360, height: 740 })
+    await page.setViewportSize(PHONE_VIEWPORT)
     await openHubWithCommodityTotals(page)
 
     const boxes = page.locator(TOTAL_BOX)
@@ -549,13 +514,7 @@ test.describe('hub feature — commodity totals', () => {
 
     expect(second.y).toBeGreaterThanOrEqual(first.y + first.height)
 
-    const horizontalOverflow = await page.evaluate(
-      () =>
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth
-    )
-
-    expect(horizontalOverflow).toBeLessThanOrEqual(0)
+    await expectNoHorizontalOverflow(page.locator('html'), 'Hub')
   })
 
   test('hub showing commodity totals has no serious or critical axe violations', async ({
@@ -567,6 +526,6 @@ test.describe('hub feature — commodity totals', () => {
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()
 
-    await expectAxeClean(page, 'Hub with commodity totals')
+    await expectNoSeriousOrCriticalViolations(page, 'Hub with commodity totals')
   })
 })

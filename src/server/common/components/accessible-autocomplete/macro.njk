@@ -1,12 +1,6 @@
 {#
   appAccessibleAutocomplete — a govukSelect enhanced into a type-ahead.
 
-  Renders a native govukSelect (the no-JS fallback that still submits the
-  option value) and marks it for progressive enhancement by the
-  accessible-autocomplete client component. Enhancement config is passed
-  through as data-* attributes, so this macro is field-agnostic and reusable
-  for any long option list on any page.
-
   Params: the usual govukSelect params (id, name, label, hint, errorMessage,
   value, items, classes, formGroup), plus an optional `autocomplete` object:
     autocomplete.minLength     (int)     characters before matches show
@@ -15,6 +9,7 @@
     autocomplete.showAllValues (bool)    show the full list on focus
     autocomplete.autoselect    (bool)    highlight the first match
     autocomplete.defaultValue  (string)  value to prefill the input with
+    autocomplete.placeholder   (string)  text shown in the empty search box
 
   Usage:
   {% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
@@ -45,7 +40,8 @@
       "data-show-all-values": "true" if ac.showAllValues else "false",
       "data-auto-select": "true" if ac.autoselect else "false",
       "data-default-value": ac.defaultValue if ac.defaultValue else "",
-      "data-no-results": ac.noResults if ac.noResults else ""
+      "data-no-results": ac.noResults if ac.noResults else "",
+      "data-placeholder": ac.placeholder if ac.placeholder else ""
     }
   }) }}
 {% endmacro %}

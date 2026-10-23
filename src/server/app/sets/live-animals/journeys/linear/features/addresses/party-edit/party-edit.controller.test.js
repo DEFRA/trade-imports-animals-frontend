@@ -1,26 +1,20 @@
 import { SET_ID } from '../../../../../set.js'
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
-import * as state from '../../../../../../../engine/index.js'
-import * as addressBook from '../../../../../../../services/address-book/index.js'
-import * as countries from '../../../../../../../services/countries/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
+import {
+  addressBookAnswering,
+  addressBookCountriesServing,
+  addressBookRequestUrls,
+  driveHandler,
+  expectOneSaveFallbackLogged,
+  resetMocksAndConfigAfterTests,
+  unavailableBackendError,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import { CONTACT_PARTY, PARTIES } from '../parties.js'
@@ -55,27 +49,14 @@ const FORM = {
   email: 'office@astra.example.com'
 }
 
-// US sits outside the SPS origin block but is in the address book's list.
-const ADDRESS_BOOK_COUNTRIES = [
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'US', name: 'United States' }
-]
-
 const handlerFor = (method, party) =>
   partyEdit.routes.find(
     (route) => route.method === method && route.path.endsWith(party.editSlug)
   ).handler
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-  afterEach(() => vi.restoreAllMocks())
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
 
   const get = handlerFor('GET', party)
   const post = handlerFor('POST', party)
@@ -153,16 +134,15 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
   })
 
   it('Should change only this notification, never the address book', async () => {
-    const partySpy = vi.spyOn(addressBook, 'party')
-    const searchSpy = vi.spyOn(addressBook, 'search')
+    addressBookAnswering({ status: 500 })
 
-    await driveHandler(post, {
+    const result = await driveHandler(post, {
       seed: { [party.id]: STORED },
       payload: FORM
     })
 
-    expect(partySpy).not.toHaveBeenCalled()
-    expect(searchSpy).not.toHaveBeenCalled()
+    expect(result.after[party.id].name).toBe(FORM.name)
+    expect(addressBookRequestUrls()).toEqual([])
   })
 
   it('Should re-render with the address-book error messages and save nothing', async () => {
@@ -171,7 +151,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
       payload: { ...FORM, postcode: '', email: 'not-an-email' }
     })
 
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.view.context.errors).toEqual({
       postcode: 'Enter a postcode',
       email: 'Enter an email address in the correct format'
@@ -201,9 +181,8 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
 })
 
 describe('Edit address details — where the trader returns to', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-  afterEach(() => vi.restoreAllMocks())
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
 
   const consignor = PARTIES.find((party) => party.id === 'consignor')
   const get = handlerFor('GET', consignor)
@@ -245,9 +224,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should accept a country the address book allows outside the SPS origin block', async () => {
-    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue(
-      ADDRESS_BOOK_COUNTRIES
-    )
+    addressBookCountriesServing()
 
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
@@ -261,9 +238,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should offer the address-book country list on the form', async () => {
-    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue(
-      ADDRESS_BOOK_COUNTRIES
-    )
+    addressBookCountriesServing()
 
     const result = await driveHandler(get, { seed: { consignor: STORED } })
 
@@ -274,20 +249,19 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should re-render the form when saving fails', async () => {
-    vi.spyOn(state, 'commit').mockRejectedValue(
-      new BackendRequestError('save answers', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
-
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
-      payload: FORM
+      payload: FORM,
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toEqual(STORED)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })

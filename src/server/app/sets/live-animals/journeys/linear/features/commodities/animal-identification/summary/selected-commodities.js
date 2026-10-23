@@ -1,24 +1,23 @@
-import * as commodities from '../../../../../../services/commodities/index.js'
+import { hasAnimalCount } from '../../lines.js'
+import { buildSelectedCommodityRows } from '../../view-model/selected-commodity-rows.js'
 
-// The declared count is a number once the line is saved and the entered string
-// on a re-render, so the summary reads it as text either way. A line the user
-// has not counted yet shows nothing rather than "undefined".
-const countText = (value) => String(value ?? '')
+const sumOfCounts = (lines) =>
+  lines.reduce(
+    (total, { entry }) => total + Number(entry.numberOfAnimalsQuantity),
+    0
+  )
 
-// One summary row per commodity line on the consignment — the whole list, not
-// only the lines with a card below it, because a commodity carrying no
-// identifier of its own earns a row here but no identification card. Each row
-// carries the commodity code, the species' common name and the number of
-// animals the line declares. The consignment-details page shows
-// the same code/common-name pairing without the count and with a Remove
-// action; here the row action is a Change link back to the commodity question,
-// which is where the commodity list is answered.
+const totalAnimalsText = (lines) => {
+  const counted = lines.filter(hasAnimalCount)
+  return counted.length === 0 ? '' : String(sumOfCounts(counted))
+}
+
 export const buildSelectedCommodities = (lines) =>
-  lines.map(({ entry }) => ({
-    code: commodities.commodityCodeFor(entry.commoditySelection) ?? '',
-    name: commodities.speciesCommonName(
-      entry.commoditySelection,
-      entry.speciesSelection
-    ),
-    animals: countText(entry.numberOfAnimalsQuantity)
-  }))
+  buildSelectedCommodityRows(lines).map(
+    ({ code, name, latinNames, lines: rowLines }) => ({
+      code,
+      name,
+      latinNames,
+      animals: totalAnimalsText(rowLines)
+    })
+  )

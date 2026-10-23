@@ -104,7 +104,7 @@ const nextInTaskRowTests = () => {
     )
   })
 
-  it('Should return the main reason for import to the hub rather than on to the additional details', () => {
+  it('Should return the main import reason to the hub rather than on to the additional details', () => {
     expect(nextInTaskRow('import-reason', scope, 'journey-1')).toMatch(hub)
     expect(nextInSection('import-reason', scope, 'journey-1')).toMatch(
       /\/additional-details$/

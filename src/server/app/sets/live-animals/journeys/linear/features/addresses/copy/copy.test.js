@@ -1,13 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
+import {
+  driveHandler,
+  sampleText,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import { copy as sectionCaptionsEn } from '../../../flow/section-captions/copy/copy.en.js'
@@ -17,31 +16,27 @@ import { PARTIES } from '../parties.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
-
 describe('#copy', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
-      const text =
-        typeof value === 'function' ? value('sample', 'sample') : value
+      const text = sampleText(value, ['sample', 'sample'])
       expect(typeof text, `${path} must resolve to a string`).toBe('string')
       expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
     }
   })
 
-  it('Should interpolate the results caption', () => {
-    expect(copy.picker.resultsCaption(5, 40)).toBe('Showing 5 of 40 addresses')
+  it('Should word the results heading and interpolate the results count', () => {
+    expect(copy.picker.resultsHeading).toBe('Select an address')
+    expect(copy.picker.resultsCount(5, 40)).toBe('Showing 5 out of 40 results')
   })
 
-  // A picker has no page id for `sectionCaptionOf` to resolve, so it holds
-  // its own copy of the section name.
+  it('Should word the Welsh results heading and count', () => {
+    expect(copyCy.picker.resultsHeading).toBe('Dewiswch gyfeiriad')
+    expect(copyCy.picker.resultsCount(5, 40)).toBe(
+      'Yn dangos 5 allan o 40 canlyniad'
+    )
+  })
+
   it.each([
     ['en', copy, sectionCaptionsEn],
     ['cy', copyCy, sectionCaptionsCy]
@@ -58,11 +53,39 @@ describe('#copy', () => {
     expect(copy.hub.title).toBe('Consignment addresses')
   })
 
-  it('Should word the CPH hub row and its hint in lower case with "number" after the abbreviation', () => {
+  it('Should word the CPH section, its hint and its add link in lower case with "number" after the abbreviation', () => {
     expect(copy.hub.cph.title).toBe('County parish holding (CPH) number')
     expect(copy.hub.cph.hint).toBe(
       'The county parish holding (CPH) number identifies the holding where the animals will be kept.'
     )
+    expect(copy.hub.cph.add).toBe('Add a CPH number')
+  })
+
+  it('Should introduce the page and warn about false addresses without a closing full stop', () => {
+    expect(copy.hub.intro).toBe(
+      'Add all the addresses that are involved in the consignment.'
+    )
+    expect(copy.hub.warning).toBe(
+      'Providing a false address is an act of fraud'
+    )
+    expect(copyCy.hub.warning).toBe(
+      'Mae darparu cyfeiriad ffug yn weithred o dwyll'
+    )
+  })
+
+  it('Should call the consignor Consignor in English and Anfonwr in Welsh', () => {
+    expect(copy.parties.consignor.title).toBe('Consignor')
+    expect(copyCy.parties.consignor.title).toBe('Anfonwr')
+  })
+
+  it('Should name each party in its add link', () => {
+    expect(PARTIES.map(({ id }) => copy.parties[id].add)).toEqual([
+      'Add a place of origin',
+      'Add a consignor',
+      'Add a consignee',
+      'Add an importer',
+      'Add a place of destination'
+    ])
   })
 
   it('Should feed every party spoke its title, hint and error from the module', () => {
@@ -75,12 +98,7 @@ describe('#copy', () => {
 })
 
 describe('GET consignment addresses — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the hub copy namespace and the shared chrome copy', async () => {
     const get = addresses.routes.find((route) => route.method === 'GET').handler
@@ -90,6 +108,8 @@ describe('GET consignment addresses — copy reaches the view', () => {
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
       'Save and continue'
     )
-    expect(result.view.context.rows.at(0).value.text).toBe(copy.hub.notAddedYet)
+    expect(result.view.context.sections.at(0).addLink.text).toBe(
+      copy.parties.placeOfOrigin.add
+    )
   })
 })

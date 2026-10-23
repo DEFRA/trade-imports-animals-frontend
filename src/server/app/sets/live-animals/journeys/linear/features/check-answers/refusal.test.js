@@ -113,8 +113,6 @@ describe('#isReviewRefused', () => {
   })
 
   it('Should refuse a notification whose stored document is still being scanned', async () => {
-    // Stub scanStatus maps filename → status when the uploadId has not been
-    // seen by upload(); "never-scans" stays PENDING on non-refresh reads.
     const journey = await seedAnd(
       fullyAnswered({
         documents: [doc({ filename: PENDING_FILENAME })]
@@ -146,19 +144,15 @@ describe('#isReviewRefused', () => {
 })
 
 describe('#documentScanCardErrors', () => {
-  const askScanErrors = (answers, options = {}) =>
-    documentScanCardErrors(answers, {
-      request: journeyRequest('journey-1'),
-      ...options
-    })
+  const request = journeyRequest('journey-1')
 
   it('Should return no errors when no documents are stored', async () => {
-    expect(await askScanErrors({})).toEqual({})
+    expect(await documentScanCardErrors(request, {})).toEqual({})
   })
 
   it('Should return no errors when every stored document has completed scanning', async () => {
     expect(
-      await askScanErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: 'clean.pdf' })]
       })
     ).toEqual({})
@@ -166,7 +160,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a document still being scanned', async () => {
     expect(
-      await askScanErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: PENDING_FILENAME })]
       })
     ).toEqual({ documents: documentsEn.errors.someStillScanning })
@@ -174,7 +168,8 @@ describe('#documentScanCardErrors', () => {
 
   it('Should not name a document still being scanned when pending is excluded', async () => {
     expect(
-      await askScanErrors(
+      await documentScanCardErrors(
+        request,
         { documents: [doc({ filename: PENDING_FILENAME })] },
         { includePending: false }
       )
@@ -183,7 +178,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a REJECTED scan ahead of one still scanning', async () => {
     expect(
-      await askScanErrors({
+      await documentScanCardErrors(request, {
         documents: [
           doc({ filename: PENDING_FILENAME }),
           doc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })

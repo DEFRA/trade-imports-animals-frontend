@@ -6,6 +6,8 @@
 
 The live-animals import notification journey runs on a shared obligation and journey platform. See the [platform documentation](src/server/app/docs/README.md) and the [live-animals set and journey documentation](src/server/app/sets/live-animals/docs/README.md).
 
+The shared type-ahead is documented in the [accessible autocomplete guide](src/server/common/components/accessible-autocomplete/README.md).
+
 Run its unit suite from the frontend repo root: `npm run test:live-animals`.
 
 - [Requirements](#requirements)

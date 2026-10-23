@@ -41,7 +41,12 @@ import { fileResponse } from './handlers/reads/download.js'
 import { unsavedClaimedUpload } from './handlers/unsaved-claim.js'
 import { documentsPage as page } from './page.js'
 import { validation } from './validate.js'
-import { isStillSettling, scanned, withScanStatus } from './scan/status.js'
+import {
+  hasDocumentsNotClearedByScan,
+  scanned,
+  scansNotCleared,
+  withScanStatus
+} from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import { render as renderView } from './view-model/render.js'
 
@@ -113,6 +118,7 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   }
   if (claimed?.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
     const { failure } = await kit.recoverableSave(
+      request,
       async () => {
         await state.appendEntry(request, h, 'documents', claimed.entry)
       },
@@ -132,6 +138,11 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
             correlationId
           }
         })
+      },
+      {
+        action: 'save-document-taken-on',
+        uploadId: claimed.entry.uploadId,
+        correlationId
       }
     )
     if (failure) {
@@ -141,8 +152,6 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   return backToPage(request, h)
 }
 
-// The JSON leg the client bundle polls. A poll is the scripted equivalent of
-// the refresh link, so it asks the upload service for a fresh status.
 const getStatus = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
@@ -152,12 +161,14 @@ const getStatus = async (request, h) => {
   return h.response({ documents: scanned(documents) })
 }
 
-// A well-formed id belonging to somebody else's journey is answered 404, not
-// 403 — the journey never confirms an upload it does not own exists.
 const getFile = async (request, h) => {
   const { answers, evaluation } = await state.get(request, h)
-  const { uploadId } = request.params
+  const { journeyId, uploadId } = request.params
   if (!ownsUpload(answers, evaluation, uploadId)) {
+    request.logger.info(
+      { journeyId, uploadId },
+      'Document file refused: upload not held by the journey'
+    )
     return h.response().code(HTTP_STATUS_NOT_FOUND)
   }
   return fileResponse(h, await documentUploads.streamFile(uploadId))
@@ -176,6 +187,20 @@ const isAlreadySaved = (pageState, uploadId) =>
 const documentAt = (answers, evaluation, index) =>
   state.collectionView(answers, ['documents'], evaluation)[index]?.entry
 
+const renderRemovalLeftToRetry = async (
+  request,
+  h,
+  pageState,
+  pendingDocumentRemoval
+) =>
+  render(request, h, pageState, EMPTY_FORM, {
+    extra: {
+      recoverableError: true,
+      pendingDocumentRemoval,
+      ...(await addFormFor(request, pageState.journey.journeyId))
+    }
+  }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+
 const retryProjectionSave = async (
   request,
   h,
@@ -183,28 +208,15 @@ const retryProjectionSave = async (
   pendingDocumentRemoval
 ) => {
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, {
         documents: pageState.answers.documents ?? []
       })
     },
-    async (err) => {
-      request.logger.error(
-        {
-          err,
-          journeyId: pageState.journey.journeyId,
-          uploadId: pendingDocumentRemoval.uploadId
-        },
-        'Could not save the retried document removal'
-      )
-      return render(request, h, pageState, EMPTY_FORM, {
-        extra: {
-          recoverableError: true,
-          pendingDocumentRemoval,
-          ...(await addFormFor(request, pageState.journey.journeyId))
-        }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    () =>
+      renderRemovalLeftToRetry(request, h, pageState, pendingDocumentRemoval),
+    { action: 'save-document-removal', ...pendingDocumentRemoval }
   )
   if (failure) {
     return failure
@@ -220,6 +232,10 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
       )
     : index
   if (retryUploadId && retryIndex === -1) {
+    request.logger.info(
+      { journeyId: request.params.journeyId, index, uploadId: retryUploadId },
+      'Document already removed: saving the notification without it'
+    )
     return retryProjectionSave(request, h, pageState, {
       index,
       uploadId: retryUploadId
@@ -228,40 +244,37 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
 
   const entry = documentAt(pageState.answers, pageState.evaluation, retryIndex)
   if (!entry) {
+    request.logger.info(
+      { journeyId: request.params.journeyId, index },
+      'Document removal refused: no document at the index'
+    )
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
   if (entry.uploadId && !retryUploadId) {
     try {
       await documentUploads.remove(entry.uploadId)
-    } catch {
+    } catch (err) {
+      request.logger.warn(
+        {
+          journeyId: request.params.journeyId,
+          uploadId: entry.uploadId,
+          err
+        },
+        'Document not removed: upload service failed, document kept'
+      )
       return backToPage(request, h)
     }
   }
+  const pendingDocumentRemoval = { index, uploadId: entry.uploadId }
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
-    async (err) => {
-      request.logger.error(
-        {
-          err,
-          journeyId: pageState.journey.journeyId,
-          uploadId: entry.uploadId
-        },
-        'Removed the upload but could not save the document removal'
-      )
-      return render(request, h, pageState, EMPTY_FORM, {
-        extra: {
-          recoverableError: true,
-          pendingDocumentRemoval: {
-            index,
-            uploadId: entry.uploadId
-          },
-          ...(await addFormFor(request, pageState.journey.journeyId))
-        }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    () =>
+      renderRemovalLeftToRetry(request, h, pageState, pendingDocumentRemoval),
+    { action: 'remove-document', ...pendingDocumentRemoval }
   )
   if (failure) {
     return failure
@@ -273,11 +286,17 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
 const continueToNextPage = async (request, h, pageState) =>
   h.redirect(await kit.nextTarget(request, page, pageState.scope))
 
-const renderStillSettling = async (request, h, pageState) =>
-  render(request, h, pageState, EMPTY_FORM, {
+const renderStillSettling = async (request, h, pageState) => {
+  kit.logRefusal(request, {
+    fieldErrors: { documents: copy.errors.cannotContinue },
+    reason: 'scans-not-cleared',
+    scansNotCleared: scansNotCleared(pageState.documents)
+  })
+  return render(request, h, pageState, EMPTY_FORM, {
     summaryErrors: settlingSummaryErrors(pageState.documents),
     extra: await addFormFor(request, pageState.journey.journeyId)
-  })
+  }).code(HTTP_STATUS_BAD_REQUEST)
+}
 
 // Leaving the page, once nothing is left to save. A file still being checked
 // holds Continue back, and so does a document the service has taken on that
@@ -288,19 +307,16 @@ const leavePage = async (request, h) => {
   if (kit.hubExitTarget(request)) {
     return continueToNextPage(request, h, pageState)
   }
-  if (isStillSettling(pageState.documents)) {
+  if (hasDocumentsNotClearedByScan(pageState.documents)) {
     return renderStillSettling(request, h, pageState)
   }
   const unsaved = await unsavedClaimedUpload(request, pageState)
   if (unsaved.uploadId) {
-    request.logger.info(
-      {
-        journeyId: pageState.journey.journeyId,
-        uploadId: unsaved.uploadId,
-        correlationId: unsaved.correlationId
-      },
-      'Continue refused: the notification does not list a document the service has taken on'
-    )
+    kit.logRefusal(request, {
+      reason: 'document-taken-on-but-not-listed',
+      uploadId: unsaved.uploadId,
+      correlationId: unsaved.correlationId
+    })
   }
   if (unsaved.uploadId || unsaved.unchecked) {
     return renderRecoverableFailure(request, h, pageState, EMPTY_FORM, {

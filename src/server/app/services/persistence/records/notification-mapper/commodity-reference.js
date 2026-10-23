@@ -11,6 +11,7 @@ export const configureCommodityReference = (setId, commodityReference) => {
 export const commodityCodeFor = (...args) =>
   reference().commodityCodeFor(...args)
 
-export const speciesLabel = (...args) => reference().speciesLabel(...args)
+export const speciesLatinName = (...args) =>
+  reference().speciesLatinName(...args)
 
 export const typeTextForId = (...args) => reference().typeTextForId(...args)

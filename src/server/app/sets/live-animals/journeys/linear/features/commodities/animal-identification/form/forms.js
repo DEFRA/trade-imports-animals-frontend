@@ -1,4 +1,3 @@
-import * as state from '../../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
@@ -16,6 +15,7 @@ import {
   permanentAddressApplies,
   scopedFields
 } from '../identifier/fields.js'
+import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -63,37 +63,37 @@ const buildLineForm = (payload, commodity, index) => {
   }
 }
 
-const capIfAtMax = (answers, index, entry) => {
-  const cap = state.collectionCapAt(answers, [
-    'commodityLines',
-    index,
-    'animalIdentifiers'
-  ])
-  return cap !== null && (entry.animalIdentifiers ?? []).length >= cap
-    ? cap
-    : null
+const capIfAtCap = (answers, { index, entry }) => {
+  const cap = identifierCapOf(answers, index)
+  return isAtCap(cap, (entry.animalIdentifiers ?? []).length) ? cap : null
 }
 
-export const buildLineForms = (payload, answers, lines) => {
-  const atMaxByIndex = new Map(
+const linesToReadFormsFor = (action, answers, lines) => {
+  const addIndex = parseAddAction(action)
+  return addIndex === null
+    ? lines.filter(({ index }) =>
+        holdsOneAnimal(identifierCapOf(answers, index))
+      )
+    : lines.filter(({ index }) => index === addIndex)
+}
+
+export const buildLineForms = (payload, answers, lines, action) => {
+  const capByLineAtCap = new Map(
     lines
-      .map(({ index, entry }) => [index, capIfAtMax(answers, index, entry)])
+      .map((line) => [line.index, capIfAtCap(answers, line)])
       .filter(([, cap]) => cap !== null)
   )
-  const built = lines
-    .filter(({ index }) => !atMaxByIndex.has(index))
+  const built = linesToReadFormsFor(action, answers, lines)
+    .filter(({ index }) => !capByLineAtCap.has(index))
     .map(({ index, entry }) => ({
       index,
       ...buildLineForm(payload, entry.commoditySelection, index)
     }))
   const forms = new Map(built.map(({ index, form }) => [index, form]))
   const errors = Object.assign({}, ...built.map((line) => line.errors))
-  return { forms, atMaxByIndex, errors }
+  return { forms, capByLineAtCap, errors }
 }
 
-// "Save and add another" pressed against a card already at its cap — a
-// stale form racing the engine-enforced cardinality link. Surface the
-// rejection; never save silently.
 export const capReachedResponse = ({
   render,
   request,
@@ -103,24 +103,18 @@ export const capReachedResponse = ({
   evaluation,
   forms,
   addIndex,
-  atMaxByIndex
+  capByLineAtCap
 }) => {
-  if (addIndex === null || !atMaxByIndex.has(addIndex)) {
+  if (addIndex === null || !capByLineAtCap.has(addIndex)) {
     return null
   }
+  const cap = capByLineAtCap.get(addIndex)
   return render(request, h, journey, answers, evaluation, {
     forms,
-    cardErrors: [
-      {
-        index: addIndex,
-        text: copy.errors.capReached(atMaxByIndex.get(addIndex))
-      }
-    ]
+    cardErrors: [{ index: addIndex, cap, text: copy.errors.capReached(cap) }]
   })
 }
 
-// "Save and add another" pressed on a card with nothing entered anywhere:
-// never append an empty record — name the gap instead.
 export const withEmptyFormGuard = (errors, forms, addIndex) => {
   const anyData = [...forms.values()].some((form) => form.holdsData)
   if (addIndex === null || anyData || !forms.has(addIndex)) {

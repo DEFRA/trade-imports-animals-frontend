@@ -10,7 +10,7 @@ import {
   FILE_VIRUS
 } from '../../../../../../../services/cdp-uploader/file-error-codes.js'
 import { copy as en } from '../copy/copy.en.js'
-import { FILE_TYPE_MESSAGE, OVERSIZE_FILE_MESSAGE } from '../upload-config.js'
+import { fileTypeMessage, oversizeMessage } from '../upload-config.js'
 import { MESSAGE_BY_FILE_ERROR_CODE, submittedFileError } from './errors.js'
 
 const refusedFile = (errorCode) => ({
@@ -23,8 +23,8 @@ describe('submittedFileError', () => {
   it.each([
     [FILE_VIRUS, en.errors.fileVirus],
     [FILE_EMPTY, en.errors.fileEmpty],
-    [FILE_TOO_LARGE, OVERSIZE_FILE_MESSAGE],
-    [FILE_INVALID_TYPE, FILE_TYPE_MESSAGE],
+    [FILE_TOO_LARGE, oversizeMessage(en)],
+    [FILE_INVALID_TYPE, fileTypeMessage(en)],
     [FILE_UPLOAD_FAILED, en.errors.uploadFailed],
     [FILE_DOWNLOAD_FAILED, en.errors.fileDownloadFailed]
   ])('answers %s with the message written for it', (errorCode, message) => {

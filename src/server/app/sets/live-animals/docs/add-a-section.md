@@ -97,7 +97,6 @@ journeys/linear/features/<group>/
 │   ├── copy.en.js
 │   └── copy.test.js
 ├── fit/
-│   ├── axe.js
 │   ├── <first-page>.fit.spec.js
 │   └── <second-page>.fit.spec.js
 ├── <first-page>/
@@ -133,10 +132,13 @@ Follow [add-a-page.md](add-a-page.md) for each page. Each controller exports:
 - GET and POST handlers
 - `routes`, normally from `kit.pageRoutes(page, { get, post })`
 
-GET reads once through `state.get()`. POST validates raw input, returns 400 with
-raw values on error, commits cleaned values on success and redirects through
-`kit.nextTarget()`. Wrap every persistence write in `kit.recoverableSave()` and
-return the same form with status 500 for a marked failure.
+GET reads once through `state.get()`. POST validates raw input and, on error,
+returns 400 with the raw values and logs nothing for a user's own field errors
+(a refusal that is not the user's input error logs once through `kit.logRefusal`
+with the journey id); on success it commits cleaned values and redirects through
+`kit.nextTarget()`.
+Wrap every persistence write in `kit.recoverableSave(request, …)`, which logs a
+marked failure once, and return the same form with status 500 for it.
 
 Use `scope.has()` for conditional fields. Do not render, validate or commit a
 field that is out of scope. Let the evaluator purge a value when its obligation
@@ -207,6 +209,10 @@ guard". Update
 [`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
 do; its coverage invariant fails if you forget.
 
+A step that applies only to some notifications also takes `offersBackWhen`, a
+function of the notification's answers that says when the step is a Back
+destination. See [`journey-flow-and-gates.md`](journey-flow-and-gates.md).
+
 ## 6. Add one task row and wire it to the hub
 
 Import the page identities in [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js) and
@@ -258,7 +264,7 @@ flow section or task row does not add a config entry.
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
-journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`,
+journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`,
 `FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no
@@ -270,7 +276,9 @@ Registration work for the feature group is therefore limited to:
 2. add its binding bundle to `featureEvaluationBindings`
 3. add page identities to `sections` and `taskRows`
 4. add task-row ids and copy to the hub
-5. add pages to `run.js` in journey order — the run is the whole notification
+5. add pages to `run.js` in journey order — the run is the whole notification —
+   and, on a step whose Back link should open an earlier step during the run, name
+   that step in its `backCandidates`
 
 Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
 the journey's template identity, cookie identity or injected policy surface itself
@@ -280,8 +288,10 @@ changes.
 
 Add a section or cards for the feature under
 [`journeys/linear/features/check-answers/view-model/`](../journeys/linear/features/check-answers/view-model/index.js).
-Add English and Welsh headings, row labels and value labels to the
-check-answers copy bundles.
+Add English and Welsh headings and row labels to the check-answers copy
+bundles. A value label that the feature's own page already shows is read from
+that feature's label function, never copied into the check-answers copy. Value
+labels only the review shows go in the check-answers copy bundles.
 
 Rows carry no Change link — `row(key, value)` is a key and a value. Each new
 card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
@@ -308,7 +318,12 @@ Do not invent fields.
 
 ## 9. Register client JavaScript when needed
 
-If any page needs feature JavaScript:
+If any page needs JavaScript, use a component in
+`src/client/javascripts/components/` registered in `application.js`, or a
+feature entry: [add-a-page.md section 8](add-a-page.md#8-register-client-javascript-when-needed)
+holds the steps for the component route.
+
+For the feature entry route:
 
 1. Add a client entry module, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
@@ -341,7 +356,7 @@ set-up in the test file:
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`. A new
+  `selectSpecies`, `chooseTypeAheadOption` and `choosePortOfEntry`. A new
   section adds its own `answer<Section>` step here and to
   `completeAnswerSections`
 - set-up shared only inside one feature group: that group's `test-support.js`,
@@ -354,11 +369,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 
@@ -392,24 +403,26 @@ Add axe coverage for every new page in both states:
 - initial render
 - validation error state after the error summary appears
 
-Build axe with `AxeBuilder({ page })`, fail on every `serious` or `critical`
-violation, and filter only a proved component false positive. Do not spell the
-tag list out in each spec: put it in one helper the whole group calls.
+Call `expectNoSeriousOrCriticalViolations(page, subject)` from
+[`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
+Do not build `AxeBuilder` in a spec.
 
 Add or extend the hub axe test when the new row or a new group heading changes
 the hub state.
 
-[`journeys/linear/features/transport/fit/axe.js`](../journeys/linear/features/transport/fit/axe.js)
-is that helper for the multi-page group, and
+Every page in the set calls that one helper, for example
 [`arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js)
 and
-[`transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js)
-both call it. One helper beside the group's specs keeps the tag list and the
-impact threshold identical on every page of the group, so a second page cannot
-quietly be checked against a narrower set of rules than the first. Its tags are
-`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`: axe-core tags a rule
-by the WCAG version that introduced it, so a rule reachable only through the
-2.1 or 2.2 tags would never run on the two WCAG 2.0 tags alone.
+[`transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js).
+One helper keeps the tag list and the impact threshold identical on every page,
+so a page cannot quietly be checked against a narrower set of rules than the
+first. Its tags are `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`:
+axe-core tags a rule by the WCAG version that introduced it, so a rule
+reachable only through the 2.1 or 2.2 tags would never run on the two WCAG 2.0
+tags alone. It fails on every `serious` or `critical` violation and filters the
+one proved component false positive: govuk-frontend's conditional reveal puts
+`aria-expanded` on a radio or checkbox, which axe reports as
+`aria-allowed-attr`.
 
 ## 11. Run every check
 

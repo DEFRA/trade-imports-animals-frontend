@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const DROPPED_FILENAME = 'dropped-itahc.pdf'
@@ -20,13 +19,8 @@ const chosenFileStatus = (page) =>
 
 // The status line only exists once the page's bundle has enhanced the input,
 // so waiting for it is what tells the test the drop zone is listening.
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-  await expect(chosenFileStatus(page)).toHaveText(copy.file.noFileChosen)
-}
+const expectDropZoneListening = (page) =>
+  expect(chosenFileStatus(page)).toHaveText(copy.file.noFileChosen)
 
 const fileInput = (page) => page.locator('input[type="file"]')
 
@@ -54,6 +48,7 @@ test.describe('document upload drop zone', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openDocuments(page)
+    await expectDropZoneListening(page)
   })
 
   test('offers a drop zone with the service’s own choose-file button and drop instruction', async ({

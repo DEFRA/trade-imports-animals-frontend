@@ -165,6 +165,7 @@ const post = async (request, h) => {
     : undefined
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = chosen
         ? await state.commit(request, h, {

@@ -44,5 +44,10 @@ export const scanned = (documents) =>
       tagKey: tagKeyFor(item)
     }))
 
-export const isStillSettling = (documents) =>
-  documents.some((item) => item.scanStatus !== SCAN_STATUS.COMPLETE)
+const isNotClearedByScan = (item) => item.scanStatus !== SCAN_STATUS.COMPLETE
+
+export const hasDocumentsNotClearedByScan = (documents) =>
+  documents.some(isNotClearedByScan)
+
+export const scansNotCleared = (documents) =>
+  scanned(documents.filter(isNotClearedByScan))

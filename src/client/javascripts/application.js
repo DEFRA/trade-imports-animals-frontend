@@ -9,7 +9,9 @@ import {
 } from 'govuk-frontend'
 import { DatePicker } from '@ministryofjustice/frontend'
 import AccessibleAutocomplete from './components/accessible-autocomplete.js'
+import RegionCodePrefix from './components/region-code-prefix.js'
 import StatusAnnouncer from './components/status-announcer.js'
+import TransporterFilter from './components/transporter-filter.js'
 
 createAll(Button)
 createAll(Checkboxes)
@@ -19,4 +21,6 @@ createAll(ServiceNavigation)
 createAll(SkipLink)
 createAll(DatePicker)
 createAll(AccessibleAutocomplete)
+createAll(RegionCodePrefix)
 createAll(StatusAnnouncer)
+createAll(TransporterFilter)

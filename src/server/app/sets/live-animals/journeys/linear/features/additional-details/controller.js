@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -27,19 +26,18 @@ const copy = copyFor({ en, cy })
 
 const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
 
-const render = (
+const render = async (
+  request,
   h,
-  journey,
+  current,
   values,
-  showUnweaned,
-  errors = {},
-  recoverableError = false
+  { showUnweaned, errors = {}, recoverableError = false }
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
@@ -60,33 +58,33 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers, scope } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, scope } = current
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const { values, errors } = await validation.onStored(answers, {
     showUnweaned
   })
-  return render(h, journey, values, showUnweaned, errors)
+  return render(request, h, current, values, { showUnweaned, errors })
 }
 
 const post = async (request, h) => {
-  const { journey, scope } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { scope } = current
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},
     { showUnweaned }
   )
   if (hasErrors(errors)) {
-    return render(h, journey, values, showUnweaned, errors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return (
+      await render(request, h, current, values, { showUnweaned, errors })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
-      // The reveal decides which of the two fields the notification carries —
-      // committing the unweaned answer under a commodity that does not ask for
-      // it would keep it around after a flip.
       committed = await state.commit(request, h, {
         animalsCertifiedFor: answers.animalsCertifiedFor,
         ...(showUnweaned
@@ -94,10 +92,13 @@ const post = async (request, h) => {
           : {})
       })
     },
-    () =>
-      render(h, journey, values, showUnweaned, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+    async () =>
+      (
+        await render(request, h, current, values, {
+          showUnweaned,
+          recoverableError: true
+        })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) {
     return failure

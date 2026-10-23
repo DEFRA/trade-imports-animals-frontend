@@ -13,6 +13,7 @@ import {
   getHandlerOf,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
+import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import { exitTarget, withChangeContext } from '../../../../../shared/kit.js'
 
@@ -37,9 +38,7 @@ const lineSeed = {
   ]
 }
 
-// The line's animal count is save-blocking, so a details POST that is meant to
-// reach its redirect has to carry one.
-const lineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
+const payloadWithAnimalCount = { 'numberOfAnimalsQuantity-0': '1' }
 
 const configure = () => {
   configureRecords(SET_ID, recordsStub)
@@ -126,7 +125,7 @@ describe('change context — context survives the internal loop navigation', () 
     expect(after.commodityLines ?? []).toHaveLength(0)
   })
 
-  it('Should carry the context through an identifier Save-and-add-another PRG cycle with the unit committed', async () => {
+  it('Should carry the context through an identifier Save-and-add-another PRG cycle for a two-animal line with the unit committed', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
@@ -135,7 +134,7 @@ describe('change context — context survives the internal loop navigation', () 
           'animalIdentifierPassport-0': 'UK123456789'
         },
         query: change,
-        seed: lineSeed
+        seed: seedWithCommodityLineOfAnimals(2)
       }
     )
     expect(response).toEqual({
@@ -181,7 +180,7 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
-        payload: lineCountPayload,
+        payload: payloadWithAnimalCount,
         query: change,
         seed: lineSeed
       }
@@ -215,7 +214,7 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
-        payload: lineCountPayload,
+        payload: payloadWithAnimalCount,
         seed: { countryOfOrigin: 'FR', ...lineSeed }
       }
     )
@@ -235,7 +234,7 @@ describe('change context — only the collection exit repoints to check your ans
 
   it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
     const details = await driveHandler(postHandlerOf(consignmentDetails), {
-      payload: { ...lineCountPayload, exit: 'hub' },
+      payload: { ...payloadWithAnimalCount, exit: 'hub' },
       query: change,
       seed: lineSeed
     })

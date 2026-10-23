@@ -1,7 +1,7 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { escapeHtml } from './text.js'
+import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
 
 const copy = copyFor({ en, cy })
 

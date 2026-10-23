@@ -22,38 +22,32 @@ export const list = () => COMMODITY_OPTIONS
 
 export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 
+export const commodityLabel = (name, code) =>
+  code ? `${name} (${code})` : name
+
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 
 export const typesFor = (name) => COMMODITY_TYPE_DATA[name] ?? []
 
-// The type id whose species list holds this species value — a species belongs
-// to exactly one type, so the line's stored commodityType derives from its
-// species. Single-type commodities collapse to their one type id.
 export const typeIdForSpecies = (name, speciesValue) =>
   typesFor(name).find((type) => type.species.includes(speciesValue))?.id
 
-// The backend-payload text for a stored type id — 'Domestic'/'Game' for Cow,
-// blank for the single-type commodities (dropped from the payload).
 export const typeTextForId = (name, id) =>
   typesFor(name).find((type) => type.id === id)?.text
 
 export const species = () => SPECIES_OPTIONS
 
-export const speciesLabel = (code) =>
+const speciesLabel = (code) =>
   SPECIES_OPTIONS.find((option) => option.value === code)?.text
+
+export const speciesLatinName = (value) => speciesLabel(value) ?? value
 
 export const speciesFor = (name) => COMMODITY_SPECIES[name] ?? []
 
-// What the species is called in English. A species the catalogue holds no
-// common name for is named after its commodity instead.
 export const speciesCommonName = (name, value) =>
   speciesFor(name).find((option) => option.value === value)?.commonName ?? name
 
-// Commodity code 01061900 covers several commodities — cat, dog, ferret and
-// other live mammals — and hundreds of species between them. The design lists a
-// chosen species of one of those under its own name rather than folding it into
-// the commodity (design 01-14).
 const PER_SPECIES_COMMODITY_CODE = '01061900'
 
 export const speciesListedIndividually = (name) =>
@@ -64,10 +58,6 @@ export const isCommoditySpecies = (name, value) =>
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
 
-// The identifiers this commodity carries, in the order it asks for them. A
-// commodity the catalogue holds no identifiers for is asked for none — design
-// release 1 has no free-text fallback, so such a commodity gets no
-// identification panel at all.
 export const identifiersFor = (name) => COMMODITY_IDENTIFIERS[name] ?? []
 
 export const microchipCommodities = () => MICROCHIP_COMMODITIES
@@ -80,9 +70,10 @@ export const earTagCommodities = () => EAR_TAG_COMMODITIES
 
 export const horseNameCommodities = () => HORSE_NAME_COMMODITIES
 
-// The commodities that carry an identifier of their own — the ones design
-// release 1 asks a trader to identify.
 export const identifiedCommodities = () => IDENTIFIED_COMMODITIES
+
+export const needsIdentifying = (line) =>
+  IDENTIFIED_COMMODITIES.includes(line?.commoditySelection)
 
 export const permanentAddressCommodities = () => PERMANENT_ADDRESS_COMMODITIES
 

@@ -5,17 +5,16 @@ import { captionSections, sectionCaptionOf } from './index.js'
 import { copy as en } from './copy/copy.en.js'
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
+const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
 const CONSIGNMENT_PARTIES = 'Consignment parties'
 const TRANSPORT_AND_ARRIVAL = 'Transport and arrival'
 const NEW_TRANSPORTER = 'Add a new transporter'
 
-// The page a reader lands on, and the section it should name. One case per
-// page so a mis-filed page names itself in the failure.
 const CAPTIONED = [
   ['dashboard', 'Dashboard'],
   ['origin', ABOUT_THE_CONSIGNMENT],
   ['commodities', ABOUT_THE_CONSIGNMENT],
-  ['consignmentDetails', ABOUT_THE_CONSIGNMENT],
+  ['consignmentDetails', DESCRIPTION_OF_THE_GOODS],
   ['animalIdentification', ABOUT_THE_CONSIGNMENT],
   ['import-reason', ABOUT_THE_CONSIGNMENT],
   ['additional-details', 'Commodity details'],
@@ -30,10 +29,7 @@ const CAPTIONED = [
   ['accompanying-documents', 'Documents']
 ]
 
-// Pages that open straight into their heading: the overview and the three
-// pages that close the notification say nothing about a section, and the
-// contact address is asked once rather than as part of one.
-const BARE = [
+const PAGES_WITHOUT_A_CAPTION = [
   'consignment-contact-select',
   'notification-view',
   'declaration',
@@ -45,7 +41,7 @@ describe('#sectionCaptionOf — the section a page names above its heading', () 
     expect(sectionCaptionOf(pageId)).toBe(expected)
   })
 
-  it.each(BARE)('Should leave %s uncaptioned', (pageId) => {
+  it.each(PAGES_WITHOUT_A_CAPTION)('Should leave %s uncaptioned', (pageId) => {
     expect(sectionCaptionOf(pageId)).toBeUndefined()
   })
 
@@ -56,16 +52,17 @@ describe('#sectionCaptionOf — the section a page names above its heading', () 
 })
 
 describe('the caption map covers the journey', () => {
-  it('Should decide every flow page, either captioning it or listing it as bare', () => {
+  it('Should decide every flow page, either captioning it or listing it as a page without a caption', () => {
     const undecided = allFlowPages
       .map((page) => page.id)
       .filter(
         (pageId) =>
-          sectionCaptionOf(pageId) === undefined && !BARE.includes(pageId)
+          sectionCaptionOf(pageId) === undefined &&
+          !PAGES_WITHOUT_A_CAPTION.includes(pageId)
       )
     expect(
       undecided,
-      'a new journey page must be given a caption or added to the bare list'
+      'a new journey page must be given a caption or added to the list of pages without a caption'
     ).toEqual([])
   })
 

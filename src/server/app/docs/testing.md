@@ -19,6 +19,28 @@ Important composition and convention checks include:
 Tests may compose a real set with platform code. Production imports remain subject
 to the layer rules.
 
+Vitest gives each test file its own module registry, so a test file that
+reconfigures a seam leaks to no other file. The global set-up wires the real
+readiness roll-up; a suite that wants a fixed answer overrides it with its own
+`configureReadyForCheckYourAnswers` call.
+
+## The second set and the completeness gate
+
+[`test/fixtures/second-set.js`](../../../../test/fixtures/second-set.js) is a
+second obligation set that exists only for tests. Co-residency is a property of
+the platform, not of one set, so proving it needs two sets mounted in one
+process. The fixture is the smallest set that fills every `configure*` seam and
+mounts under its own prefix. Its routes echo the configuration they resolve, so
+a test can read back which set answered and with whose obligations.
+
+[`set-completeness.test.js`](../set-completeness.test.js) proves a set that
+forgets a seam does not mount. Three seams answer benignly when unconfigured:
+the journey flow returns no sections and no task rows, the session returns the
+shared default cookie names, and the readiness roll-up answers false forever.
+The completeness gate turns each of those into a failed mount. The probe
+gateways are built in that test, not in the second set, because each probe has
+to be wrong in one specific way and the second set is correctly wired.
+
 ## Architecture and formatting
 
 `npm run lint` runs JavaScript, stylesheet and architecture linting. Dependency

@@ -10,7 +10,7 @@ import { copy as cy } from '../documents/copy/copy.cy.js'
 
 const documentsCopy = copyFor({ en, cy })
 
-const documentScanStatuses = async (answers, request) => {
+const documentScanStatuses = async (request, answers) => {
   const documents = [answers.documents ?? []].flat()
   if (documents.length === 0) {
     return []
@@ -21,13 +21,22 @@ const documentScanStatuses = async (answers, request) => {
   )
 }
 
-/** A REJECTED scan is permanent, so always an error; a PENDING one is transient,
- * so only an error when the trader has just been refused for it. */
+/**
+ * The card errors for the uploaded documents' scans.
+ *
+ * @param {object} request - the request being answered.
+ * @param {object} answers - the journey's answers.
+ * @param {object} [options]
+ * @param {boolean} [options.includePending=true] - whether a pending scan counts as an error
+ * @returns {Promise<object>} the `documents` error for a rejected scan, or for
+ * a pending one when `includePending` is true, else none.
+ */
 export const documentScanCardErrors = async (
+  request,
   answers,
-  { request, includePending = true } = {}
+  { includePending = true } = {}
 ) => {
-  const withStatus = await documentScanStatuses(answers, request)
+  const withStatus = await documentScanStatuses(request, answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }
@@ -58,7 +67,5 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(invalidCardErrors).length > 0) {
     return true
   }
-  return (
-    Object.keys(await documentScanCardErrors(answers, { request })).length > 0
-  )
+  return Object.keys(await documentScanCardErrors(request, answers)).length > 0
 }

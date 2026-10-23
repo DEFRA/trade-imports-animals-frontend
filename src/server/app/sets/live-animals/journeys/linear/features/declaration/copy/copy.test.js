@@ -1,26 +1,17 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../../engine/read.js'
 import { dispatchPages } from '../../index.js'
 
 import { declarationRoutesFromReview } from '../test-support.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('declaration copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -41,8 +32,6 @@ describe('declaration copy module', () => {
     )
   })
 
-  // The heading states the responsibility; the body states when it starts and
-  // the two ways it ends. The page used to compress all three into one heading.
   it('Should say when responsibility starts and when it ends', () => {
     expect(copy.body.responsible).toBe(
       'I confirm I am responsible for this consignment.'
@@ -60,8 +49,6 @@ describe('declaration copy module', () => {
     expect(copyCy.body.responsibleDetail).toBe(
       'Rwy’n gyfrifol o adeg cyflwyno’r hysbysiad hwn hyd nes iddo ddod i mewn i Brydain Fawr. Ac rwy’n gyfrifol nes iddo naill ai:'
     )
-    // Both bullets complete the 'nes iddo naill ai:' lead-in above, so both
-    // take the soft-mutated form: glirio (clirio), gyrraedd (cyrraedd).
     expect(copyCy.body.responsibleItems).toEqual([
       'glirio gwiriadau swyddogol wrth y ffin',
       'gyrraedd y man cyrchfan fel y nodir ar y dystysgrif iechyd neu’r hysbysiad'
@@ -88,13 +75,8 @@ describe('declaration copy module', () => {
 })
 
 describe('declaration reached from the review', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
+  useStubbedJourney(SET_ID, dispatchPages)
   beforeEach(() => {
-    store.clear()
     configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
 

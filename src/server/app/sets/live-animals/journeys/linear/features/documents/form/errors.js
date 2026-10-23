@@ -14,14 +14,11 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { ADD_DOCUMENT_ANCHOR } from '../contracts/add-document-anchor.js'
 import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import { FILE_TYPE_MESSAGE, OVERSIZE_FILE_MESSAGE } from '../upload-config.js'
+import { fileTypeMessage, oversizeMessage } from '../upload-config.js'
 import { fields } from './payload.js'
 
 const copy = copyFor({ en, cy })
 
-// Every document field is mandatory per record and there is no edit
-// page — a record added with blanks could never be completed in place,
-// so presence is enforced at add time.
 export const presenceErrors = (entry) => ({
   ...(entry.accompanyingDocumentReference
     ? {}
@@ -34,8 +31,8 @@ export const presenceErrors = (entry) => ({
 export const MESSAGE_BY_FILE_ERROR_CODE = {
   [FILE_VIRUS]: copy.errors.fileVirus,
   [FILE_EMPTY]: copy.errors.fileEmpty,
-  [FILE_TOO_LARGE]: OVERSIZE_FILE_MESSAGE,
-  [FILE_INVALID_TYPE]: FILE_TYPE_MESSAGE,
+  [FILE_TOO_LARGE]: oversizeMessage(copy),
+  [FILE_INVALID_TYPE]: fileTypeMessage(copy),
   [FILE_UPLOAD_FAILED]: copy.errors.uploadFailed,
   [FILE_DOWNLOAD_FAILED]: copy.errors.fileDownloadFailed
 }
@@ -62,9 +59,6 @@ export const submittedFileError = (file) => {
   return {}
 }
 
-// The error summary lists the fields in the order it is handed them, and the
-// summary has to read down the page. Presence and format rules fire in their
-// own order, so the merged result is rebuilt in the page's order.
 const FIELD_ORDER = [
   'accompanyingDocumentReference',
   'accompanyingDocumentType',
@@ -91,6 +85,14 @@ export const capacityExceededError = () => [
     href: DOCUMENTS_ADDED_ANCHOR
   }
 ]
+
+/**
+ * The file's own name resolves to no attachment type the service accepts. Worded here rather
+ * than at the call site so every file message comes from one copy deck.
+ *
+ * @returns {object} a file error to merge with the field rules
+ */
+export const fileTypeFieldError = () => ({ file: fileTypeMessage(copy) })
 
 /**
  * The add step itself is what is outstanding. Returned as an error on the file field rather than

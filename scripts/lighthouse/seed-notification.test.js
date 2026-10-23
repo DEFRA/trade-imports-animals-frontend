@@ -1,6 +1,6 @@
-import { load } from 'cheerio'
 import { describe, expect, it } from 'vitest'
 
+import { documentOf } from '../../src/server/common/test-helpers/document-of.js'
 import { SET_BASE } from '../../src/server/app/sets/live-animals/set.js'
 import {
   journeyIdIn,
@@ -64,7 +64,9 @@ describe('#submitNotification', () => {
     location: null,
     crumb: 'test-crumb',
     heading: '',
-    $: load(`<input type="hidden" name="concurrencyToken" value="${token}">`)
+    dom: documentOf(
+      `<input type="hidden" name="concurrencyToken" value="${token}">`
+    )
   })
 
   const fakeClient = () => {
@@ -81,7 +83,7 @@ describe('#submitNotification', () => {
               location: notificationPath('confirmation'),
               crumb: '',
               heading: '',
-              $: load('')
+              dom: documentOf('')
             }
       }
     }

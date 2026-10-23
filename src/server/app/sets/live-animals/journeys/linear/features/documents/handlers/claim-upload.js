@@ -1,14 +1,16 @@
 import { isoDateFromDateParts } from '../../../../../../../lib/validate/index.js'
+import * as kit from '../../../../../../../shared/kit.js'
 import { documentUploadSessions } from '../../../../../../../services/cdp-uploader/index.js'
 import { documentUploads } from '../../../../../../../services/document-uploads/index.js'
 import {
   capacityExceededError,
   documentAddErrors,
+  fileTypeFieldError,
   submittedFileError
 } from '../form/errors.js'
 import { documentFromPayload } from '../form/payload.js'
 import { atDocumentCapacity } from '../contracts/max-documents.js'
-import { FILE_TYPE_MESSAGE, attachmentTypeFor } from '../upload-config.js'
+import { attachmentTypeFor } from '../upload-config.js'
 
 const submittedForm = async (uploadId) => {
   const { form } = await documentUploadSessions.read(uploadId)
@@ -90,15 +92,16 @@ export const claimUpload = async (request, correlationId, pageState) => {
   const attachmentType = attachmentTypeFor(filename ?? '')
   const fileError =
     filename && !attachmentType
-      ? { file: FILE_TYPE_MESSAGE }
+      ? fileTypeFieldError()
       : submittedFileError(form.file)
 
   const errors = documentAddErrors(form, values, fileError)
   if (Object.keys(errors).length > 0) {
-    request.logger.info(
-      { ...ids, fields: Object.keys(errors) },
-      'Returned upload refused by the page rules'
-    )
+    kit.logRefusal(request, {
+      ...ids,
+      fieldErrors: errors,
+      reason: 'returned-upload-breaks-the-page-rules'
+    })
     return { values, errors }
   }
 

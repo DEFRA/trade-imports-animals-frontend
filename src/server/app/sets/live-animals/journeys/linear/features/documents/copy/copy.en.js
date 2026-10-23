@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 const addAnother = 'Save and add another'
 
 export const copy = {
@@ -18,7 +20,7 @@ export const copy = {
       rows: [
         {
           consignment: 'Animals that do not need a health certificate',
-          documents: "An exporter's declaration that they are fit to travel"
+          documents: "Exporter's declaration that they are fit to travel"
         },
         {
           consignment: 'Livestock transiting bluetongue restricted territories',
@@ -26,7 +28,7 @@ export const copy = {
         },
         {
           consignment: 'Rodents imported for research purposes',
-          documents: 'An RM39 licence and supplementary health certificate'
+          documents: 'RM39 licence and supplementary health certificate'
         }
       ],
       linkText: 'Check the documents you need on GOV.UK (opens in a new tab)',
@@ -36,22 +38,22 @@ export const copy = {
   },
   fileUploadHeading: 'File upload',
   reference: {
-    label: 'Document reference',
-    hint: 'For example, GBHC1234567890.'
+    label: 'Document reference'
   },
   documentType: {
     label: 'Document type',
-    placeholder: 'Select one'
+    selectText: 'Select one'
   },
   dateOfIssue: {
     label: 'Date of issue',
-    hint: 'For example, 12/12/2025'
+    hint: sharedCopy.dateExample
   },
   file: {
     label: 'Attachment',
     mustBe: 'Your file must be:',
-    smallerThan: 'smaller than',
-    a: 'a',
+    smallerThan: (size) => `files that are smaller than ${size}`,
+    or: 'or',
+    allowedTypes: (hint) => hint,
     upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',
     chooseButton: 'Choose file',
@@ -67,7 +69,7 @@ export const copy = {
     type: 'Document type',
     dateOfIssue: 'Date of issue',
     status: 'Status',
-    actionsHidden: 'Actions'
+    actionsHidden: 'Action'
   },
   types: {
     ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
@@ -92,7 +94,6 @@ export const copy = {
   viewFileHidden: (documentNumber) => `for document ${documentNumber}`,
   refreshStatus: 'Refresh virus scan status',
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
-  empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
   scanTags: {
     complete: 'Check completed',

@@ -2,10 +2,36 @@ import { SET_ID } from '../sets/live-animals/set.js'
 import { describe, expect, it } from 'vitest'
 
 import { flowOnlyKeys } from '../bridge/flow-only-keys.js'
-import { configureJourneyFlow, journeySectionCaption } from './journey-flow.js'
+import { withSetContext } from '../shared/set-context.js'
+import {
+  configureJourneyFlow,
+  journeyPreviousRunTarget,
+  journeySectionCaption
+} from './journey-flow.js'
 
-// Vitest gives each file its own module registry, so reconfiguring the journey
-// flow here leaks to no other suite and there is nothing to restore.
+describe('#journeyPreviousRunTarget', () => {
+  it("Should answer the configured journey's previous run target for the current set", () => {
+    configureJourneyFlow(SET_ID, {
+      sections: [],
+      taskRows: [],
+      previousRunTarget: () => '/j-1/reason'
+    })
+
+    expect(
+      withSetContext(SET_ID, () =>
+        journeyPreviousRunTarget('details', { scope: 'S', answers: 'A' }, 'j-1')
+      )
+    ).toBe('/j-1/reason')
+  })
+
+  it('Should report an unconfigured set as not configured', () => {
+    expect(() =>
+      withSetContext('unconfigured-set', () =>
+        journeyPreviousRunTarget('details', { scope: 'S', answers: 'A' }, 'j-1')
+      )
+    ).toThrow('journey flow not configured')
+  })
+})
 
 describe('#journeySectionCaption', () => {
   it('Should render no caption for a journey that configures none', () => {

@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 const addAnother = 'Cadw ac ychwanegu un arall'
 
@@ -41,22 +43,22 @@ export const copy = {
   },
   fileUploadHeading: 'Uwchlwytho ffeil',
   reference: {
-    label: 'Cyfeirnod y ddogfen',
-    hint: 'Er enghraifft, GBHC1234567890.'
+    label: 'Cyfeirnod y ddogfen'
   },
   documentType: {
     label: 'Math o ddogfen',
-    placeholder: 'Dewiswch un'
+    selectText: 'Dewiswch un'
   },
   dateOfIssue: {
     label: 'Dyddiad cyhoeddi',
-    hint: 'Er enghraifft, 12/12/2025'
+    hint: sharedCopy.dateExample
   },
   file: {
     label: 'Atodiad',
     mustBe: 'Rhaid i’ch ffeil fod:',
-    smallerThan: 'yn llai na',
-    a: 'yn',
+    smallerThan: (size) => `yn llai na ${size}`,
+    or: 'neu',
+    allowedTypes: (hint) => `yn ${hint}`,
     upToMaximum: (max) => `hyd at uchafswm o ${max} ffeil`,
     noZipFiles: 'Ni chaniateir ffeiliau ZIP am resymau diogelwch',
     chooseButton: 'Dewiswch ffeil',
@@ -72,7 +74,7 @@ export const copy = {
     type: 'Math o ddogfen',
     dateOfIssue: 'Dyddiad cyhoeddi',
     status: 'Statws',
-    actionsHidden: 'Camau gweithredu'
+    actionsHidden: 'Cam gweithredu'
   },
   types: {
     ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
@@ -97,7 +99,6 @@ export const copy = {
   viewFileHidden: (documentNumber) => `ar gyfer dogfen ${documentNumber}`,
   refreshStatus: 'Adnewyddu statws y sgan firws',
   stillChecking: 'Yn dal i wirio rhai dogfennau. Adnewyddwch eto mewn eiliad.',
-  empty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   notProvided: 'Heb ei ddarparu',
   scanTags: {
     complete: 'Gwiriad wedi’i gwblhau',

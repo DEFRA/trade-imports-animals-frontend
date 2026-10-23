@@ -1,9 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   openReviewFromHub,
   signIn,
@@ -11,6 +11,7 @@ import {
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -58,20 +59,6 @@ const amendAndOpenCancel = async (page, reference) => {
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await openReviewFromHub(page)
   await cancelAmendLink(page).click()
-}
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-
-  expect(
-    seriousOrCritical,
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 test.describe('cancel-amend feature', () => {
@@ -137,10 +124,26 @@ test.describe('cancel-amend feature', () => {
     await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
   })
 
+  test('Back from the restored submitted view opens the notification list', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.confirmButton }).click()
+    await expect(
+      page.getByText(checkAnswersCopy.cancelAmend.successBody)
+    ).toBeVisible()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(BASE)
+    await expect(
+      page.getByRole('heading', { name: dashboardCopy.notificationsHeading })
+    ).toBeVisible()
+  })
+
   test('confirmation page has no serious or critical axe violations', async ({
     page
   }) => {
-    await expectAxeClean(page, 'Cancel amendment')
+    await expectNoSeriousOrCriticalViolations(page, 'Cancel amendment')
   })
 
   test('restored submitted review has no serious or critical axe violations', async ({
@@ -149,7 +152,10 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
 
-    await expectAxeClean(page, 'Read-only submitted check answers')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Read-only submitted check answers'
+    )
   })
 })
 
