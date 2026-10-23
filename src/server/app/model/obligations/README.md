@@ -167,7 +167,7 @@ Top-level primitives (used everywhere else in the module):
 - `is-blank-value.js` — the "blank fulfilment" predicate used by the read-side queries.
 - `state-queries.js` — read-side queries over evaluator output (`leafSatisfied`, `effectiveStatus`, `groupInvariantErrors`).
 - `instance-complete.js` — per-instance completeness verdict.
-- `helper-internals.js` — shape-level utilities shared by gate helpers (`isNonArrayObject`, `readGate`).
+- `helper-internals.js` — shape-level utilities shared by gate helpers (`isNonArrayObject`, `readGate`), and the one owner of the complement rule: `resolveUnion` and `isOutsideUnion` (a blank value is never outside the union), used by `notInUnionOf` and `anyNotInUnionOf`, and `admitsValue`, which answers from a gate's metadata whether it admits a value.
 
 `evaluator/`:
 
@@ -182,7 +182,7 @@ Top-level primitives (used everywhere else in the module):
 
 `helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
 
-- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `notInUnionOf`).
+- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `resolveUnion`).
 - `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.
 
 ## Algorithm

@@ -1,6 +1,5 @@
-import { isBlankValue } from '../is-blank-value.js'
+import { isOutsideUnion, resolveUnion } from '../helper-internals.js'
 import { buildAnyCandidateGate } from './internals/build-any-candidate-gate.js'
-import { deriveUnion } from './internals/derive-union.js'
 
 export const anyNotInUnionOf = (
   gateObligation,
@@ -11,12 +10,8 @@ export const anyNotInUnionOf = (
   buildAnyCandidateGate({
     gateType: 'anyNotInUnionOf',
     gateObligation,
-    currentValues: () =>
-      deriveUnion(
-        typeof unionOfLists === 'function' ? unionOfLists() : unionOfLists
-      ),
-    admits: (candidate, union) =>
-      !isBlankValue(candidate) && !union.includes(candidate),
+    currentValues: () => resolveUnion(unionOfLists),
+    admits: isOutsideUnion,
     whenTrue,
     whenFalse
   })

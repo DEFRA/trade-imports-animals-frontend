@@ -31,7 +31,7 @@ const allowListedLeaf = {
   applyTo: allowListed(commodityCode, ['0102'], { id: 'unit-group' })
 }
 
-// A shape `gateAdmits` cannot read: no `values`, no gated parent group.
+// A shape `admitsValue` cannot read: no `values`, no gated parent group.
 const equalsGateLeaf = {
   id: 'equals-gate-leaf',
   name: 'equalsGateLeaf',
@@ -118,7 +118,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
     ).toBe(true)
   })
 
-  // `gateAdmits` reads `metadata.values`, which only the allowlist shapes
+  // `admitsValue` reads `metadata.values`, which only the allowlist shapes
   // define. Judged by that alone an equals/present/includes/branched gate
   // looks like a leaf that can never apply, and the mandatory floor would
   // silently go vacuous — an empty collection reported satisfied and the
