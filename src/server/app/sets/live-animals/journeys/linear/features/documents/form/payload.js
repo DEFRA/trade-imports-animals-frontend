@@ -2,6 +2,7 @@ import {
   compose,
   dateText,
   maxText,
+  pattern,
   requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -12,7 +13,13 @@ import { offeredDocumentTypes } from '../contracts/document-type-options.js'
 
 const copy = copyFor({ en, cy })
 
-export const REFERENCE_MAX_LENGTH = 58
+export const REFERENCE_MAX_LENGTH = 100
+
+// The characters a document reference may carry, matching what the claim
+// endpoint accepts: alphanumerics plus the separators real references use. An
+// air waybill is written 125-12345675, a TRACES certificate
+// CHEDA.GB.2026.1234567, and a commercial invoice whatever the exporter prints.
+export const REFERENCE_PATTERN = /^[A-Za-z0-9 ./-]*$/
 
 // Built per add, not frozen at module load: the offered types are
 // service-backed and the list is primed at boot. The order is the order the
@@ -23,6 +30,11 @@ export const fields = () =>
       'accompanyingDocumentReference',
       REFERENCE_MAX_LENGTH,
       copy.errors.referenceMaxLength
+    ),
+    pattern(
+      'accompanyingDocumentReference',
+      REFERENCE_PATTERN,
+      copy.errors.referenceCharacters
     ),
     // One message covers both mistakes a select can make: left on the
     // placeholder, or carrying a value the page never offered.

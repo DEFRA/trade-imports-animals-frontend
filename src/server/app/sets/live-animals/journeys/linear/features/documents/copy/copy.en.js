@@ -108,7 +108,9 @@ export const copy = {
   },
   errors: {
     hiddenPrefix: 'Error:',
-    referenceMaxLength: 'Document reference must be 58 characters or fewer',
+    referenceMaxLength: 'Document reference must be 100 characters or fewer',
+    referenceCharacters:
+      'Document reference must only include letters, numbers, spaces, hyphens, full stops and forward slashes',
     dateInvalid: 'Enter a real date',
     referenceRequired: 'Enter a document reference',
     typeRequired: 'Select a document type',

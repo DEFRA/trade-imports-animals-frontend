@@ -113,7 +113,9 @@ export const copy = {
   },
   errors: {
     hiddenPrefix: 'Gwall:',
-    referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai',
+    referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 100 nod neu lai',
+    referenceCharacters:
+      'Rhaid i gyfeirnod y ddogfen gynnwys llythrennau, rhifau, bylchau, cysylltnodau, atalnodau llawn a blaenslaesau yn unig',
     dateInvalid: 'Rhowch ddyddiad go iawn',
     referenceRequired: 'Rhowch gyfeirnod dogfen',
     typeRequired: 'Dewiswch fath o ddogfen',

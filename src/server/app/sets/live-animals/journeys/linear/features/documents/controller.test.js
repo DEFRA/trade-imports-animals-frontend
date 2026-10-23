@@ -41,6 +41,7 @@ import { dispatchPages } from '../index.js'
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
+import { REFERENCE_MAX_LENGTH } from './form/payload.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
   ALLOWED_MIME_TYPES,
@@ -1447,5 +1448,59 @@ describe('documents — the add form on a notification at its cap', () => {
     const addButton = page('#add-document')
     expect(addButton.attr('formaction')).toBeUndefined()
     expect(addButton.attr('aria-disabled')).toBe('true')
+  })
+})
+
+describe('documents — what a document reference may carry', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+
+  const REFERENCE_CHARACTERS_MESSAGE =
+    'Document reference must only include letters, numbers, spaces, hyphens, full stops and forward slashes'
+
+  // The shapes real documents carry: an IATA air waybill, a TRACES
+  // certificate, a commercial invoice, and a plain alphanumeric reference.
+  it.each([
+    '125-12345675',
+    'CHEDA.GB.2026.1234567',
+    'INV 2026/0042',
+    'GBHC1234567890'
+  ])('Should take on a document whose reference is %s', async (reference) => {
+    const result = await driveClaim(
+      submittedDocument({ accompanyingDocumentReference: reference })
+    )
+
+    expect(result.response.redirect).toBeDefined()
+    const [entry] = result.after.documents
+    expect(entry.accompanyingDocumentReference).toBe(reference)
+  })
+
+  it.each(['REF<script>', 'REF;DROP', 'REF|pipe'])(
+    'Should refuse a reference carrying a character the claim would reject: %s',
+    async (reference) => {
+      const result = await driveClaim(
+        submittedDocument({ accompanyingDocumentReference: reference })
+      )
+
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.errors.accompanyingDocumentReference).toBe(
+        REFERENCE_CHARACTERS_MESSAGE
+      )
+      expect(result.after).toEqual(result.before)
+    }
+  )
+
+  it('Should refuse a reference past the length the claim accepts, naming that length', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        accompanyingDocumentReference: 'R'.repeat(REFERENCE_MAX_LENGTH + 1)
+      })
+    )
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.accompanyingDocumentReference).toBe(
+      `Document reference must be ${REFERENCE_MAX_LENGTH} characters or fewer`
+    )
+    expect(result.after).toEqual(result.before)
   })
 })
