@@ -1,4 +1,4 @@
-import { callReferenceData } from './call-reference-data.js'
+import { commoditiesFromStubOrReferenceData } from './stub-or-reference-data.js'
 import { fetchCommodities } from './client.js'
 import { searchCommodities } from './stub.js'
 
@@ -11,7 +11,7 @@ import { searchCommodities } from './stub.js'
  * @throws {import('@hapi/boom').Boom} 503 when reference data fails.
  */
 export const search = (term, { page = 0, size }) =>
-  callReferenceData({
+  commoditiesFromStubOrReferenceData({
     stubCall: () => searchCommodities(term, { page, size }),
     realCall: () => fetchCommodities(term, { page, size })
   })

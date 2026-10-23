@@ -3,7 +3,10 @@ import { referenceDataUnavailable } from '../../../../services/reference-data/re
 
 const DATASET = 'commodities'
 
-export const callReferenceData = async ({ stubCall, realCall }) => {
+export const commoditiesFromStubOrReferenceData = async ({
+  stubCall,
+  realCall
+}) => {
   if (isStubMode()) {
     return stubCall()
   }

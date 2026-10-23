@@ -1,4 +1,4 @@
-import { callReferenceData } from './call-reference-data.js'
+import { commoditiesFromStubOrReferenceData } from './stub-or-reference-data.js'
 import { checkSpecies } from './client.js'
 import { COMMODITY_GROUPS } from './stub.js'
 
@@ -19,7 +19,7 @@ export const linesWithUnlistedSpecies = async (lines) => {
   if (lines.length === 0) {
     return []
   }
-  return callReferenceData({
+  return commoditiesFromStubOrReferenceData({
     stubCall: () => lines.filter((line) => !listedInStub(line)),
     realCall: async () => (await checkSpecies(lines)).unlisted ?? []
   })
