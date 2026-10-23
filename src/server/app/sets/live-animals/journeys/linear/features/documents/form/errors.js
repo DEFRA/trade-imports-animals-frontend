@@ -2,9 +2,12 @@ import { isBlank } from '../../../../../../../lib/answered.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import {
+  FILE_DOWNLOAD_FAILED,
   FILE_EMPTY,
   FILE_INVALID_TYPE,
-  FILE_TOO_LARGE
+  FILE_TOO_LARGE,
+  FILE_UPLOAD_FAILED,
+  FILE_VIRUS
 } from '../../../../../../../services/cdp-uploader/file-error-codes.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -28,10 +31,13 @@ export const presenceErrors = (entry) => ({
     : {})
 })
 
-const MESSAGE_BY_FILE_ERROR_CODE = {
+export const MESSAGE_BY_FILE_ERROR_CODE = {
+  [FILE_VIRUS]: copy.errors.fileVirus,
   [FILE_EMPTY]: copy.errors.fileEmpty,
   [FILE_TOO_LARGE]: OVERSIZE_FILE_MESSAGE,
-  [FILE_INVALID_TYPE]: FILE_TYPE_MESSAGE
+  [FILE_INVALID_TYPE]: FILE_TYPE_MESSAGE,
+  [FILE_UPLOAD_FAILED]: copy.errors.uploadFailed,
+  [FILE_DOWNLOAD_FAILED]: copy.errors.fileDownloadFailed
 }
 
 /**

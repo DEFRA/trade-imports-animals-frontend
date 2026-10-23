@@ -117,10 +117,12 @@ export const copy = {
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
     fileEmpty: 'The selected file is empty',
+    fileVirus: 'The selected file contains a virus',
+    fileDownloadFailed: 'The selected file could not be downloaded',
     notYetAdded: `Choose a file and select ‘${addAnother}’ to add this document`,
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
-    uploadFailed: 'The file could not be uploaded. Try again.',
+    uploadFailed: 'The selected file could not be uploaded. Try again.',
     uploadUnavailable:
       'Documents cannot be uploaded at the moment. Reload the page or come back later.',
     maxDocuments: (max) => `You can upload a maximum of ${max} files`,

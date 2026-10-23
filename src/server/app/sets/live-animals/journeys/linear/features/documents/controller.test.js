@@ -393,6 +393,38 @@ describe('documents — refusing an upload the browser returns with', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should name the virus when the upload service found one, rather than inviting a retry', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({
+          filename: 'eicar.pdf',
+          hasError: true,
+          errorCode: 'FILE_VIRUS'
+        })
+      })
+    )
+    expect(result.view.context.errors.file).toBe(
+      'The selected file contains a virus'
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a file the upload service could not download, rather than inviting a retry', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        file: submittedFile({
+          filename: 'certificate.pdf',
+          hasError: true,
+          errorCode: 'FILE_DOWNLOAD_FAILED'
+        })
+      })
+    )
+    expect(result.view.context.errors.file).toBe(
+      'The selected file could not be downloaded'
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should refuse a file the upload service rejected for a reason the page does not know', async () => {
     const result = await driveClaim(
       submittedDocument({
@@ -400,7 +432,7 @@ describe('documents — refusing an upload the browser returns with', () => {
       })
     )
     expect(result.view.context.errors.file).toBe(
-      'The file could not be uploaded. Try again.'
+      'The selected file could not be uploaded. Try again.'
     )
     expect(result.after).toEqual(result.before)
   })
