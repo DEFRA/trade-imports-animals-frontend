@@ -687,6 +687,21 @@ test.describe('searching the transporter list without JavaScript', () => {
     await expect(page.getByText(copy.transporters.noMatches)).toBeVisible()
     await expect(page.locator(TABLE)).toBeHidden()
   })
+
+  test('picks a transporter found by the search and saves it, landing on the overview with that transporter chosen', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, commercialRecord.name)
+    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await submit(page)
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+  })
 })
 
 test.describe('Add a transporter beside the search', () => {
