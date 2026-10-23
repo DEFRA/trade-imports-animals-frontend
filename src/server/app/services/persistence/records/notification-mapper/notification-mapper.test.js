@@ -224,6 +224,34 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ])
   })
 
+  test('Should put typeOfCommodity on each species when one Cow group has mixed types', () => {
+    const { commodities } = currentNotificationFrom({
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        },
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1388624',
+          commodityType: '24',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK2' }]
+        }
+      ]
+    })
+    expect(commodities).toHaveLength(1)
+    const [cow] = commodities
+    expect('typeOfCommodity' in cow).toBe(false)
+    expect(cow.species[0].typeOfCommodity).toBe('Domestic')
+    expect(cow.species[1].typeOfCommodity).toBe('Game')
+  })
+
   test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
     const { commodities } = currentNotificationFrom({
       commodityLines: groupedLines()
