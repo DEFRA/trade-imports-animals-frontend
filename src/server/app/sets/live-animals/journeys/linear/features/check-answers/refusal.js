@@ -10,7 +10,9 @@ import { copy as cy } from '../documents/copy/copy.cy.js'
 import { copy as reviewEn } from './copy/copy.en.js'
 import { copy as reviewCy } from './copy/copy.cy.js'
 import { linesWithUnlistedSpecies } from '../../../../services/commodities/species-check.js'
+import { createLogger } from '../../../../../../../common/helpers/logging/logger.js'
 
+const logger = createLogger()
 const documentsCopy = copyFor({ en, cy })
 const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
 
@@ -31,6 +33,10 @@ export const speciesCardErrors = async (journey, answers) => {
   if (unlisted.length === 0) {
     return {}
   }
+  logger.warn(
+    { journeyId: journey.journeyId, unlisted },
+    'Draft refused: reference data no longer lists a chosen species'
+  )
   const speciesWithCodes = unlisted
     .map(({ code, latinName }) => `${latinName} (${code})`)
     .join(', ')

@@ -1,5 +1,15 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
+
+import { createLogger } from '../../../../../../../common/helpers/logging/logger.js'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -177,6 +187,32 @@ describe('#isReviewRefused', () => {
 })
 
 describe('#speciesCardErrors', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('Should log the refusal once at warn with the journey id and each unlisted code and Latin name', async () => {
+    const warn = vi.spyOn(createLogger(), 'warn')
+    await speciesCardErrors(
+      { status: DRAFT, journeyId: 'journey-1' },
+      { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] }
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toEqual({
+      journeyId: 'journey-1',
+      unlisted: [{ code: '0102', latinName: 'Bos spp.' }]
+    })
+  })
+
+  it('Should log nothing when every species is still listed', async () => {
+    const warn = vi.spyOn(createLogger(), 'warn')
+    await speciesCardErrors(
+      { status: DRAFT, journeyId: 'journey-1' },
+      { commodityLines: [LISTED_SPECIES_LINE] }
+    )
+    expect(warn).not.toHaveBeenCalled()
+  })
+
   it('Should name each species of a draft MDM no longer lists, with its code', async () => {
     expect(
       await speciesCardErrors(
