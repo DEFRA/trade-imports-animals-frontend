@@ -30,8 +30,8 @@ import {
 } from './form/errors.js'
 import {
   EMPTY_FORM,
-  documentFromPayload,
-  startsADocument
+  answersADocument,
+  documentFromPayload
 } from './form/payload.js'
 import { claimUpload } from './handlers/claim-upload.js'
 import { loadPage } from './handlers/load-page.js'
@@ -286,7 +286,7 @@ const leavePage = async (request, h) => {
 }
 
 const continuesADocument = (request, payload) =>
-  !kit.hubExitTarget(request) && startsADocument(payload)
+  !kit.hubExitTarget(request) && answersADocument(payload)
 
 const refuseUnaddedDocument = async (request, h, payload) => {
   const pageState = await loadPage(request, h)

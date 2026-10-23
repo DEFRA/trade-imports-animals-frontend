@@ -50,6 +50,16 @@ export const startsADocument = (payload) =>
     (payload.accompanyingDocumentType ?? '').trim()
   )
 
+const answered = (value) => Boolean(String(value ?? '').trim())
+
+export const answersADocument = (payload) =>
+  startsADocument(payload) ||
+  answered(payload.accompanyingDocumentType) ||
+  answered(payload.accompanyingDocumentReference) ||
+  Object.values(
+    kit.readDate(payload, 'accompanyingDocumentDateOfIssue') ?? {}
+  ).some(answered)
+
 export const EMPTY_FORM = {
   accompanyingDocumentReference: '',
   accompanyingDocumentType: '',

@@ -101,6 +101,7 @@ const CONTINUE_AT_CAPACITY_LINE =
   'Continue refused: the notification is at its document capacity'
 const CONTINUE_NOT_ADDED_LINE =
   'Continue refused: the document has not been added'
+const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // A value the select never carries: only a tampered form could send it.
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
@@ -253,7 +254,7 @@ describe('documents — taking on an upload the browser returns with', () => {
       'Enter a document reference'
     )
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
-      'Select a document type'
+      TYPE_REQUIRED_MESSAGE
     )
     expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
       'Enter a date of issue'
@@ -291,7 +292,7 @@ describe('documents — taking on an upload the browser returns with', () => {
     )
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
-      'Select a document type'
+      TYPE_REQUIRED_MESSAGE
     )
     expect(result.after).toEqual(result.before)
   })
@@ -846,9 +847,7 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // Uploading is optional, and the type is the whole of the signal: without one
-  // there is no document to finish, so the rest of the form goes with the page.
-  it('Should carry a form with no document type chosen past the page, appending nothing', async () => {
+  it('Should keep a reference and a date typed with no type chosen, and ask for the type, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'continue',
@@ -856,20 +855,43 @@ describe('documents — Continue finishes a part-filled document', () => {
         accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
       }
     })
-    expect(result.response.redirect).toBeDefined()
+    expect(result.response.statusCode).toBe(400)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      TYPE_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.values.accompanyingDocumentReference).toBe(
+      'GBHC1234567890'
+    )
+    expect(result.view.context.values.accompanyingDocumentDateOfIssue).toEqual({
+      day: '12',
+      month: '12',
+      year: '2025'
+    })
     expect(result.after).toEqual(result.before)
   })
 
-  // The signal is a type the page actually offers, not merely a non-empty
-  // select, so a Continue carrying a value the page never offered is carried
-  // past like any other form the trader did not start.
-  it('Should carry a form whose document type the page does not offer past the page, appending nothing', async () => {
+  it('Should refuse a Continue whose type the page never offered rather than carry it past, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'continue',
         ...validDocument,
         accompanyingDocumentType: UNOFFERED_TYPE
       }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      TYPE_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  // Uploading is optional, so a form the trader never touched still goes with
+  // the page. This is the behaviour the refusals above must not swallow.
+  it('Should carry an untouched form past the page, appending nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue' }
     })
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)
@@ -1387,5 +1409,43 @@ describe('documents — a removal the backend cannot save', () => {
         message: RETRIED_REMOVAL_SAVE_FAILED_LINE
       }
     ])
+  })
+})
+
+describe('documents — the add form on a notification at its cap', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+
+  const atCapacity = () => ({
+    documents: Array.from({ length: MAX_DOCUMENTS }, () => storedDocument())
+  })
+
+  it('Should close the add form, so no file is uploaded only to be refused', async () => {
+    const result = await driveHandler(get, { seed: atCapacity() })
+
+    expect(result.view.context.addFormClosed).toBe(true)
+    expect(result.view.context.addFormClosedReason).toBe(
+      `You can upload a maximum of ${MAX_DOCUMENTS} files`
+    )
+    // The session still opened — the form is closed on capacity, not on a
+    // failure to reach the upload service.
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+  })
+
+  it('Should render the add button with no formaction, so it cannot post a file to the upload service', async () => {
+    const environment = nunjucksConfig.options.compileOptions.environment
+
+    const { view } = await driveHandler(get, { seed: atCapacity() })
+    const page = load(
+      environment.render(`${view.view}.njk`, {
+        ...view.context,
+        userSession: { isAuthenticated: true, displayName: 'Sam Example' },
+        getAssetPath: (asset) => `/assets/${asset}`
+      })
+    )
+
+    const addButton = page('#add-document')
+    expect(addButton.attr('formaction')).toBeUndefined()
+    expect(addButton.attr('aria-disabled')).toBe('true')
   })
 })

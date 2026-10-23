@@ -32,6 +32,14 @@ export const render = ({
     (item) => item.scanStatus === SCAN_STATUS.PENDING
   )
   const uploadFormUnavailable = !extra.uploadPath
+  const atCapacity = documents.length >= MAX_DOCUMENTS
+  // Closed either because no session could be opened or because the
+  // notification is full. A full notification must not offer a control that
+  // uploads a file the claim will then refuse.
+  const addFormClosed = uploadFormUnavailable || atCapacity
+  const addFormClosedReason = atCapacity
+    ? copy.errors.maxDocuments(MAX_DOCUMENTS)
+    : copy.errors.uploadUnavailable
   const errorList = [
     ...rejectedErrors(documents),
     ...summaryErrors,
@@ -49,6 +57,8 @@ export const render = ({
     // Written after the spread, so only a session that was opened can open the
     // add form.
     uploadFormUnavailable,
+    addFormClosed,
+    addFormClosedReason,
     copy,
     rows: documentRows(documents, journey.journeyId),
     hasDocuments: documents.length > 0,

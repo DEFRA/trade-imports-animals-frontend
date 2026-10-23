@@ -22,6 +22,7 @@ import {
 const HTTP_OK = 200
 const DATE_OF_ISSUE_TEXT = '03/01/2026'
 const OVERSIZE_FILENAME = 'oversize.pdf'
+const CLIENT_SIZE_SUMMARY = 'li[data-client-error="file-size-summary"]'
 
 const openDocuments = async (page) => {
   await startNotification(page)
@@ -440,9 +441,9 @@ test.describe('document upload oversize validation', () => {
     )
     await submitAdd(page)
 
-    await expect(
-      page.locator('li[data-client-error="file-size-summary"]')
-    ).toContainText(OVERSIZE_FILE_MESSAGE)
+    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toContainText(
+      OVERSIZE_FILE_MESSAGE
+    )
     await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
     await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
@@ -465,6 +466,21 @@ test.describe('document upload oversize validation', () => {
       )
     ).toHaveCount(1)
     await expectPreservedMetadata(page)
+  })
+
+  test('file validation: an oversize file in the input does not stop Continue leaving the page', async ({
+    page
+  }) => {
+    test.slow()
+    await setUploadFile(
+      page,
+      OVERSIZE_FILENAME,
+      Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
+    )
+    await submitContinue(page)
+
+    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
   })
 
   // The enhanced upload renames the input to file-input and gives the new
@@ -671,7 +687,7 @@ test.describe('document upload capacity and accessibility', () => {
     await openDocuments(page)
   })
 
-  test('rejects another upload after the maximum document capacity is reached', async ({
+  test('closes the add control once the maximum document capacity is reached, so no further file is sent', async ({
     page
   }) => {
     test.slow()
@@ -682,21 +698,16 @@ test.describe('document upload capacity and accessibility', () => {
         filename: `itahc-capacity-${index}.pdf`
       })
     }
-    await fillDocument(page, {
-      ...validDocument,
-      accompanyingDocumentReference: 'ITAHC-ONE-TOO-MANY',
-      filename: 'itahc-one-too-many.pdf'
-    })
-    await submitAdd(page)
 
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
-    const link = errorLink(page, message)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page).toHaveURL(/#documents-added$/)
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      'ITAHC-ONE-TOO-MANY'
-    )
+    await expect(page.getByText(message)).toBeVisible()
+
+    // The control keeps its place in the tab order and says why it refuses,
+    // rather than taking a file the claim would then turn away.
+    const addButton = page.getByRole('button', { name: copy.addAnother })
+    await expect(addButton).toHaveAttribute('aria-disabled', 'true')
+    await expect(addButton).not.toHaveAttribute('formaction', /./)
+    await expect(addButton).toHaveAccessibleDescription(new RegExp(message))
   })
 
   test('empty upload state has no serious or critical axe violations', async ({

@@ -124,11 +124,11 @@
 
         {# The reason comes before the control it refuses, and the button keeps
            its place in the tab order so the error summary can reach it. #}
-        <div class="govuk-form-group{{ ' govuk-form-group--error' if uploadFormUnavailable }}">
-          {% if uploadFormUnavailable %}
+        <div class="govuk-form-group{{ ' govuk-form-group--error' if addFormClosed }}">
+          {% if addFormClosed %}
             <p id="add-document-error" class="govuk-error-message">
               <span class="govuk-visually-hidden">{{ copy.errors.hiddenPrefix }}</span>
-              {{ copy.errors.uploadUnavailable }}
+              {{ addFormClosedReason }}
             </p>
           {% endif %}
 
@@ -141,7 +141,7 @@
             attributes: {
               "aria-disabled": "true",
               "aria-describedby": "add-document-error"
-            } if uploadFormUnavailable else {
+            } if addFormClosed else {
               formaction: uploadPath,
               formenctype: "multipart/form-data"
             }
