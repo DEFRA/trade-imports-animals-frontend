@@ -85,19 +85,24 @@ const DOMESTIC = { id: '16', text: 'Domestic' }
 const GAME = { id: '24', text: 'Game' }
 const SINGLE_TYPE = { id: '2', text: '' }
 
-const MULTI_TYPE_CODE = CATTLE_CODE
-
 const GAME_SPECIES = new Set(['Bos spp.'])
 
-const TYPES_BY_CODE = { [MULTI_TYPE_CODE]: [DOMESTIC, GAME] }
-
-export const typeFor = (code, latinName) => {
-  if (code !== MULTI_TYPE_CODE) {
-    return SINGLE_TYPE
+const TYPES_BY_CODE = {
+  [CATTLE_CODE]: {
+    types: [DOMESTIC, GAME],
+    typeOf: (latinName) => (GAME_SPECIES.has(latinName) ? GAME : DOMESTIC)
   }
-  return GAME_SPECIES.has(latinName) ? GAME : DOMESTIC
 }
 
-export const typesFor = (code) => TYPES_BY_CODE[code] ?? [SINGLE_TYPE]
+const SINGLE_TYPE_CODE_TYPES = {
+  types: [SINGLE_TYPE],
+  typeOf: () => SINGLE_TYPE
+}
+
+const codeTypes = (code) => TYPES_BY_CODE[code] ?? SINGLE_TYPE_CODE_TYPES
+
+export const typeFor = (code, latinName) => codeTypes(code).typeOf(latinName)
+
+export const typesFor = (code) => codeTypes(code).types
 
 export const PER_SPECIES_CODE = OTHER_LIVE_MAMMALS_CODE
