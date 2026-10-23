@@ -69,4 +69,31 @@ describe('#searchCommodities', () => {
       }
     ])
   })
+
+  it('Should list every species of a code found by its code, a page at a time', () => {
+    const firstPage = searchCommodities('0102', { page: 0, size: 10 })
+    expect(firstPage.total).toBe(15)
+    expect(firstPage.groups).toHaveLength(1)
+    expect(firstPage.groups[0].species).toHaveLength(10)
+
+    const secondPage = searchCommodities('0102', { page: 1, size: 10 })
+    expect(secondPage.groups[0].species).toHaveLength(5)
+  })
+
+  it('Should group matches under each code they fall under, in data order', () => {
+    const results = searchCommodities('taurus', { page: 0, size: 10 })
+    expect(results.groups.map((group) => group.code)).toEqual([
+      '0102',
+      '01061900'
+    ])
+  })
+
+  it('Should find nothing for a term that matches nothing', () => {
+    expect(searchCommodities('unicorn', { page: 0, size: 10 })).toEqual({
+      total: 0,
+      page: 0,
+      size: 10,
+      groups: []
+    })
+  })
 })

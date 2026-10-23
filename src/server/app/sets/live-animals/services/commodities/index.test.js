@@ -14,54 +14,11 @@ import {
   typeIdFor,
   typeTextForId
 } from './index.js'
-import { search } from './search.js'
 
 const CATTLE = '0102'
 const HORSES = '0101'
 const OTHER_MAMMALS = '01061900'
 const OSTRICHES = '01063300'
-
-describe('#search', () => {
-  it('Should find a species by its common name, under its code', async () => {
-    const results = await search('ferret', { size: 10 })
-    expect(results).toEqual({
-      total: 1,
-      page: 0,
-      size: 10,
-      groups: [
-        {
-          code: OTHER_MAMMALS,
-          species: [
-            { latinName: 'Mustela putorius furo', commonName: 'Ferret' }
-          ]
-        }
-      ]
-    })
-  })
-
-  it('Should list every species of a code found by its code, a page at a time', async () => {
-    const results = await search(CATTLE, { size: 10 })
-    expect(results.total).toBe(15)
-    expect(results.groups).toHaveLength(1)
-    expect(results.groups[0].species).toHaveLength(10)
-
-    const secondPage = await search(CATTLE, { page: 1, size: 10 })
-    expect(secondPage.groups[0].species).toHaveLength(5)
-  })
-
-  it('Should find a species by any word of its Latin name', async () => {
-    const results = await search('taurus', { size: 10 })
-    expect(results.groups.map((group) => group.code)).toEqual([
-      CATTLE,
-      OTHER_MAMMALS
-    ])
-  })
-
-  it('Should find nothing for a term that matches nothing', async () => {
-    const results = await search('unicorn', { size: 10 })
-    expect(results).toEqual({ total: 0, page: 0, size: 10, groups: [] })
-  })
-})
 
 describe('#listsSpeciesIndividually', () => {
   it('Should hold for code 01061900 and for no other', () => {
