@@ -107,7 +107,7 @@ test.describe('document scan-status rendering', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('renders a rejected document and its per-file error until it is removed', async ({
+  test('names the virus a rejected document was refused for, until it is removed', async ({
     page
   }) => {
     test.slow()
@@ -115,7 +115,7 @@ test.describe('document scan-status rendering', () => {
     await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.scanning)
-    await expect(row).toContainText(copy.scanTags.rejected)
+    await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
       errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()

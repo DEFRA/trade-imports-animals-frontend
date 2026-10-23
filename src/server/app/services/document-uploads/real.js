@@ -5,6 +5,9 @@ import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 
+const rejectionReasonOf = (files) =>
+  (Array.isArray(files) ? files : []).find((file) => file.hasError)?.errorCode
+
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
     const response = await backendFetch(
@@ -56,8 +59,8 @@ export const documentUploads = {
     if (!response.ok) {
       throw failedResponse('get document upload status', response)
     }
-    const { scanStatus } = await response.json()
-    return { scanStatus }
+    const { scanStatus, files } = await response.json()
+    return { scanStatus, rejectionReason: rejectionReasonOf(files) }
   },
 
   remove: async (uploadId) => {

@@ -159,6 +159,41 @@ describe('#documentUploadSessions (stub)', () => {
       })
     })
 
+    it('Should reject a file with no bytes in it, with the empty code', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postFile(server, uploadPath, {
+        filename: 'cert.pdf',
+        contentType: PDF,
+        bytes: 0
+      })
+
+      expect(await fileOf(uploadId)).toMatchObject({
+        hasError: true,
+        errorCode: 'FILE_EMPTY',
+        fileStatus: 'rejected'
+      })
+    })
+
+    it('Should carry back no file entry at all when the submission had no file', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await server.inject({
+        method: 'POST',
+        url: uploadPath,
+        payload: `--${BOUNDARY}\r\nContent-Disposition: form-data; name="accompanyingDocumentReference"\r\n\r\nGBHC1234567890\r\n--${BOUNDARY}--\r\n`,
+        headers: {
+          'content-type': `multipart/form-data; boundary=${BOUNDARY}`
+        }
+      })
+
+      const { form } = await documentUploadSessions.read(uploadId)
+      expect(form.accompanyingDocumentReference).toBe('GBHC1234567890')
+      expect(form).not.toHaveProperty('file')
+    })
+
     it('Should reject a file over the cap its session was opened with', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()

@@ -102,6 +102,9 @@ export const copy = {
   scanTags: {
     complete: 'Gwiriad wedi’i gwblhau',
     rejected: 'Gwrthodwyd',
+    virusFound: 'Firws wedi’i ganfod',
+    uploadFailed: 'Methodd yr uwchlwytho',
+    downloadFailed: 'Methodd y llwytho i lawr',
     scanning: 'Yn sganio am firws',
     unknown: 'Anhysbys'
   },
@@ -109,7 +112,13 @@ export const copy = {
   announce: {
     safe: 'Sgan y ddogfen wedi’i gwblhau: mae’r ffeil yn ddiogel i’w defnyddio',
     rejected:
-      'Methodd gwiriad y ddogfen: ni allwch ddefnyddio’r ffeil. Tynnwch hi a rhowch gynnig arall arni.'
+      'Methodd gwiriad y ddogfen: ni allwch ddefnyddio’r ffeil. Tynnwch hi a rhowch gynnig arall arni.',
+    virusFound:
+      'Methodd gwiriad y ddogfen: mae’r ffeil yn cynnwys firws. Tynnwch hi a rhowch gynnig arall arni.',
+    uploadFailed:
+      'Methodd gwiriad y ddogfen: nid oedd modd uwchlwytho’r ffeil. Tynnwch hi a rhowch gynnig arall arni.',
+    downloadFailed:
+      'Methodd gwiriad y ddogfen: nid oedd modd llwytho’r ffeil i lawr. Tynnwch hi a rhowch gynnig arall arni.'
   },
   errors: {
     hiddenPrefix: 'Gwall:',

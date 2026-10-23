@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
-import { FILE_INVALID_TYPE, FILE_TOO_LARGE } from './file-error-codes.js'
+import {
+  FILE_EMPTY,
+  FILE_INVALID_TYPE,
+  FILE_TOO_LARGE
+} from './file-error-codes.js'
 
 // The one rule a stub run cannot reach honestly, so a test asks for it by name:
 // the browser's own check refuses an oversize file before it is ever posted, and
@@ -32,6 +36,9 @@ const fileErrorCodeFor = ({
   // Judged on the type the browser declared and the limits the session was
   // opened with, as cdp-uploader judges it — not on the extension. A stub
   // that applied rules of its own would take a file cdp-uploader refuses.
+  if (contentLength === 0) {
+    return FILE_EMPTY
+  }
   if (Array.isArray(mimeTypes) && !mimeTypes.includes(contentType)) {
     return FILE_INVALID_TYPE
   }
@@ -88,12 +95,19 @@ const textFieldsOf = (payload) =>
     Object.entries(payload).filter(([, value]) => typeof value === 'string')
   )
 
+// A submission with no file part carries no file entry back, as cdp-uploader
+// answers it. Synthesising one here left the page's own "upload a document"
+// refusal exercised by nothing.
 const formFromSubmission = (session, payload) => {
-  const file = payload.file ?? {}
+  const file = payload.file
+  const textFields = textFieldsOf(payload)
+  if (!file?.filename) {
+    return textFields
+  }
   return {
-    ...textFieldsOf(payload),
+    ...textFields,
     file: fileEntryFor({
-      filename: file.filename ?? '',
+      filename: file.filename,
       contentType: file.headers?.['content-type'],
       contentLength: file.payload?.length ?? 0,
       maxFileSize: session.maxFileSize,
@@ -130,7 +144,7 @@ const takeUpload = (request, h) => {
     return h.response().code(HTTP_STATUS_NOT_FOUND)
   }
   recordSubmittedUpload(request.params.uploadId, request.payload ?? {})
-  if (session.form.file.hasError) {
+  if (session.form.file?.hasError) {
     request.logger.info(
       {
         uploadId: request.params.uploadId,

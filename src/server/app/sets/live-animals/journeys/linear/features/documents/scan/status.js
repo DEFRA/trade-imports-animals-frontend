@@ -1,17 +1,18 @@
 import { documentUploads } from '../../../../../../../services/document-uploads/index.js'
 import { SCAN_STATUS } from '../scan-poll.js'
+import { tagKeyFor } from '../view-model/fragments/status.js'
 
 export const scanStatusOf = async (entry, { refresh, request }) => {
   if (!entry.uploadId) {
-    return SCAN_STATUS.COMPLETE
+    return { scanStatus: SCAN_STATUS.COMPLETE }
   }
   try {
-    const { scanStatus } = await documentUploads.scanStatus({
+    const { scanStatus, rejectionReason } = await documentUploads.scanStatus({
       uploadId: entry.uploadId,
       filename: entry.filename,
       refresh
     })
-    return scanStatus
+    return { scanStatus, rejectionReason }
   } catch (err) {
     request.logger.warn(
       {
@@ -22,7 +23,7 @@ export const scanStatusOf = async (entry, { refresh, request }) => {
       },
       'Could not read the document scan status, treating it as pending'
     )
-    return SCAN_STATUS.PENDING
+    return { scanStatus: SCAN_STATUS.PENDING }
   }
 }
 
@@ -30,14 +31,18 @@ export const withScanStatus = (documents, { refresh, request }) =>
   Promise.all(
     documents.map(async (item) => ({
       ...item,
-      scanStatus: await scanStatusOf(item.entry, { refresh, request })
+      ...(await scanStatusOf(item.entry, { refresh, request }))
     }))
   )
 
 export const scanned = (documents) =>
   documents
     .filter(({ entry }) => entry.uploadId)
-    .map(({ entry, scanStatus }) => ({ uploadId: entry.uploadId, scanStatus }))
+    .map((item) => ({
+      uploadId: item.entry.uploadId,
+      scanStatus: item.scanStatus,
+      tagKey: tagKeyFor(item)
+    }))
 
 export const isStillSettling = (documents) =>
   documents.some((item) => item.scanStatus !== SCAN_STATUS.COMPLETE)

@@ -155,7 +155,9 @@ describe('#documentUploads', () => {
       })
     })
   })
+})
 
+describe('#documentUploads — scan status, removal and reads', () => {
   describe('#scanStatus', () => {
     it('Should answer the scan status read from the upload it names', async () => {
       fetchMocker.mockResponse(JSON.stringify({ scanStatus: 'COMPLETE' }))
@@ -168,14 +170,15 @@ describe('#documentUploads', () => {
       )
     })
 
-    it('Should answer the status alone for a rejected upload', async () => {
+    it('Should answer the reason the refused file carries, so the page can name it', async () => {
       fetchMocker.mockResponse(
         JSON.stringify({
           scanStatus: 'REJECTED',
           files: [
             {
               hasError: true,
-              errorMessage: 'File rejected by antivirus scan'
+              errorCode: 'FILE_VIRUS',
+              errorMessage: 'The selected file contains a virus'
             }
           ]
         })
@@ -183,7 +186,47 @@ describe('#documentUploads', () => {
 
       await expect(
         documentUploads.scanStatus({ uploadId: UPLOAD_ID })
-      ).resolves.toEqual({ scanStatus: 'REJECTED' })
+      ).resolves.toEqual({
+        scanStatus: 'REJECTED',
+        rejectionReason: 'FILE_VIRUS'
+      })
+    })
+
+    it('Should pass over files the scan took on to reach the one it refused', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          scanStatus: 'REJECTED',
+          files: [
+            { hasError: false, errorCode: null, errorMessage: null },
+            {
+              hasError: true,
+              errorCode: 'FILE_DOWNLOAD_FAILED',
+              errorMessage: 'The selected file could not be downloaded'
+            }
+          ]
+        })
+      )
+
+      await expect(
+        documentUploads.scanStatus({ uploadId: UPLOAD_ID })
+      ).resolves.toEqual({
+        scanStatus: 'REJECTED',
+        rejectionReason: 'FILE_DOWNLOAD_FAILED'
+      })
+    })
+
+    it('Should answer no reason for a refusal that carries no code', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          scanStatus: 'REJECTED',
+          files: [{ hasError: true, errorMessage: 'Rejected' }]
+        })
+      )
+
+      const read = await documentUploads.scanStatus({ uploadId: UPLOAD_ID })
+
+      expect(read.scanStatus).toBe('REJECTED')
+      expect(read.rejectionReason).toBeUndefined()
     })
   })
 

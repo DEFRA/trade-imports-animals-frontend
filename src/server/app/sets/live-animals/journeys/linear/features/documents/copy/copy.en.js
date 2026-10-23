@@ -97,6 +97,9 @@ export const copy = {
   scanTags: {
     complete: 'Check completed',
     rejected: 'Rejected',
+    virusFound: 'Virus found',
+    uploadFailed: 'Upload failed',
+    downloadFailed: 'Download failed',
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
@@ -104,7 +107,13 @@ export const copy = {
   announce: {
     safe: 'Document scan complete: the file is safe to use',
     rejected:
-      'Document check failed: the file cannot be used. Remove it and try again.'
+      'Document check failed: the file cannot be used. Remove it and try again.',
+    virusFound:
+      'Document check failed: the file contains a virus. Remove it and try again.',
+    uploadFailed:
+      'Document check failed: the file could not be uploaded. Remove it and try again.',
+    downloadFailed:
+      'Document check failed: the file could not be downloaded. Remove it and try again.'
   },
   errors: {
     hiddenPrefix: 'Error:',

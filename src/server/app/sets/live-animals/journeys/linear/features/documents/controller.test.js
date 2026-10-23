@@ -35,13 +35,14 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
+import { recordSubmittedUpload } from '../../../../../../services/cdp-uploader/stub.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
-import { REFERENCE_MAX_LENGTH } from './form/payload.js'
+import { REFERENCE_MAX_LENGTH } from '../../../../../../services/document-uploads/claim-contract.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
   ALLOWED_MIME_TYPES,
@@ -94,6 +95,11 @@ const DATE_OF_ISSUE_TEXT = '12/12/2025'
 // Pinned as literals rather than read from copy, so a rewording fails a test.
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
+const TAG_REJECTED = 'Rejected'
+const REFUSED_TAG_CLASSES = 'govuk-tag--red'
+const TAG_VIRUS_FOUND = 'Virus found'
+const TAG_UPLOAD_FAILED = 'Upload failed'
+const TAG_DOWNLOAD_FAILED = 'Download failed'
 const FILE_REQUIRED_MESSAGE = 'Upload a document'
 const FILE_EMPTY_MESSAGE = 'The selected file is empty'
 const NOT_YET_ADDED_MESSAGE =
@@ -148,8 +154,9 @@ const registeredSession = async (journeyId) => {
 /**
  * Drives the page the way the upload service returns the browser to it: a session opened and
  * registered against the notification through the stub adapters, and the submitted form read
- * back from it. Only the read is stood in for, because the stand-in service cannot produce
- * every file entry cdp-uploader can — an empty-file code and an absent file entry among them.
+ * back from it. The read is stood in for so a test can hand the page a file entry the stand-in
+ * will not produce — a code it does not model, or a scan verdict it reaches no other way.
+ * A case the stand-in can judge for itself belongs in `driveClaimThroughUploadService`.
  *
  * @param {object} form - the form the session answers with
  * @param {object} [options] - `driveHandler` options, plus `session` to replay one and
@@ -180,6 +187,38 @@ const driveClaim = async (
     claim?.mockRestore()
   }
 }
+
+/**
+ * Drives the claim leg with nothing stood in for: the submitted form is recorded against the
+ * session by the stand-in upload service, which judges the file by the limits the session was
+ * opened with, and the page reads it back through the real session read.
+ *
+ * @param {object} payload - the submitted fields, `file` as hapi's annotated multipart entry
+ * @param {object} [options] - `driveHandler` options
+ * @returns {Promise<object>} what `driveHandler` reports, plus the `session` it drove
+ */
+const driveClaimThroughUploadService = async (payload, options = {}) => {
+  const { journeyId, correlationId, uploadId } = await registeredSession(
+    (await store.create()).journeyId
+  )
+  recordSubmittedUpload(uploadId, payload)
+  const result = await driveHandler(get, {
+    ...options,
+    journeyId,
+    query: { upload: correlationId }
+  })
+  return { ...result, session: { journeyId, correlationId, uploadId } }
+}
+
+const uploadedPart = ({
+  filename,
+  contentType = 'application/pdf',
+  bytes
+}) => ({
+  filename,
+  headers: { 'content-type': contentType },
+  payload: Buffer.alloc(bytes, 1)
+})
 
 const submittedDocument = (overrides = {}) => ({
   ...validDocument,
@@ -324,19 +363,33 @@ describe('documents — taking on an upload the browser returns with', () => {
 
 describe('documents — refusing an upload the browser returns with', () => {
   it('Should refuse a return whose session holds no file entry and append nothing', async () => {
-    const result = await driveClaim({ ...validDocument })
+    const result = await driveClaimThroughUploadService({ ...validDocument })
 
     expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 
   it('Should refuse a file the upload service took but which carries no bytes, and append nothing', async () => {
-    const result = await driveClaim(
-      submittedDocument({ file: submittedFile({ contentLength: 0 }) })
-    )
+    const result = await driveClaimThroughUploadService({
+      ...validDocument,
+      file: uploadedPart({ filename: PDF_FILENAME, bytes: 0 })
+    })
 
     expect(result.view.context.errors.file).toBe(FILE_EMPTY_MESSAGE)
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should take on a file the upload service judged good, reading the session for real', async () => {
+    const result = await driveClaimThroughUploadService({
+      ...validDocument,
+      file: uploadedPart({ filename: 'itahc.pdf', bytes: 8 })
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    const [entry] = result.after.documents
+    expect(entry.filename).toBe('itahc.pdf')
+    expect(entry.accompanyingDocumentAttachmentType).toBe('PDF')
+    expect(entry.uploadId).toBe(result.session.uploadId)
   })
 
   it('Should refuse a file whose name resolves to no attachment type, and append nothing', async () => {
@@ -701,7 +754,7 @@ describe('documents — listing, scanning and removing', () => {
       payload: { action: 'continue' }
     })
     expect(result.response.redirect).toBeUndefined()
-    expect(result.view.context.rows[0][3].html).toContain('Rejected')
+    expect(result.view.context.rows[0][3].html).toContain(TAG_VIRUS_FOUND)
     expect(summaryTexts(result)).toContain(
       'virus-notes.pdf cannot be used. Remove it and try again with a different file.'
     )
@@ -951,7 +1004,7 @@ describe('documents — scan-status poll and view context', () => {
       }
     })
     expect(result.response.payload.documents).toEqual([
-      { uploadId, scanStatus: 'COMPLETE' }
+      { uploadId, scanStatus: 'COMPLETE', tagKey: 'COMPLETE' }
     ])
   })
 
@@ -973,7 +1026,7 @@ describe('documents — scan-status poll and view context', () => {
       })
 
       expect(result.response.payload.documents).toEqual([
-        { uploadId, scanStatus: 'PENDING' }
+        { uploadId, scanStatus: 'PENDING', tagKey: 'PENDING' }
       ])
       expect(
         result.logger.entries.filter(({ level }) => level === 'warn')
@@ -1005,24 +1058,29 @@ describe('documents — scan-status poll and view context', () => {
 
     const polled = await driveHandler(statusRoute.handler, { seed })
     expect(polled.response.payload.documents).toEqual([
-      { uploadId, scanStatus: 'COMPLETE' }
+      { uploadId, scanStatus: 'COMPLETE', tagKey: 'COMPLETE' }
     ])
 
     const afterPoll = await driveHandler(get, { seed })
     expect(afterPoll.view.context.rows[0][3].html).toContain(TAG_COMPLETE)
   })
 
-  it('Should report a rejected scan so the client can rewrite the tag', async () => {
-    const uploadId = await registeredUpload('virus.pdf')
-    const result = await driveHandler(statusRoute.handler, {
-      seed: {
-        documents: [storedDocument({ uploadId, filename: 'virus.pdf' })]
-      }
-    })
-    expect(result.response.payload.documents).toEqual([
-      { uploadId, scanStatus: 'REJECTED' }
-    ])
-  })
+  it.each([
+    ['virus.pdf', 'REJECTED_FILE_VIRUS'],
+    ['upload-failed.pdf', 'REJECTED_FILE_UPLOAD_FAILED'],
+    ['download-failed.pdf', 'REJECTED_FILE_DOWNLOAD_FAILED']
+  ])(
+    'Should report a %s rejection with the tag key naming its reason',
+    async (filename, tagKey) => {
+      const uploadId = await registeredUpload(filename)
+      const result = await driveHandler(statusRoute.handler, {
+        seed: { documents: [storedDocument({ uploadId, filename })] }
+      })
+      expect(result.response.payload.documents).toEqual([
+        { uploadId, scanStatus: 'REJECTED', tagKey }
+      ])
+    }
+  )
 
   it('Should leave documents with no upload out of the poll payload — the client keys on upload id', async () => {
     const result = await driveHandler(statusRoute.handler, {
@@ -1040,7 +1098,8 @@ describe('documents — scan-status poll and view context', () => {
     })
     expect(result.view.context.rows[0][3].attributes).toEqual({
       'data-upload-id': uploadId,
-      'data-scan-status': 'PENDING'
+      'data-scan-status': 'PENDING',
+      'data-tag-key': 'PENDING'
     })
   })
 
@@ -1054,6 +1113,61 @@ describe('documents — scan-status poll and view context', () => {
       manifestDocuments.requires.maxEntries
     )
   })
+})
+
+describe('documents — naming the reason a scan refused a document', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+
+  it.each([
+    ['virus.pdf', 'REJECTED_FILE_VIRUS', TAG_VIRUS_FOUND],
+    ['upload-failed.pdf', 'REJECTED_FILE_UPLOAD_FAILED', TAG_UPLOAD_FAILED],
+    [
+      'download-failed.pdf',
+      'REJECTED_FILE_DOWNLOAD_FAILED',
+      TAG_DOWNLOAD_FAILED
+    ]
+  ])(
+    'Should name the reason %s was refused for, in the tag and the key the client rewrites by',
+    async (filename, tagKey, tagText) => {
+      const uploadId = await registeredUpload(filename)
+      const seed = { documents: [storedDocument({ uploadId, filename })] }
+      await driveHandler(statusRoute.handler, { seed })
+
+      const result = await driveHandler(get, { seed })
+
+      expect(result.view.context.rows[0][3].html).toContain(tagText)
+      expect(result.view.context.rows[0][3].attributes).toEqual({
+        'data-upload-id': uploadId,
+        'data-scan-status': 'REJECTED',
+        'data-tag-key': tagKey
+      })
+    }
+  )
+
+  it('Should fall back to the plain refusal tag for a reason it has no wording for', async () => {
+    const uploadId = await registeredUpload('itahc.pdf')
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+    }
+    const read = vi.spyOn(documentUploads, 'scanStatus').mockResolvedValue({
+      scanStatus: 'REJECTED',
+      rejectionReason: 'FILE_SOMETHING_NEW'
+    })
+
+    try {
+      const result = await driveHandler(get, { seed })
+
+      expect(result.view.context.rows[0][3].html).toContain(TAG_REJECTED)
+      expect(result.view.context.rows[0][3].attributes).toEqual({
+        'data-upload-id': uploadId,
+        'data-scan-status': 'REJECTED',
+        'data-tag-key': 'REJECTED'
+      })
+    } finally {
+      read.mockRestore()
+    }
+  })
 
   it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
     const result = await driveHandler(get)
@@ -1066,10 +1180,28 @@ describe('documents — scan-status poll and view context', () => {
         announcement: 'Document scan complete: the file is safe to use'
       },
       REJECTED: {
-        text: 'Rejected',
-        classes: 'govuk-tag--red',
+        text: TAG_REJECTED,
+        classes: REFUSED_TAG_CLASSES,
         announcement:
           'Document check failed: the file cannot be used. Remove it and try again.'
+      },
+      REJECTED_FILE_VIRUS: {
+        text: TAG_VIRUS_FOUND,
+        classes: REFUSED_TAG_CLASSES,
+        announcement:
+          'Document check failed: the file contains a virus. Remove it and try again.'
+      },
+      REJECTED_FILE_UPLOAD_FAILED: {
+        text: TAG_UPLOAD_FAILED,
+        classes: REFUSED_TAG_CLASSES,
+        announcement:
+          'Document check failed: the file could not be uploaded. Remove it and try again.'
+      },
+      REJECTED_FILE_DOWNLOAD_FAILED: {
+        text: TAG_DOWNLOAD_FAILED,
+        classes: REFUSED_TAG_CLASSES,
+        announcement:
+          'Document check failed: the file could not be downloaded. Remove it and try again.'
       },
       PENDING: { text: TAG_SCANNING, classes: 'govuk-tag--blue' },
       UNKNOWN: { text: 'Unknown', classes: 'govuk-tag--grey' }
