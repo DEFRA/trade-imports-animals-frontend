@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 
 const logger = createLogger()
@@ -31,3 +33,6 @@ export const requestReferenceData = async (url, init, failureMessage) => {
     throw err
   }
 }
+
+export const referenceDataUnavailable = (dataset, err) =>
+  Boom.serverUnavailable('Reference data unavailable', { dataset, cause: err })
