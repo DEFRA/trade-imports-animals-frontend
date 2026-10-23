@@ -10,15 +10,10 @@ import {
   scopedFields
 } from '../identifier/fields.js'
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
+import { lineTitle } from '../../line-title.js'
 import { speciesLabel } from '../../species-label.js'
 
 const copy = copyFor({ en, cy }).identification
-
-const cardTitleOf = (entry) => {
-  const code = (entry.commodityCode ?? '').trim()
-  const species = speciesLabel(entry)
-  return species ? `${code} — ${species}` : code
-}
 
 const counterOf = (species, records, cap) =>
   cap === null
@@ -109,7 +104,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   return {
     index,
     anchor: `identification-card-${index}`,
-    title: cardTitleOf(entry),
+    title: lineTitle(entry),
     species,
     changeCountHref,
     counter: atMax ? null : counterOf(species, units.length, cap),
