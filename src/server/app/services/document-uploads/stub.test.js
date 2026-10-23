@@ -53,13 +53,13 @@ describe('#documentUploads', () => {
           filename: VIRUS_FILENAME,
           refresh: true
         })
-      ).toEqual({ scanStatus: 'REJECTED' })
+      ).toEqual({ scanStatus: 'REJECTED', rejectionReason: 'FILE_VIRUS' })
       expect(
         await documentUploads.scanStatus({
           uploadId,
           filename: VIRUS_FILENAME
         })
-      ).toEqual({ scanStatus: 'REJECTED' })
+      ).toEqual({ scanStatus: 'REJECTED', rejectionReason: 'FILE_VIRUS' })
     })
 
     it('Should keep a filename containing "never-scans" PENDING even through refresh reads', async () => {
@@ -79,6 +79,25 @@ describe('#documentUploads', () => {
       ).toEqual({ scanStatus: 'PENDING' })
     })
 
+    it.each([
+      ['virus-notes.pdf', 'FILE_VIRUS'],
+      ['upload-failed.pdf', 'FILE_UPLOAD_FAILED'],
+      ['download-failed.pdf', 'FILE_DOWNLOAD_FAILED']
+    ])(
+      'Should settle %s as REJECTED carrying the reason %s',
+      async (filename, rejectionReason) => {
+        const uploadId = await registeredUploadId()
+
+        expect(
+          await documentUploads.scanStatus({
+            uploadId,
+            filename,
+            refresh: true
+          })
+        ).toEqual({ scanStatus: 'REJECTED', rejectionReason })
+      }
+    )
+
     it('Should settle an unknown uploadId straight from its filename', async () => {
       expect(
         await documentUploads.scanStatus({
@@ -91,10 +110,56 @@ describe('#documentUploads', () => {
           uploadId: 'unknown',
           filename: VIRUS_FILENAME
         })
-      ).toEqual({ scanStatus: 'REJECTED' })
+      ).toEqual({ scanStatus: 'REJECTED', rejectionReason: 'FILE_VIRUS' })
     })
   })
 
+  /**
+   * The field rules the claim endpoint enforces, so a stub run shows them too. Stub mode is what
+   * the whole unit and fit suite runs against, and a stand-in that took any payload left the
+   * page's own reference rule proved by nothing — which is how a reference the endpoint refuses
+   * reached a trader.
+   */
+  describe('#claim', () => {
+    const goodClaim = {
+      uploadId: 'upload-1',
+      documentType: 'ITAHC',
+      documentReference: 'CHEDA.GB.2026.1234567',
+      dateOfIssue: '2026-01-15'
+    }
+
+    it('Should take on a claim the endpoint would accept', async () => {
+      await expect(documentUploads.claim(goodClaim)).resolves.toBeUndefined()
+    })
+
+    it.each([
+      ['documentType', { documentType: '' }],
+      ['documentReference', { documentReference: '' }],
+      ['documentReference', { documentReference: 'AWB/2026#0001' }],
+      ['documentReference', { documentReference: 'R'.repeat(101) }],
+      ['dateOfIssue', { dateOfIssue: '' }],
+      ['dateOfIssue', { dateOfIssue: '15/01/2026' }]
+    ])(
+      'Should refuse a claim the endpoint would 400 on %s',
+      async (field, override) => {
+        await expect(
+          documentUploads.claim({ ...goodClaim, ...override })
+        ).rejects.toMatchObject({ status: 400, field })
+      }
+    )
+
+    it('Should take on a reference carrying the separators real references use', async () => {
+      await expect(
+        documentUploads.claim({
+          ...goodClaim,
+          documentReference: '125-12345675 A/B.1'
+        })
+      ).resolves.toBeUndefined()
+    })
+  })
+})
+
+describe('#documentUploads — session lookup, reads and removal', () => {
   describe('#findByCorrelationId', () => {
     it('Should answer the upload registered under that correlationId', async () => {
       const uploadId = randomUUID()

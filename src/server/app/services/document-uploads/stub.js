@@ -1,5 +1,21 @@
-const REJECTED_FILENAME = /virus/i
+import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
+import {
+  FILE_DOWNLOAD_FAILED,
+  FILE_UPLOAD_FAILED,
+  FILE_VIRUS
+} from '../cdp-uploader/file-error-codes.js'
+import { claimRefusal } from './claim-contract.js'
+
 const NEVER_SCANS_FILENAME = /never-scans/i
+
+// The scan outcome a stub run cannot reach honestly, so a test asks for it by
+// name. Each reason a settled scan can refuse a document for has a filename
+// that provokes it, since nothing else in a stub run produces one.
+const REJECTION_REASON_BY_FILENAME = [
+  [/virus/i, FILE_VIRUS],
+  [/upload-failed/i, FILE_UPLOAD_FAILED],
+  [/download-failed/i, FILE_DOWNLOAD_FAILED]
+]
 
 const SCAN_STATUS_PENDING = 'PENDING'
 const SCAN_STATUS_REJECTED = 'REJECTED'
@@ -25,13 +41,16 @@ const PLACEHOLDER_PDF = [
   '%%EOF'
 ].join('\n')
 
-const settledStatus = (filename = '') => {
+const settled = (filename = '') => {
   if (NEVER_SCANS_FILENAME.test(filename)) {
-    return SCAN_STATUS_PENDING
+    return { scanStatus: SCAN_STATUS_PENDING }
   }
-  return REJECTED_FILENAME.test(filename)
-    ? SCAN_STATUS_REJECTED
-    : SCAN_STATUS_COMPLETE
+  const match = REJECTION_REASON_BY_FILENAME.find(([named]) =>
+    named.test(filename)
+  )
+  return match
+    ? { scanStatus: SCAN_STATUS_REJECTED, rejectionReason: match[1] }
+    : { scanStatus: SCAN_STATUS_COMPLETE }
 }
 
 // Keyed on the notification as well as the handle, because that is the rule the
@@ -51,7 +70,18 @@ export const documentUploads = {
     awaitingRefresh.add(uploadId)
   },
 
-  claim: async () => undefined,
+  claim: async (claim) => {
+    const field = claimRefusal(claim)
+    if (field) {
+      const error = new Error(
+        `Failed to claim document upload: ${HTTP_STATUS_BAD_REQUEST} Bad Request`
+      )
+      error.status = HTTP_STATUS_BAD_REQUEST
+      error.field = field
+      throw error
+    }
+    return undefined
+  },
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const uploadId = uploadIdsBySession.get(
@@ -62,13 +92,13 @@ export const documentUploads = {
 
   scanStatus: async ({ uploadId, filename, refresh }) => {
     if (!awaitingRefresh.has(uploadId)) {
-      return { scanStatus: settledStatus(filename) }
+      return settled(filename)
     }
     if (!refresh) {
       return { scanStatus: SCAN_STATUS_PENDING }
     }
     awaitingRefresh.delete(uploadId)
-    return { scanStatus: settledStatus(filename) }
+    return settled(filename)
   },
 
   remove: async (uploadId) => {

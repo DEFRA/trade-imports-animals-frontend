@@ -9,7 +9,7 @@ import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
+import { REFERENCE_MAX_LENGTH } from '../../../../../../../services/document-uploads/claim-contract.js'
 import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_FILE_TYPES_HINT,
