@@ -9,7 +9,8 @@ const sessionService = () => (isStubMode() ? stubSessions : realSessions)
 
 export const documentUploadSessions = {
   open: (session) => sessionService().open(session),
-  read: (uploadId) => sessionService().read(uploadId)
+  read: (uploadId) => sessionService().read(uploadId),
+  uploadPathFor: (uploadId) => sessionService().uploadPathFor(uploadId)
 }
 
 export const documentUploadRoutes = () =>

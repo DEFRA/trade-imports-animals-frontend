@@ -63,6 +63,11 @@
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+    {% if uploadSession %}
+      {# Carries the open session into the next render, so a refused Continue or a failed Remove
+         re-renders the page on the session it is already showing rather than opening another. #}
+      <input type="hidden" name="uploadSession" value="{{ uploadSession }}" />
+    {% endif %}
     {% if pendingDocumentRemoval %}
       <input type="hidden" name="retryRemoveIndex" value="{{ pendingDocumentRemoval.index }}" />
       <input type="hidden" name="retryRemoveUploadId" value="{{ pendingDocumentRemoval.uploadId }}" />

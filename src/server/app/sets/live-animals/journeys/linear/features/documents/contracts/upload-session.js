@@ -8,6 +8,12 @@ import { documentsPage as page } from '../page.js'
 // cdp-uploader has not assigned an upload id at that point.
 export const RETURNED_HANDLE_QUERY = 'upload'
 
+// The session the add form on the page being left is posting to, carried into the next render of
+// the same page — in the refresh link's query, and in the form a Continue or a Remove posts. One
+// key for both, and the value is a correlation handle as RETURNED_HANDLE_QUERY's is. A page view
+// that carries none opens a session of its own, so two adds never share a handle.
+export const OPEN_SESSION_KEY = 'uploadSession'
+
 const CORRELATION_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
@@ -58,4 +64,17 @@ export const isCorrelationHandle = (value) =>
 export const returnedCorrelationId = (request) => {
   const returned = request.query?.[RETURNED_HANDLE_QUERY]
   return isCorrelationHandle(returned) ? returned : undefined
+}
+
+/**
+ * The handle of the session the page view being re-rendered already opened.
+ *
+ * @param {object} request - the request being handled
+ * @returns {string|undefined} the handle, or nothing when the request carries no handle of that
+ *   shape
+ */
+export const carriedCorrelationId = (request) => {
+  const carried =
+    request.payload?.[OPEN_SESSION_KEY] ?? request.query?.[OPEN_SESSION_KEY]
+  return isCorrelationHandle(carried) ? carried : undefined
 }

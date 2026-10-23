@@ -43,6 +43,15 @@ const openSession = () =>
   })
 
 describe('#documentUploadSessions', () => {
+  describe('#uploadPathFor', () => {
+    it('Should answer the path the browser posts its file to for a session already open, without asking the service', async () => {
+      expect(documentUploadSessions.uploadPathFor(UPLOAD_ID)).toBe(
+        `/upload-and-scan/${UPLOAD_ID}`
+      )
+      expect(fetchMocker.requests()).toEqual([])
+    })
+  })
+
   describe('#open', () => {
     it('Should answer the session id and the path the browser posts its file to', async () => {
       fetchMocker.mockResponse(

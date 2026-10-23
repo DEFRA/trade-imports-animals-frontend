@@ -21,7 +21,7 @@ const BOUNDARY = 'stubuploadboundary'
 const OVERSIZE_FILENAME = 'oversize.pdf'
 
 // The five fields and the handle-carrying return path that the one production
-// caller, handlers/open-upload-session.js, hands the real adapter.
+// caller, handlers/add-form-session.js, hands the real adapter.
 const openSession = (maxFileSize = SESSION_CAP_BYTES) =>
   documentUploadSessions.open({
     journeyId: JOURNEY_ID,

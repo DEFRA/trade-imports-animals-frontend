@@ -36,7 +36,7 @@ import {
 } from './form/payload.js'
 import { claimUpload } from './handlers/claim-upload.js'
 import { loadPage } from './handlers/load-page.js'
-import { openUploadSession } from './handlers/open-upload-session.js'
+import { addFormSession } from './handlers/add-form-session.js'
 import { fileResponse } from './handlers/reads/download.js'
 import { unsavedClaimedUpload } from './handlers/unsaved-claim.js'
 import { documentsPage as page } from './page.js'
@@ -54,9 +54,11 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
-const openSessionOrReportUnavailable = async (request, journeyId) => {
+// The add form's own fields, or none of them: a page whose session could not be opened shows the
+// documents it holds and refuses the add form alone.
+const addFormFor = async (request, journeyId) => {
   try {
-    return await openUploadSession(request, journeyId)
+    return await addFormSession(request, journeyId)
   } catch (err) {
     request.logger.error(
       { err, status: err.status, journeyId },
@@ -72,10 +74,7 @@ const get = async (request, h) => {
   if (correlationId) {
     return claimReturnedUpload(request, h, pageState, correlationId)
   }
-  const addForm = await openSessionOrReportUnavailable(
-    request,
-    pageState.journey.journeyId
-  )
+  const addForm = await addFormFor(request, pageState.journey.journeyId)
   return render(request, h, pageState, EMPTY_FORM, { extra: addForm })
 }
 
@@ -93,10 +92,7 @@ const renderRecoverableFailure = async (
     extra: {
       recoverableError: true,
       unsavedDocument,
-      ...(await openSessionOrReportUnavailable(
-        request,
-        pageState.journey.journeyId
-      ))
+      ...(await addFormFor(request, pageState.journey.journeyId))
     }
   }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
@@ -111,10 +107,7 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
     )
   }
   if (claimed?.errors || claimed?.summaryErrors) {
-    const addForm = await openSessionOrReportUnavailable(
-      request,
-      pageState.journey.journeyId
-    )
+    const addForm = await addFormFor(request, pageState.journey.journeyId)
     return render(request, h, pageState, claimed.values, {
       errors: claimed.errors ?? {},
       summaryErrors: claimed.summaryErrors ?? [],
@@ -211,10 +204,7 @@ const retryProjectionSave = async (
         extra: {
           recoverableError: true,
           pendingDocumentRemoval,
-          ...(await openSessionOrReportUnavailable(
-            request,
-            pageState.journey.journeyId
-          ))
+          ...(await addFormFor(request, pageState.journey.journeyId))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
@@ -271,10 +261,7 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
             index,
             uploadId: entry.uploadId
           },
-          ...(await openSessionOrReportUnavailable(
-            request,
-            pageState.journey.journeyId
-          ))
+          ...(await addFormFor(request, pageState.journey.journeyId))
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
@@ -292,10 +279,7 @@ const continueToNextPage = async (request, h, pageState) =>
 const renderStillSettling = async (request, h, pageState) =>
   render(request, h, pageState, EMPTY_FORM, {
     summaryErrors: settlingSummaryErrors(pageState.documents),
-    extra: await openSessionOrReportUnavailable(
-      request,
-      pageState.journey.journeyId
-    )
+    extra: await addFormFor(request, pageState.journey.journeyId)
   })
 
 // Leaving the page, once nothing is left to save. A file still being checked
@@ -336,7 +320,7 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
   const journeyId = pageState.journey.journeyId
   const values = documentFromPayload(payload)
-  const addForm = await openSessionOrReportUnavailable(request, journeyId)
+  const addForm = await addFormFor(request, journeyId)
   if (atDocumentCapacity(pageState.documents)) {
     request.logger.info(
       { journeyId },

@@ -206,14 +206,24 @@ export const meta = { ...page, collects: ['documents'] }
 ```
 
 This loop's Add button does not post to this service at all. The entry carries
-a file, so Add posts to a session on the upload service, opened as the page is
+a file, so Add posts to a session on the upload service, resolved as the page is
 rendered by
-[`handlers/open-upload-session.js`](../journeys/linear/features/documents/handlers/open-upload-session.js),
-which also registers that session against the notification. The controller
-calls it through `openSessionOrReportUnavailable`, which reports an
-unavailable form rather than failing the page when no session can be opened:
-the document list stays readable and the Add form alone is refused, with its
-own message.
+[`handlers/add-form-session.js`](../journeys/linear/features/documents/handlers/add-form-session.js):
+the session this page view already opened where the request carries its handle,
+and a newly opened one otherwise, registered against the notification. The
+controller calls it through `addFormFor`, which reports an unavailable form
+rather than failing the page when no session can be opened: the document list
+stays readable and the Add form alone is refused, with its own message.
+
+A session is opened per page view rather than per render, because every render
+that opened one left a registration and an upload-service session behind that
+the browser never returned with — a run of them for one document, since the
+no-JS refresh link re-renders the page on every tick while a scan settles. The
+handle travels in the refresh link's query and in a hidden field on the form,
+under the one key `uploadSession`, and the session it names is looked up on the
+notification the page belongs to rather than trusted from the handle alone. A
+page view that carries no handle opens its own session, so two adds never share
+one handle.
 
 The upload service then returns the browser to this page on a GET carrying the
 correlation handle the session was opened under. That GET is where the entry

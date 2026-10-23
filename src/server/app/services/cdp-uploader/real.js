@@ -14,6 +14,14 @@ const UPLOADER_CALLS = Object.freeze({
 
 export const documentUploadSessions = {
   /**
+   * Where the browser posts a file to for a session already open.
+   *
+   * @param {string} uploadId - the session's id
+   * @returns {string} the path to post to
+   */
+  uploadPathFor: (uploadId) => `/upload-and-scan/${uploadId}`,
+
+  /**
    * Opens an upload session for the browser to post a file to.
    *
    * @param {object} session
@@ -53,7 +61,10 @@ export const documentUploadSessions = {
         return response.json()
       }
     )
-    return { uploadId, uploadPath: `/upload-and-scan/${uploadId}` }
+    return {
+      uploadId,
+      uploadPath: documentUploadSessions.uploadPathFor(uploadId)
+    }
   },
 
   /**

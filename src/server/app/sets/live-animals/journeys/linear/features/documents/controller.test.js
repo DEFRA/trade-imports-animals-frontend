@@ -1684,6 +1684,118 @@ describe('documents — the add form when no upload session can be opened', () =
   })
 })
 
+describe('documents — the session the add form posts to', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  const uploadsRegisteredAgainst = async (journeyId) =>
+    documentUploads.listByNotification({ journeyId })
+
+  it('Should reuse the session it is already showing when the refresh link brings its handle back', async () => {
+    const opened = await driveHandler(get)
+
+    const refreshed = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { attempt: 1, uploadSession: opened.view.context.uploadSession }
+    })
+
+    expect(refreshed.view.context.uploadPath).toBe(
+      opened.view.context.uploadPath
+    )
+    expect(refreshed.view.context.uploadSession).toBe(
+      opened.view.context.uploadSession
+    )
+    await expect(
+      uploadsRegisteredAgainst(opened.journeyId)
+    ).resolves.toHaveLength(1)
+  })
+
+  it('Should reuse the session it is already showing when a refused Continue brings its handle back', async () => {
+    const opened = await driveHandler(get)
+
+    const refused = await driveHandler(post, {
+      journeyId: opened.journeyId,
+      payload: {
+        action: 'continue',
+        ...validDocument,
+        uploadSession: opened.view.context.uploadSession
+      }
+    })
+
+    expect(refused.response.statusCode).toBe(400)
+    expect(refused.view.context.uploadPath).toBe(opened.view.context.uploadPath)
+    await expect(
+      uploadsRegisteredAgainst(opened.journeyId)
+    ).resolves.toHaveLength(1)
+  })
+
+  it('Should carry the open session in the link that refreshes the scan statuses', async () => {
+    const result = await driveHandler(get, {
+      seed: { documents: [storedDocument({ uploadId: 'up-1234' })] }
+    })
+
+    expect(result.view.context.refreshHref).toBe(
+      `${pagePath(result.journeyId, 'accompanying-documents')}?attempt=1&uploadSession=${result.view.context.uploadSession}`
+    )
+  })
+
+  /**
+   * The handle arrives from the browser, so the session it names is looked up on the notification
+   * the page belongs to. A handle another notification opened must reach nothing, or a file would
+   * be uploaded into a session scoped to someone else's notification.
+   */
+  it('Should open a session of its own for a handle another notification opened', async () => {
+    const other = await registeredSession((await store.create()).journeyId)
+
+    const result = await driveHandler(get, {
+      query: { uploadSession: other.correlationId }
+    })
+
+    expect(result.view.context.uploadSession).not.toBe(other.correlationId)
+    expect(result.view.context.uploadPath).toBeDefined()
+    await expect(uploadsRegisteredAgainst(result.journeyId)).resolves.toEqual([
+      {
+        uploadId: expect.any(String),
+        correlationId: result.view.context.uploadSession,
+        claimed: false
+      }
+    ])
+  })
+
+  it('Should open a session of its own when the session it is showing cannot be read, and say so once', async () => {
+    const unreadable = backendRefusal('get document upload session')
+    const opened = await driveHandler(get)
+    vi.spyOn(documentUploads, 'findByCorrelationId').mockRejectedValue(
+      unreadable
+    )
+
+    const refreshed = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { attempt: 1, uploadSession: opened.view.context.uploadSession }
+    })
+
+    expect(refreshed.view.context.uploadSession).not.toBe(
+      opened.view.context.uploadSession
+    )
+    expect(
+      refreshed.logger.entries.filter(({ level }) => level === 'warn')
+    ).toEqual([
+      {
+        level: 'warn',
+        fields: {
+          err: unreadable,
+          status: SERVICE_UNAVAILABLE,
+          journeyId: opened.journeyId,
+          correlationId: opened.view.context.uploadSession
+        },
+        message:
+          'Could not read the upload session this page already opened, opening another'
+      }
+    ])
+  })
+})
+
 describe('documents — a removal the backend cannot save', () => {
   beforeAll(configureEngine)
   beforeEach(() => store.clear())

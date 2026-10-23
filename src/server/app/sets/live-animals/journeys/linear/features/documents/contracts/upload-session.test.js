@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  OPEN_SESSION_KEY,
   RETURNED_HANDLE_QUERY,
+  carriedCorrelationId,
   documentsPageHref,
   newCorrelationId,
   returnPath,
@@ -84,5 +86,40 @@ describe('#returnedCorrelationId', () => {
   it('Should answer nothing when the query carries no handle at all', () => {
     expect(returnedCorrelationId(request())).toBeUndefined()
     expect(returnedCorrelationId({})).toBeUndefined()
+  })
+})
+
+describe('#carriedCorrelationId', () => {
+  const posting = (payload) => ({ payload, query: {} })
+
+  it('Should answer the handle the refresh link carries', () => {
+    expect(carriedCorrelationId(request({ [OPEN_SESSION_KEY]: HANDLE }))).toBe(
+      HANDLE
+    )
+  })
+
+  it('Should answer the handle the form carries', () => {
+    expect(carriedCorrelationId(posting({ [OPEN_SESSION_KEY]: HANDLE }))).toBe(
+      HANDLE
+    )
+  })
+
+  /** The handle arrives from the browser, as the returning one does, and is judged the same way. */
+  it.each([
+    ['a path traversal', '../../actuator/health'],
+    ['an encoded traversal', '..%2F..%2Fnotifications%2Fx'],
+    ['an empty value', '']
+  ])('Should answer nothing for %s', (_name, value) => {
+    expect(
+      carriedCorrelationId(request({ [OPEN_SESSION_KEY]: value }))
+    ).toBeUndefined()
+    expect(
+      carriedCorrelationId(posting({ [OPEN_SESSION_KEY]: value }))
+    ).toBeUndefined()
+  })
+
+  it('Should answer nothing when the request carries no open session', () => {
+    expect(carriedCorrelationId(request())).toBeUndefined()
+    expect(carriedCorrelationId({})).toBeUndefined()
   })
 })

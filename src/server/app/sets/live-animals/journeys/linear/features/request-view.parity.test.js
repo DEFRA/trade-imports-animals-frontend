@@ -125,6 +125,8 @@ const canonicalViewOf = (answers) =>
 const withoutKeysThatChangePerSave = ({
   concurrencyToken: _token,
   uploadPath: _uploadPath,
+  uploadSession: _uploadSession,
+  refreshHref: _refreshHref,
   ...rest
 }) => rest
 

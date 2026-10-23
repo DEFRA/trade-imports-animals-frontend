@@ -81,7 +81,7 @@ export const render = ({
       : null,
     anyPending,
     timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
-    refreshHref: refreshHref(request, attempt + 1),
+    refreshHref: refreshHref(request, attempt + 1, extra.uploadSession),
     acceptAttribute: ACCEPT_ATTRIBUTE,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,

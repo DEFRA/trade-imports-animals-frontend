@@ -67,6 +67,8 @@ const fileEntryFor = (upload) => {
 }
 
 export const documentUploadSessions = {
+  uploadPathFor: (uploadId) => `${STUB_UPLOAD_PATH}/${uploadId}`,
+
   open: async ({ correlationId, returnPath, maxFileSize, mimeTypes }) => {
     const uploadId = randomUUID()
     sessions.set(uploadId, {
@@ -76,7 +78,10 @@ export const documentUploadSessions = {
       mimeTypes,
       form: {}
     })
-    return { uploadId, uploadPath: `${STUB_UPLOAD_PATH}/${uploadId}` }
+    return {
+      uploadId,
+      uploadPath: documentUploadSessions.uploadPathFor(uploadId)
+    }
   },
 
   read: async (uploadId) => {
