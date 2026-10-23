@@ -19,8 +19,8 @@ export const scopedFields = (commodityCode) =>
 
 export const PERMANENT_ADDRESS = 'permanentAddress'
 
-export const permanentAddressApplies = (species) =>
-  appliesForGateValue(PERMANENT_ADDRESS, species)
+export const permanentAddressApplies = (commodityCode, species) =>
+  appliesForGateValue(PERMANENT_ADDRESS, [commodityCode, species])
 
 export const identifierChecksFor = (commodityCode, index) =>
   compose(

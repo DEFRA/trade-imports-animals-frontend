@@ -46,7 +46,10 @@ const buildLineForm = (payload, entry, index) => {
   const { commodityCode } = entry
   const values = identifierValuesFromPayload(payload, commodityCode, index)
   const addressValues = addressValuesFromPayload(payload, index)
-  const showAddress = permanentAddressApplies(entry.speciesLatinName)
+  const showAddress = permanentAddressApplies(
+    commodityCode,
+    entry.speciesLatinName
+  )
   const holdsData = formHoldsData(showAddress, values, addressValues)
 
   const { errors: idErrors } = validate(

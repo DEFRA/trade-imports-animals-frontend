@@ -32,8 +32,8 @@ so generic notification-mapper code does not import the set.
   an identified commodity. Then each such line needs at least one complete
   identifier record, never one per animal. `moreThanOne` on the unit-record
   group's `requires.floorAppliesToParent` carries this rule.
-- Every commodity in `PERMANENT_ADDRESS_COMMODITIES` must also be in
-  `IDENTIFIED_COMMODITIES`, or the address is never collected.
+- Every code in `PERMANENT_ADDRESS_SPECIES` must also be in
+  `IDENTIFIED_CODES`, or the address is never collected.
   [`index.test.js`](../services/commodities/index.test.js) pins this.
 - The unweaned-animals question is asked only of a commodity with unweaned
   options. Of the commodities offered, only cattle has them.
@@ -49,10 +49,13 @@ so generic notification-mapper code does not import the set.
   rules live in [`rules.js`](../services/commodities/rules.js). A rule keyed by
   a Latin name matches MDM's spelling exactly: if MDM corrects a spelling, the
   rule stops matching and has to follow it.
-- `PERMANENT_ADDRESS_SPECIES` gates on the species, not the code: `01061900`
-  holds the domestic cats, dogs and ferrets that need a permanent address
-  alongside many mammals that do not. The genus Felis (MDM's "Cat") is not one
-  of them. `Canis lupus familiaris` is listed beside MDM's `Canis familiaris`
+- `PERMANENT_ADDRESS_SPECIES` gates on the code and the species together: a
+  line is asked for each animal's permanent address only when its code is
+  `01061900` and its Latin name is listed under that code. `01061900` holds
+  the domestic cats, dogs and ferrets that need one alongside many mammals
+  that do not, and MDM lists one species under several codes, so neither the
+  code nor the species alone is enough. The genus Felis (MDM's "Cat") is not
+  listed. `Canis lupus familiaris` is listed beside MDM's `Canis familiaris`
   in case MDM renames it.
 - The package-count list holds the codes of the design's package-count list
   that MDM's live-animal data holds. Where the design named an entry by animal,

@@ -72,6 +72,12 @@ const SAMPLE_OBLIGATIONS = {
     id: 'sample-allowListed',
     applyTo: helpers.allowListed(gateObl, ['a', 'b'])
   },
+  allowListedPairs: {
+    id: 'sample-allowListedPairs',
+    applyTo: helpers.allowListedPairs(gateObl, { id: 'paired-obl' }, [
+      ['a', 'b']
+    ])
+  },
   anyAllowListed: {
     id: 'sample-anyAllowListed',
     applyTo: helpers.anyAllowListed(

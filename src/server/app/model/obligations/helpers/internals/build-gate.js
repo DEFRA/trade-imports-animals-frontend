@@ -1,8 +1,19 @@
+import { isNonArrayObject } from '../../helper-internals.js'
 import { runGate } from './run-gate.js'
+
+const pairByFulfilmentIndex = (first, second) =>
+  Object.fromEntries(
+    Object.entries(isNonArrayObject(first) ? first : {}).map(
+      ([fulfilmentIndex, value]) => [
+        fulfilmentIndex,
+        [value, second?.[fulfilmentIndex]]
+      ]
+    )
+  )
 
 /**
  * Shared factory for indexed-gate helpers (`allowListed`,
- * `notInUnionOf`). Params:
+ * `allowListedPairs`, `notInUnionOf`). Params:
  *
  *   - `gateType`         — stamped onto `.metadata.gateType`.
  *                          Differs per flavour (`'allowListed'` vs
@@ -10,6 +21,11 @@ import { runGate } from './run-gate.js'
  *   - `gateObligation`   — the obligation whose stored value the gate
  *                          reads. Its id is used for the storage lookup
  *                          and stamped on `.metadata.obligationId`.
+ *   - `pairedObligation` — optional. When set, the gate reads each
+ *                          fulfilmentIndex as the pair
+ *                          `[gateObligation value, pairedObligation value]`
+ *                          and its id is stamped on
+ *                          `.metadata.pairedObligationId`.
  *   - `currentValues`    — getter for the live allowlist / union;
  *                          wrapped by `Object.defineProperty` on
  *                          `.metadata.values` for lazy static
@@ -33,14 +49,22 @@ import { runGate } from './run-gate.js'
 export const buildGate = ({
   gateType,
   gateObligation,
+  pairedObligation,
   currentValues,
   admits,
   gatedParentGroup,
   reasons
 }) => {
+  const gateFulfilment = (fulfilments) =>
+    pairedObligation
+      ? pairByFulfilmentIndex(
+          fulfilments[gateObligation.id],
+          fulfilments[pairedObligation.id]
+        )
+      : fulfilments[gateObligation.id]
   const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
     const decision = runGate(
-      fulfilments[gateObligation.id],
+      gateFulfilment(fulfilments),
       admits,
       gatedParentGroup,
       fulfilmentIndexesByObligationId
@@ -50,6 +74,7 @@ export const buildGate = ({
   fn.metadata = {
     gateType,
     obligationId: gateObligation.id,
+    ...(pairedObligation && { pairedObligationId: pairedObligation.id }),
     gatedParentGroupId: gatedParentGroup?.id ?? null,
     reasons: reasons ?? null
   }

@@ -19,7 +19,7 @@ export const identifierColumns = (commodityCode, species) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),
-  ...(permanentAddressApplies(species)
+  ...(permanentAddressApplies(commodityCode, species)
     ? [[PERMANENT_ADDRESS, copy.table.permanentAddressColumn]]
     : [])
 ]

@@ -7,16 +7,26 @@ describe('#appliesForGateValue', () => {
     expect(appliesForGateValue('animalIdentifierPassport', '0101')).toBe(true)
   })
 
-  it('Should apply permanentAddress for the species Felis catus', () => {
-    expect(appliesForGateValue('permanentAddress', 'Felis catus')).toBe(true)
+  it('Should apply permanentAddress for the species Felis catus under 01061900', () => {
+    expect(
+      appliesForGateValue('permanentAddress', ['01061900', 'Felis catus'])
+    ).toBe(true)
+  })
+
+  it('Should not apply permanentAddress for the species Felis catus under another code', () => {
+    expect(
+      appliesForGateValue('permanentAddress', ['0102', 'Felis catus'])
+    ).toBe(false)
   })
 
   it('Should not apply horseName for commodity code 0102', () => {
     expect(appliesForGateValue('horseName', '0102')).toBe(false)
   })
 
-  it('Should not apply permanentAddress for the species Felis', () => {
-    expect(appliesForGateValue('permanentAddress', 'Felis')).toBe(false)
+  it('Should not apply permanentAddress for the genus Felis under 01061900', () => {
+    expect(appliesForGateValue('permanentAddress', ['01061900', 'Felis'])).toBe(
+      false
+    )
   })
 
   it('Should ask about unweaned animals for cattle (0102)', () => {
@@ -45,7 +55,9 @@ describe('#appliesForGateValue', () => {
   })
 
   it('Should not apply permanentAddress for an unknown species', () => {
-    expect(appliesForGateValue('permanentAddress', 'Unicorn')).toBe(false)
+    expect(
+      appliesForGateValue('permanentAddress', ['01061900', 'Unicorn'])
+    ).toBe(false)
   })
 
   it('Should never apply an obligation that has no gate', () => {

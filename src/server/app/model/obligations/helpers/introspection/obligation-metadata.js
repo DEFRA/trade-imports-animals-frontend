@@ -32,6 +32,8 @@ export const obligationMetadata = (obligation) => {
  *     `notInUnionOf` / `matches` / `equalsGate` / `presentGate` /
  *     `includesGate`
  *          → `[metadata.obligationId]` (all name a single gate obligation)
+ *   - `allowListedPairs`
+ *          → `[metadata.obligationId, metadata.pairedObligationId]`
  *   - `branchedGate`
  *          → `[metadata.predicateMeta.obligationId]` when annotated;
  *            otherwise `undefined` — the coverage assertion then requires
@@ -58,6 +60,9 @@ const deriveDependsOn = (gateMetadata) => {
     return typeof gateMetadata.obligationId === 'string'
       ? [gateMetadata.obligationId]
       : undefined
+  }
+  if (gateType === 'allowListedPairs') {
+    return [gateMetadata.obligationId, gateMetadata.pairedObligationId]
   }
   if (gateType === 'branchedGate') {
     return typeof gateMetadata.predicateMeta?.obligationId === 'string'

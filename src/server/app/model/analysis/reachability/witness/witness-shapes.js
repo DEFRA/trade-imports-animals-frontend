@@ -22,6 +22,15 @@ export const firstListedValueWitness = (
     : witness
 }
 
+export const firstListedPairWitness = (meta, emptyReason) => {
+  const witness = firstListedValueWitness(meta, emptyReason, {
+    withGatedParentGroupId: true
+  })
+  return witness.kind === WITNESS_KIND.WITNESS
+    ? { ...witness, pairedObligationId: meta.pairedObligationId }
+    : witness
+}
+
 export const isTotalBranchGate = (meta) =>
   meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true
 

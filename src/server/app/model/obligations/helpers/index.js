@@ -1,4 +1,5 @@
 export { allowListed } from './allow-listed.js'
+export { allowListedPairs } from './allow-listed-pairs.js'
 export { notInUnionOf } from './not-in-union-of.js'
 export { anyAllowListed } from './any-allow-listed.js'
 export { anyNotInUnionOf } from './any-not-in-union-of.js'

@@ -8,14 +8,13 @@ import {
   identifiersFor,
   microchipCommodityCodes,
   passportCommodityCodes,
-  permanentAddressSpecies,
+  permanentAddressCodeSpecies,
   listsSpeciesIndividually,
   tattooCommodityCodes,
   typeIdFor,
   typeTextForId
 } from './index.js'
 import { search } from './search.js'
-import { COMMODITY_GROUPS } from './stub.js'
 
 const CATTLE = '0102'
 const HORSES = '0101'
@@ -125,18 +124,19 @@ describe('the identifier allowlists', () => {
     ])
   })
 
-  it('Should find every permanent-address species MDM holds under an identified code', () => {
-    const codesOf = (latinName) =>
-      COMMODITY_GROUPS.filter((group) =>
-        group.species.some((species) => species.latinName === latinName)
-      ).map((group) => group.code)
-
-    for (const latinName of permanentAddressSpecies()) {
-      for (const code of codesOf(latinName)) {
-        expect(identifiedCommodityCodes()).toContain(code)
-      }
+  it('Should key every permanent-address species to an identified code', () => {
+    for (const [code] of permanentAddressCodeSpecies()) {
+      expect(identifiedCommodityCodes()).toContain(code)
     }
-    expect(codesOf('Felis catus')).toEqual([OTHER_MAMMALS])
+  })
+
+  it('Should key the permanent-address species to 01061900 alone', () => {
+    expect(permanentAddressCodeSpecies()).toEqual([
+      [OTHER_MAMMALS, 'Felis catus'],
+      [OTHER_MAMMALS, 'Canis familiaris'],
+      [OTHER_MAMMALS, 'Canis lupus familiaris'],
+      [OTHER_MAMMALS, 'Mustela putorius furo']
+    ])
   })
 })
 

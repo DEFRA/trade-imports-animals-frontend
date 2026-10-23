@@ -49,6 +49,10 @@ Which helper to pick:
   `gatedParentGroup` when the gate and the gated obligation sit at the same level,
   or the group when the gated obligation is deeper; the engine then fans across
   that group's fulfilment indexes for each matching parent.
+- The same decision from two obligations read at the same fulfilment index:
+  `allowListedPairs`, which admits an index whose two values form a listed pair.
+  The permanent address is asked only of a line whose CN code and Latin name
+  are listed together.
 - One decision from any value across a group: `anyAllowListed` when the rule names
   the members, `anyNotInUnionOf` when it names the exceptions and the members are
   open-ended. The CPH question is asked unless every commodity line's code is

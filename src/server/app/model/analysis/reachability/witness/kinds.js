@@ -11,7 +11,7 @@
 //
 // Classification of the manifest's gated obligations:
 //   - structured (witness-synthesisable) — helpers with recoverable
-//     metadata: `allowListed`, `anyAllowListed`, `anyNotInUnionOf`, `matches`,
+//     metadata: `allowListed`, `allowListedPairs`, `anyAllowListed`, `anyNotInUnionOf`, `matches`,
 //     `notInUnionOf`, plus `branchedGate` when the caller supplies
 //     `predicateMeta`.
 //   - trivial (total-over-branches) — `branchedGate` where both
@@ -57,6 +57,7 @@ export const WITNESS_KIND = Object.freeze({
  */
 export const STRUCTURED_HELPER_TYPES = new Set([
   'allowListed',
+  'allowListedPairs',
   'anyAllowListed',
   'anyNotInUnionOf',
   'matches',

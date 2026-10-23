@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   allowListed,
+  allowListedPairs,
   alwaysInScope,
   anyAllowListed,
   anyNotInUnionOf,
@@ -95,6 +96,53 @@ describe('allowListed', () => {
     const gate = allowListed(codeObl, ['a'], null, [reason])
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
     expect(decision).toEqual({ inScope: false })
+  })
+})
+
+describe('allowListedPairs', () => {
+  const speciesObl = { id: 'species-obl' }
+
+  it('Should admit only the fulfilmentIndexes whose two values form a listed pair', () => {
+    const gate = allowListedPairs(codeObl, speciesObl, [['a', 'cat']])
+    const decision = gate(
+      {
+        [codeObl.id]: { k1: 'a', k2: 'b', k3: 'a' },
+        [speciesObl.id]: { k1: 'cat', k2: 'cat', k3: 'dog' }
+      },
+      new Map()
+    )
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1'] })
+  })
+
+  it('Should project a listed pair onto the instance-paths of its line', () => {
+    const gate = allowListedPairs(codeObl, speciesObl, [['a', 'cat']], groupObl)
+    const decision = gate(
+      {
+        [codeObl.id]: { line1: 'a', line2: 'a' },
+        [speciesObl.id]: { line1: 'cat', line2: 'dog' }
+      },
+      new Map([[groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2.unit2']]])
+    )
+    expect(decision).toEqual({
+      inScope: true,
+      fulfilmentIndexes: [line1Unit1Path, line1Unit2Path]
+    })
+  })
+
+  it('Should expose both gate obligations and the pairs for introspection', () => {
+    const gate = allowListedPairs(codeObl, speciesObl, [['a', 'cat']], groupObl)
+    expect(gate.metadata).toEqual({
+      gateType: 'allowListedPairs',
+      obligationId: codeObl.id,
+      pairedObligationId: speciesObl.id,
+      values: [['a', 'cat']],
+      gatedParentGroupId: groupObl.id,
+      reasons: null
+    })
+    expect(obligationMetadata({ applyTo: gate }).dependsOn).toEqual([
+      codeObl.id,
+      speciesObl.id
+    ])
   })
 })
 

@@ -2,8 +2,8 @@
  * Whitelist scope tests.
  *
  * Nine commodity-scoped obligations are gated on the commodities
- * service's allowlists of CN codes, or of Latin names for the permanent
- * address. Silently widening any allowlist is a real risk (e.g. adding a
+ * service's allowlists of CN codes, or of CN code and Latin name pairs for
+ * the permanent address. Silently widening any allowlist is a real risk (e.g. adding a
  * code to the package-count list that puts `numberOfPackages` in scope
  * for a new commodity). This test iterates every `(allowlist,
  * gated-obligation)` pair and, for every entry, evaluates a scripted
@@ -36,7 +36,7 @@ import {
   microchipCommodityCodes,
   packageCountCommodityCodes,
   passportCommodityCodes,
-  permanentAddressSpecies,
+  permanentAddressCodeSpecies,
   tattooCommodityCodes,
   unweanedCommodityCodes
 } from '../services/commodities/index.js'
@@ -159,7 +159,8 @@ describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)',
 
 // ---------------------------------------------------------------------------
 // Unit-record-scoped gates: microchip / passport / tattoo / earTag /
-// horseName read the line's code; permanentAddress reads its species.
+// horseName read the line's code; permanentAddress reads its code and
+// species together.
 // Each uses `applyTo: allowListed(<gate>, LIST, unitRecord, …)`, so
 // records are `lineId.unitId` fulfilment indexes for units on matching
 // lines.
@@ -200,12 +201,6 @@ const UNIT_SCOPED_ALLOWLISTS = [
     gate: commodityCode,
     values: horseNameCommodityCodes(),
     gated: horseName
-  },
-  {
-    name: 'permanent-address list',
-    gate: speciesLatinName,
-    values: permanentAddressSpecies(),
-    gated: permanentAddress
   }
 ]
 
@@ -235,15 +230,29 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
   })
 }
 
-it('Should not put permanentAddress in scope for the genus Felis under 01061900', () => {
-  const state = evaluate({
-    [commodityCode.id]: { line1: '01061900' },
-    [speciesLatinName.id]: { line1: 'Felis' },
-    [permanentAddress.id]: { 'line1.unit1': '' }
+describe('permanent-address list → permanentAddress (unit-record-scoped)', () => {
+  const permanentAddressIndexesFor = (code, latinName) =>
+    evaluate({
+      [commodityCode.id]: { line1: code },
+      [speciesLatinName.id]: { line1: latinName },
+      [permanentAddress.id]: { 'line1.unit1': '' }
+    }).obligations[permanentAddress.id].fulfilmentIndexes ?? []
+
+  for (const [code, latinName] of permanentAddressCodeSpecies()) {
+    it(`Should put permanentAddress in scope for a unit of ${latinName} under ${code}`, () => {
+      expect(permanentAddressIndexesFor(code, latinName)).toContain(
+        'line1.unit1'
+      )
+    })
+  }
+
+  it('Should not put permanentAddress in scope for the genus Felis under 01061900', () => {
+    expect(permanentAddressIndexesFor('01061900', 'Felis')).toEqual([])
   })
-  expect(
-    state.obligations[permanentAddress.id].fulfilmentIndexes ?? []
-  ).toEqual([])
+
+  it('Should not put permanentAddress in scope for a listed species under another code', () => {
+    expect(permanentAddressIndexesFor('0102', 'Felis catus')).toEqual([])
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -297,10 +306,10 @@ const EXPECTED = {
   'ear-tag list': ['0102'],
   'horse-name list': ['0101'],
   'permanent-address list': [
-    'Canis familiaris',
-    'Canis lupus familiaris',
-    'Felis catus',
-    'Mustela putorius furo'
+    ['01061900', 'Canis familiaris'],
+    ['01061900', 'Canis lupus familiaris'],
+    ['01061900', 'Felis catus'],
+    ['01061900', 'Mustela putorius furo']
   ]
 }
 
@@ -313,7 +322,7 @@ const ALLOWLISTS_UNDER_TEST = [
   { name: 'tattoo list', values: tattooCommodityCodes() },
   { name: 'ear-tag list', values: earTagCommodityCodes() },
   { name: 'horse-name list', values: horseNameCommodityCodes() },
-  { name: 'permanent-address list', values: permanentAddressSpecies() }
+  { name: 'permanent-address list', values: permanentAddressCodeSpecies() }
 ]
 
 describe('anti-drift — every allowlist matches its expected shape', () => {

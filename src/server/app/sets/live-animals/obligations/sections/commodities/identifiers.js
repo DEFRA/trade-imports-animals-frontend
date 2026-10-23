@@ -4,11 +4,12 @@ import {
   identifiedCommodityCodes,
   microchipCommodityCodes,
   passportCommodityCodes,
-  permanentAddressSpecies,
+  permanentAddressCodeSpecies,
   tattooCommodityCodes
 } from '../../../services/commodities/index.js'
 import {
   allowListed,
+  allowListedPairs,
   moreThanOne
 } from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode, commodityLine, speciesLatinName } from './lines.js'
@@ -45,7 +46,7 @@ const horseNameReason = {
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
-    'permanentAddress applies on units of lines whose species requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
 
 // -----------------------------------------------------------------------------
@@ -166,7 +167,11 @@ export const permanentAddress = {
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(speciesLatinName, permanentAddressSpecies, unitRecord, [
-    permanentAddressReason
-  ])
+  applyTo: allowListedPairs(
+    commodityCode,
+    speciesLatinName,
+    permanentAddressCodeSpecies,
+    unitRecord,
+    [permanentAddressReason]
+  )
 }

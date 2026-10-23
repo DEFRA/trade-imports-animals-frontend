@@ -104,7 +104,10 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const species = speciesLatinNameOf(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(entry.speciesLatinName)
+  const showAddress = permanentAddressApplies(
+    commodityCode,
+    entry.speciesLatinName
+  )
   const columns = identifierColumns(commodityCode, entry.speciesLatinName)
   return {
     index,

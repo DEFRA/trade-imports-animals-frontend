@@ -8,6 +8,14 @@ import { INDEX_DELIMITER } from '../../../obligations/index-delimiter.js'
 // empty `fulfilmentIndexes` list regardless of the value. Depth-1
 // `allowListed` / `notInUnionOf` still read as a map; every other helper
 // accepts a plain unindexed value.
+const lineFulfilments = (witness) =>
+  witness.pairedObligationId
+    ? {
+        [witness.obligationId]: { line1: witness.value[0] },
+        [witness.pairedObligationId]: { line1: witness.value[1] }
+      }
+    : { [witness.obligationId]: { line1: witness.value } }
+
 export const witnessFulfilments = (obligation, witness) => {
   const fulfilmentIndexesByObligationId = new Map()
   if (witness.gatedParentGroupId) {
@@ -15,7 +23,7 @@ export const witnessFulfilments = (obligation, witness) => {
       ['line1', 'unit1'].join(INDEX_DELIMITER)
     ])
     return {
-      fulfilments: { [witness.obligationId]: { line1: witness.value } },
+      fulfilments: lineFulfilments(witness),
       fulfilmentIndexesByObligationId
     }
   }

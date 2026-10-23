@@ -7,7 +7,7 @@ import {
   MICROCHIP_CODES,
   PACKAGE_COUNT_CODES,
   PASSPORT_CODES,
-  PERMANENT_ADDRESS_SPECIES,
+  PERMANENT_ADDRESS_CODE_SPECIES,
   PER_SPECIES_CODE,
   TATTOO_CODES,
   UNWEANED_CODES,
@@ -38,7 +38,7 @@ export const horseNameCommodityCodes = () => HORSE_NAME_CODES
 
 export const identifiedCommodityCodes = () => IDENTIFIED_CODES
 
-export const permanentAddressSpecies = () => PERMANENT_ADDRESS_SPECIES
+export const permanentAddressCodeSpecies = () => PERMANENT_ADDRESS_CODE_SPECIES
 
 export const unweanedCommodityCodes = () => UNWEANED_CODES
 

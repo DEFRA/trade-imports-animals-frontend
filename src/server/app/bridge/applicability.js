@@ -1,4 +1,5 @@
 import { obligationByName } from '../model/obligations/manifest.js'
+import { listsGateValue } from '../model/obligations/helper-internals.js'
 
 const COMPLEMENT_GATE_TYPES = new Set(['notInUnionOf', 'anyNotInUnionOf'])
 
@@ -7,11 +8,12 @@ const COMPLEMENT_GATE_TYPES = new Set(['notInUnionOf', 'anyNotInUnionOf'])
  * leaves out, every other gate admits what its list holds.
  *
  * @param {object} [metadata] - the gate's `applyTo.metadata`.
- * @param {*} value - the stored value of the gate obligation.
+ * @param {*} value - the stored value of the gate obligation, or for a
+ *   pair gate the `[gate value, paired value]` pair.
  * @returns {boolean}
  */
 export const gateAdmits = (metadata, value) => {
-  const inList = (metadata?.values ?? []).includes(value)
+  const inList = listsGateValue(metadata?.values ?? [], value)
   return COMPLEMENT_GATE_TYPES.has(metadata?.gateType) ? !inList : inList
 }
 
@@ -20,7 +22,8 @@ export const gateAdmits = (metadata, value) => {
  * no gate never does.
  *
  * @param {string} obligationName - the obligation's manifest name.
- * @param {string} gateValue - the value the obligation's gate reads.
+ * @param {string | string[]} gateValue - the value the obligation's gate
+ *   reads, or for a pair gate the `[gate value, paired value]` pair.
  * @returns {boolean}
  */
 export const appliesForGateValue = (obligationName, gateValue) =>

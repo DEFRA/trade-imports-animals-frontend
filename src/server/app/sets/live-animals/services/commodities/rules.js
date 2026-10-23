@@ -62,12 +62,20 @@ export const PACKAGE_COUNT_CODES = [
   '05119985'
 ]
 
-export const PERMANENT_ADDRESS_SPECIES = [
-  'Felis catus',
-  'Canis familiaris',
-  'Canis lupus familiaris',
-  'Mustela putorius furo'
-]
+const PERMANENT_ADDRESS_SPECIES = {
+  [OTHER_LIVE_MAMMALS_CODE]: [
+    'Felis catus',
+    'Canis familiaris',
+    'Canis lupus familiaris',
+    'Mustela putorius furo'
+  ]
+}
+
+export const PERMANENT_ADDRESS_CODE_SPECIES = Object.entries(
+  PERMANENT_ADDRESS_SPECIES
+).flatMap(([code, latinNames]) =>
+  latinNames.map((latinName) => [code, latinName])
+)
 
 export const UNWEANED_CODES = [CATTLE_CODE, SWINE_CODE]
 

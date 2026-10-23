@@ -13,6 +13,18 @@
 export const isNonArrayObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
+const samePair = (listed, value) =>
+  Array.isArray(listed) &&
+  listed.length === value.length &&
+  listed.every((part, position) => part === value[position])
+
+// Whether a gate's list holds `value`: a pair such as `[code, species]`
+// matches a listed pair part for part, any other value matches by identity.
+export const listsGateValue = (values, value) =>
+  Array.isArray(value)
+    ? values.some((listed) => samePair(listed, value))
+    : values.includes(value)
+
 // Read `fulfilments[gateId]` and normalise to `{ present, candidates }`:
 //   - undefined            → { present: false, candidates: [] }
 //   - indexedFulfilments   → { present: true,  candidates: Object.values(...) }

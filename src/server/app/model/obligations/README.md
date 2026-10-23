@@ -182,7 +182,7 @@ Top-level primitives (used everywhere else in the module):
 
 `helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
 
-- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `notInUnionOf`).
+- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `notInUnionOf`).
 - `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.
 
 ## Algorithm

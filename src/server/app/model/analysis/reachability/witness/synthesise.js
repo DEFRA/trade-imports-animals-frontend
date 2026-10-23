@@ -1,11 +1,13 @@
 import { WITNESS_KIND } from './kinds.js'
 import {
+  firstListedPairWitness,
   firstListedValueWitness,
   totalBranchWitnessOrValue
 } from './witness-shapes.js'
 
 const LIST_GATE_TYPES = new Set([
   'allowListed',
+  'allowListedPairs',
   'anyAllowListed',
   'anyNotInUnionOf',
   'notInUnionOf'
@@ -122,6 +124,11 @@ const synthesiseListGateWitness = (meta) => {
         meta,
         'allowListed metadata has empty values array',
         { withGatedParentGroupId: true }
+      )
+    case 'allowListedPairs':
+      return firstListedPairWitness(
+        meta,
+        'allowListedPairs metadata has empty values array'
       )
     case 'anyAllowListed':
       return firstListedValueWitness(

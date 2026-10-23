@@ -140,7 +140,7 @@ const horseNameReason = {
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
-    'permanentAddress applies on units of lines whose species requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
 
 // A representative composite address value — the obligation model treats
