@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { JSDOM } from 'jsdom'
 
 import { nunjucksConfig } from '../../../../../../../../../config/nunjucks/nunjucks.js'
+import { documentOf } from '../../../../../../../../common/test-helpers/document-of.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as addressesCopy } from '../copy/copy.en.js'
 import { pickerTableRows } from './view-model/table-rows.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker
-
-const documentOf = (html) => new JSDOM(html).window.document
 
 const renderResults = (rows, { error, query } = {}) =>
   environment.renderString(

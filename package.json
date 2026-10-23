@@ -105,7 +105,6 @@
     "audit-ci": "7.1.0",
     "autoprefixer": "10.6.1",
     "babel-loader": "10.1.1",
-    "cheerio": "1.2.0",
     "clean-webpack-plugin": "4.0.0",
     "copy-webpack-plugin": "14.0.0",
     "dependency-cruiser": "18.5.0",
