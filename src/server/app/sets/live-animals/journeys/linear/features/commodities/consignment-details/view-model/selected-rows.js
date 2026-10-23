@@ -1,5 +1,5 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { speciesName } from '../../species-name.js'
+import { speciesLabel } from '../../species-label.js'
 import { commodityCodesOf } from '../lines.js'
 import {
   REMOVE_ACTION_PREFIX,
@@ -12,7 +12,7 @@ const linesOfCode = (lines, code) =>
 const commodityRow = (lines, code, index) => ({
   code,
   name: linesOfCode(lines, code)
-    .map(({ entry }) => speciesName(entry))
+    .map(({ entry }) => speciesLabel(entry))
     .join(', '),
   removeAction: `${REMOVE_ACTION_PREFIX}${index}`
 })
@@ -20,7 +20,7 @@ const commodityRow = (lines, code, index) => ({
 const speciesRows = (lines, code) =>
   linesOfCode(lines, code).map(({ index, entry }) => ({
     code,
-    name: speciesName(entry),
+    name: speciesLabel(entry),
     removeAction: `${REMOVE_SPECIES_ACTION_PREFIX}${index}`
   }))
 

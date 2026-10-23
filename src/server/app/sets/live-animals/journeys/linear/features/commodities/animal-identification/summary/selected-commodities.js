@@ -1,4 +1,4 @@
-import { speciesName } from '../../species-name.js'
+import { speciesLabel } from '../../species-label.js'
 
 // The declared count is a number once the line is saved and the entered string
 // on a re-render, so the summary reads it as text either way. A line the user
@@ -8,6 +8,6 @@ const countText = (value) => String(value ?? '')
 export const buildSelectedCommodities = (lines) =>
   lines.map(({ entry }) => ({
     code: entry.commodityCode ?? '',
-    name: speciesName(entry),
+    name: speciesLabel(entry),
     animals: countText(entry.numberOfAnimalsQuantity)
   }))

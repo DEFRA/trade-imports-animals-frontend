@@ -1,9 +1,10 @@
 import { animalsField, packagesApply, packagesField } from '../fields.js'
 import { commodityCodesOf } from '../lines.js'
+import { speciesLabel } from '../../species-label.js'
 
 export const groupLine = ({ index, entry }, values, errors) => ({
   index,
-  speciesText: entry.speciesLatinName,
+  speciesText: speciesLabel(entry),
   animalsField: animalsField(index),
   packagesField: packagesField(index),
   animalsValue: values[animalsField(index)] ?? '',

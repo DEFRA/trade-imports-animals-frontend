@@ -1,7 +1,7 @@
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
-import { speciesLatinNameOf } from './species-latin-name.js'
+import { speciesLabel } from '../../../../../commodities/species-label.js'
 
 const copy = copyFor({ en, cy })
 
@@ -12,7 +12,7 @@ export const speciesCardTitle = (entry) => {
   if (!commodityCode) {
     return NOT_APPLICABLE
   }
-  const speciesLatinName = speciesLatinNameOf(entry)
+  const speciesLatinName = speciesLabel(entry)
   return speciesLatinName
     ? `${commodityCode} — ${speciesLatinName}`
     : commodityCode

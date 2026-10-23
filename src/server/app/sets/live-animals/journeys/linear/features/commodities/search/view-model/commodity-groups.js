@@ -1,12 +1,13 @@
 import { lineKey } from '../selection/line-key.js'
 import { resultRows } from '../selection/rows.js'
-import { legendFor, speciesLabelFor } from './labels.js'
+import { speciesLabel } from '../../species-label.js'
+import { legendFor } from './labels.js'
 
 const itemFor = (row, selected) => {
   const key = lineKey(row)
   return {
     value: key,
-    text: speciesLabelFor(row.speciesLatinName),
+    text: speciesLabel(row),
     checked: selected.includes(key)
   }
 }

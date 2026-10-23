@@ -21,7 +21,6 @@ const FELIS_CATUS = 'Felis catus'
 const EQUUS_CABALUS = 'Equus cabalus'
 const CANIS_FAMILIARIS = 'Canis familiaris'
 const STRUTHIO = 'Struthio'
-const CATTLE_OR_COW = 'Cattle or Cow'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -137,9 +136,9 @@ const columnHeader = (page, name) =>
 const selectedCommoditiesSummary = (page) =>
   page.getByRole('table', { name: copy.identification.summary.caption })
 
-const expectSummaryRow = async (summary, commonName, code, animals) => {
-  const row = summary.getByRole('row').filter({ hasText: commonName })
-  for (const cell of [code, commonName, animals]) {
+const expectSummaryRow = async (summary, species, code, animals) => {
+  const row = summary.getByRole('row').filter({ hasText: species })
+  for (const cell of [code, species, animals]) {
     await expect(
       row.getByRole('cell', { name: cell, exact: true })
     ).toBeVisible()
@@ -510,7 +509,7 @@ test.describe('animal identification selected commodities summary', () => {
 
     for (const head of [
       copy.identification.summary.commodityCode,
-      copy.identification.summary.commonName,
+      copy.identification.summary.species,
       copy.identification.summary.numberOfAnimals
     ]) {
       await expect(
@@ -518,8 +517,8 @@ test.describe('animal identification selected commodities summary', () => {
       ).toBeVisible()
     }
 
-    await expectSummaryRow(summary, CATTLE_OR_COW, '0102', '2')
-    await expectSummaryRow(summary, 'Horse', '0101', '3')
+    await expectSummaryRow(summary, BOS_TAURUS, '0102', '2')
+    await expectSummaryRow(summary, EQUUS_CABALUS, '0101', '3')
 
     const main = await page.locator('main').innerHTML()
     expect(main.indexOf(copy.identification.summary.caption)).toBeLessThan(
@@ -531,7 +530,7 @@ test.describe('animal identification selected commodities summary', () => {
     await openIdentification(page, [BOS_TAURUS], ['2'])
     await selectedCommoditiesSummary(page)
       .getByRole('link', {
-        name: `${copy.identification.summary.change} ${CATTLE_OR_COW}`
+        name: `${copy.identification.summary.change} ${BOS_TAURUS}`
       })
       .click()
 

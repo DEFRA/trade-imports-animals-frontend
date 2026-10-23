@@ -1,7 +1,7 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 
 {# One row per selected commodity — or one per chosen species where the design
-   lists a commodity's species individually: code, common name, Remove
+   lists a commodity's species individually: code, species, Remove
    (design 01-14). #}
 {% macro selectedCommoditiesTable(selectedRows, copy) %}
   {% set rows = [] %}
@@ -20,7 +20,7 @@
     captionClasses: "govuk-table__caption--m",
     head: [
       { text: copy.commodityCode },
-      { text: copy.commonName },
+      { text: copy.species },
       { html: '<span class="govuk-visually-hidden">' + copy.actionsHidden + '</span>' }
     ],
     rows: rows

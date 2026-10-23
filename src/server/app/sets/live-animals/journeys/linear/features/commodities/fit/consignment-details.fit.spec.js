@@ -21,10 +21,10 @@ const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
 const THIRD_ANIMALS_QUANTITY_INPUT = '#numberOfAnimalsQuantity-2'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
-const CATTLE_OR_COW = 'Cattle or Cow'
-const DOMESTIC_CAT = 'Domestic Cat'
-const REMOVE_COW = `Remove ${CATTLE_OR_COW}`
-const REMOVE_CAT = `Remove ${DOMESTIC_CAT}`
+const FELIS_CATUS = 'Felis catus'
+const CANIS_FAMILIARIS = 'Canis familiaris'
+const REMOVE_COW = `Remove ${BOS_TAURUS}`
+const REMOVE_CAT = `Remove ${FELIS_CATUS}`
 
 const selectedCommoditiesTable = (page) =>
   page.getByRole('table', { name: copy.consignmentDetails.table.caption })
@@ -33,7 +33,7 @@ const openDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [BOS_TAURUS, 'Felis catus'])
+  await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page
@@ -82,14 +82,12 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(table).toContainText(
       copy.consignmentDetails.table.commodityCode
     )
-    await expect(table).toContainText(CATTLE_OR_COW)
+    await expect(table).toContainText(BOS_TAURUS)
     await expect(table).toContainText('0102')
-    await expect(table).toContainText(DOMESTIC_CAT)
+    await expect(table).toContainText(FELIS_CATUS)
     await expect(table).toContainText('01061900')
     await expect(page.getByRole('heading', { name: BOS_TAURUS })).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Felis catus' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: FELIS_CATUS })).toBeVisible()
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
     ).toHaveAccessibleName(copy.consignmentDetails.animals.label)
@@ -233,7 +231,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await page.getByRole('button', { name: REMOVE_CAT }).click()
 
-    await expect(selectedCommoditiesTable(page)).not.toContainText(DOMESTIC_CAT)
+    await expect(selectedCommoditiesTable(page)).not.toContainText(FELIS_CATUS)
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
 
@@ -246,8 +244,8 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.getByRole('button', { name: REMOVE_COW }).click()
 
     const table = selectedCommoditiesTable(page)
-    await expect(table).not.toContainText(CATTLE_OR_COW)
-    await expect(table).toContainText(DOMESTIC_CAT)
+    await expect(table).not.toContainText(BOS_TAURUS)
+    await expect(table).toContainText(FELIS_CATUS)
     // The cat line is the only one left and its saved count travelled with it,
     // so the right group was dropped.
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
@@ -282,13 +280,13 @@ test.describe('commodity consignment details — persistence and accessibility',
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
     await expectSpeciesSelected(page, BOS_TAURUS)
-    await selectSpecies(page, ['Canis familiaris'])
+    await selectSpecies(page, [CANIS_FAMILIARIS])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page
       .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
       .click()
-    await expect(selectedCommoditiesTable(page)).toContainText('Dog')
+    await expect(selectedCommoditiesTable(page)).toContainText(CANIS_FAMILIARIS)
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('')
     await expect(page.locator(THIRD_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')

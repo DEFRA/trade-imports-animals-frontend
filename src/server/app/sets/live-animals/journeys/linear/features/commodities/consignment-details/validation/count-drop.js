@@ -5,6 +5,7 @@ import { animalIdentificationPage } from '../../page.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { animalsField } from '../fields.js'
+import { speciesLabel } from '../../species-label.js'
 
 const copy = copyFor({ en, cy }).consignmentDetails
 
@@ -21,7 +22,7 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
   return [
     {
       field: animalsField(index),
-      text: copy.errors.countDrop(records, entry.speciesLatinName, entered),
+      text: copy.errors.countDrop(records, speciesLabel(entry), entered),
       href: `${kit.withChangeContext(
         request,
         pagePath(request.params.journeyId, animalIdentificationPage.slug)

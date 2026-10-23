@@ -22,6 +22,8 @@ import { consignmentDetailsPage } from '../page.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
 const CATTLE_OR_COW = 'Cattle or Cow'
+const BOS_TAURUS = 'Bos taurus'
+const EQUUS_CABALUS = 'Equus cabalus'
 
 const post = postHandlerOf(animalIdentification)
 const getHandler = animalIdentification.routes.find(
@@ -48,7 +50,7 @@ const felisCatusLine = (extra = {}) => ({
 
 const bosTaurusLine = (extra = {}) => ({
   commodityCode: '0102',
-  speciesLatinName: 'Bos taurus',
+  speciesLatinName: BOS_TAURUS,
   commonName: CATTLE_OR_COW,
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -57,7 +59,7 @@ const bosTaurusLine = (extra = {}) => ({
 
 const horseLine = (extra = {}) => ({
   commodityCode: '0101',
-  speciesLatinName: 'Equus cabalus',
+  speciesLatinName: EQUUS_CABALUS,
   commonName: 'Horse',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
@@ -271,7 +273,7 @@ describe(`${SUITE} — the in-card save button`, () => {
 describe(`${SUITE} — the Selected commodities summary`, () => {
   setupIdentificationEngine()
 
-  it('Should summarise every line with its code, common name and declared count', async () => {
+  it('Should summarise every line with its code, the Latin name of its species and declared count', async () => {
     const context = await viewContext({
       commodityLines: [
         bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
@@ -279,8 +281,8 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
       ]
     })
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: CATTLE_OR_COW, animals: '2' },
-      { code: '0101', name: 'Horse', animals: '3' }
+      { code: '0102', name: BOS_TAURUS, animals: '2' },
+      { code: '0101', name: EQUUS_CABALUS, animals: '3' }
     ])
   })
 
@@ -702,13 +704,13 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
   const MATRIX = [
     {
       commodityCode: '0102',
-      speciesLatinName: 'Bos taurus',
+      speciesLatinName: BOS_TAURUS,
       fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
       showAddress: false
     },
     {
       commodityCode: '0101',
-      speciesLatinName: 'Equus cabalus',
+      speciesLatinName: EQUUS_CABALUS,
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
       showAddress: false
     },
@@ -758,8 +760,8 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       '0102 — Bos taurus'
     ])
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: CATTLE_OR_COW, animals: '2' },
-      { code: '01063300', name: 'Ostriches', animals: '3' }
+      { code: '0102', name: BOS_TAURUS, animals: '2' },
+      { code: '01063300', name: 'Struthio', animals: '3' }
     ])
   })
 

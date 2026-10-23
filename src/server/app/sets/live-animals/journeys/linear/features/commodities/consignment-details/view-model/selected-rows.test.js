@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSelectedRows } from './selected-rows.js'
-const DOMESTIC_CAT = 'Domestic Cat'
-const CATTLE_OR_COW = 'Cattle or Cow'
+const FELIS_CATUS = 'Felis catus'
+const BOS_TAURUS = 'Bos taurus'
 
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
 
@@ -13,11 +13,11 @@ const linesOf = (...triples) =>
   }))
 
 describe('#buildSelectedRows', () => {
-  it('Should give a code one row keyed to its group index, naming the species chosen under it', () => {
+  it('Should give a code one row keyed to its group index, naming the Latin name of each species chosen under it', () => {
     expect(
       buildSelectedRows(
         linesOf(
-          ['0102', 'Bos taurus', CATTLE_OR_COW],
+          ['0102', BOS_TAURUS, 'Cattle or Cow'],
           ['0102', 'Bison bison', 'Bisons Spp'],
           ['01063300', 'Struthio', 'Ostriches']
         )
@@ -25,10 +25,10 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow, Bisons Spp',
+        name: 'Bos taurus, Bison bison',
         removeAction: 'remove:0'
       },
-      { code: '01063300', name: 'Ostriches', removeAction: 'remove:1' }
+      { code: '01063300', name: 'Struthio', removeAction: 'remove:1' }
     ])
   })
 
@@ -36,17 +36,17 @@ describe('#buildSelectedRows', () => {
     expect(
       buildSelectedRows(
         linesOf(
-          ['01061900', 'Felis catus', DOMESTIC_CAT],
+          ['01061900', FELIS_CATUS, 'Domestic Cat'],
           ['01063300', 'Struthio', 'Ostriches']
         )
       )
     ).toEqual([
       {
         code: '01061900',
-        name: DOMESTIC_CAT,
+        name: FELIS_CATUS,
         removeAction: REMOVE_FIRST_SPECIES
       },
-      { code: '01063300', name: 'Ostriches', removeAction: 'remove:1' }
+      { code: '01063300', name: 'Struthio', removeAction: 'remove:1' }
     ])
   })
 
@@ -54,30 +54,22 @@ describe('#buildSelectedRows', () => {
     expect(
       buildSelectedRows(
         linesOf(
-          ['0102', 'Bos taurus', CATTLE_OR_COW],
+          ['0102', BOS_TAURUS, 'Cattle or Cow'],
           ['01061900', 'Canis familiaris', 'Dog'],
-          ['01061900', 'Felis catus', DOMESTIC_CAT]
+          ['01061900', FELIS_CATUS, 'Domestic Cat']
         )
       )
     ).toEqual([
-      { code: '0102', name: CATTLE_OR_COW, removeAction: 'remove:0' },
-      { code: '01061900', name: 'Dog', removeAction: 'remove-species:1' },
+      { code: '0102', name: BOS_TAURUS, removeAction: 'remove:0' },
       {
         code: '01061900',
-        name: DOMESTIC_CAT,
+        name: 'Canis familiaris',
+        removeAction: 'remove-species:1'
+      },
+      {
+        code: '01061900',
+        name: FELIS_CATUS,
         removeAction: 'remove-species:2'
-      }
-    ])
-  })
-
-  it('Should name a species by its Latin name where it has no common name', () => {
-    expect(
-      buildSelectedRows(linesOf(['01061900', 'Catagonus', undefined]))
-    ).toEqual([
-      {
-        code: '01061900',
-        name: 'Catagonus',
-        removeAction: REMOVE_FIRST_SPECIES
       }
     ])
   })

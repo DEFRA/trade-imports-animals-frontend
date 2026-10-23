@@ -128,14 +128,11 @@ describe('#copy', () => {
     )
   })
 
-  // The identification page's summary carries the animal count the
-  // consignment-details table has no column for, so it owns its own heads
-  // rather than borrowing that table's.
-  it('Should head the identification summary with the code, the common name and the animal count', () => {
+  it('Should head the identification summary with the code, the species and the animal count', () => {
     expect(copy.identification.summary).toMatchObject({
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',
-      commonName: 'Common name',
+      species: 'Species',
       numberOfAnimals: 'Number of animals',
       change: 'Change'
     })

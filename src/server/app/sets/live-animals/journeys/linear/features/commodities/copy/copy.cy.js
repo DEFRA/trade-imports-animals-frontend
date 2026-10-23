@@ -42,7 +42,7 @@ export const copy = {
     table: {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
+      species: 'Rhywogaeth',
       actionsHidden: ACTIONS_HIDDEN,
       remove: 'Tynnu'
     },
@@ -70,7 +70,7 @@ export const copy = {
     summary: {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
+      species: 'Rhywogaeth',
       numberOfAnimals: 'Nifer yr anifeiliaid',
       actionsHidden: ACTIONS_HIDDEN,
       change: 'Newid'

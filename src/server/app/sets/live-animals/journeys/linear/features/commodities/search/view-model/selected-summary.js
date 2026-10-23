@@ -2,7 +2,8 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { codeAndLatinNameOf } from '../selection/keys.js'
-import { legendFor, speciesLabelFor } from './labels.js'
+import { speciesLabel } from '../../species-label.js'
+import { legendFor } from './labels.js'
 
 const copy = copyFor({ en, cy }).search
 
@@ -15,7 +16,7 @@ const groupsFor = (selected) =>
   ].map(([commodityCode, pairs]) => ({
     legend: legendFor(commodityCode),
     items: pairs.map(([, speciesLatinName]) =>
-      speciesLabelFor(speciesLatinName)
+      speciesLabel({ speciesLatinName })
     )
   }))
 

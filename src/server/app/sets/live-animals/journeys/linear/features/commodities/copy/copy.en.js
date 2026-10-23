@@ -34,7 +34,7 @@ export const copy = {
     table: {
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',
-      commonName: 'Common name',
+      species: 'Species',
       actionsHidden: 'Actions',
       remove: 'Remove'
     },
@@ -62,7 +62,7 @@ export const copy = {
     summary: {
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',
-      commonName: 'Common name',
+      species: 'Species',
       numberOfAnimals: 'Number of animals',
       actionsHidden: 'Actions',
       change: 'Change'

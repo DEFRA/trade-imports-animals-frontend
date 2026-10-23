@@ -10,13 +10,13 @@ import {
   scopedFields
 } from '../identifier/fields.js'
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
-import { speciesLatinNameOf } from '../../../check-answers/view-model/cards/consignment/species/species-latin-name.js'
+import { speciesLabel } from '../../species-label.js'
 
 const copy = copyFor({ en, cy }).identification
 
 const cardTitleOf = (entry) => {
   const code = (entry.commodityCode ?? '').trim()
-  const species = speciesLatinNameOf(entry)
+  const species = speciesLabel(entry)
   return species ? `${code} — ${species}` : code
 }
 
@@ -101,14 +101,11 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const commodityCode = entry.commodityCode
   const units = entry.animalIdentifiers ?? []
   const { cap, atMax, overBy } = capacityStateFor(answers, index, units.length)
-  const species = speciesLatinNameOf(entry)
+  const species = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(
-    commodityCode,
-    entry.speciesLatinName
-  )
-  const columns = identifierColumns(commodityCode, entry.speciesLatinName)
+  const showAddress = permanentAddressApplies(commodityCode, species)
+  const columns = identifierColumns(commodityCode, species)
   return {
     index,
     anchor: `identification-card-${index}`,

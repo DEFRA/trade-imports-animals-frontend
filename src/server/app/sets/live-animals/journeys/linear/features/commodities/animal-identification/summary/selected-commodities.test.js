@@ -21,7 +21,7 @@ const linesOf = (...rows) =>
   )
 
 describe('#buildSelectedCommodities', () => {
-  it('Should give every commodity line a summary row with its code, species name and animal count', () => {
+  it('Should give every commodity line a summary row with its code, the Latin name of its species and its animal count', () => {
     expect(
       buildSelectedCommodities(
         linesOf(
@@ -31,9 +31,9 @@ describe('#buildSelectedCommodities', () => {
         )
       )
     ).toEqual([
-      { code: '0102', name: CATTLE_OR_COW, animals: '2' },
-      { code: '0102', name: 'Bisons Spp', animals: '5' },
-      { code: '01063300', name: 'Ostriches', animals: '1' }
+      { code: '0102', name: BOS_TAURUS, animals: '2' },
+      { code: '0102', name: 'Bison bison', animals: '5' },
+      { code: '01063300', name: 'Struthio', animals: '1' }
     ])
   })
 
@@ -53,13 +53,7 @@ describe('#buildSelectedCommodities', () => {
       buildSelectedCommodities(
         linesOf(['0102', BOS_TAURUS, CATTLE_OR_COW, undefined])
       )
-    ).toEqual([{ code: '0102', name: CATTLE_OR_COW, animals: '' }])
-  })
-
-  it('Should name a row by its Latin name where the species has no common name', () => {
-    expect(
-      buildSelectedCommodities(linesOf(['01061900', 'Catagonus', undefined, 1]))
-    ).toEqual([{ code: '01061900', name: 'Catagonus', animals: '1' }])
+    ).toEqual([{ code: '0102', name: BOS_TAURUS, animals: '' }])
   })
 
   it('Should build no rows for an empty selection', () => {
