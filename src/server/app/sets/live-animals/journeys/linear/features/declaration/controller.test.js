@@ -9,7 +9,7 @@ import { records as realRecords } from '../../../../../../services/persistence/r
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
   expectOneLogged,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   journeyRequest,
   postHandlerOf,
   recordingLogger,
@@ -259,10 +259,7 @@ describe('#declaration submit', () => {
         result.reviewedConcurrencyToken
       )
       expect(result.after).toEqual(result.before)
-      expectOneRefusalLogged(result.logger, {
-        journeyId: result.journeyId,
-        errorCodes: ['declaration']
-      })
+      expectNoRefusalLogged(result.logger)
     })
 
     it('Should redirect to the confirmation page after a successful submit', async () => {

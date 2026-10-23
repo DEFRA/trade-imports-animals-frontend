@@ -1,5 +1,6 @@
 import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
+import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 
@@ -22,15 +23,6 @@ export const valueText = (value) => {
 /** A blank date comes back blank, not as "Not applicable". */
 export const dateText = (value) =>
   isBlank(value) ? null : `${value.day}/${value.month}/${value.year}`
-
-export const escapeHtml = (value) =>
-  value
-    .toString()
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
 
 /** The "Not applicable" cell, marked `empty: true`. */
 export const notApplicableCell = () => ({ text: NOT_APPLICABLE, empty: true })

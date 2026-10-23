@@ -17,22 +17,15 @@ const removeTargetOf = (action) => {
 const unitAt = (answers, line, unit) =>
   (answers.commodityLines ?? [])[line]?.animalIdentifiers?.[unit]
 
-// A removal deletes one identifier record, so it submits the card form — the
-// crumb travels with it and no GET can trigger it. Line and unit must both
-// resolve to a stored record; anything else is refused before any delete runs.
 export const postRemove = async (request, h, action) => {
   const { answers } = await state.get(request, h)
   const { line, unit } = removeTargetOf(action)
   if (!unitAt(answers, line, unit)) {
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        lineIndex: line,
-        unitIndex: unit,
-        reason: 'no-animal-identifier-at-index'
-      },
-      'Animal identifier removal refused: no animal identifier at the index'
-    )
+    kit.logRefusal(request, {
+      reason: 'no-animal-identifier-at-index',
+      lineIndex: line,
+      unitIndex: unit
+    })
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
   await state.removeEntryAt(

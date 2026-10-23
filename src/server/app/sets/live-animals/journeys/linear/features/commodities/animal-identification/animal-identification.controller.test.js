@@ -10,6 +10,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectNoRefusalLogged,
   expectOneRefusalLogged,
   expectRemovalRefusedLogged,
   journeyRequest,
@@ -98,6 +99,10 @@ const savedIdentifierColumns = (card) =>
 const savedIdentifierCells = (card, unitIndex) =>
   textsOf(card.savedAnimalsTable.rows[unitIndex].slice(1, -1))
 
+const HIDDEN_ANIMAL_1 = '<span class="govuk-visually-hidden"> animal 1</span>'
+
+const firstRemoveCellHtml = (card) => card.savedAnimalsTable.rows[0].at(-1).html
+
 const SUITE =
   '#animalIdentificationController — the single card-per-species surface'
 
@@ -124,7 +129,7 @@ describe(`${SUITE} — the cards view`, () => {
     })
     expect(card.title).toBe(BOS_TAURUS)
     expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
-    expect(card.units).toHaveLength(1)
+    expect(card.savedAnimalsTable.rows).toHaveLength(1)
     expect(savedAnimalLabels(card)[0]).toBe(BOS_TAURUS_1)
   })
 
@@ -207,8 +212,8 @@ describe(`${SUITE} — the cards view`, () => {
     expect(card.fields).toEqual([])
     expect(card.saveButtonText).toBeNull()
     expect(card.overCountText).toBeNull()
-    expect(card.units).toHaveLength(3)
-    expect(card.units[0].removeAria).toBe('animal 1')
+    expect(card.savedAnimalsTable.rows).toHaveLength(3)
+    expect(firstRemoveCellHtml(card)).toContain(HIDDEN_ANIMAL_1)
   })
 
   it('Should name the count mismatch when the declared number drops below the entered records', async () => {
@@ -227,8 +232,8 @@ describe(`${SUITE} — the cards view`, () => {
     expect(card.overCountText).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
     )
-    expect(card.units).toHaveLength(2)
-    expect(card.units[0].removeAria).toBe('animal 1')
+    expect(card.savedAnimalsTable.rows).toHaveLength(2)
+    expect(firstRemoveCellHtml(card)).toContain(HIDDEN_ANIMAL_1)
   })
 })
 
@@ -516,7 +521,7 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should reject an empty Save and add another — never append a blank record, and log the refused field', async () => {
+  it('Should reject an empty Save and add another — never append a blank record, and log nothing', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [cowLine({ numberOfAnimalsQuantity: '2' })] },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
@@ -526,10 +531,7 @@ describe(`${SUITE} — Save and add another`, () => {
     )
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: [EAR_TAG_FIELD_0]
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should surface the engine cap rejection as a card-level error when a stale form posts once every animal is entered, and log the refusal', async () => {
@@ -551,7 +553,10 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectOneRefusalLogged(result.logger, {
       journeyId: result.journeyId,
-      errorCodes: ['identification-card-0']
+      errorCodes: [],
+      reason: 'animal-identifier-cap-reached',
+      lineIndex: 0,
+      cap: 1
     })
   })
 
@@ -735,9 +740,7 @@ describe(`${SUITE} — Remove`, () => {
     expectRemovalRefusedLogged(result, {
       lineIndex: 5,
       unitIndex: 0,
-      reason: 'no-animal-identifier-at-index',
-      message:
-        'Animal identifier removal refused: no animal identifier at the index'
+      reason: 'no-animal-identifier-at-index'
     })
     expect(result.after).toEqual(seed)
   })
@@ -756,9 +759,7 @@ describe(`${SUITE} — Remove`, () => {
     expectRemovalRefusedLogged(result, {
       lineIndex: 0,
       unitIndex: 5,
-      reason: 'no-animal-identifier-at-index',
-      message:
-        'Animal identifier removal refused: no animal identifier at the index'
+      reason: 'no-animal-identifier-at-index'
     })
     expect(result.after).toEqual(seed)
   })

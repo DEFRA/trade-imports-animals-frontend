@@ -1,6 +1,12 @@
 import * as commodities from '../../../../../services/commodities/index.js'
-import { wrappingCell } from '../../../../../../../../common/constants/table-cells.js'
-import { escapeHtml } from '../../documents/view-model/fragments/text.js'
+import {
+  actionsCell,
+  hiddenActionsHeading,
+  removeActionCell,
+  visuallyHiddenText,
+  wrappingCell
+} from '../../../../../../../../common/constants/table-cells.js'
+import { escapeHtml } from '../../../../../../../shared/escape-html.js'
 import { buildCommodityGroups } from './commodity-groups.js'
 
 const latinNameOf = ({ entry }) =>
@@ -47,32 +53,22 @@ export const buildSelectedCommoditiesTable = (rows, headings) => ({
   rows: rows.map(selectedCommodityCells)
 })
 
-const ACTIONS_CELL_CLASSES = 'govuk-!-text-align-right'
-
-const hiddenText = (text) =>
-  `<span class="govuk-visually-hidden">${escapeHtml(text)}</span>`
-
-const actionsHeading = (headings) => ({
-  html: hiddenText(headings.actionsHidden)
-})
-
-const actionsCell = (html) => ({ html, classes: ACTIONS_CELL_CLASSES })
-
-const hiddenNameOf = (row) => hiddenText(` ${row.name}`)
-
-const removeButton = (row, copy) =>
-  `<button type="submit" class="govuk-link app-link-button" name="action" value="${escapeHtml(row.removeAction)}">${escapeHtml(copy.remove)}${hiddenNameOf(row)}</button>`
-
-const changeLink = (row, copy, changeHref) =>
-  `<a class="govuk-link" href="${escapeHtml(changeHref)}">${escapeHtml(copy.change)}${hiddenNameOf(row)}</a>`
+const changeLink = (row, copy, changeHref) => {
+  const hiddenName = visuallyHiddenText(` ${row.name}`)
+  return `<a class="govuk-link" href="${escapeHtml(changeHref)}">${escapeHtml(copy.change)}${hiddenName}</a>`
+}
 
 export const buildRemovableCommoditiesTable = (rows, headings, copy) => {
   const table = buildSelectedCommoditiesTable(rows, headings)
   return {
-    head: [...table.head, actionsHeading(headings)],
+    head: [...table.head, hiddenActionsHeading(headings.actionsHidden)],
     rows: table.rows.map((cells, position) => [
       ...cells,
-      actionsCell(removeButton(rows[position], copy))
+      removeActionCell({
+        action: rows[position].removeAction,
+        text: copy.remove,
+        hiddenText: rows[position].name
+      })
     ])
   }
 }
@@ -88,7 +84,7 @@ export const buildChangeableCommoditiesTable = (
     head: [
       ...table.head,
       { text: headings.numberOfAnimals },
-      actionsHeading(headings)
+      hiddenActionsHeading(headings.actionsHidden)
     ],
     rows: table.rows.map((cells, position) => [
       ...cells,

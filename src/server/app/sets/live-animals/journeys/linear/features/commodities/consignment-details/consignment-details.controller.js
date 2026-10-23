@@ -118,7 +118,6 @@ const post = async (request, h) => {
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) {
-    kit.logRefusal(request, { fieldErrors: errors })
     return renderRefusal({ request, h, current, lines, values, errors })
   }
 
@@ -127,7 +126,6 @@ const post = async (request, h) => {
     const countDropErrors = Object.fromEntries(
       issues.map((issue) => [issue.field, issue.text])
     )
-    kit.logRefusal(request, { fieldErrors: countDropErrors })
     return renderRefusal({
       request,
       h,

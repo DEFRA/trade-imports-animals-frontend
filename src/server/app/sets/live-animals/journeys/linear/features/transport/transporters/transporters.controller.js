@@ -127,7 +127,6 @@ const post = async (request, h) => {
   const records = availableTransporters(request)
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return render(
       request,

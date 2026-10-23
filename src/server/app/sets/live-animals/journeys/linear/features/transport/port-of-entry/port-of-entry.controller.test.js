@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   postHandlerOf,
   referenceDataServing,
   useStubbedJourney
@@ -35,10 +35,7 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['portOfEntry']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 })
 

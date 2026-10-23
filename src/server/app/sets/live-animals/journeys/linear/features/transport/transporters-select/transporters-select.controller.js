@@ -88,7 +88,6 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields, payload)
   if (errors) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return render(request, h, journey, {}, { errors }).code(
       HTTP_STATUS_BAD_REQUEST

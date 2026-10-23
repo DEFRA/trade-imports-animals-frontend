@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -57,10 +57,7 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
       cphCounty: 'Enter a CPH number'
     })
     expect(result.after.countyParishHoldingCph).toBeUndefined()
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['cphCounty']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should name the missing part when the others are answered', async () => {

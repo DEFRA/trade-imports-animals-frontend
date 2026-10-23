@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -127,10 +127,7 @@ describe('/transporters/add/private', () => {
     expect(Object.keys(result.view.context.errors)).toEqual(missingFields)
     expect(result.after.privateTransporter).toBeUndefined()
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: missingFields
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should hand a saved record on from the transporter list', async () => {

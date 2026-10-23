@@ -228,6 +228,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   declares, not per identifier the trader filled. The header row says which
   identifiers the line expects, and an empty cell shows which are still
   missing.
+- Removing an identifier record is a POST on the card form with no GET, so a
+  link cannot trigger it.
 - A consignment with nothing to identify skips the page.
 - The phone field is the one permanent-address field with a hint. A trader
   giving an address outside the UK cannot otherwise know the number is dialled
@@ -250,6 +252,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a trader who does not read Latin can tell the tick boxes apart.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
+- A removal returns to Commodity details while a line is left, and to the
+  commodity question once the last line is gone, because that is where the next
+  answer comes from. A removal is a POST on the page form with no GET, so a
+  link cannot trigger it.
 
 ## Consignment addresses pages
 

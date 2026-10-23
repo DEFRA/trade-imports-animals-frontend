@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -125,10 +125,7 @@ describe('/transporters/add/commercial', () => {
     expect(Object.keys(result.view.context.errors)).toEqual(missingFields)
     expect(result.after.commercialTransporter).toBeUndefined()
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: missingFields
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should hold the authorisation number to its length', async () => {

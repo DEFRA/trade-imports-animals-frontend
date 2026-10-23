@@ -132,10 +132,11 @@ Follow [add-a-page.md](add-a-page.md) for each page. Each controller exports:
 - GET and POST handlers
 - `routes`, normally from `kit.pageRoutes(page, { get, post })`
 
-GET reads once through `state.get()`. POST validates raw input, calls
-returns 400 with raw values on error and logs nothing for a user's own field errors
+GET reads once through `state.get()`. POST validates raw input and, on error,
+returns 400 with the raw values and logs nothing for a user's own field errors
 (a refusal that is not the user's input error logs once through `kit.logRefusal`
-with the journey id), commits cleaned values on success and redirects through `kit.nextTarget()`.
+with the journey id); on success it commits cleaned values and redirects through
+`kit.nextTarget()`.
 Wrap every persistence write in `kit.recoverableSave(request, …)`, which logs a
 marked failure once, and return the same form with status 500 for it.
 

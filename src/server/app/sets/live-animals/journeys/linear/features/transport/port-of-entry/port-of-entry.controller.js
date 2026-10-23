@@ -98,7 +98,6 @@ const post = async (request, h) => {
     { dateWindow, allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return (await render(h, journey, dateWindow, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST

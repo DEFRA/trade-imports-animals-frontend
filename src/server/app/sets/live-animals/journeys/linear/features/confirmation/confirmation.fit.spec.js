@@ -22,13 +22,12 @@ const expectPanelCopy = async (page) => {
   await expect(page.getByText(reference, { exact: true })).toBeVisible()
 }
 
-const expectNoDeclarationDate = async (page) => {
-  await expect(page.getByText(/date of declaration/i)).toHaveCount(0)
+const expectPanelBodyIsReferenceOnly = async (page, reference) => {
+  await expect(page.locator('.govuk-panel__body')).toHaveText(
+    `${copy.panel.referencePrefix}${reference}`
+  )
 }
 
-// The journey these tests submit uploads no documents, and documents are
-// optional at submission, so the outstanding-work section is the one this page
-// has to carry.
 const expectOutstandingCopy = async (page) => {
   await expect(
     page.getByRole('heading', { name: copy.outstanding.heading })
@@ -120,11 +119,11 @@ test.describe('submitted confirmation feature', () => {
     )
   })
 
-  test('renders the notification reference and all feature copy, with no declaration date and no back link', async ({
+  test('renders the notification reference and all feature copy, with only the reference in the panel body and no back link', async ({
     page
   }) => {
     await expectPanelCopy(page)
-    await expectNoDeclarationDate(page)
+    await expectPanelBodyIsReferenceOnly(page, journeyIdFromPage(page))
     await expectOutstandingCopy(page)
     await expectTransportingCopy(page)
     await expectViewOrAmendCopy(page)
@@ -145,8 +144,6 @@ test.describe('submitted confirmation feature', () => {
     await expect(page).toHaveURL(BASE)
   })
 
-  // Second consignment, no detour: the page starts a fresh notification without
-  // sending the trader back to the dashboard for the start button.
   test('create-a-new-notification starts a fresh notification', async ({
     page
   }) => {

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { config } from '../../../../../../../../config/config.js'
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   postHandlerOf,
   resetMocksAndConfigAfterTests,
   useStubbedJourney,
@@ -144,10 +144,7 @@ describe('POST contact — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['contactAddress']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should keep the current contact card on a 400 re-render', async () => {

@@ -7,13 +7,6 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 export const identificationCardAnchor = (index) =>
   `identification-card-${index}`
 
-export const refusedFieldsOf = (errors, cardErrors) => ({
-  ...errors,
-  ...Object.fromEntries(
-    cardErrors.map(({ index, text }) => [identificationCardAnchor(index), text])
-  )
-})
-
 export const summaryOf = (errors, cardErrors) => {
   const errorList = [
     ...Object.entries(errors).map(([field, text]) => ({

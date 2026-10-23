@@ -23,7 +23,6 @@ export const saveTransporterDetails =
     const values = trimmedValues(payload)
     const allErrors = await formErrors(payload, values)
     if (Object.keys(allErrors).length > 0) {
-      kit.logRefusal(request, { fieldErrors: allErrors })
       const { journey } = await state.get(request, h)
       return (
         await render(request, h, journey, values, { errors: allErrors })

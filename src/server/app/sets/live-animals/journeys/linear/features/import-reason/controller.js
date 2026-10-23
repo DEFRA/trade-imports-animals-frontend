@@ -102,7 +102,6 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const current = await state.get(request, h)
     return (await render(request, h, current, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST

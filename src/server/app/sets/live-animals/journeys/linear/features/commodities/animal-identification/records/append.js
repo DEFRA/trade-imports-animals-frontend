@@ -29,11 +29,7 @@ const unitFromForm = (form) => {
 const recordCapFailure = async (request, h, index) => {
   const { answers: current } = await state.get(request, h)
   const cap = identifierCapOf(current, index)
-  request.logger.info(
-    { journeyId: request.params.journeyId, lineIndex: index, cap },
-    'Animal identification refused: the engine rejected the record at the cap'
-  )
-  return { index, text: copy.errors.capReached(cap) }
+  return { index, cap, text: copy.errors.capReached(cap) }
 }
 
 export const appendLineRecords = async (request, h, forms) => {

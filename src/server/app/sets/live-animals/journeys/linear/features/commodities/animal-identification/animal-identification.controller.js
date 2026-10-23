@@ -10,7 +10,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
-import { refusedFieldsOf, summaryOf } from './card/error-summary.js'
+import { summaryOf } from './card/error-summary.js'
 import { buildSections } from './card/view-model.js'
 import { linesOf } from '../lines.js'
 import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
@@ -94,7 +94,12 @@ const render = (
   })
 }
 
-const logRefusalAndRender = (
+const renderRefused = (request, h, journey, answers, evaluation, options) =>
+  render(request, h, journey, answers, evaluation, options).code(
+    HTTP_STATUS_BAD_REQUEST
+  )
+
+const logCapRefusalsAndRender = (
   request,
   h,
   journey,
@@ -102,12 +107,14 @@ const logRefusalAndRender = (
   evaluation,
   options
 ) => {
-  kit.logRefusal(request, {
-    fieldErrors: refusedFieldsOf(options.errors ?? {}, options.cardErrors ?? [])
-  })
-  return render(request, h, journey, answers, evaluation, options).code(
-    HTTP_STATUS_BAD_REQUEST
-  )
+  for (const { index, cap } of options.cardErrors) {
+    kit.logRefusal(request, {
+      reason: 'animal-identifier-cap-reached',
+      lineIndex: index,
+      cap
+    })
+  }
+  return renderRefused(request, h, journey, answers, evaluation, options)
 }
 
 const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
@@ -149,7 +156,7 @@ const post = async (request, h) => {
   } = buildLineForms(payload, answers, cardLines(answers, evaluation), action)
 
   const capReached = capReachedResponse({
-    render: logRefusalAndRender,
+    render: logCapRefusalsAndRender,
     request,
     h,
     journey,
@@ -166,7 +173,7 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    return logRefusalAndRender(request, h, journey, answers, evaluation, {
+    return renderRefused(request, h, journey, answers, evaluation, {
       forms,
       errors
     })
@@ -179,7 +186,7 @@ const post = async (request, h) => {
       request,
       h
     )
-    return logRefusalAndRender(
+    return logCapRefusalsAndRender(
       request,
       h,
       journey,

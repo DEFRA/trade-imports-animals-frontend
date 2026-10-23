@@ -24,7 +24,7 @@ describe('#appendLineRecords', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should refuse a record for a line already holding its one animal and log the refusal once', async () => {
+  it('Should refuse a record for a line already holding its one animal and return the line index and cap on the card error', async () => {
     const [line] = seedWithCommodityLineOfAnimals(1).commodityLines
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
@@ -47,15 +47,8 @@ describe('#appendLineRecords', () => {
     )
 
     expect(cardErrors).toEqual([
-      { index: 0, text: copy.identification.errors.capReached(1) }
+      { index: 0, cap: 1, text: copy.identification.errors.capReached(1) }
     ])
-    expect(request.logger.entries).toEqual([
-      {
-        level: 'info',
-        fields: { journeyId: journey.journeyId, lineIndex: 0, cap: 1 },
-        message:
-          'Animal identification refused: the engine rejected the record at the cap'
-      }
-    ])
+    expect(request.logger.entries).toEqual([])
   })
 })

@@ -137,7 +137,6 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    kit.logRefusal(request, { fieldErrors: errors })
     return render(h, journey, reviewedConcurrencyToken, values, {
       errors
     }).code(HTTP_STATUS_BAD_REQUEST)

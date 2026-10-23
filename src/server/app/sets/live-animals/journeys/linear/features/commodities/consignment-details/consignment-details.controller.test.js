@@ -13,7 +13,7 @@ import {
   crumbProtectedServerMounting,
   driveHandler,
   expectBackLinkIsPage,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
@@ -124,13 +124,11 @@ const seedTwoSpeciesOfOneCommodity = () => ({
 })
 
 const COMMODITY_REMOVAL_REFUSED = {
-  reason: 'no-commodity-at-index',
-  message: 'Commodity removal refused: no commodity at the index'
+  reason: 'no-commodity-at-index'
 }
 
 const SPECIES_REMOVAL_REFUSED = {
-  reason: 'no-species-at-index',
-  message: 'Species removal refused: no species at the index'
+  reason: 'no-species-at-index'
 }
 
 const pageGetHandlerOf = (featureModule) =>
@@ -192,10 +190,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     )
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['numberOfAnimalsQuantity-1', 'numberOfAnimalsQuantity-2']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming, and log the refusal', async () => {
@@ -214,10 +209,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['numberOfAnimalsQuantity-0']
-    })
+    expectNoRefusalLogged(result.logger)
     expect(result.after).toEqual({
       commodityLines: [
         {

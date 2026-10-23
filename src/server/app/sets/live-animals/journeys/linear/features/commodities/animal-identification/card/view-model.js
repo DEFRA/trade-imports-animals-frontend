@@ -1,4 +1,8 @@
-import { wrappingCell } from '../../../../../../../../../common/constants/table-cells.js'
+import {
+  hiddenActionsHeading,
+  removeActionCell,
+  wrappingCell
+} from '../../../../../../../../../common/constants/table-cells.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
@@ -14,7 +18,6 @@ import {
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
 import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
 import { identificationCardAnchor } from './error-summary.js'
-import { escapeHtml } from '../../../documents/view-model/fragments/text.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -40,19 +43,18 @@ const unitEntries = (index, species, columns, units) =>
 
 const wrappingCells = (texts) => texts.map((text) => wrappingCell({ text }))
 
-const removeButton = ({ line, unitIndex, removeAria }) =>
-  `<button type="submit" class="govuk-link app-link-button" name="action" value="remove:${line}:${unitIndex}">${escapeHtml(copy.removeRow)}<span class="govuk-visually-hidden"> ${escapeHtml(removeAria)}</span></button>`
-
 const savedAnimalsTableOf = (columns, unitRows) => ({
   head: [
     ...wrappingCells([copy.table.animalColumn, ...columns]),
-    {
-      html: `<span class="govuk-visually-hidden">${escapeHtml(copy.table.actionsHidden)}</span>`
-    }
+    hiddenActionsHeading(copy.table.actionsHidden)
   ],
   rows: unitRows.map((unitRow) => [
     ...wrappingCells([unitRow.label, ...unitRow.cells]),
-    { html: removeButton(unitRow), classes: 'govuk-!-text-align-right' }
+    removeActionCell({
+      action: `remove:${unitRow.line}:${unitRow.unitIndex}`,
+      text: copy.removeRow,
+      hiddenText: unitRow.removeAria
+    })
   ])
 })
 
@@ -102,11 +104,6 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
     counter: atCap ? null : copy.counter(species, units.length + 1, cap),
     overCountText: overCountTextFor(cap, species, units.length),
     saveButtonText: atCap ? null : saveButtonTextFor(cap, units.length),
-    units: unitRows.map((row) => ({
-      line: row.line,
-      unitIndex: row.unitIndex,
-      removeAria: row.removeAria
-    })),
     savedAnimalsTable: savedAnimalsTableOf(
       columns.map(([, label]) => label),
       unitRows
