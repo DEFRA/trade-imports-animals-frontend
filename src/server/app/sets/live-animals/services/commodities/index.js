@@ -17,8 +17,8 @@ import {
 
 export const typeIdFor = (code, latinName) => typeFor(code, latinName).id
 
-export const typeTextForId = (code, id) =>
-  typesFor(code).find((type) => type.id === id)?.text
+export const typeTextForId = (code, typeId) =>
+  typesFor(code).find((type) => type.id === typeId)?.text
 
 export const listsSpeciesIndividually = (code) => code === PER_SPECIES_CODE
 
