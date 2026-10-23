@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
-const fetchMocker = createFetchMock(vi)
+import {
+  resetModulesAndRunModeEachTest,
+  switchToRealMode,
+  switchToStubMode
+} from '../../../../../common/test-helpers/run-mode.js'
 
-const originalMode = process.env.STUB_MODE
+const fetchMocker = createFetchMock(vi)
 
 const FERRET_RESULTS = {
   total: 1,
@@ -17,26 +21,20 @@ const FERRET_RESULTS = {
   ]
 }
 
+resetModulesAndRunModeEachTest()
+
 beforeEach(() => {
-  vi.resetModules()
   fetchMocker.enableMocks()
   fetchMocker.resetMocks()
 })
 
 afterEach(() => {
   fetchMocker.disableMocks()
-  if (originalMode === undefined) {
-    delete process.env.STUB_MODE
-  } else {
-    process.env.STUB_MODE = originalMode
-  }
 })
 
 describe('#search', () => {
   describe('in stub mode', () => {
-    beforeEach(() => {
-      process.env.STUB_MODE = 'true'
-    })
+    beforeEach(switchToStubMode)
 
     it('Should search the stub catalogue from the first page, asking reference-data nothing', async () => {
       const { search } = await import('./search.js')
@@ -47,9 +45,7 @@ describe('#search', () => {
   })
 
   describe('in real mode', () => {
-    beforeEach(() => {
-      process.env.STUB_MODE = 'false'
-    })
+    beforeEach(switchToRealMode)
 
     it('Should search through reference-data from the first page', async () => {
       fetchMocker.mockResponse(JSON.stringify(FERRET_RESULTS))

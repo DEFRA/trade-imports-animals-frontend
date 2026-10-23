@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
-const fetchMocker = createFetchMock(vi)
+import {
+  resetModulesAndRunModeEachTest,
+  switchToRealMode
+} from '../../../../../common/test-helpers/run-mode.js'
 
-const originalMode = process.env.STUB_MODE
+const fetchMocker = createFetchMock(vi)
 
 const FERRET_RESULTS = {
   total: 1,
@@ -26,19 +29,15 @@ const respondWithJson = (body) => fetchMocker.mockResponse(JSON.stringify(body))
 
 const firstRequest = () => fetchMocker.requests()[0]
 
+resetModulesAndRunModeEachTest()
+
 beforeEach(() => {
-  vi.resetModules()
   fetchMocker.enableMocks()
   fetchMocker.resetMocks()
 })
 
 afterEach(() => {
   fetchMocker.disableMocks()
-  if (originalMode === undefined) {
-    delete process.env.STUB_MODE
-  } else {
-    process.env.STUB_MODE = originalMode
-  }
 })
 
 describe('#fetchCommodities', () => {
@@ -76,9 +75,7 @@ describe('#fetchCommodities', () => {
 
 describe('#linesWithUnlistedSpecies', () => {
   describe('in real mode', () => {
-    beforeEach(() => {
-      process.env.STUB_MODE = 'false'
-    })
+    beforeEach(switchToRealMode)
 
     it('Should ask reference-data which lines are not listed', async () => {
       respondWithJson({ unlisted: [BOS_SPP] })
