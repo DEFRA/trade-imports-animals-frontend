@@ -22,6 +22,61 @@ const unsavedDocumentBody = (copy, saveAction, { unchecked }) =>
     ? copy.errors.documentsUnchecked(saveAction)
     : copy.errors.documentNotSaved(saveAction)
 
+/**
+ * Whether the add form is open, and what to say when it is not. It is closed
+ * either because no session could be opened or because the notification is
+ * full — a full notification must not offer a control that uploads a file the
+ * claim will then refuse.
+ *
+ * @param {object} copy - the page's copy deck
+ * @param {Array} documents - the documents the notification holds
+ * @param {boolean} uploadFormUnavailable - no session could be opened
+ * @returns {object} the add form's state for the template
+ */
+const addFormState = (copy, documents, uploadFormUnavailable) => {
+  const atCapacity = documents.length >= MAX_DOCUMENTS
+  return {
+    addFormClosed: uploadFormUnavailable || atCapacity,
+    addFormClosedReason: atCapacity
+      ? copy.errors.maxDocuments(MAX_DOCUMENTS)
+      : copy.errors.uploadUnavailable
+  }
+}
+
+/**
+ * The error summary, or none when nothing is wrong.
+ *
+ * @param {object} sharedCopy - the shared copy deck, for the summary's title
+ * @param {Array} documents - the documents the notification holds
+ * @param {object} state - what the page is refusing
+ * @returns {object|null} the summary for the template
+ */
+const errorSummaryFor = (
+  sharedCopy,
+  documents,
+  { errors, summaryErrors, uploadFormUnavailable }
+) => {
+  const errorList = [
+    ...rejectedErrors(documents),
+    ...summaryErrors,
+    ...(kit.errorSummary(errors)?.errorList ?? []),
+    ...(uploadFormUnavailable ? uploadUnavailableError() : [])
+  ]
+  return errorList.length
+    ? { titleText: sharedCopy.errorSummary.title, errorList }
+    : null
+}
+
+/** The limits the page states and the browser checks against. */
+const uploadLimits = (copy) => ({
+  acceptAttribute: ACCEPT_ATTRIBUTE,
+  allowedFileTypesHint: allowedFileTypesHint(copy),
+  maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
+  maxFileSize: MAX_FILE_SIZE_BYTES,
+  maxDocuments: MAX_DOCUMENTS,
+  oversizeFileMessage: oversizeMessage(copy)
+})
+
 export const render = ({
   view,
   copy,
@@ -37,20 +92,6 @@ export const render = ({
     (item) => item.scanStatus === SCAN_STATUS.PENDING
   )
   const uploadFormUnavailable = !extra.uploadPath
-  const atCapacity = documents.length >= MAX_DOCUMENTS
-  // Closed either because no session could be opened or because the
-  // notification is full. A full notification must not offer a control that
-  // uploads a file the claim will then refuse.
-  const addFormClosed = uploadFormUnavailable || atCapacity
-  const addFormClosedReason = atCapacity
-    ? copy.errors.maxDocuments(MAX_DOCUMENTS)
-    : copy.errors.uploadUnavailable
-  const errorList = [
-    ...rejectedErrors(documents),
-    ...summaryErrors,
-    ...(kit.errorSummary(errors)?.errorList ?? []),
-    ...(uploadFormUnavailable ? uploadUnavailableError() : [])
-  ]
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -70,8 +111,7 @@ export const render = ({
         sharedCopy.saveActions.saveAndContinue,
         extra.unsavedDocument
       ),
-    addFormClosed,
-    addFormClosedReason,
+    ...addFormState(copy, documents, uploadFormUnavailable),
     copy,
     rows: documentRows(documents, journey.journeyId),
     additionalDocumentRows: copy.guidance.additional.rows.map((row) => [
@@ -81,18 +121,15 @@ export const render = ({
     hasDocuments: documents.length > 0,
     values,
     errors,
-    errorSummary: errorList.length
-      ? { titleText: sharedCopy.errorSummary.title, errorList }
-      : null,
+    errorSummary: errorSummaryFor(sharedCopy, documents, {
+      errors,
+      summaryErrors,
+      uploadFormUnavailable
+    }),
     anyPending,
     timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1, extra.uploadSession),
-    acceptAttribute: ACCEPT_ATTRIBUTE,
-    allowedFileTypesHint: allowedFileTypesHint(copy),
-    maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
-    maxFileSize: MAX_FILE_SIZE_BYTES,
-    maxDocuments: MAX_DOCUMENTS,
-    oversizeFileMessage: oversizeMessage(copy),
+    ...uploadLimits(copy),
     scanCopyJson,
     documentTypeItems: documentTypeItems(),
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
