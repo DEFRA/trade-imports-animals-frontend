@@ -52,9 +52,6 @@ describe('#identifiersFor', () => {
   })
 })
 
-// The per-identifier allowlists the obligation gates read are derived from the
-// same per-code lists, so a code's identifiers and its gates are one edit, not
-// two that can disagree.
 describe('the identifier allowlists', () => {
   const derivations = [
     ['microchip', microchipCommodityCodes, 'animalIdentifierMicrochip'],
