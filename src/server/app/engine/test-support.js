@@ -203,11 +203,13 @@ const recordsRejectingSaves = (failure) => ({
 })
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after, with the cookies the handler set. `amend` submits the journey and
- * opens an amendment first; `openingRun` (`RUN_ACTIVE` or `RUN_COMPLETE`)
- * records that phase of the opening run for the journey; `pathOf(journeyId)`
- * gives the request the path it was made to; `saveFailure` makes the records
- * store refuse every save the handler makes with that error. */
+ * and after, alongside the cookies the handler set and the lines it logged.
+ * `journeyId` drives an existing journey rather than creating one; `amend`
+ * submits the journey and opens an amendment first; `openingRun`
+ * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
+ * the journey; `pathOf(journeyId)` gives the request the path it was made to;
+ * `saveFailure` makes the records store refuse every save the handler makes
+ * with that error. */
 export const driveHandler = async (
   handler,
   {
@@ -217,12 +219,13 @@ export const driveHandler = async (
     query = {},
     state = {},
     amend = false,
+    journeyId,
     openingRun,
     saveFailure,
     pathOf
   } = {}
 ) => {
-  const journey = await store.create()
+  const journey = journeyId ? { journeyId } : await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (amend) {
     await store.submit(journey.journeyId)
@@ -274,6 +277,11 @@ export const postHandlerOf = (featureModule) =>
 export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
+  ).handler
+
+export const getHandlerEndingWith = (featureModule, pathSuffix) =>
+  featureModule.routes.find(
+    (route) => route.method === 'GET' && route.path.endsWith(pathSuffix)
   ).handler
 
 const fetchMock = createFetchMock(vi)

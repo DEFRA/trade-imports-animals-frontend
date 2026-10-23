@@ -1,6 +1,8 @@
 import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
 
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+const addAnother = 'Cadw ac ychwanegu un arall'
+
 export const copy = {
   title: 'Uwchlwytho dogfennau',
   guidance: {
@@ -65,7 +67,7 @@ export const copy = {
     enteredDropZone: 'Wedi mynd i mewn i’r parth gollwng',
     leftDropZone: 'Wedi gadael y parth gollwng'
   },
-  addAnother: 'Cadw ac ychwanegu un arall',
+  addAnother,
   table: {
     caption: 'Dogfennau rydych chi wedi’u hychwanegu',
     reference: 'Cyfeirnod y ddogfen',
@@ -100,31 +102,53 @@ export const copy = {
   notProvided: 'Heb ei ddarparu',
   scanTags: {
     complete: 'Gwiriad wedi’i gwblhau',
+    rejected: 'Gwrthodwyd',
     virusFound: 'Firws wedi’i ganfod',
+    uploadFailed: 'Methodd yr uwchlwytho',
+    downloadFailed: 'Methodd y llwytho i lawr',
     scanning: 'Yn sganio am firws',
     unknown: 'Anhysbys'
   },
   scanStatusHidden: (reference) => `Statws gwirio firws ar gyfer ${reference}`,
   announce: {
     safe: 'Sgan y ddogfen wedi’i gwblhau: mae’r ffeil yn ddiogel i’w defnyddio',
+    rejected:
+      'Methodd gwiriad y ddogfen: ni allwch ddefnyddio’r ffeil. Tynnwch hi a rhowch gynnig arall arni.',
     virusFound:
-      'Methodd sgan y ddogfen: canfuwyd firws. Tynnwch y ffeil a rhowch gynnig arall arni.'
+      'Methodd gwiriad y ddogfen: mae’r ffeil yn cynnwys firws. Tynnwch hi a rhowch gynnig arall arni.',
+    uploadFailed:
+      'Methodd gwiriad y ddogfen: nid oedd modd uwchlwytho’r ffeil. Tynnwch hi a rhowch gynnig arall arni.',
+    downloadFailed:
+      'Methodd gwiriad y ddogfen: nid oedd modd llwytho’r ffeil i lawr. Tynnwch hi a rhowch gynnig arall arni.'
   },
   errors: {
     hiddenPrefix: 'Gwall:',
-    referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai',
+    referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 100 nod neu lai',
+    referenceCharacters:
+      'Rhaid i gyfeirnod y ddogfen gynnwys llythrennau, rhifau, bylchau, cysylltnodau, atalnodau llawn a blaenslaesau yn unig',
     dateInvalid: 'Rhowch ddyddiad go iawn',
     referenceRequired: 'Rhowch gyfeirnod dogfen',
     typeRequired: 'Dewiswch fath o ddogfen',
     dateRequired: 'Rhowch ddyddiad cyhoeddi',
     fileRequired: 'Uwchlwythwch ddogfen',
+    fileEmpty: 'Mae’r ffeil a ddewiswyd yn wag',
+    fileVirus: 'Mae’r ffeil a ddewiswyd yn cynnwys firws',
+    fileDownloadFailed: 'Nid oedd modd llwytho’r ffeil a ddewiswyd i lawr',
+    notYetAdded: `Dewiswch ffeil, ac yna dewiswch ‘${addAnother}’ i ychwanegu’r ddogfen hon`,
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
-    uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',
+    documentNotSaved: (saveAction) =>
+      `Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth. Cafodd eich dogfen ei huwchlwytho ond nid yw wedi’i chadw i’r hysbysiad hwn. Dewiswch ‘${saveAction}’ i roi cynnig arall arni.`,
+    documentsUnchecked: (saveAction) =>
+      `Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth. Nid oedd modd gwirio bod pob dogfen a uwchlwythwyd gennych wedi’i chadw i’r hysbysiad hwn. Dewiswch ‘${saveAction}’ i roi cynnig arall arni.`,
+    uploadFailed:
+      'Nid oedd modd uwchlwytho’r ffeil a ddewiswyd. Rhowch gynnig arall arni.',
+    uploadUnavailable:
+      'Ni ellir uwchlwytho dogfennau ar hyn o bryd. Ail-lwythwch y dudalen neu dewch yn ôl yn nes ymlaen.',
     maxDocuments: (max) => `Gallwch uwchlwytho uchafswm o ${max} ffeil`,
     fileFallbackName: 'Mae’r ffeil',
-    virusFound: (filename) =>
-      `${filename} yn cynnwys firws. Tynnwch hi a rhowch gynnig arall arni gyda ffeil wahanol.`,
+    rejected: (filename) =>
+      `Ni allwch ddefnyddio ${filename}. Tynnwch hi a rhowch gynnig arall arni gyda ffeil wahanol.`,
     fileType: (allowedTypesHint) =>
       `Rhaid i’r ffeil a ddewiswyd fod yn ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>

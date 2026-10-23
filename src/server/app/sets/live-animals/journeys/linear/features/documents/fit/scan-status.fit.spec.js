@@ -93,7 +93,7 @@ test.describe('document scan-status rendering', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('renders Virus found and its per-file error until the document is removed', async ({
+  test('names the virus a rejected document was refused for, until it is removed', async ({
     page
   }) => {
     test.slow()
@@ -103,7 +103,7 @@ test.describe('document scan-status rendering', () => {
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
-      errorSummaryLink(page, copy.errors.virusFound(document.filename))
+      errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
@@ -114,7 +114,7 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(
-      errorSummaryLink(page, copy.errors.virusFound(document.filename))
+      errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await row
       .getByRole('button', {

@@ -51,18 +51,24 @@
     </div>
   </div>
 
-  <form method="post" enctype="multipart/form-data" novalidate
+  {# No enctype: this form posts the typed fields alone. The add button carries
+     its own formaction and formenctype for the file. #}
+  <form method="post" novalidate
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {% if pendingDocumentSave %}
-      <input type="hidden" name="retryUploadId" value="{{ pendingDocumentSave.uploadId }}" />
-      <input type="hidden" name="retryFilename" value="{{ pendingDocumentSave.filename }}" />
+    {% if uploadSession %}
+      {# Carries the open session into the next render, so a refused Continue or a failed Remove
+         re-renders the page on the session it is already showing rather than opening another. #}
+      <input type="hidden" name="uploadSession" value="{{ uploadSession }}" />
     {% endif %}
     {% if pendingDocumentRemoval %}
       <input type="hidden" name="retryRemoveIndex" value="{{ pendingDocumentRemoval.index }}" />
       <input type="hidden" name="retryRemoveUploadId" value="{{ pendingDocumentRemoval.uploadId }}" />
+    {% endif %}
+    {% if unsavedDocument.correlationId %}
+      <input type="hidden" name="retryAddCorrelationId" value="{{ unsavedDocument.correlationId }}" />
     {% endif %}
 
     <section class="govuk-summary-card" aria-labelledby="file-upload-heading">
@@ -117,12 +123,31 @@
               errorMessage: errors.file and { text: errors.file }
             }) }}
 
-            {{ govukButton({
-              text: copy.addAnother,
-              classes: "govuk-button--secondary",
-              name: "action",
-              value: "add"
-            }) }}
+            {# The reason comes before the control it refuses, and the button keeps
+               its place in the tab order so the error summary can reach it. #}
+            <div class="govuk-form-group{{ ' govuk-form-group--error' if addFormClosed }}">
+              {% if addFormClosed %}
+                <p id="add-document-error" class="govuk-error-message">
+                  <span class="govuk-visually-hidden">{{ copy.errors.hiddenPrefix }}</span>
+                  {{ addFormClosedReason }}
+                </p>
+              {% endif %}
+
+              {{ govukButton({
+                id: "add-document",
+                text: copy.addAnother,
+                classes: "govuk-button--secondary",
+                name: "action",
+                value: "add",
+                attributes: {
+                  "aria-disabled": "true",
+                  "aria-describedby": "add-document-error"
+                } if addFormClosed else {
+                  formaction: uploadPath,
+                  formenctype: "multipart/form-data"
+                }
+              }) }}
+            </div>
           </div>
         </div>
 

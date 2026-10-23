@@ -130,10 +130,18 @@ describe('#copy', () => {
     expect(copy.file.leftDropZone).toBe('Left drop zone')
   })
 
-  it('Should name the virus check in the status tags rather than judge the file', () => {
+  /**
+   * The failed tag must not name a cause. cdp-uploader reports a rejection as a
+   * message in its own wording with no code, so the page cannot tell a virus from
+   * any other refusal the scan makes, and a file rejected for another reason would
+   * otherwise be announced to its owner as infected.
+   */
+  it('Should state that the check failed without claiming what the scan found', () => {
     expect(copy.scanTags.scanning).toBe('Scanning for virus')
     expect(copy.scanTags.complete).toBe('Check completed')
-    expect(copy.scanTags.virusFound).toBe('Virus found')
+    expect(copy.scanTags.rejected).toBe('Rejected')
+    expect(copy.scanTags.rejected).not.toMatch(/virus/i)
+    expect(copy.announce.rejected).not.toMatch(/virus/i)
     expect(copy.scanTags.unknown).toBe('Unknown')
   })
 
@@ -159,9 +167,10 @@ describe('#copy', () => {
     expect(copy.errors.maxDocuments(10)).toBe(
       'You can upload a maximum of 10 files'
     )
-    expect(copy.errors.virusFound('cert.pdf')).toBe(
-      'cert.pdf contains a virus. Remove it and try again with a different file.'
+    expect(copy.errors.rejected('cert.pdf')).toBe(
+      'cert.pdf cannot be used. Remove it and try again with a different file.'
     )
+    expect(copy.errors.rejected('cert.pdf')).not.toMatch(/virus/i)
   })
 })
 

@@ -10,8 +10,6 @@ import { records as recordsStub } from '../../../../../services/persistence/reco
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  stubH,
-  journeyRequest,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
@@ -24,24 +22,14 @@ import * as animalIdentification from './commodities/animal-identification/anima
 import * as documents from './documents/controller.js'
 import * as cphNumber from './cph-number/controller.js'
 
-const drivePost = async (
-  handler,
-  { payload = {}, query = {}, seed = {}, params = {} } = {}
-) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, seed)
-  const h = stubH()
-  const response = await handler(
-    journeyRequest(journey.journeyId, { payload, query, params }),
-    h
-  )
-  const after = (await store.get(journey.journeyId)).answers
-  return {
-    journeyId: journey.journeyId,
-    response,
-    after,
-    view: h.captured.view
-  }
+const reasonPrerequisites = {
+  countryOfOrigin: 'FR',
+  commodityLines: [{ commoditySelection: 'Cat' }]
+}
+
+const internalMarketPayload = {
+  reasonForImport: 'internalMarket',
+  purposeInInternalMarket: 'breeding'
 }
 
 describe('save actions — hub exit semantics', () => {
@@ -71,21 +59,8 @@ describe('save actions — hub exit semantics', () => {
     expect(hubExitTarget({ params: { journeyId: 'journey-1' } })).toBeNull()
   })
 
-  // The reason page carries its own reveal, so the payload answers both the
-  // reason and the purpose it opens. The seed supplies the two
-  // enforcedAt=continue prerequisites, so the section's next page
-  // (additional-details) is reachable for the no-exit contrast.
-  const reasonPrerequisites = {
-    countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat' }]
-  }
-  const internalMarketPayload = {
-    reasonForImport: 'internalMarket',
-    purposeInInternalMarket: 'breeding'
-  }
-
   it('Should commit the page and redirect to the hub on Save and return to overview', async () => {
-    const { journeyId, response, after } = await drivePost(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: { ...internalMarketPayload, exit: 'hub' },
@@ -97,7 +72,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should send Save and continue to the overview outside the opening run when no exit is named', async () => {
-    const { journeyId, response, after } = await drivePost(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: internalMarketPayload,
@@ -113,10 +88,10 @@ describe('save actions — hub exit semantics', () => {
       reasonForImport: 'internalMarket',
       purposeInInternalMarket: 'not-a-purpose'
     }
-    const plain = await drivePost(postHandlerOf(importReason), {
+    const plain = await driveHandler(postHandlerOf(importReason), {
       payload: invalid
     })
-    const exit = await drivePost(postHandlerOf(importReason), {
+    const exit = await driveHandler(postHandlerOf(importReason), {
       payload: { ...invalid, exit: 'hub' }
     })
     expect(plain.response.redirect).toBeUndefined()
@@ -128,7 +103,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should send a change-context Save and continue back to check your answers', async () => {
-    const { journeyId, response } = await drivePost(
+    const { journeyId, response } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: internalMarketPayload,
@@ -142,7 +117,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should let an explicit hub exit win over the change context', async () => {
-    const { journeyId, response, after } = await drivePost(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: { ...internalMarketPayload, exit: 'hub' },
@@ -165,7 +140,7 @@ describe('save actions — hub exit semantics', () => {
         }
       ]
     }
-    const { journeyId, response, after } = await drivePost(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
         payload: { 'numberOfAnimalsQuantity-0': '2', exit: 'hub' },
@@ -177,7 +152,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit for a one-animal line', async () => {
-    const { journeyId, response, after } = await drivePost(
+    const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
@@ -192,28 +167,28 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should exit a multi-button loop page to the hub without disturbing its own actions', async () => {
-    const exit = await drivePost(postHandlerOf(documents), {
+    const exit = await driveHandler(postHandlerOf(documents), {
       payload: { exit: 'hub' }
     })
     expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
 
-    const add = await drivePost(postHandlerOf(documents), {
-      payload: {
-        action: 'add',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          headers: { 'content-type': 'application/pdf' },
-          payload: Buffer.from('pdf-bytes')
-        }
+    const removal = await driveHandler(postHandlerOf(documents), {
+      payload: { action: 'remove:1' },
+      seed: {
+        documents: [
+          { accompanyingDocumentReference: 'GBHC1111111111' },
+          { accompanyingDocumentReference: 'GBHC2222222222' }
+        ]
       }
     })
-    expect(add.response).toEqual({
-      redirect: pagePath(add.journeyId, 'accompanying-documents')
+    expect(removal.response).toEqual({
+      redirect: pagePath(removal.journeyId, 'accompanying-documents')
     })
-    expect(add.after.documents).toHaveLength(1)
+    expect(
+      removal.after.documents.map(
+        ({ accompanyingDocumentReference }) => accompanyingDocumentReference
+      )
+    ).toEqual(['GBHC1111111111'])
   })
 
   it('Should let the hub exit win over a return-to-addresses entry context', async () => {
@@ -222,7 +197,7 @@ describe('save actions — hub exit semantics', () => {
       commodityLines: [{ commoditySelection: 'Cow' }]
     }
     const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
-    const returned = await drivePost(postHandlerOf(cphNumber), {
+    const returned = await driveHandler(postHandlerOf(cphNumber), {
       payload: cphParts,
       query: { return: 'addresses' },
       seed: cphInScope
@@ -231,7 +206,7 @@ describe('save actions — hub exit semantics', () => {
       redirect: pagePath(returned.journeyId, 'addresses')
     })
 
-    const exit = await drivePost(postHandlerOf(cphNumber), {
+    const exit = await driveHandler(postHandlerOf(cphNumber), {
       payload: { ...cphParts, exit: 'hub' },
       query: { return: 'addresses' },
       seed: cphInScope
@@ -248,15 +223,6 @@ describe('save actions — amend endings', () => {
     buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
-
-  const reasonPrerequisites = {
-    countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat' }]
-  }
-  const internalMarketPayload = {
-    reasonForImport: 'internalMarket',
-    purposeInInternalMarket: 'breeding'
-  }
 
   it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
     const postAmending = (query) =>

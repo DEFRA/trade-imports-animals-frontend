@@ -578,17 +578,27 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await expectOverview(page)
 }
 
+// Handing a file to the input is one action, and `test.slow()` does not extend
+// an action's own deadline. An oversize case has to send a genuinely over-cap
+// file — the browser check reads the limit once, at load, so a smaller file
+// cannot provoke it — and writing the whole cap through the browser outlasts
+// the default deadline on a machine running every worker at once.
+const SET_FILE_TIMEOUT_MS = 60_000
+
 export const setUploadFile = (
   page,
   filename,
   bytes,
   mimeType = 'application/pdf'
 ) =>
-  page.locator('input[type="file"]').setInputFiles({
-    name: filename,
-    mimeType,
-    buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
-  })
+  page.locator('input[type="file"]').setInputFiles(
+    {
+      name: filename,
+      mimeType,
+      buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
+    },
+    { timeout: SET_FILE_TIMEOUT_MS }
+  )
 
 /**
  * Opens the document upload page from a fresh notification with the sections

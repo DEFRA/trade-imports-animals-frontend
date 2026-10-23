@@ -263,8 +263,8 @@ export const setlessBase = (title) => ({
  *
  * @param {object} request - the request being answered.
  * @param {() => Promise<*>} saveThunk - makes the save.
- * @param {() => *} onRecoverableFailure - builds the response for a
- * recoverable backend failure.
+ * @param {(error: Error) => *} onRecoverableFailure - builds the response for a
+ * recoverable backend failure, from the failure itself.
  * @param {object} [ids] - ids to log beside the journey id.
  * @returns {Promise<{value: *}|{failure: *}>} the save's value, or the
  * fallback's response as `failure`.
@@ -291,7 +291,7 @@ export const recoverableSave = async (
         },
         SAVE_FALLBACK_LOG_MESSAGE
       )
-      return { failure: await onRecoverableFailure() }
+      return { failure: await onRecoverableFailure(error) }
     }
     throw error
   }
