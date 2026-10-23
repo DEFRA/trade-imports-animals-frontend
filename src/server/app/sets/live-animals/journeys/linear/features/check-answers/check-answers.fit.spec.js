@@ -1,12 +1,16 @@
 import { expect, test } from '@playwright/test'
 import {
   BASE,
-  chooseAutocompleteByLabel,
+  DESKTOP_VIEWPORT,
+  PHONE_VIEWPORT,
+  chooseTypeAheadOption,
   chooseCountryOfOrigin,
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   journeyUrl,
+  notificationViewUrl,
+  openNotificationView,
   openReviewFromHub,
   signIn,
   startNotification,
@@ -20,7 +24,6 @@ import { copy } from './copy/copy.en.js'
 const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
-const NOTIFICATION_VIEW_SLUG = 'notification-view'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.portOfEntry,
@@ -29,8 +32,6 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportIdentification,
   copy.rows.transportDocumentReference
 ]
-const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
-const PHONE_VIEWPORT = { width: 360, height: 740 }
 
 const rowFor = (page, label) =>
   page
@@ -74,7 +75,7 @@ test.describe('check-answers feature summary rows', () => {
     await page.getByLabel(INTERNAL_REFERENCE_LABEL).fill('ReviewRef1')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(
@@ -99,7 +100,7 @@ test.describe('check-answers feature summary rows', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notApplicable
@@ -118,7 +119,7 @@ test.describe('check-answers feature section structure', () => {
 
   test('numbers the six sections in order', async ({ page }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(
       page.getByRole('heading', { level: 2 }).filter({ hasText: /^\d\.\s/ })
@@ -136,7 +137,7 @@ test.describe('check-answers feature section structure', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
@@ -156,7 +157,7 @@ test.describe('check-answers feature section structure', () => {
 
   test('heads every card with its own subsection heading', async ({ page }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
       copy.groups.whereFrom,
@@ -183,7 +184,7 @@ test.describe('check-answers feature documents section', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(
       page.getByRole('heading', { name: copy.sections.documents })
@@ -221,13 +222,13 @@ test.describe('check-answers feature exit answers', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
     await page.locator('input[name="reasonForImport"][value="transit"]').check()
-    await chooseAutocompleteByLabel(page, {
+    await chooseTypeAheadOption(page, {
       label: importReasonCopy.port.label,
       inputId: 'transitPortOfExit',
       query: EXIT_PORT_CODE,
       optionName: EXIT_PORT_LABEL
     })
-    await chooseAutocompleteByLabel(page, {
+    await chooseTypeAheadOption(page, {
       label: importReasonCopy.country.label,
       inputId: 'transitDestinationCountry',
       query: DESTINATION_COUNTRY_NAME,
@@ -235,7 +236,7 @@ test.describe('check-answers feature exit answers', () => {
     })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
       DESTINATION_COUNTRY_NAME
@@ -273,7 +274,7 @@ test.describe('check-answers feature exit answers', () => {
       )
       .check()
     await page.locator('#temporaryAdmissionExitDate').fill('27/3/2026')
-    await chooseAutocompleteByLabel(page, {
+    await chooseTypeAheadOption(page, {
       label: importReasonCopy.port.label,
       inputId: 'temporaryAdmissionPortOfExit',
       query: EXIT_PORT_CODE,
@@ -281,7 +282,7 @@ test.describe('check-answers feature exit answers', () => {
     })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(rowFor(page, copy.rows.exitDate)).toContainText('27/3/2026')
     await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
@@ -300,7 +301,7 @@ test.describe('check-answers feature exit answers', () => {
     await page.locator('input[name="reasonForImport"][value="reEntry"]').check()
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     for (const label of [
       copy.rows.destinationCountry,
@@ -325,7 +326,7 @@ test.describe('check-answers feature change links', () => {
     await chooseCountryOfOrigin(page, 'France')
     await page.getByLabel(INTERNAL_REFERENCE_LABEL).fill('ReviewRef1')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     const changeLink = cardChangeLink(page, copy.hidden.cards.importDetails)
     await expect(changeLink).toHaveAttribute(
@@ -351,7 +352,7 @@ test.describe('check-answers feature change links', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     const cards = page.locator('.govuk-summary-card')
     const cardCount = await cards.count()
@@ -378,7 +379,7 @@ test.describe('check-answers feature navigation and submission', () => {
   test('back link returns to the notification hub', async ({ page }) => {
     await startNotification(page)
     const hubUrl = journeyUrl(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
@@ -387,7 +388,7 @@ test.describe('check-answers feature navigation and submission', () => {
 
   test('review has no serious or critical axe violations', async ({ page }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expectNoSeriousOrCriticalViolations(page, 'Check answers')
   })
@@ -396,7 +397,7 @@ test.describe('check-answers feature navigation and submission', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.consignor))
     await expect(
@@ -414,7 +415,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     const card = page.locator(ARRIVAL_DETAILS_ANCHOR)
 
@@ -428,7 +429,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    const reviewUrl = notificationViewUrl(page)
     await page.goto(reviewUrl)
     await page.getByRole('button', { name: copy.submit.button }).click()
     await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
@@ -451,7 +452,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
 
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
@@ -477,7 +478,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    const reviewUrl = notificationViewUrl(page)
     await page.goto(reviewUrl)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
@@ -492,7 +493,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    const reviewUrl = notificationViewUrl(page)
     await page.goto(reviewUrl)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
@@ -512,7 +513,7 @@ test.describe('check-answers feature unfinished notification', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await openNotificationView(page)
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expectNoSeriousOrCriticalViolations(page, 'Unfinished check answers')

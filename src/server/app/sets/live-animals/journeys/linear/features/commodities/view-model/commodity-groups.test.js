@@ -26,6 +26,12 @@ describe('#buildCommodityGroups', () => {
     ])
   })
 
+  it('Should head a commodity with no code by its name alone', () => {
+    const groups = buildCommodityGroups(lineRecordsOf(['Unlisted animal', '1']))
+
+    expect(groups.map(({ heading }) => heading)).toEqual(['Unlisted animal'])
+  })
+
   it('Should build no groups for an empty selection', () => {
     expect(buildCommodityGroups([])).toEqual([])
   })

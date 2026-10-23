@@ -8,7 +8,7 @@ export const buildCommodityGroups = (lines) =>
       index,
       name,
       code,
-      heading: `${name} (${code})`,
+      heading: commodities.commodityLabel(name, code),
       lines: linesOfCommodity(lines, name)
     }
   })

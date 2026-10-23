@@ -147,6 +147,42 @@ describe('#pageValidation — checks merge under schema errors', () => {
   })
 })
 
+describe('#pageValidation — a checks refusal reaches the result', () => {
+  const REFUSAL = { reason: 'name-taken', name: 'Alex' }
+  const validation = pageValidation({
+    fields: () => compose(),
+    checks: (values, { stored }) =>
+      values.name === 'Alex'
+        ? {
+            errors: { name: NAME_REQUIRED_STORED },
+            refusal: { ...REFUSAL, stored }
+          }
+        : { errors: {} },
+    fromPayload: (payload) => ({ name: payload.name ?? '' }),
+    fromAnswers: (answers) => ({ name: answers.name ?? '' })
+  })
+
+  it('Should pass the refusal and its errors through onSubmit', async () => {
+    const result = await validation.onSubmit({ name: 'Alex' })
+
+    expect(result.errors).toEqual({ name: NAME_REQUIRED_STORED })
+    expect(result.refusal).toEqual({ ...REFUSAL, stored: false })
+  })
+
+  it('Should pass the refusal and its errors through onStored', async () => {
+    const result = await validation.onStored({ name: 'Alex' })
+
+    expect(result.errors).toEqual({ name: NAME_REQUIRED_STORED })
+    expect(result.refusal).toEqual({ ...REFUSAL, stored: true })
+  })
+
+  it('Should leave refusal off the result when the checks name none', async () => {
+    const result = await validation.onSubmit({ name: 'Sam' })
+
+    expect(result).not.toHaveProperty('refusal')
+  })
+})
+
 describe('#pageValidation — blanks', () => {
   const validation = pageValidation({
     fields: () => compose(oneOf('a', ['keep'])),

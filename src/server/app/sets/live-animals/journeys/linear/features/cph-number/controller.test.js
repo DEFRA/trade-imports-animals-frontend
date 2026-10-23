@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -14,6 +15,7 @@ import * as cphNumber from './controller.js'
 const postCph = postHandlerOf(cphNumber)
 const getCph = cphNumber.routes.find((route) => route.method === 'GET').handler
 
+const SLASHED_CPH_NUMBER = '12/345/6789'
 const VALID_PARTS = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
 
 const seed = () => ({
@@ -55,6 +57,10 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
       cphCounty: 'Enter a CPH number'
     })
     expect(result.after.countyParishHoldingCph).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['cphCounty']
+    })
   })
 
   it('Should name the missing part when the others are answered', async () => {
@@ -68,7 +74,7 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
     expect(result.after.countyParishHoldingCph).toBeUndefined()
   })
 
-  it('Should hold each part to its own length', async () => {
+  it('Should hold each part to its own length and list the summary errors in page order', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
       payload: { cphCounty: '1', cphParish: '34', cphHolding: '678' }
@@ -78,6 +84,7 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
       cphParish: 'Parish must be 3 digits',
       cphHolding: 'Holding number must be 4 digits'
     })
+
     expect(
       result.view.context.errorSummary.errorList.map(({ href }) => href)
     ).toEqual(['#cphCounty', '#cphParish', '#cphHolding'])
@@ -102,7 +109,7 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
   it('Should save a whole number with slashes typed into the county box as nine digits', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
-      payload: { cphCounty: '12/345/6789', cphParish: '', cphHolding: '' }
+      payload: { cphCounty: SLASHED_CPH_NUMBER, cphParish: '', cphHolding: '' }
     })
     expect(result.view).toBeUndefined()
     expect(result.after.countyParishHoldingCph).toBe('123456789')
@@ -147,9 +154,9 @@ describe('GET cph-number — the stored number back in its parts', () => {
     expect(result.view.context.values).toEqual(VALID_PARTS)
   })
 
-  it('Should split a stored value written with slashes into its three parts', async () => {
+  it('Should split a stored value that still carries slashes', async () => {
     const result = await driveHandler(getCph, {
-      seed: { ...seed(), countyParishHoldingCph: '12/345/6789' }
+      seed: { ...seed(), countyParishHoldingCph: SLASHED_CPH_NUMBER }
     })
     expect(result.view.context.values).toEqual(VALID_PARTS)
   })

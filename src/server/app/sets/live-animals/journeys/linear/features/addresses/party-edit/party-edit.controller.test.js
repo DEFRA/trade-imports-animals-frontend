@@ -6,11 +6,15 @@ import {
   addressBookCountriesServing,
   addressBookRequestUrls,
   driveHandler,
-  restoreAddressBookAfterTests,
+  expectOneSaveFallbackLogged,
+  resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import { CONTACT_PARTY, PARTIES } from '../parties.js'
@@ -52,7 +56,7 @@ const handlerFor = (method, party) =>
 
 describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   const get = handlerFor('GET', party)
   const post = handlerFor('POST', party)
@@ -147,7 +151,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
       payload: { ...FORM, postcode: '', email: 'not-an-email' }
     })
 
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.view.context.errors).toEqual({
       postcode: 'Enter a postcode',
       email: 'Enter an email address in the correct format'
@@ -178,7 +182,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
 
 describe('Edit address details — where the trader returns to', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   const consignor = PARTIES.find((party) => party.id === 'consignor')
   const get = handlerFor('GET', consignor)
@@ -245,14 +249,19 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should re-render the form when saving fails', async () => {
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toEqual(STORED)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })

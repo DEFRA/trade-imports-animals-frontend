@@ -35,7 +35,7 @@ const copy = copyFor({ en, cy }).portOfEntry
 const QUESTION_LABEL_CLASSES = 'govuk-label--m'
 
 const portItems = async (selected) => [
-  { value: '', text: copy.port.placeholder },
+  { value: '', text: copy.port.selectText },
   ...(await ports.portOptions()).map((option) => ({
     ...option,
     selected: option.value === selected
@@ -43,7 +43,7 @@ const portItems = async (selected) => [
 ]
 
 const meansItems = (selected) => [
-  { value: '', text: copy.means.placeholder },
+  { value: '', text: copy.means.selectText },
   ...transportReference.meansOfTransport().map((code) => ({
     value: code,
     text: meansOfTransportLabel(code),
@@ -98,17 +98,16 @@ const post = async (request, h) => {
     { dateWindow, allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return (await render(h, journey, dateWindow, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  let committed
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      committed = await state.commit(request, h, answers)
-    },
+  const { value: committed, failure } = await kit.recoverableSave(
+    request,
+    () => state.commit(request, h, answers),
     async () => {
       const { journey } = await state.get(request, h)
       return (

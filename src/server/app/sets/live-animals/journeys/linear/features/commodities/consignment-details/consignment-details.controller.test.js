@@ -1,7 +1,8 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -11,15 +12,36 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import {
   crumbProtectedServerMounting,
   driveHandler,
+  expectBackLinkIsPage,
+  expectOneRefusalLogged,
+  expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
-  stubH
+  stubH,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
 
 const post = postHandlerOf(consignmentDetails)
+
+const cowLineHoldingThreeIdentifiers = () => ({
+  commodityLines: [
+    {
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      numberOfPackages: '',
+      numberOfAnimalsQuantity: '3',
+      animalIdentifiers: [
+        { animalIdentifierEarTag: 'UK1' },
+        { animalIdentifierEarTag: 'UK2' },
+        { animalIdentifierEarTag: 'UK3' }
+      ]
+    }
+  ]
+})
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
@@ -101,7 +123,17 @@ const seedTwoSpeciesOfOneCommodity = () => ({
   ]
 })
 
-const getHandlerOf = (featureModule) =>
+const COMMODITY_REMOVAL_REFUSED = {
+  reason: 'no-commodity-at-index',
+  message: 'Commodity removal refused: no commodity at the index'
+}
+
+const SPECIES_REMOVAL_REFUSED = {
+  reason: 'no-species-at-index',
+  message: 'Species removal refused: no species at the index'
+}
+
+const pageGetHandlerOf = (featureModule) =>
   featureModule.routes.find(
     (route) => route.method === 'GET' && !route.path.includes('remove')
   ).handler
@@ -110,7 +142,10 @@ const contextOf = async (seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
-  await getHandlerOf(consignmentDetails)(journeyRequest(journey.journeyId), h)
+  await pageGetHandlerOf(consignmentDetails)(
+    journeyRequest(journey.journeyId),
+    h
+  )
   return h.captured.view.context
 }
 
@@ -143,7 +178,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect('numberOfPackages' in lines[2]).toBe(false)
   })
 
-  it('Should re-render a non-numeric quantity against its own line and save nothing', async () => {
+  it('Should re-render a non-numeric quantity against its own line and save nothing, and log the refusal', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -155,25 +190,16 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.view.context.errors['numberOfAnimalsQuantity-1']).toBe(
       'Enter a whole number greater than 0'
     )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['numberOfAnimalsQuantity-1', 'numberOfAnimalsQuantity-2']
+    })
   })
 
-  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming', async () => {
-    const seed = {
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
-          numberOfPackages: '',
-          numberOfAnimalsQuantity: '3',
-          animalIdentifiers: [
-            { animalIdentifierEarTag: 'UK1' },
-            { animalIdentifierEarTag: 'UK2' },
-            { animalIdentifierEarTag: 'UK3' }
-          ]
-        }
-      ]
-    }
+  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming, and log the refusal', async () => {
+    const seed = cowLineHoldingThreeIdentifiers()
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '' }
@@ -187,6 +213,11 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'commodities/identification'
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['numberOfAnimalsQuantity-0']
+    })
     expect(result.after).toEqual({
       commodityLines: [
         {
@@ -262,7 +293,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] }
     })
     expect(result.response).toEqual({
@@ -272,7 +303,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
       query: { change: '1' }
     })
@@ -287,7 +318,11 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:7' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: 7
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -297,7 +332,11 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -412,7 +451,11 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 0
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -422,7 +465,11 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:9' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 9
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -432,7 +479,11 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 })
@@ -543,5 +594,48 @@ describe('#consignmentDetailsController — the animal count must be answered be
       { href: '#numberOfPackages-1', text: PACKAGES_WHOLE_NUMBER_MESSAGE }
     ])
     expect(result.after.commodityLines).toHaveLength(2)
+  })
+})
+
+describe('#consignmentDetailsController — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ]
+  }
+
+  it('Should go Back to What are you importing? while the opening run is on', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed,
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed
+    })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

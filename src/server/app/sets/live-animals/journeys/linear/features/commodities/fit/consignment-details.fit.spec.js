@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
+  PHONE_VIEWPORT,
   answerCountryOfOrigin,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectThreeSaveControls,
   expectSpeciesSelected,
   journeyUrl,
   selectSpecies,
@@ -354,29 +356,10 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('')
   })
 
-  test('ends with all three controls now the hub links straight here', async ({
+  test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
     page
   }) => {
-    const group = page.locator('.govuk-button-group')
-
-    await expect(
-      group.getByRole('button', { name: SAVE_AND_CONTINUE })
-    ).toBeVisible()
-    await expect(
-      group.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndReturnToHub
-      })
-    ).toBeVisible()
-    await expect(
-      group.getByRole('link', {
-        name: sharedCopy.saveActions.cancelAndReturnToHub
-      })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('link', {
-        name: sharedCopy.saveActions.cancelAndReturnToHub
-      })
-    ).toBeVisible()
+    await expectThreeSaveControls(page)
   })
 
   test('save and return to overview stores the counts and marks the row Completed', async ({
@@ -407,7 +390,7 @@ test.describe('commodity consignment details — persistence and accessibility',
 })
 
 test.describe('commodity consignment details on a phone', () => {
-  test.use({ viewport: { width: 390, height: 844 } })
+  test.use({ viewport: PHONE_VIEWPORT })
 
   test.beforeEach(async ({ page }) => {
     await signIn(page)

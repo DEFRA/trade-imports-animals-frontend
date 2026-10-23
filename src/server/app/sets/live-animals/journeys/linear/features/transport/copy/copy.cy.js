@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 const SELECT_A_COUNTRY = 'Dewiswch wlad'
 
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
@@ -6,17 +8,18 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: 'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
+      hint: `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Porthladd mynediad',
       hint: 'Dewiswch ble bydd y cludwr yn dod i mewn gyda’r llwyth. Dechreuwch deipio i chwilio yn ôl enw neu god y porthladd neu’r maes awyr.',
-      placeholder: 'Dewiswch borthladd',
+      selectText: 'Dewiswch borthladd',
+      searchPlaceholder: 'Dewiswch borthladd',
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
       label: 'Cyfrwng cludo i’r porthladd mynediad',
-      placeholder: 'Dewiswch un',
+      selectText: 'Dewiswch un',
       options: {
         AIRPLANE: 'Awyr',
         RAILWAY: 'Rheilffordd',

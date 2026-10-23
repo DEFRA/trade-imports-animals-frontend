@@ -9,6 +9,7 @@ import {
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
+import { originPage } from '../features/origin/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import {
@@ -28,7 +29,7 @@ import { declarationPage } from '../features/declaration/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
-import { nextRunTarget, RUN_STEPS } from './run.js'
+import { nextRunTarget, previousRunTarget, RUN_STEPS } from './run.js'
 import { allFlowPages } from './flow.js'
 
 const JOURNEY_ID = 'journey-1'
@@ -197,6 +198,77 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 
   it('Should rest on the hub after the review page — the run is over', () => {
     expect(step(notificationViewPage.id)).toBe(hubPath(JOURNEY_ID))
+  })
+})
+
+describe('#previousRunTarget — where Back goes during the opening run', () => {
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  const fishSeed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commoditySelection: 'Fish', speciesSelection: '801204' }]
+  }
+  const previous = (stepId, answers) =>
+    previousRunTarget(
+      stepId,
+      { scope: makeScope(answers), answers },
+      JOURNEY_ID
+    )
+
+  it('Should send the commodities page back to the origin page', () => {
+    expect(previous(commoditiesPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, originPage.slug)
+    )
+  })
+
+  it('Should send the import reason page back to the commodities page', () => {
+    expect(previous(importReasonPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, commoditiesPage.slug)
+    )
+  })
+
+  it('Should send the consignment details page back to the commodities page, not to the import reason page', () => {
+    expect(previous(consignmentDetailsPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, commoditiesPage.slug)
+    )
+  })
+
+  it('Should send the additional details page back to the animal identification page when a chosen species needs identifiers', () => {
+    expect(previous(additionalDetailsPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, animalIdentificationPage.slug)
+    )
+  })
+
+  it('Should send the additional details page back to the consignment details page when no chosen species needs identifiers', () => {
+    expect(previous(additionalDetailsPage.id, fishSeed)).toBe(
+      pagePath(JOURNEY_ID, consignmentDetailsPage.slug)
+    )
+  })
+
+  it('Should send the transit countries back to the port of entry page', () => {
+    expect(previous(transitCountriesPage.id, completeSeed)).toBe(
+      pagePath(JOURNEY_ID, portOfEntryPage.slug)
+    )
+  })
+
+  it('Should give no run Back to the steps whose Back link stays on the overview', () => {
+    for (const step of [
+      originPage,
+      animalIdentificationPage,
+      portOfEntryPage,
+      transportersPage,
+      documentsPage,
+      addressesPage,
+      consignmentContactSelectPage
+    ]) {
+      expect(previous(step.id, completeSeed)).toBeNull()
+    }
+  })
+
+  it('Should give no run Back to a page outside the run', () => {
+    expect(previous(dashboardPage.id, lineSeed)).toBeNull()
   })
 })
 

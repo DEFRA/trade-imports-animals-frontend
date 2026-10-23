@@ -16,7 +16,7 @@
     autocomplete: {
       showAllValues: true,
       noResults: params.copy.noResults,
-      placeholder: params.copy.placeholder
+      placeholder: params.copy.searchPlaceholder
     }
   }) }}
 {% endmacro %}
@@ -64,17 +64,6 @@
     temporaryAdmissionHorses: temporaryAdmissionReveal
   } %}
 
-  {% set reasonItems = [] %}
-  {% for option in reasonOptions %}
-    {% set ignored = reasonItems.push({
-      value: option.value,
-      text: option.text,
-      hint: option.hint,
-      checked: option.checked,
-      conditional: { html: reveals[option.value] }
-    }) %}
-  {% endfor %}
-
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -88,9 +77,9 @@
         }
       },
       errorMessage: errors.reasonForImport and { text: errors.reasonForImport },
-      items: reasonItems
+      items: withReveals(reasonOptions, reveals)
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

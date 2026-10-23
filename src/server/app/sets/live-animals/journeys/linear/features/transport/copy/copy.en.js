@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 const SELECT_A_COUNTRY = 'Select a country'
 
 export const copy = {
@@ -5,17 +7,18 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026'
+      hint: `The expected date of arrival at the port of entry. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Port of entry',
       hint: 'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select a port',
+      selectText: 'Select a port',
+      searchPlaceholder: 'Select a port',
       noResults: 'No ports found'
     },
     means: {
       label: 'Means of transport to the port of entry',
-      placeholder: 'Select one',
+      selectText: 'Select one',
       options: {
         AIRPLANE: 'Air',
         RAILWAY: 'Rail',

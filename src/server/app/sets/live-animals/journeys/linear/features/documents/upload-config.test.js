@@ -4,13 +4,16 @@ import { attachmentTypes } from '../../../../../../services/document-types/index
 import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_TYPES,
-  ALLOWED_FILE_TYPES_HINT,
+  allowedFileTypesHint,
+  fileTypeMessage,
   attachmentTypeFor,
   exceedsMaxFileSize,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage
 } from './upload-config.js'
+import { copy as copyEn } from './copy/copy.en.js'
+import { copy as copyCy } from './copy/copy.cy.js'
 
 describe('#upload-config', () => {
   it('Should derive the attachment type from the file extension, case-insensitively', () => {
@@ -32,18 +35,26 @@ describe('#upload-config', () => {
     ).toBe(true)
   })
 
-  it('Should name every accepted extension in the user-facing hint, including JPG', () => {
-    expect(ALLOWED_FILE_TYPES_HINT).toBe(
+  it('Should name every accepted extension in the English hint, including JPG', () => {
+    expect(allowedFileTypesHint(copyEn)).toBe(
       'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'
     )
   })
 
-  it('Should keep the user-facing hint in step with what the file input accepts', () => {
+  it('Should join the accepted extensions with the Welsh word for or in the Welsh hint', () => {
+    expect(allowedFileTypesHint(copyCy)).toBe(
+      'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS neu XLSX'
+    )
+  })
+
+  it('Should keep the hint in step with what the file input accepts', () => {
     const accepted = ACCEPT_ATTRIBUTE.split(',').map((extension) =>
       extension.replace('.', '').toUpperCase()
     )
 
-    const listed = ALLOWED_FILE_TYPES_HINT.replaceAll(' or ', ', ').split(', ')
+    const listed = allowedFileTypesHint(copyEn)
+      .replaceAll(' or ', ', ')
+      .split(', ')
 
     expect(listed).toEqual(accepted)
   })
@@ -51,9 +62,21 @@ describe('#upload-config', () => {
   it('Should hold the 10MB decimal limit with multipart headroom on the route cap', () => {
     expect(MAX_FILE_SIZE_BYTES).toBe(10000000)
     expect(MAX_PAYLOAD_BYTES).toBe(10001024)
-    expect(OVERSIZE_FILE_MESSAGE).toBe(
+    expect(oversizeMessage(copyEn)).toBe(
       'The selected file must be smaller than 10MB'
     )
+  })
+
+  it('Should word the file type error in Welsh, listing the types joined with neu', () => {
+    expect(fileTypeMessage(copyCy)).toBe(
+      copyCy.errors.fileType('PDF, DOC, DOCX, JPEG, JPG, PNG, XLS neu XLSX')
+    )
+    expect(fileTypeMessage(copyCy)).not.toBe(fileTypeMessage(copyEn))
+  })
+
+  it('Should word the oversize error in Welsh with the size limit', () => {
+    expect(oversizeMessage(copyCy)).toBe(copyCy.errors.oversize('10MB'))
+    expect(oversizeMessage(copyCy)).not.toBe(oversizeMessage(copyEn))
   })
 
   it('Should judge a byte count against the shared limit, allowing exactly the limit', () => {

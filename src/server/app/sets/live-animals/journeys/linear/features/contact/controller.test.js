@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { config } from '../../../../../../../../config/config.js'
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
-  restoreStubModeAndConfigAfterTests,
+  resetMocksAndConfigAfterTests,
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
@@ -143,6 +144,10 @@ describe('POST contact — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['contactAddress']
+    })
   })
 
   it('Should keep the current contact card on a 400 re-render', async () => {
@@ -186,7 +191,7 @@ describe('POST contact — invalid payload', () => {
 
 describe('GET contact — INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreStubModeAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
     config.set('stubMode', false)

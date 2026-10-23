@@ -21,6 +21,7 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
+import * as cancelAmend from '../cancel-amend/controller.js'
 import {
   continueRequest,
   declarationRoutesFromReview
@@ -29,7 +30,11 @@ import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persis
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as ports from '../../../../../../services/ports/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -87,7 +92,7 @@ const sectionsFor = async (seed) =>
 const summaryFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.errorSummary
 
-const viewForStatus = async (status, seed = fullSeed, query = {}) => {
+const journeyIdForStatus = async (status, seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (status === SUBMITTED || status === AMEND) {
@@ -96,9 +101,21 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
+  return journey.journeyId
+}
+
+const viewOfJourney = async (journeyId, query = {}) => {
   const h = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), h)
+  await getHandler(journeyRequest(journeyId, { query }), h)
   return h.captured.view
+}
+
+const viewForStatus = async (status, seed = fullSeed, query = {}) =>
+  viewOfJourney(await journeyIdForStatus(status, seed), query)
+
+const viewAndJourneyIdForStatus = async (status) => {
+  const journeyId = await journeyIdForStatus(status, fullSeed)
+  return { view: await viewOfJourney(journeyId), journeyId }
 }
 
 const cardsOf = (sections) =>
@@ -306,6 +323,38 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(submitted.context.amendmentCancelled).toBe(true)
     expect(draft.context.amendmentCancelled).toBe(false)
+  })
+
+  it('Should go Back to the notification list from a submitted notification', async () => {
+    const view = await viewForStatus(SUBMITTED)
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the notification list from the submitted view shown after an amendment is cancelled', async () => {
+    const journeyId = await journeyIdForStatus(AMEND, fullSeed)
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'AmendedRef'
+    })
+    const cancelRequest = journeyRequest(journeyId)
+    await postHandlerOf(cancelAmend)(cancelRequest, stubH(cancelRequest))
+
+    const view = await viewOfJourney(journeyId, { cancelled: '1' })
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the overview from the review of a draft notification', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
+  })
+
+  it('Should go Back to the overview from the review of a notification being amended', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(AMEND)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
   })
 })
 

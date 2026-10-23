@@ -132,10 +132,12 @@ Follow [add-a-page.md](add-a-page.md) for each page. Each controller exports:
 - GET and POST handlers
 - `routes`, normally from `kit.pageRoutes(page, { get, post })`
 
-GET reads once through `state.get()`. POST validates raw input, returns 400 with
-raw values on error, commits cleaned values on success and redirects through
-`kit.nextTarget()`. Wrap every persistence write in `kit.recoverableSave()` and
-return the same form with status 500 for a marked failure.
+GET reads once through `state.get()`. POST validates raw input, calls
+returns 400 with raw values on error and logs nothing for a user's own field errors
+(a refusal that is not the user's input error logs once through `kit.logRefusal`
+with the journey id), commits cleaned values on success and redirects through `kit.nextTarget()`.
+Wrap every persistence write in `kit.recoverableSave(request, …)`, which logs a
+marked failure once, and return the same form with status 500 for it.
 
 Use `scope.has()` for conditional fields. Do not render, validate or commit a
 field that is out of scope. Let the evaluator purge a value when its obligation
@@ -206,6 +208,10 @@ guard". Update
 [`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
 do; its coverage invariant fails if you forget.
 
+A step that applies only to some notifications also takes `offersBackWhen`, a
+function of the notification's answers that says when the step is a Back
+destination. See [`journey-flow-and-gates.md`](journey-flow-and-gates.md).
+
 ## 6. Add one task row and wire it to the hub
 
 Import the page identities in [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js) and
@@ -257,7 +263,7 @@ flow section or task row does not add a config entry.
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
-journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`,
+journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`,
 `FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no
@@ -269,7 +275,9 @@ Registration work for the feature group is therefore limited to:
 2. add its binding bundle to `featureEvaluationBindings`
 3. add page identities to `sections` and `taskRows`
 4. add task-row ids and copy to the hub
-5. add pages to `run.js` in journey order — the run is the whole notification
+5. add pages to `run.js` in journey order — the run is the whole notification —
+   and, on a step whose Back link should open an earlier step during the run, name
+   that step in its `backCandidates`
 
 Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
 the journey's template identity, cookie identity or injected policy surface itself
@@ -347,7 +355,7 @@ set-up in the test file:
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`. A new
+  `selectSpecies`, `chooseTypeAheadOption` and `choosePortOfEntry`. A new
   section adds its own `answer<Section>` step here and to
   `completeAnswerSections`
 - set-up shared only inside one feature group: that group's `test-support.js`,

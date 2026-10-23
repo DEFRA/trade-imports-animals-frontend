@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  PHONE_VIEWPORT,
   answerCountryOfOrigin,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -29,7 +30,6 @@ const COW = 'Cow'
 const COW_HEADING = 'Cow (0102)'
 const GOVUK_GREEN = 'rgb(15, 122, 82)'
 const REGULAR_FONT_WEIGHT = '400'
-const PHONE_VIEWPORT = { width: 390, height: 844 }
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -182,12 +182,6 @@ const commodityHeading = (page, heading) =>
 
 const speciesCard = (page, species) =>
   page.getByRole('region', { name: species, exact: true })
-
-const bottomOf = (locator) =>
-  locator.evaluate((el) => el.getBoundingClientRect().bottom)
-
-const topOf = (locator) =>
-  locator.evaluate((el) => el.getBoundingClientRect().top)
 
 const removeAnimalRow = async (page, species, number) => {
   const row = savedAnimalRow(page, species, number)
@@ -597,8 +591,8 @@ test.describe('animal identification selected commodities summary', () => {
       latinNames: [FELIS_CATUS],
       animals: '4'
     })
-    expect(await bottomOf(selectedCommoditiesSummary(page))).toBeLessThan(
-      await topOf(commodityHeading(page, COW_HEADING))
+    await expect(summary.or(commodityHeading(page, COW_HEADING))).toContainText(
+      [copy.selectedCommodities.caption, COW_HEADING]
     )
   })
 
@@ -941,11 +935,18 @@ test.describe('animal identification sections and species cards', () => {
     const button = card.getByRole('button', {
       name: copy.identification.saveAndAddAnother
     })
-    const table = card.getByRole('table')
-    expect(await topOf(card.getByRole('heading', { level: 4 }))).toBeLessThan(
-      await topOf(page.locator(EAR_TAG_FIELD))
-    )
-    expect(await bottomOf(button)).toBeLessThan(await topOf(table))
+    const inDocumentOrder = card
+      .getByRole('heading', { level: 4 })
+      .or(card.locator(EAR_TAG_FIELD))
+      .or(button)
+      .or(card.getByRole('table'))
+    await expect
+      .poll(() =>
+        inDocumentOrder.evaluateAll((elements) =>
+          elements.map((element) => element.tagName)
+        )
+      )
+      .toEqual(['H4', 'INPUT', 'BUTTON', 'TABLE'])
   })
 
   test('shows the card button as a primary button', async ({ page }) => {

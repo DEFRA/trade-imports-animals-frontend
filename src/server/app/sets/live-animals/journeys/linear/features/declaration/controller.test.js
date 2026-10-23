@@ -1,28 +1,22 @@
 import { SET_ID } from '../../../../set.js'
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { pagePath } from '../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
+  expectOneLogged,
+  expectOneRefusalLogged,
   journeyRequest,
   postHandlerOf,
   recordingLogger,
-  stubH
+  stubH,
+  expectOneSaveFallbackLogged,
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 
@@ -95,21 +89,17 @@ const drivePost = async ({
 }
 
 const expectRefusalLogged = (result, expectedRefusal) =>
-  expect(result.logger.entries).toEqual([
-    {
-      level: 'info',
-      fields: expect.objectContaining({
-        journeyId: result.journeyId,
-        refusal: expectedRefusal
-      }),
-      message: 'Declaration refused'
-    }
-  ])
+  expectOneLogged(result.logger, {
+    level: 'info',
+    fields: expect.objectContaining({
+      journeyId: result.journeyId,
+      refusal: expectedRefusal
+    }),
+    message: 'Declaration refused'
+  })
 
-// In practice kit.base()'s current token always equals the reviewed one, so it
-// is moved to show which of the two the page carries.
 const CURRENT_CONCURRENCY_TOKEN = 'current-token'
-const currentConcurrencyTokenDiffers = () => {
+const movePageTokenAwayFromReviewedToken = () => {
   const base = kit.base
   vi.spyOn(kit, 'base').mockImplementation((...args) => ({
     ...base(...args),
@@ -123,21 +113,14 @@ const editElsewhere = (journeyId) =>
 const CHANGED = '?staleAction=1'
 const REFUSED = '?refused=1'
 
-const setupDeclarationEngine = () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => {
-    store.clear()
-    configureReadyForCheckYourAnswers(SET_ID, () => true)
-  })
+const useReadyDeclarationJourney = () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  beforeEach(() => configureReadyForCheckYourAnswers(SET_ID, () => true))
   afterEach(() => vi.restoreAllMocks())
 }
 
 describe('#declaration', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('GET /declaration', () => {
     it('Should send a bookmark or typed URL back to the review', async () => {
@@ -260,11 +243,11 @@ describe('#declaration', () => {
 })
 
 describe('#declaration submit', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
-      currentConcurrencyTokenDiffers()
+      movePageTokenAwayFromReviewedToken()
 
       const result = await drivePost({ payload: { declaration: '' } })
 
@@ -276,6 +259,10 @@ describe('#declaration submit', () => {
         result.reviewedConcurrencyToken
       )
       expect(result.after).toEqual(result.before)
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: ['declaration']
+      })
     })
 
     it('Should redirect to the confirmation page after a successful submit', async () => {
@@ -363,8 +350,6 @@ describe('#declaration submit', () => {
 
     it('Should redirect to the review when a stored answer has gone stale', async () => {
       vi.spyOn(refusal, 'isReviewRefused').mockResolvedValue(true)
-      // seedAnswers itself calls replaceFulfilment, so finalise — only
-      // submitJourney calls it — is the signal that nothing was submitted.
       const finaliseSpy = vi.spyOn(records, 'finalise')
 
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
@@ -408,7 +393,7 @@ describe('#declaration submit', () => {
 })
 
 describe('#declaration submit against the real records adapter', () => {
-  setupDeclarationEngine()
+  useReadyDeclarationJourney()
 
   describe('backend submit', () => {
     const backendResponds = (response) =>
@@ -473,12 +458,13 @@ describe('#declaration submit against the real records adapter', () => {
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
+      const failure = unavailableBackendError('submit notification')
       backendResponds({
         ok: false,
         status: 503,
         statusText: 'Service Unavailable'
       })
-      currentConcurrencyTokenDiffers()
+      movePageTokenAwayFromReviewedToken()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed', crumb: 'test-crumb' }
@@ -495,6 +481,10 @@ describe('#declaration submit against the real records adapter', () => {
       expect(result.view.view).toBe(
         'live-animals/journeys/linear/features/declaration/template'
       )
+      expectOneSaveFallbackLogged(result.logger, {
+        journeyId: result.journeyId,
+        err: failure
+      })
     })
   })
 })

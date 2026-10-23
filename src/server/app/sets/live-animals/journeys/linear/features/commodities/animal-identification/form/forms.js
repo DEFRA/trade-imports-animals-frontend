@@ -109,10 +109,6 @@ export const capReachedResponse = ({
     return null
   }
   const cap = capByLineAtCap.get(addIndex)
-  request.logger.info(
-    { journeyId: request.params.journeyId, lineIndex: addIndex, cap },
-    'Animal identification refused: line already holds all its animals'
-  )
   return render(request, h, journey, answers, evaluation, {
     forms,
     cardErrors: [{ index: addIndex, text: copy.errors.capReached(cap) }]

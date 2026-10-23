@@ -104,9 +104,13 @@ For a conditional field, use `scope.has(fieldName)` to decide whether to render
 and validate it. Do not commit a hidden value. The evaluator removes stored
 data when the obligation leaves scope.
 
-Wrap the write in `kit.recoverableSave()`. On a marked persistence failure,
-render the same values with `recoverableError: true` and return 500. Let other
-errors throw.
+Wrap the write in `kit.recoverableSave(request, …)`. On a marked persistence
+failure it logs the fallback once; render the same values with
+`recoverableError: true` and return 500. Let other errors throw. When
+validation fails, render the page again with status 400 and log nothing: a user's
+own field errors shown back on the form are not logged. A refusal that is not the
+user's input error (a state refusal, a bare 400, another service refusing) logs
+once through `kit.logRefusal(request, { …details })` with the journey id.
 
 Run `npm run test:live-animals`. `buildDispatch` should now pass. Update the existing
 case for this controller in
@@ -223,7 +227,7 @@ set-up in the test file:
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`
+  `selectSpecies`, `chooseTypeAheadOption` and `choosePortOfEntry`
 - set-up shared only inside one feature: that feature's `test-support.js`, as in
   [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
 

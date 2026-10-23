@@ -7,8 +7,9 @@ import {
   driveHandler,
   addressBookAnswering,
   expectOneLogged,
-  restoreAddressBookAfterTests,
-  restoreStubModeAndConfigAfterTests,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
+  resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -65,7 +66,7 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 describe('GET /consignors/select', () => {
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should render the first page of the book with a radio per row and pagination over the rest', async () => {
@@ -175,7 +176,7 @@ describe('GET /consignors/select', () => {
 })
 
 describe('POST /consignors/select', () => {
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the matches from page one on a search, saving nothing', async () => {
@@ -302,15 +303,11 @@ describe('POST /consignors/select', () => {
       { text: SELECT_A_CONSIGNOR_ERROR, href: '#party' }
     ])
     expect(result.after.consignor).toBeUndefined()
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        role: 'consignor',
-        addressId: NOT_IN_THE_BOOK
-      },
-      message:
-        'Address picker refused an address that is not in the address book'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['party'],
+      role: 'consignor',
+      addressId: NOT_IN_THE_BOOK
     })
   })
 
@@ -419,7 +416,7 @@ describe('GET /consignors/select — handshake return', () => {
 
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreStubModeAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
@@ -460,14 +457,21 @@ describe('POST /consignors/select — recoverable save failure', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the picker when saving the selection fails', async () => {
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toBeUndefined()
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure,
+      role: 'consignor',
+      addressId: ALPINE_DAIRY_ID
+    })
   })
 })
 

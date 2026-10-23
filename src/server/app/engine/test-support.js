@@ -5,13 +5,18 @@ import createFetchMock from 'vitest-fetch-mock'
 import { config } from '../../../config/config.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
+import { pagePath } from '../shared/paths.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
+import {
+  REFUSAL_LOG_MESSAGE,
+  SAVE_FALLBACK_LOG_MESSAGE
+} from '../shared/kit.js'
 import { store } from './store.js'
 import { knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
-import { configureSession } from './persistence/session.js'
+import { configureSession, openingRunCookie } from './persistence/session.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -198,10 +203,11 @@ const recordsRejectingSaves = (failure) => ({
 })
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after. `amend` submits the journey and opens an amendment first;
- * `pathOf(journeyId)` gives the request the path it was made to;
- * `saveFailure` makes the records store refuse every save the handler makes
- * with that error. */
+ * and after, with the cookies the handler set. `amend` submits the journey and
+ * opens an amendment first; `openingRun` (`RUN_ACTIVE` or `RUN_COMPLETE`)
+ * records that phase of the opening run for the journey; `pathOf(journeyId)`
+ * gives the request the path it was made to; `saveFailure` makes the records
+ * store refuse every save the handler makes with that error. */
 export const driveHandler = async (
   handler,
   {
@@ -211,6 +217,7 @@ export const driveHandler = async (
     query = {},
     state = {},
     amend = false,
+    openingRun,
     saveFailure,
     pathOf
   } = {}
@@ -225,7 +232,12 @@ export const driveHandler = async (
     payload,
     params,
     query,
-    state,
+    state: {
+      ...(openingRun
+        ? { [openingRunCookie()]: { [journey.journeyId]: openingRun } }
+        : {}),
+      ...state
+    },
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
@@ -245,9 +257,16 @@ export const driveHandler = async (
     after,
     response,
     view: h.captured.view,
+    cookies: h.cookies,
     logger: request.logger
   }
 }
+
+export const getHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'GET').handler
+
+export const expectBackLinkIsPage = (result, slug) =>
+  expect(result.view.context.backLink).toBe(pagePath(result.journeyId, slug))
 
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler
@@ -257,29 +276,28 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
 
-export const restoreStubModeAndConfigAfterTests = (...configKeys) => {
+const fetchMock = createFetchMock(vi)
+
+export const resetMocksAndConfigAfterTests = (...configKeys) => {
   const originals = ['stubMode', ...configKeys].map((key) => [
     key,
     config.get(key)
   ])
   afterEach(() => {
+    fetchMock.resetMocks()
     vi.unstubAllGlobals()
     originals.forEach(([key, value]) => config.set(key, value))
   })
 }
 
 export const referenceDataServing = () => {
-  restoreStubModeAndConfigAfterTests()
+  resetMocksAndConfigAfterTests()
   return (rows) => {
     config.set('stubMode', false)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => rows }))
-    )
+    fetchMock.enableMocks()
+    fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
   }
 }
-
-const addressBookFetchMock = createFetchMock(vi)
 
 const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
   { code: 'GB', name: 'United Kingdom' },
@@ -291,15 +309,15 @@ const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
  * `/addresses` paths gets `addressResponse` (or, for a function, what it
  * returns for the request) and the country list gets the United Kingdom,
  * Switzerland and the United States. Call it inside a test; pair it with
- * `restoreAddressBookAfterTests()` in the describe. */
+ * `resetMocksAndConfigAfterTests()` in the describe. */
 export const addressBookAnswering = (addressResponse) => {
   const answerAddresses = (request) =>
     typeof addressResponse === 'function'
       ? addressResponse(request)
       : addressResponse
-  addressBookFetchMock.enableMocks()
+  fetchMock.enableMocks()
   config.set('stubMode', false)
-  addressBookFetchMock.mockResponse(async (request) =>
+  fetchMock.mockResponse(async (request) =>
     request.url.includes('/addresses')
       ? answerAddresses(request)
       : { body: ADDRESS_BOOK_COUNTRY_LIST }
@@ -312,19 +330,34 @@ export const addressBookCountriesServing = () =>
 
 /** The urls of the address book requests made since `addressBookAnswering()`. */
 export const addressBookRequestUrls = () =>
-  addressBookFetchMock
+  fetchMock
     .requests()
     .map((request) => request.url)
     .filter((url) => url.includes('/addresses'))
 
-export const restoreAddressBookAfterTests = (...configKeys) => {
-  restoreStubModeAndConfigAfterTests(...configKeys)
-  afterEach(() => addressBookFetchMock.resetMocks())
-}
-
 /** Asserts the logger holds exactly one line. */
 export const expectOneLogged = (logger, { level, fields, message }) =>
   expect(logger.entries).toEqual([{ level, fields, message }])
+
+const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
+  level: 'info',
+  message: REFUSAL_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, errorCodes, ...details })
+})
+
+export const expectOneRefusalLogged = (logger, refusal) =>
+  expectOneLogged(logger, refusalEntry(refusal))
+
+/** The log entry for a save fallback: the journey id, the caught error and
+ * any ids the page passed. */
+export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
+  level: 'warn',
+  message: SAVE_FALLBACK_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, ...ids, err })
+})
+
+export const expectOneSaveFallbackLogged = (logger, fallback) =>
+  expectOneLogged(logger, saveFallbackEntry(fallback))
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {
@@ -334,3 +367,13 @@ export const useStubbedJourney = (setId, dispatchPages) => {
   })
   beforeEach(() => store.clear())
 }
+
+export const expectRemovalRefusedLogged = (
+  { logger, journeyId },
+  { message, ...ids }
+) =>
+  expectOneLogged(logger, {
+    level: 'info',
+    fields: { journeyId, ...ids },
+    message
+  })

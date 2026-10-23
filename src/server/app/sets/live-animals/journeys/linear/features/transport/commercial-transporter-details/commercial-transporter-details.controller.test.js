@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -16,6 +17,7 @@ import {
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 import { dispatchPages } from '../../index.js'
@@ -112,15 +114,21 @@ describe('/transporters/add/commercial', () => {
       }
     })
 
-    expect(Object.keys(result.view.context.errors)).toEqual([
+    const missingFields = [
       'approvalNumber',
       'addressLine1',
       'townOrCity',
       'postcode',
       'email',
       'phone'
-    ])
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(missingFields)
     expect(result.after.commercialTransporter).toBeUndefined()
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: missingFields
+    })
   })
 
   it('Should hold the authorisation number to its length', async () => {
@@ -212,7 +220,6 @@ describe('/transporters/add/commercial', () => {
 describe('/transporters/add/commercial keeps the transporter for the organisation', () => {
   const ORG = authenticatedCredentials.organisationId
 
-  // Not a name the service ships, so a row under it can only have been added.
   const HAULIER = {
     ...RECORD,
     nameOrOrganisationName: 'Lough Neagh Livestock Haulage Ltd',

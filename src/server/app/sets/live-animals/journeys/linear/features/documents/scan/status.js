@@ -1,10 +1,7 @@
-import { createLogger } from '../../../../../../../../common/helpers/logging/logger.js'
 import { documentUploads } from '../../../../../../../services/document-uploads/index.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
-const logger = createLogger()
-
-export const scanStatusOf = async (entry, refresh) => {
+export const scanStatusOf = async (entry, { refresh, request }) => {
   if (!entry.uploadId) {
     return SCAN_STATUS.COMPLETE
   }
@@ -15,19 +12,19 @@ export const scanStatusOf = async (entry, refresh) => {
       refresh
     })
   } catch (err) {
-    logger.warn(
-      { err, uploadId: entry.uploadId },
+    request.logger.warn(
+      { journeyId: request.params.journeyId, uploadId: entry.uploadId, err },
       'Scan status unavailable: upload service call failed, document shown as pending'
     )
     return SCAN_STATUS.PENDING
   }
 }
 
-export const withScanStatus = (documents, refresh) =>
+export const withScanStatus = (documents, { refresh, request }) =>
   Promise.all(
     documents.map(async (item) => ({
       ...item,
-      scanStatus: await scanStatusOf(item.entry, refresh)
+      scanStatus: await scanStatusOf(item.entry, { refresh, request })
     }))
   )
 

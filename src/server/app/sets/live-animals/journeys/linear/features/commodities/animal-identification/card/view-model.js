@@ -13,6 +13,8 @@ import {
 } from '../identifier/fields.js'
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
 import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
+import { identificationCardAnchor } from './error-summary.js'
+import { escapeHtml } from '../../../documents/view-model/fragments/text.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -38,9 +40,20 @@ const unitEntries = (index, species, columns, units) =>
 
 const wrappingCells = (texts) => texts.map((text) => wrappingCell({ text }))
 
+const removeButton = ({ line, unitIndex, removeAria }) =>
+  `<button type="submit" class="govuk-link app-link-button" name="action" value="remove:${line}:${unitIndex}">${escapeHtml(copy.removeRow)}<span class="govuk-visually-hidden"> ${escapeHtml(removeAria)}</span></button>`
+
 const savedAnimalsTableOf = (columns, unitRows) => ({
-  head: wrappingCells([copy.table.animalColumn, ...columns]),
-  rows: unitRows.map(({ label, cells }) => wrappingCells([label, ...cells]))
+  head: [
+    ...wrappingCells([copy.table.animalColumn, ...columns]),
+    {
+      html: `<span class="govuk-visually-hidden">${escapeHtml(copy.table.actionsHidden)}</span>`
+    }
+  ],
+  rows: unitRows.map((unitRow) => [
+    ...wrappingCells([unitRow.label, ...unitRow.cells]),
+    { html: removeButton(unitRow), classes: 'govuk-!-text-align-right' }
+  ])
 })
 
 const saveButtonTextFor = (cap, records) => {
@@ -83,7 +96,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const unitRows = unitEntries(index, species, columns, units)
   return {
     index,
-    anchor: `identification-card-${index}`,
+    anchor: identificationCardAnchor(index),
     title: species,
     changeCountHref,
     counter: atCap ? null : copy.counter(species, units.length + 1, cap),

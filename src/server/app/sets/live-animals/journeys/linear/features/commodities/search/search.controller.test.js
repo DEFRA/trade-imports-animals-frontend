@@ -1,18 +1,16 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectBackLinkIsPage,
+  postHandlerOf,
+  expectOneRefusalLogged,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 
 import * as search from './search.controller.js'
 
@@ -34,7 +32,11 @@ const SELECT_COMMODITY = 'Select a commodity'
 
 const searchFor = (commoditySearch, payload = {}) =>
   driveHandler(post, {
-    payload: { action: 'search', commoditySearch, ...payload }
+    payload: {
+      action: 'search',
+      [search.SEARCH_FIELD]: commoditySearch,
+      ...payload
+    }
   })
 
 const groupsOf = (result) => result.view.context.commodityGroups
@@ -45,12 +47,7 @@ const textsOf = (result) =>
   groupsOf(result).flatMap((group) => group.items.map((item) => item.text))
 
 describe('commodity search', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list nothing until the page is searched', async () => {
     const result = await driveHandler(get)
@@ -145,12 +142,7 @@ describe('commodity search', () => {
 })
 
 describe('commodity search — what has been chosen so far', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should summarise the stored selection, counted and grouped', async () => {
     const result = await driveHandler(get, {
@@ -176,7 +168,7 @@ describe('commodity search — what has been chosen so far', () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'clear',
-        commoditySearch: 'Bos',
+        [search.SEARCH_FIELD]: 'Bos',
         selection: [COW_BOS_TAURUS_KEY, CAT_FELIS_CATUS_KEY]
       }
     })
@@ -188,21 +180,22 @@ describe('commodity search — what has been chosen so far', () => {
 })
 
 describe('commodity search — saving the selection', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should require at least one chosen pair and create nothing', async () => {
     const result = await driveHandler(post, { payload: {} })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.commoditySearch).toBe(SELECT_COMMODITY)
+    expect(result.view.context.errors[search.SEARCH_FIELD]).toBe(
+      SELECT_COMMODITY
+    )
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#commoditySearch' }
+      { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [search.SEARCH_FIELD]
+    })
   })
 
   it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
@@ -243,14 +236,14 @@ describe('commodity search — saving the selection', () => {
 
   it('Should key the error to the search box even with results listed, keeping the query and the results', async () => {
     const result = await driveHandler(post, {
-      payload: { commoditySearch: 'Bos' }
+      payload: { [search.SEARCH_FIELD]: 'Bos' }
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors).toEqual({
-      commoditySearch: SELECT_COMMODITY
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
     })
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#commoditySearch' }
+      { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.view.context.query).toBe('Bos')
     expect(legendsOf(result)).toEqual([COW_LEGEND])
@@ -292,7 +285,7 @@ describe('commodity search — saving the selection', () => {
   it('Should save what is carried alongside what is ticked on screen', async () => {
     const result = await driveHandler(post, {
       payload: {
-        commoditySearch: 'Felis',
+        [search.SEARCH_FIELD]: 'Felis',
         selection: COW_BOS_TAURUS_KEY,
         species: CAT_FELIS_CATUS_KEY
       }
@@ -349,5 +342,27 @@ describe('commodity search — saving the selection', () => {
         (line) => `${line.commoditySelection}|${line.speciesSelection}`
       )
     ).toEqual([COW_BOS_TAURUS_KEY])
+  })
+})
+
+describe('commodity search — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back to the origin of the import while the opening run is on', async () => {
+    const result = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should keep Back on the origin of the import when the page is shown again by a search in the run', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'search', [search.SEARCH_FIELD]: 'cat' },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

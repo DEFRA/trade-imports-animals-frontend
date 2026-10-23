@@ -89,7 +89,7 @@ describe('AccessibleAutocomplete', () => {
 
       expect(listed).toEqual(["Côte d'Ivoire"])
       expect(config.templates.suggestion("Côte d'Ivoire")).toBe(
-        '<strong class="app-autocomplete__match">Côte</strong> d&#39;Ivoire'
+        '<strong class="govuk-!-font-weight-bold">Côte</strong> d&#39;Ivoire'
       )
     })
 
@@ -97,10 +97,10 @@ describe('AccessibleAutocomplete', () => {
       const { config } = enhanceCountrySelect()
 
       expect(suggestionAfterTyping(config, 'fra', 'France')).toBe(
-        '<strong class="app-autocomplete__match">Fra</strong>nce'
+        '<strong class="govuk-!-font-weight-bold">Fra</strong>nce'
       )
       expect(suggestionAfterTyping(config, 'an', 'Banana')).toBe(
-        'B<strong class="app-autocomplete__match">an</strong><strong class="app-autocomplete__match">an</strong>a'
+        'B<strong class="govuk-!-font-weight-bold">an</strong><strong class="govuk-!-font-weight-bold">an</strong>a'
       )
     })
 
@@ -118,7 +118,7 @@ describe('AccessibleAutocomplete', () => {
       second.source('ger', () => {})
 
       expect(first.templates.suggestion('France')).toBe(
-        '<strong class="app-autocomplete__match">Fra</strong>nce'
+        '<strong class="govuk-!-font-weight-bold">Fra</strong>nce'
       )
       expect(second.templates.suggestion('France')).toBe('France')
     })
@@ -135,7 +135,7 @@ describe('AccessibleAutocomplete', () => {
       const { config } = enhanceCountrySelect()
 
       expect(suggestionAfterTyping(config, '&', 'R&D')).toBe(
-        'R<strong class="app-autocomplete__match">&amp;</strong>D'
+        'R<strong class="govuk-!-font-weight-bold">&amp;</strong>D'
       )
       expect(suggestionAfterTyping(config, 'amp', 'R&D')).toBe('R&amp;D')
     })
@@ -144,7 +144,7 @@ describe('AccessibleAutocomplete', () => {
       const { config } = enhanceCountrySelect()
 
       expect(suggestionAfterTyping(config, '(', 'Congo (Brazzaville)')).toBe(
-        'Congo <strong class="app-autocomplete__match">(</strong>Brazzaville)'
+        'Congo <strong class="govuk-!-font-weight-bold">(</strong>Brazzaville)'
       )
     })
   })

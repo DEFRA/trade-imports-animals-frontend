@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  DESKTOP_VIEWPORT,
+  PHONE_VIEWPORT,
   addressBookInsetText,
   addressesSection,
   contentWidthOf,
@@ -16,18 +18,15 @@ import {
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
+import { PAGE_SIZE } from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
 
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const ADDRESS_BOOK_SIZE = 13
-const PAGE_SIZE = 5
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
-
-const PHONE_VIEWPORT = { width: 375, height: 812 }
-const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
 const expectBackOnTheAddressesPage = async (page) => {
   await expect(
@@ -104,6 +103,23 @@ const postAnIdNotInTheBook = async (page) => {
       input.value = id
       input.checked = true
     }, NOT_IN_THE_BOOK)
+  await saveAndContinue(page)
+}
+
+const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
+  const fieldName = await page.getByRole('radio').first().getAttribute('name')
+  await searchAddresses(page, NO_MATCH_QUERY)
+  await expect(page.getByText(copy.picker.noMatches)).toBeVisible()
+  await journeyFormOf(page).evaluate(
+    (form, { name, id }) => {
+      const input = document.createElement('input')
+      input.type = 'hidden'
+      input.name = name
+      input.value = id
+      form.append(input)
+    },
+    { name: fieldName, id: NOT_IN_THE_BOOK }
+  )
   await saveAndContinue(page)
 }
 
@@ -407,6 +423,19 @@ test.describe('party picker save', () => {
       'Denmark'
     )
   })
+
+  test('an address that is not in the book after a search that matched nothing is refused, linking to and focusing the search box, which keeps the term', async ({
+    page
+  }) => {
+    await postAnIdNotInTheBookAfterASearchMatchingNothing(page)
+
+    const link = pickerErrorLink(page, CONSIGNOR.error)
+    await expect(link).toBeVisible()
+    await link.click()
+    const searchBox = page.getByLabel(copy.picker.search.label)
+    await expect(searchBox).toBeFocused()
+    await expect(searchBox).toHaveValue(NO_MATCH_QUERY)
+  })
 })
 
 test.describe('party picker search', () => {
@@ -429,6 +458,23 @@ test.describe('party picker search', () => {
     await expect(page.getByLabel(copy.picker.search.label)).toHaveValue(
       'Denmark'
     )
+  })
+
+  test('clearing the search and searching with nothing entered lists the whole book again, paged as before', async ({
+    page
+  }) => {
+    await searchAddresses(page, 'Denmark')
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(2, 2)
+    )
+
+    await searchAddresses(page, '')
+
+    await expect(resultsSummary(page)).toHaveText(
+      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+    )
+    await expect(page.getByRole('radio')).toHaveCount(PAGE_SIZE)
+    await expect(page.getByRole('link', { name: 'Page 2' })).toBeVisible()
   })
 
   test('picker search with no matches shows its empty state', async ({

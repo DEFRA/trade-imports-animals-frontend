@@ -1,21 +1,10 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 
-{% macro selectedCommoditiesTable(selectedRows, table, headings, copy) %}
-  {% set rows = [] %}
-  {% for row in selectedRows %}
-    {% set removeCell %}
-      <button type="submit" class="govuk-link app-link-button" name="action" value="{{ row.removeAction }}">{{ copy.remove }}<span class="govuk-visually-hidden"> {{ row.name }}</span></button>
-    {% endset %}
-    {% set ignored = rows.push(table.rows[loop.index0].concat([
-      { html: removeCell, classes: "govuk-!-text-align-right" }
-    ])) %}
-  {% endfor %}
+{% macro selectedCommoditiesTable(table, headings) %}
   {{ govukTable({
     caption: headings.caption,
     captionClasses: "govuk-table__caption--m",
-    head: table.head.concat([
-      { html: '<span class="govuk-visually-hidden">' + headings.actionsHidden + '</span>' }
-    ]),
-    rows: rows
+    head: table.head,
+    rows: table.rows
   }) }}
 {% endmacro %}

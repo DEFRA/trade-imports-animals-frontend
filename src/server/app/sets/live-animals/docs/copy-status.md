@@ -18,3 +18,8 @@ The address pickers' Welsh results count is a machine draft as well. A
 translator must review it in
 `journeys/linear/features/addresses/copy/copy.cy.js`, where it is a function of
 the number shown and the total.
+
+The declaration's Welsh responsibility bullets both complete the "nes iddo naill
+ai:" lead-in, so both take the soft-mutated form: glirio (clirio) and gyrraedd
+(cyrraedd). A translator must review them in
+`journeys/linear/features/declaration/copy/copy.cy.js`.

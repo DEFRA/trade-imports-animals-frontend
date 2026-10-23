@@ -85,6 +85,6 @@
       }) }}
     </div>
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false, amend: amend }) }}
   </form>
 {% endblock %}

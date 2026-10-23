@@ -1,5 +1,6 @@
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -27,7 +28,7 @@ import { postRemove, postRemoveSpecies } from './remove/post-remove.js'
 import { countDropIssues } from './validation/count-drop.js'
 import { buildGroups } from './view-model/groups.js'
 import { buildSelectedRows } from './view-model/selected-rows.js'
-import { buildSelectedCommoditiesTable } from '../view-model/selected-commodity-rows.js'
+import { buildRemovableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { payloadValues, storedValues } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
@@ -42,27 +43,28 @@ const selectedCommoditiesContext = (lines) => {
   const selectedRows = buildSelectedRows(lines)
   return {
     selectedRows,
-    selectedTable: buildSelectedCommoditiesTable(
+    selectedTable: buildRemovableCommoditiesTable(
       selectedRows,
-      selectedCommoditiesCopy
+      selectedCommoditiesCopy,
+      copy.table
     )
   }
 }
 
-const render = (
+const render = async ({
   request,
   h,
-  journey,
+  current,
   lines,
   values,
   errors = {},
   errorSummary = null
-) =>
+}) =>
   h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page
     }),
     copy,
@@ -77,13 +79,12 @@ const render = (
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-// While a line is left the page still has quantities to collect. With none
-// left it has nothing to ask, so a load sends the user to the commodity
-// question — the same rule the removal applies on the way out, applied on
-// the way in, so a browser Back, a refresh or a bookmark cannot land on an
-// empty details page.
+const renderRefusal = async (renderOptions) =>
+  (await render(renderOptions)).code(HTTP_STATUS_BAD_REQUEST)
+
 const get = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
     return h.redirect(
@@ -93,11 +94,18 @@ const get = async (request, h) => {
       )
     )
   }
-  return render(request, h, journey, lines, storedValues(lines))
+  return render({
+    request,
+    h,
+    current,
+    lines,
+    values: storedValues(lines)
+  })
 }
 
 const post = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
@@ -110,23 +118,28 @@ const post = async (request, h) => {
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) {
-    return render(request, h, journey, lines, values, errors)
+    kit.logRefusal(request, { fieldErrors: errors })
+    return renderRefusal({ request, h, current, lines, values, errors })
   }
 
   const issues = countDropIssues(request, lines, values)
   if (issues.length > 0) {
-    return render(
+    const countDropErrors = Object.fromEntries(
+      issues.map((issue) => [issue.field, issue.text])
+    )
+    kit.logRefusal(request, { fieldErrors: countDropErrors })
+    return renderRefusal({
       request,
       h,
-      journey,
+      current,
       lines,
       values,
-      Object.fromEntries(issues.map((issue) => [issue.field, issue.text])),
-      {
+      errors: countDropErrors,
+      errorSummary: {
         titleText: sharedCopy.errorSummary.title,
         errorList: issues.map(({ text, href }) => ({ text, href }))
       }
-    )
+    })
   }
 
   for (const { index, entry } of lines) {

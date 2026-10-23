@@ -1,42 +1,44 @@
 import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { SURFACES } from '../../../../../../shared/kit.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   knownJourneysCookie,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  getHandlerOf,
   expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
   journeyRequest,
   postHandlerOf,
   registerTestRequestLogger,
   registerTestSessionAuth,
+  saveFallbackEntry,
   stubH,
-  unavailableBackendError
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
-  FILE_TYPE_MESSAGE,
+  fileTypeMessage,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage
 } from './upload-config.js'
 
 const serverWithDocumentRoutes = async ({
@@ -63,7 +65,7 @@ const serverWithDocumentRoutes = async ({
 }
 
 const post = postHandlerOf(documents)
-const get = documents.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(documents)
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
@@ -103,21 +105,14 @@ const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
 const expectContinueRefusedLogged = (result, scansNotCleared) =>
-  expectOneLogged(result.logger, {
-    level: 'info',
-    fields: { journeyId: result.journeyId, scansNotCleared },
-    message: 'Continue refused: documents not cleared by the virus scan'
+  expectOneRefusalLogged(result.logger, {
+    journeyId: result.journeyId,
+    errorCodes: ['documents'],
+    scansNotCleared
   })
 
-const configureEngine = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe('documents — real upload leg on the single-page loop', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
     const result = await driveHandler(post, {
@@ -155,12 +150,17 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add' }
     })
-    expect(Object.keys(result.view.context.errors)).toEqual([
+    const fieldOrder = [
       'accompanyingDocumentReference',
       'accompanyingDocumentType',
       'accompanyingDocumentDateOfIssue',
       'file'
-    ])
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(fieldOrder)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: fieldOrder
+    })
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
@@ -272,7 +272,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('notes.zip') }
     })
-    expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(fileTypeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
@@ -284,7 +284,7 @@ describe('documents — real upload leg on the single-page loop', () => {
         file: pdfFile('big.pdf', MAX_FILE_SIZE_BYTES + 1)
       }
     })
-    expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.errors.file).toBe(oversizeMessage(copy))
     expect(result.after).toEqual(result.before)
   })
 
@@ -316,18 +316,16 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     const response = await documents.handleOversizePayload(request, h)
     expect(response.statusCode).toBe(400)
-    expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
-    expectOneLogged(request.logger, {
-      level: 'info',
-      fields: { journeyId: journey.journeyId },
-      message: 'Document refused: upload larger than the payload limit'
+    expect(h.captured.view.context.errors.file).toBe(oversizeMessage(copy))
+    expectOneRefusalLogged(request.logger, {
+      journeyId: journey.journeyId,
+      errorCodes: ['file']
     })
   })
 })
 
 describe('documents — listing, scanning and removing', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
@@ -401,7 +399,7 @@ describe('documents — listing, scanning and removing', () => {
       },
       payload: { action: 'continue' }
     })
-    expect(result.response.statusCode).toBe(200)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(summaryTexts(result)).toContain(
       'You cannot continue until all documents have been scanned or removed'
@@ -425,6 +423,7 @@ describe('documents — listing, scanning and removing', () => {
       seed,
       payload: { action: 'continue' }
     })
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(result.view.context.rows[0][3].html).toContain('Virus found')
     expect(summaryTexts(result)).toContain(
@@ -519,15 +518,11 @@ describe('documents — listing, scanning and removing', () => {
       { text: limitMessage, href: '#file' }
     ])
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
-        journeyId: result.journeyId,
-        documentsHeld: MAX_DOCUMENTS,
-        maxDocuments: MAX_DOCUMENTS
-      },
-      message:
-        'Document refused: notification holds the maximum number of documents'
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['file'],
+      documentsHeld: MAX_DOCUMENTS,
+      maxDocuments: MAX_DOCUMENTS
     })
   })
 
@@ -543,8 +538,7 @@ describe('documents — listing, scanning and removing', () => {
 })
 
 describe('documents — Continue finishes a part-filled document', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should carry an untouched form past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
@@ -621,8 +615,7 @@ describe('documents — Continue finishes a part-filled document', () => {
 })
 
 describe('documents — scan-status poll and view context', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
@@ -701,7 +694,7 @@ describe('documents — scan-status poll and view context', () => {
   it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)
-    expect(result.view.context.oversizeFileMessage).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.view.context.oversizeFileMessage).toBe(oversizeMessage(copy))
     expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
       COMPLETE: {
         text: TAG_COMPLETE,
@@ -762,7 +755,7 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer all fourteen document types behind a placeholder, in the service order', async () => {
+  it('Should offer all fourteen document types behind the select text, in the service order', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })
@@ -797,8 +790,7 @@ describe('documents — scan-status poll and view context', () => {
 })
 
 describe('documents — reading an uploaded file back', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const journeyHolding = async (uploadId) => {
     const server = await serverWithDocumentRoutes({ cookies: true })
@@ -903,11 +895,8 @@ describe('documents — reading an uploaded file back', () => {
 })
 
 describe('documents — backend and upload service failures', () => {
-  beforeAll(configureEngine)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  const REMOVAL_LEFT_TO_RETRY =
-    'Document not removed: backend unavailable, removal left to retry'
   const ALREADY_REMOVED_UPLOAD_ID = 'up-already-removed'
   const retryRemovalPayload = {
     action: 'continue',
@@ -928,7 +917,7 @@ describe('documents — backend and upload service failures', () => {
     }
   }
 
-  it('Should log the save left to retry with the backend error, keeping the uploaded file for the retry', async () => {
+  it('Should log the save fallback once with the upload id and the backend error, keeping the uploaded file for the retry', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
@@ -936,14 +925,10 @@ describe('documents — backend and upload service failures', () => {
     })
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
-    expectOneLogged(result.logger, {
-      level: 'warn',
-      fields: {
-        journeyId: result.journeyId,
-        uploadId: result.view.context.pendingDocumentSave.uploadId,
-        err: failure
-      },
-      message: 'Document not saved: backend unavailable, save left to retry'
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      uploadId: result.view.context.pendingDocumentSave.uploadId,
+      err: failure
     })
   })
 
@@ -967,7 +952,7 @@ describe('documents — backend and upload service failures', () => {
     spy.mockRestore()
   })
 
-  it('Should log the removal left to retry with the backend error, keeping the document', async () => {
+  it('Should log the removal save fallback once with the index, the upload id and the backend error, keeping the document', async () => {
     const { uploadId, seed } = await seededUpload()
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
@@ -978,10 +963,11 @@ describe('documents — backend and upload service failures', () => {
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after).toEqual(seed)
-    expectOneLogged(result.logger, {
-      level: 'warn',
-      fields: { journeyId: result.journeyId, index: 0, uploadId, err: failure },
-      message: REMOVAL_LEFT_TO_RETRY
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      index: 0,
+      uploadId,
+      err: failure
     })
   })
 
@@ -991,7 +977,7 @@ describe('documents — backend and upload service failures', () => {
     expectOneLogged(result.logger, alreadyRemovedEntry(result.journeyId))
   })
 
-  it('Should log the retried removal left to retry again, with the backend error, when the notification still cannot be saved', async () => {
+  it('Should log the retried removal save fallback once, with the backend error, when the notification still cannot be saved', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       saveFailure: failure,
@@ -1000,16 +986,12 @@ describe('documents — backend and upload service failures', () => {
     expect(result.response.statusCode).toBe(500)
     expect(result.logger.entries).toEqual([
       alreadyRemovedEntry(result.journeyId),
-      {
-        level: 'warn',
-        fields: {
-          journeyId: result.journeyId,
-          index: 0,
-          uploadId: ALREADY_REMOVED_UPLOAD_ID,
-          err: failure
-        },
-        message: REMOVAL_LEFT_TO_RETRY
-      }
+      saveFallbackEntry({
+        journeyId: result.journeyId,
+        index: 0,
+        uploadId: ALREADY_REMOVED_UPLOAD_ID,
+        err: failure
+      })
     ])
   })
 })

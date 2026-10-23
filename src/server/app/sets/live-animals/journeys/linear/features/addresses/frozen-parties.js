@@ -1,10 +1,6 @@
 import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { PARTIES, CONTACT_PARTY } from './parties.js'
 
-/** Backend role name to journey party id. The two vocabularies agree on every
- * role but two: the backend says `destination` where the journey says
- * `placeOfDestination`, and `consignment` where the journey says
- * `contactAddress`. */
 export const PARTY_ID_BY_ROLE = {
   placeOfOrigin: 'placeOfOrigin',
   consignor: 'consignor',
@@ -19,15 +15,7 @@ const JOURNEY_PARTY_IDS = [
   CONTACT_PARTY.id
 ]
 
-/** One stored inline party in the shape the journey renders.
- *
- * Sibling of `toRecord` in services/address-book/client.js — same target shape,
- * different source. That one maps a live address-book record; this one maps a
- * party held inline on the notification, which keeps phone and email on the
- * party rather than in the address block.
- *
- * A party with no name never made it onto the notification, so it renders as
- * "not provided" exactly like an unanswered one. */
+/** The stored inline party in the shape the journey renders, or nothing when it has no name. */
 export const toDisplayParty = async (party) => {
   if (!party?.name) {
     return undefined

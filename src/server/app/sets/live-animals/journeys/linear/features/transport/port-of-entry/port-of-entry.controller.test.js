@@ -1,24 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectOneRefusalLogged,
   postHandlerOf,
-  referenceDataServing
+  referenceDataServing,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
@@ -38,12 +26,7 @@ const get = portOfEntry.routes.find((route) => route.method === 'GET').handler
 const oneOfError = 'Select a valid option'
 
 describe('POST port-of-entry — port membership', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an out-of-list port with an error and commit nothing', async () => {
     const result = await driveHandler(post, {
@@ -52,16 +35,15 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['portOfEntry']
+    })
   })
 })
 
 describe('POST port-of-entry — means of transport on the merged page', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an out-of-list means with an error and commit nothing', async () => {
     const result = await driveHandler(post, {
@@ -97,14 +79,9 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 })
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should supply an empty-value placeholder followed by name-plus-code options (no divider)', async () => {
+  it('Should supply an empty-value select text followed by name-plus-code options (no divider)', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.portItems
     expect(items[0]).toEqual({ value: '', text: 'Select a port' })
@@ -121,7 +98,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     })
   })
 
-  it('Should supply the means of transport as a placeholder followed by every reference code, none selected', async () => {
+  it('Should supply the means of transport as select text followed by every reference code, none selected', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.meansItems).toEqual([
       { value: '', text: 'Select one' },
@@ -184,11 +161,8 @@ describe('port-of-entry — the arrival-date window', () => {
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(now)
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
   afterAll(() => vi.useRealTimers())
 
   it('Should hand the picker the window bounds', async () => {
@@ -272,12 +246,7 @@ describe('port-of-entry — the arrival-date window', () => {
 })
 
 describe('GET port-of-entry — a stored port the reader no longer offers', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the port in values so the select renders unselected, without adding the stale option', async () => {
     const result = await driveHandler(get, {
@@ -311,14 +280,9 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
 })
 
 describe('POST port-of-entry — empty port overwrites a stored answer', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should replace a previously stored port with an empty string when the placeholder is submitted', async () => {
+  it('Should replace a previously stored port with an empty string when the select text is submitted', async () => {
     const result = await driveHandler(post, {
       seed: { portOfEntry: 'GB DVR' },
       payload: {
@@ -336,12 +300,7 @@ describe('POST port-of-entry — empty port overwrites a stored answer', () => {
 describe('POST port-of-entry — port membership follows the primed list', () => {
   const serveReferenceData = referenceDataServing()
 
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should validate against the list as primed at POST time', async () => {
     serveReferenceData([{ code: 'ZZ 001', name: 'Zedport' }])

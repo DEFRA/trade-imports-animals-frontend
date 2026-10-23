@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   describeDatePickerLook,
+  documentRowFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   openDatePicker,
@@ -17,11 +18,11 @@ import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
 import {
   ACCEPT_ATTRIBUTE,
-  ALLOWED_FILE_TYPES_HINT,
-  FILE_TYPE_MESSAGE,
+  fileTypeMessage,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE
+  oversizeMessage,
+  allowedFileTypesHint
 } from '../upload-config.js'
 
 const HTTP_OK = 200
@@ -30,9 +31,6 @@ const OVERSIZE_FILENAME = 'oversize.pdf'
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
-const rowFor = (scope, reference) =>
-  scope.locator('.govuk-table__row', { hasText: reference })
 
 const fileUploadCard = (page) =>
   page.getByRole('region', { name: copy.fileUploadHeading })
@@ -92,7 +90,7 @@ const expectLongReferenceFitsCard = async (
     accompanyingDocumentReference: LONG_REFERENCE
   })
   await afterUpload()
-  await expect(rowFor(page, LONG_REFERENCE)).toContainText(
+  await expect(documentRowFor(page, LONG_REFERENCE)).toContainText(
     copy.scanTags.complete
   )
   await expect(withinTwoThirdsColumn(addedDocumentsTable(page))).toHaveCount(0)
@@ -180,7 +178,7 @@ test.describe('document upload page', () => {
       })
     ).toBeVisible()
     await expect(
-      page.getByText(copy.file.allowedTypes(ALLOWED_FILE_TYPES_HINT), {
+      page.getByText(copy.file.allowedTypes(allowedFileTypesHint(copy)), {
         exact: true
       })
     ).toBeVisible()
@@ -200,12 +198,12 @@ test.describe('document upload page', () => {
     ).toBeVisible()
   })
 
-  test('offers all fourteen document types behind a placeholder, between the reference and the date', async ({
+  test('offers all fourteen document types behind the select text, between the reference and the date', async ({
     page
   }) => {
     const select = page.getByLabel(copy.documentType.label)
     await expect(select.getByRole('option')).toHaveText([
-      copy.documentType.placeholder,
+      copy.documentType.selectText,
       copy.types.ITAHC,
       copy.types.VETERINARY_HEALTH_CERTIFICATE,
       copy.types.AIR_WAYBILL,
@@ -337,7 +335,7 @@ test.describe('document upload type validation', () => {
     await openDocuments(page)
   })
 
-  test('type validation: leaving the placeholder links to and focuses the select, preserving the other answers', async ({
+  test('type validation: leaving the select text links to and focuses the select, preserving the other answers', async ({
     page
   }) => {
     await fillDocument(page, {
@@ -369,7 +367,10 @@ test.describe('document upload type validation', () => {
       filename: 'itahc-upload.pdf'
     })
 
-    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    const row = documentRowFor(
+      page,
+      validDocument.accompanyingDocumentReference
+    )
     await expect(row).toContainText(copy.types.COMMERCIAL_INVOICE)
     await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
   })
@@ -441,7 +442,7 @@ test.describe('document upload file validation', () => {
     await expectPreservedMetadata(page)
   })
 
-  test('file validation: unsupported type links to and focuses the upload while preserving metadata', async ({
+  test('file validation: unsupported type links to and focuses the upload while preserving metadata, and adds no document', async ({
     page
   }) => {
     await fillMetadata(page)
@@ -453,12 +454,13 @@ test.describe('document upload file validation', () => {
     )
     await submitAdd(page)
 
-    const link = errorLink(page, FILE_TYPE_MESSAGE)
+    const link = errorLink(page, fileTypeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
+    await expectNoDocumentsAdded(page)
   })
 })
 
@@ -468,7 +470,7 @@ test.describe('document upload oversize validation', () => {
     await openDocuments(page)
   })
 
-  test('file validation: client-side oversize error focuses the summary and retains metadata', async ({
+  test('file validation: client-side oversize error focuses the summary and retains metadata, and adds no document', async ({
     page
   }) => {
     test.slow()
@@ -482,7 +484,7 @@ test.describe('document upload oversize validation', () => {
 
     await expect(
       page.locator('li[data-client-error="file-size-summary"]')
-    ).toContainText(OVERSIZE_FILE_MESSAGE)
+    ).toContainText(oversizeMessage(copy))
     await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
     await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
@@ -491,7 +493,7 @@ test.describe('document upload oversize validation', () => {
     const clientMessage = page.locator(
       '[data-client-error="file-size-message"]'
     )
-    await expect(clientMessage).toContainText(OVERSIZE_FILE_MESSAGE)
+    await expect(clientMessage).toContainText(oversizeMessage(copy))
     await expect(
       page.locator(
         '.govuk-file-upload-wrapper [data-client-error="file-size-message"]'
@@ -503,6 +505,7 @@ test.describe('document upload oversize validation', () => {
       )
     ).toHaveCount(1)
     await expectPreservedMetadata(page)
+    await expectNoDocumentsAdded(page)
   })
 
   test('file validation: the client-side oversize summary link focuses the upload control', async ({
@@ -519,7 +522,7 @@ test.describe('document upload oversize validation', () => {
 
     const link = page
       .locator('li[data-client-error="file-size-summary"]')
-      .getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
+      .getByRole('link', { name: oversizeMessage(copy) })
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -539,7 +542,7 @@ test.describe('document upload oversize validation', () => {
       document.querySelector('form[data-max-file-size]').submit()
     )
 
-    const link = errorLink(page, OVERSIZE_FILE_MESSAGE)
+    const link = errorLink(page, oversizeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -560,7 +563,10 @@ test.describe('document upload continue', () => {
     await fillDocument(page)
     await submitContinue(page)
 
-    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    const row = documentRowFor(
+      page,
+      validDocument.accompanyingDocumentReference
+    )
     await expect(row).toContainText(copy.types.ITAHC)
     await expect(row).toContainText(copy.scanTags.complete)
 
@@ -609,7 +615,7 @@ test.describe('document upload saved rows', () => {
       filename: document.filename
     })
 
-    const row = rowFor(page, document.accompanyingDocumentReference)
+    const row = documentRowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(
       copy.types[document.accompanyingDocumentType]
     )
@@ -628,7 +634,7 @@ test.describe('document upload saved rows', () => {
     await uploadDocument(page)
     const fileUpload = fileUploadCard(page)
     await expect(
-      rowFor(fileUpload, validDocument.accompanyingDocumentReference)
+      documentRowFor(fileUpload, validDocument.accompanyingDocumentReference)
     ).toBeVisible()
     await expectSaveAndContinueOutsideCard(page)
   })
@@ -645,7 +651,10 @@ test.describe('document upload saved rows', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    const row = documentRowFor(
+      page,
+      validDocument.accompanyingDocumentReference
+    )
     await expect(row).toContainText(copy.scanTags.complete)
 
     await expect(
@@ -671,7 +680,7 @@ test.describe('document upload saved rows', () => {
     test.slow()
     await uploadDocument(page)
     await expect(
-      rowFor(page, validDocument.accompanyingDocumentReference)
+      documentRowFor(page, validDocument.accompanyingDocumentReference)
     ).toBeVisible()
     await expect(
       page.getByText(copy.file.upToMaximum(MAX_DOCUMENTS))
@@ -683,7 +692,10 @@ test.describe('document upload saved rows', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    const row = documentRowFor(
+      page,
+      validDocument.accompanyingDocumentReference
+    )
     await expect(row).toContainText(copy.scanTags.complete)
     const viewFile = row.getByRole('link', {
       name: `${copy.viewFile} ${copy.viewFileHidden(1)}`
@@ -703,7 +715,10 @@ test.describe('document upload saved rows', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    const row = documentRowFor(
+      page,
+      validDocument.accompanyingDocumentReference
+    )
     await row
       .getByRole('button', {
         name: `${copy.remove} ${copy.removeHidden(1)}`,
@@ -789,7 +804,7 @@ test.describe('document upload capacity and accessibility', () => {
     test.slow()
     await uploadDocument(page)
     await expect(
-      rowFor(page, validDocument.accompanyingDocumentReference)
+      documentRowFor(page, validDocument.accompanyingDocumentReference)
     ).toContainText(copy.scanTags.complete)
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -826,7 +841,7 @@ test.describe('document upload page without JavaScript', () => {
         page.getByRole('link', { name: copy.refreshStatus }).click()
     })
     await expectViewFileAndRemoveInCell(
-      actionsCellOf(rowFor(page, LONG_REFERENCE))
+      actionsCellOf(documentRowFor(page, LONG_REFERENCE))
     )
   })
 })

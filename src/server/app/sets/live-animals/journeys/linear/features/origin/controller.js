@@ -1,4 +1,3 @@
-import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -9,7 +8,7 @@ import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
-import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
+import { entryBackLink } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -46,11 +45,6 @@ const regionCodePrefixesByCountry = (countryItems) =>
       .map(({ value }) => [value, prefixFor(value)])
   )
 
-const backLinkFor = (journey, answers) =>
-  hasCommittedNotificationAnswers(answers)
-    ? hubPath(journey.journeyId)
-    : dashboardPath()
-
 const render = async (
   h,
   journey,
@@ -61,7 +55,7 @@ const render = async (
   return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
-      backLink: backLinkFor(journey, answers),
+      backLink: entryBackLink(journey, answers),
       journey,
       page,
       recoverableError
@@ -89,6 +83,7 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey, answers: storedAnswers } = await state.get(request, h)
     return (
       await render(h, journey, values, { errors, answers: storedAnswers })
@@ -97,6 +92,7 @@ const post = async (request, h) => {
 
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = await state.commit(request, h, answers)
     },

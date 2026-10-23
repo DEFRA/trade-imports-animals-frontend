@@ -136,7 +136,7 @@
                 { text: copy.table.type },
                 { text: copy.table.dateOfIssue },
                 { text: copy.table.status },
-                { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>', format: "numeric" }
+                { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>', classes: "govuk-!-text-align-right" }
               ],
               rows: rows
             }) }}
@@ -151,7 +151,7 @@
       </div>
     </section>
 
-    {{ saveActions(hubHref, { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 
   <div id="js-scan-status-announcer"

@@ -22,6 +22,9 @@ export const list = () => COMMODITY_OPTIONS
 
 export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 
+export const commodityLabel = (name, code) =>
+  code ? `${name} (${code})` : name
+
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 
@@ -68,6 +71,9 @@ export const earTagCommodities = () => EAR_TAG_COMMODITIES
 export const horseNameCommodities = () => HORSE_NAME_COMMODITIES
 
 export const identifiedCommodities = () => IDENTIFIED_COMMODITIES
+
+export const needsIdentifying = (line) =>
+  IDENTIFIED_COMMODITIES.includes(line?.commoditySelection)
 
 export const permanentAddressCommodities = () => PERMANENT_ADDRESS_COMMODITIES
 

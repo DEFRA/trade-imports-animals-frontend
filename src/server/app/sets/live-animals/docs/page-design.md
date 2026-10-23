@@ -27,10 +27,33 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
+- With no commodity chosen, the commodity details task is still a link: the
+  consignment details page asks the commodity question rather than drawing an
+  empty table, and a task opened from the overview returns to the overview
+  when saved.
+- Each hub group renders a task list of its own, and `govukTaskList` stamps
+  the group id on the status of every item in it.
 - The overview has no back link. It is the top of the notification; the way
   out is "Return to dashboard" or the service navigation.
 - "Review and submit" is a button under the task list, offered whatever is
   still owed, so a trader can read back what they have entered at any time.
+
+## How a page ends
+
+- A page the overview links to directly ends with all three controls: the
+  primary and "Save and return to overview" side by side, then "Cancel and
+  return to overview" on its own line below them, so a trader can stop and
+  leave from where the overview sent them.
+- The two return controls name the page they lead to, which is headed
+  "Overview". "Hub" is the internal name for it and never appears on screen.
+- A page reached from another page ends with the primary alone, and the trader
+  leaves the way they came in.
+- While a notification is being amended, a page ends with "Save and return"
+  (back to the review) and "Save and continue" (on, never back to the review)
+  side by side, then a secondary "Save and return to overview" button on its
+  own line below them, with no cancel link. Each save button carries its own
+  form action, so no new field is posted. A page reached from another page or a
+  picker ends with the first two only.
 
 ## Check your answers (review)
 
@@ -230,6 +253,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Consignment addresses pages
 
+- The backend names the place of destination `destination` and the contact
+  address `consignment`; the journey says `placeOfDestination` and
+  `contactAddress`. Every other role has the same name in both.
 - The consignment addresses page gives each party its own section: a medium
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
@@ -257,6 +283,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The picker is one form. The search and Save and continue are told apart by
   their `action` value. Paging is a link, so the selection travels in the
   link's query string and in a hidden field, with no client JavaScript.
+- Edit details is offered only for an address the picker has copied onto the
+  notification, so with no address picked the edit page sends the trader to the
+  picker.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
 - "Add a new address" is a secondary button beside the heading, shown only
@@ -277,6 +306,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - The three part labels stay on screen. Three unlabelled boxes under one
   legend would be harder to use than the single field they replace.
+- A CPH number is two digits of county, three of parish and four of holding,
+  so the example hint shows that 2/3/4 grouping.
 - The help names APHA documents only. A link to GOV.UK holding details waits
   for a real destination.
 - The boxes set no character limit, so nothing typed or pasted is cut short.
@@ -315,6 +346,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every document field is mandatory per record and there is no edit page, so
   presence is checked when a document is added.
 - The error summary lists the fields in the order they appear on the page.
+- The document type select opens on its select text, which carries no value, so
+  a form left on it submits an empty type. One message covers both mistakes a
+  select can make: left on the select text, or carrying a value the page never
+  offered.
+- The offered document types are service-backed and primed at boot, so the
+  type check is built for each add, not frozen at module load.
 - A saved document returns the trader to the page, so a reload cannot replay
   the save. Continue is pressed again from the fresh page once scans settle.
 - A file still being checked holds Continue back. The exit to the overview
@@ -332,12 +369,28 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The arrival date hint gives a fixed date showing the format, not a date tied
   to the window. The date picker's bounds and the out-of-range error police
   the window.
-- The port search shows its select text, "Select a port", in its empty box as
-  well as in the no-JavaScript list's first entry.
+- The port search shows the search placeholder "Select a port" in its empty
+  box, in the same words as the select text that is the no-JavaScript list's
+  first entry.
 - The means of transport options read Air, Rail, Road and Sea, and each stores
   its reference code (AIRPLANE, RAILWAY, ROAD_VEHICLE, VESSEL).
 - The transport identification hint is a lead-in and one bullet per
   alternative, so the number of choices shows at a glance.
+- Remove on an added country submits the page form, so the crumb travels with
+  it and no GET can trigger it. The country code rides in the button value,
+  so the row pressed is the row removed however the list has been reordered
+  since the page rendered.
+- The status message region ships empty and the page script writes the message
+  into it just after load. A live region that already holds its text when the
+  document is parsed is read as ordinary page content, and Add and Remove are
+  full form submits, so the message arrives with a fresh document every time.
+- The added-countries list names each country rather than its code, because
+  the list is the whole record of the answer the trader reads back.
+- Searching the transporters list filters it in place: nothing is validated or
+  committed, and a picked row stays picked when the search leaves it on the
+  list.
+- The add-transporter link keeps the change context, so a trader sent from
+  check your answers returns there and not into the journey.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
 - The transit search's select text, "Select a country", and its empty-box

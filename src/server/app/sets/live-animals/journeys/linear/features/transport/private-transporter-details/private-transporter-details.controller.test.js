@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -16,6 +17,7 @@ import {
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 
@@ -114,15 +116,21 @@ describe('/transporters/add/private', () => {
       payload: { nameOrOrganisationName: RECORD.nameOrOrganisationName }
     })
 
-    expect(Object.keys(result.view.context.errors)).toEqual([
+    const missingFields = [
       'addressLine1',
       'townOrCity',
       'postcode',
       'country',
       'email',
       'phone'
-    ])
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(missingFields)
     expect(result.after.privateTransporter).toBeUndefined()
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: missingFields
+    })
   })
 
   it('Should hand a saved record on from the transporter list', async () => {

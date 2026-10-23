@@ -6,7 +6,7 @@ import {
   addressBookCountriesServing,
   driveHandler,
   journeyRequest,
-  restoreAddressBookAfterTests,
+  resetMocksAndConfigAfterTests,
   stubH,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -113,7 +113,7 @@ describe('GET addresses — conditional CPH section', () => {
 
 describe('GET addresses — sections for parties copied onto the notification', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  restoreAddressBookAfterTests()
+  resetMocksAndConfigAfterTests()
 
   it('Should show a chosen consignor as its name and address lines, ending with the locality, postcode and country, offering Change and Edit details', async () => {
     const result = await driveAddresses({

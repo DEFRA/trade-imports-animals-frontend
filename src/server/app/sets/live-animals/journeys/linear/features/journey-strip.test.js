@@ -16,6 +16,7 @@ import { records as recordsStub } from '../../../../../services/persistence/reco
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  getHandlerOf,
   journeyRequest,
   stubH
 } from '../../../../../engine/test-support.js'
@@ -32,9 +33,6 @@ import { routes as importReasonRoutes } from './import-reason/controller.js'
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
 const DASHBOARD_PATH = dashboardPath()
-
-const getHandlerOf = (routes) =>
-  routes.find((route) => route.method === 'GET').handler
 
 const renderWith = async (handler, seed) => {
   const journey = await store.create()
@@ -103,7 +101,7 @@ describe('journey reference strip', () => {
   })
 
   it('Should offer Cancel amend on the hub while amending', async () => {
-    const { view } = await driveHandler(getHandlerOf(hubRoutes), {
+    const { view } = await driveHandler(getHandlerOf({ routes: hubRoutes }), {
       amend: true
     })
     expect(view.context.journeyStrip.cancelAmend.href).toMatch(
@@ -125,7 +123,9 @@ describe('journey reference strip', () => {
   })
 
   it('Should render the strip on the hub with the journey reference', async () => {
-    const { journey, context } = await renderWith(getHandlerOf(hubRoutes))
+    const { journey, context } = await renderWith(
+      getHandlerOf({ routes: hubRoutes })
+    )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
       status: DRAFT_TAG
@@ -134,7 +134,7 @@ describe('journey reference strip', () => {
 
   it('Should render the strip on a post-origin task page', async () => {
     const { journey, context } = await renderWith(
-      getHandlerOf(importReasonRoutes)
+      getHandlerOf({ routes: importReasonRoutes })
     )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
@@ -143,12 +143,16 @@ describe('journey reference strip', () => {
   })
 
   it('Should render no strip on the dashboard', async () => {
-    const { context } = await renderWith(getHandlerOf(dashboardRoutes))
+    const { context } = await renderWith(
+      getHandlerOf({ routes: dashboardRoutes })
+    )
     expect(context.journeyStrip).toBeUndefined()
   })
 
   it('Should render the strip on origin while the journey has no saved answers', async () => {
-    const { journey, context } = await renderWith(getHandlerOf(originRoutes))
+    const { journey, context } = await renderWith(
+      getHandlerOf({ routes: originRoutes })
+    )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
       status: DRAFT_TAG
@@ -156,9 +160,12 @@ describe('journey reference strip', () => {
   })
 
   it('Should render the strip but keep the dashboard back link for a real-mode fresh draft carrying only the backend reference', async () => {
-    const { journey, context } = await renderWith(getHandlerOf(originRoutes), {
-      referenceNumber: 'GBN-AG-26-29Q5Q7'
-    })
+    const { journey, context } = await renderWith(
+      getHandlerOf({ routes: originRoutes }),
+      {
+        referenceNumber: 'GBN-AG-26-29Q5Q7'
+      }
+    )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
       status: DRAFT_TAG
@@ -167,9 +174,12 @@ describe('journey reference strip', () => {
   })
 
   it('Should render the strip on origin once the journey has saved answers', async () => {
-    const { journey, context } = await renderWith(getHandlerOf(originRoutes), {
-      countryOfOrigin: 'FR'
-    })
+    const { journey, context } = await renderWith(
+      getHandlerOf({ routes: originRoutes }),
+      {
+        countryOfOrigin: 'FR'
+      }
+    )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
       status: DRAFT_TAG
@@ -177,7 +187,9 @@ describe('journey reference strip', () => {
   })
 
   describe('on the declaration', () => {
-    const declarationHandler = getHandlerOf(declarationRoutesFromReview)
+    const declarationHandler = getHandlerOf({
+      routes: declarationRoutesFromReview
+    })
 
     beforeEach(() => configureReadyForCheckYourAnswers(SET_ID, () => true))
 

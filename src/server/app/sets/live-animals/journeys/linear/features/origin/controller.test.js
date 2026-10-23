@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectOneRefusalLogged,
+  getHandlerOf,
   postHandlerOf,
   referenceDataServing,
   useStubbedJourney
@@ -16,7 +18,7 @@ import { copy } from './copy/copy.en.js'
 import { REGION_CODE_SUFFIX_MAX_LENGTH } from './validate.js'
 
 const post = postHandlerOf(origin)
-const get = origin.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(origin)
 
 const COUNTRY_CODE_OUTSIDE_THE_LIST = 'ZZ'
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
@@ -60,6 +62,10 @@ describe('POST /origin — invalid payload', () => {
       expect(result.response.statusCode).toBe(400)
       expect(result.view.context.errors[field]).toBe(message)
       expect(result.after).toEqual(result.before)
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: [field]
+      })
     }
   )
 })
@@ -411,7 +417,7 @@ describe('GET /origin — region of origin code splits back into its two parts',
 })
 
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
-  it('Should supply the placeholder and full country list to the select', async () => {
+  it('Should supply the select text and full country list to the select', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Select a country' })
@@ -472,7 +478,7 @@ describe('GET /origin — region code prefix for each offered country', () => {
 })
 
 describe('POST /origin — empty country overwrites a stored answer', () => {
-  it('Should replace a previously stored country with an empty string when the placeholder is submitted', async () => {
+  it('Should replace a previously stored country with an empty string when the select text is submitted', async () => {
     const result = await driveHandler(post, {
       seed: {
         countryOfOrigin: 'FR',

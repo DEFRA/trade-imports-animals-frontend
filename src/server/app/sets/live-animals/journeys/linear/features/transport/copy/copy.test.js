@@ -13,6 +13,8 @@ import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 const SAMPLE_ADDRESS = '1 Farm Lane, Kent'
 const SAMPLE_APPROVAL_NUMBER = 'GB-01'
@@ -111,9 +113,12 @@ describe('transport copy module', () => {
     { language: 'English', bundle: copy, expected: 'Select a port' },
     { language: 'Welsh', bundle: copyCy, expected: 'Dewiswch borthladd' }
   ])(
-    'Should word the port placeholder exactly in $language',
+    'Should word the port select text and search placeholder exactly in $language',
     ({ bundle, expected }) => {
-      expect(bundle.portOfEntry.port.placeholder).toBe(expected)
+      expect({
+        selectText: bundle.portOfEntry.port.selectText,
+        searchPlaceholder: bundle.portOfEntry.port.searchPlaceholder
+      }).toEqual({ selectText: expected, searchPlaceholder: expected })
     }
   )
 
@@ -189,6 +194,15 @@ describe('transport copy module', () => {
       expect(bundle.portOfEntry.identification.hint.lead).toBe(expected)
     }
   )
+
+  test('Should end the arrival date hint with the shared date example in both languages', () => {
+    expect(
+      copy.portOfEntry.arrivalDate.hint.endsWith(sharedEn.dateExample)
+    ).toBe(true)
+    expect(
+      copyCy.portOfEntry.arrivalDate.hint.endsWith(sharedCy.dateExample)
+    ).toBe(true)
+  })
 
   test('Should interpolate portOfEntry.errors.arrivalDateOutOfRange', () => {
     expect(
@@ -372,10 +386,10 @@ describe('GET /port-of-entry', () => {
       'Save and continue'
     )
     expect(result.view.context.portItems[0].text).toBe(
-      copy.portOfEntry.port.placeholder
+      copy.portOfEntry.port.selectText
     )
     expect(result.view.context.meansItems[0].text).toBe(
-      copy.portOfEntry.means.placeholder
+      copy.portOfEntry.means.selectText
     )
     expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label

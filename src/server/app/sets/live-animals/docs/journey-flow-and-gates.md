@@ -60,7 +60,7 @@ renders an unfinished notification and names what is outstanding. The review
 section's authored gate on `readyForCheckYourAnswers` still stands between that
 page and submitting: the declaration refuses on the same verdict.
 
-The declaration is reachable only from the review (EUDPA-676). The review's
+The declaration is reachable only from the review. The review's
 Continue posts to `/declaration` with `step=review` - the review registers no
 `POST` of its own, and `GET /declaration` redirects to the review. This is to
 ensure that the user has seen the review in its latest state before submitting
@@ -91,7 +91,7 @@ redirects to the commodity question when the notification holds no line.
 ## Opening run and entry guard
 
 [`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports
-`nextRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
+`nextRunTarget` and `previousRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
 journey's redirect policy before handlers run.
 
 The run is the whole notification, not its first leg. `RUN_STEPS` runs origin,
@@ -106,6 +106,40 @@ and saves back to it. Roles and addresses ends the run on the hub when every
 task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
+
+Three pieces of the sequence carry reasons that are easy to lose. Fish is on none
+of the identifier allowlists, so animal identification has nothing to ask of a
+consignment of fish; the identification page's no-identifiers guard sends that
+request on to the additional details rather than to the hub, so the run carries
+on. The transporter leg is one step, the list: the add spokes behind it are not
+steps, and each hands the run back at the list's step when it saves. A spoke that
+continued from itself would find no step and drop the trader on the hub.
+
+During the run, a step's Back link opens the previous step rather than the
+overview, and following it does not end the run: a later Save and continue goes
+on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
+may open, nearest first, and `previousRunTarget` returns the first whose gate
+passes, so a skipped step is skipped going back too. `kit.runBackLink()` falls
+back to the overview when the run is over or no named earlier step applies.
+
+| Step                    | Back opens                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| What are you importing? | Origin                                                                                |
+| Reason for import       | What are you importing?                                                               |
+| Commodity details       | What are you importing?, not the reason between them                                  |
+| Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |
+| Transit countries       | Arrival details                                                                       |
+
+Animal identification, arrival details, the transporter, the documents, roles
+and addresses and the contact address keep their Back link on the overview.
+Origin goes back to the dashboard until something is saved, then to the
+overview. The identification condition is `identifiesAnAnimal`, the rule that also decides
+whether the identification task row applies.
+
+The review page's Back link follows the notification's status instead. A
+submitted notification, including the one shown after an amendment is cancelled,
+goes back to the notification list; a draft's review and an amendment in
+progress go back to the overview.
 
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from
@@ -145,7 +179,7 @@ from there. Only a notification created in this session sequences through
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), imports `sections`,
-`taskRows`, `rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS` and
+`taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`, `FLOW_ONLY_KEYS` and
 `entryGuardTarget`, then passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from

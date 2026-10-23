@@ -9,7 +9,8 @@ import {
 import {
   matchingTransporters,
   shownCountMessages,
-  transporterRows
+  transporterRows,
+  transporterTableRows
 } from './rows.js'
 
 const commercial = {
@@ -172,5 +173,39 @@ describe('#shownCountMessages', () => {
 
   it('Should give no messages for an empty list', () => {
     expect(shownCountMessages(0)).toEqual([])
+  })
+})
+
+describe('#transporterTableRows', () => {
+  it('Should give each transporter a select radio, its plain facts and a status tag', () => {
+    const [cells] = transporterTableRows(
+      transporterRows([commercial], { selectedId: commercial.id })
+    )
+    const [selectCell, name, address, approvalNumber, type, statusCell] = cells
+
+    expect(selectCell.attributes).toEqual({
+      'data-search-text':
+        'García Livestock Transport SL 43 East Hague Extension, Switzerland ES-T2-45001294 Commercial Approved'
+    })
+    expect(selectCell.html).toContain('type="radio"')
+    expect(selectCell.html).toContain('value="garcia-livestock-transport"')
+    expect(selectCell.html).toContain('checked')
+    expect(selectCell.html).toContain('Select García Livestock Transport SL')
+    expect([name, address, approvalNumber, type]).toEqual([
+      { text: 'García Livestock Transport SL' },
+      { text: '43 East Hague Extension, Switzerland' },
+      { text: 'ES-T2-45001294' },
+      { text: 'Commercial' }
+    ])
+    expect(statusCell.html).toContain('govuk-tag--green')
+    expect(statusCell.html).toContain('Approved')
+  })
+
+  it('Should leave the radio unchecked for a transporter that is not the selected one', () => {
+    const [[selectCell]] = transporterTableRows(
+      transporterRows([privateRecord], { selectedId: commercial.id })
+    )
+
+    expect(selectCell.html).not.toContain('checked')
   })
 })

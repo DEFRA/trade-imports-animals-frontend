@@ -19,7 +19,7 @@ export const valueText = (value) => {
   return value
 }
 
-/** A blank date comes back blank, not as the placeholder. */
+/** A blank date comes back blank, not as "Not applicable". */
 export const dateText = (value) =>
   isBlank(value) ? null : `${value.day}/${value.month}/${value.year}`
 
@@ -32,7 +32,7 @@ export const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 
-/** The "Not applicable" placeholder cell, marked `empty: true`. */
+/** The "Not applicable" cell, marked `empty: true`. */
 export const notApplicableCell = () => ({ text: NOT_APPLICABLE, empty: true })
 
 /** A cell with no visible text and a visually hidden "Missing". */

@@ -16,6 +16,10 @@ import {
   postHandlerOf,
   postHandlerEndingWith
 } from './engine/test-support.js'
+import {
+  typedInCommercialTransporterPayload,
+  typedInPrivateTransporterPayload
+} from './sets/live-animals/journeys/linear/features/transport/test-support.js'
 import { isAnswered } from './lib/answered.js'
 import { addUtcDays, formatDateText } from './lib/validate/calendar.js'
 import {
@@ -429,25 +433,11 @@ describe('transporter commit contract — the list and its add spokes', () => {
     })
     expect(committedIds(register)).toEqual(['commercialTransporter'])
 
-    // The commercial arm of the add route types a transporter that is on no
-    // register, so it carries its own approval number and the Northern Ireland
-    // country the page fixes.
     const typedInCommercial = await drive(
       postHandlerOf(commercialTransporterDetails),
       {
         seed: { transporterType: 'Commercial' },
-        payload: {
-          approvalNumber: 'UK/BELF/T2/00104115',
-          nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
-          addressLine1: '4 Quay Road',
-          addressLine2: '',
-          townOrCity: 'Belfast',
-          county: 'County Antrim',
-          postcode: 'BT1 3LG',
-          country: 'Northern Ireland',
-          email: 'movements@lough-neagh.example.com',
-          phone: '+44 28 9000 0111'
-        }
+        payload: typedInCommercialTransporterPayload
       }
     )
     expect(committedIds(typedInCommercial)).toEqual(['commercialTransporter'])
@@ -460,17 +450,7 @@ describe('transporter commit contract — the list and its add spokes', () => {
 
     const typedIn = await drive(postHandlerOf(privateTransporterDetails), {
       seed: { transporterType: 'Private' },
-      payload: {
-        nameOrOrganisationName: 'Jean Dupont',
-        addressLine1: '12 Rue des Fermes',
-        addressLine2: '',
-        townOrCity: 'Amiens',
-        county: '',
-        postcode: '80000',
-        country: 'France',
-        phone: '+33 3 22 55 01 44',
-        email: 'jean.dupont@example.fr'
-      }
+      payload: typedInPrivateTransporterPayload
     })
     expect(committedIds(typedIn)).toEqual(['privateTransporter'])
   })

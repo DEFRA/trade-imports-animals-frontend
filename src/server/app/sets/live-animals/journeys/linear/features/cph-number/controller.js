@@ -67,6 +67,7 @@ const post = async (request, h) => {
     request.payload ?? {}
   )
   if (hasErrors(errors)) {
+    kit.logRefusal(request, { fieldErrors: errors })
     const { journey: invalidJourney } = await state.get(request, h)
     return render(request, h, invalidJourney, values, { errors }).code(
       HTTP_STATUS_BAD_REQUEST
@@ -74,6 +75,7 @@ const post = async (request, h) => {
   }
 
   const { failure, value: committed } = await kit.recoverableSave(
+    request,
     () => state.commit(request, h, answers),
     async () => {
       const { journey: failedJourney } = await state.get(request, h)

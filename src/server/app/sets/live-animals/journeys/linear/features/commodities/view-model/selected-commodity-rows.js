@@ -46,3 +46,54 @@ export const buildSelectedCommoditiesTable = (rows, headings) => ({
   ),
   rows: rows.map(selectedCommodityCells)
 })
+
+const ACTIONS_CELL_CLASSES = 'govuk-!-text-align-right'
+
+const hiddenText = (text) =>
+  `<span class="govuk-visually-hidden">${escapeHtml(text)}</span>`
+
+const actionsHeading = (headings) => ({
+  html: hiddenText(headings.actionsHidden)
+})
+
+const actionsCell = (html) => ({ html, classes: ACTIONS_CELL_CLASSES })
+
+const hiddenNameOf = (row) => hiddenText(` ${row.name}`)
+
+const removeButton = (row, copy) =>
+  `<button type="submit" class="govuk-link app-link-button" name="action" value="${escapeHtml(row.removeAction)}">${escapeHtml(copy.remove)}${hiddenNameOf(row)}</button>`
+
+const changeLink = (row, copy, changeHref) =>
+  `<a class="govuk-link" href="${escapeHtml(changeHref)}">${escapeHtml(copy.change)}${hiddenNameOf(row)}</a>`
+
+export const buildRemovableCommoditiesTable = (rows, headings, copy) => {
+  const table = buildSelectedCommoditiesTable(rows, headings)
+  return {
+    head: [...table.head, actionsHeading(headings)],
+    rows: table.rows.map((cells, position) => [
+      ...cells,
+      actionsCell(removeButton(rows[position], copy))
+    ])
+  }
+}
+
+export const buildChangeableCommoditiesTable = (
+  rows,
+  headings,
+  copy,
+  changeHref
+) => {
+  const table = buildSelectedCommoditiesTable(rows, headings)
+  return {
+    head: [
+      ...table.head,
+      { text: headings.numberOfAnimals },
+      actionsHeading(headings)
+    ],
+    rows: table.rows.map((cells, position) => [
+      ...cells,
+      { text: rows[position].animals },
+      actionsCell(changeLink(rows[position], copy, changeHref))
+    ])
+  }
+}

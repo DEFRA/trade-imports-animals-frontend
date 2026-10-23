@@ -2,18 +2,22 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectBackLinkIsPage,
+  expectOneRefusalLogged,
+  getHandlerOf,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
 
 const post = postHandlerOf(importReason)
-const get = importReason.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(importReason)
 
 const EXIT_DATE_TEXT = '20/12/2026'
 const EXIT_DATE_PARTS = { day: '20', month: '12', year: '2026' }
@@ -28,6 +32,10 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.reasonForImport).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['reasonForImport']
+    })
   })
 
   it('Should answer 400 for a reason that names an Object.prototype member, committing nothing', async () => {
@@ -558,5 +566,34 @@ describe('POST import-reason — Save and return to overview', () => {
       copy.errors.portRequired
     )
     expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('import-reason — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+  }
+
+  it('Should go Back to What are you importing? while the opening run is on', async () => {
+    const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
+    expectBackLinkIsPage(result, 'commodities')
+  })
+
+  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { reasonForImport: 'not-a-real-reason' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.response.statusCode).toBe(400)
+    expectBackLinkIsPage(result, 'commodities')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get, { seed })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

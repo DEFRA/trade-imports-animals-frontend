@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Uwchlwytho dogfennau',
@@ -43,16 +45,17 @@ export const copy = {
   },
   documentType: {
     label: 'Math o ddogfen',
-    placeholder: 'Dewiswch un'
+    selectText: 'Dewiswch un'
   },
   dateOfIssue: {
     label: 'Dyddiad cyhoeddi',
-    hint: 'Er enghraifft, 27/3/2026'
+    hint: sharedCopy.dateExample
   },
   file: {
     label: 'Atodiad',
     mustBe: 'Rhaid i’ch ffeil fod:',
     smallerThan: (size) => `yn llai na ${size}`,
+    or: 'neu',
     allowedTypes: (hint) => `yn ${hint}`,
     upToMaximum: (max) => `hyd at uchafswm o ${max} ffeil`,
     noZipFiles: 'Ni chaniateir ffeiliau ZIP am resymau diogelwch',

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   FORM_GROUP_ANCESTOR_XPATH,
+  PHONE_VIEWPORT,
   contentWidthOf,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
@@ -29,8 +30,6 @@ const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
 const REGISTER_SLUG = 'transporters/select'
-const PHONE_WIDTH = 400
-const PHONE_HEIGHT = 900
 const TABLE = '.govuk-table'
 const BACK_LINK = '.govuk-back-link'
 const ERROR_SUMMARY = '.govuk-error-summary'
@@ -551,7 +550,7 @@ test.describe('filtering the transporter list as the trader types', () => {
     await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
   })
 
-  test('finds a row the first term left out after a refused save', async ({
+  test('keeps the list narrowed to the term typed before a refused save', async ({
     page
   }) => {
     await openTransporterList(page)
@@ -562,11 +561,12 @@ test.describe('filtering the transporter list as the trader types', () => {
     await submit(page)
     await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
 
-    await searchBoxOf(page).fill('aberdeen')
-
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeVisible()
     await expect(
       page.getByRole('radio', { name: privateRecord.name })
-    ).toBeVisible()
+    ).toHaveCount(0)
   })
 
   test('says so and hides the table when nothing matches', async ({ page }) => {
@@ -711,7 +711,7 @@ test.describe('Add a transporter beside the search', () => {
   })
 
   test('sits below the search box on a phone', async ({ page }) => {
-    await page.setViewportSize({ width: PHONE_WIDTH, height: PHONE_HEIGHT })
+    await page.setViewportSize(PHONE_VIEWPORT)
     await openTransporterList(page)
     const searchGroupBox = await searchBoxOf(page)
       .locator(FORM_GROUP_ANCESTOR_XPATH)

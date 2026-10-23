@@ -9,10 +9,11 @@ import {
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { summaryOf } from './card/error-summary.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
+import { refusedFieldsOf, summaryOf } from './card/error-summary.js'
 import { buildSections } from './card/view-model.js'
 import { linesOf } from '../lines.js'
-import { buildSelectedCommoditiesTable } from '../view-model/selected-commodity-rows.js'
+import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { capAllowsEntry, identifierCapOf } from './line-cap.js'
 import {
   buildLineForms,
@@ -24,6 +25,7 @@ import { appendLineRecords } from './records/append.js'
 import { isRemoveAction, postRemove } from './remove/post-remove.js'
 import { buildSelectedCommodities } from './summary/selected-commodities.js'
 import { scopedFields } from './identifier/fields.js'
+import { needsIdentifying } from '../../../../../services/commodities/index.js'
 
 export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
@@ -36,9 +38,7 @@ const copy = localisedCopy.identification
 const selectedCommoditiesCopy = localisedCopy.selectedCommodities
 
 const identifiedLines = (answers, evaluation) =>
-  linesOf(answers, evaluation).filter(
-    ({ entry }) => scopedFields(entry.commoditySelection).length > 0
-  )
+  linesOf(answers, evaluation).filter(({ entry }) => needsIdentifying(entry))
 
 const cardLines = (answers, evaluation) =>
   identifiedLines(answers, evaluation).filter(({ index }) =>
@@ -60,6 +60,10 @@ const render = (
   const selectedCommodities = buildSelectedCommodities(
     linesOf(answers, evaluation)
   )
+  const addHref = kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, 'commodities')
+  )
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -78,17 +82,32 @@ const render = (
       changeCountHref
     ),
     selectedCommodities,
-    selectedTable: buildSelectedCommoditiesTable(
+    selectedTable: buildChangeableCommoditiesTable(
       selectedCommodities,
-      selectedCommoditiesCopy
+      selectedCommoditiesCopy,
+      copy.summary,
+      addHref
     ),
-    addHref: kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, 'commodities')
-    ),
+    addHref,
     errors,
     errorSummary: summaryOf(errors, cardErrors)
   })
+}
+
+const logRefusalAndRender = (
+  request,
+  h,
+  journey,
+  answers,
+  evaluation,
+  options
+) => {
+  kit.logRefusal(request, {
+    fieldErrors: refusedFieldsOf(options.errors ?? {}, options.cardErrors ?? [])
+  })
+  return render(request, h, journey, answers, evaluation, options).code(
+    HTTP_STATUS_BAD_REQUEST
+  )
 }
 
 const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
@@ -130,7 +149,7 @@ const post = async (request, h) => {
   } = buildLineForms(payload, answers, cardLines(answers, evaluation), action)
 
   const capReached = capReachedResponse({
-    render,
+    render: logRefusalAndRender,
     request,
     h,
     journey,
@@ -147,15 +166,10 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        action,
-        refusedFields: Object.keys(errors)
-      },
-      'Animal identification refused: the submitted details failed validation'
-    )
-    return render(request, h, journey, answers, evaluation, { forms, errors })
+    return logRefusalAndRender(request, h, journey, answers, evaluation, {
+      forms,
+      errors
+    })
   }
 
   const cardErrors = await appendLineRecords(request, h, forms)
@@ -165,9 +179,16 @@ const post = async (request, h) => {
       request,
       h
     )
-    return render(request, h, journey, current, currentEvaluation, {
-      cardErrors
-    })
+    return logRefusalAndRender(
+      request,
+      h,
+      journey,
+      current,
+      currentEvaluation,
+      {
+        cardErrors
+      }
+    )
   }
 
   if (addIndex !== null) {

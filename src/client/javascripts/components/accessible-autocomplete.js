@@ -13,11 +13,10 @@
  */
 import accessibleAutocomplete from 'accessible-autocomplete'
 import { escapeAndBoldMatches } from '../../common/helpers/bold-matches.js'
-import { containsTerm } from '../../../server/common/helpers/search-fold.js'
+import { containsTerm } from '../../common/helpers/search-fold.js'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 const CONTAINER_CLASS = 'app-autocomplete'
-const MATCH_CLASS = 'app-autocomplete__match'
 const BUTTON_CLASS = 'app-autocomplete__button'
 const LIBRARY_WRAPPER_CLASS = 'autocomplete__wrapper'
 
@@ -29,7 +28,7 @@ const createSuggestionSearch = (values) => {
       syncResults(values.filter((value) => containsTerm(value, lastQuery)))
     },
     suggestionTemplate: (suggestion) =>
-      escapeAndBoldMatches(suggestion, lastQuery, { matchClass: MATCH_CLASS })
+      escapeAndBoldMatches(suggestion, lastQuery)
   }
 }
 

@@ -53,6 +53,10 @@ const get = async (request, h) => {
     chosen = await chosenPartyFor(orgId, addressId)
   } catch (error) {
     if (isRecoverableBackendError(error)) {
+      request.logger.warn(
+        { journeyId, role: party.id, addressId, err: error },
+        'Returned address could not be read, picker shown again'
+      )
       return h.redirect(
         redirectToPicker(request, journeyId, party, {
           handshakeError: 'unavailable'
@@ -63,6 +67,10 @@ const get = async (request, h) => {
   }
 
   if (!chosen) {
+    request.logger.info(
+      { journeyId, role: party.id, addressId, reason: 'address-not-found' },
+      'Returned address not found, picker shown again'
+    )
     return h.redirect(
       redirectToPicker(request, journeyId, party, {
         handshakeError: 'not-found'
@@ -71,6 +79,7 @@ const get = async (request, h) => {
   }
 
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, {
         [party.id]: answerFor(party, chosen)

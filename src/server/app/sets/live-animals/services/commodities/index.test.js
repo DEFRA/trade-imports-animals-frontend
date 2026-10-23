@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import {
   commodityCodeFor,
+  commodityLabel,
   cphCommodities,
   cphExemptCommodityCodes,
   earTagCommodities,
   horseNameCommodities,
   identifiedCommodities,
+  needsIdentifying,
   identifiersFor,
   list,
   microchipCommodities,
@@ -109,6 +111,12 @@ describe('the identifier allowlists', () => {
     )
   })
 
+  it('Should need identifying for a line of a species that carries identifiers and not for one that does not', () => {
+    expect(needsIdentifying({ commoditySelection: 'Cow' })).toBe(true)
+    expect(needsIdentifying({ commoditySelection: 'Fish' })).toBe(false)
+    expect(needsIdentifying(undefined)).toBe(false)
+  })
+
   it('Should hold every commodity that is asked for a permanent address', () => {
     for (const commodity of permanentAddressCommodities()) {
       expect(identifiedCommodities()).toContain(commodity)
@@ -127,5 +135,16 @@ describe('the CPH exemption', () => {
         !cphExemptCommodityCodes().includes(commodityCodeFor(commodity))
       )
     }
+  })
+})
+
+describe('#commodityLabel', () => {
+  it('Should append the code in brackets to the name when there is one', () => {
+    expect(commodityLabel('Bovine', '0102')).toBe('Bovine (0102)')
+  })
+
+  it('Should give the name alone when there is no code', () => {
+    expect(commodityLabel('Bovine', undefined)).toBe('Bovine')
+    expect(commodityLabel('Bovine', '')).toBe('Bovine')
   })
 })

@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  {{ selectedCommoditiesSummary(selectedCommodities, selectedTable, addHref, selectedCommoditiesCopy, copy.summary) }}
+  {{ selectedCommoditiesSummary(selectedTable, selectedCommoditiesCopy) }}
 
   <p class="govuk-body">
     <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnotherCommodity }}</a>
@@ -38,6 +38,6 @@
       {% endfor %}
     {% endfor %}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}
