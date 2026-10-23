@@ -67,6 +67,9 @@
       <input type="hidden" name="retryRemoveIndex" value="{{ pendingDocumentRemoval.index }}" />
       <input type="hidden" name="retryRemoveUploadId" value="{{ pendingDocumentRemoval.uploadId }}" />
     {% endif %}
+    {% if unsavedDocument.correlationId %}
+      <input type="hidden" name="retryAddCorrelationId" value="{{ unsavedDocument.correlationId }}" />
+    {% endif %}
 
     <section class="govuk-summary-card" aria-labelledby="file-upload-heading">
       <div class="govuk-summary-card__title-wrapper">

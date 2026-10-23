@@ -51,6 +51,22 @@ export const documentUploads = {
     return response.json()
   },
 
+  listByNotification: async ({ journeyId }) => {
+    const response = await backendFetch(
+      `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
+      { method: 'GET', headers: traceHeaders() }
+    )
+    if (!response.ok) {
+      throw failedResponse('list document uploads', response)
+    }
+    const { items } = await response.json()
+    return (items ?? []).map(({ uploadId, correlationId, claimed }) => ({
+      uploadId,
+      correlationId,
+      claimed
+    }))
+  },
+
   scanStatus: async ({ uploadId }) => {
     const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,

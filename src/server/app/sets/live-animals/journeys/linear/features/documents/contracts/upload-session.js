@@ -39,16 +39,23 @@ export const returnPath = (request, journeyId, correlationId) => {
 }
 
 /**
- * The handle a returning request is recognised by, answered only for the UUID shape
- * `newCorrelationId` mints. A separator, a dot segment or an encoded one is no handle this
- * module ever issued, so it is answered as no handle at all.
+ * Whether a value is a handle of the UUID shape `newCorrelationId` mints. A separator, a dot
+ * segment or an encoded one is no handle this module ever issued, so it is answered as no handle
+ * at all.
+ *
+ * @param {*} value - the value a browser supplied
+ * @returns {boolean} whether it is a handle of that shape
+ */
+export const isCorrelationHandle = (value) =>
+  typeof value === 'string' && CORRELATION_ID_PATTERN.test(value)
+
+/**
+ * The handle a returning request is recognised by.
  *
  * @param {object} request - the returning request
  * @returns {string|undefined} the handle, or nothing when the query carries no handle of that shape
  */
 export const returnedCorrelationId = (request) => {
   const returned = request.query?.[RETURNED_HANDLE_QUERY]
-  return typeof returned === 'string' && CORRELATION_ID_PATTERN.test(returned)
-    ? returned
-    : undefined
+  return isCorrelationHandle(returned) ? returned : undefined
 }

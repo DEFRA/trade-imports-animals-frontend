@@ -131,6 +131,10 @@ export const copy = {
     notYetAdded: `Choose a file and select ‘${addAnother}’ to add this document`,
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
+    documentNotSaved: (saveAction) =>
+      `Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘${saveAction}’ to try again.`,
+    documentsUnchecked: (saveAction) =>
+      `Sorry, there is a problem with the service. We could not check that every document you uploaded is saved to this notification. Select ‘${saveAction}’ to try again.`,
     uploadFailed: 'The selected file could not be uploaded. Try again.',
     uploadUnavailable:
       'Documents cannot be uploaded at the moment. Reload the page or come back later.',

@@ -108,6 +108,10 @@ const CONTINUE_AT_CAPACITY_LINE =
   'Continue refused: the notification is at its document capacity'
 const CONTINUE_NOT_ADDED_LINE =
   'Continue refused: the document has not been added'
+const DOCUMENT_NOT_SAVED_BANNER =
+  'Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘Save and continue’ to try again.'
+const DOCUMENTS_UNCHECKED_BANNER =
+  'Sorry, there is a problem with the service. We could not check that every document you uploaded is saved to this notification. Select ‘Save and continue’ to try again.'
 const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // A value the select never carries: only a tampered form could send it.
@@ -258,8 +262,8 @@ const errorEntries = ({ logger }) =>
 
 const SERVICE_UNAVAILABLE = 503
 
-const backendRefusal = () =>
-  new BackendRequestError('save answers', {
+const backendRefusal = (operation = 'save answers') =>
+  new BackendRequestError(operation, {
     status: SERVICE_UNAVAILABLE,
     statusText: 'Service Unavailable'
   })
@@ -617,11 +621,8 @@ describe('documents — taking on a returned upload a service refuses', () => {
     expect(logged.fields.err).toBe(refusal)
   })
 
-  it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, so a reload tries the save again', async () => {
-    const saveFailure = new BackendRequestError('save answers', {
-      status: SERVICE_UNAVAILABLE,
-      statusText: 'Service Unavailable'
-    })
+  it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, appending nothing and logging the failure once', async () => {
+    const saveFailure = backendRefusal()
     vi.spyOn(state, 'appendEntry').mockRejectedValue(saveFailure)
 
     const result = await driveClaim(submittedDocument())
@@ -645,6 +646,177 @@ describe('documents — taking on a returned upload a service refuses', () => {
       message: 'Took on the returned upload but could not save the document'
     })
     expect(logged.fields.err).toBe(saveFailure)
+  })
+
+  it('Should say the document was not saved to the notification, rather than that the answers were saved', async () => {
+    vi.spyOn(state, 'appendEntry').mockRejectedValue(backendRefusal())
+
+    const result = await driveClaim(submittedDocument())
+
+    expect(result.view.context.recoverableErrorBody).toBe(
+      DOCUMENT_NOT_SAVED_BANNER
+    )
+  })
+
+  it('Should carry the handle the next save takes the upload on again by', async () => {
+    vi.spyOn(state, 'appendEntry').mockRejectedValue(backendRefusal())
+
+    const result = await driveClaim(submittedDocument())
+
+    expect(result.view.context.unsavedDocument).toEqual({
+      uploadId: result.session.uploadId,
+      correlationId: result.session.correlationId
+    })
+  })
+})
+
+describe('documents — saving a document the service has taken on', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  const CONTINUE_UNSAVED_LINE =
+    'Continue refused: the notification does not list a document the service has taken on'
+  const RETRY_TAKE_ON_LINE =
+    'Taking on the returned upload again, to save the document it was taken on for'
+
+  /** A session registered against the notification, uploaded through and claimed. */
+  const takenOnUpload = async (journeyId) => {
+    const session = await registeredSession(journeyId)
+    recordSubmittedUpload(session.uploadId, {
+      ...validDocument,
+      file: uploadedPart({ filename: PDF_FILENAME, bytes: 8 })
+    })
+    await documentUploads.claim({
+      uploadId: session.uploadId,
+      documentType: validDocument.accompanyingDocumentType,
+      documentReference: validDocument.accompanyingDocumentReference,
+      dateOfIssue: '2025-12-12'
+    })
+    return session
+  }
+
+  it('Should save the document on the next save, and leave the trader on the page it was added from', async () => {
+    const journey = await store.create()
+    const session = await takenOnUpload(journey.journeyId)
+
+    const result = await driveHandler(post, {
+      journeyId: journey.journeyId,
+      payload: { retryAddCorrelationId: session.correlationId }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.documents).toEqual([
+      expect.objectContaining({
+        uploadId: session.uploadId,
+        accompanyingDocumentReference:
+          validDocument.accompanyingDocumentReference
+      })
+    ])
+    expect(linesLogged(result, RETRY_TAKE_ON_LINE)).toEqual([
+      {
+        level: 'info',
+        fields: {
+          journeyId: journey.journeyId,
+          correlationId: session.correlationId
+        },
+        message: RETRY_TAKE_ON_LINE
+      }
+    ])
+  })
+
+  it('Should refuse Continue while the notification does not list a document the service has taken on, naming it in the line it logs', async () => {
+    const journey = await store.create()
+    const session = await takenOnUpload(journey.journeyId)
+
+    const result = await driveHandler(post, {
+      journeyId: journey.journeyId,
+      payload: { action: 'continue' }
+    })
+
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.recoverableErrorBody).toBe(
+      DOCUMENT_NOT_SAVED_BANNER
+    )
+    expect(result.view.context.unsavedDocument).toEqual({
+      uploadId: session.uploadId,
+      correlationId: session.correlationId
+    })
+    expect(linesLogged(result, CONTINUE_UNSAVED_LINE)).toEqual([
+      {
+        level: 'info',
+        fields: {
+          journeyId: journey.journeyId,
+          uploadId: session.uploadId,
+          correlationId: session.correlationId
+        },
+        message: CONTINUE_UNSAVED_LINE
+      }
+    ])
+  })
+
+  it('Should carry Continue past the page when the notification lists the document the service has taken on', async () => {
+    const journey = await store.create()
+    const session = await takenOnUpload(journey.journeyId)
+    // Settles the scan, so it is this gate and not the settling one that answers the press.
+    await documentUploads.scanStatus({
+      uploadId: session.uploadId,
+      filename: PDF_FILENAME,
+      refresh: true
+    })
+
+    const result = await driveHandler(post, {
+      journeyId: journey.journeyId,
+      seed: { documents: [storedDocument({ uploadId: session.uploadId })] },
+      payload: { action: 'continue' }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    expect(result.view).toBeUndefined()
+  })
+
+  it('Should refuse Continue when the documents the service holds cannot be read, logging the failure once', async () => {
+    const unreadable = backendRefusal('list document uploads')
+    vi.spyOn(documentUploads, 'listByNotification').mockRejectedValue(
+      unreadable
+    )
+
+    const result = await driveHandler(post, {
+      payload: { action: 'continue' }
+    })
+
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.recoverableErrorBody).toBe(
+      DOCUMENTS_UNCHECKED_BANNER
+    )
+    expect(errorEntries(result)).toEqual([
+      {
+        level: 'error',
+        fields: {
+          err: unreadable,
+          status: SERVICE_UNAVAILABLE,
+          journeyId: result.journeyId
+        },
+        message:
+          'Could not read the documents the service has taken on for this notification'
+      }
+    ])
+  })
+
+  it('Should answer Continue as Continue when the retry handle is not one this service issues', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'continue',
+        ...validDocument,
+        retryAddCorrelationId: TRAVERSING_CORRELATION_ID
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.file).toBe(NOT_YET_ADDED_MESSAGE)
+    expect(result.after).toEqual(result.before)
   })
 })
 

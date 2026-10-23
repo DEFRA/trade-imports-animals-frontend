@@ -136,6 +136,10 @@ export const copy = {
     notYetAdded: `Dewiswch ffeil, ac yna dewiswch ‘${addAnother}’ i ychwanegu’r ddogfen hon`,
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
+    documentNotSaved: (saveAction) =>
+      `Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth. Cafodd eich dogfen ei huwchlwytho ond nid yw wedi’i chadw i’r hysbysiad hwn. Dewiswch ‘${saveAction}’ i roi cynnig arall arni.`,
+    documentsUnchecked: (saveAction) =>
+      `Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth. Nid oedd modd gwirio bod pob dogfen a uwchlwythwyd gennych wedi’i chadw i’r hysbysiad hwn. Dewiswch ‘${saveAction}’ i roi cynnig arall arni.`,
     uploadFailed:
       'Nid oedd modd uwchlwytho’r ffeil a ddewiswyd. Rhowch gynnig arall arni.',
     uploadUnavailable:

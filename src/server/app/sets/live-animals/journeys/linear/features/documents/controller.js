@@ -21,6 +21,7 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import {
   documentsPageHref,
+  isCorrelationHandle,
   returnedCorrelationId
 } from './contracts/upload-session.js'
 import {
@@ -37,6 +38,7 @@ import { claimUpload } from './handlers/claim-upload.js'
 import { loadPage } from './handlers/load-page.js'
 import { openUploadSession } from './handlers/open-upload-session.js'
 import { fileResponse } from './handlers/reads/download.js'
+import { unsavedClaimedUpload } from './handlers/unsaved-claim.js'
 import { documentsPage as page } from './page.js'
 import { validation } from './validate.js'
 import { isStillSettling, scanned, withScanStatus } from './scan/status.js'
@@ -77,10 +79,20 @@ const get = async (request, h) => {
   return render(request, h, pageState, EMPTY_FORM, { extra: addForm })
 }
 
-const renderTakeOnFailure = async (request, h, pageState, values) =>
+// The page a service failure leaves the trader on, with the add form still live. `unsavedDocument`
+// names the upload the service has taken on that the notification does not list, so the banner
+// says so and the next save retries it.
+const renderRecoverableFailure = async (
+  request,
+  h,
+  pageState,
+  values,
+  { unsavedDocument } = {}
+) =>
   render(request, h, pageState, values, {
     extra: {
       recoverableError: true,
+      unsavedDocument,
       ...(await openSessionOrReportUnavailable(
         request,
         pageState.journey.journeyId
@@ -91,7 +103,7 @@ const renderTakeOnFailure = async (request, h, pageState, values) =>
 const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   const claimed = await claimUpload(request, correlationId, pageState)
   if (claimed?.takeOnFailed) {
-    return renderTakeOnFailure(
+    return renderRecoverableFailure(
       request,
       h,
       pageState,
@@ -124,7 +136,12 @@ const claimReturnedUpload = async (request, h, pageState, correlationId) => {
           },
           'Took on the returned upload but could not save the document'
         )
-        return renderTakeOnFailure(request, h, pageState, EMPTY_FORM)
+        return renderRecoverableFailure(request, h, pageState, EMPTY_FORM, {
+          unsavedDocument: {
+            uploadId: claimed.entry.uploadId,
+            correlationId
+          }
+        })
       }
     )
     if (failure) {
@@ -269,20 +286,47 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
   return backToPage(request, h)
 }
 
+const continueToNextPage = async (request, h, pageState) =>
+  h.redirect(await kit.nextTarget(request, page, pageState.scope))
+
+const renderStillSettling = async (request, h, pageState) =>
+  render(request, h, pageState, EMPTY_FORM, {
+    summaryErrors: settlingSummaryErrors(pageState.documents),
+    extra: await openSessionOrReportUnavailable(
+      request,
+      pageState.journey.journeyId
+    )
+  })
+
 // Leaving the page, once nothing is left to save. A file still being checked
-// holds Continue back; the exit to the overview is a deliberate stop and goes.
+// holds Continue back, and so does a document the service has taken on that
+// this notification does not list; the exit to the overview is a deliberate
+// stop and goes.
 const leavePage = async (request, h) => {
   const pageState = await loadPage(request, h)
-  if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
-    return render(request, h, pageState, EMPTY_FORM, {
-      summaryErrors: settlingSummaryErrors(pageState.documents),
-      extra: await openSessionOrReportUnavailable(
-        request,
-        pageState.journey.journeyId
-      )
+  if (kit.hubExitTarget(request)) {
+    return continueToNextPage(request, h, pageState)
+  }
+  if (isStillSettling(pageState.documents)) {
+    return renderStillSettling(request, h, pageState)
+  }
+  const unsaved = await unsavedClaimedUpload(request, pageState)
+  if (unsaved.uploadId) {
+    request.logger.info(
+      {
+        journeyId: pageState.journey.journeyId,
+        uploadId: unsaved.uploadId,
+        correlationId: unsaved.correlationId
+      },
+      'Continue refused: the notification does not list a document the service has taken on'
+    )
+  }
+  if (unsaved.uploadId || unsaved.unchecked) {
+    return renderRecoverableFailure(request, h, pageState, EMPTY_FORM, {
+      unsavedDocument: unsaved
     })
   }
-  return h.redirect(await kit.nextTarget(request, page, pageState.scope))
+  return continueToNextPage(request, h, pageState)
 }
 
 const continuesADocument = (request, payload) =>
@@ -318,9 +362,24 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
+// The save the page offers for a document the service has taken on that the notification does
+// not list. Claiming twice replaces the details rather than adding a second document, so the
+// whole take-on runs again.
+const retryTakingOnTheUpload = async (request, h, correlationId) => {
+  const pageState = await loadPage(request, h)
+  request.logger.info(
+    { journeyId: pageState.journey.journeyId, correlationId },
+    'Taking on the returned upload again, to save the document it was taken on for'
+  )
+  return claimReturnedUpload(request, h, pageState, correlationId)
+}
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = payload.action ?? ''
+  if (isCorrelationHandle(payload.retryAddCorrelationId)) {
+    return retryTakingOnTheUpload(request, h, payload.retryAddCorrelationId)
+  }
   if (
     payload.retryRemoveUploadId &&
     UPLOAD_ID_PATTERN.test(payload.retryRemoveUploadId)

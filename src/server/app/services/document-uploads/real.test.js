@@ -155,6 +155,71 @@ describe('#documentUploads', () => {
       })
     })
   })
+
+  describe('#listByNotification', () => {
+    it('Should answer every upload the notification holds, with whether its document details have been claimed', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          items: [
+            {
+              id: 'document-1',
+              notificationReferenceNumber: JOURNEY_ID,
+              uploadId: UPLOAD_ID,
+              correlationId: CORRELATION_ID,
+              claimed: true,
+              scanStatus: 'COMPLETE',
+              files: []
+            },
+            {
+              id: 'document-2',
+              notificationReferenceNumber: JOURNEY_ID,
+              uploadId: SESSION_UPLOAD_ID,
+              correlationId: SESSION_CORRELATION_ID,
+              claimed: false,
+              scanStatus: 'PENDING',
+              files: []
+            }
+          ]
+        })
+      )
+
+      await expect(
+        documentUploads.listByNotification({ journeyId: JOURNEY_ID })
+      ).resolves.toEqual([
+        { uploadId: UPLOAD_ID, correlationId: CORRELATION_ID, claimed: true },
+        {
+          uploadId: SESSION_UPLOAD_ID,
+          correlationId: SESSION_CORRELATION_ID,
+          claimed: false
+        }
+      ])
+      expect(fetchMocker.mock.calls[0][0]).toBe(
+        `${BACKEND_URL}/notifications/${JOURNEY_ID}/document-uploads`
+      )
+    })
+
+    it('Should answer an empty list for a notification the response carries no uploads for', async () => {
+      fetchMocker.mockResponse(JSON.stringify({}))
+
+      await expect(
+        documentUploads.listByNotification({ journeyId: JOURNEY_ID })
+      ).resolves.toEqual([])
+    })
+
+    it('Should throw with the response status when the uploads cannot be read', async () => {
+      fetchMocker.mockResponse(() => ({
+        status: 503,
+        statusText: 'Service Unavailable'
+      }))
+
+      await expect(
+        documentUploads.listByNotification({ journeyId: JOURNEY_ID })
+      ).rejects.toMatchObject({
+        message: 'Failed to list document uploads: 503 Service Unavailable',
+        status: 503
+      })
+    })
+  })
 })
 
 describe('#documentUploads — scan status, removal and reads', () => {
@@ -319,6 +384,12 @@ describe('#documentUploads — interpolated path segments', () => {
           correlationId: ID_WITH_SEPARATORS
         }),
       `${BACKEND_URL}/notifications/${JOURNEY_ID}/document-upload-sessions/${ID_WITH_SEPARATORS_ENCODED}`
+    ],
+    [
+      'the notification whose uploads are listed',
+      () =>
+        documentUploads.listByNotification({ journeyId: ID_WITH_SEPARATORS }),
+      `${BACKEND_URL}/notifications/${ID_WITH_SEPARATORS_ENCODED}/document-uploads`
     ],
     [
       'the upload a scan status is read from',

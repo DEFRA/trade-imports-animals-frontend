@@ -60,13 +60,16 @@ const settled = (filename = '') => {
 const sessionKey = (journeyId, correlationId) => `${journeyId}/${correlationId}`
 
 const uploadIdsBySession = new Map()
-const sessionKeysByUploadId = new Map()
+const sessionsByUploadId = new Map()
 
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
-    const key = sessionKey(journeyId, correlationId)
-    uploadIdsBySession.set(key, uploadId)
-    sessionKeysByUploadId.set(uploadId, key)
+    uploadIdsBySession.set(sessionKey(journeyId, correlationId), uploadId)
+    sessionsByUploadId.set(uploadId, {
+      journeyId,
+      correlationId,
+      claimed: false
+    })
     awaitingRefresh.add(uploadId)
   },
 
@@ -80,6 +83,10 @@ export const documentUploads = {
       error.field = field
       throw error
     }
+    const session = sessionsByUploadId.get(claim.uploadId)
+    if (session) {
+      session.claimed = true
+    }
     return undefined
   },
 
@@ -89,6 +96,15 @@ export const documentUploads = {
     )
     return uploadId ? { uploadId, correlationId } : undefined
   },
+
+  listByNotification: async ({ journeyId }) =>
+    [...sessionsByUploadId]
+      .filter(([, session]) => session.journeyId === journeyId)
+      .map(([uploadId, { correlationId, claimed }]) => ({
+        uploadId,
+        correlationId,
+        claimed
+      })),
 
   scanStatus: async ({ uploadId, filename, refresh }) => {
     if (!awaitingRefresh.has(uploadId)) {
@@ -103,8 +119,13 @@ export const documentUploads = {
 
   remove: async (uploadId) => {
     awaitingRefresh.delete(uploadId)
-    uploadIdsBySession.delete(sessionKeysByUploadId.get(uploadId))
-    sessionKeysByUploadId.delete(uploadId)
+    const session = sessionsByUploadId.get(uploadId)
+    if (session) {
+      uploadIdsBySession.delete(
+        sessionKey(session.journeyId, session.correlationId)
+      )
+      sessionsByUploadId.delete(uploadId)
+    }
   },
 
   streamFile: async () =>

@@ -17,6 +17,11 @@ import { scanCopyJson } from './fragments/status.js'
 import { getAttempt, refreshHref } from './refresh.js'
 import { documentRows } from './rows.js'
 
+const unsavedDocumentBody = (copy, saveAction, { unchecked }) =>
+  unchecked
+    ? copy.errors.documentsUnchecked(saveAction)
+    : copy.errors.documentNotSaved(saveAction)
+
 export const render = ({
   view,
   copy,
@@ -57,6 +62,13 @@ export const render = ({
     // Written after the spread, so only a session that was opened can open the
     // add form.
     uploadFormUnavailable,
+    recoverableErrorBody:
+      extra.unsavedDocument &&
+      unsavedDocumentBody(
+        copy,
+        sharedCopy.saveActions.saveAndContinue,
+        extra.unsavedDocument
+      ),
     addFormClosed,
     addFormClosedReason,
     copy,

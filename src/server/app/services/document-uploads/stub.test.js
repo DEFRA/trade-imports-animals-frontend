@@ -7,15 +7,14 @@ const CLEAN_FILENAME = 'invoice.pdf'
 const VIRUS_FILENAME = 'virus-notes.pdf'
 const NEVER_SCANS_FILENAME = 'never-scans.pdf'
 
-const registeredUploadId = async () => {
-  const uploadId = randomUUID()
-  await documentUploads.register({
-    journeyId: 'journey-1',
-    uploadId,
-    correlationId: randomUUID()
-  })
-  return uploadId
+const registeredUploadFor = async (journeyId) => {
+  const upload = { uploadId: randomUUID(), correlationId: randomUUID() }
+  await documentUploads.register({ journeyId, ...upload })
+  return upload
 }
+
+const registeredUploadId = async () =>
+  (await registeredUploadFor('journey-1')).uploadId
 
 describe('#documentUploads', () => {
   describe('#scanStatus', () => {
@@ -206,6 +205,55 @@ describe('#documentUploads — session lookup, reads and removal', () => {
           correlationId
         })
       ).resolves.toBeUndefined()
+    })
+  })
+
+  /**
+   * What the claim leg records, so the page can tell a document the service has taken on from one
+   * it has not. Stub mode is what the whole unit and fit suite runs against, so a stand-in that
+   * reported nothing taken on would leave the page's own recovery of an unsaved document proved by
+   * nothing.
+   */
+  describe('#listByNotification', () => {
+    it('Should report an upload as claimed only once its document details have been taken on', async () => {
+      const journeyId = randomUUID()
+      const unclaimed = await registeredUploadFor(journeyId)
+      const claimed = await registeredUploadFor(journeyId)
+
+      await documentUploads.claim({
+        uploadId: claimed.uploadId,
+        documentType: 'ITAHC',
+        documentReference: 'CHEDA.GB.2026.1234567',
+        dateOfIssue: '2026-01-15'
+      })
+
+      await expect(
+        documentUploads.listByNotification({ journeyId })
+      ).resolves.toEqual([
+        { ...unclaimed, claimed: false },
+        { ...claimed, claimed: true }
+      ])
+    })
+
+    it('Should report only the uploads the notification itself registered', async () => {
+      const journeyId = randomUUID()
+      const own = await registeredUploadFor(journeyId)
+      await registeredUploadFor(randomUUID())
+
+      await expect(
+        documentUploads.listByNotification({ journeyId })
+      ).resolves.toEqual([{ ...own, claimed: false }])
+    })
+
+    it('Should report nothing for a removed upload', async () => {
+      const journeyId = randomUUID()
+      const { uploadId } = await registeredUploadFor(journeyId)
+
+      await documentUploads.remove(uploadId)
+
+      await expect(
+        documentUploads.listByNotification({ journeyId })
+      ).resolves.toEqual([])
     })
   })
 
