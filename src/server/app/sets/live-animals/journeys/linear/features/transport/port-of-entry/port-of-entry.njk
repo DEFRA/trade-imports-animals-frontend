@@ -29,7 +29,7 @@
       autocomplete: {
         showAllValues: true,
         noResults: copy.port.noResults,
-        placeholder: copy.port.placeholder
+        placeholder: copy.port.searchPlaceholder
       }
     }) }}
 
@@ -70,6 +70,6 @@
       errorMessage: errors.transportDocumentReference and { text: errors.transportDocumentReference }
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

@@ -2,7 +2,8 @@ import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { escapeHtml, notApplicableCell } from './value-text.js'
+import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
+import { notApplicableCell } from './value-text.js'
 
 const copy = copyFor({ en, cy })
 

@@ -1,13 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import * as ports from '../../../../../../../services/ports/index.js'
@@ -21,13 +19,6 @@ import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 const SELECT_ONE = 'Select one'
 const SELECT_ONE_CY = 'Dewiswch un'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('import-reason copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -60,25 +51,29 @@ describe('import-reason copy module', () => {
     }
   })
 
-  it('Should label each search and word its placeholder and no-results message', () => {
+  it('Should label each search and word its select text, search placeholder and no-results message', () => {
     expect(copy.country).toEqual({
       label: 'Destination country',
-      placeholder: SELECT_ONE,
+      selectText: SELECT_ONE,
+      searchPlaceholder: SELECT_ONE,
       noResults: 'No countries found'
     })
     expect(copy.port).toEqual({
       label: 'Port of exit',
-      placeholder: SELECT_ONE,
+      selectText: SELECT_ONE,
+      searchPlaceholder: SELECT_ONE,
       noResults: 'No ports found'
     })
     expect(copyCy.country).toEqual({
       label: 'Gwlad gyrchfan',
-      placeholder: SELECT_ONE_CY,
+      selectText: SELECT_ONE_CY,
+      searchPlaceholder: SELECT_ONE_CY,
       noResults: 'Dim gwledydd wedi’u darganfod'
     })
     expect(copyCy.port).toEqual({
       label: 'Porthladd ymadael',
-      placeholder: SELECT_ONE_CY,
+      selectText: SELECT_ONE_CY,
+      searchPlaceholder: SELECT_ONE_CY,
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     })
   })
@@ -107,12 +102,7 @@ describe('import-reason copy module', () => {
 })
 
 describe('GET import-reason — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module and hint every option from it', async () => {
     const get = importReason.routes.find(

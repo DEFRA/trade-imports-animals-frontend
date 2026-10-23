@@ -20,8 +20,10 @@ import {
   journeyRequest,
   stubH
 } from '../../../../../engine/test-support.js'
+import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
 import { dispatchPages } from './index.js'
 import { journeyStrip } from '../../../../../shared/kit.js'
+import { declarationRoutesFromReview } from './declaration/test-support.js'
 
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as dashboardRoutes } from './dashboard/controller.js'
@@ -147,8 +149,6 @@ describe('journey reference strip', () => {
     expect(context.journeyStrip).toBeUndefined()
   })
 
-  // The reference is minted when the notification is created, so origin can
-  // show it on the very first request — before the user has saved anything.
   it('Should render the strip on origin while the journey has no saved answers', async () => {
     const { journey, context } = await renderWith(
       getHandlerOf({ routes: originRoutes })
@@ -159,11 +159,6 @@ describe('journey reference strip', () => {
     })
   })
 
-  // Real mode rebuilds `answers` from the stored notification, so a fresh
-  // backend DRAFT loads carrying its server-minted referenceNumber. The strip
-  // is drawn either way; the back link is the one thing still told by saved
-  // answers, and the backend's own field is not one — so it stays on the
-  // dashboard rather than the hub.
   it('Should render the strip but keep the dashboard back link for a real-mode fresh draft carrying only the backend reference', async () => {
     const { journey, context } = await renderWith(
       getHandlerOf({ routes: originRoutes }),
@@ -188,6 +183,24 @@ describe('journey reference strip', () => {
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
       status: DRAFT_TAG
+    })
+  })
+
+  describe('on the declaration', () => {
+    const declarationHandler = getHandlerOf({
+      routes: declarationRoutesFromReview
+    })
+
+    beforeEach(() => configureReadyForCheckYourAnswers(SET_ID, () => true))
+
+    it('Should render no strip on a draft', async () => {
+      const { view } = await driveHandler(declarationHandler)
+      expect(view.context.journeyStrip).toBeNull()
+    })
+
+    it('Should render no strip on an amendment', async () => {
+      const { view } = await driveHandler(declarationHandler, { amend: true })
+      expect(view.context.journeyStrip).toBeNull()
     })
   })
 })

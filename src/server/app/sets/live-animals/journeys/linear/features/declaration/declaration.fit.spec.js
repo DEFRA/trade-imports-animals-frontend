@@ -92,6 +92,35 @@ test.describe('declaration feature', () => {
     ).toBeVisible()
   })
 
+  test('shows the confirmation as a small checkbox in a group whose legend only screen readers get', async ({
+    page
+  }) => {
+    const group = page.getByRole('group', { name: copy.declarationLegend })
+
+    await expect(group.locator('legend')).toHaveClass(/govuk-visually-hidden/)
+    await expect(group.locator('.govuk-checkboxes')).toHaveClass(
+      /govuk-checkboxes--small/
+    )
+    await expect(
+      group.getByRole('checkbox', { name: copy.declarationLabel })
+    ).toBeVisible()
+  })
+
+  test('shows the date of declaration in bold', async ({ page }) => {
+    const date = page
+      .locator('p.govuk-body', { hasText: copy.dateOfDeclaration })
+      .locator('strong')
+
+    await expect(date).toHaveText(/^\d{1,2} [A-Z][a-z]+ \d{4}$/)
+    await expect(date).toHaveCSS('font-weight', '700')
+  })
+
+  test('starts the page with the heading', async ({ page }) => {
+    await expect(
+      page.locator('main .govuk-grid-column-two-thirds > :first-child')
+    ).toHaveText(copy.title)
+  })
+
   test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
     page
   }) => {

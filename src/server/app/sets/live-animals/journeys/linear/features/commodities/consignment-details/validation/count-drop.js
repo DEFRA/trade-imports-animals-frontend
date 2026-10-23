@@ -5,6 +5,7 @@ import * as commodities from '../../../../../../services/commodities/index.js'
 import { animalIdentificationPage } from '../../page.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { identificationCardAnchor } from '../../animal-identification/card/error-summary.js'
 import { animalsField } from '../fields.js'
 
 const copy = copyFor({ en, cy }).consignmentDetails
@@ -27,7 +28,7 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
       href: `${kit.withChangeContext(
         request,
         pagePath(request.params.journeyId, animalIdentificationPage.slug)
-      )}#identification-card-${index}`
+      )}#${identificationCardAnchor(index)}`
     }
   ]
 }

@@ -147,10 +147,7 @@ const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
 const NOT_APPLICABLE = 'Not applicable'
-const MISSING_HTML =
-  '<span class="app-summary-list__value--missing">' +
-  '<span class="govuk-visually-hidden">Missing</span>' +
-  '</span>'
+const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
@@ -831,19 +828,19 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should mark a blank plain answer missing', async () => {
+  it('Should leave a blank plain answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(await sectionsFor(gatedOffSeed))
     expect(htmlOf(rows, INTERNAL_REFERENCE_KEY)).toBe(MISSING_HTML)
     expect(htmlOf(rows, 'Port of entry')).toBe(MISSING_HTML)
   })
 
-  it('Should mark a coded answer with no matching label missing', async () => {
+  it('Should leave a coded answer with no matching label with only a visually hidden Missing', async () => {
     expect(
       htmlOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark a blank date missing', async () => {
+  it('Should leave a blank date with only a visually hidden Missing', async () => {
     expect(
       htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
@@ -852,7 +849,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark an unset party missing', async () => {
+  it('Should leave an unset party with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
@@ -882,7 +879,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 
-  it('Should give the same optional row no text at all on an unfinished card', async () => {
+  it('Should leave the same optional row with only a visually hidden Missing on an unfinished card', async () => {
     const sections = await sectionsFor(
       without(fullSeed, 'internalReferenceNumber', 'countryOfOrigin')
     )
@@ -915,7 +912,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(reference.value.html).toBeUndefined()
   })
 
-  it('Should mark the blank rows inside an unfinished documents card missing', async () => {
+  it('Should leave the blank rows inside an unfinished documents card with only a visually hidden Missing', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
@@ -1034,7 +1031,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keys).not.toContain(PORT_OF_EXIT_KEY)
   })
 
-  it('Should mark an in-scope exit answer left blank missing', async () => {
+  it('Should leave a blank in-scope exit answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'temporaryAdmissionHorses' })
@@ -1207,7 +1204,7 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(texts).toContain(ADDRESSES_INCOMPLETE)
   })
 
-  it('Should mark a role that has never been answered missing', async () => {
+  it('Should leave a role that has never been answered with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
       ROLES_AND_ADDRESSES_CARD

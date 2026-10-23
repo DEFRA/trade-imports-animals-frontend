@@ -27,10 +27,33 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
+- With no commodity chosen, the commodity details task is still a link: the
+  consignment details page asks the commodity question rather than drawing an
+  empty table, and a task opened from the overview returns to the overview
+  when saved.
+- Each hub group renders a task list of its own, and `govukTaskList` stamps
+  the group id on the status of every item in it.
 - The overview has no back link. It is the top of the notification; the way
   out is "Return to dashboard" or the service navigation.
 - "Review and submit" is a button under the task list, offered whatever is
   still owed, so a trader can read back what they have entered at any time.
+
+## How a page ends
+
+- A page the overview links to directly ends with all three controls: the
+  primary and "Save and return to overview" side by side, then "Cancel and
+  return to overview" on its own line below them, so a trader can stop and
+  leave from where the overview sent them.
+- The two return controls name the page they lead to, which is headed
+  "Overview". "Hub" is the internal name for it and never appears on screen.
+- A page reached from another page ends with the primary alone, and the trader
+  leaves the way they came in.
+- While a notification is being amended, a page ends with "Save and return"
+  (back to the review) and "Save and continue" (on, never back to the review)
+  side by side, then a secondary "Save and return to overview" button on its
+  own line below them, with no cancel link. Each save button carries its own
+  form action, so no new field is posted. A page reached from another page or a
+  picker ends with the first two only.
 
 ## Check your answers (review)
 
@@ -41,10 +64,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   only sometimes asked gets its own card and link.
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
-- A blank answer on a finished card reads "Not applicable". On a card that
-  still owes answers, every blank cell is empty and marked missing, required
-  or not. The empty mark is a flag on the cell, not its text, because a
-  trader can type "Not applicable" into a free-text answer.
+- A blank answer on a finished card reads "Not applicable", and the cell
+  carries an empty flag, not just that text, because a trader can type "Not
+  applicable" into a free-text answer. On a card that still owes answers,
+  every blank cell, required or not, has no visible text and no flag, and
+  "Missing" is announced only to a screen reader. The card's red left border
+  and "Complete ..." line are the only visible marking.
 - Every task row belongs to exactly one card, so "no unfinished card" and
   `readyForCheckYourAnswers` give the same verdict.
 - Species cards carry no card id, so the error summary names outstanding
@@ -76,6 +101,25 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   owes. The declaration date is shown only on the declaration page.
 - Documents are not required to submit, so a notification with none lists
   them as still owed.
+- The help links to HMRC open in a new tab. Their visible text is unchanged
+  and a visually hidden "(opens in a new tab)" tells screen reader users.
+- The customs link goes to HMRC's customs, international trade and excise
+  enquiries page, not its contact index, which lists every tax and helpline.
+- "Create a new notification" is a form button styled as a link, because
+  starting a notification creates a record. It is offered so a trader with a
+  second consignment need not return to the dashboard to find the start
+  button.
+
+## Declaration
+
+- The confirmation is one small checkbox in a fieldset whose legend is for
+  screen readers only, so a lone checkbox still has a group label.
+- The page carries no status strip, at a first submission or an amendment.
+- The date of declaration is shown in bold.
+- The hidden `step` tells a Submit from a Continue, because an unticked box
+  posts nothing.
+- The checkbox is never pre-ticked, because a tick left by a submit refused
+  as stale was given to older content.
 
 ## Origin of the import
 
@@ -109,7 +153,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
 - The back link goes to the dashboard until something is saved, then to the
-  overview.
+  overview. A fresh draft loaded from the backend carries only the reference
+  number the backend minted, which is not a saved answer, so its back link
+  stays on the dashboard while the status strip still shows.
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,
   so a country the reference data no longer offers is named on the page.
@@ -133,8 +179,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Origin and port of entry share the medium label, but this page asks its
   searches as follow-up questions, so it sets the small label itself, and
   "Select one" in both the empty box and the select's first option.
-- The exit date takes the prototype's date picker styling: a regular-weight
-  label, and a GOV.UK margin override on its form group. GOV.UK Frontend zeroes
+- The exit date has a regular-weight label and a GOV.UK margin override on its
+  form group. GOV.UK Frontend zeroes
   the bottom margin of the last form group nested in another, which would leave
   the date box touching "Port of exit".
 
@@ -147,19 +193,43 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Identification
 
+- The page uses the full-width surface so the tables and cards fit. The error
+  summary, caption, heading and inset text keep a two-thirds reading width.
+- Identification is grouped by commodity: one section per commodity headed
+  "<commodity name> (<commodity code>)", holding one card per species. The
+  card is built from GOV.UK summary card styling and `govukTable`, not the
+  prototype's custom CSS and div grid, so tables keep their meaning and
+  reflow at 390px.
+- The saved-animals and Selected commodities tables set
+  `app-table__cell--break-anywhere` on their cells. It is a deliberate custom
+  class so long unbroken identifiers and commodity names wrap inside table
+  cells at 390px.
+- A species with no number of animals has no card, and a consignment whose
+  identified species all lack a count shows the summary and no cards.
+- The card title is the species name, with "Change number of animals" beside
+  it naming the species. The link keeps the change context, so Continue on
+  Commodity details returns to where the trader came from.
+- While animals remain the card shows the entry form, then the in-card button,
+  then the saved-animals table. A finished species shows its saved animals
+  alone, with no form, no button and no completion message. A count lowered
+  below its saved records still shows the over-count message.
 - The in-card button says what pressing it does next: "Save and add another"
-  while more than one animal is outstanding, "Save and finish" on the last.
-  A line of one animal has no in-card button; the page's own "Save and
-  continue" saves it.
-- The counter on each card is the only mention of the number the trader is held
-  to, so the card links back to the page that sets the declared animal count, with
-  no query or change context.
+  while more than one animal is outstanding, "Save and finish" on the last,
+  and it is a primary button. It saves only its own species' current animal
+  and reloads with that form empty. A line of one animal has no in-card
+  button.
+- "Save and continue", "Save and return to overview" and the amend buttons
+  save only the forms of species with one animal. Values typed into the form
+  of a species with more animals are neither validated nor saved by them.
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading.
+  saved-animals column heading, and no identifier field has a hint. Labels
+  are regular weight.
 - The saved-animals table has one column per identifier the commodity
   declares, not per identifier the trader filled. The header row says which
   identifiers the line expects, and an empty cell shows which are still
   missing.
+- Removing an identifier record is a POST on the card form with no GET, so a
+  link cannot trigger it.
 - A consignment with nothing to identify skips the page.
 - The phone field is the one permanent-address field with a hint. A trader
   giving an address outside the UK cannot otherwise know the number is dialled
@@ -171,7 +241,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   sent back with the form as a hidden value.
 - Commodity code 01061900 covers several commodities and hundreds of species.
   Each chosen species gets its own Selected commodities row, named by the
-  species.
+  species, on both Commodity details and Identification.
 - The commodity heading on Commodity details is set at the larger size because
   the commodity blocks are the substance of the page. The type steps down from
   commodity to species to quantity labels, and the labels carry a size so they
@@ -182,9 +252,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a trader who does not read Latin can tell the tick boxes apart.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
+- A removal returns to Commodity details while a line is left, and to the
+  commodity question once the last line is gone, because that is where the next
+  answer comes from. A removal is a POST on the page form with no GET, so a
+  link cannot trigger it.
 
 ## Consignment addresses pages
 
+- The backend names the place of destination `destination` and the contact
+  address `consignment`; the journey says `placeOfDestination` and
+  `contactAddress`. Every other role has the same name in both.
 - The consignment addresses page gives each party its own section: a medium
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
@@ -235,8 +312,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - The three part labels stay on screen. Three unlabelled boxes under one
   legend would be harder to use than the single field they replace.
+- A CPH number is two digits of county, three of parish and four of holding,
+  so the example hint shows that 2/3/4 grouping.
 - The help names APHA documents only. A link to GOV.UK holding details waits
   for a real destination.
+- The boxes set no character limit, so nothing typed or pasted is cut short.
+  When the county box holds nine digits, with or without spaces or slashes,
+  and parish and holding are empty, the number is split into its three parts
+  on save. Anything else, such as `1234` in the county box, goes through the
+  per-part checks unchanged and every box keeps what was typed.
+- Nothing moves focus between the boxes (WCAG 3.2.2; GOV.UK forms do not
+  auto-advance).
+- One error message belongs to the group, not to each box. The date-input row
+  classes only sit the boxes side by side.
 
 ## Documents
 
@@ -264,6 +352,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every document field is mandatory per record and there is no edit page, so
   presence is checked when a document is added.
 - The error summary lists the fields in the order they appear on the page.
+- The document type select opens on its select text, which carries no value, so
+  a form left on it submits an empty type. One message covers both mistakes a
+  select can make: left on the select text, or carrying a value the page never
+  offered.
+- The offered document types are service-backed and primed at boot, so the
+  type check is built for each add, not frozen at module load.
 - A saved document returns the trader to the page, so a reload cannot replay
   the save. Continue is pressed again from the fresh page once scans settle.
 - A file still being checked holds Continue back. The exit to the overview
@@ -281,12 +375,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The arrival date hint gives a fixed date showing the format, not a date tied
   to the window. The date picker's bounds and the out-of-range error police
   the window.
-- The port search shows its select text, "Select a port", in its empty box as
-  well as in the no-JavaScript list's first entry.
+- The port search shows the search placeholder "Select a port" in its empty
+  box, in the same words as the select text that is the no-JavaScript list's
+  first entry.
 - The means of transport options read Air, Rail, Road and Sea, and each stores
   its reference code (AIRPLANE, RAILWAY, ROAD_VEHICLE, VESSEL).
 - The transport identification hint is a lead-in and one bullet per
   alternative, so the number of choices shows at a glance.
+- Remove on an added country submits the page form, so the crumb travels with
+  it and no GET can trigger it. The country code rides in the button value,
+  so the row pressed is the row removed however the list has been reordered
+  since the page rendered.
+- The status message region ships empty and the page script writes the message
+  into it just after load. A live region that already holds its text when the
+  document is parsed is read as ordinary page content, and Add and Remove are
+  full form submits, so the message arrives with a fresh document every time.
 - The added-countries list names each country rather than its code, because
   the list is the whole record of the answer the trader reads back.
 - Searching the transporters list filters it in place: nothing is validated or

@@ -176,13 +176,15 @@ so the line carries the request's trace id. Log the ids support searches by:
 `journeyId` always, plus the reason and any token or code the decision turned
 on. Log a caught error as `{ err }`, never only its message.
 
-Every branch that refuses an answer and shows the page again calls
+A user's own field errors, shown back on the form, are not logged. Every other
+refusal that shows the page again, such as a state refusal, a bare 400 or
+another service refusing what this one accepted, calls
 `kit.logRefusal(request, { fieldErrors, ...details })` once, before it renders,
 whatever status code it answers with. `fieldErrors` is the map of field key to
 the message the page shows (empty when it shows none). The line is info, carries
 `journeyId`, the route and the error codes (the field keys, never the
 messages), and takes any named reason or ids the branch decided on as further
-keys of the options. No refusal is exempt. The
+keys of the options. The
 [transit countries controller](../sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js)
 is the example of a refusal that passes its reason.
 

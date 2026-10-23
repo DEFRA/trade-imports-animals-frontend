@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
@@ -26,7 +26,7 @@ const seed = () => ({
 const driveWithQuery = (handler, options = {}) =>
   driveHandler(handler, { seed: seed(), ...options })
 
-describe('POST cph-number — three parts joined into the nine stored digits', () => {
+describe('POST cph-number — the CPH number saved as nine digits or refused per part', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should join the county, parish and holding parts into nine bare digits', async () => {
@@ -57,10 +57,7 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
       cphCounty: 'Enter a CPH number'
     })
     expect(result.after.countyParishHoldingCph).toBeUndefined()
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['cphCounty']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should name the missing part when the others are answered', async () => {
@@ -106,15 +103,30 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
     expect(result.after.countyParishHoldingCph).toBeUndefined()
   })
 
-  it('Should reject slashes typed into a part, so the parts stay the parts', async () => {
+  it('Should save a whole number with slashes typed into the county box as nine digits', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
-      payload: { cphCounty: '12/345/6789', cphParish: '', cphHolding: '' }
+      payload: { cphCounty: SLASHED_CPH_NUMBER, cphParish: '', cphHolding: '' }
     })
+    expect(result.view).toBeUndefined()
+    expect(result.after.countyParishHoldingCph).toBe('123456789')
+  })
+
+  it('Should name each part and echo what was typed when the county box holds fewer than nine digits', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { cphCounty: '1234', cphParish: '', cphHolding: '' }
+    })
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors).toEqual({
       cphCounty: 'County must be 2 digits',
       cphParish: 'Enter the parish',
       cphHolding: 'Enter the holding number'
+    })
+    expect(result.view.context.values).toEqual({
+      cphCounty: '1234',
+      cphParish: '',
+      cphHolding: ''
     })
     expect(result.after.countyParishHoldingCph).toBeUndefined()
   })

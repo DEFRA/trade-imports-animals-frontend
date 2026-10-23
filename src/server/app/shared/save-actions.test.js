@@ -11,8 +11,9 @@ const renderActions = (args) =>
     { hubHref: '/notifications/journey-1/hub', copy: sharedEn.saveActions }
   )
 
-const withReturnControls = 'hubHref, copy = copy'
-const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
+const withReturnControls = '{ hubHref: hubHref, copy: copy }'
+const withoutReturnControls =
+  '{ hubHref: hubHref, copy: copy, showReturnControls: false }'
 
 // The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
@@ -68,7 +69,7 @@ describe('#saveActions', () => {
 
   it('Should let a page reached from another page name its own primary and show it alone', () => {
     const html = renderActions(
-      'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy, false'
+      '{ hubHref: hubHref, primary: { text: "Save and finish", name: "action", value: "finish" }, copy: copy, showReturnControls: false }'
     )
 
     expect(html).toContain('Save and finish')
@@ -79,7 +80,7 @@ describe('#saveActions', () => {
 
   it('Should keep the return controls when a hub-linked page names its own primary', () => {
     const html = renderActions(
-      'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy'
+      '{ hubHref: hubHref, primary: { text: "Save and finish", name: "action", value: "finish" }, copy: copy }'
     )
 
     expect(html).toContain('Save and finish')
@@ -93,7 +94,7 @@ describe('#saveActions while amending', () => {
   const RETURN_ACTION = '/n/j-1/origin?change=1'
   const CONTINUE_ACTION = '/n/j-1/origin'
   const amend = `{ returnAction: "${RETURN_ACTION}", continueAction: "${CONTINUE_ACTION}" }`
-  const amending = `hubHref, copy = copy, amend = ${amend}`
+  const amending = `{ hubHref: hubHref, copy: copy, amend: ${amend} }`
   const namedPrimary =
     '{ text: "Save and finish", name: "action", value: "save" }'
 
@@ -140,7 +141,9 @@ describe('#saveActions while amending', () => {
   })
 
   it("Should carry the page's own primary name and value on both save buttons", () => {
-    const html = renderActions(`hubHref, ${namedPrimary}, copy, true, ${amend}`)
+    const html = renderActions(
+      `{ hubHref: hubHref, primary: ${namedPrimary}, copy: copy, amend: ${amend} }`
+    )
     const [first, second] = buttons(html)
 
     for (const button of [first, second]) {
@@ -155,14 +158,18 @@ describe('#saveActions while amending', () => {
   })
 
   it('Should end a page reached from another page with Save and return and Save and continue only', () => {
-    const html = renderActions(`${amending}, showReturnControls = false`)
+    const html = renderActions(
+      `{ hubHref: hubHref, copy: copy, amend: ${amend}, showReturnControls: false }`
+    )
 
     expect(buttons(html)).toHaveLength(2)
     expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
   })
 
   it('Should drop the overview exit on a picker while amending', () => {
-    const html = renderActions(`${amending}, hubExitWhileAmending = false`)
+    const html = renderActions(
+      `{ hubHref: hubHref, copy: copy, amend: ${amend}, hubExitWhileAmending: false }`
+    )
 
     expect(buttons(html)).toHaveLength(2)
     expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)

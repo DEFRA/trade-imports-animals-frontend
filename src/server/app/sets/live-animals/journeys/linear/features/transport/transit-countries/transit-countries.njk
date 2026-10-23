@@ -52,11 +52,11 @@
     {% endif %}
 
     {% if hasCountries %}
-      {{ addedCountriesTable(countryRows, copy) }}
+      {{ addedCountriesTable(countriesTable, copy) }}
     {% endif %}
 
     <div id="transit-countries-status" class="govuk-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-module="app-status-announcer" data-message="{{ status }}"></div>
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

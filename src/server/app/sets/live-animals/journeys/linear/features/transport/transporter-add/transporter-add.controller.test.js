@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -11,6 +11,7 @@ import {
   COMMERCIAL,
   PRIVATE
 } from '../../../../../../../services/transporters/index.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
@@ -106,13 +107,11 @@ describe('/transporters/add', () => {
       payload: { transporterType: 'Municipal' }
     })
 
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.view.context.errors.transporterType).toBeTruthy()
     expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['transporterType']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {

@@ -339,6 +339,11 @@ export const addressBookRequestUrls = () =>
 export const expectOneLogged = (logger, { level, fields, message }) =>
   expect(logger.entries).toEqual([{ level, fields, message }])
 
+export const expectNoRefusalLogged = (logger) =>
+  expect(
+    logger.entries.filter(({ message }) => message === REFUSAL_LOG_MESSAGE)
+  ).toEqual([])
+
 const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
   level: 'info',
   message: REFUSAL_LOG_MESSAGE,
@@ -368,12 +373,5 @@ export const useStubbedJourney = (setId, dispatchPages) => {
   beforeEach(() => store.clear())
 }
 
-export const expectRemovalRefusedLogged = (
-  { logger, journeyId },
-  { message, ...ids }
-) =>
-  expectOneLogged(logger, {
-    level: 'info',
-    fields: { journeyId, ...ids },
-    message
-  })
+export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>
+  expectOneRefusalLogged(logger, { journeyId, errorCodes: [], ...details })

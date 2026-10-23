@@ -76,7 +76,6 @@ const post = async (request, h) => {
     { showUnweaned }
   )
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     return (
       await render(request, h, current, values, { showUnweaned, errors })
     ).code(HTTP_STATUS_BAD_REQUEST)

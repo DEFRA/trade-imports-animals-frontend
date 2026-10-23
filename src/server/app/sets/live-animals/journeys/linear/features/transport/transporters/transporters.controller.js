@@ -17,7 +17,8 @@ import { transporterAnswer } from './transporter-record.js'
 import {
   matchingTransporters,
   shownCountMessages,
-  transporterRows
+  transporterRows,
+  transporterTableRows
 } from './rows.js'
 import { validation } from './validate.js'
 
@@ -70,7 +71,8 @@ const render = (
     query,
     selectedId: values.selectedId,
     shownMessages: shownCountMessages(rows.length),
-    transporterRows: rows
+    transporterRows: rows,
+    transporterTableRows: transporterTableRows(rows)
   })
 }
 
@@ -125,7 +127,6 @@ const post = async (request, h) => {
   const records = availableTransporters(request)
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey } = await state.get(request, h)
     return render(
       request,

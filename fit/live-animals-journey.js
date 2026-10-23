@@ -85,26 +85,24 @@ export const expectNoHorizontalOverflow = async (element, subject) => {
 export const FORM_GROUP_ANCESTOR_XPATH =
   'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
 
-/** The { code, name } of every option after the first in a country select. */
-export const renderedCountriesIn = (select) =>
-  select.locator('option').evaluateAll((options) =>
-    options.slice(1).map((option) => ({
-      code: option.value,
-      name: option.textContent
-    }))
-  )
+export const PHONE_VIEWPORT = { width: 360, height: 740 }
+export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
+
+export const GOVUK_BLUE = 'rgb(29, 112, 184)'
+export const GOVUK_SECONDARY_TEXT = 'rgb(72, 73, 73)'
+export const GOVUK_FOCUS = 'rgb(255, 221, 0)'
+export const GOVUK_FOCUS_OUTLINE_WIDTH = '3px'
+export const GOVUK_FOCUS_INSET_SHADOW = 'rgb(0, 0, 0) 0px 0px 0px 2px inset'
+export const GOVUK_ERROR = 'rgb(202, 53, 53)'
+export const GOVUK_FONT_FAMILY = '"GDS Transport", arial, sans-serif'
+export const GOVUK_BODY_FONT_SIZE = '19px'
+export const GOVUK_BORDER_WIDTH = '2px'
 
 const documentTop = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
 
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
-
-export const computedStyle = (locator, property) =>
-  locator.evaluate(
-    (el, name) => window.getComputedStyle(el).getPropertyValue(name),
-    property
-  )
 
 /**
  * An anchored matcher for a URL under this set's mount.
@@ -117,7 +115,7 @@ export const urlUnderBase = (pathPattern) =>
 
 const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 
-/** Happy-path parties may be inline ({ name }) or picker refs ({ addressId }). */
+/** The name a happy-path party shows in the address-book picker. */
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
@@ -207,6 +205,31 @@ export const contentWidthOf = (locator) =>
       Number.parseFloat(style.paddingRight)
     )
   })
+
+const withinGridColumn = (locator, widthClass) =>
+  locator.locator(
+    `xpath=ancestor::*[contains(@class,"govuk-grid-column-${widthClass}")]`
+  )
+
+/**
+ * The two-thirds grid column holding a locator, matching nothing when the
+ * locator sits outside one.
+ *
+ * @param {import('@playwright/test').Locator} locator
+ * @returns {import('@playwright/test').Locator}
+ */
+export const withinTwoThirdsColumn = (locator) =>
+  withinGridColumn(locator, 'two-thirds')
+
+/**
+ * The full-width grid column holding a locator, matching nothing when the
+ * locator sits outside one.
+ *
+ * @param {import('@playwright/test').Locator} locator
+ * @returns {import('@playwright/test').Locator}
+ */
+export const withinFullWidthColumn = (locator) =>
+  withinGridColumn(locator, 'full')
 
 /** Selects the page's journey form. */
 export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
@@ -355,13 +378,14 @@ export const startNotificationAtOrigin = async (page) => {
  * search box with JavaScript, the native select without it.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ label: string, query: string, optionName: string, inputId?: string }} field
+ * @param {{ label: string, optionName: string, query?: string, inputId?: string }} field
+ *   - `query` is the text typed into the search box, defaulting to the option's name.
  *   - `inputId` scopes the label lookup to one form group when the page shows
  *   the same label more than once.
  */
-export const chooseAutocompleteByLabel = async (
+export const chooseTypeAheadOption = async (
   page,
-  { label, query, optionName, inputId }
+  { label, optionName, query = optionName, inputId }
 ) => {
   await page.waitForLoadState('domcontentloaded')
   const scope = inputId
@@ -380,8 +404,8 @@ export const chooseAutocompleteByLabel = async (
 }
 
 export const chooseCountryOfOrigin = (page, name = FIXTURE_COUNTRY) =>
-  chooseAutocompleteByLabel(page, {
-    label: 'Country of origin',
+  chooseTypeAheadOption(page, {
+    label: originCopy.country.label,
     query: name,
     optionName: name
   })
@@ -406,16 +430,59 @@ export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
 
 /**
- * Opens the notification's overview, then the page at `slug`, the way the
- * trader reaches it from an overview task.
+ * Opens the notification's overview, then the page at `slug`.
  *
  * @param {import('@playwright/test').Page} page
  * @param {string} slug - the page's slug within the notification.
  */
-export const openPageFromOverview = async (page, slug) => {
+export const visitOverviewThenOpen = async (page, slug) => {
   await page.goto(journeyUrl(page))
   await page.goto(journeyUrl(page, slug))
 }
+
+/**
+ * The URL of the notification view of the notification the page is on.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {string}
+ */
+export const notificationViewUrl = (page) =>
+  journeyUrl(page, 'notification-view')
+
+/**
+ * Opens the notification view of the notification the page is on.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const openNotificationView = (page) =>
+  page.goto(notificationViewUrl(page))
+
+/**
+ * Makes the origin country select offer a country the page does not.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [code] - the code and label of the extra option.
+ */
+export const chooseOutOfListCountry = (page, code = 'XX') =>
+  page
+    .locator('select#countryOfOrigin-select')
+    .evaluate((select, outOfListCode) => {
+      const option = document.createElement('option')
+      option.value = outOfListCode
+      option.textContent = outOfListCode
+      select.append(option)
+      select.value = outOfListCode
+    }, code)
+
+/**
+ * The row of the added-documents table that mentions a reference.
+ *
+ * @param {import('@playwright/test').Page | import('@playwright/test').Locator} scope
+ * @param {string} reference
+ * @returns {import('@playwright/test').Locator}
+ */
+export const documentRowFor = (scope, reference) =>
+  scope.locator('.govuk-table__row', { hasText: reference })
 
 /**
  * Starts a notification, answers origin and stops on the overview.
@@ -465,8 +532,8 @@ const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
 export const choosePortOfEntry = (page, option = FIXTURE_PORT_OPTION) =>
-  chooseAutocompleteByLabel(page, {
-    label: 'Port of entry',
+  chooseTypeAheadOption(page, {
+    label: transportCopy.portOfEntry.port.label,
     query: option,
     optionName: option
   })
@@ -694,7 +761,7 @@ export const answerArrivalDetails = async (page) => {
 }
 
 export const addTransitCountry = async (page, name) => {
-  await chooseAutocompleteByLabel(page, {
+  await chooseTypeAheadOption(page, {
     label: transportCopy.transitCountries.country.label,
     query: name,
     optionName: name
@@ -820,27 +887,49 @@ export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
 }
 
+export const saveAndContinue = (page) =>
+  page.getByRole('button', {
+    name: sharedAppCopy.saveActions.saveAndContinue,
+    exact: true
+  })
+
+const buttonGroupOf = (page) =>
+  page.locator('.govuk-button-group', { has: saveAndContinue(page) })
+
 /**
- * Asserts the page ends with the primary button alone: no "Save and return to
- * overview" button and no "Cancel and return to overview" link.
+ * Fails unless the page offers Save and continue and Save and return to
+ * overview in its button group and Cancel and return to overview in the
+ * paragraph after the group.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const expectThreeSaveControls = async (page) => {
+  const buttonGroup = buttonGroupOf(page)
+
+  await expect(buttonGroup.getByRole('button')).toHaveText([
+    sharedAppCopy.saveActions.saveAndContinue,
+    sharedAppCopy.saveActions.saveAndReturnToHub
+  ])
+  await expect(
+    buttonGroup.locator('xpath=following-sibling::p[1]').getByRole('link', {
+      name: sharedAppCopy.saveActions.cancelAndReturnToHub
+    })
+  ).toBeVisible()
+}
+
+/**
+ * Fails unless the page's button group holds Save and continue alone and ends
+ * the journey form.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
+  const buttonGroup = buttonGroupOf(page)
+
+  await expect(buttonGroup.getByRole('button')).toHaveText([
+    sharedAppCopy.saveActions.saveAndContinue
+  ])
   await expect(
-    page.getByRole('button', {
-      name: sharedAppCopy.saveActions.saveAndContinue,
-      exact: true
-    })
-  ).toBeVisible()
-  await expect(
-    page.getByRole('button', {
-      name: sharedAppCopy.saveActions.saveAndReturnToHub
-    })
-  ).toHaveCount(0)
-  await expect(
-    page.getByRole('link', {
-      name: sharedAppCopy.saveActions.cancelAndReturnToHub
-    })
-  ).toHaveCount(0)
+    journeyFormOf(page).locator(':scope > :not(input[type="hidden"])').last()
+  ).toHaveClass(/govuk-button-group/)
 }

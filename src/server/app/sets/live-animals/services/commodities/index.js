@@ -72,6 +72,9 @@ export const horseNameCommodities = () => HORSE_NAME_COMMODITIES
 
 export const identifiedCommodities = () => IDENTIFIED_COMMODITIES
 
+export const needsIdentifying = (line) =>
+  IDENTIFIED_COMMODITIES.includes(line?.commoditySelection)
+
 export const permanentAddressCommodities = () => PERMANENT_ADDRESS_COMMODITIES
 
 export const unweanedCommodities = () => UNWEANED_ANIMAL_COMMODITIES

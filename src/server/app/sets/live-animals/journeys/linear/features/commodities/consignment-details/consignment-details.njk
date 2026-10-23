@@ -13,7 +13,7 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {{ selectedCommoditiesTable(selectedRows, copy.table) }}
+    {{ selectedCommoditiesTable(selectedTable, selectedCommoditiesCopy) }}
   </form>
 
   <p class="govuk-body govuk-!-margin-bottom-7">
@@ -31,6 +31,6 @@
       {{ speciesQuantityGroup(group, copy) }}
     {% endfor %}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

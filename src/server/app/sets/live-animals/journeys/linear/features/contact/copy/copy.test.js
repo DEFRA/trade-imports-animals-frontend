@@ -1,24 +1,15 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import * as contact from '../controller.js'
 import { copy } from './copy.en.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('contact copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -32,12 +23,7 @@ describe('contact copy module', () => {
 })
 
 describe('GET contact — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
     const get = contact.routes.find((route) => route.method === 'GET').handler

@@ -19,13 +19,6 @@ import { copy as copyCy } from './copy.cy.js'
 
 const BOS_TAURUS = 'Bos taurus'
 
-const IDENTIFIERS_LABELLED_AS_COLUMN_HEADING = [
-  'animalIdentifierPassport',
-  'animalIdentifierTattoo',
-  'animalIdentifierEarTag',
-  'horseName'
-]
-
 describe('#copy', () => {
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
@@ -47,38 +40,26 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  it('Should label each identifier entry field with its saved-animals column heading', () => {
-    for (const field of IDENTIFIERS_LABELLED_AS_COLUMN_HEADING) {
-      expect(copy.identification.typeFields[field].label).toBe(
-        copy.identification.identifierLabels[field]
-      )
-      expect(copyCy.identification.typeFields[field].label).toBe(
-        copyCy.identification.identifierLabels[field]
-      )
-    }
-  })
+  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity asks for', () => {
+    const identifiers = new Set(
+      list().flatMap((commodity) => identifiersFor(commodity))
+    )
+    expect(
+      identifiers.size,
+      'no commodity carries any identifier'
+    ).toBeGreaterThan(0)
 
-  const expectLabelledIn = (block, commodity, identifier) => {
-    const where = `${commodity} asks for ${identifier}`
-    expect(block.identification.typeFields[identifier]?.label, where).toEqual(
-      expect.any(String)
-    )
-    expect(block.identification.identifierLabels[identifier], where).toEqual(
-      expect.any(String)
-    )
-  }
-
-  it('Should carry an entry field and a column heading for every identifier a commodity asks for', () => {
-    const pairs = list().flatMap((commodity) =>
-      identifiersFor(commodity).map((identifier) => [commodity, identifier])
-    )
-    expect(pairs.length, 'no commodity carries any identifier').toBeGreaterThan(
-      0
-    )
-
-    for (const [commodity, identifier] of pairs) {
-      expectLabelledIn(copy, commodity, identifier)
-      expectLabelledIn(copyCy, commodity, identifier)
+    for (const block of [copy, copyCy]) {
+      for (const identifier of identifiers) {
+        const { identifierLabels, errors } = block.identification
+        expect(identifierLabels[identifier], `${identifier} label`).toMatch(
+          /\S/
+        )
+        expect(
+          errors.identifierMax[identifier],
+          `${identifier} length error`
+        ).toMatch(/\S/)
+      }
     }
   })
 
@@ -118,19 +99,6 @@ describe('#copy', () => {
   it('Should interpolate overCount', () => {
     expect(copy.identification.overCount(1, BOS_TAURUS, 2, 1)).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
-    )
-  })
-
-  it('Should head the identification summary with the code, the common name and the animal count', () => {
-    expect(copy.identification.summary).toMatchObject({
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      commonName: 'Common name',
-      numberOfAnimals: 'Number of animals',
-      change: 'Change'
-    })
-    expect(copy.identification.addAnotherCommodity).toBe(
-      'Add another commodity'
     )
   })
 

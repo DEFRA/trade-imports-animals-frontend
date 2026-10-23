@@ -27,7 +27,7 @@ so generic notification-mapper code does not import the set.
   commodity is one edit. `IDENTIFIED_COMMODITIES` is derived from the same map,
   so whether a commodity is asked to identify at all is part of that edit.
 - A commodity with no identifiers, such as fish, is asked for none. There is no
-  free-text identifier, so its line gets no identification panel and no animal
+  free-text identifier, so its line gets no identification card and no animal
   records.
 - A species belongs to exactly one type, so a line's stored type derives from
   its species. The type text is blank for a single-type commodity.

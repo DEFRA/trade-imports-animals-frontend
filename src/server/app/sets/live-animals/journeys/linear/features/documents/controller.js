@@ -5,7 +5,9 @@ import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR
+  HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_PAYLOAD_TOO_LARGE
 } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { routeOptions } from '../../../../../../shared/kit.js'
@@ -51,11 +53,6 @@ const view = `${TEMPLATES}/features/documents/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
-
-const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
-
-const HTTP_STATUS_NOT_FOUND = 404
-const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
@@ -140,7 +137,7 @@ const postAdd = async (request, h, payload, afterSave) => {
     : await uploadOutcome(request, pageState, bare, payload.file, filename)
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
-      errors: { file: UPLOAD_FAILURE_MESSAGE }
+      errors: { file: copy.errors.uploadFailed }
     }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
@@ -306,7 +303,7 @@ const leavePage = async (request, h) => {
     })
     return render(request, h, pageState, EMPTY_FORM, {
       summaryErrors: settlingSummaryErrors(pageState.documents)
-    })
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }

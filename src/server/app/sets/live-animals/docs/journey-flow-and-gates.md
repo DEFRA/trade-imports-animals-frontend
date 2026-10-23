@@ -60,7 +60,7 @@ renders an unfinished notification and names what is outstanding. The review
 section's authored gate on `readyForCheckYourAnswers` still stands between that
 page and submitting: the declaration refuses on the same verdict.
 
-The declaration is reachable only from the review (EUDPA-676). The review's
+The declaration is reachable only from the review. The review's
 Continue posts to `/declaration` with `step=review` - the review registers no
 `POST` of its own, and `GET /declaration` redirects to the review. This is to
 ensure that the user has seen the review in its latest state before submitting

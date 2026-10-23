@@ -8,8 +8,6 @@ const copy = copyFor({ en, cy })
 
 const NOT_APPLICABLE = copy.notApplicable
 
-// One card per commodity line = one per species; the title carries
-// both the commodity and the species so same-commodity cards stay distinct.
 export const speciesCardTitle = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()
   if (!name) {

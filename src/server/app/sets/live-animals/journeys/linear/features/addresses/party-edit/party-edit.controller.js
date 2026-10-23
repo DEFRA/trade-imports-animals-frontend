@@ -99,7 +99,6 @@ const post = (party) => async (request, h) => {
     values
   )
   if (errors) {
-    kit.logRefusal(request, { fieldErrors: errors })
     return (await render(request, h, journey, party, { values, errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )

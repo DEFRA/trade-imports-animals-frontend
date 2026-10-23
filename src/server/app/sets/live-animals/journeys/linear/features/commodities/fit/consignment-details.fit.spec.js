@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
+  PHONE_VIEWPORT,
   answerCountryOfOrigin,
+  expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectThreeSaveControls,
   expectSpeciesSelected,
   journeyUrl,
   selectSpecies,
@@ -76,19 +79,17 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     const table = page.locator(GOVUK_TABLE)
-    await expect(table).toContainText(copy.consignmentDetails.table.caption)
-    await expect(table).toContainText(
-      copy.consignmentDetails.table.commodityCode
-    )
+    await expect(table).toContainText(copy.selectedCommodities.caption)
+    await expect(table).toContainText(copy.selectedCommodities.commodityCode)
     await expect(table).toContainText('Cow')
     await expect(table).toContainText('0102')
     await expect(table).toContainText('Cat')
     await expect(table).toContainText('01061900')
     await expect(table.getByRole('columnheader')).toHaveText([
-      copy.consignmentDetails.table.commodityCode,
-      copy.consignmentDetails.table.commonName,
-      copy.consignmentDetails.table.species,
-      copy.consignmentDetails.table.actionsHidden
+      copy.selectedCommodities.commodityCode,
+      copy.selectedCommodities.commonName,
+      copy.selectedCommodities.species,
+      copy.selectedCommodities.actionsHidden
     ])
     await expect(table.getByRole('row', { name: /Cow/ })).toContainText(
       BOS_TAURUS
@@ -355,29 +356,10 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('')
   })
 
-  test('ends with all three controls now the hub links straight here', async ({
+  test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
     page
   }) => {
-    const group = page.locator('.govuk-button-group')
-
-    await expect(
-      group.getByRole('button', { name: SAVE_AND_CONTINUE })
-    ).toBeVisible()
-    await expect(
-      group.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndReturnToHub
-      })
-    ).toBeVisible()
-    await expect(
-      group.getByRole('link', {
-        name: sharedCopy.saveActions.cancelAndReturnToHub
-      })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('link', {
-        name: sharedCopy.saveActions.cancelAndReturnToHub
-      })
-    ).toBeVisible()
+    await expectThreeSaveControls(page)
   })
 
   test('save and return to overview stores the counts and marks the row Completed', async ({
@@ -403,6 +385,24 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectNoSeriousOrCriticalViolations(
       page,
       'Commodity details with errors'
+    )
+  })
+})
+
+test.describe('commodity consignment details on a phone', () => {
+  test.use({ viewport: PHONE_VIEWPORT })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDetails(page)
+  })
+
+  test('keeps the selected commodities table inside the screen width', async ({
+    page
+  }) => {
+    await expectNoHorizontalOverflow(
+      page.getByRole('table', { name: copy.selectedCommodities.caption }),
+      'Selected commodities table'
     )
   })
 })

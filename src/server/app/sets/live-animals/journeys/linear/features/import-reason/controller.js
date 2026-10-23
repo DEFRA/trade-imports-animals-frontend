@@ -35,12 +35,12 @@ const view = `${TEMPLATES}/features/import-reason/template`
 const copy = copyFor({ en, cy })
 
 const countryItems = async () => [
-  { value: '', text: copy.country.placeholder },
+  { value: '', text: copy.country.selectText },
   ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
 
 const portItems = async () => [
-  { value: '', text: copy.port.placeholder },
+  { value: '', text: copy.port.selectText },
   ...(await ports.portOptions())
 ]
 
@@ -102,19 +102,15 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const current = await state.get(request, h)
     return (await render(request, h, current, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  let committed
-  const { failure } = await kit.recoverableSave(
+  const { value: committed, failure } = await kit.recoverableSave(
     request,
-    async () => {
-      committed = await state.commit(request, h, answers)
-    },
+    () => state.commit(request, h, answers),
     async () => {
       const current = await state.get(request, h)
       return (

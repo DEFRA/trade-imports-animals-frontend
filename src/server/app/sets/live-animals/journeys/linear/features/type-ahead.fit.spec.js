@@ -2,6 +2,15 @@ import { expect, test } from '@playwright/test'
 
 import {
   FORM_GROUP_ANCESTOR_XPATH,
+  GOVUK_BODY_FONT_SIZE,
+  GOVUK_ERROR,
+  GOVUK_BORDER_WIDTH,
+  GOVUK_FOCUS,
+  GOVUK_FOCUS_OUTLINE_WIDTH,
+  GOVUK_FOCUS_INSET_SHADOW,
+  GOVUK_FONT_FAMILY,
+  PHONE_VIEWPORT,
+  chooseOutOfListCountry,
   expectNoSeriousOrCriticalViolations,
   openArrival,
   openTransit,
@@ -17,7 +26,7 @@ import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as transportCopy } from './transport/copy/copy.en.js'
 
-const PHONE_VIEWPORT = { width: 375, height: 800 }
+const AUTOCOMPLETE_BUTTON = '.app-autocomplete__button'
 const AUTOCOMPLETE_CONTAINER =
   'xpath=ancestor::*[contains(@class,"app-autocomplete")][1]'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
@@ -55,7 +64,7 @@ const typeAheads = [
     label: originCopy.country.label,
     labelSize: 'medium',
     selectText: originCopy.country.selectText,
-    emptyBoxText: originCopy.country.searchPlaceholder,
+    searchPlaceholder: originCopy.country.searchPlaceholder,
     open: startNotificationAtOrigin
   }),
   portCase({
@@ -64,8 +73,8 @@ const typeAheads = [
     label: transportCopy.portOfEntry.port.label,
     hint: transportCopy.portOfEntry.port.hint,
     labelSize: 'medium',
-    selectText: transportCopy.portOfEntry.port.placeholder,
-    emptyBoxText: transportCopy.portOfEntry.port.placeholder,
+    selectText: transportCopy.portOfEntry.port.selectText,
+    searchPlaceholder: transportCopy.portOfEntry.port.searchPlaceholder,
     open: openArrival
   }),
   countryCase({
@@ -75,7 +84,7 @@ const typeAheads = [
     hint: transportCopy.transitCountries.country.hint,
     labelSize: 'medium',
     selectText: transportCopy.transitCountries.country.selectText,
-    emptyBoxText: transportCopy.transitCountries.country.searchPlaceholder,
+    searchPlaceholder: transportCopy.transitCountries.country.searchPlaceholder,
     open: openTransit
   })
 ]
@@ -85,38 +94,44 @@ const revealedTypeAheads = [
     name: 'Main import reason transhipment destination',
     inputId: 'transhipmentDestinationCountry',
     label: importReasonCopy.country.label,
-    selectText: importReasonCopy.country.placeholder,
-    emptyBoxText: importReasonCopy.country.placeholder,
+    selectText: importReasonCopy.country.selectText,
+    searchPlaceholder: importReasonCopy.country.searchPlaceholder,
     open: openReveal('transhipmentOrOnwardTravel')
   }),
   portCase({
     name: 'Main import reason transit port of exit',
     inputId: 'transitPortOfExit',
     label: importReasonCopy.port.label,
-    selectText: importReasonCopy.port.placeholder,
-    emptyBoxText: importReasonCopy.port.placeholder,
+    selectText: importReasonCopy.port.selectText,
+    searchPlaceholder: importReasonCopy.port.searchPlaceholder,
     open: openReveal('transit')
   }),
   countryCase({
     name: 'Main import reason transit destination',
     inputId: 'transitDestinationCountry',
     label: importReasonCopy.country.label,
-    selectText: importReasonCopy.country.placeholder,
-    emptyBoxText: importReasonCopy.country.placeholder,
+    selectText: importReasonCopy.country.selectText,
+    searchPlaceholder: importReasonCopy.country.searchPlaceholder,
     open: openReveal('transit')
   }),
   portCase({
     name: 'Main import reason temporary admission port of exit',
     inputId: 'temporaryAdmissionPortOfExit',
     label: importReasonCopy.port.label,
-    selectText: importReasonCopy.port.placeholder,
-    emptyBoxText: importReasonCopy.port.placeholder,
+    selectText: importReasonCopy.port.selectText,
+    searchPlaceholder: importReasonCopy.port.searchPlaceholder,
     open: openReveal('temporaryAdmissionHorses')
   })
 ]
 
-const expectSquareButtonFlushWithBox = (measurements) => {
-  expect(measurements.arrowDisplay).toBe('none')
+const expectSquareButtonFlushWithBox = async (input) => {
+  await expect(
+    input
+      .locator(AUTOCOMPLETE_CONTAINER)
+      .locator('.autocomplete__dropdown-arrow-down')
+  ).toHaveCSS('display', 'none')
+
+  const measurements = await measureJoinedSearchButton(input)
   expect(measurements.buttonWidth).toBe(measurements.buttonHeight)
   expect(measurements.buttonTop).toBe(measurements.inputTop)
   expect(measurements.buttonBottom).toBe(measurements.inputBottom)
@@ -141,7 +156,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     suggestion,
     bold,
     selectText,
-    emptyBoxText,
+    searchPlaceholder,
     open
   } = typeAhead
 
@@ -151,22 +166,18 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       await open(page)
     })
 
-    if (emptyBoxText !== undefined) {
-      test('shows the empty search box text and no value', async ({ page }) => {
-        const input = inputFor(page, inputId)
+    test('shows the search placeholder and no value', async ({ page }) => {
+      const input = inputFor(page, inputId)
 
-        await expect(input).toHaveAttribute('placeholder', emptyBoxText)
-        await expect(input).toHaveAccessibleName(label)
-        await expect(input).toHaveValue('')
-      })
-    }
+      await expect(input).toHaveAttribute('placeholder', searchPlaceholder)
+      await expect(input).toHaveAccessibleName(label)
+      await expect(input).toHaveValue('')
+    })
 
     test('shows a square button joined flush to the box and no dropdown arrow', async ({
       page
     }) => {
-      expectSquareButtonFlushWithBox(
-        await measureJoinedSearchButton(inputFor(page, inputId))
-      )
+      await expectSquareButtonFlushWithBox(inputFor(page, inputId))
     })
 
     test('keeps the button out of assistive technology and the tab order, and focuses the box when it is clicked', async ({
@@ -175,12 +186,12 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       const input = inputFor(page, inputId)
       const button = input
         .locator(AUTOCOMPLETE_CONTAINER)
-        .locator('.app-autocomplete__button')
+        .locator(AUTOCOMPLETE_BUTTON)
       const urlBeforeClick = page.url()
 
       await expect(button).toHaveAttribute('aria-hidden', 'true')
       await expect(button).not.toHaveAttribute('tabindex')
-      expect(await button.evaluate((element) => element.tagName)).toBe('SPAN')
+      await expect(button).toHaveJSProperty('tagName', 'SPAN')
 
       await input.focus()
       await page.keyboard.press('Tab')
@@ -267,9 +278,7 @@ for (const typeAhead of revealedTypeAheads) {
     test('keeps the button joined to the box and the suggestion list as wide as the joined control', async ({
       page
     }) => {
-      expectSquareButtonFlushWithBox(
-        await measureJoinedSearchButton(inputFor(page, inputId))
-      )
+      await expectSquareButtonFlushWithBox(inputFor(page, inputId))
 
       await showSuggestionFor(page, typeAhead)
       const widths = await suggestionListWidthsOf(inputFor(page, inputId))
@@ -335,15 +344,68 @@ test.describe('country of origin change announcement', () => {
   })
 })
 
+test.describe('country of origin type-ahead styles', () => {
+  const COUNTRY_ERROR = '#countryOfOrigin-error'
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+  })
+
+  test('uses GOV.UK typography for the enhanced input and its options', async ({
+    page
+  }) => {
+    const input = inputFor(page, 'countryOfOrigin')
+    await input.fill('Fr')
+    const option = page.getByRole('option', { name: france.name, exact: true })
+    await expect(option).toBeVisible()
+
+    for (const element of [input, option]) {
+      await expect(element).toHaveCSS('font-family', GOVUK_FONT_FAMILY)
+      await expect(element).toHaveCSS('font-size', GOVUK_BODY_FONT_SIZE)
+    }
+  })
+
+  test('keeps the upstream focus indicator on the enhanced input', async ({
+    page
+  }) => {
+    const input = inputFor(page, 'countryOfOrigin')
+
+    await input.focus()
+
+    await expect(input).toHaveCSS('outline-color', GOVUK_FOCUS)
+    await expect(input).toHaveCSS('outline-width', GOVUK_FOCUS_OUTLINE_WIDTH)
+    await expect(input).toHaveCSS('box-shadow', GOVUK_FOCUS_INSET_SHADOW)
+  })
+
+  test('gives the enhanced input the standard GOV.UK error border', async ({
+    page
+  }) => {
+    await chooseOutOfListCountry(page)
+    await page
+      .getByRole('radio', { name: originCopy.regionRequirement.no })
+      .check()
+    await page.locator('form button[type="submit"]').first().click()
+    await expect(
+      page.getByRole('alert').getByRole('link', {
+        name: originCopy.errors.countryFromList
+      })
+    ).toBeVisible()
+
+    const input = inputFor(page, 'countryOfOrigin')
+    await expect(input).toHaveCSS('border-top-color', GOVUK_ERROR)
+    await expect(input).toHaveCSS('border-top-width', GOVUK_BORDER_WIDTH)
+    await expect(page.locator(COUNTRY_ERROR)).toHaveCSS('color', GOVUK_ERROR)
+  })
+})
+
 const measureJoinedSearchButton = (input) =>
   input.evaluate((inputElement) => {
     const container = inputElement.closest('.app-autocomplete')
     const button = container.querySelector('.app-autocomplete__button')
-    const arrow = container.querySelector('.autocomplete__dropdown-arrow-down')
     const inputEdges = inputElement.getBoundingClientRect()
     const buttonEdges = button.getBoundingClientRect()
     return {
-      arrowDisplay: window.getComputedStyle(arrow).display,
       inputTop: inputEdges.top,
       inputBottom: inputEdges.bottom,
       inputRight: inputEdges.right,

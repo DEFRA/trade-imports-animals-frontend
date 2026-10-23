@@ -4,8 +4,8 @@ import {
   MEANS_OF_TRANSPORT_SELECT,
   addTransitCountry,
   choosePortOfEntry,
-  computedStyle,
   describeCalendarPosition,
+  GOVUK_SECONDARY_TEXT,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -162,11 +162,8 @@ test.describe('arrival details rendering', () => {
     const means = page.getByLabel(copy.portOfEntry.means.label, { exact: true })
     await expect(means).toBeVisible()
     await expect(means).toHaveValue('')
-    const meansOptions = await means
-      .locator('option')
-      .evaluateAll((items) => items.map((option) => option.textContent.trim()))
-    expect(meansOptions).toEqual([
-      copy.portOfEntry.means.placeholder,
+    await expect(means.locator('option')).toHaveText([
+      copy.portOfEntry.means.selectText,
       ...Object.values(copy.portOfEntry.means.options)
     ])
     await expect(
@@ -185,17 +182,18 @@ test.describe('arrival details rendering', () => {
     const options = await page
       .locator(`${portNativeSelect} option`)
       .evaluateAll((items) =>
-        items.slice(1).map((option) => ({
+        items.map((option) => ({
           code: option.value,
           label: option.textContent
         }))
       )
-    expect(options).toEqual(
-      portsOfEntry.map((port) => ({
+    expect(options).toEqual([
+      { code: '', label: copy.portOfEntry.port.selectText },
+      ...portsOfEntry.map((port) => ({
         code: port.code,
         label: `${port.name} - ${port.code}`
       }))
-    )
+    ])
   })
 
   for (const fieldId of [
@@ -216,21 +214,22 @@ test.describe('arrival details rendering', () => {
     })
   }
 
-  test('shows the identification lead-in and every list item in the same colour as the document reference hint', async ({
+  test('shows the identification lead-in, every list item and the document reference hint in the GOV.UK secondary text colour', async ({
     page
   }) => {
     await openArrival(page)
 
-    const hintColour = await computedStyle(
-      page.locator(documentReferenceHint),
-      'color'
-    )
     await expect(page.locator(`${identificationHint} p`)).toHaveCount(1)
-    expect(
-      await computedStyle(page.locator(`${identificationHint} p`), 'color')
-    ).toBe(hintColour)
+    await expect(page.locator(`${identificationHint} p`)).toHaveCSS(
+      'color',
+      GOVUK_SECONDARY_TEXT
+    )
+    await expect(page.locator(documentReferenceHint)).toHaveCSS(
+      'color',
+      GOVUK_SECONDARY_TEXT
+    )
     for (const item of await page.locator(`${identificationHint} li`).all()) {
-      expect(await computedStyle(item, 'color')).toBe(hintColour)
+      await expect(item).toHaveCSS('color', GOVUK_SECONDARY_TEXT)
     }
   })
 
@@ -833,7 +832,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await addTransitCountry(page, 'France')
 
     const removeCell = page.getByRole('cell', { name: 'Remove France' })
-    expect(await computedStyle(removeCell, 'text-align')).toBe('right')
+    await expect(removeCell).toHaveCSS('text-align', 'right')
   })
 })
 

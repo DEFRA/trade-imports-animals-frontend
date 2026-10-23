@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom'
 import { nunjucksConfig } from '../../../../../../../../../config/nunjucks/nunjucks.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as addressesCopy } from '../copy/copy.en.js'
+import { pickerTableRows } from './view-model/table-rows.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker
@@ -17,6 +18,7 @@ const renderResults = (rows, { error, query } = {}) =>
     {
       picker: {
         rows,
+        tableRows: pickerTableRows(rows, pickerCopy),
         error,
         query,
         resultsCount: pickerCopy.resultsCount(rows.length, rows.length)

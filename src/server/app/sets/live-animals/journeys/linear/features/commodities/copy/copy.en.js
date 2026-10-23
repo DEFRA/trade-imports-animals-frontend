@@ -29,15 +29,18 @@ export const copy = {
       selectCommodity: 'Select a commodity'
     }
   },
+  selectedCommodities: {
+    caption: 'Selected commodities',
+    commodityCode: 'Commodity code',
+    commonName: 'Common name',
+    species: 'Species',
+    numberOfAnimals: 'Number of animals',
+    actionsHidden: 'Actions'
+  },
   consignmentDetails: {
     title: 'Commodity details',
     addAnother: 'Add another commodity',
     table: {
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      commonName: 'Common name',
-      species: 'Species',
-      actionsHidden: 'Actions',
       remove: 'Remove'
     },
     animals: {
@@ -62,11 +65,6 @@ export const copy = {
     addAnotherCommodity: 'Add another commodity',
     changeAnimalCount: 'Change number of animals',
     summary: {
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      commonName: 'Common name',
-      numberOfAnimals: 'Number of animals',
-      actionsHidden: 'Actions',
       change: 'Change'
     },
     identifierLabels: {
@@ -81,32 +79,10 @@ export const copy = {
       permanentAddressColumn: 'Permanent address',
       actionsHidden: 'Actions'
     },
-    typeFields: {
-      animalIdentifierMicrochip: {
-        label: 'Microchip number',
-        hint: 'For example, 900123456789012'
-      },
-      animalIdentifierPassport: {
-        label: 'Passport',
-        hint: 'For example, UK123456789'
-      },
-      animalIdentifierTattoo: {
-        label: 'Tattoo',
-        hint: 'For example, AB1234'
-      },
-      animalIdentifierEarTag: {
-        label: 'Ear tag',
-        hint: 'For example, UK123456789012'
-      },
-      horseName: { label: 'Horse name' }
-    },
-    counterNoCap: (species) => `Enter details for ${species}`,
     counter: (species, next, cap) =>
       `Enter details for ${species} ${next} of ${cap}`,
     overCount: (cap, species, entered, overBy) =>
       `This commodity line lists ${cap} ${species} animals but you have entered details for ${entered}. Remove ${overBy} to continue.`,
-    allEntered: (cap, species) =>
-      `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`,
     animalRow: (number) => `Animal ${number}`,
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Remove',
@@ -137,11 +113,11 @@ export const copy = {
     },
     errors: {
       identifierMax: {
-        animalIdentifierMicrochip: 'Microchip must be 58 characters or fewer',
-        animalIdentifierPassport: 'Passport must be 58 characters or fewer',
-        animalIdentifierTattoo: 'Tattoo must be 58 characters or fewer',
-        animalIdentifierEarTag: 'Ear tag must be 58 characters or fewer',
-        horseName: 'Horse name must be 58 characters or fewer'
+        animalIdentifierMicrochip: 'Microchip must be 58 characters or less',
+        animalIdentifierPassport: 'Passport must be 58 characters or less',
+        animalIdentifierTattoo: 'Tattoo must be 58 characters or less',
+        animalIdentifierEarTag: 'Ear tag must be 58 characters or less',
+        horseName: 'Horse name must be 58 characters or less'
       },
       addressMandatory: {
         nameOrOrganisationName: 'Enter a name or organisation name',

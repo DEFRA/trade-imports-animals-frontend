@@ -1,6 +1,8 @@
 import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
 
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+const SELECT_ONE = 'Dewiswch un'
+
 export const copy = {
   title: 'Prif reswm mewnforio',
   legend: 'Beth yw prif reswm mewnforio’r anifeiliaid?',
@@ -43,12 +45,14 @@ export const copy = {
   },
   country: {
     label: 'Gwlad gyrchfan',
-    placeholder: 'Dewiswch un',
+    selectText: SELECT_ONE,
+    searchPlaceholder: SELECT_ONE,
     noResults: 'Dim gwledydd wedi’u darganfod'
   },
   port: {
     label: 'Porthladd ymadael',
-    placeholder: 'Dewiswch un',
+    selectText: SELECT_ONE,
+    searchPlaceholder: SELECT_ONE,
     noResults: 'Dim porthladdoedd wedi’u darganfod'
   },
   date: {

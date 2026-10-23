@@ -4,14 +4,8 @@ import { copy as sharedCy } from '../../../../../../../../shared/copy.cy.js'
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const cardField = (index) => `identification-card-${index}`
-
-export const refusedFieldsOf = (errors, cardErrors) => ({
-  ...errors,
-  ...Object.fromEntries(
-    cardErrors.map(({ index, text }) => [cardField(index), text])
-  )
-})
+export const identificationCardAnchor = (index) =>
+  `identification-card-${index}`
 
 export const summaryOf = (errors, cardErrors) => {
   const errorList = [
@@ -21,7 +15,7 @@ export const summaryOf = (errors, cardErrors) => {
     })),
     ...cardErrors.map(({ index, text }) => ({
       text,
-      href: `#${cardField(index)}`
+      href: `#${identificationCardAnchor(index)}`
     }))
   ]
   return errorList.length

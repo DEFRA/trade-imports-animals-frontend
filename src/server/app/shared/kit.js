@@ -203,6 +203,7 @@ export const nextTarget = async (request, page, scope) =>
  * @param {string} [options.surface] - a key of `SURFACES` naming the width of
  * the content column. Defaults to `form`, the reading measure; an unknown
  * surface throws.
+ * @param {boolean} [options.showJourneyStrip] - false leaves the status strip off the page.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -214,6 +215,7 @@ export const base = (
     page,
     recoverableError = false,
     offerCancelAmend = true,
+    showJourneyStrip = true,
     request,
     surface = 'form'
   } = {}
@@ -227,7 +229,9 @@ export const base = (
     backLink,
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
-    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
+    journeyStrip: showJourneyStrip
+      ? journeyStrip(journey, { offerCancelAmend })
+      : null,
     amending,
     amend:
       amending && request

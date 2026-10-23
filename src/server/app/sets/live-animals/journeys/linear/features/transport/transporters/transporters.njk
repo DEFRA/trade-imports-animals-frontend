@@ -2,9 +2,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-message/macro.njk" import govukErrorMessage %}
 {% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
-{% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
-{% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "submitted-search/macro.njk" import appSubmittedSearch %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -37,39 +35,12 @@
       <input type="hidden" name="selected" value="{{ selectedId }}" />
     {% endif %}
 
-    {% set transporterTableRows = [] %}
-    {% for row in transporterRows %}
-      {% set selectCell %}
-        {{ govukRadios({
-          idPrefix: row.idPrefix,
-          name: "transporter",
-          classes: "govuk-radios--small",
-          items: [{
-            value: row.id,
-            html: '<span class="govuk-visually-hidden">' + copy.selectRowPrefix + " " + (row.name | escape) + '</span>',
-            checked: row.checked
-          }]
-        }) }}
-      {% endset %}
-      {% set statusCell %}
-        {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
-      {% endset %}
-      {% set ignored = transporterTableRows.push([
-        { html: selectCell, attributes: { "data-search-text": row.searchText } },
-        { text: row.name },
-        { text: row.addressText },
-        { text: row.approvalNumber },
-        { text: row.type },
-        { html: statusCell }
-      ]) %}
-    {% endfor %}
-
     {% set transporterListHtml %}
       {% if errors.transporter %}
         {{ govukErrorMessage({ id: "transporter-error", text: errors.transporter }) }}
       {% endif %}
 
-      <div data-transporter-table {{ "hidden" if not transporterTableRows.length }}>
+      <div data-transporter-table {{ "hidden" if not transporterRows.length }}>
         {{ govukTable({
           head: [
             { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
@@ -82,7 +53,7 @@
           rows: transporterTableRows
         }) }}
       </div>
-      <p class="govuk-body" data-transporter-no-matches {{ "hidden" if transporterTableRows.length }}>{{ copy.noMatches }}</p>
+      <p class="govuk-body" data-transporter-no-matches {{ "hidden" if transporterRows.length }}>{{ copy.noMatches }}</p>
     {% endset %}
 
     <div
@@ -124,11 +95,11 @@
       </div>
     </div>
 
-    {{ saveActions(
-      hubHref,
-      { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "save" },
-      sharedCopy.saveActions,
-      amend = amend
-    ) }}
+    {{ saveActions({
+      hubHref: hubHref,
+      primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "save" },
+      copy: sharedCopy.saveActions,
+      amend: amend
+    }) }}
   </form>
 {% endblock %}

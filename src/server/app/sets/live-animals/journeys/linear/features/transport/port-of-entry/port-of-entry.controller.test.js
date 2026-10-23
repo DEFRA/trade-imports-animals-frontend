@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   driveHandler,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   postHandlerOf,
   referenceDataServing,
   useStubbedJourney
@@ -35,10 +35,7 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['portOfEntry']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 })
 
@@ -81,7 +78,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should supply an empty-value placeholder followed by name-plus-code options (no divider)', async () => {
+  it('Should supply an empty-value select text followed by name-plus-code options (no divider)', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.portItems
     expect(items[0]).toEqual({ value: '', text: 'Select a port' })
@@ -98,7 +95,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     })
   })
 
-  it('Should supply the means of transport as a placeholder followed by every reference code, none selected', async () => {
+  it('Should supply the means of transport as select text followed by every reference code, none selected', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.meansItems).toEqual([
       { value: '', text: 'Select one' },
@@ -282,7 +279,7 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
 describe('POST port-of-entry — empty port overwrites a stored answer', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should replace a previously stored port with an empty string when the placeholder is submitted', async () => {
+  it('Should replace a previously stored port with an empty string when the select text is submitted', async () => {
     const result = await driveHandler(post, {
       seed: { portOfEntry: 'GB DVR' },
       payload: {

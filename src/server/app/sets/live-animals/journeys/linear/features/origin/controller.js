@@ -83,7 +83,6 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey, answers: storedAnswers } = await state.get(request, h)
     return (
       await render(h, journey, values, { errors, answers: storedAnswers })

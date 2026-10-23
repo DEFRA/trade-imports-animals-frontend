@@ -113,9 +113,12 @@ describe('transport copy module', () => {
     { language: 'English', bundle: copy, expected: 'Select a port' },
     { language: 'Welsh', bundle: copyCy, expected: 'Dewiswch borthladd' }
   ])(
-    'Should word the port placeholder exactly in $language',
+    'Should word the port select text and search placeholder exactly in $language',
     ({ bundle, expected }) => {
-      expect(bundle.portOfEntry.port.placeholder).toBe(expected)
+      expect({
+        selectText: bundle.portOfEntry.port.selectText,
+        searchPlaceholder: bundle.portOfEntry.port.searchPlaceholder
+      }).toEqual({ selectText: expected, searchPlaceholder: expected })
     }
   )
 
@@ -383,10 +386,10 @@ describe('GET /port-of-entry', () => {
       'Save and continue'
     )
     expect(result.view.context.portItems[0].text).toBe(
-      copy.portOfEntry.port.placeholder
+      copy.portOfEntry.port.selectText
     )
     expect(result.view.context.meansItems[0].text).toBe(
-      copy.portOfEntry.means.placeholder
+      copy.portOfEntry.means.selectText
     )
     expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label

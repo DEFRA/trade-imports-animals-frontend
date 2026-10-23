@@ -142,7 +142,6 @@ const post = async (request, h) => {
     addressOptions: options
   })
   if (hasErrors(errors)) {
-    kit.logRefusal(request, { fieldErrors: errors })
     const { journey, answers } = await state.get(request, h)
     return render(
       h,

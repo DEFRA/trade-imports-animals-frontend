@@ -45,7 +45,7 @@ export const copy = {
   },
   documentType: {
     label: 'Math o ddogfen',
-    placeholder: 'Dewiswch un'
+    selectText: 'Dewiswch un'
   },
   dateOfIssue: {
     label: 'Dyddiad cyhoeddi',

@@ -1,17 +1,20 @@
 import * as state from '../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { continueFromTransporterList } from './continue-from-transporter-list.js'
 
 /**
- * @param {object} arm the parts that differ between the two arms
- * @param {Function} arm.trimmedValues the entered values, trimmed, from the payload
- * @param {Function} arm.formErrors the errors to show, in the order the page asks the fields
- * @param {Function} arm.recordProvided whether the trader has begun a record
- * @param {Function} arm.record the answer to commit, built from the values
- * @param {Function} arm.render the arm's own view
- * @param {Function} [arm.remember] keeps the saved transporter for the organisation
- * @returns {Function} the arm's POST handler
+ * @param {object} details the parts that differ between the commercial and private transporter pages
+ * @param {Function} details.trimmedValues the entered values, trimmed, from the payload
+ * @param {Function} details.formErrors the errors to show, in the order the page asks the fields
+ * @param {Function} details.recordProvided whether the trader has begun a record
+ * @param {Function} details.record the answer to commit, built from the values
+ * @param {Function} details.render the page's own view
+ * @param {Function} [details.remember] keeps the saved transporter for the organisation
+ * @returns {Function} the POST handler: it refuses invalid details with status 400 and saves the rest
  */
 export const saveTransporterDetails =
   ({ trimmedValues, formErrors, recordProvided, record, render, remember }) =>
@@ -20,21 +23,21 @@ export const saveTransporterDetails =
     const values = trimmedValues(payload)
     const allErrors = await formErrors(payload, values)
     if (Object.keys(allErrors).length > 0) {
-      kit.logRefusal(request, { fieldErrors: allErrors })
       const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, { errors: allErrors })
+      return (
+        await render(request, h, journey, values, { errors: allErrors })
+      ).code(HTTP_STATUS_BAD_REQUEST)
     }
 
-    let committed
-    const { failure } = await kit.recoverableSave(
+    const { value: saved, failure } = await kit.recoverableSave(
       request,
       async () => {
         if (!recordProvided(values)) {
-          committed = await state.get(request, h)
-          return
+          return state.get(request, h)
         }
-        committed = await state.commit(request, h, await record(values))
+        const committed = await state.commit(request, h, await record(values))
         await remember?.(request, values)
+        return committed
       },
       async () => {
         const { journey } = await state.get(request, h)
@@ -49,6 +52,5 @@ export const saveTransporterDetails =
       return failure
     }
 
-    const { scope } = committed
-    return continueFromTransporterList(request, h, scope)
+    return continueFromTransporterList(request, h, saved.scope)
   }

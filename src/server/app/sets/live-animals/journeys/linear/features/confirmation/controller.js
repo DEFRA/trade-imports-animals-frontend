@@ -23,7 +23,7 @@ const get = async (request, h) => {
     return h.redirect(hubPath(journey.journeyId))
   }
   return h.view(view, {
-    ...base(copy.title, { journeyId: journey.journeyId }),
+    ...base(copy.title, { journey, showJourneyStrip: false }),
     copy,
     referenceNumber: journey.journeyId,
     outstandingItems: outstandingItems(answers, evaluation),

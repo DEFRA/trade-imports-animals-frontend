@@ -1,12 +1,6 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
   expectBackLinkIsPage,
@@ -53,12 +47,7 @@ const textsOf = (result) =>
   groupsOf(result).flatMap((group) => group.items.map((item) => item.text))
 
 describe('commodity search', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list nothing until the page is searched', async () => {
     const result = await driveHandler(get)
@@ -153,12 +142,7 @@ describe('commodity search', () => {
 })
 
 describe('commodity search — what has been chosen so far', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should summarise the stored selection, counted and grouped', async () => {
     const result = await driveHandler(get, {
@@ -196,12 +180,7 @@ describe('commodity search — what has been chosen so far', () => {
 })
 
 describe('commodity search — saving the selection', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should require at least one chosen pair and create nothing', async () => {
     const result = await driveHandler(post, { payload: {} })

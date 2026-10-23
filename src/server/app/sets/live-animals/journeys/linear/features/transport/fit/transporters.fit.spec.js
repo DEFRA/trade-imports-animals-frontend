@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   FORM_GROUP_ANCESTOR_XPATH,
+  PHONE_VIEWPORT,
   contentWidthOf,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
@@ -29,8 +30,6 @@ const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
 const REGISTER_SLUG = 'transporters/select'
-const PHONE_WIDTH = 400
-const PHONE_HEIGHT = 900
 const TABLE = '.govuk-table'
 const BACK_LINK = '.govuk-back-link'
 const ERROR_SUMMARY = '.govuk-error-summary'
@@ -712,7 +711,7 @@ test.describe('Add a transporter beside the search', () => {
   })
 
   test('sits below the search box on a phone', async ({ page }) => {
-    await page.setViewportSize({ width: PHONE_WIDTH, height: PHONE_HEIGHT })
+    await page.setViewportSize(PHONE_VIEWPORT)
     await openTransporterList(page)
     const searchGroupBox = await searchBoxOf(page)
       .locator(FORM_GROUP_ANCESTOR_XPATH)

@@ -36,11 +36,17 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {# An unticked box posts nothing, so the step tells a Submit from a Continue. #}
     <input type="hidden" name="step" value="declare" />
 
     {{ govukCheckboxes({
       name: "declaration",
+      classes: "govuk-checkboxes--small",
+      fieldset: {
+        legend: {
+          text: copy.declarationLegend,
+          classes: "govuk-visually-hidden"
+        }
+      },
       errorMessage: errors.declaration and { text: errors.declaration },
       items: [
         {
@@ -51,7 +57,7 @@
       ]
     }) }}
 
-    <p class="govuk-body">{{ copy.dateOfDeclaration }} {{ submissionDate }}</p>
+    <p class="govuk-body">{{ copy.dateOfDeclaration }} <strong>{{ submissionDate }}</strong></p>
 
     {{ govukButton({ text: copy.continueButton }) }}
   </form>

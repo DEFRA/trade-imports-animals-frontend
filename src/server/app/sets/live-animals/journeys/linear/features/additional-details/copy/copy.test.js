@@ -1,25 +1,16 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import * as additionalDetails from '../controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('additional-details copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -47,12 +38,7 @@ describe('additional-details copy module', () => {
 })
 
 describe('GET additional-details — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module to the view', async () => {
     const get = additionalDetails.routes.find(

@@ -1,6 +1,6 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { animalsField, packagesApply, packagesField } from '../fields.js'
-import { commodityNamesOf, linesOfCommodity } from '../lines.js'
+import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
 
 export const groupLine = ({ index, entry }, values, errors) => ({
   index,
@@ -13,20 +13,9 @@ export const groupLine = ({ index, entry }, values, errors) => ({
   packagesError: errors[packagesField(index)]
 })
 
-export const linesForGroup = (lines, name, values, errors) =>
-  linesOfCommodity(lines, name).map((line) => groupLine(line, values, errors))
-
-const groupOf = (lines, values, errors) => (name, index) => {
-  const code = commodities.commodityCodeFor(name) ?? ''
-  return {
-    index,
-    name,
-    code,
-    label: commodities.commodityLabel(name, code),
-    showPackages: packagesApply(name),
-    lines: linesForGroup(lines, name, values, errors)
-  }
-}
-
 export const buildGroups = (lines, values, errors) =>
-  commodityNamesOf(lines).map(groupOf(lines, values, errors))
+  buildCommodityGroups(lines).map((group) => ({
+    ...group,
+    showPackages: packagesApply(group.name),
+    lines: group.lines.map((line) => groupLine(line, values, errors))
+  }))

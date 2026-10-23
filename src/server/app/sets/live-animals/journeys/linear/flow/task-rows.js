@@ -1,6 +1,6 @@
 import { NA, statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
-import { identifiedCommodities } from '../../../services/commodities/index.js'
+import { needsIdentifying } from '../../../services/commodities/index.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
@@ -21,7 +21,7 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 
 export const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
-    (line) => identifiedCommodities().includes(line?.commoditySelection)
+    needsIdentifying
   )
 
 export const taskRows = [
@@ -61,8 +61,6 @@ export const taskRows = [
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
   { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
-  // The list declares all three transporter answers, so the row still spans
-  // the type and both address blocks from the one page.
   { id: 'transporter', pages: [transportersPage] },
   { id: 'addresses', pages: [addressesPage, cphNumberPage] },
   { id: 'contact', pages: [consignmentContactSelectPage] },
@@ -74,9 +72,6 @@ export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 export const rowParts = (row) =>
   row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
 
-// A row with no `applies` test is always applicable; one that answers no is
-// Not applicable however its parts roll up, which is what lets a `conditional`
-// row leave the hub and stand down as submit-readiness work.
 const rowApplies = (row, answers) => row.applies?.(answers) ?? true
 
 export const rowStatus = (row, answers, inScope, evaluation) =>

@@ -15,6 +15,7 @@ import {
 } from '../../../../../engine/persistence/session.js'
 import {
   driveHandler,
+  expectOneLogged,
   getHandlerOf,
   journeyRequest,
   postHandlerOf,
@@ -203,13 +204,19 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
   })
 
-  it('Should carry a consignment with nothing to identify on to additional details mid-run', async () => {
-    const { journeyId, response, view } = await driveHandler(
+  it('Should log the skip and carry a consignment with nothing to identify on to additional details mid-run', async () => {
+    const { journeyId, response, view, logger } = await driveHandler(
       getHandlerOf(animalIdentification),
       { seed: fishLineSeed, openingRun: RUN_ACTIVE }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
     expect(view).toBeUndefined()
+    expectOneLogged(logger, {
+      level: 'info',
+      fields: { journeyId },
+      message:
+        'Animal identification skipped: nothing on the consignment carries an identifier'
+    })
   })
 
   it('Should send import reason on to the consignment details mid-run', async () => {
@@ -230,18 +237,6 @@ const saveAndContinueFollowsTheRunSequence = () => {
       }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'port-of-entry'))
-  })
-
-  it('Should redirect a mid-run commodity search save to the main import reason', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(commoditiesSearch),
-      {
-        payload: { species: ['Cat|923501'] },
-        seed: lineSeed,
-        openingRun: RUN_ACTIVE
-      }
-    )
-    expect(response.redirect).toBe(pagePath(journeyId, 'import-reason'))
   })
 
   const driveAddSpoke = (featureModule, { seed, payload }) =>
@@ -463,7 +458,7 @@ describe('the opening run', () => {
       expect(openingRunCookie() in cookies).toBe(false)
     })
 
-    it('Should fall back to the section flow once the run is complete (change=1 and plain saves unaffected)', async () => {
+    it('Should send origin to the overview and write no run record once the run is complete', async () => {
       const { journeyId, response, cookies } = await driveHandler(
         postHandlerOf(origin),
         { payload: originPayload, openingRun: RUN_COMPLETE }

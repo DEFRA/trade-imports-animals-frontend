@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  DESKTOP_VIEWPORT,
+  PHONE_VIEWPORT,
   addressBookInsetText,
   addressesSection,
   contentWidthOf,
@@ -25,9 +27,6 @@ const NOT_IN_THE_BOOK = 'not-in-this-book'
 const ADDRESS_BOOK_SIZE = 13
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
-
-const PHONE_VIEWPORT = { width: 375, height: 812 }
-const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
 const expectBackOnTheAddressesPage = async (page) => {
   await expect(

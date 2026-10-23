@@ -3,6 +3,7 @@ import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { describe, expect, it, vi } from 'vitest'
 
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { SURFACES } from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
@@ -398,7 +399,7 @@ describe('documents — listing, scanning and removing', () => {
       },
       payload: { action: 'continue' }
     })
-    expect(result.response.statusCode).toBe(200)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(summaryTexts(result)).toContain(
       'You cannot continue until all documents have been scanned or removed'
@@ -422,6 +423,7 @@ describe('documents — listing, scanning and removing', () => {
       seed,
       payload: { action: 'continue' }
     })
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.response.redirect).toBeUndefined()
     expect(result.view.context.rows[0][3].html).toContain('Virus found')
     expect(summaryTexts(result)).toContain(
@@ -753,7 +755,7 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer all fourteen document types behind a placeholder, in the service order', async () => {
+  it('Should offer all fourteen document types behind the select text, in the service order', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })

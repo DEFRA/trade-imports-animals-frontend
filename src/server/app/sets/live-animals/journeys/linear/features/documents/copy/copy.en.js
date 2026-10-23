@@ -40,7 +40,7 @@ export const copy = {
   },
   documentType: {
     label: 'Document type',
-    placeholder: 'Select one'
+    selectText: 'Select one'
   },
   dateOfIssue: {
     label: 'Date of issue',

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   driveHandler,
   expectBackLinkIsPage,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
   useStubbedJourney
@@ -32,10 +32,7 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.reasonForImport).toBeDefined()
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['reasonForImport']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should answer 400 for a reason that names an Object.prototype member, committing nothing', async () => {

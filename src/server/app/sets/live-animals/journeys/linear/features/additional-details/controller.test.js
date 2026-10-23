@@ -10,7 +10,7 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   expectBackLinkIsPage,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   expectOneSaveFallbackLogged,
   getHandlerOf,
   postHandlerOf,
@@ -41,10 +41,7 @@ describe('POST additional-details — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.animalsCertifiedFor).toBeDefined()
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['animalsCertifiedFor']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 })
 

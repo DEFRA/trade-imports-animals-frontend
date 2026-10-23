@@ -5,6 +5,7 @@ import {
 import { addressSummary } from './transporter-record.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { containsTerm } from '../../../../../../../../../client/common/helpers/search-fold.js'
+import { renderMacro } from '../../../../../../../shared/render-macro.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -51,3 +52,20 @@ export const transporterRows = (records, { selectedId }) =>
     searchText: searchTextOf(record),
     checked: record.id === selectedId
   }))
+
+const CELLS_TEMPLATE =
+  'live-animals/journeys/linear/features/transport/transporters/_cells.njk'
+
+/** One table row of cells per transporter row, searchable by its search text. */
+export const transporterTableRows = (rows) =>
+  rows.map((row) => [
+    {
+      html: renderMacro(CELLS_TEMPLATE, 'transporterSelectCell', row, copy),
+      attributes: { 'data-search-text': row.searchText }
+    },
+    { text: row.name },
+    { text: row.addressText },
+    { text: row.approvalNumber },
+    { text: row.type },
+    { html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row) }
+  ])

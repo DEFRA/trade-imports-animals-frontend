@@ -8,6 +8,7 @@ import {
   earTagCommodities,
   horseNameCommodities,
   identifiedCommodities,
+  needsIdentifying,
   identifiersFor,
   list,
   microchipCommodities,
@@ -108,6 +109,12 @@ describe('the identifier allowlists', () => {
     expect(identifiedCommodities()).toEqual(
       expect.arrayContaining(['Cow', 'Horse', 'Cat', 'Dog'])
     )
+  })
+
+  it('Should need identifying for a line of a species that carries identifiers and not for one that does not', () => {
+    expect(needsIdentifying({ commoditySelection: 'Cow' })).toBe(true)
+    expect(needsIdentifying({ commoditySelection: 'Fish' })).toBe(false)
+    expect(needsIdentifying(undefined)).toBe(false)
   })
 
   it('Should hold every commodity that is asked for a permanent address', () => {

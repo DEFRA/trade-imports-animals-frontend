@@ -13,13 +13,14 @@ import {
   crumbProtectedServerMounting,
   driveHandler,
   expectBackLinkIsPage,
-  expectOneRefusalLogged,
+  expectNoRefusalLogged,
   expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
@@ -123,13 +124,11 @@ const seedTwoSpeciesOfOneCommodity = () => ({
 })
 
 const COMMODITY_REMOVAL_REFUSED = {
-  reason: 'no-commodity-at-index',
-  message: 'Commodity removal refused: no commodity at the index'
+  reason: 'no-commodity-at-index'
 }
 
 const SPECIES_REMOVAL_REFUSED = {
-  reason: 'no-species-at-index',
-  message: 'Species removal refused: no species at the index'
+  reason: 'no-species-at-index'
 }
 
 const pageGetHandlerOf = (featureModule) =>
@@ -189,11 +188,9 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.view.context.errors['numberOfAnimalsQuantity-1']).toBe(
       'Enter a whole number greater than 0'
     )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['numberOfAnimalsQuantity-1', 'numberOfAnimalsQuantity-2']
-    })
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming, and log the refusal', async () => {
@@ -211,10 +208,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'commodities/identification'
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: ['numberOfAnimalsQuantity-0']
-    })
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectNoRefusalLogged(result.logger)
     expect(result.after).toEqual({
       commodityLines: [
         {
@@ -315,7 +310,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:7' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...COMMODITY_REMOVAL_REFUSED,
       index: 7
@@ -329,7 +324,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...COMMODITY_REMOVAL_REFUSED,
       index: NaN
@@ -448,7 +443,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
       index: 0
@@ -462,7 +457,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:9' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
       index: 9
@@ -476,7 +471,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
       index: NaN

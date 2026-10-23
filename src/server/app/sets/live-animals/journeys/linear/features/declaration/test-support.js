@@ -16,8 +16,6 @@ export const continueRequest = (request, token, payload = {}) => ({
   }
 })
 
-// A stand-in GET for tests that render pages by their GET handler: it posts the
-// review's Continue instead.
 export const declarationRoutesFromReview = [
   {
     method: 'GET',

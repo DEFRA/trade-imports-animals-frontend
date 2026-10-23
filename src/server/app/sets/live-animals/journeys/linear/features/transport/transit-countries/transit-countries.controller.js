@@ -12,7 +12,7 @@ import { transitCountriesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { ADD_ACTION, isRemoveAction, removeCodeOf } from './remove-action.js'
-import { countryRows } from './rows.js'
+import { countriesTable, countryRows } from './rows.js'
 import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
@@ -54,6 +54,7 @@ const render = async (
     }))
   )
   const chosenLabel = (await countries.originLabel(chosen)) ?? ''
+  const rows = countryRows(offeredLabelled)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -67,7 +68,8 @@ const render = async (
     errorSummary: kit.errorSummary(errors),
     countryItems: await countryItems(),
     selectedCountries: offeredSelected,
-    countryRows: countryRows(offeredLabelled),
+    countryRows: rows,
+    countriesTable: countriesTable(rows, copy),
     hasCountries: offeredSelected.length > 0,
     showCountryField:
       Object.keys(errors).length > 0 ||

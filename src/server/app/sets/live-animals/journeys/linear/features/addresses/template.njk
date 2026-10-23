@@ -38,6 +38,6 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

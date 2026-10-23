@@ -151,7 +151,7 @@
       </div>
     </section>
 
-    {{ saveActions(hubHref, { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 
   <div id="js-scan-status-announcer"

@@ -10,7 +10,8 @@ import {
 import {
   matchingTransporters,
   shownCountMessages,
-  transporterRows
+  transporterRows,
+  transporterTableRows
 } from '../../../server/app/sets/live-animals/journeys/linear/features/transport/transporters/rows.js'
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
 import { copy as sharedCopy } from '../../../server/app/shared/copy.en.js'
@@ -72,7 +73,8 @@ const filterModuleHtml = ({ rows, term }) => {
     errors: {},
     query: term,
     shownMessages: shownCountMessages(rows.length),
-    transporterRows: rows
+    transporterRows: rows,
+    transporterTableRows: transporterTableRows(rows)
   })
   return page.querySelector('[data-module="app-transporter-filter"]').outerHTML
 }
