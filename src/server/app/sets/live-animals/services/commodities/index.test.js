@@ -7,6 +7,7 @@ import {
   identifiedCommodityCodes,
   identifiersFor,
   microchipCommodityCodes,
+  packageCountCommodityCodes,
   passportCommodityCodes,
   permanentAddressCodeSpecies,
   listsSpeciesIndividually,
@@ -22,9 +23,10 @@ const OSTRICHES = '01063300'
 
 describe('#listsSpeciesIndividually', () => {
   it('Should hold for code 01061900 and for no other', () => {
-    expect(listsSpeciesIndividually(OTHER_MAMMALS)).toBe(true)
-    expect(listsSpeciesIndividually(CATTLE)).toBe(false)
-    expect(listsSpeciesIndividually(HORSES)).toBe(false)
+    expect(
+      packageCountCommodityCodes().filter(listsSpeciesIndividually)
+    ).toEqual([OTHER_MAMMALS])
+    expect(listsSpeciesIndividually(OSTRICHES)).toBe(false)
   })
 })
 
@@ -54,19 +56,29 @@ describe('#identifiersFor', () => {
 
 describe('the identifier allowlists', () => {
   const derivations = [
-    ['microchip', microchipCommodityCodes, 'animalIdentifierMicrochip'],
-    ['passport', passportCommodityCodes, 'animalIdentifierPassport'],
-    ['tattoo', tattooCommodityCodes, 'animalIdentifierTattoo'],
-    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag'],
-    ['horse name', horseNameCommodityCodes, 'horseName']
+    [
+      'microchip',
+      microchipCommodityCodes,
+      'animalIdentifierMicrochip',
+      [HORSES, OTHER_MAMMALS]
+    ],
+    [
+      'passport',
+      passportCommodityCodes,
+      'animalIdentifierPassport',
+      [HORSES, CATTLE, OTHER_MAMMALS]
+    ],
+    ['tattoo', tattooCommodityCodes, 'animalIdentifierTattoo', [OTHER_MAMMALS]],
+    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag', [CATTLE]],
+    ['horse name', horseNameCommodityCodes, 'horseName', [HORSES]]
   ]
 
-  for (const [name, allowlist, identifier] of derivations) {
+  for (const [name, allowlist, identifier, expectedCodes] of derivations) {
     it(`Should list only codes that carry the ${name}`, () => {
       for (const code of allowlist()) {
         expect(identifiersFor(code)).toContain(identifier)
       }
-      expect(allowlist()).not.toContain(OSTRICHES)
+      expect([...allowlist()].sort()).toEqual(expectedCodes)
     })
   }
 
@@ -110,7 +122,13 @@ describe('#typeIdFor', () => {
   })
 
   it('Should give every other code its one type', () => {
-    expect(typeIdFor(OTHER_MAMMALS, 'Felis catus')).toBe('2')
+    const otherCodes = packageCountCommodityCodes().filter(
+      (code) => code !== CATTLE
+    )
+    for (const code of otherCodes) {
+      expect(typeIdFor(code, 'Felis catus')).toBe('2')
+      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
+    }
   })
 })
 
