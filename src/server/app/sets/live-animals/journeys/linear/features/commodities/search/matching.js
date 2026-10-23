@@ -1,6 +1,6 @@
 export const MIN_SEARCH_LENGTH = 3
 
-export const SEARCH_PAGE_SIZE = 10
+export const SEARCH_PAGE_SIZE = 100
 
 export const normaliseQuery = (value) => String(value ?? '').trim()
 

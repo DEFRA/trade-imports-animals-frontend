@@ -101,10 +101,17 @@ describe('commodity search', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should list no more than ten species for one search', async () => {
+  it('Should list every species under a code searched for', async () => {
     const result = await searchFor('0102')
     expect(legendsOf(result)).toEqual(['0102'])
-    expect(textsOf(result)).toHaveLength(10)
+    expect(textsOf(result)).toHaveLength(15)
+    expect(textsOf(result)).toContain('Bison bison')
+  })
+
+  it('Should list no more than a hundred species for one search', async () => {
+    const result = await searchFor('01061900')
+    expect(legendsOf(result)).toEqual(['01061900'])
+    expect(textsOf(result)).toHaveLength(100)
   })
 
   it('Should reach a species by its common name', async () => {

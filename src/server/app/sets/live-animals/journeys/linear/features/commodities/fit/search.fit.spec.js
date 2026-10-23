@@ -40,11 +40,13 @@ const reopenSelection = async (page) => {
   ).toBeVisible()
 }
 
+const signInAndOpenSelection = async ({ page }) => {
+  await signIn(page)
+  await openSelection(page)
+}
+
 test.describe('commodity search', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await openSelection(page)
-  })
+  test.beforeEach(signInAndOpenSelection)
 
   test('offers a search box and lists nothing until it is used', async ({
     page
@@ -145,11 +147,6 @@ test.describe('commodity search', () => {
       otherMammals.getByRole('checkbox', { name: BOS_TAURUS, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(2)
-  })
-
-  test('lists no more than ten species for one search', async ({ page }) => {
-    await searchCommodities(page, '0102')
-    await expect(page.getByRole('checkbox')).toHaveCount(10)
   })
 
   test('says so when nothing matches', async ({ page }) => {
@@ -255,5 +252,25 @@ test.describe('commodity search', () => {
     // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
     await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+  })
+})
+
+test.describe('commodity search by code', () => {
+  test.beforeEach(signInAndOpenSelection)
+
+  test('lists every species under a code searched for', async ({ page }) => {
+    await searchCommodities(page, CATTLE_CODE)
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    await expect(
+      cattle.getByRole('checkbox', { name: BISON_BISON, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(15)
+  })
+
+  test('lists no more than a hundred species for one search', async ({
+    page
+  }) => {
+    await searchCommodities(page, OTHER_MAMMALS_CODE)
+    await expect(page.getByRole('checkbox')).toHaveCount(100)
   })
 })
