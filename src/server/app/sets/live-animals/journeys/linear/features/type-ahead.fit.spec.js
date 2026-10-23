@@ -36,6 +36,7 @@ const countryCase = (fields) => ({
   typed: 'fra',
   suggestion: france.name,
   bold: 'Fra',
+  labelSize: 'small',
   ...fields
 })
 
@@ -43,6 +44,7 @@ const portCase = (fields) => ({
   typed: 'dov',
   suggestion: DOVER_OPTION,
   bold: 'Dov',
+  labelSize: 'small',
   ...fields
 })
 
@@ -51,6 +53,7 @@ const typeAheads = [
     name: 'Country of origin',
     inputId: 'countryOfOrigin',
     label: originCopy.country.label,
+    labelSize: 'medium',
     selectText: originCopy.country.selectText,
     emptyBoxText: originCopy.country.searchPlaceholder,
     open: startNotificationAtOrigin
@@ -60,6 +63,7 @@ const typeAheads = [
     inputId: 'portOfEntry',
     label: transportCopy.portOfEntry.port.label,
     hint: transportCopy.portOfEntry.port.hint,
+    labelSize: 'medium',
     selectText: transportCopy.portOfEntry.port.placeholder,
     emptyBoxText: transportCopy.portOfEntry.port.placeholder,
     open: openArrival
@@ -69,6 +73,7 @@ const typeAheads = [
     inputId: 'transitedCountry',
     label: transportCopy.transitCountries.country.label,
     hint: transportCopy.transitCountries.country.hint,
+    labelSize: 'medium',
     selectText: transportCopy.transitCountries.country.selectText,
     emptyBoxText: transportCopy.transitCountries.country.searchPlaceholder,
     open: openTransit
@@ -131,6 +136,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
     inputId,
     label,
     hint,
+    labelSize,
     typed,
     suggestion,
     bold,
@@ -212,9 +218,13 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
   test.describe(`${name} type-ahead without JavaScript`, () => {
     test.use({ javaScriptEnabled: false })
 
-    test('is a native select named by its label and described only by its hint, whose first option is the page select text and is selected, with no button', async ({
+    test(`is a native select named by its ${labelSize} label and described only by its hint, whose first option is the page select text and is selected, with no button`, async ({
       page
     }) => {
+      const labelSizeModifier = {
+        small: 'govuk-label--s',
+        medium: 'govuk-label--m'
+      }[labelSize]
       await signIn(page)
       await open(page)
 
@@ -233,6 +243,9 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       )
       await expect(select).toHaveAccessibleName(label)
       await expect(select).toHaveAccessibleDescription(hint ?? '')
+      await expect(formGroup.locator(`label[for="${inputId}"]`)).toHaveClass(
+        new RegExp(`\\b${labelSizeModifier}\\b`)
+      )
       await expect(formGroup.getByRole('button')).toHaveCount(0)
       await expect(
         page.locator('.autocomplete__wrapper, .app-autocomplete__button')
