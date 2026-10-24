@@ -13,7 +13,6 @@ import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 
 export { signIn } from './sign-in.js'
 
-/** The set's mount, under the one name every spec imports. */
 export const BASE = SET_BASE
 
 /**
@@ -36,9 +35,6 @@ const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
-// Anchored at the set base, so a URL that lost or doubled the prefix fails
-// here with an honest message rather than yielding a journey id that then
-// surfaces as a confusing 404 further down the spec.
 const JOURNEY_ID_IN_URL = new RegExp(`^${BASE}/notifications/([^/]+)`)
 
 export const journeyIdFromPage = (page) => {
@@ -108,9 +104,6 @@ export const { values } = JSON.parse(
 const arrivalDate = addUtcMonths(new Date(), 1)
 export const ARRIVAL_DATE_IN_WINDOW = formatDateText(arrivalDate)
 
-// Spelled out rather than routed through `formatDisplayDate`: that is the
-// function rendering the cell this value is asserted against, so sharing it
-// would move expectation and actual together and hide a format regression.
 const SHORT_MONTHS = [
   'Jan',
   'Feb',
@@ -136,17 +129,7 @@ const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
-// Country of origin is a type-ahead (accessible-autocomplete) enhancing a
-// native <select>. With JavaScript the field resolved by its label is the
-// enhanced input; without it the field is still the select. Ask the element
-// what it is — one round trip, no timeout. Mirrors `choosePort` in
-// src/server/app/sets/live-animals/journeys/linear/features/transport/fit/arrival-transit.fit.spec.js.
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
-  // The enhancement is a module script, so it has run by DOMContentLoaded.
-  // Waiting for that event settles which element the label resolves to before
-  // the probe reads it — without it the probe can catch the page mid-load,
-  // read the not-yet-enhanced select and then act on the enhanced input.
-  // With JavaScript off the event has already fired, so this costs nothing.
   await page.waitForLoadState('domcontentloaded')
   const field = page.getByLabel('Country of origin', { exact: true })
   if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
@@ -164,12 +147,7 @@ export const answerOriginEntry = async (page) => {
   await save(page)
 }
 
-/** Origin is the journey's entry page: the entry guard holds a notification
- * there until it is answered, so reaching the hub means answering it. */
 export const startNotification = async (page) => {
-  // The set's own base, not '/': entering through the root redirect would make
-  // this driver depend on live-animals being the default set. The root
-  // redirect has its own coverage in the service-navigation spec.
   await page.goto(BASE)
   await page.getByRole('button', { name: 'Start a new notification' }).click()
   await expect(
@@ -183,8 +161,6 @@ export const startNotification = async (page) => {
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
-// Port of entry is a type-ahead (accessible-autocomplete) enhancing a native
-// <select>. Drive it the way a user does: type to filter, then pick the match.
 export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
   const field = page.getByLabel('Port of entry', { exact: true })
   await field.click()
@@ -192,16 +168,11 @@ export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
   await page.getByRole('option', { name: option, exact: true }).click()
 }
 
-// Any accessible-autocomplete field addressed by its visible label. With
-// JavaScript off the field is still the native <select>.
 export const chooseAutocompleteByLabel = async (
   page,
   { label, query, optionName, inputId }
 ) => {
-  // The enhancement is a module script, so it has run by DOMContentLoaded.
   await page.waitForLoadState('domcontentloaded')
-  // Import-reason exposes the same port label on more than one reveal; scope the
-  // label lookup to the field's form group when the caller names the input id.
   const scope = inputId
     ? page
         .locator(`#${inputId}`)
@@ -227,45 +198,82 @@ export const answerCountryOfOrigin = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
-// The commodity page lists nothing until it is searched, so a species is
-// reached the way a trader reaches it: search, then tick the result.
 export const searchCommodities = async (page, query) => {
   await page.getByLabel('Search for a commodity').fill(query)
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-const tickFirstExactSpeciesMatch = (page, name) =>
-  page.getByRole('checkbox', { name, exact: true }).first().check()
+const species = (commodityCode, latinName) => ({ commodityCode, latinName })
 
-export const selectSpecies = async (page, speciesNames) => {
-  for (const name of speciesNames) {
-    await searchCommodities(page, name)
-    await tickFirstExactSpeciesMatch(page, name)
+export const BISON_BISON = species('0102', 'Bison bison')
+export const BOS_TAURUS = species('0102', 'Bos taurus')
+export const EQUUS_CABALUS = species('0101', 'Equus cabalus')
+export const FELIS_CATUS = species('01061900', 'Felis catus')
+export const CANIS_FAMILIARIS = species('01061900', 'Canis familiaris')
+export const STRUTHIO = species('01063300', 'Struthio')
+
+export const SAVE_AND_CONTINUE = 'Save and continue'
+
+const tickSpecies = (page, { commodityCode, latinName }) =>
+  page
+    .getByRole('group', { name: commodityCode })
+    .getByRole('checkbox', { name: latinName, exact: true })
+    .check()
+
+export const selectSpecies = async (page, speciesToSelect) => {
+  for (const chosen of speciesToSelect) {
+    await searchCommodities(page, chosen.latinName)
+    await tickSpecies(page, chosen)
   }
+}
+
+export const animalsQuantityInputUnder = (page, { latinName }) =>
+  page
+    .getByRole('heading', { level: 3, name: latinName })
+    .locator(
+      'xpath=following::input[starts-with(@id, "numberOfAnimalsQuantity")][1]'
+    )
+
+export const openCommoditySearch = async (page) => {
+  await startNotification(page)
+  await answerCountryOfOrigin(page)
+  await page.getByRole('link', { name: 'What are you importing?' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+}
+
+export const openCommodityDetails = async (page, speciesToSelect) => {
+  await openCommoditySearch(page)
+  await selectSpecies(page, speciesToSelect)
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page
+    .getByRole('link', { name: 'Commodity details', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Commodity details' })
+  ).toBeVisible()
 }
 
 export const expectSpeciesSelected = async (page, name) =>
   expect(page.locator('#commodity-selection')).toContainText(name)
 
-export const unlockSections = async (page, species = 'Felis catus') => {
+export const unlockSections = async (page, chosen = FELIS_CATUS) => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [species])
+  await selectSpecies(page, [chosen])
   await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page.getByRole('link', { name: 'Commodity details' }).click()
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
-  // The animal count is save-blocking, so the page will not let the journey
-  // past it unanswered.
   await page.getByLabel('Number of animals').fill('1')
   await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
-// The enhanced file upload hides the input behind a drop-zone button, so the
-// file goes to the input itself rather than to the labelled control.
 const setUploadFile = (page, filename, bytes) =>
   page.locator('input[type="file"]').setInputFiles({
     name: filename,
@@ -291,12 +299,6 @@ export const addDocument = async (page, entry) => {
 const save = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
-// One page-answering block per question, so the same keystrokes drive the
-// journey whether it is reached page by page through the opening run or one
-// task at a time from the hub. Each block ends on its own save and leaves the
-// landing assertion to the caller, because where a page lands is exactly what
-// the two ways of walking the journey disagree about.
-
 export const answerOriginDetails = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'Yes' }).check()
@@ -310,7 +312,7 @@ export const answerOriginDetails = async (page) => {
 }
 
 export const answerWhatYouAreImporting = async (page) => {
-  await selectSpecies(page, ['Bos taurus'])
+  await selectSpecies(page, [BOS_TAURUS])
   await save(page)
 }
 
@@ -339,8 +341,6 @@ export const answerAnimalIdentification = async (page) => {
 
 export const answerImportReason = async (page) => {
   await page.getByRole('radio', { name: 'Internal market' }).check()
-  // The purpose is a conditional reveal under the reason, so both answers go
-  // in on the one submit.
   await page.getByRole('radio', { name: 'Breeding' }).check()
   await save(page)
 }
@@ -434,10 +434,6 @@ export const answerArrivalDetails = async (page) => {
   await save(page)
 }
 
-// Transit countries are added one at a time through a type-ahead, each one
-// landing in the list before the next is searched for. Mirrors
-// `addTransitCountry` in
-// src/server/app/sets/live-animals/journeys/linear/features/transport/fit/arrival-transit.fit.spec.js.
 export const addTransitCountry = async (page, name) => {
   await page.waitForLoadState('domcontentloaded')
   const field = page.getByLabel('Enter a country', { exact: true })
@@ -449,9 +445,6 @@ export const addTransitCountry = async (page, name) => {
     await page.getByRole('option', { name, exact: true }).click()
   }
   await page.getByRole('button', { name: 'Add country', exact: true }).click()
-  // The row landing is the post-condition — a refused add re-renders this page
-  // with the button still on it, so without this the journey quietly saves a
-  // different answer.
   await expect(page.getByRole('cell', { name, exact: true })).toBeVisible()
 }
 
@@ -461,8 +454,6 @@ export const answerTransitCountries = async (page) => {
   await save(page)
 }
 
-// One step: the transporter list carries both kinds, so the pick settles the
-// type too and there is no question in front of it.
 export const answerTransporter = async (page) => {
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
@@ -539,9 +530,8 @@ export const openReviewFromHub = async (page) => {
 }
 
 /**
- * A page reached from another page ends with the primary alone: the shared
- * saveActions macro emits no "Save and return to overview" button and no
- * "Cancel and return to overview" link.
+ * Asserts the page offers "Save and continue" and neither "Save and return to
+ * overview" nor "Cancel and return to overview".
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
   await expect(

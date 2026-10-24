@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  EQUUS_CABALUS,
+  STRUTHIO,
   partyPickerName,
   signIn,
   startNotification,
@@ -22,9 +24,9 @@ const rowFor = (page, title) =>
     has: page.getByText(title, { exact: true })
   })
 
-const openAddresses = async (page, species) => {
+const openAddresses = async (page, chosenSpecies) => {
   await startNotification(page)
-  await unlockSections(page, species)
+  await unlockSections(page, chosenSpecies)
   await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
   await expect(
     page.getByRole('heading', { name: copy.hub.title })
@@ -121,7 +123,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   })
 
   test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, 'Struthio')
+    await openAddresses(page, STRUTHIO)
 
     const row = rowFor(page, copy.hub.cph.title)
     await expect(row).toContainText(copy.hub.cph.hint)
@@ -136,7 +138,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   test('does not ask a consignment of horses for a CPH number', async ({
     page
   }) => {
-    await openAddresses(page, 'Equus cabalus')
+    await openAddresses(page, EQUUS_CABALUS)
 
     await expect(rowFor(page, copy.hub.cph.title)).toHaveCount(0)
   })

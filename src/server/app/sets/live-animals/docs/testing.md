@@ -30,6 +30,35 @@ or AA violations.
 live-animals helper uses
 [`src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json`](../journeys/linear/flow/fixtures/happy-path.json).
 
+## Browser-test drivers
+
+`fit/live-animals-journey.js` is the one set of drivers the browser tests share.
+
+- `selectSpecies` takes `{ commodityCode, latinName }` pairs and ticks the box
+  inside the group for that code. A species can sit under several codes
+  (`Bos taurus` is under `0102` and `01061900`), so the code is part of the
+  choice and the result order never decides it.
+- The shared species constants (`BOS_TAURUS`, `FELIS_CATUS` and so on) live in
+  that file. Specs import them rather than declaring their own.
+- `openCommoditySearch` and `openCommodityDetails` take a notification from the
+  start to the commodity search page and to the commodity details page.
+- Country of origin, port of entry and the other type-aheads enhance a native
+  `<select>`. The drivers ask the element what it is after `DOMContentLoaded`,
+  so they work with or without JavaScript.
+- The driver for the arrival date computes a date inside the moving arrival
+  window, and spells the display format out rather than calling
+  `formatDisplayDate`, so a format regression fails the assertion instead of
+  moving expectation and actual together.
+- `startNotification` enters through the set's own base rather than `/`, so the
+  driver does not depend on live-animals being the default set. The root
+  redirect is covered by the service-navigation spec.
+- Origin is the entry page. The entry guard holds a notification there until it
+  is answered, so reaching the hub means answering it.
+- The animal count is save-blocking, so a driver that reaches past commodity
+  details fills it.
+- Dogs are identified by microchip in law, so a chip number on its own is enough
+  to save a dog.
+
 ## Required checks for a journey change
 
 ```bash

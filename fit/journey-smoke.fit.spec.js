@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   addDocument,
   BASE,
+  FELIS_CATUS,
   answerAdditionalDetails,
   answerAnimalIdentification,
   answerArrivalDetails,
@@ -49,7 +50,7 @@ test.describe('live-animals journey glue', () => {
     await save()
     await expect(heading('What are you importing?')).toBeVisible()
 
-    await selectSpecies(page, ['Felis catus'])
+    await selectSpecies(page, [FELIS_CATUS])
     await save()
     await expect(heading('Main reason for import')).toBeVisible()
 
