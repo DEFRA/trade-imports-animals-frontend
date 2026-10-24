@@ -1,23 +1,3 @@
-/**
- * Project the obligation evaluator's implications into the `scope` object the
- * controllers and hub consume — `makeScopeFromEvaluation(evaluation,
- * answers)`, four members.
- *
- * The load-bearing member is `inScope: Set<pathKey>` — one key for every
- * in-scope node, a mix of:
- *   - bare top-level ids            `'countryOfOrigin'`
- *   - the group obligation node     `'commodityLines'`,
- *                                   `'commodityLines[0].animalIdentifiers'`
- *   - positional leaf paths         `'commodityLines[0].commodityCode'`,
- *                                   `'commodityLines[0].animalIdentifiers[1].animalIdentifierPassport'`
- * The group OBLIGATION node is keyed once per parent instance, never a bare
- * group instance (`'commodityLines[0]'` is not a key).
- *
- * The set is built from the request-level evaluator output by projecting each
- * in-scope implication into the pathKey grammar (composite->positional
- * conversion).
- */
-
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, isGroup } from '../model/obligations/manifest-graph.js'
 import { fulfilmentIndexToPath } from './fulfilments/index.js'
@@ -26,12 +6,6 @@ import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from './readiness-config.js'
 import { flowOnlyKeys } from './flow-only-keys.js'
 
-// `anyInstanceAnswered` — look up the obligation named `id` and walk the
-// answers tree over its ancestor-group chain, testing each positional instance
-// with `isAnswered`. The manifest does not carry declaration, but
-// `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE` prerequisites
-// (`countryOfOrigin`, `commodityCode`, flow/gates.js), which it does — so
-// the check is exact.
 const collectInstanceValues = (answers, chain, name) => {
   const values = []
   const visit = (node, remainingGroups) => {
@@ -62,14 +36,10 @@ const anyInstanceAnswered = (answers, id) => {
   )
 }
 
-// A depth-0 group's node has no parent, so a single bare key.
 const groupNodeKey = (inScope, name) => {
   inScope.add(name)
 }
 
-// A nested group's node is keyed once per PARENT-group instance — derived
-// from the parent's instances, not the group's own fulfilmentIndexes, so a
-// parent instance whose nested group is empty still contributes its node key.
 const groupInstanceKeys = (inScope, implications, obligation, chain, name) => {
   const parentFulfilmentIndexes =
     implications[obligation.within.id]?.fulfilmentIndexes ?? []
@@ -78,19 +48,16 @@ const groupInstanceKeys = (inScope, implications, obligation, chain, name) => {
   }
 }
 
-// Grouped leaf — one positional pathKey per in-scope fulfilmentIndex.
 const leafFulfilmentIndexKeys = (inScope, chain, name, fulfilmentIndexes) => {
   for (const fulfilmentIndex of fulfilmentIndexes) {
     inScope.add(pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, name)))
   }
 }
 
-// Top-level scalar/field — the bare obligation id.
 const leafScalarKey = (inScope, name) => {
   inScope.add(name)
 }
 
-// Add every pathKey an in-scope implication projects onto.
 const addProjectedKeys = (inScope, implications, obligation) => {
   const name = obligation.name
   const chain = ancestorChain(obligation)
@@ -124,53 +91,31 @@ const projectInScope = (implications) => {
 }
 
 /**
- * The RAW evaluator scope, projected into the pathKey grammar — the manifest
- * only, before the flow-only projection. declaration is ABSENT here
- * because the notification model does not carry it. `makeScope` layers the
- * flow-only obligations on TOP of this for the FULL scope the controllers
- * consume; this export stays the raw evaluator scope.
+ * The evaluator's in-scope obligations as path keys, without the flow-only keys.
+ *
+ * @param {object} evaluation - the request-level evaluator result.
+ * @returns {Set<string>} one path key per in-scope node.
  */
 export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 
-// Flow-only obligations the notification model does not carry: the submit-time
-// declaration step. The evaluator omits them, so without this layer their
-// owning pages would be unreachable. They are unconditional top-level
-// obligations (bare-id pathKeys). Declared in bridge/obligation-source.js so
-// the answer-key recognition surface and this projection share one list.
-
-// Project the flow-only obligations onto the FULL scope. They are unconditional
-// top-level obligations (no `activatedBy`, no collection ancestor), always in
-// scope regardless of answers. An additive layer only; the raw evaluator scope
-// (`rawInScope`) is untouched.
-const projectFlowOnlyScope = (inScope) => {
+const addFlowOnlyKeys = (inScope) => {
   for (const id of flowOnlyKeys()) {
     inScope.add(id)
   }
 }
 
 /**
- * Project the evaluator output into the `scope` object the controllers and hub
- * consume.
+ * The scope for one request: the in-scope path keys with the flow-only keys
+ * added, and whether the notification is ready for check your answers.
  *
- * `readyForCheckYourAnswers` comes from the readiness seam
- * (`bridge/readiness-config.js`), which each set's gateway configures at boot.
- * Unconfigured, the seam is fail-closed.
- *
- * The FULL scope also carries the flow-only obligations the notification model
- * does not model (declaration — `projectFlowOnlyScope`), so their owning pages
- * stay reachable. That projection is additive on the full scope only; the raw
- * evaluator scope (`rawInScope`) still excludes them.
- * `readyForCheckYourAnswers` is unaffected — its task rows never cover
- * declaration.
- *
- * @param {object} answers - the nested answer POJO.
  * @param {object} evaluation - the request-level evaluator result.
+ * @param {object} answers - the nested answer POJO.
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
  *   answered: (id: string) => boolean, readyForCheckYourAnswers: boolean }}
  */
-const scopeFrom = (answers, evaluation) => {
-  const inScope = projectInScope(evaluation.obligations)
-  projectFlowOnlyScope(inScope)
+export const makeScopeFromEvaluation = (evaluation, answers) => {
+  const inScope = rawInScope(evaluation)
+  addFlowOnlyKeys(inScope)
   return {
     inScope,
     has: (id) => inScope.has(id),
@@ -182,6 +127,3 @@ const scopeFrom = (answers, evaluation) => {
     )
   }
 }
-
-export const makeScopeFromEvaluation = (evaluation, answers) =>
-  scopeFrom(answers, evaluation)

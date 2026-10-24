@@ -302,7 +302,7 @@ Some collections cap their instance count at a sibling field. The declaration
 is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
 
 ```js
-export const MAX_ENTRIES_FROM = {
+export const ENTRY_CAP_FIELD_BY_COLLECTION = {
   animalIdentifiers: 'numberOfAnimalsQuantity'
 }
 ```

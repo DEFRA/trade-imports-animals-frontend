@@ -32,8 +32,7 @@ export const isOutsideUnion = (value, union) =>
  * every other gate admits what its list holds.
  *
  * @param {object} [metadata] - the gate's `applyTo.metadata`.
- * @param {*} value - the stored value of the gate obligation, or for a
- *   pair gate the `[gate value, paired value]` pair.
+ * @param {*} value - the value to test against the gate's list.
  * @returns {boolean}
  */
 export const admitsValue = (metadata, value) => {

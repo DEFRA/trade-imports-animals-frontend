@@ -19,6 +19,17 @@ Important composition and convention checks include:
 Tests may compose a real set with platform code. Production imports remain subject
 to the layer rules.
 
+[`real.integration.test.js`](../services/persistence/records/real/real.integration.test.js)
+runs the real records adapter against a running backend, and the default run skips
+it. Start the matching backend stack, then run:
+
+```bash
+PERSISTENCE_IT_MODE=real npm run test:live-animals -- real.integration
+```
+
+The backend base URL comes from `TRADE_IMPORTS_ANIMALS_BACKEND_URL` and defaults to
+`http://localhost:8085`.
+
 ## Architecture and formatting
 
 `npm run lint` runs JavaScript, stylesheet and architecture linting. Dependency

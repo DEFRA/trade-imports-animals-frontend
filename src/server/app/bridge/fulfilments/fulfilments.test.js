@@ -52,12 +52,6 @@ const address = {
 const DOCUMENT_UPLOAD_ID = 'upload-001'
 const DOCUMENT_FILENAME = 'itahc-certificate.pdf'
 
-// ---------------------------------------------------------------------------
-// Round-trip property — assembleFulfilments then projectAnswers
-// recovers the original A answers (the animal count comes back as the
-// number the model stores, pinned separately below).
-// ---------------------------------------------------------------------------
-
 describe('#fulfilments — round-trip A -> B -> A recovers the original', () => {
   it('Should recover notification-level scalars on round-trip', () => {
     const answers = {
@@ -82,7 +76,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
         {
           commodityCode: '0102',
           numberOfAnimalsQuantity: '25',
-          speciesLatinName: [BOS_TAURUS],
+          speciesLatinName: BOS_TAURUS,
           animalIdentifiers: [
             { animalIdentifierEarTag: 'A' },
             { animalIdentifierEarTag: 'B' }
@@ -104,7 +98,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     })
   })
 
-  it('Should round-trip every commodity code exactly', () => {
+  it('Should round-trip a commodity code of any length exactly', () => {
     for (const code of ['0102', '0101', '01063300', '01061900']) {
       const answers = { commodityLines: [{ commodityCode: code }] }
       expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
@@ -116,10 +110,6 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
   })
 })
-
-// ---------------------------------------------------------------------------
-// Shape — A positional path <-> B composite fulfilmentIndex, both directions.
-// ---------------------------------------------------------------------------
 
 describe('#fulfilments — storage shape translation', () => {
   it('Should store a notification scalar directly under the UUID', () => {
@@ -138,8 +128,6 @@ describe('#fulfilments — storage shape translation', () => {
       ]
     }
     const fulfilments = assembleFulfilments(answers)
-    // The count field is coerced to a number on the way in and stays a
-    // number on the way out.
     expect(fulfilments[numberOfAnimals.id]).toEqual({
       line0: 10,
       line1: 20
@@ -171,9 +159,7 @@ describe('#fulfilments — storage shape translation', () => {
     expect(projectAnswers(fulfilments)).toEqual(answers)
   })
 
-  it('Should not represent an empty collection (documented)', () => {
-    // The evaluator infers group instances from descendant storage, so a
-    // group with no answered leaves is invisible — a known blind spot.
+  it('Should not represent an empty collection', () => {
     expect(assembleFulfilments({ commodityLines: [] })).toEqual({})
     expect(assembleFulfilments({ commodityLines: [{}] })).toEqual({})
   })
@@ -219,12 +205,12 @@ describe('#fulfilments — page projection validation and ordering', () => {
 
   it('Should accept out-of-order records and canonicalise arrays by numeric index', () => {
     const fulfilments = {
-      [commodityCode.id]: { line1: '0101', line0: '0102' },
+      [commodityCode.id]: { line1: '0102', line0: '0102' },
       [speciesLatinName.id]: { line1: BISON_BISON, line0: BOS_TAURUS },
       [earTag.id]: {
-        'line1.unit1': 'horse-2',
+        'line1.unit1': 'bison-2',
         'line0.unit0': 'cow-1',
-        'line1.unit0': 'horse-1'
+        'line1.unit0': 'bison-1'
       }
     }
     const before = structuredClone(fulfilments)
@@ -237,11 +223,11 @@ describe('#fulfilments — page projection validation and ordering', () => {
           animalIdentifiers: [{ animalIdentifierEarTag: 'cow-1' }]
         },
         {
-          commodityCode: '0101',
+          commodityCode: '0102',
           speciesLatinName: BISON_BISON,
           animalIdentifiers: [
-            { animalIdentifierEarTag: 'horse-1' },
-            { animalIdentifierEarTag: 'horse-2' }
+            { animalIdentifierEarTag: 'bison-1' },
+            { animalIdentifierEarTag: 'bison-2' }
           ]
         }
       ]
@@ -285,11 +271,6 @@ describe('#fulfilments — page projection validation and ordering', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// Stored vocabulary passes through unchanged — the manifest's gates compare
-// the same values the pages store. The animal count is the one coercion.
-// ---------------------------------------------------------------------------
-
 describe('#fulfilments — stored values pass through', () => {
   it('Should store the commodity code of a commodity line', () => {
     const fulfilments = assembleFulfilments({
@@ -309,20 +290,20 @@ describe('#fulfilments — stored values pass through', () => {
     expect(fulfilments[portOfEntry.id]).toBe('GB ABD')
   })
 
-  it('Should leave every other field untouched', () => {
+  it('Should store purpose, certification, transport, transited countries and species as given', () => {
     const answers = {
       purposeInInternalMarket: 'breeding',
       animalsCertifiedFor: 'slaughter',
       meansOfTransport: 'ROAD_VEHICLE',
       transitedCountries: ['FR', 'BE'],
-      commodityLines: [{ speciesLatinName: [BOS_TAURUS] }]
+      commodityLines: [{ speciesLatinName: BOS_TAURUS }]
     }
     const fulfilments = assembleFulfilments(answers)
     expect(fulfilments[purposeInInternalMarket.id]).toBe('breeding')
     expect(fulfilments[animalsCertifiedFor.id]).toBe('slaughter')
     expect(fulfilments[meansOfTransport.id]).toBe('ROAD_VEHICLE')
     expect(fulfilments[transitedCountries.id]).toEqual(['FR', 'BE'])
-    expect(fulfilments[speciesLatinName.id]).toEqual({ line0: [BOS_TAURUS] })
+    expect(fulfilments[speciesLatinName.id]).toEqual({ line0: BOS_TAURUS })
   })
 
   it('Should keep an unparseable animal count raw for controller-side validation', () => {
@@ -332,13 +313,6 @@ describe('#fulfilments — stored values pass through', () => {
     expect(fulfilments[numberOfAnimals.id]).toEqual({ line0: 'many' })
   })
 })
-
-// ---------------------------------------------------------------------------
-// Accompanying documents — the answers' repeatable collection maps to the
-// model's `documents` collection. Both model the same nested topology, so
-// documents bridges as an ordinary collection <-> collection mapping (like
-// commodityLines).
-// ---------------------------------------------------------------------------
 
 describe('#fulfilments — accompanying documents topology (answers collection <-> model collection)', () => {
   const answers = {
@@ -403,11 +377,6 @@ describe('#fulfilments — accompanying documents topology (answers collection <
   })
 })
 
-// ---------------------------------------------------------------------------
-// Evaluator smoke — bridged answers meet the evaluator. Proves the bridge
-// output is shaped the way the evaluator wants and drives real gates.
-// ---------------------------------------------------------------------------
-
 describe('#fulfilments — evaluator smoke — a happy path produces real implications', () => {
   const evaluator = createObligationEvaluator()
   const fulfilments = assembleFulfilments(happyPath)
@@ -434,8 +403,6 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
     expect(result.obligations[purposeInInternalMarket.id].status).toBe(
       'mandatory'
     )
-    // The land-transport gate brings transited countries INTO scope; the
-    // answer itself is optional there.
     expect(result.obligations[transitedCountries.id].inScope).toBe(true)
     expect(result.obligations[transitedCountries.id].status).toBe('optional')
   })

@@ -11,12 +11,6 @@ import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { encodeEvaluatorFulfilments } from '../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../mapper.js'
 
-// Gated integration test for the option-e REAL adapter and its two backend
-// resources. The default hermetic run skips it. Run against the matching
-// backend worktree with:
-//
-//   PERSISTENCE_IT_MODE=real npm run test:live-animals -- real.integration
-
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 const notificationsUrl = `${backendBaseUrl}/notifications`
@@ -66,7 +60,7 @@ const answers = {
     {
       commodityCode: '0102',
       commodityType: '16',
-      speciesLatinName: ['Bos taurus'],
+      speciesLatinName: 'Bos taurus',
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '5',
       animalIdentifiers: [
@@ -81,20 +75,21 @@ const answers = {
   ]
 }
 
+const assertBackendReachable = async () => {
+  try {
+    await fetch(`${notificationsUrl}?page=1`)
+  } catch (cause) {
+    throw new Error(
+      `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,
+      { cause }
+    )
+  }
+}
+
 describe.skipIf(!runsIt('real'))(
-  'real records adapter over the live option-e backend',
+  'real records adapter against a running backend',
   () => {
-    beforeAll(async () => {
-      try {
-        // Reachability probe — any HTTP response confirms the stack is up.
-        await fetch(`${notificationsUrl}?page=1`)
-      } catch (cause) {
-        throw new Error(
-          `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,
-          { cause }
-        )
-      }
-    })
+    beforeAll(assertBackendReachable)
 
     it('Should mint an empty canonical journey and load it directly', async () => {
       const created = await records.create()

@@ -1,10 +1,8 @@
 import { createPath, pagePath, setBase } from '../../../../../shared/paths.js'
 import { isAnswered } from '../../../../../lib/answered.js'
 import { get } from '../../../../../engine/read.js'
-import {
-  obligationByName,
-  SYSTEM_POPULATED
-} from '../../../../../bridge/obligation-source.js'
+import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
+import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import { openingRunStarted } from '../../../../../flow/run-state.js'
 

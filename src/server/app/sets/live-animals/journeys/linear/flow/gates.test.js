@@ -5,12 +5,11 @@ import { dispatchPages } from '../features/index.js'
 import { transitCountriesPage } from '../features/transport/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { makeScope } from '../../../../../engine/index.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { enumerateScopeStates } from './reachability-fixtures/scope-states.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { sections } from './flow.js'
 import { pageGatePasses, sectionGatePasses } from '../../../../../flow/gates.js'
-
-const unitedKingdom = 'United Kingdom'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
   const syntheticGatedSection = {
@@ -81,7 +80,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   })
 })
 
-describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
+describe('#sectionGatePasses — sections open in mandate order', () => {
   beforeAll(() => {
     buildDispatch(SET_ID, dispatchPages)
   })
@@ -124,7 +123,7 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
     }
   })
 
-  it('Should leave an obligation without enforcedAt unaffected by RULE 1 (backwards-compat)', () => {
+  it('Should open addresses, transport and contact before any document is answered', () => {
     const noDocuments = {
       countryOfOrigin: 'FR',
       commodityLines: [{ commodityCode: '0102' }]
@@ -135,76 +134,15 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
   })
 })
 
-describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
+describe('#sectionGatePasses — the review opens on submit-readiness', () => {
   beforeAll(() => {
     buildDispatch(SET_ID, dispatchPages)
   })
 
   const reviewSection = sections.find((section) => section.id === 'review')
 
-  const allAnswerSectionsReady = {
-    countryOfOrigin: 'FR',
-    regionOfOriginCodeRequirement: 'no',
-    reasonForImport: 'internalMarket',
-    purposeInInternalMarket: 'breeding',
-    animalsCertifiedFor: 'slaughter',
-    containsUnweanedAnimals: 'no',
-    countyParishHoldingCph: '12/345/6789',
-    commodityLines: [
-      {
-        commodityCode: '0102',
-        commodityType: '16',
-        speciesLatinName: ['Bos taurus'],
-        numberOfPackages: '5',
-        numberOfAnimalsQuantity: '1',
-        animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-      }
-    ],
-    consignor: {
-      name: 'Astra Rosales',
-      address: {
-        addressLine1: '43 East Hague Extension',
-        country: 'Switzerland'
-      }
-    },
-    placeOfDestination: {
-      name: 'Tech Imports Ltd',
-      address: { addressLine1: '643 Main Street', country: unitedKingdom }
-    },
-    placeOfOrigin: {
-      name: 'Origin Farm',
-      address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
-    },
-    consignee: {
-      name: 'British Livestock Ltd',
-      address: {
-        addressLine1: '10 Market Street',
-        country: unitedKingdom
-      }
-    },
-    importer: {
-      name: 'Import Co UK',
-      address: { addressLine1: '20 Trade Road', country: unitedKingdom }
-    },
-    portOfEntry: 'GB ABD',
-    arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-    meansOfTransport: 'AIRPLANE',
-    transportIdentification: 'FR-892-LK',
-    transportDocumentReference: 'CMR-2026-884721',
-    transporterType: 'Commercial',
-    commercialTransporter: {
-      name: 'García Livestock Transport SL',
-      address: {
-        addressLine1: '43 East Hague Extension',
-        country: 'Switzerland'
-      },
-      approvalNumber: 'ES-T2-45001294'
-    },
-    contactAddress: {
-      name: 'Animal and Plant Health Agency',
-      address: { addressLine1: 'Woodham Lane', country: unitedKingdom }
-    }
-  }
+  const allAnswerSectionsReady = completeNotification()
+  delete allAnswerSectionsReady.declaration
 
   it('Should lock the review section on a blank journey', () => {
     expect(sectionGatePasses(reviewSection, makeScope({}))).toBe(false)

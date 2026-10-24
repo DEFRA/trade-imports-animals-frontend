@@ -1,18 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { collectionView } from './collection-view.js'
 import { evaluateAnswers } from '../../bridge/evaluation.js'
+import { completeCommodityLine } from '../test-support.js'
 
-const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
-
-const completeLine = {
-  commodityCode: '0102',
-  commodityType: '16',
-  speciesLatinName: ['Bos taurus'],
-  numberOfAnimalsQuantity: '1',
-  animalIdentifiers: [
-    { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
-  ]
-}
+const completeLine = completeCommodityLine()
 
 const incompleteLine = { commodityCode: '0102' }
 
@@ -28,6 +19,19 @@ describe('#collectionView', () => {
     expect(rows[0].entry).toBe(completeLine)
     expect(rows[1]).toMatchObject({ index: 1, path: ['commodityLines', 1] })
     expect(rows[1].entry).toBe(incompleteLine)
+  })
+
+  it('Should keep entries / index / path in positional storage', () => {
+    const emptyLine = {}
+    const rows = viewOf({ commodityLines: [completeLine, emptyLine] }, [
+      'commodityLines'
+    ])
+    expect(
+      rows.map(({ index, path, entry }) => ({ index, path, entry }))
+    ).toEqual([
+      { index: 0, path: ['commodityLines', 0], entry: completeLine },
+      { index: 1, path: ['commodityLines', 1], entry: emptyLine }
+    ])
   })
 
   it('Should set complete per-row from entryComplete across a mixed list', () => {

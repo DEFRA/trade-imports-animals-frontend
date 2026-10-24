@@ -5,11 +5,6 @@ import { rawInScope } from './scope.js'
 import { configureReadyForCheckYourAnswers, makeScope } from '../engine/read.js'
 import { evaluateAnswers } from './evaluation.js'
 
-// The scope projection, pinned against the manifest: each gate scopes its
-// obligation in/out as the manifest declares, positional keys project under
-// multi-line/multi-unit answers, and makeScope returns the scope object the
-// controllers consume.
-
 const happyPath = JSON.parse(
   readFileSync(
     new URL(
@@ -30,9 +25,9 @@ const resolveRegion = (answers) => ({
 
 const FIRST_LINE_COMMODITY_CODE = 'commodityLines[0].commodityCode'
 
-const line = (commodity, units) => ({
-  commodityCode: commodity,
-  speciesLatinName: 'Bos taurus',
+const line = (commodityCode, speciesLatinName, units) => ({
+  commodityCode,
+  speciesLatinName,
   numberOfAnimalsQuantity: String(units.length),
   animalIdentifiers: units
 })
@@ -51,7 +46,6 @@ describe('scope bridge — per-gate scoping', () => {
         regionOfOriginCode: 'FR-75'
       }).has('regionOfOriginCode')
     ).toBe(true)
-    // Unanswered requirement — still in scope, optional.
     expect(makeScope({ countryOfOrigin: 'FR' }).has('regionOfOriginCode')).toBe(
       true
     )
@@ -100,11 +94,11 @@ describe('scope bridge — per-gate scoping', () => {
     const scope = makeScope(
       resolveRegion({
         commodityLines: [
-          line('0102', [
+          line('0102', 'Bos taurus', [
             { animalIdentifierEarTag: 'UK111' },
             { animalIdentifierEarTag: 'UK222' }
           ]),
-          line('0101', [{ horseName: 'Dobbin' }])
+          line('0101', 'Equus cabalus', [{ horseName: 'Dobbin' }])
         ]
       })
     )
@@ -118,12 +112,6 @@ describe('scope bridge — per-gate scoping', () => {
     expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(false)
   })
 })
-
-// ---------------------------------------------------------------------------
-// The flow shim — the obligations the evaluator does not model, layered onto
-// the FULL scope so their owning pages stay reachable; the RAW projection
-// excludes them.
-// ---------------------------------------------------------------------------
 
 describe('scope bridge — flow-only obligations layered on the full scope', () => {
   it('Should add declaration to the full scope, not the raw projection', () => {
@@ -146,12 +134,8 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
   })
 })
 
-// ---------------------------------------------------------------------------
-// Shape parity — makeScope returns the scope object the controllers consume.
-// ---------------------------------------------------------------------------
-
-describe('scope bridge — makeScope shape parity', () => {
-  it('Should expose the same members with the same types', () => {
+describe('scope bridge — makeScope result', () => {
+  it('Should return inScope as a Set, has and answered as functions and readyForCheckYourAnswers as a boolean', () => {
     const scope = makeScope(happyPath)
     expect(scope.inScope).toBeInstanceOf(Set)
     expect(typeof scope.has).toBe('function')

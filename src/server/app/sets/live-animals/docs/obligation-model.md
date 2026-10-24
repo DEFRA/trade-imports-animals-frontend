@@ -24,6 +24,14 @@ The declarations use helper functions from the platform model. They contain stab
 identity, scope, mandate and cardinality rules, but no display copy or journey
 knowledge.
 
+## Commodity rules in the manifest
+
+The CPH question is asked unless every commodity line's code is exempt; a line
+with no code yet is ignored rather than counted as outside the exemptions
+(`anyNotInUnionOf`). The animal identifiers floor asks for a record per commodity
+line only on a consignment carrying more than one identified commodity line
+(`moreThanOne` over the identified-commodity allowlist).
+
 ## Registration
 
 This set's gateway,

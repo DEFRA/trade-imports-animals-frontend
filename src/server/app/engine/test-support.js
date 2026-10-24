@@ -1,6 +1,15 @@
+import { readFileSync } from 'node:fs'
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { store } from './store.js'
 import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
-import { records } from './persistence/records.js'
+import { configureRecords, records } from './persistence/records.js'
+import { configureSession } from './persistence/session.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../services/persistence/session/stub.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -196,6 +205,55 @@ export const driveHandler = async (
     response,
     view: h.captured.view,
     cookies: h.cookies
+  }
+}
+
+const happyPathValues = JSON.parse(
+  readFileSync(
+    new URL(
+      '../sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    )
+  )
+).values
+
+/** A complete notification, a fresh copy of the happy-path fixture. */
+export const completeNotification = () => structuredClone(happyPathValues)
+
+/** A commodity line in the shape the search page saves: a commodity code and
+ * the Latin name of one species, with any further fields given. */
+export const commodityLine = ({
+  commodityCode = '0102',
+  speciesLatinName = 'Bos taurus',
+  ...fields
+} = {}) => ({ commodityCode, speciesLatinName, ...fields })
+
+/** A commodity line with every required field answered. */
+export const completeCommodityLine = (overrides = {}) => ({
+  ...completeNotification().commodityLines[0],
+  ...overrides
+})
+
+/** Configures the stub ports, creates a journey and returns what the purge
+ * tests drive it with: `seed` stores answers, `durable` reads them back,
+ * `wipeOf` names the keys the evaluator purges and `buildRequest` makes a
+ * request for the journey. */
+export const purgeTestJourney = async () => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  await records.clear()
+  configureReadyForCheckYourAnswers(SET_ID, () => false)
+  const { journeyId } = await records.create()
+  return {
+    buildRequest: () => journeyRequest(journeyId),
+    seed: (answers) =>
+      records.replaceFulfilment(journeyId, assembleFulfilments(answers)),
+    durable: async () =>
+      projectAnswers((await records.load({ journeyId })).fulfilment),
+    wipeOf: (answers) => {
+      const fulfilments = assembleFulfilments(answers)
+      return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+    }
   }
 }
 

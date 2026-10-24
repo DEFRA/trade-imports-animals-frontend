@@ -18,17 +18,6 @@ import { stubH, journeyRequest } from './test-support.js'
 const FELIS_CATUS = 'Felis catus'
 const BOS_TAURUS = 'Bos taurus'
 
-// Mutator behaviour. Storage is positional (an array; the evaluator holds no
-// instance record and infers instances from leaf composite prefixes), so every
-// mutator's storage mechanic — index-minting, in-place `with`, `toSpliced`,
-// key-matched reconcile — is a storage concern:
-//   - append/update/remove/reconcile store positionally;
-//   - append's cap rejection fires via `collectionCapAt` (`maxEntriesFrom`);
-//   - an empty appended entry survives in storage even though the evaluator
-//     cannot address it (no leaf → no evaluator instance);
-//   - remove/reconcile route their purge to the evaluator (evaluator-authoritative
-//     wipe of now-orphaned notification-level data).
-
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = async () => (await store.get(journeyId)).answers
@@ -37,7 +26,7 @@ const wipeOf = (answers) => {
   return wipeSet(fulfilments, purgeFulfilments(fulfilments))
 }
 
-const GOATS_COMMODITY = '010420 - Goats'
+const GOATS_CODE = '010420'
 
 const line = (commodityCode, extra = {}) => ({
   commodityCode,
@@ -76,12 +65,12 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         buildRequest(),
         stubH(),
         ['commodityLines'],
-        { commodityCode: GOATS_COMMODITY }
+        { commodityCode: GOATS_CODE }
       )
       expect(second).toBe(1)
       expect((await answersNow()).commodityLines).toEqual([
         { commodityCode: '0102' },
-        { commodityCode: GOATS_COMMODITY }
+        { commodityCode: GOATS_CODE }
       ])
     })
   })
@@ -89,7 +78,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   describe('#updateEntryAt — edits in place, siblings intact', () => {
     it('Should edit a line in place', async () => {
       await store.seedAnswers(journeyId, {
-        commodityLines: [line('0102'), line(GOATS_COMMODITY)]
+        commodityLines: [line('0102'), line(GOATS_CODE)]
       })
       await updateEntryAt(
         buildRequest(),
@@ -100,23 +89,23 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       )
       const lines = (await answersNow()).commodityLines
       expect(lines[0].commodityCode).toBe('0101')
-      expect(lines[1].commodityCode).toBe(GOATS_COMMODITY)
+      expect(lines[1].commodityCode).toBe(GOATS_CODE)
     })
   })
 
   describe('#removeEntryAt — splices positionally, siblings intact', () => {
     it('Should remove a line by index', async () => {
       await store.seedAnswers(journeyId, {
-        commodityLines: [line('0102'), line(GOATS_COMMODITY)]
+        commodityLines: [line('0102'), line(GOATS_CODE)]
       })
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       expect(
         (await answersNow()).commodityLines.map((entry) => entry.commodityCode)
-      ).toEqual([GOATS_COMMODITY])
+      ).toEqual([GOATS_CODE])
     })
   })
 
-  describe('#appendEntryAt cap — `maxEntriesFrom` fires', () => {
+  describe('#appendEntryAt cap', () => {
     const cappedLine = () => ({
       commodityCode: '01061900',
       numberOfAnimalsQuantity: '2',
@@ -142,8 +131,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   })
 
   describe('#appendEntryAt — an empty appended entry is not persisted', () => {
-    it('Should accept the loss of a leaf-less unit the canonical evaluator cannot express', async () => {
-      // No numberOfAnimalsQuantity → uncapped (blank-count semantics).
+    it('Should return index 0 and store no identifiers when appending an empty identifier entry', async () => {
       await store.seedAnswers(journeyId, {
         commodityLines: [{ commodityCode: '01061900', animalIdentifiers: [] }]
       })
@@ -154,7 +142,6 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         {}
       )
       expect(index).toBe(0)
-      // The evaluator infers instances from leaf composite prefixes, so this
       expect(
         (await answersNow()).commodityLines[0].animalIdentifiers
       ).toBeUndefined()
@@ -163,8 +150,6 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
 
   describe('#removeEntryAt — the purge is evaluator-authoritative', () => {
     it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
-      // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
-      // triggering commodity (0102) existing in ANY line, and carries wipeOnExit.
       await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
@@ -172,7 +157,6 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
           { commodityCode: '01061900', speciesLatinName: FELIS_CATUS }
         ]
       })
-      // After removing the 0102 line, the evaluator owns the wipe decision.
       const afterRemoval = {
         containsUnweanedAnimals: 'no',
         commodityLines: [
@@ -218,7 +202,6 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       ])
       const lines = (await answersNow()).commodityLines
       expect(lines).toHaveLength(2)
-      // The kept line retains ALL its data — positional key-matched merge.
       expect(lines[0].animalIdentifiers).toEqual([
         { animalIdentifierEarTag: 'UK123456789012' }
       ])

@@ -2,10 +2,8 @@ import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import {
-  walkObligations,
-  obligationByName
-} from './bridge/obligation-source.js'
+import { walkObligations } from './bridge/obligation-source.js'
+import { obligationByName } from './model/obligations/manifest.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureSession } from './engine/persistence/session.js'
