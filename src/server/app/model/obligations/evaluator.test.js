@@ -143,7 +143,7 @@ const horseNameReason = {
   explanation: 'horseName applies on units of horse-commodity lines'
 }
 const permanentAddressReason = {
-  code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
+  code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
   explanation:
     'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }

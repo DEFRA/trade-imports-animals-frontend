@@ -25,12 +25,6 @@ export const cph = {
   )
 }
 
-// -----------------------------------------------------------------------------
-// Contains unweaned animals — notification-level yes/no, gated on the
-// commodities unweanedCommodityCodes() names. Declared after commodityCode
-// because the applyTo closure captures it.
-// -----------------------------------------------------------------------------
-
 const unweanedApplicableReason = {
   code: 'obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity',
   explanation:

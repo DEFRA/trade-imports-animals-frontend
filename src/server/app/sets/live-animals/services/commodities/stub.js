@@ -1,12 +1,6 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { commodityGroups } from '../../../../services/_capture/fixtures.js'
 
-const HERE = dirname(fileURLToPath(import.meta.url))
-
-export const COMMODITY_GROUPS = JSON.parse(
-  readFileSync(join(HERE, 'fixtures', 'commodities.json'), 'utf8')
-)
+export const COMMODITY_GROUPS = commodityGroups
 
 const wordsOf = (text) =>
   String(text ?? '')

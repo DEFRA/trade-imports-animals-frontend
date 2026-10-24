@@ -9,6 +9,7 @@
       {
         "commodityCode": "0102",
         "speciesLatinName": "Bos taurus",
+        "speciesCommonName": "Cattle or Cow",
         "commodityType": "16",
         "numberOfPackages": "5",
         "numberOfAnimalsQuantity": "1",

@@ -1,4 +1,9 @@
 import { readFileSync } from 'node:fs'
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
 const happyPath = JSON.parse(
   readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
@@ -14,12 +19,11 @@ const animalAddress = {
 }
 
 const commodityLine = ({
-  speciesLatinName = 'Bos taurus',
+  row = BOS_TAURUS_ROW,
   numberOfAnimalsQuantity = '1',
   animalIdentifiers = [{ animalIdentifierEarTag: 'UK123456789012' }]
 } = {}) => ({
-  commodityCode: '0102',
-  speciesLatinName,
+  ...row,
   commodityType: '16',
   numberOfPackages: '1',
   numberOfAnimalsQuantity,
@@ -52,7 +56,7 @@ const comprehensive = {
       ]
     }),
     commodityLine({
-      speciesLatinName: 'Bison bison',
+      row: BISON_BISON_ROW,
       animalIdentifiers: [
         {
           animalIdentifierEarTag: 'UK000000000001'
@@ -129,8 +133,7 @@ export const characterisationCorpus = [
       commodityLines: [
         {
           ...gateOpen.commodityLines[0],
-          commodityCode: '01063300',
-          speciesLatinName: 'Struthio',
+          ...STRUTHIO_ROW,
           commodityType: '2'
         }
       ]

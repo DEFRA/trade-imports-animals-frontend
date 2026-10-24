@@ -16,6 +16,7 @@ import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import { projectAnswers } from './bridge/fulfilments/index.js'
+import { OTHER_LIVE_MAMMALS_CODE } from './sets/live-animals/services/commodities/rules.js'
 import {
   BISON_BISON,
   BOS_TAURUS,
@@ -41,7 +42,8 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 const catsLine = (units = []) => ({
-  commodityCode: '01061900',
+  commodityCode: OTHER_LIVE_MAMMALS_CODE,
+  speciesLatinName: FELIS_CATUS,
   animalIdentifiers: units
 })
 const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
@@ -269,8 +271,6 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
   })
 
   it('Should run the scope-and-wipe pass: dropping the last triggering commodity destroys the dependent notification-level answer', async () => {
-    // containsUnweanedAnimals is gated on an unweaned-triggering commodity
-    // (Cow) existing in ANY line (frame:anyItem) and carries wipeOnExit.
     await store.seedAnswers(journeyId, {
       containsUnweanedAnimals: 'no',
       commodityLines: [
@@ -513,7 +513,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   unitRecordCrudTests()
   cardinalityCapTests()
 
-  it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', async () => {
+  it('Should destroy a nested permanentAddress at its exact depth-2 path when the line under 01061900 changes to a species off the permanent-address list', async () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
         catsLine([
@@ -524,7 +524,8 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     await commit(buildRequest(), stubH(), {
       commodityLines: [
         {
-          commodityCode: '0101',
+          commodityCode: OTHER_LIVE_MAMMALS_CODE,
+          speciesLatinName: 'Carnivora excluding Canis familiaris',
           animalIdentifiers: [
             { animalIdentifierPassport: 'UK-1', permanentAddress: address }
           ]

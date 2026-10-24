@@ -118,6 +118,10 @@
         "line0": "Bos taurus",
         "line1": "Bison bison"
       },
+      "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+        "line0": "Cattle or Cow",
+        "line1": "Bisons Spp"
+      },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 2,
         "line1": 1
@@ -284,6 +288,10 @@
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Bos taurus",
           "line1": "Bison bison"
+        },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "line0": "Cattle or Cow",
+          "line1": "Bisons Spp"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 2,
@@ -708,6 +716,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
+          "speciesCommonName": "Cattle or Cow",
           "numberOfAnimalsQuantity": 2,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -734,6 +743,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bison bison",
+          "speciesCommonName": "Bisons Spp",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1411,6 +1421,9 @@
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
         "line0": "Bos taurus"
       },
+      "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+        "line0": "Cattle or Cow"
+      },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
       },
@@ -1433,6 +1446,9 @@
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Bos taurus"
+        },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "line0": "Cattle or Cow"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -1695,6 +1711,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
+          "speciesCommonName": "Cattle or Cow",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1747,6 +1764,9 @@
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
         "line0": "Struthio"
       },
+      "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+        "line0": "Ostriches"
+      },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
       },
@@ -1768,6 +1788,9 @@
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Struthio"
+        },
+        "c8824345-0a1a-421d-8f35-f932fa1874f7": {
+          "line0": "Ostriches"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -2000,6 +2023,7 @@
           "commodityCode": "01063300",
           "commodityType": "2",
           "speciesLatinName": "Struthio",
+          "speciesCommonName": "Ostriches",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [

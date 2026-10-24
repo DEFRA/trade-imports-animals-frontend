@@ -44,7 +44,7 @@ const horseNameReason = {
 }
 
 const permanentAddressReason = {
-  code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
+  code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
   explanation:
     'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
@@ -59,32 +59,6 @@ export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
   name: 'animalIdentifiers',
   within: commodityLine,
-  // No applyTo — structural user-driven group, always in scope.
-  //
-  // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
-  // to Submit - At least one Animal Identifier". Every unit-record
-  // must carry ≥ 1 of the five identifier obligations. Listed as
-  // literal ids in `requires.anyOfIds` rather than obligation
-  // references — id-based deferred resolution avoids
-  // declaration-order coupling and makes the "requires-any-of" edge
-  // legible as data to the reachability prover.
-  //
-  // `groupInvariantErrors` (state-queries.js) walks in-scope
-  // instances and emits one error per instance that violates the
-  // invariant, so the per-unit-records subsection stays In progress
-  // until the user fixes it.
-  //
-  // Every listed identifier is commodity-gated, so on a line whose
-  // commodity carries none of them the rule has nothing it could
-  // ask for. It is vacuous there rather than unsatisfiable:
-  // `checkAnyOfIds` skips an instance no listed leaf is in scope
-  // for, and the empty-collection floor the bridge derives from
-  // this key does the same (bridge/status/completeness/invariants.js).
-  //
-  // `floorAppliesToParent` narrows the empty-collection floor to the lines
-  // of a multi-species consignment: `moreThanOne` stands the whole floor
-  // down unless more than one line carries a commodity with an identifier
-  // set of its own.
   requires: {
     anyOfIds: [
       '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
@@ -99,14 +73,6 @@ export const unitRecord = {
     )
   }
 }
-
-// -----------------------------------------------------------------------------
-// Per-unit identifier field records — depth-2, commodity-gated via
-// `allowListed` with projection to unitRecord's instance-paths.
-// The evaluator's pre-purge enumeration supplies the paths; the
-// obligation code doesn't enumerate them itself. Allowlists come from
-// the commodities service as CN codes.
-// -----------------------------------------------------------------------------
 
 export const microchip = {
   id: '8f030bfa-0734-40c8-9d9e-b9e95dac4724',
@@ -126,10 +92,6 @@ export const passport = {
   applyTo: allowListed(commodityCode, passportCommodityCodes, unitRecord, [
     passportReason
   ])
-  // Note: `unitRecord` is a structural gatedParentGroup (the closure's
-  // 3rd arg), not a value read. Only the gate obligation
-  // (`commodityCode.id`) is a dependency — gatedParentGroups are
-  // structural and are not part of the reachability dependency graph.
 }
 
 export const tattoo = {

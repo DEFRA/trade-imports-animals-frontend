@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  commodityGroups,
   countries,
   countriesOrigin,
   countriesOriginEntries,
@@ -53,5 +54,14 @@ describe('#captured reference fixtures', () => {
     expect(destinationPageCountryEntries()).toHaveLength(
       originPageCountryEntries().length
     )
+  })
+
+  it('Should load commodities as { code, species } groups, each species a Latin and common name', () => {
+    expect(commodityGroups).toContainEqual({
+      code: '0101',
+      species: expect.arrayContaining([
+        { latinName: 'Equus cabalus', commonName: 'Horse' }
+      ])
+    })
   })
 })

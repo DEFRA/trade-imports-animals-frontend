@@ -78,11 +78,11 @@ so generic notification-mapper code does not import the set.
   `commoditySearchRows`. They are never sent to the backend. The chosen species
   also ride back as hidden `selection` values, so a choice made under an earlier
   query survives a new search.
-- The stub's [`fixtures/commodities.json`](../services/commodities/fixtures/commodities.json)
-  is TST's MDM data as reference-data groups it, saved on 16 October 2026:
-  every selectable code the `010` search returned, with every species of
-  `01061900`. The stub does not rank matches as MDM does; it lists them in
-  data order.
+- The stub reads
+  [`_capture/fixtures/commodities.json`](../../../services/_capture/fixtures/commodities.json),
+  which `npm run capture:live-animals` refreshes from reference-data: every
+  species the `010` search lists, grouped by code. The stub does not rank
+  matches as MDM does; it lists them in data order.
 - The species check at submission reads a renamed species as a removed one:
   the old name is no longer listed under its code.
 

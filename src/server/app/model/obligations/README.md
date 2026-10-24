@@ -157,6 +157,23 @@ state.obligations.documentUploadId ===
   }
 ```
 
+## Choosing a gate helper
+
+The gate helpers live in `helpers/`. Each builds an `applyTo` and attaches
+metadata that names its gate obligation, so `obligationMetadata()` can derive
+`dependsOn` without a second declaration.
+
+- `equals`-shape gate: `equalsGate(gate, value, whenTrue, whenFalse)`. For a
+  status flip where both branches are in scope, give both branches
+  `inScope: true` and different `status` values.
+- `includes`-shape gate: `includesGate(gate, values, whenTrue, whenFalse)`.
+- `isFilled`-shape gate: `presentGate(gate, whenTrue, whenFalse)`.
+- Line gates on a list of codes or names: `allowListed`, `anyAllowListed`,
+  `notInUnionOf`, `anyNotInUnionOf`, `matches`.
+
+Use `branchedGate` only for a predicate none of these can express: its closure
+is opaque, so it must declare `dependsOn` itself.
+
 ## File map
 
 Top-level primitives (used everywhere else in the module):
