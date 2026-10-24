@@ -156,8 +156,6 @@ describe('#nextRunTarget — the run past the arrival details', () => {
   })
 
   it('Should return null for the transporter add spokes — they are not run steps', () => {
-    // The spokes are off the run, so they carry no step of their own — they
-    // continue from the list, which is the step they hang off.
     expect(next(transporterAddPage.id, completeSeed)).toBeNull()
     expect(next(transportersSelectPage.id, completeSeed)).toBeNull()
     expect(next(privateTransporterDetailsPage.id, completeSeed)).toBeNull()
@@ -203,10 +201,6 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 })
 
 describe('the run covers the journey', () => {
-  // Pages deliberately outside the run: the dashboard sits before a
-  // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run. The CPH number page is reached only
-  // from its row on the roles and addresses page.
   const OUTSIDE_THE_RUN = [
     'dashboard',
     'cphNumber',

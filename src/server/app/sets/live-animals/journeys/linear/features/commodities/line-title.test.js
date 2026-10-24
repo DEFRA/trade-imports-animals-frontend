@@ -8,7 +8,7 @@ describe('#lineTitle', () => {
       lineTitle({
         commodityCode: ' 0102 ',
         speciesLatinName: 'Bos taurus',
-        commonName: 'Cattle'
+        speciesCommonName: 'Cattle'
       })
     ).toBe('0102 — Bos taurus')
   })

@@ -36,20 +36,19 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-/** One summary over both kinds of refusal: first the roles whose copied address
- * breaks the address-book rules, then the cards with answers still
- * outstanding. A role in error is a more particular statement than "complete
- * this card", so it leads; the cards follow in page order. An unfinished card
- * is somewhere on this page, so its entry is an anchor; a party's entry links
- * to the page that edits its address, returning here.
- *
- * Party errors are keyed `party:<id>` here because `contactAddress` is both a
- * party id and a card id: unprefixed, the card's message would overwrite the
- * party's and the party entry would link to the card anchor.
- *
- * Focus is only moved to the summary when the user has just been refused, so a
- * plain visit does not yank the caret out of the page heading. */
 const PARTY_KEY_PREFIX = 'party:'
+
+const incompleteOverridesInvalid = ({
+  invalidCardErrors,
+  scanDocErrors,
+  speciesErrors,
+  incompleteErrors
+}) => ({
+  ...invalidCardErrors,
+  ...scanDocErrors,
+  ...speciesErrors,
+  ...incompleteErrors
+})
 
 const reviewErrorSummary = (
   journeyId,
@@ -153,10 +152,9 @@ export const renderNotificationView = async (
   const scanDocErrors = hidesAnswerErrors
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
-  const checksSpeciesAgainstMdm = !hidesAnswerErrors && refused
-  const speciesErrors = checksSpeciesAgainstMdm
-    ? await speciesCardErrors(journey, answers)
-    : {}
+  const speciesErrors = hidesAnswerErrors
+    ? {}
+    : await speciesCardErrors(journey, answers, { refused })
   return renderCya(h, journey, {
     answers,
     scope,
@@ -166,18 +164,14 @@ export const renderNotificationView = async (
     recoverableError,
     parties,
     partyErrors: hidesAnswerErrors ? {} : await invalidPartyErrors(answers),
-    // Incomplete wins over invalid on the same card: spread the invalid map
-    // first and the incomplete map second, so a card that is both unfinished
-    // and carrying a stale value says "complete this section" rather than
-    // naming the stale answer.
     cardErrors: hidesAnswerErrors
       ? {}
-      : {
-          ...invalidCardErrors,
-          ...scanDocErrors,
-          ...speciesErrors,
-          ...incompleteCardErrors(answers, scope, evaluation)
-        },
+      : incompleteOverridesInvalid({
+          invalidCardErrors,
+          scanDocErrors,
+          speciesErrors,
+          incompleteErrors: incompleteCardErrors(answers, scope, evaluation)
+        }),
     disableAutoFocus: !refused
   })
 }

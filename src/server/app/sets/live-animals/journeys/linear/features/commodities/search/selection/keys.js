@@ -1,7 +1,4 @@
-export const codeAndLatinNameOf = (key) => {
-  const separator = key.indexOf('|')
-  return [key.slice(0, separator), key.slice(separator + 1)]
-}
+import { codeAndLatinNameOf } from './line-key.js'
 
 const byCodeThenName = (left, right) => {
   const [leftCode, leftName] = codeAndLatinNameOf(left)
@@ -9,7 +6,8 @@ const byCodeThenName = (left, right) => {
   return leftCode.localeCompare(rightCode) || leftName.localeCompare(rightName)
 }
 
+export const inCanonicalOrder = (keys) =>
+  [...new Set(keys)].sort(byCodeThenName)
+
 export const knownKeysInCanonicalOrder = (keys, knownRowsByKey) =>
-  [...new Set(keys.filter((key) => knownRowsByKey.has(key)))].sort(
-    byCodeThenName
-  )
+  inCanonicalOrder(keys.filter((key) => knownRowsByKey.has(key)))

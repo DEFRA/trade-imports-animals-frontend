@@ -2,6 +2,15 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
 import { groupInvariantErrors } from './state-queries.js'
 import { obligationSet } from './manifest.js'
+import {
+  CATTLE_CODE,
+  HORSES_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../sets/live-animals/services/commodities/rules.js'
+import {
+  BOS_TAURUS,
+  OSTRICHES_CODE
+} from '../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
 const {
   poApprovedReferenceNumber,
@@ -109,13 +118,6 @@ const LINE_HORSES = 'lineH'
 const LINE_CATS = 'lineD'
 const LINE_SECOND_HORSES = 'lineH2'
 const LINE_SECOND_CATTLE = 'line5'
-
-const HORSES_CODE = '0101'
-const CATTLE_CODE = '0102'
-const CATS_CODE = '01061900'
-const OSTRICHES_CODE = '01063300'
-
-const BOS_TAURUS = 'Bos taurus'
 
 // Unit-instance-id mnemonics for depth-2 composite keys (`lineId.unitId`).
 const UNIT_1 = 'unit1'
@@ -450,7 +452,7 @@ describe('commodity line group semantics', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
-        [LINE_CATS]: CATS_CODE
+        [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE
       }
     })
     const ids = new Set(result.obligations[commodityLine.id].fulfilmentIndexes)
@@ -478,7 +480,7 @@ describe('commodity line field fulfilments (round-trip)', () => {
     const commodityCodeFulfilments = {
       [LINE_UNKNOWN]: 'Unicorn',
       [LINE_HORSES]: HORSES_CODE,
-      [LINE_CATS]: CATS_CODE
+      [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE
     }
     const result = evaluator.evaluate({
       [commodityCode.id]: commodityCodeFulfilments
@@ -556,7 +558,7 @@ describe('numberOfPackages (derived-leaf, commodity-code-gated)', () => {
       [commodityCode.id]: {
         [LINE_OSTRICHES]: OSTRICHES_CODE,
         [LINE_HORSES]: HORSES_CODE,
-        [LINE_CATS]: CATS_CODE
+        [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE
       }
     })
     const ids = result.obligations[numberOfPackages.id].fulfilmentIndexes
@@ -586,7 +588,7 @@ describe('numberOfPackages (derived-leaf, commodity-code-gated)', () => {
       [commodityCode.id]: {
         [LINE_OSTRICHES]: OSTRICHES_CODE,
         [LINE_HORSES]: HORSES_CODE,
-        [LINE_CATS]: CATS_CODE
+        [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE
       },
       [numberOfPackages.id]: {
         [LINE_OSTRICHES]: 7, // should be purged
@@ -635,7 +637,7 @@ describe('cph (notification-level, reads commodityCode storage)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
-        [LINE_CATS]: CATS_CODE
+        [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE
       }
     })
     expect(result.obligations[cph.id]).toEqual(outOfScope)
@@ -812,7 +814,7 @@ describe('passport (gatedBy allowListed(commodityCode, passport list))', () => {
 describe('tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
   it('is in scope for a 01061900 line (01061900 in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
+      [commodityCode.id]: { [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE },
       [tattoo.id]: { [`${LINE_CATS}.${UNIT_1}`]: 'CT-99' }
     })
     expect(result.obligations[tattoo.id].inScope).toBe(true)
@@ -860,7 +862,7 @@ describe('earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
 
   it('is out of scope for a 01061900 line (01061900 not in the ear-tag list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATS]: CATS_CODE }
+      [commodityCode.id]: { [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE }
     })
     expect(result.obligations[earTag.id]).toEqual({ inScope: false })
   })
@@ -936,7 +938,7 @@ describe('permanentAddress (gated on commodity code and species Latin name)', ()
 
   it('is in scope for Felis catus under 01061900 with a composite address value', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
+      [commodityCode.id]: { [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE },
       [speciesLatinName.id]: { [LINE_CATS]: 'Felis catus' },
       [permanentAddress.id]: { [`${LINE_CATS}.${UNIT_1}`]: petAddress }
     })
@@ -963,7 +965,7 @@ describe('permanentAddress (gated on commodity code and species Latin name)', ()
 
   it('is out of scope for Oryctolagus cuniculus under 01061900', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
+      [commodityCode.id]: { [LINE_CATS]: OTHER_LIVE_MAMMALS_CODE },
       [speciesLatinName.id]: { [LINE_CATS]: 'Oryctolagus cuniculus' }
     })
     expect(result.obligations[permanentAddress.id]).toEqual({ inScope: false })

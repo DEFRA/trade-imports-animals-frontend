@@ -11,15 +11,12 @@ const copy = copyFor({ en, cy }).identification
 
 export const IDENTIFIER_LABELS = copy.identifierLabels
 
-// One column per identifier the COMMODITY declares — not per identifier the
-// trader happened to fill — so the header row says which identifiers this line
-// expects and an empty cell shows which are still missing (design 01-16/17).
-export const identifierColumns = (commodityCode, species) => [
+export const identifierColumns = (commodityCode, speciesLatinName) => [
   ...scopedFields(commodityCode).map((field) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),
-  ...(permanentAddressApplies(commodityCode, species)
+  ...(permanentAddressApplies(commodityCode, speciesLatinName)
     ? [[PERMANENT_ADDRESS, copy.table.permanentAddressColumn]]
     : [])
 ]

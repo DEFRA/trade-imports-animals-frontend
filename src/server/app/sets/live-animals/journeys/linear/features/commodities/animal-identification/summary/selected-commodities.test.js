@@ -1,20 +1,25 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSelectedCommodities } from './selected-commodities.js'
+import { BOS_TAURUS } from '../../search/test-support.js'
 const CATTLE_OR_COW = 'Cattle or Cow'
-const BOS_TAURUS = 'Bos taurus'
 
 const linesOf = (...rows) =>
   rows.map(
     (
-      [commodityCode, speciesLatinName, commonName, numberOfAnimalsQuantity],
+      [
+        commodityCode,
+        speciesLatinName,
+        speciesCommonName,
+        numberOfAnimalsQuantity
+      ],
       index
     ) => ({
       index,
       entry: {
         commodityCode,
         speciesLatinName,
-        commonName,
+        speciesCommonName,
         numberOfAnimalsQuantity
       }
     })

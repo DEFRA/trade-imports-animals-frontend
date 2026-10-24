@@ -7,7 +7,7 @@ import { searchCommodities } from './stub.js'
  *
  * @param {string} term - the search term.
  * @param {{page?: number, size: number}} paging - the zero-based page and its size.
- * @returns {Promise<{total: number, page: number, size: number, groups: Array<{code: string, species: Array<{latinName: string, commonName: string}>}>}>} the page of results.
+ * @returns {Promise<{total: number, page: number, size: number, groups: Array<{code: string, species: Array<{latinName: string, commonName: string|null}>}>}>} the page of results.
  * @throws {import('@hapi/boom').Boom} 503 when reference data fails.
  */
 export const search = (term, { page = 0, size }) =>

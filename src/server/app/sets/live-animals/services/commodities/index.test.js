@@ -15,33 +15,30 @@ import {
   typeIdFor,
   typeTextForId
 } from './index.js'
-
-const CATTLE = '0102'
-const HORSES = '0101'
-const OTHER_MAMMALS = '01061900'
-const OSTRICHES = '01063300'
+import { CATTLE_CODE, HORSES_CODE, OTHER_LIVE_MAMMALS_CODE } from './rules.js'
+import { OSTRICHES_CODE } from '../../journeys/linear/features/commodities/search/test-support.js'
 
 describe('#listsSpeciesIndividually', () => {
   it('Should hold for code 01061900 and for no other', () => {
     expect(
       packageCountCommodityCodes().filter(listsSpeciesIndividually)
-    ).toEqual([OTHER_MAMMALS])
-    expect(listsSpeciesIndividually(OSTRICHES)).toBe(false)
+    ).toEqual([OTHER_LIVE_MAMMALS_CODE])
+    expect(listsSpeciesIndividually(OSTRICHES_CODE)).toBe(false)
   })
 })
 
 describe('#identifiersFor', () => {
   it('Should give each code its identifiers in the order it asks for them', () => {
-    expect(identifiersFor(CATTLE)).toEqual([
+    expect(identifiersFor(CATTLE_CODE)).toEqual([
       'animalIdentifierEarTag',
       'animalIdentifierPassport'
     ])
-    expect(identifiersFor(HORSES)).toEqual([
+    expect(identifiersFor(HORSES_CODE)).toEqual([
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
       'horseName'
     ])
-    expect(identifiersFor(OTHER_MAMMALS)).toEqual([
+    expect(identifiersFor(OTHER_LIVE_MAMMALS_CODE)).toEqual([
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
       'animalIdentifierTattoo'
@@ -49,7 +46,7 @@ describe('#identifiersFor', () => {
   })
 
   it('Should give no identifiers for a code that carries none', () => {
-    expect(identifiersFor(OSTRICHES)).toEqual([])
+    expect(identifiersFor(OSTRICHES_CODE)).toEqual([])
     expect(identifiersFor('not-a-code')).toEqual([])
   })
 })
@@ -60,17 +57,22 @@ describe('the identifier allowlists', () => {
       'microchip',
       microchipCommodityCodes,
       'animalIdentifierMicrochip',
-      [HORSES, OTHER_MAMMALS]
+      [HORSES_CODE, OTHER_LIVE_MAMMALS_CODE]
     ],
     [
       'passport',
       passportCommodityCodes,
       'animalIdentifierPassport',
-      [HORSES, CATTLE, OTHER_MAMMALS]
+      [HORSES_CODE, CATTLE_CODE, OTHER_LIVE_MAMMALS_CODE]
     ],
-    ['tattoo', tattooCommodityCodes, 'animalIdentifierTattoo', [OTHER_MAMMALS]],
-    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag', [CATTLE]],
-    ['horse name', horseNameCommodityCodes, 'horseName', [HORSES]]
+    [
+      'tattoo',
+      tattooCommodityCodes,
+      'animalIdentifierTattoo',
+      [OTHER_LIVE_MAMMALS_CODE]
+    ],
+    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag', [CATTLE_CODE]],
+    ['horse name', horseNameCommodityCodes, 'horseName', [HORSES_CODE]]
   ]
 
   for (const [name, allowlist, identifier, expectedCodes] of derivations) {
@@ -84,9 +86,9 @@ describe('the identifier allowlists', () => {
 
   it('Should identify exactly the codes that carry at least one identifier', () => {
     expect([...identifiedCommodityCodes()].sort()).toEqual([
-      HORSES,
-      CATTLE,
-      OTHER_MAMMALS
+      HORSES_CODE,
+      CATTLE_CODE,
+      OTHER_LIVE_MAMMALS_CODE
     ])
   })
 
@@ -98,10 +100,10 @@ describe('the identifier allowlists', () => {
 
   it('Should key the permanent-address species to 01061900 alone', () => {
     expect(permanentAddressCodeSpecies()).toEqual([
-      [OTHER_MAMMALS, 'Felis catus'],
-      [OTHER_MAMMALS, 'Canis familiaris'],
-      [OTHER_MAMMALS, 'Canis lupus familiaris'],
-      [OTHER_MAMMALS, 'Mustela putorius furo']
+      [OTHER_LIVE_MAMMALS_CODE, 'Felis catus'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Canis familiaris'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Canis lupus familiaris'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Mustela putorius furo']
     ])
   })
 })
@@ -109,21 +111,21 @@ describe('the identifier allowlists', () => {
 describe('the CPH exemption', () => {
   it('Should exempt exactly the horse and cat/dog/ferret codes', () => {
     expect([...cphExemptCommodityCodes()].sort()).toEqual([
-      HORSES,
-      OTHER_MAMMALS
+      HORSES_CODE,
+      OTHER_LIVE_MAMMALS_CODE
     ])
   })
 })
 
 describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
-    expect(typeIdFor(CATTLE, 'Bos taurus')).toBe('16')
-    expect(typeIdFor(CATTLE, 'Bos spp.')).toBe('24')
+    expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
+    expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
   })
 
   it('Should give every other code its one type', () => {
     const otherCodes = packageCountCommodityCodes().filter(
-      (code) => code !== CATTLE
+      (code) => code !== CATTLE_CODE
     )
     for (const code of otherCodes) {
       expect(typeIdFor(code, 'Felis catus')).toBe('2')
@@ -134,15 +136,15 @@ describe('#typeIdFor', () => {
 
 describe('#typeTextForId', () => {
   it('Should name the cattle types Domestic and Game', () => {
-    expect(typeTextForId(CATTLE, '16')).toBe('Domestic')
-    expect(typeTextForId(CATTLE, '24')).toBe('Game')
+    expect(typeTextForId(CATTLE_CODE, '16')).toBe('Domestic')
+    expect(typeTextForId(CATTLE_CODE, '24')).toBe('Game')
   })
 
   it('Should give a single-type code blank text', () => {
-    expect(typeTextForId(OTHER_MAMMALS, '2')).toBe('')
+    expect(typeTextForId(OTHER_LIVE_MAMMALS_CODE, '2')).toBe('')
   })
 
   it('Should give no text for a type id the code does not have', () => {
-    expect(typeTextForId(CATTLE, '2')).toBeUndefined()
+    expect(typeTextForId(CATTLE_CODE, '2')).toBeUndefined()
   })
 })

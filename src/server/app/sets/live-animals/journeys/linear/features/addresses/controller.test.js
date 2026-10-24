@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -10,13 +10,19 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   journeyRequest,
+  postHandlerOf,
   stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
-import * as addressBook from '../../../../../../services/address-book/index.js'
+import {
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW
+} from '../commodities/search/test-support.js'
+import * as cphNumber from '../cph-number/controller.js'
 
 import * as addresses from './controller.js'
+import { copy } from './copy/copy.en.js'
 import { PARTIES } from './parties.js'
 
 const getAddresses = addresses.routes.find(
@@ -25,13 +31,13 @@ const getAddresses = addresses.routes.find(
 const postAddresses = addresses.routes.find(
   (route) => route.method === 'POST'
 ).handler
+const postCphNumber = postHandlerOf(cphNumber)
+
+const CPH_LINE = BOS_TAURUS_ROW
+const CPH_EXEMPT_LINE = FELIS_CATUS_ROW
 
 const rowsFor = async (seed, query = {}) =>
   driveHandler(getAddresses, { seed, query })
-const cphRowOf = (rows) =>
-  rows.find((row) =>
-    row.key.html.includes('County parish holding (CPH) number')
-  )
 const CONSIGNOR_TITLE = 'Consignor or exporter'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const ASTRA_NAME = 'Astra Rosales'
@@ -40,26 +46,28 @@ const CYA_SLUG = 'notification-view'
 const rowTitled = (rows, title) =>
   rows.find((row) => row.key.html.includes(title))
 
-describe('GET addresses — conditional CPH hub row', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+const cphRowOf = (rows) => rowTitled(rows, copy.hub.cph.title)
 
-  it('Should not render a CPH row when no CPH-triggering commodity line exists', async () => {
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
+})
+beforeEach(() => store.clear())
+
+describe('GET addresses — conditional CPH hub row', () => {
+  it('Should not render a CPH row when every commodity line is CPH-exempt', async () => {
     const result = await rowsFor({
-      commodityLines: [{ commodityCode: '01061900' }]
+      commodityLines: [CPH_EXEMPT_LINE]
     })
     const { rows } = result.view.context
     expect(rows).toHaveLength(5)
     expect(cphRowOf(rows)).toBeUndefined()
   })
 
-  it('Should render an empty-state CPH row with an Add link into cph-number when a CPH-triggering commodity line exists', async () => {
+  it('Should render an empty-state CPH row with an Add link into cph-number when a commodity line is not CPH-exempt', async () => {
     const result = await rowsFor({
-      commodityLines: [{ commodityCode: '0102' }]
+      commodityLines: [CPH_LINE]
     })
     const { rows } = result.view.context
     const cphRow = cphRowOf(rows)
@@ -71,11 +79,12 @@ describe('GET addresses — conditional CPH hub row', () => {
     })
   })
 
-  it('Should render the stored (slash-stripped) CPH value with a Change link when answered', async () => {
-    const result = await rowsFor({
-      commodityLines: [{ commodityCode: '0102' }],
-      countyParishHoldingCph: '123456789'
+  it('Should render the CPH value the CPH page saves, without slashes, with a Change link when answered', async () => {
+    const saved = await driveHandler(postCphNumber, {
+      seed: { commodityLines: [CPH_LINE] },
+      payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
     })
+    const result = await rowsFor(saved.after)
     const { rows } = result.view.context
     const cphRow = cphRowOf(rows)
     expect(cphRow.value.text).toBe('123456789')
@@ -84,13 +93,6 @@ describe('GET addresses — conditional CPH hub row', () => {
 })
 
 describe('GET addresses — copied party hub rows', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should render the name held on the copy, offering both Change and Edit details', async () => {
     const result = await rowsFor({
       consignor: { name: ASTRA_NAME, address: { countryCode: 'CH' } }
@@ -137,24 +139,21 @@ describe('GET addresses — copied party hub rows', () => {
     ])
   })
 
-  it('Should never consult the address book to name a row', async () => {
-    const partySpy = vi.spyOn(addressBook, 'party')
-    await rowsFor({
-      placeOfOrigin: { name: 'Origin Copy', address: { countryCode: 'IE' } }
+  it('Should name a row from the copy, not from the address book entry at the same address', async () => {
+    const renamedByTrader = 'Renamed By Trader'
+    const result = await rowsFor({
+      placeOfOrigin: {
+        name: renamedByTrader,
+        address: { addressLine1: '1 Farm Lane', countryCode: 'IE' }
+      }
     })
+    const row = rowTitled(result.view.context.rows, 'Place of origin')
 
-    expect(partySpy).not.toHaveBeenCalled()
+    expect(row.value.text).toBe(renamedByTrader)
   })
 })
 
 describe('GET addresses — frozen parties on submitted notification', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should render the name held on the copy once submitted', async () => {
     const frozenName = 'Frozen At Submit'
     const journey = await store.create()
@@ -166,30 +165,15 @@ describe('GET addresses — frozen parties on submitted notification', () => {
     })
     await store.submit(journey.journeyId)
 
-    try {
-      const h = stubH()
-      await getAddresses(journeyRequest(journey.journeyId), h)
-      const row = rowTitled(h.captured.view.context.rows, 'Place of origin')
+    const h = stubH()
+    await getAddresses(journeyRequest(journey.journeyId), h)
+    const row = rowTitled(h.captured.view.context.rows, 'Place of origin')
 
-      expect(row.value.text).toBe(frozenName)
-    } finally {
-      /* no spy */
-    }
+    expect(row.value.text).toBe(frozenName)
   })
 })
 
 describe('GET addresses — change context', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
-  // Check your answers sends a trader here to change an address. The context
-  // has to survive the trip out to the picker and back, or
-  // the save at the far end exits into the section flow instead of returning
-  // them to the summary that sent them.
   it('Should carry change context into every party link', async () => {
     const result = await rowsFor({}, { change: '1' })
     const { rows } = result.view.context
@@ -203,7 +187,7 @@ describe('GET addresses — change context', () => {
 
   it('Should leave the CPH link alone, its slug already carrying a query string', async () => {
     const result = await rowsFor(
-      { commodityLines: [{ commodityCode: '0102' }] },
+      { commodityLines: [CPH_LINE] },
       { change: '1' }
     )
 
@@ -246,13 +230,6 @@ describe('GET addresses — change context', () => {
 })
 
 describe('POST addresses — change context', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should exit to check your answers when continuing under change context', async () => {
     const result = await driveHandler(postAddresses, { query: { change: '1' } })
 
@@ -262,9 +239,6 @@ describe('POST addresses — change context', () => {
   it('Should follow the ordinary flow when continuing without change context', async () => {
     const result = await driveHandler(postAddresses, {})
 
-    expect(result.response.redirect).not.toBe(
-      pagePath(result.journeyId, CYA_SLUG)
-    )
     expect(result.response.redirect).toBe(hubPath(result.journeyId))
   })
 })

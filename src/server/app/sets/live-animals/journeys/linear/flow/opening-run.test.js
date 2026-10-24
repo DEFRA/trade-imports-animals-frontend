@@ -13,12 +13,23 @@ import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
 import {
   configureSession,
+  flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie
 } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { postHandlerOf } from '../../../../../engine/test-support.js'
+import {
+  postHandlerOf,
+  recordingLogger
+} from '../../../../../engine/test-support.js'
+import { lineKey } from '../features/commodities/search/selection/line-key.js'
+import { SHOWN_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
+import {
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
+  lineOf
+} from '../features/commodities/search/test-support.js'
 import { STUB_BOOK } from '../../../../../services/address-book/stub/index.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -72,14 +83,18 @@ const captureH = () => {
   }
 }
 
-const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
+const buildRequest = (journeyId, { record, flowOnly, ...overrides } = {}) => ({
   payload: {},
   params: journeyId ? { journeyId } : {},
   query: {},
   headers: {},
+  logger: recordingLogger(),
   state: {
     ...(journeyId ? { [knownJourneysCookie()]: [journeyId] } : {}),
-    ...(record ? { [openingRunCookie()]: record } : {})
+    ...(record ? { [openingRunCookie()]: record } : {}),
+    ...(flowOnly
+      ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } }
+      : {})
   },
   ...overrides
 })
@@ -96,32 +111,14 @@ const active = (journeyId) => ({ [journeyId]: RUN_ACTIVE })
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [
-    {
-      commodityCode: '01061900',
-      speciesLatinName: 'Felis catus',
-      numberOfAnimalsQuantity: '',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(FELIS_CATUS_ROW)]
 }
 
-// A consignment of Atlantic salmon: Fish is on none of the identifier
-// allowlists, so the identification page has nothing to ask of this line.
-const fishLineSeed = {
+const unidentifiedLineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [
-    {
-      commodityCode: '01063300',
-      speciesLatinName: 'Struthio',
-      numberOfAnimalsQuantity: '3',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
 }
 
-// A whole notification, so a step deep in the run has every earlier question
-// answered and the next one admitted.
 const { values: completeSeed } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
@@ -163,7 +160,7 @@ const creatingANotificationOpensTheRun = () => {
     expect(h.captured.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
-  it('Should send a journey with no run record to the hub after origin, not into the opening run — origin is an ordinary page now', async () => {
+  it('Should send a journey with no run record to the hub after origin', async () => {
     const { journeyId, h } = await drive(postHandlerOf(origin), {
       payload: originPayload
     })
@@ -189,18 +186,15 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
-    const withCat = {
-      countryOfOrigin: 'FR',
-      commodityLines: [
-        { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
-      ]
-    }
+    const shownCat = { [SHOWN_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
+    const choice = { species: [lineKey(FELIS_CATUS_ROW)] }
     const inRun = await store.create()
-    await store.seedAnswers(inRun.journeyId, withCat)
+    await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
     const h = captureH()
     await postHandlerOf(commoditiesSearch)(
       buildRequest(inRun.journeyId, {
-        payload: { species: ['01061900|Felis catus'] },
+        payload: choice,
+        flowOnly: shownCat,
         record: active(inRun.journeyId)
       }),
       h
@@ -208,8 +202,9 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(pagePath(inRun.journeyId, 'import-reason'))
 
     const outside = await drive(postHandlerOf(commoditiesSearch), {
-      payload: { species: ['01061900|Felis catus'] },
-      seed: withCat
+      payload: choice,
+      flowOnly: shownCat,
+      seed: { countryOfOrigin: 'FR' }
     })
     expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
   })
@@ -229,8 +224,6 @@ const saveAndContinueFollowsTheRunSequence = () => {
       pagePath(inRun.journeyId, 'commodities/identification')
     )
 
-    // Outside the run the page is the commodities section's last page, so
-    // the section flow rests on the hub.
     const outside = await drive(postHandlerOf(consignmentDetails), {
       payload: { 'numberOfAnimalsQuantity-0': '2' },
       seed: lineSeed
@@ -254,12 +247,9 @@ const saveAndContinueFollowsTheRunSequence = () => {
     )
   })
 
-  // Pins where the no-identifiers guard sends the request, not merely that it
-  // redirects: mid-run it has to carry the person on to the next question,
-  // which a bare hop to the hub would not do.
   it('Should carry a consignment with nothing to identify on to additional details mid-run', async () => {
     const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, fishLineSeed)
+    await store.seedAnswers(journey.journeyId, unidentifiedLineSeed)
     const h = captureH()
     const getHandler = animalIdentification.routes.find(
       (route) => route.method === 'GET'
@@ -309,9 +299,6 @@ const saveAndContinueFollowsTheRunSequence = () => {
     )
   })
 
-  // The add spokes are off the run, so the only thing that carries the trader
-  // on is each spoke handing back at the list's step. A spoke that continued
-  // from itself would find no step and drop them on the hub.
   const driveAddSpoke = async (featureModule, { seed, payload }) => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, { ...completeSeed, ...seed })
@@ -626,7 +613,7 @@ describe('the opening run', () => {
       expect(openingRunCookie() in h.captured.cookies).toBe(false)
     })
 
-    it('Should fall back to the section flow once the run is complete (change=1 and plain saves unaffected)', async () => {
+    const postOriginAfterTheRun = async (query) => {
       const journey = await store.create()
       const h = captureH()
       await postHandlerOf(origin)(
@@ -635,11 +622,25 @@ describe('the opening run', () => {
             countryOfOrigin: 'FR',
             regionOfOriginCodeRequirement: 'no'
           },
+          query,
           record: { [journey.journeyId]: RUN_COMPLETE }
         }),
         h
       )
-      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+      return { journeyId: journey.journeyId, h }
+    }
+
+    it('Should send a plain origin save to the hub once the run is complete', async () => {
+      const { journeyId, h } = await postOriginAfterTheRun({})
+      expect(h.captured.redirect).toBe(hubPath(journeyId))
+      expect(openingRunCookie() in h.captured.cookies).toBe(false)
+    })
+
+    it('Should send a change=1 origin save to check your answers once the run is complete', async () => {
+      const { journeyId, h } = await postOriginAfterTheRun({ change: '1' })
+      expect(h.captured.redirect).toBe(
+        pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
+      )
       expect(openingRunCookie() in h.captured.cookies).toBe(false)
     })
   })

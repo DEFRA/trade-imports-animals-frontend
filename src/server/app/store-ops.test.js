@@ -16,9 +16,11 @@ import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import { projectAnswers } from './bridge/fulfilments/index.js'
-const FELIS_CATUS = 'Felis catus'
-const BISON_BISON = 'Bison bison'
-const BOS_TAURUS = 'Bos taurus'
+import {
+  BISON_BISON,
+  BOS_TAURUS,
+  FELIS_CATUS
+} from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
 const GOATS_CODE = '010420'
 

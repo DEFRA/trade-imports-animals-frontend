@@ -1,7 +1,7 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { codeAndLatinNameOf } from '../selection/keys.js'
+import { codeAndLatinNameOf } from '../selection/line-key.js'
 import { speciesLabel } from '../../species-label.js'
 import { legendFor } from './labels.js'
 
@@ -21,8 +21,7 @@ const groupsFor = (selected) =>
   }))
 
 /**
- * What is on the notification so far, so the trader never has to scroll a
- * results list to find out. Grouped by code in canonical selection order.
+ * The chosen species, counted and grouped by commodity code in the order given.
  *
  * @param {string[]} selected - the selection keys already chosen.
  * @returns {{count: number, heading: string, groups: Array<{legend: string, items: string[]}>}} the panel view model.

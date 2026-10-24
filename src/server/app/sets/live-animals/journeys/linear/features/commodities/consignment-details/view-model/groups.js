@@ -1,6 +1,6 @@
 import { packagesApply } from '../../../check-answers/view-model/applicability.js'
 import { animalsField, packagesField } from '../fields.js'
-import { commodityCodesOf } from '../lines.js'
+import { commodityCodesOf, linesOfCode } from '../lines.js'
 import { speciesLabel } from '../../species-label.js'
 
 export const groupLine = ({ index, entry }, values, errors) => ({
@@ -15,9 +15,7 @@ export const groupLine = ({ index, entry }, values, errors) => ({
 })
 
 export const linesForGroup = (lines, code, values, errors) =>
-  lines
-    .filter(({ entry }) => entry.commodityCode === code)
-    .map((line) => groupLine(line, values, errors))
+  linesOfCode(lines, code).map((line) => groupLine(line, values, errors))
 
 export const buildGroups = (lines, values, errors) =>
   commodityCodesOf(lines).map((code, index) => ({

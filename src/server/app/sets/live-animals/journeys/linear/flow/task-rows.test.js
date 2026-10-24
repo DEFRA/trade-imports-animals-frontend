@@ -22,8 +22,8 @@ import {
 import { rowEntry } from '../../../../../flow/navigation.js'
 import { sectionGatePasses } from '../../../../../flow/gates.js'
 import { rowStatus, taskRowById, taskRows } from './task-rows.js'
+import { BOS_TAURUS } from '../features/commodities/search/test-support.js'
 const EQUUS_CABALUS = 'Equus cabalus'
-const BOS_TAURUS = 'Bos taurus'
 
 const { values: happyPath } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
@@ -338,7 +338,7 @@ describe('#rowStatus — the conditional animal-identification row', () => {
     ).toBe(FULFILLED)
   })
 
-  it('Should be marked conditional so the hub drops it while it is Not applicable', () => {
+  it('Should mark the animal-identification row conditional', () => {
     expect(taskRowById('animalIdentification').conditional).toBe(true)
   })
 })
@@ -411,7 +411,7 @@ describe('#rowEntry — every row opens on a page, in any order', () => {
   })
 })
 
-describe('submit-readiness equivalence — the row roll-up admits exactly the journeys the section roll-up did', () => {
+describe('submit-readiness equivalence — the row roll-up and the section roll-up admit the same journeys', () => {
   const PASSING = [FULFILLED, NA, OPTIONAL]
   const sectionRollUp = (answers, inScope, evaluation) =>
     answerSections.every((section) =>
@@ -506,7 +506,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
   }
 
   it.each(Object.entries({ ...submittable, ...notSubmittable }))(
-    'Should agree with the retired section roll-up for %s',
+    'Should agree with the section roll-up for %s',
     (_label, answers) => {
       const { inScope } = makeScope(answers)
       const evaluation = evaluateAnswers(answers)
@@ -536,7 +536,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     }
   )
 
-  it('Should keep the review section gated on the row roll-up exactly as before', () => {
+  it('Should gate the review section on the row roll-up', () => {
     const review = sections.find((section) => section.id === 'review')
     expect(sectionGatePasses(review, makeScope({}))).toBe(false)
     expect(sectionGatePasses(review, makeScope(happyPath))).toBe(true)

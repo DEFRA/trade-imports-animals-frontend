@@ -23,6 +23,7 @@ import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import { routes } from './controller.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import { CATTLE_CODE } from '../../../../services/commodities/rules.js'
 
 const hubUrl = (journeyId) => `${SET_BASE}/notifications/${journeyId}`
 const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
@@ -30,7 +31,6 @@ const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const ORIGIN_SLUG = 'origin'
-const CATTLE_CODE = '0102'
 
 const handlerOf = (method, pathSuffix) =>
   routes.find(

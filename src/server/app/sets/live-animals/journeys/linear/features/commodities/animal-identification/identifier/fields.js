@@ -10,7 +10,6 @@ const copy = copyFor({ en, cy }).identification
 
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
-const IDENTIFIER_MAX_LENGTH = 58
 export const scopedFields = (commodityCode) =>
   commodities
     .identifiersFor(commodityCode)
@@ -19,11 +18,12 @@ export const scopedFields = (commodityCode) =>
 
 export const PERMANENT_ADDRESS = 'permanentAddress'
 
-export const permanentAddressApplies = (commodityCode, species) =>
-  appliesForGateValue(PERMANENT_ADDRESS, [commodityCode, species])
+export const permanentAddressApplies = (commodityCode, speciesLatinName) =>
+  appliesForGateValue(PERMANENT_ADDRESS, [commodityCode, speciesLatinName])
 
-export const identifierChecksFor = (commodityCode, index) =>
-  compose(
+export const identifierChecksFor = (commodityCode, index) => {
+  const IDENTIFIER_MAX_LENGTH = 58
+  return compose(
     ...scopedFields(commodityCode).map((field) =>
       maxText(
         fieldName(field.id, index),
@@ -32,6 +32,7 @@ export const identifierChecksFor = (commodityCode, index) =>
       )
     )
   )
+}
 
 export const identifierValuesFromPayload = (payload, commodityCode, index) =>
   Object.fromEntries(

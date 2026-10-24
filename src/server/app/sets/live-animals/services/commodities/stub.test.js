@@ -5,8 +5,7 @@ import {
   matchesWordPrefixes,
   searchCommodities
 } from './stub.js'
-
-const BOS_TAURUS = 'Bos taurus'
+import { BOS_TAURUS } from '../../journeys/linear/features/commodities/search/test-support.js'
 
 describe('#matchesWordPrefixes', () => {
   it('Should match any word of the text on its opening characters', () => {

@@ -156,11 +156,10 @@ test.describe('party picker per role', () => {
     }) => {
       await openPartyPicker(page, party)
 
-      // The selector pins placement: the section name is the element directly
-      // above the role heading, not text floating elsewhere on the page.
-      await expect(
-        page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-      ).toHaveText(party.title)
+      const headingDirectlyBelowCaption = page.locator(
+        'span.govuk-caption-l + h1.govuk-heading-l'
+      )
+      await expect(headingDirectlyBelowCaption).toHaveText(party.title)
       await expect(page.locator('span.govuk-caption-l')).toHaveText(
         copy.picker.caption
       )

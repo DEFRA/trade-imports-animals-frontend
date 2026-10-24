@@ -1,25 +1,32 @@
 import { describe, expect, it } from 'vitest'
 
-import { BOS_TAURUS_ROW, FELIS_CATUS_ROW } from '../test-support.js'
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW
+} from '../test-support.js'
 import { knownRows, lineRow, resultRows } from './rows.js'
 
 describe('#resultRows', () => {
-  it('Should give one row per species in the search results, with its code', () => {
+  it('Should give every species of every group its own row, carrying its group code', () => {
+    const speciesOf = (row) => ({
+      latinName: row.speciesLatinName,
+      commonName: row.speciesCommonName
+    })
     expect(
       resultRows({
         groups: [
           {
+            code: BOS_TAURUS_ROW.commodityCode,
+            species: [speciesOf(BOS_TAURUS_ROW), speciesOf(BISON_BISON_ROW)]
+          },
+          {
             code: FELIS_CATUS_ROW.commodityCode,
-            species: [
-              {
-                latinName: FELIS_CATUS_ROW.speciesLatinName,
-                commonName: FELIS_CATUS_ROW.commonName
-              }
-            ]
+            species: [speciesOf(FELIS_CATUS_ROW)]
           }
         ]
       })
-    ).toEqual([FELIS_CATUS_ROW])
+    ).toEqual([BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW])
   })
 
   it('Should give no rows before a search', () => {

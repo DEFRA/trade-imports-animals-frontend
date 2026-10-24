@@ -9,6 +9,14 @@ import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 
 export { signIn } from './sign-in.js'
@@ -203,14 +211,17 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-const species = (commodityCode, latinName) => ({ commodityCode, latinName })
+const species = ({ commodityCode, speciesLatinName }) => ({
+  commodityCode,
+  latinName: speciesLatinName
+})
 
-export const BISON_BISON = species('0102', 'Bison bison')
-export const BOS_TAURUS = species('0102', 'Bos taurus')
-export const EQUUS_CABALUS = species('0101', 'Equus cabalus')
-export const FELIS_CATUS = species('01061900', 'Felis catus')
-export const CANIS_FAMILIARIS = species('01061900', 'Canis familiaris')
-export const STRUTHIO = species('01063300', 'Struthio')
+export const BISON_BISON = species(BISON_BISON_ROW)
+export const BOS_TAURUS = species(BOS_TAURUS_ROW)
+export const EQUUS_CABALUS = species(EQUUS_CABALUS_ROW)
+export const FELIS_CATUS = species(FELIS_CATUS_ROW)
+export const CANIS_FAMILIARIS = species(CANIS_FAMILIARIS_ROW)
+export const STRUTHIO = species(STRUTHIO_ROW)
 
 export const SAVE_AND_CONTINUE = 'Save and continue'
 

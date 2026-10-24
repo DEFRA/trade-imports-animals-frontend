@@ -3,10 +3,14 @@ import { lineKey } from './line-key.js'
 
 export const SHOWN_SEARCH_ROWS = 'commoditySearchRows'
 
-export const lineRow = ({ commodityCode, speciesLatinName, commonName }) => ({
+export const lineRow = ({
   commodityCode,
   speciesLatinName,
-  commonName
+  speciesCommonName
+}) => ({
+  commodityCode,
+  speciesLatinName,
+  speciesCommonName
 })
 
 export const resultRows = (results) =>
@@ -14,7 +18,7 @@ export const resultRows = (results) =>
     group.species.map((species) => ({
       commodityCode: group.code,
       speciesLatinName: species.latinName,
-      commonName: species.commonName
+      speciesCommonName: species.commonName
     }))
   )
 

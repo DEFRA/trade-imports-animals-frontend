@@ -30,9 +30,6 @@ const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
   return null
 }
 
-// The row is keyed by the animal, not by its place in the list: on a page
-// holding four commodity lines "Animal 1" heads the first row of every one of
-// them, where "Bos taurus 1" says which animal of which species it is.
 const animalLabelOf = (species, number) =>
   species ? copy.animalRowNamed(species, number) : copy.animalRow(number)
 

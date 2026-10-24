@@ -7,7 +7,7 @@ export const copy = {
       'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.',
     searchLabel: 'Search for a commodity',
     searchHint:
-      'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
+      'Search by commodity code, common name or Latin name, for example 0102, cattle or Bos taurus. Enter at least 3 characters.',
     searchButton: 'Search',
     noResults: 'No results found',
     selected: {

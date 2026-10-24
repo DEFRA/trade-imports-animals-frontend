@@ -20,10 +20,12 @@ import {
 import { dispatchPages } from '../../index.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
-const FELIS_CATUS = 'Felis catus'
-const CANIS_FAMILIARIS = 'Canis familiaris'
-const BISON_BISON = 'Bison bison'
-const BOS_TAURUS = 'Bos taurus'
+import {
+  BISON_BISON,
+  BOS_TAURUS,
+  CANIS_FAMILIARIS,
+  FELIS_CATUS
+} from '../search/test-support.js'
 
 const post = postHandlerOf(consignmentDetails)
 
@@ -53,7 +55,6 @@ const seedLines = () => ({
   ]
 })
 
-// 0102 holds two species; 01061900 lists its species individually.
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     {
@@ -136,7 +137,6 @@ describe('#consignmentDetailsController — per-species quantities over every li
         'numberOfAnimalsQuantity-1': '10',
         'numberOfPackages-1': '2',
         'numberOfAnimalsQuantity-2': '40',
-        // 01063300 takes no package count — a smuggled value must not persist.
         'numberOfPackages-2': '9'
       }
     })
@@ -308,8 +308,6 @@ describe('#consignmentDetailsController — per-species quantities over every li
     const server = Hapi.server()
     await server.register(Crumb)
     registerTestSessionAuth(server)
-    // Mounted under the set prefix, as the router does, so the injected
-    // `pagePath()` URL below reaches the route rather than 404ing.
     await server.register(
       {
         name: 'consignment-details-under-test',
@@ -327,7 +325,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
 
     const prefetched = await server.inject({
       method: 'GET',
-      url: pagePath('journey-1', 'consignment-details/Cow/remove')
+      url: pagePath('journey-1', 'consignment-details/0102/remove')
     })
     expect(prefetched.statusCode).toBe(404)
   })
@@ -391,8 +389,6 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       ['0102', BOS_TAURUS],
       ['01061900', FELIS_CATUS]
     ])
-    // reconcileEntriesAt keys by commodity|species, so the surviving Felis catus line
-    // keeps its own quantities rather than inheriting the removed line's.
     expect(lines[1].numberOfAnimalsQuantity).toBe(9)
     expect(lines[1].numberOfPackages).toBe('4')
   })

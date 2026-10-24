@@ -1,6 +1,17 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
+import {
+  BISON_BISON,
+  BOS_TAURUS,
+  FELIS_CATUS,
+  OSTRICHES_CODE,
+  STRUTHIO
+} from '../../../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import {
+  CATTLE_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../../../sets/live-animals/services/commodities/rules.js'
 
 const address = (name, line1) => ({
   name,
@@ -9,13 +20,6 @@ const address = (name, line1) => ({
 
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
-const BOS_TAURUS = 'Bos taurus'
-const FELIS_CATUS = 'Felis catus'
-const BISON_BISON = 'Bison bison'
-const STRUTHIO = 'Struthio'
-const CATTLE_CODE = '0102'
-const CAT_CODE = '01061900'
-const RATITE_CODE = '01063300'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
 const TRANSPORTER_NAME = 'Transporter Co'
@@ -138,7 +142,7 @@ const groupedLines = () => [
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
   },
   {
-    commodityCode: CAT_CODE,
+    commodityCode: OTHER_LIVE_MAMMALS_CODE,
     speciesLatinName: FELIS_CATUS,
     commodityType: '2',
     numberOfPackages: '1',
@@ -398,7 +402,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commodityCode: CAT_CODE,
+          commodityCode: OTHER_LIVE_MAMMALS_CODE,
           speciesLatinName: FELIS_CATUS,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
@@ -450,7 +454,7 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commodityCode: RATITE_CODE,
+          commodityCode: OSTRICHES_CODE,
           speciesLatinName: STRUTHIO,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '40'

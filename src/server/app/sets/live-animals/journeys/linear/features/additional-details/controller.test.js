@@ -18,14 +18,16 @@ import * as additionalDetails from './controller.js'
 
 const post = postHandlerOf(additionalDetails)
 
-describe('POST additional-details — invalid payload', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+const UNWEANED_SEED = { commodityLines: [{ commodityCode: '0102' }] }
 
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
+})
+beforeEach(() => store.clear())
+
+describe('POST additional-details — invalid payload', () => {
   it('Should answer 400 and re-render an out-of-list certification, committing nothing', async () => {
     const result = await driveHandler(post, {
       payload: { animalsCertifiedFor: 'not-a-real-purpose' }
@@ -37,15 +39,6 @@ describe('POST additional-details — invalid payload', () => {
 })
 
 describe('POST additional-details — Save and return to overview', () => {
-  const UNWEANED_SEED = { commodityLines: [{ commodityCode: '0102' }] }
-
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should go to the overview with every answer blank and commit the blank answers', async () => {
     const result = await driveHandler(post, {
       seed: UNWEANED_SEED,

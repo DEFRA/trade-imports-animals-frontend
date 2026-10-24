@@ -1,22 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSelectedRows } from './selected-rows.js'
-const FELIS_CATUS = 'Felis catus'
-const BOS_TAURUS = 'Bos taurus'
+import { BOS_TAURUS, FELIS_CATUS } from '../../search/test-support.js'
 
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
 
-const linesOf = (...triples) =>
-  triples.map(([commodityCode, speciesLatinName, commonName], index) => ({
-    index,
-    entry: { commodityCode, speciesLatinName, commonName }
-  }))
+const indexedLines = (...triples) =>
+  triples.map(
+    ([commodityCode, speciesLatinName, speciesCommonName], index) => ({
+      index,
+      entry: { commodityCode, speciesLatinName, speciesCommonName }
+    })
+  )
 
 describe('#buildSelectedRows', () => {
   it('Should give a code one row keyed to its group index, naming the Latin name of each species chosen under it', () => {
     expect(
       buildSelectedRows(
-        linesOf(
+        indexedLines(
           ['0102', BOS_TAURUS, 'Cattle or Cow'],
           ['0102', 'Bison bison', 'Bisons Spp'],
           ['01063300', 'Struthio', 'Ostriches']
@@ -35,7 +36,7 @@ describe('#buildSelectedRows', () => {
   it('Should key a code row to its group index even where a species group is built before it', () => {
     expect(
       buildSelectedRows(
-        linesOf(
+        indexedLines(
           ['01061900', FELIS_CATUS, 'Domestic Cat'],
           ['01063300', 'Struthio', 'Ostriches']
         )
@@ -53,7 +54,7 @@ describe('#buildSelectedRows', () => {
   it('Should give each species on code 01061900 its own row and its own remove', () => {
     expect(
       buildSelectedRows(
-        linesOf(
+        indexedLines(
           ['0102', BOS_TAURUS, 'Cattle or Cow'],
           ['01061900', 'Canis familiaris', 'Dog'],
           ['01061900', FELIS_CATUS, 'Domestic Cat']

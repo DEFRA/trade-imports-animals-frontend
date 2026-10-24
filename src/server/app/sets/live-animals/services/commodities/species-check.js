@@ -1,13 +1,13 @@
 import { commoditiesFromStubOrReferenceData } from './stub-or-reference-data.js'
 import { checkSpecies } from './client.js'
-import { COMMODITY_GROUPS } from './stub.js'
+import { unlistedLinesInStub } from './stub.js'
 
-const listedInStub = ({ code, latinName }) =>
-  COMMODITY_GROUPS.some(
-    (group) =>
-      group.code === code &&
-      group.species.some((species) => species.latinName === latinName)
-  )
+const unlistedFrom = ({ unlisted }) => {
+  if (!Array.isArray(unlisted)) {
+    throw new Error('Species check reply has no unlisted list')
+  }
+  return unlisted
+}
 
 /**
  * @param {Array<{code: string, latinName: string}>} lines - the lines to check.
@@ -20,7 +20,7 @@ export const linesWithUnlistedSpecies = async (lines) => {
     return []
   }
   return commoditiesFromStubOrReferenceData({
-    stubCall: () => lines.filter((line) => !listedInStub(line)),
-    realCall: async () => (await checkSpecies(lines)).unlisted ?? []
+    stubCall: () => unlistedLinesInStub(lines),
+    realCall: async () => unlistedFrom(await checkSpecies(lines))
   })
 }

@@ -14,30 +14,29 @@ import {
   identifiersFor
 } from '../../../../../services/commodities/index.js'
 
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-
-const BOS_TAURUS = 'Bos taurus'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
+import { BOS_TAURUS } from '../search/test-support.js'
 
 describe('#copy', () => {
-  // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
-  // sample arguments returning the finished sentence.
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text =
-        typeof value === 'function' ? value('sample', 2, 3, 4) : value
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
+  it.each([
+    ['English', copy],
+    ['Welsh', copyCy]
+  ])(
+    'Should have a non-empty string (or string-returning function) at every %s leaf',
+    (_language, block) => {
+      for (const { path, value } of leaves(block)) {
+        const text =
+          typeof value === 'function' ? value('sample', 2, 3, 4) : value
+        expect(typeof text, `${path} must resolve to a string`).toBe('string')
+        expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(
+          0
+        )
+      }
     }
-  })
+  )
 
   it('Should point the commodity-code lookup at the Trade Tariff tool', () => {
     expect(copy.search.help.lookupHref).toBe('https://www.gov.uk/trade-tariff')
@@ -51,7 +50,6 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  // Microchip is left out: its entry label reads 'Microchip number'.
   it('Should label each identifier entry field with its saved-animals column heading', () => {
     for (const field of [
       'animalIdentifierPassport',
@@ -68,12 +66,8 @@ describe('#copy', () => {
     }
   })
 
-  // The commodity now sets the running order of its own identifier boxes, so
-  // the copy block is a lookup rather than a list. An identifier a commodity
-  // asks for but the copy block has no entry for would render an unlabelled
-  // box, which this closes off in both locales.
-  const expectLabelledIn = (block, commodity, identifier) => {
-    const where = `${commodity} asks for ${identifier}`
+  const expectLabelledIn = (block, commodityCode, identifier) => {
+    const where = `${commodityCode} asks for ${identifier}`
     expect(block.identification.typeFields[identifier]?.label, where).toEqual(
       expect.any(String)
     )
@@ -82,22 +76,24 @@ describe('#copy', () => {
     )
   }
 
-  it('Should carry an entry field and a column heading for every identifier a commodity asks for', () => {
-    const pairs = identifiedCommodityCodes().flatMap((commodity) =>
-      identifiersFor(commodity).map((identifier) => [commodity, identifier])
+  it('Should carry an entry field and a column heading for every identifier a commodity code asks for', () => {
+    const pairs = identifiedCommodityCodes().flatMap((commodityCode) =>
+      identifiersFor(commodityCode).map((identifier) => [
+        commodityCode,
+        identifier
+      ])
     )
-    expect(pairs.length, 'no commodity carries any identifier').toBeGreaterThan(
-      0
-    )
+    expect(
+      pairs.length,
+      'no commodity code carries any identifier'
+    ).toBeGreaterThan(0)
 
-    for (const [commodity, identifier] of pairs) {
-      expectLabelledIn(copy, commodity, identifier)
-      expectLabelledIn(copyCy, commodity, identifier)
+    for (const [commodityCode, identifier] of pairs) {
+      expectLabelledIn(copy, commodityCode, identifier)
+      expectLabelledIn(copyCy, commodityCode, identifier)
     }
   })
 
-  // A user reading only the first sentence could conclude that no health
-  // certificate means no notification. The second sentence closes that off.
   it('Should tell the user that a consignment without a health certificate must still be notified', () => {
     expect(copy.search.inset).toBe(
       'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.'
@@ -141,8 +137,6 @@ describe('#copy', () => {
     )
   })
 
-  // Every card gets the same link, so it names no species — it says what it
-  // changes, not which animal it changes it for.
   it('Should label the route back to the animal count without naming a species', () => {
     expect(copy.identification.changeAnimalCount).toBe(
       'Change number of animals'
@@ -152,9 +146,6 @@ describe('#copy', () => {
     )
   })
 
-  // Saying the address is required tells the trader nothing about why an
-  // invented one is a problem. The warning names the offence and the second
-  // bullet names APHA, who will turn up at whatever address was given.
   it('Should warn that a false permanent address is fraud and say APHA can check it', () => {
     expect(copy.identification.permanentAddress.warning).toBe(
       'Providing a false address is an act of fraud'

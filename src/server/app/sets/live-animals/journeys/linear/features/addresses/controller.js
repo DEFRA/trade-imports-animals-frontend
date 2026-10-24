@@ -3,7 +3,6 @@ import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
@@ -24,6 +23,8 @@ export const meta = {
 const view = `${TEMPLATES}/features/addresses/template`
 
 const copy = copyFor({ en, cy }).hub
+
+const CPH_OBLIGATION = 'countyParishHoldingCph'
 
 const CPH_ROW = {
   ...copy.cph,
@@ -55,11 +56,7 @@ const hubRow = (href, { title, hint }, valueText, editHref) => ({
   }
 })
 
-// A party row keeps change context so the picker and the edit page can hand
-// the trader back here and this page's Continue can return them to check your
-// answers. The CPH row does not: its slug already carries `?return=addresses`,
-// and it is a different obligation reached by its own route.
-const rows = (request, journeyId, answers, parties) => [
+const rows = (request, journeyId, answers, scope, parties) => [
   ...PARTIES.map((party) =>
     hubRow(
       kit.withChangeContext(request, pagePath(journeyId, party.slug)),
@@ -70,7 +67,7 @@ const rows = (request, journeyId, answers, parties) => [
       })
     )
   ),
-  ...(isCphApplicable(answers)
+  ...(scope.has(CPH_OBLIGATION)
     ? [
         hubRow(
           pagePath(journeyId, CPH_ROW.slug),
@@ -82,10 +79,8 @@ const rows = (request, journeyId, answers, parties) => [
 ]
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, scope } = await state.get(request, h)
   const parties = await partiesFromStoredAnswers(answers)
-  // A draft reached from a Change link goes back to the summary that sent the
-  // trader here; an amendment never does, so Back is the task list.
   const backLink =
     kit.changeContext(request) && journey.status !== state.AMEND
       ? pagePath(journey.journeyId, kit.CYA_SLUG)
@@ -98,7 +93,7 @@ const get = async (request, h) => {
       page
     }),
     copy,
-    rows: rows(request, journey.journeyId, answers, parties)
+    rows: rows(request, journey.journeyId, answers, scope, parties)
   })
 }
 

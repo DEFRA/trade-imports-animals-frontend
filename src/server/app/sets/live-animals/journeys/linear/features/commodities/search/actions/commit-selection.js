@@ -6,10 +6,14 @@ import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { lineKey } from '../selection/line-key.js'
 import { clearStoredSearchRows } from '../selection/rows.js'
 
-export const seedLine = ({ commodityCode, speciesLatinName, commonName }) => ({
+export const seedLine = ({
   commodityCode,
   speciesLatinName,
-  ...(commonName ? { commonName } : {}),
+  speciesCommonName
+}) => ({
+  commodityCode,
+  speciesLatinName,
+  ...(speciesCommonName ? { speciesCommonName } : {}),
   commodityType: commodities.typeIdFor(commodityCode, speciesLatinName),
   numberOfPackages: '',
   numberOfAnimalsQuantity: ''

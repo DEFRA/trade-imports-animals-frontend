@@ -2,6 +2,7 @@ import * as state from '../../../../../../engine/index.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { toArray } from './view-model/rows/value-text.js'
 import { withScanStatus } from '../documents/scan/status.js'
 import { SCAN_STATUS } from '../documents/scan-poll.js'
 import { copyFor } from '../../../../../../shared/copy.js'
@@ -17,16 +18,15 @@ const documentsCopy = copyFor({ en, cy })
 const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
 
 const chosenSpecies = (answers) =>
-  [answers.commodityLines ?? []]
-    .flat()
+  toArray(answers.commodityLines)
     .filter((line) => line?.commodityCode && line?.speciesLatinName)
     .map((line) => ({
       code: line.commodityCode,
       latinName: line.speciesLatinName
     }))
 
-export const speciesCardErrors = async (journey, answers) => {
-  if (journey.status !== state.DRAFT) {
+export const speciesCardErrors = async (journey, answers, { refused }) => {
+  if (!refused || journey.status !== state.DRAFT) {
     return {}
   }
   const unlisted = await linesWithUnlistedSpecies(chosenSpecies(answers))
@@ -41,12 +41,12 @@ export const speciesCardErrors = async (journey, answers) => {
     .map(({ code, latinName }) => `${latinName} (${code})`)
     .join(', ')
   return {
-    species: reviewCopy.errors.cards.speciesNoLongerOffered(speciesWithCodes)
+    species: reviewCopy.errors.species.notListed(speciesWithCodes)
   }
 }
 
 const documentScanStatuses = async (answers) => {
-  const documents = [answers.documents ?? []].flat()
+  const documents = toArray(answers.documents)
   if (documents.length === 0) {
     return []
   }
@@ -56,8 +56,15 @@ const documentScanStatuses = async (answers) => {
   )
 }
 
-/** A REJECTED scan is permanent, so always an error; a PENDING one is transient,
- * so only an error when the trader has just been refused for it. */
+/**
+ * The documents card error for the stored documents.
+ *
+ * @param {object} answers - the stored answers.
+ * @param {{ includePending?: boolean }} [options] - include an error for a
+ *   PENDING scan (default true).
+ * @returns {Promise<object>} `someRejected` for any REJECTED scan, else
+ *   `someStillScanning` for a PENDING one when `includePending`, else `{}`.
+ */
 export const documentScanCardErrors = async (
   answers,
   { includePending = true } = {}
@@ -96,5 +103,8 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(await documentScanCardErrors(answers)).length > 0) {
     return true
   }
-  return Object.keys(await speciesCardErrors(journey, answers)).length > 0
+  const speciesErrors = await speciesCardErrors(journey, answers, {
+    refused: true
+  })
+  return Object.keys(speciesErrors).length > 0
 }

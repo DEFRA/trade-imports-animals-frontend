@@ -70,28 +70,14 @@ export const submitReadySeed = {
 }
 
 /**
- * Seed variants — overlays on `submitReadySeed` whose commodity/documents
- * choices open the gates the base seed leaves shut. The base seed's single
- * Cow line never scopes the Horse-gated `horseName`, the Cat/Dog-gated
- * `permanentAddress` or the four per-document leaves (no
- * `documents` records). Values are the real canned commodity and
- * document-type reference data — the same vocabulary
- * the pages store. `fish-line` is the inverse case rather than a
- * gate-opener: Fish is on none of the identifier allowlists, so its line
- * carries no identifier obligation and no animal records, which makes it the
- * corpus's only design-release-1 consignment with no identification panel at
- * all.
- *
- * Both provers run every variant × every scope state, so page reachability
- * is proven in the states these variants create, and `proveScopeCompleteness`
- * fails loudly when a manifest obligation is scoped by NO variant/state pair.
+ * The base seed and the overlays on it that open the gates it leaves shut.
  *
  * @returns {Array<{ id: string, answers: object }>} named answer sets.
  */
 export const seedVariants = () => [
   { id: 'base', answers: submitReadySeed },
   {
-    // Horse: horseName (and passport) per unit record.
+    // 0101 Equus cabalus: horseName (and passport) per unit record.
     id: 'horse-line',
     answers: {
       ...submitReadySeed,
@@ -107,7 +93,7 @@ export const seedVariants = () => [
     }
   },
   {
-    // Cat: permanentAddress (mandatory when in scope) per unit record.
+    // 01061900 Felis catus: permanentAddress (mandatory when in scope) per unit record.
     id: 'cat-line',
     answers: {
       ...submitReadySeed,
@@ -123,9 +109,9 @@ export const seedVariants = () => [
     }
   },
   {
-    // Fish is on none of the identifier allowlists, so no identifier
+    // 01063300 Struthio: the code carries no identifier list, so no identifier
     // obligation applies to its line and it carries no animal records.
-    id: 'fish-line',
+    id: 'unidentified-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [

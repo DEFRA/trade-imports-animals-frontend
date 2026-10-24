@@ -260,7 +260,7 @@ await state.reconcileEntriesAt(
 )
 ```
 
-Each row carries `commodityCode`, `speciesLatinName` and `commonName` from the
+Each row carries `commodityCode`, `speciesLatinName` and `speciesCommonName` from the
 search results the page showed.
 
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected

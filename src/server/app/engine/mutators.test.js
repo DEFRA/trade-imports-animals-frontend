@@ -15,8 +15,10 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
-const FELIS_CATUS = 'Felis catus'
-const BOS_TAURUS = 'Bos taurus'
+import {
+  BOS_TAURUS,
+  FELIS_CATUS
+} from '../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)

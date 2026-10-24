@@ -13,10 +13,10 @@ const itemFor = (row, selected) => {
 }
 
 /**
- * The results panel: one group per CN code in the search results, each with a
- * tick box per species, in the order reference-data returned them.
+ * One group per CN code, in the order each code first appears in the results,
+ * with a tick box per species; an empty list when results is null.
  *
- * @param {object | null} results - the search results, or null before a search.
+ * @param {object | null} results - the search page, or null.
  * @param {string[]} selected - the selection keys already chosen.
  * @returns {Array<{legend: string, items: object[]}>} the result groups.
  */

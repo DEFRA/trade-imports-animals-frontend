@@ -44,10 +44,11 @@ const render = (
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
   const lines = identifiedLines(answers, evaluation)
-  // The recap is the whole consignment, not just the lines with a panel: a
-  // line the page asks nothing of still exists, and hiding it invites the
-  // trader to add the commodity a second time.
-  const allLines = state.collectionView(answers, ['commodityLines'], evaluation)
+  const everyCommodityLine = state.collectionView(
+    answers,
+    ['commodityLines'],
+    evaluation
+  )
   const changeCountHref = kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, consignmentDetailsPage.slug)
@@ -63,7 +64,7 @@ const render = (
     cards: lines.map((line) =>
       buildCard(answers, line, forms.get(line.index), errors, changeCountHref)
     ),
-    selectedCommodities: buildSelectedCommodities(allLines),
+    selectedCommodities: buildSelectedCommodities(everyCommodityLine),
     addHref: kit.withChangeContext(
       request,
       pagePath(request.params.journeyId, 'commodities')
@@ -73,13 +74,21 @@ const render = (
   })
 }
 
-// Nothing on this consignment carries an identifier, so the page does not
-// exist for this person: send them on rather than showing an empty one. The
-// guard sits on both handlers, so a stale form posting to it moves on too.
-const noIdentifiersTarget = async (request, answers, evaluation, scope) =>
-  identifiedLines(answers, evaluation).length === 0
-    ? kit.nextTarget(request, page, scope)
-    : null
+const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
+  if (identifiedLines(answers, evaluation).length > 0) {
+    return null
+  }
+  request.logger.info(
+    {
+      journeyId: request.params.journeyId,
+      commodityCodes: state
+        .collectionView(answers, ['commodityLines'], evaluation)
+        .map(({ entry }) => entry.commodityCode)
+    },
+    'Identification skipped: no commodity line carries an identifier'
+  )
+  return kit.nextTarget(request, page, scope)
+}
 
 const get = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)

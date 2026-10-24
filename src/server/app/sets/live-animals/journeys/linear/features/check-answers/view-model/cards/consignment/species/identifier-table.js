@@ -2,7 +2,7 @@ import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
 import { identifierCell } from './identifier-cell.js'
-import { identifierColumns } from './identifier-columns.js'
+import { filledIdentifierColumns } from './identifier-columns.js'
 
 const copy = copyFor({ en, cy })
 
@@ -10,7 +10,7 @@ export const identifierTable = (units, commodityCode) => {
   if (units.length === 0) {
     return null
   }
-  const columns = identifierColumns(units, commodityCode)
+  const columns = filledIdentifierColumns(units, commodityCode)
   return {
     head: [
       { text: copy.identifierTable.animalColumn },

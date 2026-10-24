@@ -1,7 +1,7 @@
-const HORSES_CODE = '0101'
-const CATTLE_CODE = '0102'
-const SWINE_CODE = '0103'
-const OTHER_LIVE_MAMMALS_CODE = '01061900'
+export const HORSES_CODE = '0101'
+export const CATTLE_CODE = '0102'
+export const SWINE_CODE = '0103'
+export const OTHER_LIVE_MAMMALS_CODE = '01061900'
 
 export const COMMODITY_IDENTIFIERS = {
   [CATTLE_CODE]: ['animalIdentifierEarTag', 'animalIdentifierPassport'],
@@ -57,9 +57,7 @@ export const PACKAGE_COUNT_CODES = [
   '01063200',
   '01063980',
   '01064100',
-  '01064900',
-  '05111000',
-  '05119985'
+  '01064900'
 ]
 
 const PERMANENT_ADDRESS_SPECIES = {

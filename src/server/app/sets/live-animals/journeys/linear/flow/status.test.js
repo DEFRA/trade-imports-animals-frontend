@@ -20,13 +20,7 @@ import {
   FULFILLED,
   OPTIONAL
 } from '../../../../../bridge/status/index.js'
-const BOS_TAURUS = 'Bos taurus'
-
-// The presentation rollup (statusOf), pinned against the manifest. The expected
-// statuses below are stated as literals so a regression fails loudly. The
-// concrete single-row walk (Not started → In progress → Completed) lives in
-// flow/task-rows.test.js; this file pins the whole row / section / readiness
-// rollup across representative journey states.
+import { BOS_TAURUS } from '../features/commodities/search/test-support.js'
 
 const { values: happyPath } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
@@ -325,9 +319,6 @@ describe('statusOf — the commodities/identification facet split', () => {
       IN_PROGRESS,
       FULFILLED
     ],
-    // A unit that EXISTS (permanentAddress stored, Cat-scoped) but violates
-    // the at-least-one-identifier invariant — the per-record verdict the
-    // model's groupInvariantErrors supplies.
     [
       {
         commodityLines: [
@@ -355,7 +346,7 @@ describe('statusOf — the commodities/identification facet split', () => {
     ]
   ]
 
-  it('Should classify each facet as B derives it', () => {
+  it('Should give the commodity facet and the identifiers facet the expected status for each answer set', () => {
     for (const [answers, exceptStatus, onlyStatus] of facetCases) {
       const evaluation = evaluateAnswers(answers)
       expect(statusOf([exceptIdentifiers], answers, inScope, evaluation)).toBe(
@@ -388,8 +379,6 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
     statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
 
   it('Should fulfil the identifiers facet on one species however many animals it declares', () => {
-    // Two hundred salmon, or two hundred cattle, need not be entered one
-    // record at a time — the declared quantity is progress, not a gate.
     expect(facetStatus({ commodityLines: [cowLine('200', [earTag])] })).toBe(
       FULFILLED
     )
@@ -423,8 +412,6 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   })
 
   it('Should ask no record of a second species that carries no identifier of its own', () => {
-    // Fish is on none of the identifier allowlists, so a Cow-and-Fish
-    // consignment is a one-identified-species consignment.
     expect(
       facetStatus({
         commodityLines: [cowLine('5', []), { commodityCode: '01063300' }]

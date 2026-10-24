@@ -89,10 +89,6 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
       cphHolding: 'Holding number must be 4 digits'
     })
 
-    // GDS: the summary lists errors in the order the boxes appear on the page.
-    // toEqual on the errors object above ignores key order, so reordering the
-    // three requiredExactDigits calls in compose() would silently invert the
-    // summary while every other assertion stayed green.
     expect(
       result.view.context.errorSummary.errorList.map(({ href }) => href)
     ).toEqual(['#cphCounty', '#cphParish', '#cphHolding'])
@@ -152,9 +148,7 @@ describe('GET cph-number — the stored number back in its parts', () => {
     expect(result.view.context.values).toEqual(VALID_PARTS)
   })
 
-  // Answers seeded by fixtures still carry the slashed form the page used to
-  // accept, so the split reads digits only rather than slicing the separators.
-  it('Should split a stored value that still carries slashes', async () => {
+  it('Should split a stored value written with slashes into its three parts', async () => {
     const result = await driveHandler(getCph, {
       seed: { ...seed(), countyParishHoldingCph: '12/345/6789' }
     })

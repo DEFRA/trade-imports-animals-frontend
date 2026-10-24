@@ -9,8 +9,12 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { search } from '../../../../../services/commodities/search.js'
 import { commitSelection } from './actions/commit-selection.js'
-import { SEARCH_PAGE_SIZE, isSearchable, normaliseQuery } from './matching.js'
-import { mergedKeysFromPayload, storedKeys } from './selection/selected-keys.js'
+import { isSearchable, normaliseQuery } from './search-query.js'
+import {
+  droppedKeysFromPayload,
+  mergedKeysFromPayload,
+  storedKeys
+} from './selection/selected-keys.js'
 import {
   knownRows,
   replaceStoredSearchRows,
@@ -30,7 +34,7 @@ const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
 const searchFor = (query) =>
-  isSearchable(query) ? search(query, { size: SEARCH_PAGE_SIZE }) : null
+  isSearchable(query) ? search(query, { size: 100 }) : null
 
 const rowsFor = (keys, knownRowsByKey) =>
   keys.map((key) => knownRowsByKey.get(key))
@@ -44,10 +48,8 @@ const render = (
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
-  // The error belongs on the control the trader must fix: the tick boxes when
-  // results are listed, the search box when there is nothing yet to tick.
-  const errorField = groups.length > 0 ? 'species' : 'commoditySearch'
-  const errors = errorText ? { [errorField]: errorText } : {}
+  const fieldToFix = groups.length > 0 ? 'species' : 'commoditySearch'
+  const errors = errorText ? { [fieldToFix]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
@@ -79,7 +81,7 @@ const searchStoreRowsAndRender = async (
 ) => {
   const results = await searchFor(query)
   await replaceStoredSearchRows(request, h, [
-    ...rowsFor(selected, knownRowsByKey),
+    ...knownRowsByKey.values(),
     ...resultRows(results)
   ])
   const { journey } = await state.get(request, h)
@@ -99,6 +101,13 @@ const post = async (request, h) => {
   }
 
   const selected = mergedKeysFromPayload(payload, knownRowsByKey)
+  const droppedKeys = droppedKeysFromPayload(payload, knownRowsByKey)
+  if (droppedKeys.length > 0) {
+    request.logger.warn(
+      { journeyId: request.params.journeyId, droppedKeys },
+      'Commodity choices not in the stored search rows were dropped'
+    )
+  }
 
   if (payload.action === SEARCH_ACTION) {
     return searchStoreRowsAndRender(request, h, knownRowsByKey, {

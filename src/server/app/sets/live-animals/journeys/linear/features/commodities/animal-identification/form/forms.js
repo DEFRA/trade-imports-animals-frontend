@@ -95,9 +95,6 @@ export const buildLineForms = (payload, answers, lines) => {
   return { forms, atMaxByIndex, errors }
 }
 
-// "Save and add another" pressed against a card already at its cap — a
-// stale form racing the engine-enforced cardinality link. Surface the
-// rejection; never save silently.
 export const capReachedResponse = ({
   render,
   request,
@@ -112,19 +109,17 @@ export const capReachedResponse = ({
   if (addIndex === null || !atMaxByIndex.has(addIndex)) {
     return null
   }
+  const cap = atMaxByIndex.get(addIndex)
+  request.logger.warn(
+    { journeyId: request.params.journeyId, lineIndex: addIndex, cap },
+    'Identifier add refused: the line is already at its animal count'
+  )
   return render(request, h, journey, answers, evaluation, {
     forms,
-    cardErrors: [
-      {
-        index: addIndex,
-        text: copy.errors.capReached(atMaxByIndex.get(addIndex))
-      }
-    ]
+    cardErrors: [{ index: addIndex, text: copy.errors.capReached(cap) }]
   })
 }
 
-// "Save and add another" pressed on a card with nothing entered anywhere:
-// never append an empty record — name the gap instead.
 export const withEmptyFormGuard = (errors, forms, addIndex) => {
   const anyData = [...forms.values()].some((form) => form.holdsData)
   if (addIndex === null || anyData || !forms.has(addIndex)) {

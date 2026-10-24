@@ -9,7 +9,7 @@ const copy = copyFor({ en, cy })
 
 export const speciesCardRows = (entry) => [
   row(copy.rows.commodityCode, entry.commodityCode),
-  row(copy.rows.commonName, entry.commonName),
+  row(copy.rows.speciesCommonName, entry.speciesCommonName),
   row(copy.rows.species, speciesLabel(entry)),
   row(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
   ...(packagesApply(entry.commodityCode)

@@ -1,13 +1,10 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { speciesLabel } from '../../species-label.js'
-import { commodityCodesOf } from '../lines.js'
+import { commodityCodesOf, linesOfCode } from '../lines.js'
 import {
   REMOVE_ACTION_PREFIX,
   REMOVE_SPECIES_ACTION_PREFIX
 } from '../remove/actions.js'
-
-const linesOfCode = (lines, code) =>
-  lines.filter(({ entry }) => entry.commodityCode === code)
 
 const commodityRow = (lines, code, index) => ({
   code,

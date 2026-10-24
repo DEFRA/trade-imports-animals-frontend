@@ -43,8 +43,14 @@ import * as commercialTransporterDetails from './sets/live-animals/journeys/line
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
-const FELIS_CATUS = 'Felis catus'
-const BOS_TAURUS = 'Bos taurus'
+import {
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS,
+  FELIS_CATUS_ROW,
+  lineOf
+} from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import { lineKey } from './sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
 
 const drive = driveHandler
 
@@ -223,41 +229,16 @@ describe('controller <-> model commit contract', () => {
     expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
     const result = await drive(postHandlerOf(commoditiesSearch), {
       flowOnly: {
-        commoditySearchRows: [
-          {
-            commodityCode: '0102',
-            speciesLatinName: BOS_TAURUS,
-            commonName: 'Cattle or Cow'
-          },
-          {
-            commodityCode: '01061900',
-            speciesLatinName: FELIS_CATUS,
-            commonName: 'Domestic Cat'
-          }
-        ]
+        commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
       },
-      payload: { species: [`0102|${BOS_TAURUS}`, `01061900|${FELIS_CATUS}`] }
+      payload: { species: [BOS_TAURUS_ROW, FELIS_CATUS_ROW].map(lineKey) }
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(commoditiesSearch.meta.collects))
     )
     expect(result.after.commodityLines).toEqual([
-      {
-        commodityCode: '0102',
-        speciesLatinName: BOS_TAURUS,
-        commonName: 'Cattle or Cow',
-        commodityType: '16',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      },
-      {
-        commodityCode: '01061900',
-        speciesLatinName: FELIS_CATUS,
-        commonName: 'Domestic Cat',
-        commodityType: '2',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      }
+      lineOf(BOS_TAURUS_ROW, { commodityType: '16' }),
+      lineOf(FELIS_CATUS_ROW, { commodityType: '2' })
     ])
   })
 

@@ -11,9 +11,11 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import {
+  CATTLE_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../../../../services/commodities/rules.js'
 
-const CATTLE_CODE = BOS_TAURUS.commodityCode
-const OTHER_MAMMALS_CODE = FELIS_CATUS.commodityCode
 const BACK_LINK = '.govuk-back-link'
 
 const canonicalSelectionOrder = [
@@ -107,7 +109,7 @@ test.describe('commodity search', () => {
 
   test('finds a species by its common name', async ({ page }) => {
     await searchCommodities(page, 'ferret')
-    const group = page.getByRole('group', { name: OTHER_MAMMALS_CODE })
+    const group = page.getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
     await expect(
       group.getByRole('checkbox', {
         name: 'Mustela putorius furo',
@@ -138,7 +140,9 @@ test.describe('commodity search', () => {
   }) => {
     await searchCommodities(page, 'taurus')
     const cattle = page.getByRole('group', { name: CATTLE_CODE })
-    const otherMammals = page.getByRole('group', { name: OTHER_MAMMALS_CODE })
+    const otherMammals = page.getByRole('group', {
+      name: OTHER_LIVE_MAMMALS_CODE
+    })
     await expect(
       cattle.getByRole('checkbox', { name: BOS_TAURUS.latinName, exact: true })
     ).toBeVisible()
@@ -167,7 +171,7 @@ test.describe('commodity search', () => {
     await expect(panel).toContainText(copy.search.selected.heading(2))
     await expect(panel).toContainText(`${CATTLE_CODE}: ${BOS_TAURUS.latinName}`)
     await expect(panel).toContainText(
-      `${OTHER_MAMMALS_CODE}: ${FELIS_CATUS.latinName}`
+      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.latinName}`
     )
 
     await page
@@ -217,7 +221,7 @@ test.describe('commodity search', () => {
     await expect(panel).toContainText(copy.search.selected.heading(3))
     await expect(panel.getByRole('listitem')).toHaveText([
       `${CATTLE_CODE}: ${BISON_BISON.latinName}, ${BOS_TAURUS.latinName}`,
-      `${OTHER_MAMMALS_CODE}: ${FELIS_CATUS.latinName}`
+      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.latinName}`
     ])
   })
 
@@ -244,7 +248,7 @@ test.describe('commodity search', () => {
     await searchCommodities(page, 'taurus')
     await expect(
       page
-        .getByRole('group', { name: OTHER_MAMMALS_CODE })
+        .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
         .getByRole('checkbox', { name: BOS_TAURUS.latinName, exact: true })
     ).not.toBeChecked()
   })
@@ -276,7 +280,7 @@ test.describe('commodity search by code', () => {
   test('lists no more than a hundred species for one search', async ({
     page
   }) => {
-    await searchCommodities(page, OTHER_MAMMALS_CODE)
+    await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
     await expect(page.getByRole('checkbox')).toHaveCount(100)
   })
 })

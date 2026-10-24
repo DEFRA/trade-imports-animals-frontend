@@ -49,7 +49,13 @@ owned once and that grouped binding paths match each `within` chain.
 
 [`src/server/app/sets/live-animals/obligations/coverage.test.js`](../obligations/coverage.test.js)
 checks manifest identity, dependency and group invariants.
-[`src/server/app/sets/live-animals/obligations/whitelists.test.js`](../obligations/whitelists.test.js)
-checks commodity allow-lists against the set-owned reference service.
+[`src/server/app/sets/live-animals/obligations/allowlists.test.js`](../obligations/allowlists.test.js)
+checks commodity allow-lists against the set-owned reference service. The test
+iterates every allow-list and gated obligation pair, checks that a control value on
+no list leaves the obligation out of scope, and pins each allow-list to an expected
+list, so a single-file edit to a service list fails the drift check. To change an
+allow-list on purpose, edit it in
+[`rules.js`](../services/commodities/rules.js) and update the matching expected list
+in the test in the same change.
 
 The generic model contract is in the [platform obligation-model guide](../../../docs/obligation-model.md).

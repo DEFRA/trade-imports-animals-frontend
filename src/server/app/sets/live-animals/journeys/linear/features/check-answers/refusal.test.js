@@ -37,6 +37,10 @@ const UNLISTED_SPECIES_LINE = {
   commodityCode: '0102',
   speciesLatinName: 'Bos spp.'
 }
+const SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Felis catus'
+}
 
 const PENDING_FILENAME = 'notes-never-scans.pdf'
 const REJECTED_FILENAME = 'virus-alert.pdf'
@@ -138,8 +142,6 @@ describe('#isReviewRefused', () => {
   })
 
   it('Should refuse a notification whose stored document is still being scanned', async () => {
-    // Stub scanStatus maps filename → status when the uploadId has not been
-    // seen by upload(); "never-scans" stays PENDING on non-refresh reads.
     const journey = await seedAnd(
       fullyAnswered({
         documents: [doc({ filename: PENDING_FILENAME })]
@@ -195,7 +197,8 @@ describe('#speciesCardErrors', () => {
     const warn = vi.spyOn(createLogger(), 'warn')
     await speciesCardErrors(
       { status: DRAFT, journeyId: 'journey-1' },
-      { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] }
+      { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] },
+      { refused: true }
     )
     expect(warn).toHaveBeenCalledTimes(1)
     expect(warn.mock.calls[0][0]).toEqual({
@@ -208,19 +211,29 @@ describe('#speciesCardErrors', () => {
     const warn = vi.spyOn(createLogger(), 'warn')
     await speciesCardErrors(
       { status: DRAFT, journeyId: 'journey-1' },
-      { commodityLines: [LISTED_SPECIES_LINE] }
+      { commodityLines: [LISTED_SPECIES_LINE] },
+      { refused: true }
     )
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it('Should name each species of a draft MDM no longer lists, with its code', async () => {
+  it('Should name every species of a draft that reference data no longer lists under its code, with its code', async () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE] }
+        {
+          commodityLines: [
+            LISTED_SPECIES_LINE,
+            UNLISTED_SPECIES_LINE,
+            SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
+          ]
+        },
+        { refused: true }
       )
     ).toEqual({
-      species: reviewEn.errors.cards.speciesNoLongerOffered('Bos spp. (0102)')
+      species: reviewEn.errors.species.notListed(
+        'Bos spp. (0102), Felis catus (0102)'
+      )
     })
   })
 
@@ -228,7 +241,18 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: AMEND },
-        { commodityLines: [UNLISTED_SPECIES_LINE] }
+        { commodityLines: [UNLISTED_SPECIES_LINE] },
+        { refused: true }
+      )
+    ).toEqual({})
+  })
+
+  it('Should return no species error for a draft that has not just been refused', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [UNLISTED_SPECIES_LINE] },
+        { refused: false }
       )
     ).toEqual({})
   })
@@ -237,7 +261,8 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [{ commodityCode: '0102' }] }
+        { commodityLines: [{ commodityCode: '0102' }] },
+        { refused: true }
       )
     ).toEqual({})
   })

@@ -12,9 +12,7 @@ import * as certification from '../../../../../../services/certification-purpose
 import { additionalDetailsPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { unweanedApplies, validation } from './validate.js'
-
-export { unweanedApplies }
+import { validation } from './validate.js'
 
 export const meta = {
   ...page,

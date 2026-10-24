@@ -1,11 +1,6 @@
 export const copy = {
   title: 'Review your notification',
-  // An empty value inside a card that is finished. Nothing more is owed on
-  // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
-  // An empty value inside a card that still has answers outstanding gets no
-  // text at all — the row is drawn in the missing style, and this is what a
-  // screen reader is told in its place.
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   means: {
@@ -46,7 +41,6 @@ export const copy = {
     consignmentParties: '5. Consignment parties',
     contactAddress: '6. Contact address'
   },
-  // The subsection heading that stands above each card. Every card has one.
   groups: {
     whereFrom: 'Where is this consignment coming from?',
     mainReasonForImport: 'Main reason for import',
@@ -83,7 +77,7 @@ export const copy = {
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
     commodityCode: 'Commodity code',
-    commonName: 'Common name',
+    speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     numberOfPackages: 'Number of packages',
@@ -118,8 +112,6 @@ export const copy = {
   },
   documentN: (n) => `Document ${n}`,
   documentsEmpty: 'You have not added any documents yet.',
-  // The visually hidden end of each card's "Change ..." link: lower case, the
-  // card's title in words.
   hidden: {
     cards: {
       importDetails: 'import details',
@@ -134,29 +126,26 @@ export const copy = {
     },
     commodity: (n) => `commodity ${n}`
   },
-  // The review ends with the button and nothing else. Its label carries the
-  // whole instruction, so no heading and no sentence stand above it.
   submit: {
     button: 'Continue'
   },
   errors: {
     prefix: 'Error:',
-    // One line per review card that still has answers outstanding. The same
-    // line carries the error summary entry and the message inside the card, so
-    // a trader reading either sees the same words.
     cards: {
       importDetails: 'Complete import details',
       reasonForImport: 'Complete reason for import',
       additionalAnimalDetails: 'Complete additional animal details',
       species: 'Complete species details',
-      speciesNoLongerOffered: (speciesWithCodes) =>
-        `${speciesWithCodes} can no longer be selected. Choose the species again`,
       arrivalDetails: 'Complete arrival details',
       transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
+    },
+    species: {
+      notListed: (speciesWithCodes) =>
+        `${speciesWithCodes} can no longer be selected. Choose the species again`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',

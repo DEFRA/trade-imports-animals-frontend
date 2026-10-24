@@ -12,9 +12,6 @@ export const regionCodeApplies = (_answers, scope) =>
 export const purposeApplies = (_answers, scope) =>
   scope.has('purposeInInternalMarket')
 
-// The three answers the reason for import reveals beyond the purpose. Each
-// row stands on the same scope entry that puts its question to the trader, so
-// the review shows an exit answer exactly when one was asked for.
 export const destinationCountryApplies = (_answers, scope) =>
   scope.has('destinationCountry')
 

@@ -1,14 +1,5 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 
-{# One block per commodity group: heading, then per-species quantity inputs
-   for every line of that commodity, one sub-block per species.
-
-   The commodity heading is set at the page-heading size on purpose: the
-   commodity blocks are the substance of the page and the h1 above them only
-   names it, so the design steps the type down from the commodity to the
-   species to the quantity labels. Without a size on the labels they read at
-   the same weight as their own hints, and with several commodities on the
-   page the questions and their guidance run together. #}
 {% macro speciesQuantityGroup(group, copy) %}
   <h2 class="govuk-heading-l">{{ group.code }}</h2>
   {% for line in group.lines %}

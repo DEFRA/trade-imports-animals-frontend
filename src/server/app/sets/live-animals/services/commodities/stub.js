@@ -39,6 +39,16 @@ const matchingSpecies = (group, term) =>
     ? group.species
     : group.species.filter((species) => speciesMatches(species, term))
 
+const listedInStub = ({ code, latinName }) =>
+  COMMODITY_GROUPS.some(
+    (group) =>
+      group.code === code &&
+      group.species.some((species) => species.latinName === latinName)
+  )
+
+export const unlistedLinesInStub = (lines) =>
+  lines.filter((line) => !listedInStub(line))
+
 export const searchCommodities = (term, { page, size }) => {
   const matches = COMMODITY_GROUPS.flatMap((group) =>
     matchingSpecies(group, term).map((species) => ({

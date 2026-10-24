@@ -6,6 +6,7 @@ import {
   switchToStubMode
 } from '../../../../../common/test-helpers/run-mode.js'
 import {
+  fetchMocker,
   firstRequest,
   mockFetchEachTest,
   respondWith,
@@ -35,16 +36,30 @@ describe('#linesWithUnlistedSpecies', () => {
         { code: '0101', latinName: 'Felis catus' }
       ])
     })
-
-    it('Should return nothing when there is nothing to check', async () => {
-      const { linesWithUnlistedSpecies } = await import('./species-check.js')
-
-      expect(await linesWithUnlistedSpecies([])).toEqual([])
-    })
   })
 
   describe('in real mode', () => {
     beforeEach(switchToRealMode)
+
+    it('Should return nothing and send no request when there is nothing to check', async () => {
+      const { linesWithUnlistedSpecies } = await import('./species-check.js')
+
+      expect(await linesWithUnlistedSpecies([])).toEqual([])
+      expect(fetchMocker.requests()).toEqual([])
+    })
+
+    it('Should report reference data as unavailable when the reply has no unlisted list', async () => {
+      respondWithJson({})
+      const { linesWithUnlistedSpecies } = await import('./species-check.js')
+
+      const error = await linesWithUnlistedSpecies([BOS_SPP]).catch(
+        (caught) => caught
+      )
+
+      expect(error.isBoom).toBe(true)
+      expect(error.output.statusCode).toBe(503)
+      expect(error.data.dataset).toBe('commodities')
+    })
 
     it('Should ask reference-data which lines are not listed', async () => {
       respondWithJson({ unlisted: [BOS_SPP] })

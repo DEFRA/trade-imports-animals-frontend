@@ -4,8 +4,10 @@ import { assembleFulfilments } from '../assemble-fulfilments.js'
 import { projectAnswers } from './index.js'
 import { createObligationEvaluator } from '../../model/obligations/evaluator.js'
 import { obligationSet } from '../../model/obligations/manifest.js'
-const BISON_BISON = 'Bison bison'
-const BOS_TAURUS = 'Bos taurus'
+import {
+  BISON_BISON,
+  BOS_TAURUS
+} from '../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
 const {
   countryOfOrigin,

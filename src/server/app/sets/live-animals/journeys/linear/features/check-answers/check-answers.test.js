@@ -38,6 +38,7 @@ import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
+import { BOS_TAURUS_ROW } from '../commodities/search/test-support.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 
@@ -192,9 +193,7 @@ const fullSeed = {
   internalReferenceNumber: 'Imports456GB',
   commodityLines: [
     {
-      commodityCode: '0102',
-      speciesLatinName: 'Bos taurus',
-      commonName: 'Cattle or Cow',
+      ...BOS_TAURUS_ROW,
       commodityType: '16',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
@@ -1454,7 +1453,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
 
     expect(view.context.errorSummary.errorList).toEqual([
       {
-        text: copyEn.errors.cards.speciesNoLongerOffered(
+        text: copyEn.errors.species.notListed(
           `${SPECIES_MDM_DOES_NOT_LIST} (0102)`
         ),
         href: '#description-of-the-goods'

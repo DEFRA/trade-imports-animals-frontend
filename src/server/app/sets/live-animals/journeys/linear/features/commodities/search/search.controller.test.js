@@ -12,7 +12,9 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
@@ -130,7 +132,7 @@ describe('commodity search', () => {
     const bubalis = {
       commodityCode: '0102',
       speciesLatinName: 'Bubalus bubalis',
-      commonName: 'Water Buffalo'
+      speciesCommonName: 'Water Buffalo'
     }
     const result = await searchFor(
       'buffalo',
@@ -177,7 +179,7 @@ describe('commodity search', () => {
     expect(unticked.view.context.selectedSummary.count).toBe(0)
   })
 
-  it('Should remember the rows it showed and the rows already chosen until the page saves', async () => {
+  it("Should store this search's rows beside the rows already shown, until the page saves", async () => {
     const result = await searchFor(
       'ferret',
       { selection: BOS_TAURUS_KEY },
@@ -185,12 +187,46 @@ describe('commodity search', () => {
     )
     expect(storedSearchRowsOf(result)).toEqual([
       BOS_TAURUS_ROW,
+      BISON_BISON_ROW,
       {
         commodityCode: '01061900',
         speciesLatinName: 'Mustela putorius furo',
-        commonName: 'Ferret'
+        speciesCommonName: 'Ferret'
       }
     ])
+  })
+
+  it('Should keep a row an earlier search showed, so a later search cannot lose the choice', async () => {
+    const later = await searchFor(
+      'felis',
+      {},
+      searchRowsShownEarlier(BOS_TAURUS_ROW)
+    )
+    expect(storedSearchRowsOf(later)).toContainEqual(BOS_TAURUS_ROW)
+
+    const saved = await driveHandler(post, {
+      payload: { species: BOS_TAURUS_KEY },
+      flowOnly: { [SHOWN_SEARCH_ROWS]: storedSearchRowsOf(later) }
+    })
+    expect(keysOf(saved.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
+  })
+
+  it('Should log a choice the stored search rows no longer hold, naming the journey and the key', async () => {
+    const journey = await store.create()
+    const request = journeyRequest(journey.journeyId, {
+      payload: {
+        action: 'search',
+        commoditySearch: 'felis',
+        selection: BOS_TAURUS_KEY
+      }
+    })
+    await post(request, stubH(request))
+
+    expect(request.logger.entries).toContainEqual({
+      level: 'warn',
+      fields: { journeyId: journey.journeyId, droppedKeys: [BOS_TAURUS_KEY] },
+      message: 'Commodity choices not in the stored search rows were dropped'
+    })
   })
 
   it('Should forget the rows once the page has saved its lines', async () => {
@@ -275,7 +311,7 @@ describe('commodity search — saving the selection', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should require at least one chosen pair and create nothing', async () => {
+  it('Should require at least one chosen species and create nothing', async () => {
     const result = await driveHandler(post, { payload: {} })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.commoditySearch).toBe(SELECT_COMMODITY)
@@ -386,10 +422,31 @@ describe('commodity search — saving the selection', () => {
     ])
   })
 
-  it('Should ignore unknown pairs and deduplicate chosen pairs', async () => {
+  it('Should save a species MDM gives no common name without a speciesCommonName key', async () => {
+    const unnamedRow = {
+      commodityCode: '01061900',
+      speciesLatinName: 'Carnivora excluding Canis familiaris',
+      speciesCommonName: null
+    }
+    const result = await driveHandler(post, {
+      payload: { species: lineKey(unnamedRow) },
+      flowOnly: searchRowsShownEarlier(unnamedRow)
+    })
+    expect(result.after.commodityLines).toStrictEqual([
+      {
+        commodityCode: '01061900',
+        speciesLatinName: 'Carnivora excluding Canis familiaris',
+        commodityType: '2',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ])
+  })
+
+  it('Should ignore unknown species and deduplicate chosen species', async () => {
     const result = await driveHandler(post, {
       payload: {
-        selection: ['Wolf|999', BOS_TAURUS_KEY],
+        selection: ['0102|Canis lupus', BOS_TAURUS_KEY],
         species: [BOS_TAURUS_KEY, 'not-a-key']
       },
       flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)

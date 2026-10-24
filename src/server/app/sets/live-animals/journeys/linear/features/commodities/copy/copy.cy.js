@@ -15,7 +15,7 @@ export const copy = {
       'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd. Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.',
     searchLabel: 'Chwilio am nwydd',
     searchHint:
-      'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
+      'Chwiliwch yn ôl cod nwyddau, enw cyffredin neu enw Lladin, er enghraifft 0102, gwartheg neu Bos taurus. Rhowch o leiaf 3 nod.',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
     selected: {

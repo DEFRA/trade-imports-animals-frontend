@@ -56,9 +56,9 @@ export const speciesLatinName = {
   status: 'mandatory'
 }
 
-export const commonName = {
+export const speciesCommonName = {
   id: 'c8824345-0a1a-421d-8f35-f932fa1874f7',
-  name: 'commonName',
+  name: 'speciesCommonName',
   within: commodityLine,
   status: 'optional'
 }
