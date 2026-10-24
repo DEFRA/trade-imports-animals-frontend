@@ -1,0 +1,330 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: animals/e2e/journeys/opening-run.spec.ts >> Opening run >> walks a cattle-by-air notification through every opening-run task, from create to submitted
+- Location: tests/animals/e2e/journeys/opening-run.spec.ts:8:3
+
+# Error details
+
+```
+TimeoutError: locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Main reason for import', exact: true, level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f4e1]:
+  - link "Skip to main content" [ref=f4e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f4e3]:
+    - link [ref=f4e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=f4e8]
+    - region "Service information" [ref=f4e21]:
+      - generic [ref=f4e23]:
+        - link "Import notification service" [ref=f4e25] [cursor=pointer]:
+          - /url: /live-animals
+        - navigation "Menu" [ref=f4e26]:
+          - list [ref=f4e27]:
+            - listitem [ref=f4e28]:
+              - link [ref=f4e29] [cursor=pointer]:
+                - /url: /live-animals
+                - strong [ref=f4e30]: Dashboard
+            - listitem [ref=f4e31]:
+              - link "Address book" [ref=f4e32] [cursor=pointer]:
+                - /url: http://localhost:3002/address-book
+            - listitem [ref=f4e33]:
+              - link "Manage account" [ref=f4e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f4e35]:
+              - link "Log out" [ref=f4e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=f4e37]:
+    - paragraph [ref=f4e39]:
+      - strong [ref=f4e40]: Alpha
+      - generic [ref=f4e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=f4e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - paragraph [ref=f4e44]:
+      - strong [ref=f4e45]:
+        - generic [ref=f4e46]: "This page’s status:"
+        - text: Detailing
+        - generic [ref=f4e47]: .
+      - generic [ref=f4e48]: We’re keeping this page. We’re still working out the detail.
+    - link "Back" [ref=f4e49] [cursor=pointer]:
+      - /url: /live-animals/notifications/GBN-AG-26-3N9SY8/commodities
+    - main [ref=f4e50]:
+      - generic [ref=f4e52]:
+        - generic [ref=f4e53]:
+          - strong [ref=f4e54]: Draft
+          - text: GBN-AG-26-3N9SY8
+        - generic [ref=f4e55]: About the consignment
+        - heading "Main import reason" [level=1] [ref=f4e56]
+        - generic [ref=f4e57]:
+          - group "What is the main reason for importing the animals?" [ref=f4e59]:
+            - generic [ref=f4e61]:
+              - generic [ref=f4e62]:
+                - radio "Internal market" [ref=f4e63] [cursor=pointer]
+                - generic [ref=f4e64] [cursor=pointer]: Internal market
+                - generic [ref=f4e65]: For imports of animals intended for sale or use in Great Britain (England, Scotland or Wales).
+              - generic [ref=f4e66]:
+                - radio "Transhipment or onward travel" [ref=f4e67] [cursor=pointer]
+                - generic [ref=f4e68] [cursor=pointer]: Transhipment or onward travel
+                - generic [ref=f4e69]: For animals intended for direct travel to a third country, that will stay only within the same port or airport in Great Britain while moving to another means of transport.
+              - generic [ref=f4e70]:
+                - radio "Transit" [ref=f4e71] [cursor=pointer]
+                - generic [ref=f4e72] [cursor=pointer]: Transit
+                - generic [ref=f4e73]: For animals moving through Great Britain for direct travel to a third country, that will enter Great Britain at one port or airport and leave from a different one within England, Scotland or Wales.
+              - generic [ref=f4e74]:
+                - radio "Re-entry" [ref=f4e75] [cursor=pointer]
+                - generic [ref=f4e76] [cursor=pointer]: Re-entry
+                - generic [ref=f4e77]: For animals authorised for re-entry, or rejected exports re-entering Great Britain.
+              - generic [ref=f4e78]:
+                - radio "Temporary admission horses" [ref=f4e79] [cursor=pointer]
+                - generic [ref=f4e80] [cursor=pointer]: Temporary admission horses
+                - generic [ref=f4e81]: For horses authorised for temporary entry.
+          - generic [ref=f4e82]:
+            - button "Save and continue" [ref=f4e83] [cursor=pointer]
+            - button "Save and return to overview" [ref=f4e84] [cursor=pointer]
+          - paragraph [ref=f4e85]:
+            - link "Cancel and return to overview" [ref=f4e86] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-3N9SY8
+  - contentinfo [ref=f4e87]:
+    - generic [ref=f4e100]:
+      - generic [ref=f4e101]:
+        - heading "Support links" [level=2] [ref=f4e102]
+        - list [ref=f4e103]:
+          - listitem [ref=f4e104]:
+            - link "Privacy" [ref=f4e105] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=f4e106]:
+            - link "Cookies" [ref=f4e107] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=f4e108]:
+            - link "Accessibility statement" [ref=f4e109] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - generic [ref=f4e112]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=f4e113] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=f4e115] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  389 |     await this.animalsPages.overview.task('Transport details').click();
+  390 |     await this.animalsPages.transporter.heading.waitFor(pageLoadWait);
+  391 |   }
+  392 | 
+  393 |   // The commercial arm of the add route: the list first, then the type
+  394 |   // question, and then the form for a commercial transporter that is not on
+  395 |   // the list.
+  396 |   async toCommercialTransporter(): Promise<void> {
+  397 |     await this.toTransporter();
+  398 |     await this.animalsPages.transporter.addTransporter.click();
+  399 |     await this.animalsPages.transporterAdd.heading.waitFor(pageLoadWait);
+  400 |     await this.animalsPages.transporterAdd.transporterType('Commercial').check();
+  401 |     await this.animalsPages.transporterAdd.saveAndContinue.click();
+  402 |     await this.animalsPages.commercialTransporter.heading.waitFor(pageLoadWait);
+  403 |   }
+  404 | 
+  405 |   // The approved commercial register, which nothing links to now that the add
+  406 |   // route's commercial arm is the add-commercial form. It is reached by its own
+  407 |   // URL, through that arm so the transporter type is answered — which is what
+  408 |   // puts the commercial answer the register writes in scope.
+  409 |   async toTransporterSelection(): Promise<void> {
+  410 |     await this.toCommercialTransporter();
+  411 |     await this.animalsPages.transporterSelection.open(this.animalsPages.commercialTransporter.referenceNumberFromUrl());
+  412 |     await this.animalsPages.transporterSelection.heading.waitFor(pageLoadWait);
+  413 |   }
+  414 | 
+  415 |   async toContactAddress(): Promise<void> {
+  416 |     await this.startNotification();
+  417 |     await this.unlockSections();
+  418 |     await this.animalsPages.overview.task('Contact address for this consignment').click();
+  419 |     await this.animalsPages.contactAddress.heading.waitFor(pageLoadWait);
+  420 |   }
+  421 | 
+  422 |   async toReview(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  423 |     if (!this.context.referenceNumber) await this.startNotification();
+  424 |     await this.completeAnswerSections(answers);
+  425 |     await this.animalsPages.overview.reviewAndSubmitButton.click();
+  426 |     await this.animalsPages.notificationView.heading.waitFor(pageLoadWait);
+  427 |   }
+  428 | 
+  429 |   async toDeclaration(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  430 |     await this.startNotification();
+  431 |     await this.completeAnswerSections(answers);
+  432 |     await this.fromOverviewToDeclaration();
+  433 |   }
+  434 | 
+  435 |   // Only the answers the frontend requires, unless the caller passes a fuller set.
+  436 |   async submitNotification(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  437 |     await this.toDeclaration(answers);
+  438 |     await this.confirmDeclaration();
+  439 |   }
+  440 | 
+  441 |   async walkOpeningRunToRolesAndAddressesWithoutCph(): Promise<string> {
+  442 |     const pages = this.animalsPages;
+  443 |     const referenceNumber = await this.createNotificationAtOrigin();
+  444 | 
+  445 |     await this.fillOriginOfImport();
+  446 |     await this.saveOriginOfImport();
+  447 | 
+  448 |     await pages.commoditySelection.heading.waitFor(pageLoadWait);
+  449 |     await pages.commoditySelection.selectSpecies([MANDATORY_ANSWERS.species.display]);
+  450 |     await pages.commoditySelection.saveAndContinue.click();
+  451 | 
+  452 |     await pages.importReason.heading.waitFor(pageLoadWait);
+  453 |     await pages.importReason.saveAndContinue.click();
+  454 | 
+  455 |     await pages.consignmentDetails.heading.waitFor(pageLoadWait);
+  456 |     await pages.consignmentDetails.numberOfAnimals.fill('1');
+  457 |     await pages.consignmentDetails.saveAndContinue.click();
+  458 | 
+  459 |     await pages.animalIdentification.heading.waitFor(pageLoadWait);
+  460 |     await pages.animalIdentification.saveAndContinue.click();
+  461 | 
+  462 |     await pages.additionalDetails.heading.waitFor(pageLoadWait);
+  463 |     await pages.additionalDetails.saveAndContinue.click();
+  464 | 
+  465 |     await pages.arrivalDetails.heading.waitFor(pageLoadWait);
+  466 |     await pages.arrivalDetails.saveAndContinue.click();
+  467 | 
+  468 |     await pages.transporter.heading.waitFor(pageLoadWait);
+  469 |     await pages.transporter.saveAndContinue.click();
+  470 | 
+  471 |     await pages.accompanyingDocuments.heading.waitFor(pageLoadWait);
+  472 |     await pages.accompanyingDocuments.continueButton.click();
+  473 | 
+  474 |     await pages.addresses.heading.waitFor(pageLoadWait);
+  475 |     return referenceNumber;
+  476 |   }
+  477 | 
+  478 |   async walkOpeningRunCattleByAir(document: AccompanyingDocumentAnswer): Promise<string> {
+  479 |     const pages = this.animalsPages;
+  480 |     const referenceNumber = await this.createNotificationAtOrigin();
+  481 | 
+  482 |     await this.fillOriginOfImport({ requiresRegionCode: 'Yes', internalReference: 'CATTLE-2026-01' });
+  483 |     await this.saveOriginOfImport();
+  484 | 
+  485 |     await pages.commoditySelection.heading.waitFor(pageLoadWait);
+  486 |     await pages.commoditySelection.selectSpecies([MANDATORY_ANSWERS.species.display]);
+  487 |     await pages.commoditySelection.saveAndContinue.click();
+  488 | 
+> 489 |     await pages.importReason.heading.waitFor(pageLoadWait);
+      |                                      ^ TimeoutError: locator.waitFor: Timeout 30000ms exceeded.
+  490 |     await pages.importReason.reason('Internal market').check();
+  491 |     await pages.importReason.purpose('Breeding').check();
+  492 |     await pages.importReason.saveAndContinue.click();
+  493 | 
+  494 |     await pages.consignmentDetails.heading.waitFor(pageLoadWait);
+  495 |     await pages.consignmentDetails.numberOfAnimals.fill('2');
+  496 |     await pages.consignmentDetails.numberOfPackages.fill('1');
+  497 |     await pages.consignmentDetails.saveAndContinue.click();
+  498 | 
+  499 |     await pages.animalIdentification.heading.waitFor(pageLoadWait);
+  500 |     await pages.animalIdentification.earTag.fill('UK000000000001');
+  501 |     await pages.animalIdentification.passportNumber.fill('PASSPORT-0001');
+  502 |     await pages.animalIdentification.saveAndAddAnother.click();
+  503 |     await pages.animalIdentification.savedAnimalRow(MANDATORY_ANSWERS.species.display, 1).waitFor(pageLoadWait);
+  504 |     await pages.animalIdentification.earTag.fill('UK000000000002');
+  505 |     await pages.animalIdentification.passportNumber.fill('PASSPORT-0002');
+  506 |     await pages.animalIdentification.saveAndFinish.click();
+  507 |     await pages.animalIdentification.savedAnimalRow(MANDATORY_ANSWERS.species.display, 2).waitFor(pageLoadWait);
+  508 |     await pages.animalIdentification.saveAndContinue.click();
+  509 | 
+  510 |     await pages.additionalDetails.heading.waitFor(pageLoadWait);
+  511 |     await pages.additionalDetails.certifiedFor('Further keeping').check();
+  512 |     await pages.additionalDetails.containsUnweanedAnimals('No').check();
+  513 |     await pages.additionalDetails.saveAndContinue.click();
+  514 | 
+  515 |     await pages.arrivalDetails.heading.waitFor(pageLoadWait);
+  516 |     await this.fillArrivalDetails({
+  517 |       port: pointOfEntries.heathrowAirport.display,
+  518 |       means: 'Airplane',
+  519 |       transportId: 'BA0117',
+  520 |       documentReference: 'AWB-2026-0001',
+  521 |     });
+  522 |     await pages.arrivalDetails.saveAndContinue.click();
+  523 | 
+  524 |     await pages.transporter.heading.waitFor(pageLoadWait);
+  525 |     await pages.transporter.transporter(MANDATORY_ANSWERS.transporter.display).check();
+  526 |     await pages.transporter.saveAndContinue.click();
+  527 | 
+  528 |     await pages.accompanyingDocuments.heading.waitFor(pageLoadWait);
+  529 |     await this.uploadDocumentAndWaitForScan(document);
+  530 |     await pages.accompanyingDocuments.continueButton.click();
+  531 | 
+  532 |     await pages.addresses.heading.waitFor(pageLoadWait);
+  533 |     await this.addFiveParties();
+  534 |     await this.addCphAndLeaveAddresses();
+  535 | 
+  536 |     await pages.contactAddress.heading.waitFor(pageLoadWait);
+  537 |     await this.chooseContactAddress();
+  538 | 
+  539 |     await pages.notificationView.heading.waitFor(pageLoadWait);
+  540 |     return referenceNumber;
+  541 |   }
+  542 | 
+  543 |   async walkOpeningRunHorseBySea(document: AccompanyingDocumentAnswer): Promise<string> {
+  544 |     const pages = this.animalsPages;
+  545 |     const referenceNumber = await this.createNotificationAtOrigin();
+  546 | 
+  547 |     await this.fillOriginOfImport({ countryCode: countryCodes.eu.ireland });
+  548 |     await this.saveOriginOfImport();
+  549 | 
+  550 |     await pages.commoditySelection.heading.waitFor(pageLoadWait);
+  551 |     await pages.commoditySelection.selectSpecies(['Equus caballus']);
+  552 |     await pages.commoditySelection.saveAndContinue.click();
+  553 | 
+  554 |     await pages.importReason.heading.waitFor(pageLoadWait);
+  555 |     await pages.importReason.reason('Temporary admission horses').check();
+  556 |     await pages.importReason.temporaryAdmissionExitDate.fill(TEMPORARY_ADMISSION_EXIT_DATE);
+  557 |     await pages.importReason.selectTemporaryAdmissionPortOfExit('GB HLY');
+  558 |     await pages.importReason.saveAndContinue.click();
+  559 | 
+  560 |     await pages.consignmentDetails.heading.waitFor(pageLoadWait);
+  561 |     await pages.consignmentDetails.numberOfAnimals.fill('1');
+  562 |     await pages.consignmentDetails.numberOfPackages.fill('1');
+  563 |     await pages.consignmentDetails.saveAndContinue.click();
+  564 | 
+  565 |     await pages.animalIdentification.heading.waitFor(pageLoadWait);
+  566 |     await pages.animalIdentification.microchip.fill('900123456789012');
+  567 |     await pages.animalIdentification.passportNumber.fill('IE-EQ-2026-0001');
+  568 |     await pages.animalIdentification.horseName.fill('Dublin Bay');
+  569 |     await pages.animalIdentification.saveAndContinue.click();
+  570 | 
+  571 |     await pages.additionalDetails.heading.waitFor(pageLoadWait);
+  572 |     await pages.additionalDetails.certifiedFor('Registered equine animal').check();
+  573 |     await pages.additionalDetails.saveAndContinue.click();
+  574 | 
+  575 |     await pages.arrivalDetails.heading.waitFor(pageLoadWait);
+  576 |     await this.fillArrivalDetails({
+  577 |       port: pointOfEntries.holyheadPort.display,
+  578 |       means: 'Vessel',
+  579 |       transportId: HORSE_TRANSPORT_ID,
+  580 |       documentReference: 'BOL-2026-0001',
+  581 |     });
+  582 |     await pages.arrivalDetails.saveAndContinue.click();
+  583 | 
+  584 |     await pages.transporter.heading.waitFor(pageLoadWait);
+  585 |     await pages.transporter.transporter(HORSE_TRANSPORTER).check();
+  586 |     await pages.transporter.saveAndContinue.click();
+  587 | 
+  588 |     await pages.accompanyingDocuments.heading.waitFor(pageLoadWait);
+  589 |     await this.uploadDocumentAndWaitForScan(document);
+```
