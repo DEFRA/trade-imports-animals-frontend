@@ -64,6 +64,13 @@ Which helper to pick:
   that helper admits more than one entry. It goes on a group's `requires` (for
   example `floorAppliesToParent`), never on an obligation's `applyTo`.
 
+The reachability prover builds a witness for a complement gate (`notInUnionOf`,
+`anyNotInUnionOf`) from a stable sentinel string that is not in the gate's derived
+union. If the union held the sentinel and its fallback as well, the prover reports
+the gate opaque instead of vacuously green, because a gate no input can open is an
+authoring defect. A commodity-code union covers a handful of codes, so any other
+string opens the gate.
+
 ## Evaluation
 
 [`src/server/app/model/obligations/evaluator.js`](../model/obligations/evaluator.js)

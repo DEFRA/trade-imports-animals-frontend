@@ -1,5 +1,6 @@
 import { isNonArrayObject } from '../../helper-internals.js'
 import { runGate } from './run-gate.js'
+import { stampGateMetadata } from './stamp-gate-metadata.js'
 
 const pairByFulfilmentIndex = (first, second) =>
   Object.fromEntries(
@@ -71,16 +72,12 @@ export const buildGate = ({
     )
     return decision.inScope && reasons ? { ...decision, reasons } : decision
   }
-  fn.metadata = {
+  return stampGateMetadata(fn, {
     gateType,
-    obligationId: gateObligation.id,
+    gateObligation,
+    currentValues,
     ...(pairedObligation && { pairedObligationId: pairedObligation.id }),
     gatedParentGroupId: gatedParentGroup?.id ?? null,
     reasons: reasons ?? null
-  }
-  Object.defineProperty(fn.metadata, 'values', {
-    enumerable: true,
-    get: currentValues
   })
-  return fn
 }

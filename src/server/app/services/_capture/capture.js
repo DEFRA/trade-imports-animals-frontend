@@ -2,18 +2,21 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
-const referenceDataUrl =
-  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
+import { referenceDataUrl } from '../reference-data/request.js'
+
 const outDir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
 const JSON_INDENT_SPACES = 2
 
 const targets = [
-  { name: 'countries', url: `${referenceDataUrl}/countries` },
+  { name: 'countries', url: referenceDataUrl('/countries').toString() },
   {
     name: 'countries-origin',
-    url: `${referenceDataUrl}/countries?blocks=GBNAG_SPS_EX`
+    url: referenceDataUrl('/countries?blocks=GBNAG_SPS_EX').toString()
   },
-  { name: 'ports-of-entry', url: `${referenceDataUrl}/ports-of-entry` }
+  {
+    name: 'ports-of-entry',
+    url: referenceDataUrl('/ports-of-entry').toString()
+  }
 ]
 
 const reportFetchFailure = (target, message) => {

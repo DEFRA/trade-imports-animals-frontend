@@ -10,7 +10,7 @@ const IDENTIFIER_KEYS = [
   'permanentAddress'
 ]
 
-const legacyAnimalCount = (value) =>
+const animalCountText = (value) =>
   typeof value === 'number' ? String(value) : value
 
 const identifiersFrom = (obligations) =>
@@ -37,13 +37,15 @@ const lineFrom = ({
     commodityCode: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
     speciesLatinName: valueAt(obligations.speciesLatinName, lineIndex),
-    numberOfAnimalsQuantity: legacyAnimalCount(
+    numberOfAnimalsQuantity: animalCountText(
       valueAt(obligations.numberOfAnimals, lineIndex)
     ),
     numberOfPackages: valueAt(obligations.numberOfPackages, lineIndex),
     animalIdentifiers:
       unitIndexes.length > 0
-        ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
+        ? unitIndexes.map((unitIndex) =>
+            unitFrom(valueAt, identifiers, unitIndex)
+          )
         : undefined
   })
 

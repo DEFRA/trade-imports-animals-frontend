@@ -1,16 +1,13 @@
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
-// Journey-shape permanent address → backend ConsignmentParty wire shape. The
-// journey keeps phone and email inside the address block; the backend keeps
-// them on the party, and drops any field it does not know.
-const permanentAddressFrom = (pa) =>
-  pa &&
+const partyFromPermanentAddress = (permanentAddress) =>
+  permanentAddress &&
   compact({
-    name: pa.name,
-    phone: pa.address?.phone,
-    email: pa.address?.email,
-    address: toWireAddress(pa.address)
+    name: permanentAddress.name,
+    phone: permanentAddress.address?.phone,
+    email: permanentAddress.address?.email,
+    address: toWireAddress(permanentAddress.address)
   })
 
 const animalIdentifierFrom = (unit) =>
@@ -20,7 +17,7 @@ const animalIdentifierFrom = (unit) =>
     tattoo: unit.animalIdentifierTattoo,
     earTag: unit.animalIdentifierEarTag,
     horseName: unit.horseName,
-    permanentAddress: permanentAddressFrom(unit.permanentAddress)
+    permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 
 export const speciesEntryFromLine = (line) => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 
 describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
-  it('Should collapse a depth-0 path to the legacy bare id', () => {
+  it('Should encode a depth-0 path as the bare id', () => {
     expect(pathKey(['commodityLines'])).toBe('commodityLines')
     expect(pathKey(['countryOfOrigin'])).toBe('countryOfOrigin')
   })

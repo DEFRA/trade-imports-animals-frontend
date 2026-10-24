@@ -2,8 +2,6 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
 
-/** A party answer in backend wire shape, as `answerForInlineParty` stores it
- * — see addresses/party-inline.js. */
 const address = (name, line1) => ({
   name,
   address: { addressLine1: line1, postcode: 'AB1 2CD' }
@@ -27,10 +25,6 @@ const currentNotificationFrom = (answers) =>
     answers.referenceNumber ?? referenceNumber
   )
 
-// Answers carrying only the obligations Mapper A maps to the current backend
-// notification. One commodity line = one species, with one animal
-// identifier unit carrying earTag + passport — two of the identifiers that
-// have a home on the backend species entry.
 const mappedAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
   countryOfOrigin: 'FR',
@@ -70,11 +64,6 @@ const mappedAnswers = () => ({
   ]
 })
 
-// mappedAnswers plus the obligations beyond it: those Mapper A still has no
-// home for (purpose, declaration, the documents collection), those it now maps
-// (region code, internal-market purpose, destination country, exit port and
-// date, the transport details), and a richer animal-identifier unit carrying
-// microchip, tattoo, horse name and a permanent address.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
@@ -111,8 +100,6 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          // The identification page stores the ISO code so persistence carries
-          // it through without a reverse lookup.
           permanentAddress: {
             name: 'Owner',
             address: {
@@ -133,9 +120,6 @@ const answersWithGaps = () => ({
   ]
 })
 
-// Two species on the same commodity plus a second commodity — the grouping
-// case: one complement per commodity, per-species counts kept on the species
-// entries, totals summed per complement.
 const groupedLines = () => [
   {
     commodityCode: CATTLE_CODE,
@@ -168,7 +152,7 @@ const groupedLines = () => [
   }
 ]
 
-describe('Mapper A — current backend notification (as-is)', () => {
+describe('Mapper A — backend notification', () => {
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodity } = currentNotificationFrom(mappedAnswers())
     expect(commodity).toEqual({
@@ -321,14 +305,34 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.origin.countrySubdivisionCode).toBe('ES-CN')
   })
 
-  test('Should omit the obligations with no home and map the newly homed ones', () => {
+  test('Should map region, internal-market purpose, destination, exit and transport details and leave out purpose, declaration and documents', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 
-    expect('purpose' in notification).toBe(false)
-    expect('declaration' in notification).toBe(false)
-    expect('documents' in notification).toBe(false)
-    expect('regionCode' in notification.origin).toBe(false)
-    expect(notification.origin.regionOfOriginCode).toBe('FR-75')
+    expect(Object.keys(notification).sort()).toEqual([
+      'additionalDetails',
+      'commodity',
+      'consignee',
+      'consignment',
+      'consignor',
+      'cphNumber',
+      'destination',
+      'destinationCountry',
+      'exitDate',
+      'importer',
+      'origin',
+      'placeOfOrigin',
+      'portOfExit',
+      'purposeInInternalMarket',
+      'reasonForImport',
+      'referenceNumber',
+      'transport'
+    ])
+    expect(notification.origin).toEqual({
+      countryCode: 'FR',
+      requiresRegionCode: 'Yes',
+      regionOfOriginCode: 'FR-75',
+      internalReference: 'Imports456GB'
+    })
     expect(notification.purposeInInternalMarket).toBe('Breeding')
     expect(notification.destinationCountry).toBe('DE')
     expect(notification.portOfExit).toBe('GB DVR')
@@ -342,15 +346,15 @@ describe('Mapper A — current backend notification (as-is)', () => {
       transportDocumentReference: 'CMR-2026-884721',
       transitedCountries: ['France', 'Belgium']
     })
-    expect(
-      'commodityCode' in notification.commodity.commodityComplement[0]
-    ).toBe(false)
-    expect('name' in notification.commodity.commodityComplement[0]).toBe(false)
+    expect(notification.commodity.commodityComplement[0]).toEqual({
+      typeOfCommodity: 'Domestic',
+      totalNoOfAnimals: 25,
+      totalNoOfPackages: 5,
+      species: expect.any(Array)
+    })
   })
 })
 
-// Per-unit animal-identifier coverage — a separate describe from the block
-// above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — per-unit animal identifiers', () => {
   test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
@@ -441,11 +445,6 @@ describe('Mapper A — per-unit animal identifiers', () => {
   })
 })
 
-// A commodity on none of the identifier allowlists carries no identifier
-// obligation, so its line reaches the mapper with no animal-identifier unit at
-// all. The species entry must be built from the line alone rather than
-// throwing on a missing unit. Its own describe rather than the Mapper A block
-// above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — a commodity line with no animal-identifier unit', () => {
   test('Should map a commodity line that carries no animal-identifier unit', () => {
     const notification = currentNotificationFrom({
@@ -497,8 +496,6 @@ test('Mapper A should use the envelope id as the reference number', () => {
   expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
 })
 
-// GBN-AG's TradeCountry carries an ISO 3166-1 alpha-2 code, so a territory the
-// destination and transit selects offer must leave as its country.
 describe('Mapper A — territories leave as their ISO country', () => {
   test('Should send a territory chosen as the destination country as its parent country', () => {
     const notification = currentNotificationFrom({

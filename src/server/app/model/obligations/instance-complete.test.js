@@ -4,10 +4,6 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { configureObligationSet } from './manifest.js'
 import { instanceComplete } from './instance-complete.js'
 
-// Synthetic manifest — mirrors the shape of a two-level nested collection
-// with per-instance invariants, so instanceComplete can be exercised
-// without pulling in the live-animals set.
-
 const line = { id: 'line-group', name: 'commodityLines' }
 const unit = {
   id: 'unit-group',
@@ -50,27 +46,21 @@ const state = ({ fulfilments = {}, obligations = {} } = {}) => ({
   obligations
 })
 
-const impls = (entries) =>
+const implicationsById = (entries) =>
   Object.fromEntries(entries.map((entry) => [entry.id, entry.implication]))
 
 describe('#instanceComplete', () => {
-  // No teardown. Vitest isolates module state per test file, so the synthetic
-  // manifest never leaves this one. Configuring the set back to `undefined`
-  // would be worse than nothing: setKeyed's `has()` asks whether the set was
-  // configured, not whether it holds a value, so the set would stay
-  // "configured" — to undefined — and manifest.js's named "not configured"
-  // error would become a TypeError on the next read.
   beforeAll(() => {
     configureObligationSet(SET_ID, syntheticSet)
   })
 
   it('reads a fully-populated instance as complete', () => {
-    const st = state({
+    const evaluatedState = state({
       fulfilments: {
         [commodityCode.id]: { [line1FulfilmentIndex]: '0102' },
         [passport.id]: { [line1Unit1FulfilmentIndex]: 'P-1' }
       },
-      obligations: impls([
+      obligations: implicationsById([
         {
           id: line.id,
           implication: {
@@ -102,15 +92,15 @@ describe('#instanceComplete', () => {
         { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
-    expect(instanceComplete(unit, line1Unit1FulfilmentIndex, st)).toBe(true)
+    expect(
+      instanceComplete(unit, line1Unit1FulfilmentIndex, evaluatedState)
+    ).toBe(true)
   })
 
   it('reads an instance missing a mandatory direct-child leaf as incomplete', () => {
-    // commodityCode is a mandatory direct child of line but has no
-    // fulfilmentIndex for line1 — the direct-child requirement fires.
-    const st = state({
+    const evaluatedState = state({
       fulfilments: {},
-      obligations: impls([
+      obligations: implicationsById([
         {
           id: line.id,
           implication: {
@@ -130,15 +120,17 @@ describe('#instanceComplete', () => {
         { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
-    expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(false)
+    expect(instanceComplete(line, line1FulfilmentIndex, evaluatedState)).toBe(
+      false
+    )
   })
 
   it('reads a unit with no identifier stored as incomplete via anyOfIds', () => {
-    const st = state({
+    const evaluatedState = state({
       fulfilments: {
         [commodityCode.id]: { [line1FulfilmentIndex]: '0102' }
       },
-      obligations: impls([
+      obligations: implicationsById([
         {
           id: line.id,
           implication: {
@@ -176,15 +168,15 @@ describe('#instanceComplete', () => {
         }
       ])
     })
-    expect(instanceComplete(unit, line1Unit1FulfilmentIndex, st)).toBe(false)
+    expect(
+      instanceComplete(unit, line1Unit1FulfilmentIndex, evaluatedState)
+    ).toBe(false)
   })
 
   it('reads a not-enumerated instance as vacuously complete', () => {
-    // No fulfilmentIndexes anywhere for line2.unit1 — outside the enumerated set. No
-    // direct-child mandatory leaves under unit either, so nothing blocks.
-    const st = state({
+    const evaluatedState = state({
       fulfilments: {},
-      obligations: impls([
+      obligations: implicationsById([
         {
           id: line.id,
           implication: {
@@ -204,15 +196,13 @@ describe('#instanceComplete', () => {
         { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
-    expect(instanceComplete(unit, 'line2.unit1', st)).toBe(true)
+    expect(instanceComplete(unit, 'line2.unit1', evaluatedState)).toBe(true)
   })
 
   it('does not block on out-of-scope leaves', () => {
-    // commodityCode is out of scope — the direct-child requirement is
-    // gated behind inScope, so the missing fulfilmentIndex is ignored.
-    const st = state({
+    const evaluatedState = state({
       fulfilments: {},
-      obligations: impls([
+      obligations: implicationsById([
         {
           id: line.id,
           implication: {
@@ -232,6 +222,8 @@ describe('#instanceComplete', () => {
         { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
-    expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(true)
+    expect(instanceComplete(line, line1FulfilmentIndex, evaluatedState)).toBe(
+      true
+    )
   })
 })

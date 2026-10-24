@@ -3,15 +3,17 @@ import { buildAnyCandidateGate } from './internals/build-any-candidate-gate.js'
 
 export const anyNotInUnionOf = (
   gateObligation,
-  unionOfLists,
+  allowlists,
   whenTrue,
   whenFalse
-) =>
-  buildAnyCandidateGate({
+) => {
+  const currentValues = () => resolveUnion(allowlists)
+  return buildAnyCandidateGate({
     gateType: 'anyNotInUnionOf',
     gateObligation,
-    currentValues: () => resolveUnion(unionOfLists),
-    admits: isOutsideUnion,
+    currentValues,
+    admits: (candidate) => isOutsideUnion(candidate, currentValues()),
     whenTrue,
     whenFalse
   })
+}

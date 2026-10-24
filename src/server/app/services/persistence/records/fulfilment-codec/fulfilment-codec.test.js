@@ -108,22 +108,22 @@ describe('persisted fulfilment codec', () => {
   })
 
   test.each(characterisationCorpus)(
-    'Should pass both golden-equivalence gates for $name',
+    'Should decode to an identical map that evaluates to identical fulfilments and obligations for $name',
     ({ answers }) => {
-      const oldMap = assembleFulfilments(answers)
+      const assembledMap = assembleFulfilments(answers)
       const decodedMap = decodePersistedFulfilment(
-        encodeEvaluatorFulfilments(oldMap)
+        encodeEvaluatorFulfilments(assembledMap)
       )
 
-      expect(JSON.stringify(decodedMap)).toBe(JSON.stringify(oldMap))
+      expect(JSON.stringify(decodedMap)).toBe(JSON.stringify(assembledMap))
 
-      const oldEvaluation = evaluator.evaluate(oldMap)
+      const assembledEvaluation = evaluator.evaluate(assembledMap)
       const decodedEvaluation = evaluator.evaluate(decodedMap)
       expect(JSON.stringify(decodedEvaluation.fulfilments)).toBe(
-        JSON.stringify(oldEvaluation.fulfilments)
+        JSON.stringify(assembledEvaluation.fulfilments)
       )
       expect(JSON.stringify(decodedEvaluation.obligations)).toBe(
-        JSON.stringify(oldEvaluation.obligations)
+        JSON.stringify(assembledEvaluation.obligations)
       )
     }
   )

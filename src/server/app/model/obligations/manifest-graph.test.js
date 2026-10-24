@@ -9,9 +9,6 @@ import {
   groupsFrom
 } from './manifest-graph.js'
 
-// Synthetic manifest — two-level nested collection with an unindexed
-// sibling, exercised without pulling in the live-animals set.
-
 const line = { id: 'line-group', name: 'commodityLines' }
 const unit = { id: 'unit-group', name: 'animalIdentifiers', within: line }
 const passport = { id: 'passport', name: 'passport', within: unit }
@@ -28,9 +25,6 @@ const syntheticSet = {
 }
 
 describe('#manifest-graph', () => {
-  // No teardown: vitest isolates module state per test file, and configuring
-  // the set back to `undefined` would leave it "configured" to undefined —
-  // turning manifest.js's named "not configured" error into a TypeError.
   beforeAll(() => {
     configureObligationSet(SET_ID, syntheticSet)
   })

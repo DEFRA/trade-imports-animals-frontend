@@ -182,7 +182,7 @@ Top-level primitives (used everywhere else in the module):
 
 `helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
 
-- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `resolveUnion`).
+- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `build-any-candidate-gate.js` (the factory used by `anyAllowListed` / `anyNotInUnionOf`, which reads the candidates through `readGate`), `stamp-gate-metadata.js` (stamps `gateType`, `obligationId` and the lazy `values` on both factories' gates), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `resolveUnion`).
 - `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.
 
 ## Algorithm
@@ -194,3 +194,7 @@ The per-call evaluation algorithm is described in
 2. Fixpoint (`convergePurge`): repeat `{enumerate → applyTo → isInScope → purge}` until the fulfilments map stops shrinking. Guarantees every `applyTo` sees the same post-purge view its neighbours see.
 3. Post-purge enumeration for group implications.
 4. Build per-obligation implications.
+
+## Tests with their own manifest
+
+A test that needs its own manifest calls `configureObligationSet(SET_ID, syntheticSet)` once, in `beforeAll`, and never configures it back. Vitest isolates module state per test file, and configuring the set to `undefined` would leave it configured to `undefined`, which turns the manifest's named "not configured" error into a `TypeError`.

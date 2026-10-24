@@ -23,7 +23,7 @@ describe('fulfilmentsEqual', () => {
     expect(fulfilmentsEqual({ a: 'x' }, { a: 'y' })).toBe(false)
   })
 
-  it('is true when indexedFulfilments maps have the same keys and values (fresh objects — purge replays produce this shape)', () => {
+  it('is true when indexedFulfilments maps are distinct objects with the same keys and values', () => {
     const previousSnapshot = { commodityCode: { line0: '0102', line1: '0101' } }
     const nextSnapshot = { commodityCode: { line0: '0102', line1: '0101' } }
     expect(fulfilmentsEqual(previousSnapshot, nextSnapshot)).toBe(true)

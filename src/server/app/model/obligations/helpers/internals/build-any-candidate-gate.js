@@ -1,4 +1,5 @@
 import { readGate } from '../../helper-internals.js'
+import { stampGateMetadata } from './stamp-gate-metadata.js'
 
 export const buildAnyCandidateGate = ({
   gateType,
@@ -10,19 +11,15 @@ export const buildAnyCandidateGate = ({
 }) => {
   const gate = (fulfilments) => {
     const { candidates } = readGate(fulfilments, gateObligation.id)
-    return candidates.some((candidate) => admits(candidate, currentValues()))
+    return candidates.some((candidate) => admits(candidate))
       ? whenTrue
       : whenFalse
   }
-  gate.metadata = {
+  return stampGateMetadata(gate, {
     gateType,
-    obligationId: gateObligation.id,
+    gateObligation,
+    currentValues,
     whenTrue,
     whenFalse
-  }
-  Object.defineProperty(gate.metadata, 'values', {
-    enumerable: true,
-    get: currentValues
   })
-  return gate
 }

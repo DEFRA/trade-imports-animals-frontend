@@ -132,7 +132,7 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }
@@ -245,8 +245,10 @@ forms; each delegates to the `…At` form with a single-segment path
 
 The commodities collection uses two pages. The SEARCH page
 ([`journeys/linear/features/commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js))
-declares the group in `collects` and, on save, reconciles one line per selected
-species in a single write:
+declares the group in `collects` and, on save, hands the chosen search rows to
+[`actions/commit-selection.js`](../journeys/linear/features/commodities/search/actions/commit-selection.js),
+which reconciles one line per chosen search row (a commodity code plus a Latin
+name) in a single write, then clears the stored search rows:
 
 ```js
 await state.reconcileEntriesAt(
@@ -254,9 +256,12 @@ await state.reconcileEntriesAt(
   h,
   ['commodityLines'],
   lineKey,
-  selected.map(seedLine)
+  rows.map(seedLine)
 )
 ```
+
+Each row carries `commodityCode`, `speciesLatinName` and `commonName` from the
+search results the page showed.
 
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected

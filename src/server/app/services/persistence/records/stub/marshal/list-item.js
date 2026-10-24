@@ -16,8 +16,6 @@ export const marshalListItem = async (document) => {
     reference: document.id,
     commodity: commodityCode ? { commodityCode } : null,
     originCountryCode: answers.countryOfOrigin ?? null,
-    // The rest of this row uses null for absent, so the helper's undefined is
-    // mapped across rather than changing the shape the stub has always sent.
     arrivalDate: isoDateFromDateParts(answers.arrivalDateAtPort) ?? null,
     consignorName: answers.consignor?.name ?? null,
     consigneeName: answers.consignee?.name ?? null

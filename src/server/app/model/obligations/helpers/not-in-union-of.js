@@ -12,11 +12,11 @@ import { buildGate } from './internals/build-gate.js'
  */
 export const notInUnionOf = (
   gateObligation,
-  unionOfAllowlists,
+  allowlists,
   gatedParentGroup,
   reasons
 ) => {
-  const currentValues = () => resolveUnion(unionOfAllowlists)
+  const currentValues = () => resolveUnion(allowlists)
   return buildGate({
     gateType: 'notInUnionOf',
     gateObligation,

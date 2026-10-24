@@ -54,8 +54,6 @@ export const sections = [
   },
   {
     id: 'transport',
-    // One transporter step: the list. Adding a transporter that is not on it
-    // is a detour off that page, not a leg of the journey.
     pages: [portOfEntryPage, transitCountriesPage, transportersPage]
   },
   {

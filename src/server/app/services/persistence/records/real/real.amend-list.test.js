@@ -70,7 +70,7 @@ describe('real records adapter — paged list', () => {
     fetchMocker.resetMocks()
   })
 
-  test('Should GET /notifications and map main-shape entries to dashboard rows', async () => {
+  test('Should GET /notifications with page and sort and map each notification to a dashboard row', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -107,7 +107,7 @@ describe('real records adapter — paged list', () => {
           submittedAt: null,
           concurrencyToken: 0,
           reference: 'GBN-1',
-          commodity: { name: '0102' },
+          commodity: { commodityCode: '0102' },
           originCountryCode: 'FR',
           arrivalDate: RECORD_ARRIVAL_DATE,
           consignorName: CONSIGNOR_NAME,
@@ -120,7 +120,7 @@ describe('real records adapter — paged list', () => {
           submittedAt: null,
           concurrencyToken: 0,
           reference: 'GBN-2',
-          commodity: { name: '0102' },
+          commodity: { commodityCode: '0102' },
           originCountryCode: 'FR',
           arrivalDate: RECORD_ARRIVAL_DATE,
           consignorName: CONSIGNOR_NAME,
@@ -133,7 +133,7 @@ describe('real records adapter — paged list', () => {
           submittedAt: null,
           concurrencyToken: 0,
           reference: 'GBN-3',
-          commodity: { name: '0102' },
+          commodity: { commodityCode: '0102' },
           originCountryCode: 'FR',
           arrivalDate: RECORD_ARRIVAL_DATE,
           consignorName: CONSIGNOR_NAME,

@@ -1,37 +1,31 @@
 import Boom from '@hapi/boom'
 
-import { createLogger } from '../../../common/helpers/logging/logger.js'
+import { config } from '../../../../config/config.js'
+import { traceHeaders } from '../trace-headers.js'
 
-const logger = createLogger()
+const baseUrl = () => config.get('tradeImportsReferenceDataApi.baseUrl')
 
-const baseUrl =
-  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
+export const referenceDataUrl = (path) => new URL(`${baseUrl()}${path}`)
 
-export const referenceDataUrl = (path) => new URL(`${baseUrl}${path}`)
-
-const fetchJson = async (url, init, failureMessage) => {
+export const requestReferenceData = async (url, init, failureMessage) => {
   const response = await fetch(url.toString(), {
     ...init,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      ...traceHeaders(),
+      ...init?.headers
+    }
   })
 
   if (!response.ok) {
     throw Object.assign(new Error(failureMessage), {
       status: response.status,
-      statusText: response.statusText
+      statusText: response.statusText,
+      url: url.toString()
     })
   }
 
   return response.json()
-}
-
-export const requestReferenceData = async (url, init, failureMessage) => {
-  try {
-    return await fetchJson(url, init, failureMessage)
-  } catch (err) {
-    logger.error({ err, url: url.toString() }, failureMessage)
-    throw err
-  }
 }
 
 export const referenceDataUnavailable = (dataset, err) =>

@@ -14,7 +14,6 @@ export const toRow = async (journey) => ({
   origin: journey.originCountryCode
     ? await countries.countryDisplayLabel(journey.originCountryCode)
     : '',
-  // arrival is a day the user chose; created and submitted are moments.
   arrival: formatDisplayCalendarDate(journey.arrivalDate),
   consignor: journey.consignorName ?? '',
   consignee: journey.consigneeName ?? '',

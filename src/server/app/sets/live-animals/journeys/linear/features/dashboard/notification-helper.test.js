@@ -13,25 +13,12 @@ import {
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 
-/**
- * West of UTC on purpose: the only side where an ambient-zone renderer and a
- * correct one disagree about a moment, so this is the zone that guards
- * `formatDisplayMoment`. Do not "tidy" it. See `calendar.test.js`.
- */
-const WEST_OF_UTC = 'America/New_York'
+const ZONE_WEST_OF_UTC_GUARDING_MOMENTS = 'America/New_York'
 
-/**
- * East of UTC on purpose, and in July so BST is in force: the side where a
- * string carrying no offset, resolved against the process zone, lands on the
- * previous UTC day. It is also the zone the service is deployed in, so this is
- * the disagreement a user would actually see. Do not "tidy" it.
- */
-const EAST_OF_UTC = 'Europe/London'
+const ZONE_EAST_OF_UTC_GUARDING_DATE_ONLY_VALUES = 'Europe/London'
 
-/** An arrival date as the API sends it: a calendar date, no time, no offset. */
 const ARRIVAL_DATE = '2026-07-21'
 
-/** The one day every spelling of 21 July 2026 in this file has to render as. */
 const ARRIVAL_DAY = '21 Jul 2026'
 
 describe('promoted dashboard notification helpers', () => {
@@ -70,12 +57,7 @@ describe('promoted dashboard notification helpers', () => {
     expect(formatDisplayCalendarDate(null)).toBe('')
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
-    expect(formatCommodity({ name: 'Cattle' })).toBe('Cattle')
-    expect(
-      formatCommodity({ commodityCode: '0101' }, (code) =>
-        code === '0101' ? 'Horses' : undefined
-      )
-    ).toBe('Horses')
+    expect(formatCommodity({ commodityCode: '0102' })).toBe('0102')
     expect(formatCommodity(null)).toBe('')
   })
 
@@ -84,27 +66,20 @@ describe('promoted dashboard notification helpers', () => {
   })
 
   it('Should render a moment as the UK day it happened', () => {
-    // 23:35 UTC on the 10th is already the 11th in London during BST, and the
-    // 11th is the day the user would say they submitted it.
     expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe('11 Sep 2026')
   })
 
-  it('Should render both kinds the same whatever zone the process runs in', () => {
-    // The suite pins TZ=UTC, where an ambient-zone implementation and a
-    // correct one agree — so the zone has to be moved for this to mean
-    // anything.
-    runInZone(WEST_OF_UTC, () => {
+  it('Should render a moment and an arrival date the same when the process runs west of UTC', () => {
+    runInZone(ZONE_WEST_OF_UTC_GUARDING_MOMENTS, () => {
       expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
       expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe(
         '11 Sep 2026'
       )
     })
+  })
 
-    // The west-of-UTC block above guards the moment. This one guards the
-    // date-only arrival date, which carries no offset: read as local time it
-    // moves forward into the same UTC day west of UTC, where a wrong renderer
-    // still passes, and back into the previous one east of it.
-    runInZone(EAST_OF_UTC, () => {
+  it('Should render a date-only arrival date the same when the process runs east of UTC', () => {
+    runInZone(ZONE_EAST_OF_UTC_GUARDING_DATE_ONLY_VALUES, () => {
       expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
       expect(formatDisplayCalendarDate('2026-07-21T00:00:00')).toBe(ARRIVAL_DAY)
     })

@@ -107,17 +107,20 @@ const LINE_OSTRICHES = 'line2'
 const LINE_CATTLE = 'line4'
 const LINE_HORSES = 'lineH'
 const LINE_CATS = 'lineD'
+const LINE_SECOND_HORSES = 'lineH2'
+const LINE_SECOND_CATTLE = 'line5'
 
 const HORSES_CODE = '0101'
 const CATTLE_CODE = '0102'
 const CATS_CODE = '01061900'
 const OSTRICHES_CODE = '01063300'
 
+const BOS_TAURUS = 'Bos taurus'
+
 // Unit-instance-id mnemonics for depth-2 composite keys (`lineId.unitId`).
 const UNIT_1 = 'unit1'
 const UNIT_2 = 'unit2'
 
-// Reason constants for the migrated applyTo + helpers obligations.
 const passportReason = {
   code: 'obligation.passport.applicable.becausePassportCommodity',
   explanation:
@@ -145,7 +148,7 @@ const permanentAddressReason = {
 
 // A representative composite address value — the obligation model treats
 // the address as an opaque single value; field-level validation is out
-// of scope. Field names come from the V4 Standard Address Block.
+// of scope. Field names come from the Standard Address Block.
 const alpineExporterAddress = {
   name: 'Alpine Livestock Exports GmbH',
   addressLine1: 'Gewerbestrasse 18',
@@ -161,7 +164,7 @@ const alpineExporterAddress = {
 // Smoke — evaluator wires up against the fresh manifest
 // ---------------------------------------------------------------------------
 
-describe('V4 smoke — evaluator wires up against fresh manifest', () => {
+describe('smoke — evaluator wires up against fresh manifest', () => {
   it('returns { fulfilments, obligations } shape for an empty input', () => {
     const result = evaluator.evaluate({})
     expect(result.fulfilments).toEqual({})
@@ -182,11 +185,7 @@ describe('V4 smoke — evaluator wires up against fresh manifest', () => {
 // Always-mandatory notification-level singles — batched
 // ---------------------------------------------------------------------------
 
-describe('V4 — always-mandatory notification-level singles', () => {
-  // Note: containsUnweanedAnimals is NOT in this list any more —
-  // audit #11 gated it on the active commodities (equines /
-  // cattle / pigs / sheep / goats), so it's out-of-scope until a
-  // matching commodity line is added. Covered separately below.
+describe('always-mandatory notification-level singles', () => {
   it.each([
     ['countryOfOrigin', countryOfOrigin],
     ['regionCodeRequirement', regionCodeRequirement],
@@ -208,7 +207,7 @@ describe('V4 — always-mandatory notification-level singles', () => {
 // countryOfOrigin (representative single) — round-trip
 // ---------------------------------------------------------------------------
 
-describe('V4 — countryOfOrigin round-trip', () => {
+describe('countryOfOrigin round-trip', () => {
   it('stored value passes through and remains mandatory in-scope', () => {
     const result = evaluator.evaluate({ [countryOfOrigin.id]: 'France' })
     expect(result.fulfilments[countryOfOrigin.id]).toBe('France')
@@ -220,7 +219,7 @@ describe('V4 — countryOfOrigin round-trip', () => {
 // regionCode conditional gate (retain-value pattern)
 // ---------------------------------------------------------------------------
 
-describe('V4 — regionCode conditional gate (retain-value)', () => {
+describe('regionCode conditional gate (retain-value)', () => {
   it('is optional in-scope when regionCodeRequirement is absent', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[regionCode.id]).toEqual(optional)
@@ -261,7 +260,7 @@ describe('V4 — regionCode conditional gate (retain-value)', () => {
 // internalReferenceNumber (always-optional)
 // ---------------------------------------------------------------------------
 
-describe('V4 — internalReferenceNumber (always optional)', () => {
+describe('internalReferenceNumber (always optional)', () => {
   it('is optional in-scope on empty input', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
@@ -280,7 +279,7 @@ describe('V4 — internalReferenceNumber (always optional)', () => {
 // purposeInInternalMarket conditional gate (purge-on-flip pattern)
 // ---------------------------------------------------------------------------
 
-describe('V4 — purposeInInternalMarket conditional gate', () => {
+describe('purposeInInternalMarket conditional gate', () => {
   it('is out of scope when reasonForImport is absent', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[purposeInInternalMarket.id]).toEqual(outOfScope)
@@ -317,7 +316,7 @@ describe('V4 — purposeInInternalMarket conditional gate', () => {
 // transporterType → commercial vs private mutual exclusion
 // ---------------------------------------------------------------------------
 
-describe('V4 — transporterType → commercial vs private mutual exclusion', () => {
+describe('transporterType → commercial vs private mutual exclusion', () => {
   it('both address blocks are out of scope when transporterType is absent', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[commercialTransporter.id]).toEqual(outOfScope)
@@ -369,7 +368,7 @@ describe('V4 — transporterType → commercial vs private mutual exclusion', ()
 // meansOfTransport → transitedCountries multi-select gate
 // ---------------------------------------------------------------------------
 
-describe('V4 — transitedCountries conditional gate', () => {
+describe('transitedCountries conditional gate', () => {
   it('is out of scope when meansOfTransport is absent', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
@@ -417,7 +416,7 @@ describe('V4 — transitedCountries conditional gate', () => {
 // Standard address blocks — composite value round-trip
 // ---------------------------------------------------------------------------
 
-describe('V4 — standard address blocks (composite value round-trip)', () => {
+describe('standard address blocks (composite value round-trip)', () => {
   it.each([
     ['placeOfOrigin', placeOfOrigin],
     ['consignor', consignor],
@@ -438,7 +437,7 @@ describe('V4 — standard address blocks (composite value round-trip)', () => {
 // Commodity line — user-driven indexed group semantics
 // ---------------------------------------------------------------------------
 
-describe('V4 — commodity line group semantics', () => {
+describe('commodity line group semantics', () => {
   it('has no fulfilmentIndexes when no commodity lines exist', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[commodityLine.id]).toEqual({
@@ -474,7 +473,7 @@ describe('V4 — commodity line group semantics', () => {
 // Commodity line field fulfilments — per-line round-trip
 // ---------------------------------------------------------------------------
 
-describe('V4 — commodity line field fulfilments (round-trip)', () => {
+describe('commodity line field fulfilments (round-trip)', () => {
   it('commodityCode stores one value per line', () => {
     const commodityCodeFulfilments = {
       [LINE_UNKNOWN]: 'Unicorn',
@@ -513,12 +512,12 @@ describe('V4 — commodity line field fulfilments (round-trip)', () => {
     const result = evaluator.evaluate({
       [speciesLatinName.id]: {
         [LINE_OSTRICHES]: ['Struthio'],
-        [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+        [LINE_CATTLE]: [BOS_TAURUS, 'Bison bison']
       }
     })
     expect(result.fulfilments[speciesLatinName.id]).toEqual({
       [LINE_OSTRICHES]: ['Struthio'],
-      [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+      [LINE_CATTLE]: [BOS_TAURUS, 'Bison bison']
     })
   })
 })
@@ -527,7 +526,7 @@ describe('V4 — commodity line field fulfilments (round-trip)', () => {
 // numberOfPackages — derived-leaf reuse (commodity-code-gated per line)
 // ---------------------------------------------------------------------------
 
-describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
+describe('numberOfPackages (derived-leaf, commodity-code-gated)', () => {
   it(outOfScopeWhenNoCommodityLinesTitle, () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
@@ -606,19 +605,19 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
-        [LINE_CATS]: HORSES_CODE
+        [LINE_SECOND_HORSES]: HORSES_CODE
       },
       [numberOfPackages.id]: {
         [LINE_HORSES]: 3,
-        [LINE_CATS]: 5
+        [LINE_SECOND_HORSES]: 5
       }
     })
     expect(result.fulfilments[numberOfPackages.id]).toEqual({
       [LINE_HORSES]: 3,
-      [LINE_CATS]: 5
+      [LINE_SECOND_HORSES]: 5
     })
     const ids = result.obligations[numberOfPackages.id].fulfilmentIndexes
-    expect(new Set(ids)).toEqual(new Set([LINE_HORSES, LINE_CATS]))
+    expect(new Set(ids)).toEqual(new Set([LINE_HORSES, LINE_SECOND_HORSES]))
   })
 })
 
@@ -626,13 +625,13 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
 // CPH — notification-level single reading nested storage
 // ---------------------------------------------------------------------------
 
-describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
+describe('cph (notification-level, reads commodityCode storage)', () => {
   it(outOfScopeWhenNoCommodityLinesTitle, () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when no line has a CPH-required commodity', () => {
+  it('is out of scope when every line is CPH-exempt', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
@@ -642,7 +641,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is mandatory in-scope when at least one line has a CPH-required commodity', () => {
+  it('is mandatory in-scope when at least one line is not CPH-exempt', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
@@ -656,7 +655,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
     })
   })
 
-  it('keeps a stored cph value when a required commodity is present', () => {
+  it('keeps a stored cph value when a line is not CPH-exempt', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
       [cph.id]: '123456789'
@@ -664,7 +663,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
     expect(result.fulfilments[cph.id]).toBe('123456789')
   })
 
-  it('purges a stored cph value when no line has a required commodity', () => {
+  it('purges a stored cph value when every line is CPH-exempt', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
       [cph.id]: '123456789'
@@ -677,7 +676,7 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
 // Interlock — one cattle line triggers both packages and CPH gates
 // ---------------------------------------------------------------------------
 
-describe('V4 — cow line triggers both packages and CPH gates', () => {
+describe('cattle line triggers both packages and CPH gates', () => {
   it('activates numberOfPackages (per-line) and cph (notification-level) simultaneously', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
@@ -699,7 +698,7 @@ describe('V4 — cow line triggers both packages and CPH gates', () => {
 // composite-key prefixes.
 // ---------------------------------------------------------------------------
 
-describe('V4 — unitRecord group semantics', () => {
+describe('unitRecord group semantics', () => {
   it('has no fulfilmentIndexes when no unit-level obligations have storage', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
@@ -741,7 +740,7 @@ describe('V4 — unitRecord group semantics', () => {
 // passport — commodity-gated per-unit identifier (gatedBy, depth-2)
 // ---------------------------------------------------------------------------
 
-describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', () => {
+describe('passport (gatedBy allowListed(commodityCode, passport list))', () => {
   it(outOfScopeWhenNoCommodityLinesTitle, () => {
     expect(evaluator.evaluate({}).obligations[passport.id]).toEqual({
       inScope: false
@@ -810,7 +809,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 // tattoo / earTag / horseName — same gatedBy shape, different whitelists
 // ---------------------------------------------------------------------------
 
-describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
+describe('tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
   it('is in scope for a 01061900 line (01061900 in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
@@ -839,23 +838,23 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
   })
 })
 
-describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
+describe('earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
   it('is in scope across two 0102 lines', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_CATTLE]: CATTLE_CODE,
-        [LINE_UNKNOWN]: CATTLE_CODE
+        [LINE_SECOND_CATTLE]: CATTLE_CODE
       },
       [earTag.id]: {
         [`${LINE_CATTLE}.${UNIT_1}`]: 'UK-COW-1',
-        [`${LINE_UNKNOWN}.${UNIT_1}`]: 'UK-COW-2'
+        [`${LINE_SECOND_CATTLE}.${UNIT_1}`]: 'UK-COW-2'
       }
     })
     expect(result.obligations[earTag.id].inScope).toBe(true)
     expect(result.obligations[earTag.id].reasons).toEqual([earTagReason])
     const ids = new Set(result.obligations[earTag.id].fulfilmentIndexes)
     expect(ids).toEqual(
-      new Set([`${LINE_CATTLE}.${UNIT_1}`, `${LINE_UNKNOWN}.${UNIT_1}`])
+      new Set([`${LINE_CATTLE}.${UNIT_1}`, `${LINE_SECOND_CATTLE}.${UNIT_1}`])
     )
   })
 
@@ -867,7 +866,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
   })
 })
 
-describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
+describe('horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
   it('is in scope for a 0101 line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
@@ -885,12 +884,7 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
   })
 })
 
-describe('V4 — a commodity with no identifier type of its own', () => {
-  // With no unit storage every unit-level identifier is out of scope for a
-  // reason unrelated to the commodity — unitRecord enumerates no instance at
-  // all. Store a value so a unit exists pre-purge and the commodity gate is
-  // what decides, and pin the same shape on a Cow line so the pair
-  // discriminates.
+describe('a commodity with no identifier type of its own', () => {
   it('puts no identifier obligation in scope on an ostrich line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
@@ -929,11 +923,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// permanentAddress — depth-2 standard address block, commodity-gated
-// ---------------------------------------------------------------------------
-
-describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
+describe('permanentAddress (gated on commodity code and species Latin name)', () => {
   const petAddress = {
     name: 'Meadow Farm Distribution',
     addressLine1: 'Plot 8, Rural Enterprise Park',
@@ -963,16 +953,26 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
     })
   })
 
-  it('is out of scope for a 0102 line', () => {
+  it('is out of scope for Bos taurus under 0102', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
+      [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
+      [speciesLatinName.id]: { [LINE_CATTLE]: BOS_TAURUS }
     })
     expect(result.obligations[permanentAddress.id]).toEqual({ inScope: false })
   })
 
-  it('purges a stored permanentAddress on a non-cats/dogs line', () => {
+  it('is out of scope for Oryctolagus cuniculus under 01061900', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_CATS]: CATS_CODE },
+      [speciesLatinName.id]: { [LINE_CATS]: 'Oryctolagus cuniculus' }
+    })
+    expect(result.obligations[permanentAddress.id]).toEqual({ inScope: false })
+  })
+
+  it('purges a stored permanentAddress on a Bos taurus line under 0102', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
+      [speciesLatinName.id]: { [LINE_CATTLE]: BOS_TAURUS },
       [permanentAddress.id]: { [`${LINE_CATTLE}.${UNIT_1}`]: petAddress }
     })
     expect(result.fulfilments[permanentAddress.id]).toBeUndefined()
@@ -984,7 +984,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
 // unit on the same evaluation
 // ---------------------------------------------------------------------------
 
-describe('V4 — mixed lines drive per-line identifier gating', () => {
+describe('mixed lines drive per-line identifier gating', () => {
   it('0102 + 0101: passport applies to both, earTag only to 0102, horseName only to 0101', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
@@ -1037,7 +1037,7 @@ const optionalDocumentFields = [
 const inScopeWithNoFulfilmentIndexesTitle =
   '%s is in scope with no fulfilmentIndexes'
 
-describe('V4 — accompanying documents: no documents at all', () => {
+describe('accompanying documents: no documents at all', () => {
   it.each([['documents group', documents]])(
     inScopeWithNoFulfilmentIndexesTitle,
     (_name, obligation) => {
@@ -1074,7 +1074,7 @@ describe('V4 — accompanying documents: no documents at all', () => {
   )
 })
 
-describe('V4 — accompanying documents: upload returns are optional obligations', () => {
+describe('accompanying documents: upload returns are optional obligations', () => {
   const uploadOnly = {
     [documentUploadId.id]: { d0: 'upload-001' },
     [documentFilename.id]: { d0: 'certificate.pdf' }
@@ -1116,7 +1116,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
   )
 })
 
-describe('V4 — accompanying documents: four metadata fields are mandatory per document', () => {
+describe('accompanying documents: four metadata fields are mandatory per document', () => {
   const withType = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' }
   }
@@ -1142,7 +1142,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
   )
 })
 
-describe('V4 — accompanying documents: all four filled on one document', () => {
+describe('accompanying documents: all four filled on one document', () => {
   const fulfilments = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
     [accompanyingDocumentAttachmentType.id]: { d0: 'PDF' },
@@ -1166,7 +1166,7 @@ describe('V4 — accompanying documents: all four filled on one document', () =>
   )
 })
 
-describe('V4 — accompanying documents: a partial document keeps every field owed', () => {
+describe('accompanying documents: a partial document keeps every field owed', () => {
   it('a document with only a Reference keeps its other fields mandatory (nothing purged)', () => {
     const result = evaluator.evaluate({
       [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
@@ -1184,7 +1184,7 @@ describe('V4 — accompanying documents: a partial document keeps every field ow
   })
 })
 
-describe('V4 — accompanying documents: the 0..15 cap', () => {
+describe('accompanying documents: the 0..15 cap', () => {
   const documentsOf = (count) =>
     Object.fromEntries(
       Array.from({ length: count }, (_, i) => [`d${i}`, 'ITAHC'])
