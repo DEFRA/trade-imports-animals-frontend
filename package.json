@@ -138,9 +138,11 @@
     "@lhci/cli": {
       "uuid": "11.1.1"
     },
-    "basic-ftp": "6.2.3",
     "blankie": {
       "@hapi/joi": "npm:joi@17.13.8"
+    },
+    "get-uri": {
+      "basic-ftp": "6.2.3"
     },
     "lighthouse": {
       ".": "13.4.1"
