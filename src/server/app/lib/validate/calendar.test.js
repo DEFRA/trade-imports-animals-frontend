@@ -41,6 +41,8 @@ const WEST_OF_UTC = 'America/New_York'
  */
 const EAST_OF_UTC = 'Pacific/Auckland'
 
+const UK_ZONE = 'Europe/London'
+
 /**
  * Re-imports `calendar.js` against a service zone west of UTC, so that tests can
  * ask what the renderers do if this service ever moved to that side. Nothing
@@ -72,15 +74,15 @@ describe('#startOfUtcDay', () => {
 describe('#startOfDayInZone', () => {
   it('takes the London day, not the UTC one, in the hour they disagree', () => {
     // 00:30 on 12 August in London is still 23:30 on the 11th in UTC.
-    expect(
-      startOfDayInZone(new Date('2026-08-11T23:30:00Z'), 'Europe/London')
-    ).toEqual(utc(2026, 8, 12))
+    expect(startOfDayInZone(new Date('2026-08-11T23:30:00Z'), UK_ZONE)).toEqual(
+      utc(2026, 8, 12)
+    )
   })
 
   it('agrees with the UTC day outside British Summer Time', () => {
-    expect(
-      startOfDayInZone(new Date('2026-01-11T23:30:00Z'), 'Europe/London')
-    ).toEqual(utc(2026, 1, 11))
+    expect(startOfDayInZone(new Date('2026-01-11T23:30:00Z'), UK_ZONE)).toEqual(
+      utc(2026, 1, 11)
+    )
   })
 })
 
@@ -96,6 +98,18 @@ describe('#addUtcDays', () => {
   it('crosses a leap day', () => {
     expect(addUtcDays(utc(2028, 2, 28), 1)).toEqual(utc(2028, 2, 29))
   })
+
+  it('counts whole days back across the autumn clock change on UK time', () => {
+    runInZone(UK_ZONE, () => {
+      expect(addUtcDays(utc(2026, 10, 26), -7)).toEqual(utc(2026, 10, 19))
+    })
+  })
+
+  it('counts whole days forward across the spring clock change on UK time', () => {
+    runInZone(UK_ZONE, () => {
+      expect(addUtcDays(utc(2027, 3, 26), 7)).toEqual(utc(2027, 4, 2))
+    })
+  })
 })
 
 describe('#addUtcMonths', () => {
@@ -109,6 +123,18 @@ describe('#addUtcMonths', () => {
 
   it('moves backward across a year boundary', () => {
     expect(addUtcMonths(utc(2026, 2, 15), -3)).toEqual(utc(2025, 11, 15))
+  })
+
+  it('lands on the same day of the month across a clock change on UK time', () => {
+    runInZone(UK_ZONE, () => {
+      expect(addUtcMonths(utc(2026, 10, 26), 6)).toEqual(utc(2027, 4, 26))
+    })
+  })
+
+  it('clamps to the last day of a shorter target month on UK time', () => {
+    runInZone(UK_ZONE, () => {
+      expect(addUtcMonths(utc(2026, 10, 31), 4)).toEqual(utc(2027, 2, 28))
+    })
   })
 })
 
