@@ -32,12 +32,15 @@ describe('scanStatusOf', () => {
       { refresh: true, request }
     )
 
-    expect(status).toBe(SCAN_STATUS.PENDING)
+    expect(status).toEqual({ scanStatus: SCAN_STATUS.PENDING })
     expectOneLogged(request.logger, {
       level: 'warn',
-      fields: { journeyId: 'journey-1', uploadId: 'up-1', err: failure },
-      message:
-        'Scan status unavailable: upload service call failed, document shown as pending'
+      fields: {
+        journeyId: 'journey-1',
+        uploadId: 'up-1',
+        err: failure
+      },
+      message: 'Could not read the document scan status, treating it as pending'
     })
   })
 })

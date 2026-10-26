@@ -1,7 +1,7 @@
 import Boom from '@hapi/boom'
 
 import { config } from '../../../../config/config.js'
-import { traceHeaders } from '../trace-headers.js'
+import { traceHeaders } from '../http/trace-headers.js'
 
 const baseUrl = () => config.get('tradeImportsReferenceDataApi.baseUrl')
 

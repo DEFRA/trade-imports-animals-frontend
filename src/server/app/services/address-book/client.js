@@ -1,12 +1,17 @@
 import { config } from '../../../../config/config.js'
-import { traceHeaders } from '../trace-headers.js'
 import { addressBookCountryName } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
+import { traceHeaders } from '../http/trace-headers.js'
 import { BackendRequestError } from '../persistence/records/errors.js'
 
 const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
-/** The page size the address book serves. */
+const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
+
+/** Page size the API serves. Server-owned (cv-025) — it is deliberately not a
+ * request parameter, so the service re-slices to its own page size rather than
+ * asking for one. Read back off each response in case the server is configured
+ * differently. */
 export const API_PAGE_SIZE = 25
 
 const addressesUrl = (orgId, addressId) => {
@@ -20,9 +25,8 @@ const addressesUrl = (orgId, addressId) => {
 }
 
 const headers = (orgId) => ({
-  'Content-Type': 'application/json',
-  'Trade-Imports-Organisation-Id': orgId,
-  ...traceHeaders()
+  ...traceHeaders('application/json'),
+  [ORGANISATION_ID_HEADER]: orgId
 })
 
 const failed = (what, response) => new BackendRequestError(what, response)

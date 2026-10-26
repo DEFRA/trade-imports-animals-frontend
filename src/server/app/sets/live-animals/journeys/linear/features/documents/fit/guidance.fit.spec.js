@@ -72,7 +72,7 @@ test.describe('document upload guidance', () => {
   }) => {
     const hintBullets = page.locator('#file-hint li')
     await expect(hintBullets.nth(0)).toHaveText(
-      'files that are smaller than 10MB'
+      'files that are smaller than 50MB'
     )
     await expect(hintBullets.nth(1)).toHaveText(
       'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'

@@ -329,12 +329,22 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 ## Documents
 
 - The file field is labelled "Attachment", the noun the review also uses.
-- The Status column reports the virus check ("Scanning for virus", "Check
-  completed"), not a verdict on the file.
-- A chosen document type means a document is on its way, so Continue finishes
-  a part-filled form rather than dropping it.
-- The file size limit is held at 10 MB so the request stays inside the CDP
-  ingress body cap.
+- The Status column reports the check's progress ("Scanning for virus", "Check
+  completed"), and on a refusal names the reason the upload service gave where
+  the page has wording for it ("Virus found", "Upload failed", "Download
+  failed"); a reason it has no wording for stays "Rejected" rather than being
+  named wrongly.
+- A chosen document type means a document is on its way, and only the add
+  action attaches a file. So Continue keeps every answer typed and names the
+  action that attaches it, rather than dropping the part-filled form.
+- The file size limit is whatever `MAX_FILE_SIZE_MB` in
+  `journeys/linear/features/documents/upload-config.js` holds; nothing else
+  states a figure. "Save and add another" posts the file to the upload
+  service's `/upload-and-scan` session rather than to this service, and that
+  session is opened with that limit to enforce, so the CDP ingress body cap
+  does not bound it. The page states the same figure and checks it in the
+  browser, so a trader learns a file is too large before spending time
+  uploading it.
 - The page uses the full-width surface so the added-documents table fits. The
   guidance and the fields keep a two-thirds reading width.
 - With no documents, the File upload card shows no table and no sentence.
@@ -347,8 +357,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   `govuk-!-text-break-word` sets only `overflow-wrap: break-word`, which
   leaves a table cell's minimum width at the unbroken reference, so a
   reference of the maximum length pushes the table past the card.
-- The limit error belongs to the Attachment field: the summary links to it and
-  the same message shows on it.
+- The limit error links to the documents already added, not to the Attachment
+  field: at the cap the add control is shut, so pointing a trader at the file
+  input would send them to a control they cannot use, while the table shows
+  the documents they already hold.
 - Every document field is mandatory per record and there is no edit page, so
   presence is checked when a document is added.
 - The error summary lists the fields in the order they appear on the page.
@@ -360,8 +372,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   type check is built for each add, not frozen at module load.
 - A saved document returns the trader to the page, so a reload cannot replay
   the save. Continue is pressed again from the fresh page once scans settle.
-- A file still being checked holds Continue back. The exit to the overview
-  does not wait.
+- A file still being checked holds Continue back, and so does a document the
+  upload service has taken on that this notification does not list — otherwise
+  the trader would carry on with a claimed document missing from the
+  notification. The exit to the overview does not wait for either.
+- An upload session is opened once per page view, not per render: a render
+  reuses the session the page is already showing, carried in the refresh link
+  and a hidden field, so a scan being polled does not leave a run of
+  registrations behind. A page view carrying no handle opens its own, which is
+  what keeps two concurrent adds off one handle.
 - A well-formed upload id from another journey answers 404, not 403, so the
   journey never confirms that upload exists.
 - The drop zone wording matches the design system's own defaults.

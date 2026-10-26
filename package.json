@@ -25,7 +25,8 @@
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",
-    "git:pre-commit-hook": "npm run format:check && npm run lint && npm test",
+    "git:pre-push-checks": "npm run format:check && npm run lint",
+    "git:pre-push-hook": "npm run git:pre-push-checks && npm test",
     "postinstall": "npm run setup:husky",
     "lint": "run-s lint:js lint:templates lint:scss lint:arch",
     "lint:js": "eslint .",
@@ -112,6 +113,7 @@
     "eslint-plugin-sonarjs": "4.2.2",
     "husky": "9.1.7",
     "jsdom": "30.1.2",
+    "lint-staged": "17.6.0",
     "mongodb": "7.7.0",
     "neostandard": "0.14.0-next.1",
     "nodemon": "3.1.14",
@@ -148,5 +150,13 @@
       ".": "13.4.1"
     },
     "tmp": "0.2.7"
+  },
+  "lint-staged": {
+    "*.{js,cjs,md,json}": [
+      "prettier --write"
+    ],
+    "*.js": [
+      "eslint --fix"
+    ]
   }
 }

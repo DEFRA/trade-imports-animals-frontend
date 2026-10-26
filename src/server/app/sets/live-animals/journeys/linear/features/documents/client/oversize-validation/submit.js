@@ -45,7 +45,17 @@ const focusSummaryTitle = (summary) => {
   }
 }
 
+// The add control is the only submit that sends the file: it is the one
+// carrying the formaction that posts to the upload service. Continue and
+// Remove post the typed fields to this page, so an oversize file sitting in
+// the input is no reason to stop them.
+const sendsTheFile = (submitter) =>
+  Boolean(submitter?.hasAttribute('formaction'))
+
 const onUploadSubmit = (form, container, maxFileSize) => (event) => {
+  if (!sendsTheFile(event.submitter)) {
+    return
+  }
   clearPreviousClientErrors(form)
   const fileInput = form.querySelector('input[type="file"]')
   const file = fileInput?.files?.[0]

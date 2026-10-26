@@ -72,9 +72,10 @@
   <div class="govuk-grid-row">
     <div class="{{ contentColumnClass | default("govuk-grid-column-two-thirds", true) }}">
       {% if recoverableError %}
+        {# A page that knows what failed says so; the shared wording stands for the rest. #}
         {{ govukNotificationBanner({
           titleText: sharedCopy.recoverableError.title,
-          text: sharedCopy.recoverableError.body,
+          text: recoverableErrorBody | default(sharedCopy.recoverableError.body, true),
           role: "alert"
         }) }}
       {% endif %}

@@ -304,7 +304,7 @@ describe(`${SUITE} — the in-card save button`, () => {
 describe(`${SUITE} — the Selected commodities summary`, () => {
   setupIdentificationEngine()
 
-  it('Should summarise each commodity code with every common name, every Latin name and the total declared count', async () => {
+  it('Should summarise each commodity code with every Latin name and the total declared count', async () => {
     const context = await viewContext({
       commodityLines: [
         bosTaurusLine({ numberOfAnimalsQuantity: '2' }),

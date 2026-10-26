@@ -10,8 +10,7 @@ import { records as recordsStub } from '../../../../../services/persistence/reco
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  stubH,
-  journeyRequest,
+  getHandlerOf,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
@@ -25,6 +24,7 @@ import * as documents from './documents/controller.js'
 import { lineKey } from './commodities/search/selection/line-key.js'
 import { SHOWN_SEARCH_ROWS } from './commodities/search/selection/rows.js'
 import { FELIS_CATUS_ROW } from './commodities/search/test-support.js'
+import { driveReturnFromUpload } from './documents/test-support.js'
 
 const change = { change: '1' }
 const TEST_JOURNEY_ID = 'journey-1'
@@ -99,17 +99,12 @@ describe('change context — context survives the internal loop navigation', () 
   })
 
   it('Should carry the context on the details page Add-another affordance', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = stubH()
-    const getHandler = consignmentDetails.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-    await getHandler(journeyRequest(journey.journeyId, { query: change }), h)
-    const { addHref, groups } = h.captured.view.context
-    expect(addHref).toBe(
-      `${pagePath(journey.journeyId, 'commodities')}?change=1`
+    const { journeyId, view } = await driveHandler(
+      getHandlerOf(consignmentDetails),
+      { seed: lineSeed, query: change }
     )
+    const { addHref, groups } = view.context
+    expect(addHref).toBe(`${pagePath(journeyId, 'commodities')}?change=1`)
     expect(groups[0].index).toBe(0)
   })
 
@@ -148,24 +143,11 @@ describe('change context — context survives the internal loop navigation', () 
     ).toBe('UK123456789')
   })
 
-  it('Should carry the context through a documents add-another PRG cycle with the entry committed', async () => {
-    const { journeyId, response, after } = await driveHandler(
-      postHandlerOf(documents),
-      {
-        payload: {
-          action: 'add',
-          accompanyingDocumentReference: 'GBHC1234567890',
-          accompanyingDocumentType: 'ITAHC',
-          accompanyingDocumentDateOfIssue: '12/12/2025',
-          file: {
-            filename: 'itahc-certificate.pdf',
-            headers: { 'content-type': 'application/pdf' },
-            payload: Buffer.from('pdf-bytes')
-          }
-        },
-        query: change
-      }
-    )
+  it('Should carry the context through a documents upload-return cycle with the entry committed', async () => {
+    const { journeyId, response, after } = await driveReturnFromUpload({
+      query: change
+    })
+
     expect(response).toEqual({
       redirect: `${pagePath(journeyId, 'accompanying-documents')}?change=1`
     })

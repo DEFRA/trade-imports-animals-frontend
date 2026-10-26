@@ -28,6 +28,7 @@ import { seedWithCommodityLineOfAnimals } from './sets/live-animals/test-support
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
+import { driveReturnFromUpload } from './sets/live-animals/journeys/linear/features/documents/test-support.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
@@ -265,21 +266,11 @@ describe('controller <-> model commit contract', () => {
     })
   })
 
-  it('Should commit documents via its own add action on the single-page loop', async () => {
+  it('Should commit documents when the browser returns from the upload service', async () => {
     expect(documents.meta.collects).toEqual(['documents'])
-    const result = await drive(postHandlerOf(documents), {
-      payload: {
-        action: 'add',
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          headers: { 'content-type': 'application/pdf' },
-          payload: Buffer.from('pdf-bytes')
-        }
-      }
-    })
+
+    const result = await driveReturnFromUpload()
+
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documents.meta.collects))
     )

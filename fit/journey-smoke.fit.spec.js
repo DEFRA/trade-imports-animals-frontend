@@ -276,6 +276,10 @@ test.describe('live-animals journey glue', () => {
     page
   }) => {
     test.slow()
+    // The documents page carries query parameters of its own — the refresh
+    // attempt, and the upload session a render reuses — so this asserts the
+    // change context the test is about and lets the rest follow.
+    const documentsInChangeContext = /\/accompanying-documents\?change=1(?:&|$)/
     await startNotification(page)
     await completeAnswerSections(page)
 
@@ -318,21 +322,15 @@ test.describe('live-animals journey glue', () => {
       filename: 'commercial-invoice.pdf'
     }
     await page.getByRole('link', { name: 'Change uploaded documents' }).click()
-    await expect(page).toHaveURL(
-      /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
-    )
+    await expect(page).toHaveURL(documentsInChangeContext)
     await addDocument(page, secondDocument)
-    await expect(page).toHaveURL(
-      /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
-    )
+    await expect(page).toHaveURL(documentsInChangeContext)
     await expect(
       page.locator('.govuk-table__row', {
         hasText: secondDocument.accompanyingDocumentReference
       })
     ).toContainText('Check completed')
-    await expect(page).toHaveURL(
-      /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
-    )
+    await expect(page).toHaveURL(documentsInChangeContext)
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
     await expect(

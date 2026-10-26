@@ -415,6 +415,26 @@ export const config = convict({
       env: 'TRADE_IMPORTS_ADDRESS_BOOK_URL'
     }
   },
+  cdpUploader: {
+    baseUrl: {
+      doc: 'cdp-uploader base URL, called server-side to open an upload session.',
+      format: 'url',
+      default: 'http://localhost:7337',
+      env: 'CDP_UPLOADER_BASE_URL'
+    },
+    scanResultCallbackUrl: {
+      doc: "Where cdp-uploader posts a scan result. Resolved by cdp-uploader itself, not by this service or the browser, so it must name the backend from inside the platform's network — a value left at the localhost default scans the file and posts the result nowhere, leaving the document pending for good.",
+      format: 'url',
+      default: 'http://localhost:8085/document-uploads/pending/scan-results',
+      env: 'CDP_UPLOADER_CALLBACK_URL'
+    },
+    documentsBucket: {
+      doc: 'S3 bucket cdp-uploader promotes a clean accompanying document into.',
+      format: String,
+      default: 'trade-imports-animals-documents',
+      env: 'CDP_UPLOADER_DOCUMENTS_BUCKET'
+    }
+  },
   tradeImportsInsFrontend: {
     baseUrl: {
       doc: "Trade Imports INS Frontend base URL. Browser-visible — used to build deep links the trader's own browser navigates to, so it must resolve outside the Docker network (unlike the server-side API base URLs above).",
