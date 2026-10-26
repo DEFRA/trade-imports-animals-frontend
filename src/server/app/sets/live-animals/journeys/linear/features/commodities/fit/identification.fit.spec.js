@@ -142,10 +142,7 @@ const columnHeader = (page, name) =>
 const selectedCommoditiesSummary = (page) =>
   page.getByRole('table', { name: copy.selectedCommodities.caption })
 
-const expectSummaryRow = async (
-  summary,
-  { code, name, latinNames, animals }
-) => {
+const expectSummaryRow = async (summary, { code, latinNames, animals }) => {
   const cells = summary
     .getByRole('row')
     .filter({
@@ -153,11 +150,10 @@ const expectSummaryRow = async (
     })
     .getByRole('cell')
   await expect(cells.nth(0)).toHaveText(code)
-  await expect(cells.nth(1)).toHaveText(name)
   for (const latinName of latinNames) {
-    await expect(cells.nth(2)).toContainText(latinName)
+    await expect(cells.nth(1)).toContainText(latinName)
   }
-  await expect(cells.nth(3)).toHaveText(animals)
+  await expect(cells.nth(2)).toHaveText(animals)
 }
 
 const commodityHeading = (page, heading) =>
@@ -526,7 +522,7 @@ test.describe('animal identification selected commodities summary', () => {
     await signIn(page)
   })
 
-  test('heads the summary with the code, common name, species and number of animals', async ({
+  test('heads the summary with the code, species and number of animals', async ({
     page
   }) => {
     await openIdentification(page, [[BOS_TAURUS, '2']])
@@ -535,7 +531,6 @@ test.describe('animal identification selected commodities summary', () => {
       selectedCommoditiesSummary(page).getByRole('columnheader')
     ).toHaveText([
       copy.selectedCommodities.commodityCode,
-      copy.selectedCommodities.commonName,
       copy.selectedCommodities.species,
       copy.selectedCommodities.numberOfAnimals,
       copy.selectedCommodities.actionsHidden
@@ -554,13 +549,11 @@ test.describe('animal identification selected commodities summary', () => {
 
     await expectSummaryRow(summary, {
       code: BOS_TAURUS.commodityCode,
-      name: 'Bisons Spp, Cattle or Cow',
       latinNames: [BISON_BISON.latinName, BOS_TAURUS.latinName],
       animals: '5'
     })
     await expectSummaryRow(summary, {
       code: FELIS_CATUS.commodityCode,
-      name: 'Domestic Cat',
       latinNames: [FELIS_CATUS.latinName],
       animals: '4'
     })

@@ -12,15 +12,8 @@ import { buildCommodityGroups } from './commodity-groups.js'
 
 const latinNameOf = ({ entry }) => speciesLabel(entry)
 
-const commonNamesOf = (lines) =>
-  lines
-    .map(({ entry }) => entry.speciesCommonName)
-    .filter(Boolean)
-    .join(', ')
-
 const commodityRow = ({ index, code, lines }) => ({
   code,
-  name: commonNamesOf(lines),
   latinNames: lines.map(latinNameOf),
   lines,
   groupIndex: index,
@@ -30,7 +23,6 @@ const commodityRow = ({ index, code, lines }) => ({
 const speciesRows = ({ index, code, lines }) =>
   lines.map((line) => ({
     code,
-    name: commonNamesOf([line]),
     latinNames: [latinNameOf(line)],
     lines: [line],
     groupIndex: index,
@@ -46,15 +38,14 @@ export const buildSelectedCommodityRows = (lines) =>
 
 const speciesHtml = (latinNames) => latinNames.map(escapeHtml).join(',<br>')
 
-const selectedCommodityCells = ({ code, name, latinNames }) => [
+const selectedCommodityCells = ({ code, latinNames }) => [
   wrappingCell({ text: code }),
-  wrappingCell({ text: name }),
   wrappingCell({ html: speciesHtml(latinNames) })
 ]
 
 export const buildSelectedCommoditiesTable = (rows, headings) => ({
-  head: [headings.commodityCode, headings.commonName, headings.species].map(
-    (text) => wrappingCell({ text })
+  head: [headings.commodityCode, headings.species].map((text) =>
+    wrappingCell({ text })
   ),
   rows: rows.map(selectedCommodityCells)
 })

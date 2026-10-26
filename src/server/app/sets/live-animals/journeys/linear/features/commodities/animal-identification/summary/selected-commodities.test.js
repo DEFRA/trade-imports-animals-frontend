@@ -28,13 +28,11 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow, Bisons Spp',
         latinNames: [BOS_TAURUS, BISON_BISON],
         animals: '7'
       },
       {
         code: '01063300',
-        name: 'Ostriches',
         latinNames: [STRUTHIO],
         animals: '1'
       }
@@ -55,7 +53,6 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow',
         latinNames: [BOS_TAURUS],
         animals: ''
       }
@@ -66,15 +63,10 @@ describe('#buildSelectedCommodities', () => {
     expect(
       buildSelectedCommodities(
         commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
-      ).map(({ code, name, latinNames, animals }) => [
-        code,
-        name,
-        latinNames,
-        animals
-      ])
+      ).map(({ code, latinNames, animals }) => [code, latinNames, animals])
     ).toEqual([
-      ['01061900', 'Dog', [CANIS_FAMILIARIS], '1'],
-      ['01061900', 'Domestic Cat', [FELIS_CATUS], '4']
+      ['01061900', [CANIS_FAMILIARIS], '1'],
+      ['01061900', [FELIS_CATUS], '4']
     ])
   })
 
@@ -86,7 +78,6 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow, Bisons Spp',
         latinNames: [BOS_TAURUS, BISON_BISON],
         animals: '2'
       }

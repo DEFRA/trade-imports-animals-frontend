@@ -146,7 +146,6 @@ describe(`${SUITE} — the cards view`, () => {
     expect(context.selectedCommodities).toEqual([
       {
         code: '01061900',
-        name: 'Domestic Cat',
         latinNames: [FELIS_CATUS],
         animals: ''
       }
@@ -316,13 +315,11 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow, Bisons Spp',
         latinNames: [BOS_TAURUS, BISON_BISON],
         animals: '7'
       },
       {
         code: '0101',
-        name: 'Horse',
         latinNames: [EQUUS_CABALUS],
         animals: '3'
       }
@@ -886,13 +883,11 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow',
         latinNames: [BOS_TAURUS],
         animals: '2'
       },
       {
         code: '01063300',
-        name: 'Ostriches',
         latinNames: [STRUTHIO],
         animals: '3'
       }

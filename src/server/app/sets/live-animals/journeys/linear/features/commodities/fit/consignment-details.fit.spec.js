@@ -72,7 +72,6 @@ test.describe('commodity consignment details — rendering and validation', () =
     const table = selectedCommoditiesTable(page)
     await expect(table.getByRole('columnheader')).toHaveText([
       copy.selectedCommodities.commodityCode,
-      copy.selectedCommodities.commonName,
       copy.selectedCommodities.species,
       copy.selectedCommodities.actionsHidden
     ])
@@ -228,7 +227,7 @@ test.describe('commodity consignment details — rendering and validation', () =
       .getByRole('table', { name: copy.selectedCommodities.caption })
       .getByRole('row')
       .filter({ has: page.getByRole('cell', { name: '0102', exact: true }) })
-    const speciesCell = cattleRow.getByRole('cell').nth(2)
+    const speciesCell = cattleRow.getByRole('cell').nth(1)
     expect(await speciesCell.evaluate((el) => el.innerText)).toBe(
       `${BISON_BISON.latinName},\n${BOS_TAURUS.latinName}`
     )

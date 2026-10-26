@@ -18,7 +18,7 @@ import {
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
 
 describe('#buildSelectedRows', () => {
-  it('Should give a code one row keyed to its group index, listing the common and Latin name of every species under it', () => {
+  it('Should give a code one row keyed to its group index, listing the Latin name of every species under it', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
@@ -30,13 +30,11 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow, Bisons Spp',
         latinNames: [BOS_TAURUS, BISON_BISON],
         removeAction: 'remove:0'
       },
       {
         code: '01063300',
-        name: 'Ostriches',
         latinNames: [STRUTHIO],
         removeAction: 'remove:1'
       }
@@ -51,13 +49,11 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '01061900',
-        name: 'Domestic Cat',
         latinNames: [FELIS_CATUS],
         removeAction: REMOVE_FIRST_SPECIES
       },
       {
         code: '01063300',
-        name: 'Ostriches',
         latinNames: [STRUTHIO],
         removeAction: 'remove:1'
       }
@@ -76,30 +72,19 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        name: 'Cattle or Cow',
         latinNames: [BOS_TAURUS],
         removeAction: 'remove:0'
       },
       {
         code: '01061900',
-        name: 'Dog',
         latinNames: [CANIS_FAMILIARIS],
         removeAction: 'remove-species:1'
       },
       {
         code: '01061900',
-        name: 'Domestic Cat',
         latinNames: [FELIS_CATUS],
         removeAction: 'remove-species:2'
       }
     ])
-  })
-
-  it('Should leave the common name empty for a species MDM gives none', () => {
-    expect(
-      buildSelectedRows(
-        commodityLinesFixture([{ ...STRUTHIO_ROW, speciesCommonName: null }])
-      ).map(({ name }) => name)
-    ).toEqual([''])
   })
 })

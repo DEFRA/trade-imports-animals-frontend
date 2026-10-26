@@ -7,20 +7,17 @@ import {
 
 const headings = {
   commodityCode: 'Commodity code',
-  commonName: 'Common name',
   species: 'Species',
   numberOfAnimals: 'Number of animals',
   actionsHidden: 'Actions'
 }
 
-const COW_AND_CALF = 'Cow & calf'
 const BOS_TAURUS = 'Bos taurus'
 const WRAPPING = 'app-table__cell--break-anywhere'
 const RIGHT = 'govuk-!-text-align-right'
 
 const leadingCells = [
   { text: '0102', classes: WRAPPING },
-  { text: COW_AND_CALF, classes: WRAPPING },
   { html: BOS_TAURUS, classes: WRAPPING }
 ]
 
@@ -30,7 +27,6 @@ describe('#buildRemovableCommoditiesTable', () => {
       [
         {
           code: '0102',
-          name: COW_AND_CALF,
           latinNames: [BOS_TAURUS],
           removeAction: 'remove:0'
         }
@@ -60,7 +56,6 @@ describe('#buildChangeableCommoditiesTable', () => {
       [
         {
           code: '0102',
-          name: COW_AND_CALF,
           latinNames: [BOS_TAURUS],
           animals: '5'
         }

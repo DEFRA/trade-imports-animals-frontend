@@ -12,7 +12,6 @@ const removeActionOf = ({ perSpecies, groupIndex, lines }) =>
 export const buildSelectedRows = (lines) =>
   buildSelectedCommodityRows(lines).map((row) => ({
     code: row.code,
-    name: row.name,
     latinNames: row.latinNames,
     removeAction: removeActionOf(row)
   }))
