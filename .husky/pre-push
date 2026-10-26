@@ -1,0 +1,25 @@
+# Full local gate, on push rather than on commit. A commit is private and
+# cheap to amend; a push is the first moment the work becomes everyone's
+# problem, so that is where the slow checks belong.
+#
+# The test phase costs a production webpack build plus ~3,400 Vitest tests
+# with coverage, of which roughly two-thirds is fixed import/transform
+# startup — a cost that does not shrink for a one-line commit. Paying it per
+# commit is what drives people to --no-verify, which silently disables the
+# cheap format and lint checks too.
+#
+# If the workspace's SonarCloud pre-push gate has already built and tested
+# this exact commit (see tools/sonar/sonar-push-check.sh in
+# trade-imports-workspace), it leaves a marker naming the verified SHA. In
+# that case run only the checks Sonar does not cover, instead of building and
+# testing the same commit twice. No marker, a marker for a different commit,
+# or no workspace at all — the normal case for anyone cloning this repo on
+# its own — means the full gate runs.
+VERIFIED=".cache/prepush-verified"
+
+if [ -f "$VERIFIED" ] && [ "$(cat "$VERIFIED")" = "$(git rev-parse HEAD)" ]; then
+  echo "pre-push: this commit was already built and tested by the Sonar gate — running format and lint only"
+  npm run git:pre-push-checks
+else
+  npm run git:pre-push-hook
+fi

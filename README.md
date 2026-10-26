@@ -138,9 +138,29 @@ npm install
 
 ### Git hooks
 
-`npm install` installs the pre-commit hook — `postinstall` runs
-`npm run setup:husky`. The hook runs `npm run git:pre-commit-hook`: format
-check, lint and the unit suite.
+`npm install` installs the pre-push hook — `postinstall` runs
+`npm run setup:husky`. The hook runs `npm run git:pre-push-hook`: format
+check, lint and the unit suite (which builds the frontend first, via
+`pretest`).
+
+It is a pre-push rather than a pre-commit hook on purpose. The suite is
+~3,400 tests with coverage on top of a production webpack build, mostly
+fixed startup cost that does not shrink for a small change. Charging that to
+every commit — including the ones you are about to squash — is what teaches
+people to reach for `--no-verify`, which skips the cheap format and lint
+checks as well. A push is the first point the work affects anyone else, so
+the gate sits there.
+
+Run the same gate by hand at any time with `npm run git:pre-push-hook`, or
+just the fast half with `npm run git:pre-push-checks`.
+
+If the hook reports that it is "running format and lint only", the
+SonarCloud pre-push gate in the
+[trade-imports-workspace](https://github.com/DEFRA/trade-imports-workspace)
+tooling has already built and tested that exact commit and left a marker at
+`.cache/prepush-verified`; the hook skips the duplicate build and suite
+rather than running them twice. Without that workspace — cloning this repo
+on its own — the full gate always runs.
 
 ### Development
 
