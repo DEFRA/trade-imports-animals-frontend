@@ -1,7 +1,21 @@
 import { createServer } from 'node:http'
 import { Readable } from 'node:stream'
+import { vi } from 'vitest'
 
 import { backendFetch } from './backend-fetch.js'
+
+const logged = vi.hoisted(() => ({ warnings: [], onWarning: () => {} }))
+
+vi.mock('../logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: (fields, message) => {
+      logged.warnings.push({ fields, message })
+      logged.onWarning()
+    },
+    info: () => {},
+    error: () => {}
+  })
+}))
 
 const listen = async (handler) => {
   const server = createServer(handler)
@@ -101,16 +115,34 @@ describe('backendFetch over a real connection', () => {
     }
   })
 
-  test('throws the refused connection after trying it once more', async () => {
+  test('connects on the second attempt after the first is refused', async () => {
     const closed = await listen(() => {})
     const { port } = closed.address()
     await close(closed)
-
-    await expect(
-      backendFetch(`http://127.0.0.1:${port}/notifications`)
-    ).rejects.toMatchObject({
-      message: 'fetch failed',
-      cause: expect.objectContaining({ code: 'ECONNREFUSED' })
+    const backend = createServer((request, response) => {
+      response.writeHead(200, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ url: request.url }))
     })
+    logged.warnings.length = 0
+    logged.onWarning = () => backend.listen(port)
+
+    try {
+      const response = await backendFetch(
+        `http://127.0.0.1:${port}/notifications`
+      )
+
+      expect({
+        firstAttemptRefusal: logged.warnings.map(
+          ({ fields }) => fields.err.cause.code
+        ),
+        secondAttemptResponse: await response.json()
+      }).toEqual({
+        firstAttemptRefusal: ['ECONNREFUSED'],
+        secondAttemptResponse: { url: '/notifications' }
+      })
+    } finally {
+      logged.onWarning = () => {}
+      await close(backend)
+    }
   })
 })
