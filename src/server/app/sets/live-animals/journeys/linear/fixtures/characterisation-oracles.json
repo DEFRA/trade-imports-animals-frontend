@@ -862,6 +862,7 @@
         {
           "name": "Cow",
           "commodityCode": "0102",
+          "description": "Live bovine animals",
           "typeOfCommodity": "Domestic",
           "totalNoOfAnimals": 3,
           "totalNoOfPackages": 2,
@@ -869,6 +870,7 @@
             {
               "value": "1148346",
               "text": "Bos taurus",
+              "commonName": "Domestic cattle",
               "noOfAnimals": "2",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -896,6 +898,7 @@
             {
               "value": "716661",
               "text": "Bison bison",
+              "commonName": "American bison",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK000000000001",
@@ -1179,7 +1182,8 @@
       "commodities": [
         {
           "name": "Cow",
-          "commodityCode": "0102"
+          "commodityCode": "0102",
+          "description": "Live bovine animals"
         }
       ]
     }
@@ -1693,6 +1697,7 @@
         {
           "name": "Cow",
           "commodityCode": "0102",
+          "description": "Live bovine animals",
           "typeOfCommodity": "Domestic",
           "totalNoOfAnimals": 1,
           "totalNoOfPackages": 1,
@@ -1700,6 +1705,7 @@
             {
               "value": "1148346",
               "text": "Bos taurus",
+              "commonName": "Domestic cattle",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -1992,12 +1998,14 @@
         {
           "name": "Fish",
           "commodityCode": "0301",
+          "description": "Live fish",
           "totalNoOfAnimals": 1,
           "totalNoOfPackages": 1,
           "species": [
             {
               "value": "801204",
               "text": "Salmo salar",
+              "commonName": "Atlantic salmon",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",

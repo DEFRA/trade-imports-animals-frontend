@@ -9,6 +9,14 @@ export const COMMODITY_CODES = {
   Fish: '0301'
 }
 
+// MDM commodity descriptions (reference-data /commodities?codes=); stubbed until live lookup.
+export const COMMODITY_DESCRIPTIONS = {
+  '0101': 'Live horses, asses, mules and hinnies',
+  '0102': 'Live bovine animals',
+  '01061900': 'Other live animals',
+  '0301': 'Live fish'
+}
+
 // Species per commodity. Cow's four are the skeleton's mock-species.json for
 // 0102; the others carry one representative species each so the batch search
 // can select across commodity codes. `text` is the scientific name the backend

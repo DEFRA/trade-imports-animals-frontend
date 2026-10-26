@@ -1,4 +1,8 @@
-import { commodityCodeFor } from '../commodity-reference.js'
+import {
+  commodityCodeFor,
+  commodityDescriptionFor,
+  commodityNameFor
+} from '../commodity-reference.js'
 import { compact } from '../shared/compact.js'
 import { groupLinesByCommodity } from '../shared/lines/group-by-commodity.js'
 import { speciesEntryFromLine } from '../shared/lines/species-entry.js'
@@ -7,10 +11,21 @@ import { totalOf } from '../shared/lines/total.js'
 import { typeTextForLine } from '../shared/lines/type-text-for-line.js'
 
 const groupHasUniformType = (group) => {
-  const types = new Set(
-    group.map((line) => typeTextForLine(line) ?? '')
-  )
+  const types = new Set(group.map((line) => typeTextForLine(line) ?? ''))
   return types.size <= 1
+}
+
+const commodityCodeForLine = (line) =>
+  line.commodityCode ??
+  (line.commoditySelection
+    ? commodityCodeFor(line.commoditySelection)
+    : undefined)
+
+const commodityNameForLine = (line) => {
+  if (line.commoditySelection) {
+    return line.commoditySelection
+  }
+  return commodityNameFor(line.commodityCode) ?? line.commodityCode
 }
 
 const commodityEntryFromGroup = (group) => {
@@ -20,10 +35,12 @@ const commodityEntryFromGroup = (group) => {
       typeOfCommodity: uniformType ? undefined : typeTextForLine(line)
     })
   )
-  const selection = group[0].commoditySelection
+  const head = group[0]
+  const code = commodityCodeForLine(head)
   return compact({
-    name: selection,
-    commodityCode: commodityCodeFor(selection),
+    name: commodityNameForLine(head),
+    commodityCode: code,
+    description: code ? commodityDescriptionFor(code) : undefined,
     typeOfCommodity: uniformType ? typeTextForLine(group[0]) : undefined,
     totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
     totalNoOfPackages: totalOf(group, 'numberOfPackages'),

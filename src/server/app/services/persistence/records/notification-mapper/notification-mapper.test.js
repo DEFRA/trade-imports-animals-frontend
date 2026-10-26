@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
+import { commoditiesFromLinesA } from './mapper-a/commodity.js'
 import { fulfilmentToNotification } from './index.js'
 
 /** A party answer in backend wire shape, as `answerForInlineParty` stores it
@@ -12,6 +13,8 @@ const address = (name, line1) => ({
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
+const LIVE_BOVINE_DESCRIPTION = 'Live bovine animals'
+const DOMESTIC_CATTLE = 'Domestic cattle'
 const SALMO_SALAR = 'Salmo salar'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
@@ -170,6 +173,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       {
         name: 'Cow',
         commodityCode: '0102',
+        description: LIVE_BOVINE_DESCRIPTION,
         typeOfCommodity: 'Domestic',
         totalNoOfAnimals: 25,
         totalNoOfPackages: 5,
@@ -177,6 +181,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
           {
             value: '1148346',
             text: BOS_TAURUS,
+            commonName: DOMESTIC_CATTLE,
             noOfAnimals: '25',
             noOfPackages: '5',
             earTag: 'UK123456789012',
@@ -185,40 +190,6 @@ describe('Mapper A — current backend notification (as-is)', () => {
               { earTag: 'UK123456789012', passport: 'UK123456789' }
             ]
           }
-        ]
-      }
-    ])
-  })
-
-  test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
-    const { commodities } = currentNotificationFrom({
-      commodityLines: groupedLines()
-    })
-    expect(commodities).toHaveLength(2)
-
-    const [cow, cat] = commodities
-    expect(cow.name).toBe('Cow')
-    expect(cow.commodityCode).toBe('0102')
-    expect(cat.name).toBe('Cat')
-    expect(cat.commodityCode).toBe('01061900')
-    expect(cow.totalNoOfAnimals).toBe(35)
-    expect(cow.totalNoOfPackages).toBe(7)
-    expect(cow.species.map((entry) => entry.value)).toEqual([
-      '1148346',
-      '716661'
-    ])
-    expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
-    expect(cat.totalNoOfAnimals).toBe(2)
-    expect(cat.species).toEqual([
-      {
-        value: '923501',
-        text: 'Felis catus',
-        noOfAnimals: '2',
-        noOfPackages: '1',
-        passport: 'UK-CAT-1',
-        microchip: '900987654321098',
-        animalIdentifiers: [
-          { passport: 'UK-CAT-1', microchip: '900987654321098' }
         ]
       }
     ])
@@ -305,6 +276,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.commodities[0].species[0]).toEqual({
       value: '1148346',
       text: BOS_TAURUS,
+      commonName: DOMESTIC_CATTLE,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -369,6 +341,79 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 })
 
+describe('Mapper A — commodities array from lines', () => {
+  test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
+    const { commodities } = currentNotificationFrom({
+      commodityLines: groupedLines()
+    })
+    expect(commodities).toHaveLength(2)
+
+    const [cow, cat] = commodities
+    expect(cow.name).toBe('Cow')
+    expect(cow.commodityCode).toBe('0102')
+    expect(cat.name).toBe('Cat')
+    expect(cat.commodityCode).toBe('01061900')
+    expect(cow.totalNoOfAnimals).toBe(35)
+    expect(cow.totalNoOfPackages).toBe(7)
+    expect(cow.species.map((entry) => entry.value)).toEqual([
+      '1148346',
+      '716661'
+    ])
+    expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
+    expect(cat.totalNoOfAnimals).toBe(2)
+    expect(cat.species).toEqual([
+      {
+        value: '923501',
+        text: 'Felis catus',
+        commonName: 'Cat',
+        noOfAnimals: '2',
+        noOfPackages: '1',
+        passport: 'UK-CAT-1',
+        microchip: '900987654321098',
+        animalIdentifiers: [
+          { passport: 'UK-CAT-1', microchip: '900987654321098' }
+        ]
+      }
+    ])
+  })
+
+  test('Should map MDM commodity search lines with code, latin name and common name', () => {
+    expect(
+      commoditiesFromLinesA([
+        {
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
+          commonName: DOMESTIC_CATTLE,
+          commodityType: '16',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        }
+      ])
+    ).toEqual([
+      {
+        name: 'Cow',
+        commodityCode: '0102',
+        description: LIVE_BOVINE_DESCRIPTION,
+        typeOfCommodity: 'Domestic',
+        totalNoOfAnimals: 1,
+        totalNoOfPackages: 1,
+        species: [
+          {
+            value: BOS_TAURUS,
+            text: BOS_TAURUS,
+            commonName: DOMESTIC_CATTLE,
+            noOfAnimals: '1',
+            noOfPackages: '1',
+            earTag: 'UK1',
+            animalIdentifiers: [{ earTag: 'UK1' }]
+          }
+        ]
+      }
+    ])
+  })
+})
+
 // Per-unit animal-identifier coverage — a separate describe from the block
 // above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — per-unit animal identifiers', () => {
@@ -379,6 +424,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
     expect(species).toEqual({
       value: '1148346',
       text: BOS_TAURUS,
+      commonName: DOMESTIC_CATTLE,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -426,6 +472,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
     expect(notification.commodities[0].species[0]).toEqual({
       value: '923501',
       text: 'Felis catus',
+      commonName: 'Cat',
       noOfAnimals: '2',
       noOfPackages: '1',
       microchip: '900987654321098',
@@ -482,6 +529,7 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
     expect(notification.commodities[0].species[0]).toEqual({
       value: '801204',
       text: SALMO_SALAR,
+      commonName: 'Atlantic salmon',
       noOfAnimals: '40',
       noOfPackages: '1'
     })

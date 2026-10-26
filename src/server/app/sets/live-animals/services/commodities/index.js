@@ -1,6 +1,7 @@
 import {
   COMMODITY_OPTIONS,
   COMMODITY_CODES,
+  COMMODITY_DESCRIPTIONS,
   COMMODITY_IDENTIFIERS,
   COMMODITY_SPECIES,
   COMMODITY_TYPE_DATA,
@@ -27,6 +28,8 @@ export const commodityLabel = (name, code) =>
 
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
+
+export const commodityDescriptionFor = (code) => COMMODITY_DESCRIPTIONS[code]
 
 export const typesFor = (name) => COMMODITY_TYPE_DATA[name] ?? []
 

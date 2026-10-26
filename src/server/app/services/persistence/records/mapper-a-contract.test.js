@@ -121,6 +121,7 @@ describe('Mapper A PUT /notifications contract', () => {
         {
           name: 'Cow',
           commodityCode: '0102',
+          description: 'Live bovine animals',
           typeOfCommodity: 'Domestic',
           totalNoOfAnimals: 1,
           totalNoOfPackages: 5,
@@ -128,6 +129,7 @@ describe('Mapper A PUT /notifications contract', () => {
             {
               value: '1148346',
               text: 'Bos taurus',
+              commonName: 'Domestic cattle',
               noOfAnimals: '1',
               noOfPackages: '5',
               earTag: 'UK123456789012',
