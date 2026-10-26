@@ -1,3 +1,5 @@
+import { getDefaultAutoSelectFamilyAttemptTimeout } from 'node:net'
+
 import { beforeAll, afterAll, describe, expect, test, vi } from 'vitest'
 import { statusCodes } from '../constants/status-codes.js'
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
@@ -42,6 +44,10 @@ describe('#startServer', () => {
 
       expect(result).toEqual({ message: 'success' })
       expect(statusCode).toBe(statusCodes.ok)
+    })
+
+    test('gives each address of a host one second to connect before trying the next', () => {
+      expect(getDefaultAutoSelectFamilyAttemptTimeout()).toBe(1000)
     })
   })
 

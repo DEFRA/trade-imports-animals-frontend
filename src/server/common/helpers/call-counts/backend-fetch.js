@@ -9,13 +9,7 @@ const logger = createLogger()
 const connectBoundedDispatcher = () =>
   config.get('httpProxy')
     ? undefined
-    : new Dispatcher1Wrapper(
-        new Agent({
-          connect: { timeout: 2000 },
-          autoSelectFamily: true,
-          autoSelectFamilyAttemptTimeout: 1000
-        })
-      )
+    : new Dispatcher1Wrapper(new Agent({ connect: { timeout: 2000 } }))
 
 const dispatcher = connectBoundedDispatcher()
 
