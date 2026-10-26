@@ -6,8 +6,23 @@ import { callCounts } from './call-counts.js'
 import { callCountsRoutes } from './call-counts-routes.js'
 import { clearCallCountTotals } from './call-count-totals.js'
 
+const loggedWarnings = vi.hoisted(() => [])
+
+vi.mock('../logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: (fields, message) => loggedWarnings.push({ fields, message }),
+    info: () => {},
+    error: () => {}
+  })
+}))
+
 const BACKEND_URL = 'http://backend.test/notifications'
 const INIT = { method: 'PUT', headers: { 'content-type': 'application/json' } }
+
+const fetchFailedBecause = (cause) => new TypeError('fetch failed', { cause })
+const errorWithCode = (code) => Object.assign(new Error(code), { code })
+const connectTimedOut = () =>
+  fetchFailedBecause(errorWithCode('UND_ERR_CONNECT_TIMEOUT'))
 
 describe('backendFetch', () => {
   const originalFetch = global.fetch
@@ -23,6 +38,7 @@ describe('backendFetch', () => {
 
   beforeEach(async () => {
     clearCallCountTotals()
+    loggedWarnings.length = 0
     global.fetch = vi.fn().mockResolvedValue({ ok: true })
     server = hapi.server()
     await server.register([callCounts, callCountsRoutes])
@@ -62,6 +78,82 @@ describe('backendFetch', () => {
     await expect(backendFetch(BACKEND_URL, INIT)).resolves.toEqual({
       ok: true
     })
+  })
+
+  describe('when the connection to the backend does not open', () => {
+    test('tries once more and returns the second response', async () => {
+      const response = { ok: true, status: 200 }
+      global.fetch
+        .mockRejectedValueOnce(connectTimedOut())
+        .mockResolvedValueOnce(response)
+
+      await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
+    })
+
+    test('logs one warning with the failed connection and the URL', async () => {
+      const stalled = connectTimedOut()
+      global.fetch
+        .mockRejectedValueOnce(stalled)
+        .mockResolvedValueOnce({ ok: true })
+
+      await backendFetch(BACKEND_URL, INIT)
+
+      expect(loggedWarnings).toEqual([
+        {
+          fields: { err: stalled, url: BACKEND_URL },
+          message: 'Backend connection did not open, retrying once'
+        }
+      ])
+    })
+
+    test('tries once more when every address of the host timed out', async () => {
+      const allAddressesTimedOut = fetchFailedBecause(
+        new AggregateError([errorWithCode('ETIMEDOUT')], '')
+      )
+      const response = { ok: true, status: 200 }
+      global.fetch
+        .mockRejectedValueOnce(allAddressesTimedOut)
+        .mockResolvedValueOnce(response)
+
+      await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
+    })
+
+    test('throws the second failure when the retry cannot connect either', async () => {
+      const second = fetchFailedBecause(errorWithCode('ECONNREFUSED'))
+      global.fetch
+        .mockRejectedValueOnce(connectTimedOut())
+        .mockRejectedValueOnce(second)
+
+      await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(second)
+    })
+
+    test('counts the call once, however many attempts it took', async () => {
+      global.fetch
+        .mockRejectedValueOnce(connectTimedOut())
+        .mockResolvedValueOnce({ ok: true })
+      server.route({
+        method: 'GET',
+        path: '/stalled',
+        handler: async () => {
+          await backendFetch(BACKEND_URL, INIT)
+          return 'page'
+        }
+      })
+
+      await server.inject({ method: 'GET', url: '/stalled' })
+
+      expect((await readRoute('/stalled')).backendCalls).toBe(1)
+    })
+  })
+
+  test('throws a failure after the connection opened without sending the request again', async () => {
+    const socketClosed = fetchFailedBecause(errorWithCode('UND_ERR_SOCKET'))
+    global.fetch
+      .mockRejectedValueOnce(socketClosed)
+      .mockResolvedValueOnce({ ok: true })
+
+    await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketClosed)
+    expect(loggedWarnings).toEqual([])
   })
 
   test('counts every backend call a request makes', async () => {
