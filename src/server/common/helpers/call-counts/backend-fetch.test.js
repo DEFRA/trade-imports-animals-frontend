@@ -1,20 +1,21 @@
 import hapi from '@hapi/hapi'
+import { Writable } from 'node:stream'
+import { pino } from 'pino'
 import { vi } from 'vitest'
 
-import { backendFetch } from './backend-fetch.js'
+import { createBackendFetch } from './backend-fetch.js'
 import { callCounts } from './call-counts.js'
 import { callCountsRoutes } from './call-counts-routes.js'
 import { clearCallCountTotals } from './call-count-totals.js'
 
-const loggedWarnings = vi.hoisted(() => [])
-
-vi.mock('../logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: (fields, message) => loggedWarnings.push({ fields, message }),
-    info: () => {},
-    error: () => {}
-  })
-}))
+const loggedLines = []
+const logDestination = new Writable({
+  write(chunk, _encoding, done) {
+    loggedLines.push(JSON.parse(chunk))
+    done()
+  }
+})
+const backendFetch = createBackendFetch(pino({ level: 'warn' }, logDestination))
 
 const BACKEND_URL = 'http://backend.test/notifications'
 const INIT = { method: 'PUT', headers: { 'content-type': 'application/json' } }
@@ -50,7 +51,7 @@ describe('backendFetch', () => {
 
   beforeEach(async () => {
     clearCallCountTotals()
-    loggedWarnings.length = 0
+    loggedLines.length = 0
     global.fetch = vi.fn().mockResolvedValue({ ok: true })
     server = hapi.server()
     await server.register([callCounts, callCountsRoutes])
@@ -103,18 +104,23 @@ describe('backendFetch', () => {
     })
 
     test('logs one warning with the failed connection, the method and the URL', async () => {
-      const stalled = connectTimedOut()
       global.fetch
-        .mockRejectedValueOnce(stalled)
+        .mockRejectedValueOnce(connectTimedOut())
         .mockResolvedValueOnce({ ok: true })
 
       await backendFetch(BACKEND_URL, INIT)
 
-      expect(loggedWarnings).toEqual([
-        {
-          fields: { err: stalled, method: 'PUT', url: BACKEND_URL },
-          message: 'Backend connection did not open, retrying once'
-        }
+      expect(loggedLines).toEqual([
+        expect.objectContaining({
+          level: pino.levels.values.warn,
+          msg: 'Backend connection did not open, retrying once',
+          method: 'PUT',
+          url: BACKEND_URL,
+          err: expect.objectContaining({
+            type: 'TypeError',
+            message: 'fetch failed: UND_ERR_CONNECT_TIMEOUT'
+          })
+        })
       ])
     })
 
@@ -164,7 +170,7 @@ describe('backendFetch', () => {
         .mockResolvedValueOnce({ ok: true })
 
       await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketFailed)
-      expect(loggedWarnings).toEqual([])
+      expect(loggedLines).toEqual([])
     }
   )
 

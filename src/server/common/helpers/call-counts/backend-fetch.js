@@ -4,8 +4,6 @@ import { config } from '../../../../config/config.js'
 import { createLogger } from '../logging/logger.js'
 import { countBackendCall } from './call-counts.js'
 
-const logger = createLogger()
-
 const connectBoundedDispatcher = () =>
   config.get('httpProxy')
     ? undefined
@@ -20,15 +18,15 @@ const fetchOnce = (url, init) =>
   dispatcher ? fetch(url, { ...init, dispatcher }) : fetch(url, init)
 
 /**
- * Makes one call to the journey backend, counted once against the page request
- * in progress. A connection that is refused, or has not opened within two
- * seconds, is tried once more; any other failure is thrown to the caller.
+ * Builds a backend fetch: each use makes one call to the journey backend,
+ * counted once against the page request in progress. A connection that is
+ * refused, or has not opened within two seconds, is logged at warn on the
+ * given logger and tried once more; any other failure is thrown to the caller.
  *
- * @param {string | URL} url - the backend URL
- * @param {RequestInit} [init] - the fetch options, passed through unchanged
- * @returns {Promise<Response>} the backend's response
+ * @param {import('pino').Logger} logger - where the retry warning is written
+ * @returns {(url: string | URL, init?: RequestInit) => Promise<Response>} the backend fetch
  */
-export const backendFetch = async (url, init) => {
+export const createBackendFetch = (logger) => async (url, init) => {
   countBackendCall()
   try {
     return await fetchOnce(url, init)
@@ -43,3 +41,15 @@ export const backendFetch = async (url, init) => {
     return fetchOnce(url, init)
   }
 }
+
+/**
+ * Makes one call to the journey backend, counted once against the page request
+ * in progress. A connection that is refused, or has not opened within two
+ * seconds, is logged at warn on the service logger and tried once more; any
+ * other failure is thrown to the caller.
+ *
+ * @param {string | URL} url - the backend URL
+ * @param {RequestInit} [init] - the fetch options, passed through unchanged
+ * @returns {Promise<Response>} the backend's response
+ */
+export const backendFetch = createBackendFetch(createLogger())

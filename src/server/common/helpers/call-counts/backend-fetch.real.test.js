@@ -1,21 +1,10 @@
+import { subscribe, unsubscribe } from 'node:diagnostics_channel'
 import { createServer } from 'node:http'
 import { Readable } from 'node:stream'
-import { vi } from 'vitest'
 
 import { backendFetch } from './backend-fetch.js'
 
-const logged = vi.hoisted(() => ({ warnings: [], onWarning: () => {} }))
-
-vi.mock('../logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: (fields, message) => {
-      logged.warnings.push({ fields, message })
-      logged.onWarning()
-    },
-    info: () => {},
-    error: () => {}
-  })
-}))
+const CONNECT_ERROR_CHANNEL = 'undici:client:connectError'
 
 const listen = async (handler) => {
   const server = createServer(handler)
@@ -123,8 +112,12 @@ describe('backendFetch over a real connection', () => {
       response.writeHead(200, { 'content-type': 'application/json' })
       response.end(JSON.stringify({ url: request.url }))
     })
-    logged.warnings.length = 0
-    logged.onWarning = () => backend.listen(port)
+    const connectErrors = []
+    const listenAfterConnectError = ({ error }) => {
+      connectErrors.push(error.code)
+      backend.listen(port, '127.0.0.1')
+    }
+    subscribe(CONNECT_ERROR_CHANNEL, listenAfterConnectError)
 
     try {
       const response = await backendFetch(
@@ -132,16 +125,14 @@ describe('backendFetch over a real connection', () => {
       )
 
       expect({
-        firstAttemptRefusal: logged.warnings.map(
-          ({ fields }) => fields.err.cause.code
-        ),
+        connectErrors,
         secondAttemptResponse: await response.json()
       }).toEqual({
-        firstAttemptRefusal: ['ECONNREFUSED'],
+        connectErrors: ['ECONNREFUSED'],
         secondAttemptResponse: { url: '/notifications' }
       })
     } finally {
-      logged.onWarning = () => {}
+      unsubscribe(CONNECT_ERROR_CHANNEL, listenAfterConnectError)
       await close(backend)
     }
   })
