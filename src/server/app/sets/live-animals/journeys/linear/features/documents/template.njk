@@ -51,16 +51,12 @@
     </div>
   </div>
 
-  {# No enctype: this form posts the typed fields alone. The add button carries
-     its own formaction and formenctype for the file. #}
   <form method="post" novalidate
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     {% if uploadSession %}
-      {# Carries the open session into the next render, so a refused Continue or a failed Remove
-         re-renders the page on the session it is already showing rather than opening another. #}
       <input type="hidden" name="uploadSession" value="{{ uploadSession }}" />
     {% endif %}
     {% if pendingDocumentRemoval %}
@@ -123,8 +119,7 @@
               errorMessage: errors.file and { text: errors.file }
             }) }}
 
-            {# The reason comes before the control it refuses, and the button keeps
-               its place in the tab order so the error summary can reach it. #}
+            {% set addUploadAttributes = { formaction: saveButtonsUploadPath, formenctype: "multipart/form-data" } if saveButtonsUploadPath else {} %}
             <div class="govuk-form-group{{ ' govuk-form-group--error' if addFormClosed }}">
               {% if addFormClosed %}
                 <p id="add-document-error" class="govuk-error-message">
@@ -142,10 +137,7 @@
                 attributes: {
                   "aria-disabled": "true",
                   "aria-describedby": "add-document-error"
-                } if addFormClosed else {
-                  formaction: uploadPath,
-                  formenctype: "multipart/form-data"
-                }
+                } if addFormClosed else addUploadAttributes
               }) }}
             </div>
           </div>
@@ -176,7 +168,13 @@
       </div>
     </section>
 
-    {{ saveActions({ hubHref: hubHref, primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, copy: sharedCopy.saveActions, amend: amend }) }}
+    {{ saveActions({
+      hubHref: hubHref,
+      primary: { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" },
+      copy: sharedCopy.saveActions,
+      amend: amend,
+      uploadPath: saveButtonsUploadPath
+    }) }}
   </form>
 
   <div id="js-scan-status-announcer"

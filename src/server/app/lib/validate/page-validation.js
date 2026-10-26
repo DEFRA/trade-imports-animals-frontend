@@ -9,16 +9,9 @@ const checkOutcomeOf = (checked) =>
 export const hasErrors = (errors) => Object.keys(errors).length > 0
 
 /**
- * One page's validation, stated once, read against two audiences: a form the
- * trader has just submitted, and the answers already stored (task list,
- * review page). Same rules, same field set — what counts as a valid answer
- * cannot drift. Which reading is running is passed to the rules as `stored`,
- * so the same broken rule can be told differently: "Select a port from the
- * list" is right for a trader who just mistyped, wrong for one whose stored
- * port has since closed. Errors come back keyed by the page's own field names.
- *
- * `onSubmit` accepts `context.allowMissing` to leave blank answers unreported
- * (the 'Save and return to overview' reading); `onStored` callers never pass it.
+ * One page's validation: `onSubmit` reads a submitted form and `onStored`
+ * reads the stored answers, both against the same rules. Errors come back
+ * keyed by the page's own field names.
  *
  * @param {object} page
  * @param {Function} page.fields - `(values, context) => schema`. Rules keyed by field name.
@@ -40,9 +33,7 @@ export const pageValidation = ({
 }) => {
   const outcomeIn = async (values, context) => {
     const measured = normalise(values)
-    const { errors } = validate(await fields(measured, context), measured, {
-      allowMissing: context.allowMissing === true
-    })
+    const { errors } = validate(await fields(measured, context), measured)
     const checked = checkOutcomeOf(await checks?.(measured, context))
     return {
       errors: { ...checked.errors, ...(errors ?? NO_ERRORS) },

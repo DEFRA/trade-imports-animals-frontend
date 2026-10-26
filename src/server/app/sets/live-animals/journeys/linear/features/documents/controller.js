@@ -27,12 +27,12 @@ import {
 import {
   capacityExceededError,
   documentAddErrors,
-  notYetAddedFileError
+  fileRequiredFieldError
 } from './form/errors.js'
 import {
   EMPTY_FORM,
-  answersADocument,
-  documentFromPayload
+  documentFromPayload,
+  startsADocument
 } from './form/payload.js'
 import { claimUpload } from './handlers/claim-upload.js'
 import { loadPage } from './handlers/load-page.js'
@@ -59,8 +59,7 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const render = (request, h, pageState, values, options) =>
   renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
-// The add form's own fields, or none of them when no session could be opened.
-const addFormFor = async (request, journeyId) => {
+const addFormSessionFields = async (request, journeyId) => {
   try {
     return await addFormSession(request, journeyId)
   } catch (err) {
@@ -78,12 +77,14 @@ const get = async (request, h) => {
   if (correlationId) {
     return claimReturnedUpload(request, h, pageState, correlationId)
   }
-  const addForm = await addFormFor(request, pageState.journey.journeyId)
+  const addForm = await addFormSessionFields(
+    request,
+    pageState.journey.journeyId
+  )
   return render(request, h, pageState, EMPTY_FORM, { extra: addForm })
 }
 
-// The page a service failure leaves the trader on, with the add form still live.
-const renderRecoverableFailure = async (
+const renderAfterServiceFailure = async (
   request,
   h,
   pageState,
@@ -94,62 +95,76 @@ const renderRecoverableFailure = async (
     extra: {
       recoverableError: true,
       unsavedDocument,
-      ...(await addFormFor(request, pageState.journey.journeyId))
+      ...(await addFormSessionFields(request, pageState.journey.journeyId))
     }
   }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
+const renderRefusedClaim = async (request, h, pageState, claimed) =>
+  render(request, h, pageState, claimed.values, {
+    errors: claimed.errors ?? {},
+    summaryErrors: claimed.summaryErrors ?? [],
+    extra: await addFormSessionFields(request, pageState.journey.journeyId)
+  }).code(HTTP_STATUS_BAD_REQUEST)
+
+const saveClaimedEntry = (request, h, pageState, entry, correlationId) =>
+  kit.recoverableSave(
+    request,
+    async () => {
+      await state.appendEntry(request, h, 'documents', entry)
+    },
+    async (err) => {
+      request.logger.error(
+        {
+          err,
+          journeyId: pageState.journey.journeyId,
+          uploadId: entry.uploadId,
+          correlationId
+        },
+        'Took on the returned upload but could not save the document'
+      )
+      return renderAfterServiceFailure(request, h, pageState, EMPTY_FORM, {
+        unsavedDocument: { uploadId: entry.uploadId, correlationId }
+      })
+    },
+    {
+      action: 'save-document-taken-on',
+      uploadId: entry.uploadId,
+      correlationId
+    }
+  )
+
+const routeAfterClaim = (request, h, { saveChoice, addsAnother }) =>
+  addsAnother ? backToPage(request, h) : leavePage(request, h, saveChoice)
+
 const claimReturnedUpload = async (request, h, pageState, correlationId) => {
   const claimed = await claimUpload(request, correlationId, pageState)
-  if (claimed?.takeOnFailed) {
-    return renderRecoverableFailure(
+  if (!claimed) {
+    return backToPage(request, h)
+  }
+  if (claimed.takeOnFailed) {
+    return renderAfterServiceFailure(
       request,
       h,
       pageState,
       claimed.values ?? EMPTY_FORM
     )
   }
-  if (claimed?.errors || claimed?.summaryErrors) {
-    const addForm = await addFormFor(request, pageState.journey.journeyId)
-    return render(request, h, pageState, claimed.values, {
-      errors: claimed.errors ?? {},
-      summaryErrors: claimed.summaryErrors ?? [],
-      extra: addForm
-    }).code(HTTP_STATUS_BAD_REQUEST)
+  if (claimed.errors || claimed.summaryErrors) {
+    return renderRefusedClaim(request, h, pageState, claimed)
   }
-  if (claimed?.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
-    const { failure } = await kit.recoverableSave(
+  if (claimed.entry && !isAlreadySaved(pageState, claimed.entry.uploadId)) {
+    const { failure } = await saveClaimedEntry(
       request,
-      async () => {
-        await state.appendEntry(request, h, 'documents', claimed.entry)
-      },
-      async (err) => {
-        request.logger.error(
-          {
-            err,
-            journeyId: pageState.journey.journeyId,
-            uploadId: claimed.entry.uploadId,
-            correlationId
-          },
-          'Took on the returned upload but could not save the document'
-        )
-        return renderRecoverableFailure(request, h, pageState, EMPTY_FORM, {
-          unsavedDocument: {
-            uploadId: claimed.entry.uploadId,
-            correlationId
-          }
-        })
-      },
-      {
-        action: 'save-document-taken-on',
-        uploadId: claimed.entry.uploadId,
-        correlationId
-      }
+      h,
+      pageState,
+      claimed.entry,
+      correlationId
     )
     if (failure) {
       return failure
     }
   }
-  return backToPage(request, h)
+  return routeAfterClaim(request, h, claimed)
 }
 
 const getStatus = async (request, h) => {
@@ -174,8 +189,6 @@ const getFile = async (request, h) => {
   return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
 
-// The single-page loop: a saved document leaves the trader on the page it was
-// added from, ready for the next one.
 const backToPage = (request, h) =>
   h.redirect(documentsPageHref(request, request.params.journeyId))
 
@@ -197,7 +210,7 @@ const renderRemovalLeftToRetry = async (
     extra: {
       recoverableError: true,
       pendingDocumentRemoval,
-      ...(await addFormFor(request, pageState.journey.journeyId))
+      ...(await addFormSessionFields(request, pageState.journey.journeyId))
     }
   }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
@@ -283,8 +296,10 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
   return backToPage(request, h)
 }
 
-const continueToNextPage = async (request, h, pageState) =>
-  h.redirect(await kit.nextTarget(request, page, pageState.scope))
+const continueToNextPage = async (request, h, pageState, saveChoice) =>
+  h.redirect(
+    await kit.nextTarget(request, page, pageState.scope, { saveChoice })
+  )
 
 const renderStillSettling = async (request, h, pageState) => {
   kit.logRefusal(request, {
@@ -294,18 +309,14 @@ const renderStillSettling = async (request, h, pageState) => {
   })
   return render(request, h, pageState, EMPTY_FORM, {
     summaryErrors: settlingSummaryErrors(pageState.documents),
-    extra: await addFormFor(request, pageState.journey.journeyId)
+    extra: await addFormSessionFields(request, pageState.journey.journeyId)
   }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
-// Leaving the page, once nothing is left to save. A file still being checked
-// holds Continue back, and so does a document the service has taken on that
-// this notification does not list; the exit to the overview is a deliberate
-// stop and goes.
-const leavePage = async (request, h) => {
+const leavePage = async (request, h, saveChoice) => {
   const pageState = await loadPage(request, h)
-  if (kit.hubExitTarget(request)) {
-    return continueToNextPage(request, h, pageState)
+  if (saveChoice.hubExit) {
+    return continueToNextPage(request, h, pageState, saveChoice)
   }
   if (hasDocumentsNotClearedByScan(pageState.documents)) {
     return renderStillSettling(request, h, pageState)
@@ -319,21 +330,18 @@ const leavePage = async (request, h) => {
     })
   }
   if (unsaved.uploadId || unsaved.unchecked) {
-    return renderRecoverableFailure(request, h, pageState, EMPTY_FORM, {
+    return renderAfterServiceFailure(request, h, pageState, EMPTY_FORM, {
       unsavedDocument: unsaved
     })
   }
-  return continueToNextPage(request, h, pageState)
+  return continueToNextPage(request, h, pageState, saveChoice)
 }
-
-const continuesADocument = (request, payload) =>
-  !kit.hubExitTarget(request) && answersADocument(payload)
 
 const refuseUnaddedDocument = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
   const journeyId = pageState.journey.journeyId
   const values = documentFromPayload(payload)
-  const addForm = await addFormFor(request, journeyId)
+  const addForm = await addFormSessionFields(request, journeyId)
   if (atDocumentCapacity(pageState.documents)) {
     request.logger.info(
       { journeyId },
@@ -347,11 +355,7 @@ const refuseUnaddedDocument = async (request, h, payload) => {
   const errors = documentAddErrors(
     payload,
     values,
-    addForm.uploadPath ? notYetAddedFileError() : {}
-  )
-  request.logger.info(
-    { journeyId, fields: Object.keys(errors) },
-    'Continue refused: the document has not been added'
+    addForm.uploadPath ? fileRequiredFieldError() : {}
   )
   return render(request, h, pageState, values, {
     errors,
@@ -385,10 +389,10 @@ const post = async (request, h) => {
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action))
   }
-  if (continuesADocument(request, payload)) {
+  if (startsADocument(payload)) {
     return refuseUnaddedDocument(request, h, payload)
   }
-  return leavePage(request, h)
+  return leavePage(request, h, kit.requestSaveChoice(request))
 }
 
 export const routes = [

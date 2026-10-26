@@ -8,7 +8,11 @@ import {
   fileTypeFieldError,
   submittedFileError
 } from '../form/errors.js'
-import { documentFromPayload } from '../form/payload.js'
+import {
+  addsAnotherDocument,
+  documentFromPayload,
+  startsADocument
+} from '../form/payload.js'
 import { atDocumentCapacity } from '../contracts/max-documents.js'
 import { attachmentTypeFor } from '../upload-config.js'
 
@@ -36,20 +40,37 @@ const callOrRefuse = async (request, ids, call) => {
   }
 }
 
+const fileErrorOf = (form, attachmentType) =>
+  form.file?.filename && !attachmentType
+    ? fileTypeFieldError()
+    : submittedFileError(form.file)
+
+const takeOn = async (request, ids, form, upload) => {
+  const entry = entryFrom(form, upload)
+  const claimed = await callOrRefuse(request, ids, () =>
+    documentUploads.claim({
+      uploadId: upload.uploadId,
+      documentType: entry.accompanyingDocumentType,
+      documentReference: entry.accompanyingDocumentReference,
+      dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue)
+    })
+  )
+  return claimed.takeOnFailed
+    ? { ...claimed, values: documentFromPayload(form) }
+    : { entry }
+}
+
 /**
- * Takes on the document a returning browser just uploaded.
- *
- * Refusals add nothing and keep the trader's answers on the form: a file cdp-uploader would not
- * take, and a submission that breaks one of the page's own rules. The uploaded file is simply
- * never claimed. A service that cannot be reached refuses the same way, as `takeOnFailed`, so the
- * page is re-rendered for the trader to try again rather than the request ending in an error page.
+ * Takes on the document a returning browser just uploaded, or reports why not.
  *
  * @param {object} request - the returning request, carrying the correlation handle
  * @param {string} correlationId - the handle the upload was opened under
  * @param {object} pageState - the loaded page state
- * @returns {Promise<object|null>} `{entry}` to add it; `{values, errors}` for a refusal by the
- *   page's rules; `{values, summaryErrors}` when the notification is full; `{takeOnFailed, values}`
- *   when a service could not be reached; `null` for a handle this notification never opened
+ * @returns {Promise<object|null>} `{entry, saveChoice, addsAnother}` to add it;
+ *   `{unclaimed, saveChoice, addsAnother}` for a form that started no document; `{values, errors}`
+ *   for a refusal by the page's rules; `{values, summaryErrors}` when the notification is full;
+ *   `{takeOnFailed, values}` when a service could not be reached; `null` for a handle this
+ *   notification never opened.
  */
 export const claimUpload = async (request, correlationId, pageState) => {
   const journeyId = pageState.journey.journeyId
@@ -78,8 +99,18 @@ export const claimUpload = async (request, correlationId, pageState) => {
     return session
   }
   const form = session.value
-  const values = documentFromPayload(form)
+  const saveChoice = kit.returnedSaveChoice(request, form, pageState.journey)
+  const addsAnother = addsAnotherDocument(form)
 
+  if (!startsADocument(form) && !addsAnother) {
+    request.logger.info(
+      { ...ids, saveChoice },
+      'Returned upload left unclaimed: no document was started'
+    )
+    return { unclaimed: true, saveChoice, addsAnother }
+  }
+
+  const values = documentFromPayload(form)
   if (atDocumentCapacity(pageState.documents)) {
     request.logger.info(
       ids,
@@ -90,37 +121,23 @@ export const claimUpload = async (request, correlationId, pageState) => {
 
   const filename = form.file?.filename
   const attachmentType = attachmentTypeFor(filename ?? '')
-  const fileError =
-    filename && !attachmentType
-      ? fileTypeFieldError()
-      : submittedFileError(form.file)
-
-  const errors = documentAddErrors(form, values, fileError)
+  const errors = documentAddErrors(
+    form,
+    values,
+    fileErrorOf(form, attachmentType)
+  )
   if (Object.keys(errors).length > 0) {
-    kit.logRefusal(request, {
-      ...ids,
-      fieldErrors: errors,
-      reason: 'returned-upload-breaks-the-page-rules'
-    })
     return { values, errors }
   }
 
-  const entry = entryFrom(form, {
+  const taken = await takeOn(request, ids, form, {
     uploadId: registered.uploadId,
     filename,
     attachmentType
   })
-  const claimed = await callOrRefuse(request, ids, () =>
-    documentUploads.claim({
-      uploadId: registered.uploadId,
-      documentType: entry.accompanyingDocumentType,
-      documentReference: entry.accompanyingDocumentReference,
-      dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue)
-    })
-  )
-  if (claimed.takeOnFailed) {
-    return { ...claimed, values }
+  if (taken.takeOnFailed) {
+    return taken
   }
-  request.logger.info(ids, 'Took on the returned upload')
-  return { entry }
+  request.logger.info({ ...ids, saveChoice }, 'Took on the returned upload')
+  return { ...taken, saveChoice, addsAnother }
 }

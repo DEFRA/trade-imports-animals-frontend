@@ -134,7 +134,6 @@ export const copy = {
     fileEmpty: 'Mae’r ffeil a ddewiswyd yn wag',
     fileVirus: 'Mae’r ffeil a ddewiswyd yn cynnwys firws',
     fileDownloadFailed: 'Nid oedd modd llwytho’r ffeil a ddewiswyd i lawr',
-    notYetAdded: `Dewiswch ffeil, ac yna dewiswch ‘${addAnother}’ i ychwanegu’r ddogfen hon`,
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     documentNotSaved: (saveAction) =>

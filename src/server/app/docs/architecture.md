@@ -116,8 +116,11 @@ way:
 
 - page chrome: `base()`, `setlessBase()`, `journeyStrip()` and `SURFACES`
 - errors: `errorSummary()`, `fieldError()` and `logRefusal()`
-- where a POST goes next: `hubExitTarget()`, `isHubExit()`, `exitTarget()`,
-  `nextTarget()` and `amendReviewTarget()`
+- where a POST goes next: `hubExitTarget()`, `exitTarget()`, `nextTarget()`
+  and `amendReviewTarget()`, which follow the save choice of the request, or
+  one passed to them
+- the save choice a request carries: `requestSaveChoice()`, and for a form the
+  upload service returns the browser with, `returnedSaveChoice()`
 - where a page's Back link goes: `runBackLink()`
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`

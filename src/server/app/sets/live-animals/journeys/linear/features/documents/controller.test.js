@@ -18,7 +18,7 @@ import {
 
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { REFUSAL_LOG_MESSAGE, SURFACES } from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
 import {
@@ -27,7 +27,6 @@ import {
 } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
-import * as state from '../../../../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -90,6 +89,17 @@ const serverWithDocumentRoutes = async ({
 
 const post = postHandlerOf(documents)
 const get = getHandlerOf(documents)
+
+const environment = nunjucksConfig.options.compileOptions.environment
+
+const renderedPageOf = ({ view: { view, context } }) =>
+  documentOf(
+    environment.render(`${view}.njk`, {
+      ...context,
+      userSession: { isAuthenticated: true, displayName: 'Sam Example' },
+      getAssetPath: (asset) => `/assets/${asset}`
+    })
+  )
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
@@ -110,12 +120,11 @@ const TAG_UPLOAD_FAILED = 'Upload failed'
 const TAG_DOWNLOAD_FAILED = 'Download failed'
 const FILE_REQUIRED_MESSAGE = 'Upload a document'
 const FILE_EMPTY_MESSAGE = 'The selected file is empty'
-const NOT_YET_ADDED_MESSAGE =
-  'Choose a file and select ‘Save and add another’ to add this document'
 const CONTINUE_AT_CAPACITY_LINE =
   'Continue refused: the notification is at its document capacity'
-const CONTINUE_NOT_ADDED_LINE =
-  'Continue refused: the document has not been added'
+const UPLOAD_SESSION_OPENED_LINE = 'Upload session opened'
+const SETTLING_MESSAGE =
+  'You cannot continue until all documents have been scanned or removed'
 const DOCUMENT_NOT_SAVED_BANNER =
   'Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘Save and continue’ to try again.'
 const DOCUMENTS_UNCHECKED_BANNER =
@@ -136,6 +145,10 @@ const storedDocument = (overrides = {}) => ({
   accompanyingDocumentReference: 'GBHC1234567890',
   accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' },
   ...overrides
+})
+
+const documentsAtCapacity = () => ({
+  documents: Array.from({ length: MAX_DOCUMENTS }, () => storedDocument())
 })
 
 const UNREGISTERED_CORRELATION_ID = randomUUID()
@@ -190,7 +203,7 @@ const driveClaim = async (
     const result = await driveHandler(get, {
       ...options,
       journeyId,
-      query: { upload: correlationId }
+      query: { ...options.query, upload: correlationId }
     })
     return { ...result, session: { journeyId, correlationId, uploadId } }
   } finally {
@@ -233,9 +246,14 @@ const uploadedPart = ({
 
 const submittedDocument = (overrides = {}) => ({
   ...validDocument,
+  action: 'add',
   file: submittedFile(),
   ...overrides
 })
+
+const SAVE_AND_CONTINUE = { action: 'continue' }
+const SAVE_AND_RETURN_TO_OVERVIEW = { action: 'continue', exit: 'hub' }
+const AMEND_SAVE_AND_RETURN = { amendSave: 'return' }
 
 let nextUploadSession = 0
 const registeredUpload = async (filename) => {
@@ -350,14 +368,9 @@ describe('documents — taking on an upload the browser returns with', () => {
     ]
     expect(Object.keys(result.view.context.errors)).toEqual(fieldOrder)
     expect(result.view.context.errors.file).toBe(oversizeMessage(copy))
-    expect(result.logger.entries).toContainEqual({
-      level: 'info',
-      message: REFUSAL_LOG_MESSAGE,
-      fields: expect.objectContaining({
-        journeyId: result.journeyId,
-        errorCodes: fieldOrder
-      })
-    })
+    expect(result.logger.entries.map(({ message }) => message)).toEqual([
+      UPLOAD_SESSION_OPENED_LINE
+    ])
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
@@ -395,6 +408,177 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 })
 
+describe('documents — leaving the page by the save choice a returned upload carries', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const completeDocument = (choice) =>
+    submittedDocument({ action: null, ...choice })
+  const REVIEW = 'notification-view'
+
+  it('Should append a complete document returned with Save and return to overview once and redirect to the overview', async () => {
+    const result = await driveClaim(
+      completeDocument(SAVE_AND_RETURN_TO_OVERVIEW)
+    )
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.documents).toEqual([
+      expect.objectContaining({
+        uploadId: result.session.uploadId,
+        accompanyingDocumentReference:
+          validDocument.accompanyingDocumentReference
+      })
+    ])
+  })
+
+  it('Should append a complete document returned with Save and continue once and hold the trader on the page with the settling message', async () => {
+    const result = await driveClaim(completeDocument(SAVE_AND_CONTINUE))
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
+    expect(result.view.context.rows[0][3].html).toContain(TAG_SCANNING)
+    expect(result.after.documents).toEqual([
+      expect.objectContaining({ uploadId: result.session.uploadId })
+    ])
+  })
+
+  it.each([
+    ['Save and return', AMEND_SAVE_AND_RETURN],
+    ['Save and continue', SAVE_AND_CONTINUE]
+  ])(
+    'Should append a complete document returned with the amend %s and hold the trader on the page with the settling message',
+    async (_button, choice) => {
+      const result = await driveClaim(completeDocument(choice), {
+        query: { change: '1' },
+        amend: true
+      })
+
+      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+      expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
+      expect(result.after.documents).toEqual([
+        expect.objectContaining({ uploadId: result.session.uploadId })
+      ])
+    }
+  )
+
+  it('Should append nothing and redirect to the overview for an untouched form returned with Save and return to overview, logging the unclaimed return once', async () => {
+    const result = await driveClaim(SAVE_AND_RETURN_TO_OVERVIEW)
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after).toEqual(result.before)
+    expect(
+      linesLogged(
+        result,
+        'Returned upload left unclaimed: no document was started'
+      )
+    ).toEqual([
+      {
+        level: 'info',
+        fields: {
+          journeyId: result.journeyId,
+          uploadId: result.session.uploadId,
+          correlationId: result.session.correlationId,
+          saveChoice: { hubExit: true, change: false }
+        },
+        message: 'Returned upload left unclaimed: no document was started'
+      }
+    ])
+  })
+
+  it('Should append nothing and redirect to the overview for an untouched form returned with Save and continue', async () => {
+    const result = await driveClaim(SAVE_AND_CONTINUE)
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should redirect an untouched form returned at the cap with Save and return to overview to the overview, appending nothing', async () => {
+    const result = await driveClaim(SAVE_AND_RETURN_TO_OVERVIEW, {
+      seed: documentsAtCapacity()
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
+  })
+
+  it('Should refuse an untouched form returned with Save and add another, naming every missing detail', async () => {
+    const result = await driveClaim({ action: 'add' })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'accompanyingDocumentReference',
+      'accompanyingDocumentType',
+      'accompanyingDocumentDateOfIssue',
+      'file'
+    ])
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should send an untouched form returned with Save and continue from a page opened with a Change link to the review when the notification is not being amended', async () => {
+    const result = await driveClaim(SAVE_AND_CONTINUE, {
+      query: { change: '1' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, REVIEW)
+    })
+  })
+
+  it('Should send an untouched form returned with the amend Save and return from a page opened with a Change link to the review', async () => {
+    const result = await driveClaim(AMEND_SAVE_AND_RETURN, {
+      query: { change: '1' },
+      amend: true
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, REVIEW)
+    })
+  })
+
+  it('Should send an untouched form returned with the amend Save and continue from a page opened with a Change link to the overview', async () => {
+    const result = await driveClaim(SAVE_AND_CONTINUE, {
+      query: { change: '1' },
+      amend: true
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+  })
+
+  it('Should ask for the document type when a reference, a date and a file arrive without one, appending nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({
+        ...SAVE_AND_CONTINUE,
+        accompanyingDocumentType: ''
+      })
+    )
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors).toEqual({
+      accompanyingDocumentType: TYPE_REQUIRED_MESSAGE
+    })
+    expect(result.after).toEqual(result.before)
+  })
+
+  it.each([
+    [
+      'only a date of issue',
+      { accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT }
+    ],
+    [
+      'only a type the page never offered',
+      { accompanyingDocumentType: UNOFFERED_TYPE }
+    ]
+  ])(
+    'Should count a returned form carrying %s as started and refuse it, appending nothing',
+    async (_title, fields) => {
+      const result = await driveClaim({ ...SAVE_AND_CONTINUE, ...fields })
+
+      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+      expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+      expect(result.after).toEqual(result.before)
+    }
+  )
+})
+
 describe('documents — refusing an upload the browser returns with', () => {
   it('Should refuse a return whose session holds no file entry and append nothing', async () => {
     const result = await driveClaimThroughUploadService({ ...validDocument })
@@ -415,6 +599,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   it('Should take on a file the upload service judged good, reading the session for real', async () => {
     const result = await driveClaimThroughUploadService({
       ...validDocument,
+      action: 'add',
       file: uploadedPart({ filename: 'itahc.pdf', bytes: 8 })
     })
 
@@ -571,12 +756,19 @@ describe('documents — taking on a returned upload a service refuses', () => {
   afterEach(() => vi.restoreAllMocks())
 
   const NOT_FOUND = 404
-  // Pinned as a literal rather than read from the handler, so a reworded line
-  // fails here.
   const TAKE_ON_FAILED_MESSAGE = 'Could not take on the returned upload'
   // Registered against the notification but never opened with the upload
   // service, so reading the session it names answers 404.
   const UNOPENED_UPLOAD_ID = 'upload-session-never-opened'
+
+  const expectHeldOnPageWithProblemBanner = (result) => {
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after).toEqual(result.before)
+    expect(result.view.context.uploadFormUnavailable).toBe(false)
+    expect(summaryTexts(result)).toEqual([])
+  }
 
   const claimRefusal = () =>
     Object.assign(
@@ -595,14 +787,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
     const result = await driveHandler(get, { query: { upload: correlationId } })
     found.mockRestore()
 
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.response.redirect).toBeUndefined()
-    expect(result.view.context.recoverableError).toBe(true)
-    expect(result.after).toEqual(result.before)
-    // The add form is still live, so the page says the service failed without
-    // also claiming documents cannot be uploaded.
-    expect(result.view.context.uploadFormUnavailable).toBe(false)
-    expect(summaryTexts(result)).toEqual([])
+    expectHeldOnPageWithProblemBanner(result)
     expect(errorEntries(result)).toEqual([
       {
         level: 'error',
@@ -625,15 +810,10 @@ describe('documents — taking on a returned upload a service refuses', () => {
       claimError: refusal
     })
 
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.response.redirect).toBeUndefined()
-    expect(result.view.context.recoverableError).toBe(true)
+    expectHeldOnPageWithProblemBanner(result)
     expect(result.view.context.values.accompanyingDocumentReference).toBe(
       validDocument.accompanyingDocumentReference
     )
-    expect(result.after).toEqual(result.before)
-    expect(result.view.context.uploadFormUnavailable).toBe(false)
-    expect(summaryTexts(result)).toEqual([])
     expect(errorEntries(result)).toHaveLength(1)
     const [logged] = errorEntries(result)
     expect(logged).toEqual({
@@ -652,16 +832,10 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, appending nothing and logging the failure once', async () => {
     const saveFailure = backendRefusal()
-    vi.spyOn(state, 'appendEntry').mockRejectedValue(saveFailure)
 
-    const result = await driveClaim(submittedDocument())
+    const result = await driveClaim(submittedDocument(), { saveFailure })
 
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.response.redirect).toBeUndefined()
-    expect(result.view.context.recoverableError).toBe(true)
-    expect(result.after).toEqual(result.before)
-    expect(result.view.context.uploadFormUnavailable).toBe(false)
-    expect(summaryTexts(result)).toEqual([])
+    expectHeldOnPageWithProblemBanner(result)
     expect(errorEntries(result)).toHaveLength(1)
     const [logged] = errorEntries(result)
     expect(logged).toEqual({
@@ -678,9 +852,9 @@ describe('documents — taking on a returned upload a service refuses', () => {
   })
 
   it('Should say the document was not saved to the notification, rather than that the answers were saved', async () => {
-    vi.spyOn(state, 'appendEntry').mockRejectedValue(backendRefusal())
-
-    const result = await driveClaim(submittedDocument())
+    const result = await driveClaim(submittedDocument(), {
+      saveFailure: backendRefusal()
+    })
 
     expect(result.view.context.recoverableErrorBody).toBe(
       DOCUMENT_NOT_SAVED_BANNER
@@ -688,9 +862,9 @@ describe('documents — taking on a returned upload a service refuses', () => {
   })
 
   it('Should carry the handle the next save takes the upload on again by', async () => {
-    vi.spyOn(state, 'appendEntry').mockRejectedValue(backendRefusal())
-
-    const result = await driveClaim(submittedDocument())
+    const result = await driveClaim(submittedDocument(), {
+      saveFailure: backendRefusal()
+    })
 
     expect(result.view.context.unsavedDocument).toEqual({
       uploadId: result.session.uploadId,
@@ -712,6 +886,7 @@ describe('documents — saving a document the service has taken on', () => {
     const session = await registeredSession(journeyId)
     recordSubmittedUpload(session.uploadId, {
       ...validDocument,
+      action: 'add',
       file: uploadedPart({ filename: PDF_FILENAME, bytes: 8 })
     })
     await documentUploads.claim({
@@ -841,7 +1016,7 @@ describe('documents — saving a document the service has taken on', () => {
     })
 
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.file).toBe(NOT_YET_ADDED_MESSAGE)
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
     expect(result.after).toEqual(result.before)
   })
 })
@@ -1034,11 +1209,8 @@ describe('documents — removing one, and the document cap', () => {
   })
 
   it('Should refuse a returning upload past the cap with the maximum message, linked to the documents it already holds, and append nothing', async () => {
-    const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
-      storedDocument()
-    )
     const result = await driveClaim(submittedDocument(), {
-      seed: { documents: documentsAtCapacity }
+      seed: documentsAtCapacity()
     })
     expect(result.response.statusCode).toBe(400)
     const limitMessage = `You can upload a maximum of ${MAX_DOCUMENTS} files`
@@ -1049,11 +1221,8 @@ describe('documents — removing one, and the document cap', () => {
   })
 
   it('Should refuse a Continue past the cap with the maximum message, which is the only refusal the page states, and log that refusal once', async () => {
-    const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
-      storedDocument()
-    )
     const result = await driveHandler(post, {
-      seed: { documents: documentsAtCapacity },
+      seed: documentsAtCapacity(),
       payload: { action: 'continue', ...validDocument }
     })
     expect(result.response.statusCode).toBe(400)
@@ -1081,7 +1250,7 @@ describe('documents — removing one, and the document cap', () => {
   })
 })
 
-describe('documents — Continue finishes a part-filled document', () => {
+describe('documents — every save button finishes or refuses a part-filled document', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should carry an untouched form past the page, appending nothing', async () => {
@@ -1092,13 +1261,13 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should keep the reference, the type and the date of issue, ask for the add action on the file and log that refusal once with the field it names, appending nothing', async () => {
+  it('Should show the reference, the type and the date of issue as typed, ask for the file and log nothing for the refusal, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'continue', ...validDocument }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.file).toBe(NOT_YET_ADDED_MESSAGE)
-    expect(summaryTexts(result)).toContain(NOT_YET_ADDED_MESSAGE)
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expect(summaryTexts(result)).toContain(FILE_REQUIRED_MESSAGE)
     expect(result.view.context.values.accompanyingDocumentReference).toBe(
       validDocument.accompanyingDocumentReference
     )
@@ -1111,20 +1280,9 @@ describe('documents — Continue finishes a part-filled document', () => {
       year: '2025'
     })
     expect(result.after).toEqual(result.before)
-    expect(linesLogged(result, CONTINUE_NOT_ADDED_LINE)).toEqual([
-      {
-        level: 'info',
-        fields: { journeyId: result.journeyId, fields: ['file'] },
-        message: CONTINUE_NOT_ADDED_LINE
-      }
+    expect(result.logger.entries.map(({ message }) => message)).toEqual([
+      UPLOAD_SESSION_OPENED_LINE
     ])
-  })
-
-  it('Should not claim a file was chosen when Continue asks for the add action', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'continue', ...validDocument }
-    })
-    expect(result.view.context.errors.file).not.toMatch(/you chose/i)
   })
 
   it('Should name what is missing when Continue carries a type and nothing else, appending nothing', async () => {
@@ -1140,7 +1298,7 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should keep a reference and a date typed with no type chosen, and ask for the type, appending nothing', async () => {
+  it('Should show a reference and a date typed with no type chosen, and ask for the type, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'continue',
@@ -1180,21 +1338,31 @@ describe('documents — Continue finishes a part-filled document', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // Uploading is optional, so a form the trader never touched still goes with
-  // the page. This is the behaviour the refusals above must not swallow.
-  it('Should carry an untouched form past the page, appending nothing', async () => {
+  it('Should refuse a part-filled form on the exit to the overview, naming each missing detail and appending nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { action: 'continue' }
+      payload: {
+        ...SAVE_AND_RETURN_TO_OVERVIEW,
+        accompanyingDocumentReference:
+          validDocument.accompanyingDocumentReference
+      }
     })
-    expect(result.response.redirect).toBeDefined()
+    expect(result.response.statusCode).toBe(400)
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'accompanyingDocumentType',
+      'accompanyingDocumentDateOfIssue',
+      'file'
+    ])
+    expect(result.view.context.values.accompanyingDocumentReference).toBe(
+      validDocument.accompanyingDocumentReference
+    )
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should leave a part-filled form behind on the exit to the overview, appending nothing', async () => {
+  it('Should leave an untouched form behind on the exit to the overview, appending nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { exit: 'hub', ...validDocument }
+      payload: SAVE_AND_RETURN_TO_OVERVIEW
     })
-    expect(result.response.redirect).toBeDefined()
+    expect(result.response.redirect).toBe(hubPath(result.journeyId))
     expect(result.after).toEqual(result.before)
   })
 })
@@ -1602,9 +1770,6 @@ describe('documents — the add form when no upload session can be opened', () =
   beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
-  const environment = nunjucksConfig.options.compileOptions.environment
-  // Pinned as a literal rather than read from copy, so a reworded or reused
-  // message fails here.
   const UPLOAD_UNAVAILABLE_MESSAGE =
     'Documents cannot be uploaded at the moment. Reload the page or come back later.'
 
@@ -1612,15 +1777,6 @@ describe('documents — the add form when no upload session can be opened', () =
     Object.assign(
       new Error('Failed to open an upload session: 503 Service Unavailable'),
       { status: SERVICE_UNAVAILABLE }
-    )
-
-  const pageOf = ({ view: { view, context } }) =>
-    documentOf(
-      environment.render(`${view}.njk`, {
-        ...context,
-        userSession: { isAuthenticated: true, displayName: 'Sam Example' },
-        getAssetPath: (asset) => `/assets/${asset}`
-      })
     )
 
   it('Should log the ids of a session it opened but could not record against the notification, and still refuse only the add form', async () => {
@@ -1684,7 +1840,7 @@ describe('documents — the add form when no upload session can be opened', () =
         }
       ])
 
-      const page = pageOf(result)
+      const page = renderedPageOf(result)
       const addButton = page.querySelector('button[name="action"][value="add"]')
       expect(addButton.getAttribute('formaction')).toBeNull()
       expect(addButton.getAttribute('formenctype')).toBeNull()
@@ -1762,19 +1918,20 @@ describe('documents — the session the add form posts to', () => {
     ).resolves.toHaveLength(1)
   })
 
-  it('Should reuse the session it is already showing when a refused Continue brings its handle back', async () => {
+  it('Should reuse the session it is already showing when a failed remove brings its handle back', async () => {
     const opened = await driveHandler(get)
 
     const refused = await driveHandler(post, {
       journeyId: opened.journeyId,
+      seed: { documents: [storedDocument()] },
+      saveFailure: backendRefusal(),
       payload: {
-        action: 'continue',
-        ...validDocument,
+        action: 'remove:0',
         uploadSession: opened.view.context.uploadSession
       }
     })
 
-    expect(refused.response.statusCode).toBe(400)
+    expect(refused.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(refused.view.context.uploadPath).toBe(opened.view.context.uploadPath)
     await expect(
       uploadsRegisteredAgainst(opened.journeyId)
@@ -1944,12 +2101,8 @@ describe('documents — the add form on a notification at its cap', () => {
   beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
-  const atCapacity = () => ({
-    documents: Array.from({ length: MAX_DOCUMENTS }, () => storedDocument())
-  })
-
   it('Should close the add form, so no file is uploaded only to be refused', async () => {
-    const result = await driveHandler(get, { seed: atCapacity() })
+    const result = await driveHandler(get, { seed: documentsAtCapacity() })
 
     expect(result.view.context.addFormClosed).toBe(true)
     expect(result.view.context.addFormClosedReason).toBe(
@@ -1961,20 +2114,81 @@ describe('documents — the add form on a notification at its cap', () => {
   })
 
   it('Should render the add button with no formaction, so it cannot post a file to the upload service', async () => {
-    const environment = nunjucksConfig.options.compileOptions.environment
-
-    const { view } = await driveHandler(get, { seed: atCapacity() })
-    const page = documentOf(
-      environment.render(`${view.view}.njk`, {
-        ...view.context,
-        userSession: { isAuthenticated: true, displayName: 'Sam Example' },
-        getAssetPath: (asset) => `/assets/${asset}`
-      })
+    const page = renderedPageOf(
+      await driveHandler(get, { seed: documentsAtCapacity() })
     )
 
     const addButton = page.querySelector('#add-document')
     expect(addButton.getAttribute('formaction')).toBeNull()
     expect(addButton.getAttribute('aria-disabled')).toBe('true')
+  })
+})
+
+describe('documents — where the save buttons post', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  const saveButtonsOf = (result) =>
+    [
+      ...renderedPageOf(result).querySelectorAll('.govuk-button-group button')
+    ].filter((button) =>
+      ['Save and continue', 'Save and return to overview'].includes(
+        trimmedTextOf(button)
+      )
+    )
+
+  const addButtonOf = (result) =>
+    renderedPageOf(result).querySelector('#add-document')
+
+  it('Should post the add button and both save buttons to the upload session as multipart while the add form is open', async () => {
+    const result = await driveHandler(get)
+
+    const buttons = saveButtonsOf(result)
+    expect(buttons).toHaveLength(2)
+    for (const button of [...buttons, addButtonOf(result)]) {
+      expect(button.getAttribute('formaction')).toBe(
+        result.view.context.uploadPath
+      )
+      expect(button.getAttribute('formenctype')).toBe('multipart/form-data')
+    }
+  })
+
+  it('Should post both save buttons to this page when the add form is closed', async () => {
+    const result = await driveHandler(get, { seed: documentsAtCapacity() })
+
+    const buttons = saveButtonsOf(result)
+    expect(buttons).toHaveLength(2)
+    for (const button of buttons) {
+      expect(button.getAttribute('formaction')).toBeNull()
+    }
+  })
+
+  it('Should post both save buttons to this page when a taken-on document is waiting to be saved, so the save is retried', async () => {
+    const result = await driveClaim(submittedDocument(), {
+      saveFailure: backendRefusal()
+    })
+
+    expect(result.view.context.unsavedDocument).toBeDefined()
+    for (const button of [...saveButtonsOf(result), addButtonOf(result)]) {
+      expect(button.getAttribute('formaction')).toBeNull()
+    }
+  })
+
+  it('Should post both save buttons to this page when a removal is waiting to be saved, so the removal is retried', async () => {
+    const opened = await driveHandler(get)
+
+    const result = await driveHandler(post, {
+      journeyId: opened.journeyId,
+      seed: { documents: [storedDocument()] },
+      saveFailure: backendRefusal(),
+      payload: { action: 'remove:0' }
+    })
+
+    expect(result.view.context.pendingDocumentRemoval).toBeDefined()
+    for (const button of [...saveButtonsOf(result), addButtonOf(result)]) {
+      expect(button.getAttribute('formaction')).toBeNull()
+    }
   })
 })
 

@@ -205,13 +205,13 @@ button:
 export const meta = { ...page, collects: ['documents'] }
 ```
 
-This loop's Add button does not post to this service at all. The entry carries
-a file, so Add posts to a session on the upload service, resolved as the page is
-rendered by
+While the add form is open, none of this loop's save buttons post to this
+service. The entry carries a file, so every save button posts to a session on
+the upload service, resolved as the page is rendered by
 [`handlers/add-form-session.js`](../journeys/linear/features/documents/handlers/add-form-session.js):
 the session this page view already opened where the request carries its handle,
 and a newly opened one otherwise, registered against the notification. The
-controller calls it through `addFormFor`, which reports an unavailable form
+controller calls it through `addFormSessionFields`, which reports an unavailable form
 rather than failing the page when no session can be opened: the document list
 stays readable and the Add form alone is refused, with its own message.
 
@@ -229,9 +229,11 @@ The upload service then returns the browser to this page on a GET carrying the
 correlation handle the session was opened under. That GET is where the entry
 is taken on: `claimReturnedUpload` reads back what was submitted, refuses it
 by the page's own rules — the field rules, the file, and the collection's cap
-— and otherwise appends it and redirects to the page's clean path. The
-redirect is what makes a write on a GET safe: the handle is spent once
-claimed, so the page the trader lands on cannot claim the same upload again.
+— and otherwise appends it and routes on by `routeAfterClaim`. Save and add
+another is followed by a redirect back to the page's clean path. Save and
+continue, Save and return to overview and the amend buttons go through
+`leavePage` on the returned request. A reload adds nothing twice, because
+`isAlreadySaved` stops a second append.
 
 ```js
 await state.appendEntry(request, h, 'documents', claimed.entry)
@@ -259,15 +261,24 @@ what the service holds, it holds Continue back too: the gate exists to stop a
 document going missing, and trusting the collection alone is what let it go
 missing.
 
-Continue appends nothing. It posts the entry fields with it, so a payload
-holding a started entry — `startsADocument` in
-[`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
-keys that on the trader having chosen a document type — is refused rather than
-dropped: `refuseUnaddedDocument` keeps every answer typed, says what is
-missing, and asks for the add step on the file field, because only Add can
-attach the file. Where no session could be opened there is nothing to press,
-so the page's unavailable message stands in place of that ask. A payload that
-holds no started entry advances with no write.
+While the add form is open, every save button sends the entry and its file to
+the upload session, as Add does, and each carries its own choice. A save then
+takes the entry on exactly as Add does, and goes on by the choice the returned
+form carries: back to the page for Add, to the overview for Save and return to
+overview, and held on the page with the scan message for Save and continue. An
+entry is started by any of its reference, type, date of issue or a chosen file:
+`startsADocument` in
+[`form/payload.js`](../journeys/linear/features/documents/form/payload.js) owns
+that rule. A started entry is refused on every save button rather than dropped:
+the refusal keeps every answer typed, says what is missing, and adds nothing. A
+form with no started entry is left unclaimed, and the browser goes on by its
+save choice with no write.
+
+When the add form is closed (no session could be opened, or the notification is
+full), or a taken-on entry or a removal is waiting to be retried, the save
+buttons post to the page. A payload there holding a started entry
+is refused the same way by `refuseUnaddedDocument`, with "Upload a document" on
+the file field where a session is open.
 
 Remove is a branch of the same POST — a submit button named
 `action` with a `remove:<index>` value, so the page form's crumb travels
