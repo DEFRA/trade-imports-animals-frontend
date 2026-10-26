@@ -138,12 +138,20 @@ npm install
 
 ### Git hooks
 
-`npm install` installs the pre-push hook — `postinstall` runs
-`npm run setup:husky`. The hook runs `npm run git:pre-push-hook`: format
+`npm install` installs both hooks — `postinstall` runs
+`npm run setup:husky`.
+
+**`pre-commit` is cheap.** It runs `lint-staged`, which formats and
+auto-fixes lint problems on the staged files only. No build, no tests. The
+fixes land in the commit that caused them, which is the whole point of doing
+it here: by push time the code is already committed, so a fixer would be
+writing changes the commit does not contain.
+
+**`pre-push` is the full gate.** It runs `npm run git:pre-push-hook`: format
 check, lint and the unit suite (which builds the frontend first, via
 `pretest`).
 
-It is a pre-push rather than a pre-commit hook on purpose. The suite is
+The slow half is on pre-push rather than pre-commit on purpose. The suite is
 ~3,400 tests with coverage on top of a production webpack build, mostly
 fixed startup cost that does not shrink for a small change. Charging that to
 every commit — including the ones you are about to squash — is what teaches
@@ -154,13 +162,15 @@ the gate sits there.
 Run the same gate by hand at any time with `npm run git:pre-push-hook`, or
 just the fast half with `npm run git:pre-push-checks`.
 
-If the hook reports that it is "running format and lint only", the
-SonarCloud pre-push gate in the
+If the hook reports that there is "nothing to re-run", the SonarCloud
+pre-push gate in the
 [trade-imports-workspace](https://github.com/DEFRA/trade-imports-workspace)
-tooling has already built and tested that exact commit and left a marker at
-`.cache/prepush-verified`; the hook skips the duplicate build and suite
-rather than running them twice. Without that workspace — cloning this repo
-on its own — the full gate always runs.
+tooling has already run format, lint and the suite for that exact commit and
+left a marker naming the verified SHA under `.cache/`; the hook skips rather
+than repeating all of it. That gate runs the cheap checks before the build,
+so a formatting slip fails in seconds instead of after a full suite. Without
+that workspace — cloning this repo on its own — the full gate always runs
+here.
 
 ### Development
 
