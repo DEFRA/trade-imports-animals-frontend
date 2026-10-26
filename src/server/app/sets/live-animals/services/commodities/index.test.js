@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   commodityCodeFor,
+  commodityDescriptionFor,
   commodityLabel,
+  commodityNameFor,
   cphCommodities,
   cphExemptCommodityCodes,
   earTagCommodities,
@@ -146,5 +148,27 @@ describe('#commodityLabel', () => {
   it('Should give the name alone when there is no code', () => {
     expect(commodityLabel('Bovine', undefined)).toBe('Bovine')
     expect(commodityLabel('Bovine', '')).toBe('Bovine')
+  })
+})
+
+describe('#commodityDescriptionFor', () => {
+  it('Should give the stub MDM description for a known CN code', () => {
+    expect(commodityDescriptionFor('0102')).toBe('Live bovine animals')
+    expect(commodityDescriptionFor('01061900')).toBe('Other live animals')
+  })
+
+  it('Should give undefined for a code the stub does not hold', () => {
+    expect(commodityDescriptionFor('9999')).toBeUndefined()
+  })
+})
+
+describe('#commodityNameFor', () => {
+  it('Should reverse-lookup the commodity name from a CN code', () => {
+    expect(commodityNameFor('0102')).toBe('Cow')
+    expect(commodityNameFor('01061900')).toBe('Cat')
+  })
+
+  it('Should give undefined for a code that is not in the catalogue', () => {
+    expect(commodityNameFor('9999')).toBeUndefined()
   })
 })

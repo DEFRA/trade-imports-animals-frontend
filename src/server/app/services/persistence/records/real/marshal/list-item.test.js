@@ -2,6 +2,15 @@ import { describe, expect, test } from 'vitest'
 import { marshalListItem } from './list-item.js'
 
 describe('marshalListItem — commodity label', () => {
+  test('Should use a single commodities[] entry without joining', () => {
+    const row = marshalListItem({
+      referenceNumber: 'GBN-AG-26-ONE',
+      status: 'SUBMITTED',
+      commodities: [{ name: 'Cow' }]
+    })
+    expect(row.commodity).toEqual({ name: 'Cow' })
+  })
+
   test('Should use commodities from the list API row when present', () => {
     const row = marshalListItem({
       referenceNumber: 'GBN-AG-26-ABC',
