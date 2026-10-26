@@ -6,43 +6,29 @@ import { countBackendCall } from './call-counts.js'
 
 const logger = createLogger()
 
-const BACKEND_CONNECT_TIMEOUT_MS = 2000
-
-const CONNECT_ERROR_CODES = new Set([
-  'UND_ERR_CONNECT_TIMEOUT',
-  'ECONNREFUSED',
-  'ETIMEDOUT'
-])
-
 const connectBoundedDispatcher = () =>
   config.get('httpProxy')
     ? undefined
     : new Dispatcher1Wrapper(
-        new Agent({ connect: { timeout: BACKEND_CONNECT_TIMEOUT_MS } })
+        new Agent({
+          connect: { timeout: 2000 },
+          autoSelectFamily: true,
+          autoSelectFamilyAttemptTimeout: 1000
+        })
       )
 
 const dispatcher = connectBoundedDispatcher()
 
-const causeChain = (error) =>
-  error?.cause ? [error.cause, ...causeChain(error.cause)] : []
-
-const codesOf = (cause) => [
-  cause.code,
-  ...(cause.errors ?? []).map(({ code }) => code)
-]
-
 const isConnectError = (error) =>
-  causeChain(error)
-    .flatMap(codesOf)
-    .some((code) => CONNECT_ERROR_CODES.has(code))
+  ['UND_ERR_CONNECT_TIMEOUT', 'ECONNREFUSED'].includes(error?.cause?.code)
 
 const fetchOnce = (url, init) =>
   dispatcher ? fetch(url, { ...init, dispatcher }) : fetch(url, init)
 
 /**
  * Makes one call to the journey backend, counted once against the page request
- * in progress. A connection that has not opened within two seconds is tried
- * once more; any other failure is thrown to the caller.
+ * in progress. A connection that is refused, or has not opened within two
+ * seconds, is tried once more; any other failure is thrown to the caller.
  *
  * @param {string | URL} url - the backend URL
  * @param {RequestInit} [init] - the fetch options, passed through unchanged
@@ -57,7 +43,7 @@ export const backendFetch = async (url, init) => {
       throw error
     }
     logger.warn(
-      { err: error, url: String(url) },
+      { err: error, method: init?.method ?? 'GET', url: String(url) },
       'Backend connection did not open, retrying once'
     )
     return fetchOnce(url, init)

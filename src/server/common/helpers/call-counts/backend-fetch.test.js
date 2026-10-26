@@ -23,6 +23,18 @@ const fetchFailedBecause = (cause) => new TypeError('fetch failed', { cause })
 const errorWithCode = (code) => Object.assign(new Error(code), { code })
 const connectTimedOut = () =>
   fetchFailedBecause(errorWithCode('UND_ERR_CONNECT_TIMEOUT'))
+const everyAddressTimedOut = () =>
+  fetchFailedBecause(
+    Object.assign(errorWithCode('UND_ERR_CONNECT_TIMEOUT'), {
+      cause: Object.assign(
+        new AggregateError(
+          [errorWithCode('ETIMEDOUT'), errorWithCode('ETIMEDOUT')],
+          ''
+        ),
+        { code: 'ETIMEDOUT' }
+      )
+    })
+  )
 
 describe('backendFetch', () => {
   const originalFetch = global.fetch
@@ -90,7 +102,7 @@ describe('backendFetch', () => {
       await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
     })
 
-    test('logs one warning with the failed connection and the URL', async () => {
+    test('logs one warning with the failed connection, the method and the URL', async () => {
       const stalled = connectTimedOut()
       global.fetch
         .mockRejectedValueOnce(stalled)
@@ -100,19 +112,16 @@ describe('backendFetch', () => {
 
       expect(loggedWarnings).toEqual([
         {
-          fields: { err: stalled, url: BACKEND_URL },
+          fields: { err: stalled, method: 'PUT', url: BACKEND_URL },
           message: 'Backend connection did not open, retrying once'
         }
       ])
     })
 
     test('tries once more when every address of the host timed out', async () => {
-      const allAddressesTimedOut = fetchFailedBecause(
-        new AggregateError([errorWithCode('ETIMEDOUT')], '')
-      )
       const response = { ok: true, status: 200 }
       global.fetch
-        .mockRejectedValueOnce(allAddressesTimedOut)
+        .mockRejectedValueOnce(everyAddressTimedOut())
         .mockResolvedValueOnce(response)
 
       await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
@@ -146,15 +155,18 @@ describe('backendFetch', () => {
     })
   })
 
-  test('throws a failure after the connection opened without sending the request again', async () => {
-    const socketClosed = fetchFailedBecause(errorWithCode('UND_ERR_SOCKET'))
-    global.fetch
-      .mockRejectedValueOnce(socketClosed)
-      .mockResolvedValueOnce({ ok: true })
+  test.each(['UND_ERR_SOCKET', 'ETIMEDOUT'])(
+    'throws a %s socket failure without sending the request again',
+    async (code) => {
+      const socketFailed = fetchFailedBecause(errorWithCode(code))
+      global.fetch
+        .mockRejectedValueOnce(socketFailed)
+        .mockResolvedValueOnce({ ok: true })
 
-    await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketClosed)
-    expect(loggedWarnings).toEqual([])
-  })
+      await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketFailed)
+      expect(loggedWarnings).toEqual([])
+    }
+  )
 
   test('counts every backend call a request makes', async () => {
     server.route({
