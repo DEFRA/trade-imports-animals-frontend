@@ -43,10 +43,11 @@ const applyActions = (statusCell, uploadId, scanStatus) => {
   actionsCell.appendChild(removeButton)
 }
 
-const applyStatus = (cell, uploadId, scanStatus, scanCopy) => {
+const applyStatus = (cell, uploadId, scanStatus, tagKey, scanCopy) => {
   cell.dataset.scanStatus = scanStatus
+  cell.dataset.tagKey = tagKey
   applyActions(cell, uploadId, scanStatus)
-  const presentation = scanCopy[scanStatus] ?? scanCopy[UNKNOWN_STATUS]
+  const presentation = scanCopy[tagKey] ?? scanCopy[UNKNOWN_STATUS]
   const tag = cell.querySelector('.govuk-tag')
   if (!tag || !presentation) {
     return
@@ -57,10 +58,10 @@ const applyStatus = (cell, uploadId, scanStatus, scanCopy) => {
 }
 
 export const applyStatusUpdates = (documents, scanCopy) => {
-  documents.forEach(({ uploadId, scanStatus }) => {
+  documents.forEach(({ uploadId, scanStatus, tagKey }) => {
     const cell = document.querySelector(`[data-upload-id="${uploadId}"]`)
-    if (cell && cell.dataset.scanStatus !== scanStatus) {
-      applyStatus(cell, uploadId, scanStatus, scanCopy)
+    if (cell && cell.dataset.tagKey !== tagKey) {
+      applyStatus(cell, uploadId, scanStatus, tagKey, scanCopy)
     }
   })
 }

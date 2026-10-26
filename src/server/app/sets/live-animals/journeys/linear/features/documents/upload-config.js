@@ -38,15 +38,12 @@ export const allowedFileTypesHint = (documentsCopy) =>
 export const fileTypeMessage = (documentsCopy) =>
   documentsCopy.errors.fileType(allowedFileTypesHint(documentsCopy))
 
-const MAX_FILE_SIZE_MB = 10
+const MAX_FILE_SIZE_MB = 50
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
 export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
 export const oversizeMessage = (documentsCopy) =>
   documentsCopy.errors.oversize(MAX_FILE_SIZE_LABEL)
-
-const MULTIPART_OVERHEAD_BYTES = 1024
-export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
 
 export const exceedsMaxFileSize = (byteCount, limit = MAX_FILE_SIZE_BYTES) =>
   Number.isFinite(byteCount) && Number.isFinite(limit) && byteCount > limit

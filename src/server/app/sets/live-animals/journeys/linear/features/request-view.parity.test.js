@@ -122,17 +122,20 @@ const canonicalViewOf = (answers) =>
     )
   )
 
-// Each seed is a save, so the token differs between the two renders by design.
+const withoutKeysThatChangePerSave = ({
+  concurrencyToken: _token,
+  uploadPath: _uploadPath,
+  uploadSession: _uploadSession,
+  refreshHref: _refreshHref,
+  ...rest
+}) => rest
+
 const contextFor = async (handler, journeyId, answers) => {
   await store.seedAnswers(journeyId, answers)
   const h = stubH()
   await handler(journeyRequest(journeyId), h)
   const context = h.captured.view?.context
-  if (!context) {
-    return context
-  }
-  const { concurrencyToken: _token, ...rest } = context
-  return rest
+  return context ? withoutKeysThatChangePerSave(context) : context
 }
 
 const expectContextParity = async (feature, answers = parityFixture) => {

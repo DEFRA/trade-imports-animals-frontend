@@ -15,7 +15,7 @@ import {
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
+import { REFERENCE_MAX_LENGTH } from '../../../../../../../services/document-uploads/claim-contract.js'
 import {
   ACCEPT_ATTRIBUTE,
   fileTypeMessage,
@@ -28,6 +28,7 @@ import {
 const HTTP_OK = 200
 const DATE_OF_ISSUE_TEXT = '03/01/2026'
 const OVERSIZE_FILENAME = 'oversize.pdf'
+const CLIENT_SIZE_SUMMARY = 'li[data-client-error="file-size-summary"]'
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -462,6 +463,25 @@ test.describe('document upload file validation', () => {
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
     await expectNoDocumentsAdded(page)
   })
+
+  // A file with nothing in it is the right type and under the size limit, so
+  // neither the browser's check nor the upload service stops it: the page is
+  // where it is refused, and nothing is added.
+  test('file validation: a file carrying no bytes is refused on receipt', async ({
+    page
+  }) => {
+    test.slow()
+    await fillMetadata(page)
+    await setUploadFile(page, 'itahc-empty.pdf', Buffer.alloc(0))
+    await submitAdd(page)
+
+    const link = errorLink(page, copy.errors.fileEmpty)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(uploadControl(page)).toBeFocused()
+    await expectPreservedMetadata(page)
+    await expectNoDocumentsAdded(page)
+  })
 })
 
 test.describe('document upload oversize validation', () => {
@@ -482,9 +502,9 @@ test.describe('document upload oversize validation', () => {
     )
     await submitAdd(page)
 
-    await expect(
-      page.locator('li[data-client-error="file-size-summary"]')
-    ).toContainText(oversizeMessage(copy))
+    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toContainText(
+      oversizeMessage(copy)
+    )
     await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
     await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
@@ -508,6 +528,24 @@ test.describe('document upload oversize validation', () => {
     await expectNoDocumentsAdded(page)
   })
 
+  test('file validation: an oversize file in the input does not stop Continue leaving the page', async ({
+    page
+  }) => {
+    test.slow()
+    await setUploadFile(
+      page,
+      OVERSIZE_FILENAME,
+      Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
+    )
+    await submitContinue(page)
+
+    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
+  })
+
+  // The enhanced upload renames the input to file-input and gives the new
+  // button the original id, so the summary link has to point at the button.
+  // Pointing it at the input sends focus to a hidden element.
   test('file validation: the client-side oversize summary link focuses the upload control', async ({
     page
   }) => {
@@ -528,19 +566,19 @@ test.describe('document upload oversize validation', () => {
     await expect(uploadControl(page)).toBeFocused()
   })
 
-  test('file validation: server rejects an oversize multipart payload', async ({
+  // The upload service decides for itself whether to take a file, and the page
+  // has to render the refusal it sends back. The file here is deliberately
+  // small, so the browser's own size check never fires and cannot be what
+  // produces the message: the stand-in refuses it on its name, the way
+  // cdp-uploader refuses one that arrives over the cap, and the wording comes
+  // from mapping the service's FILE_TOO_LARGE verdict.
+  test('file validation: a file the upload service refuses as too large is reported on receipt', async ({
     page
   }) => {
     test.slow()
-    await fillDocument(page)
-    await setUploadFile(
-      page,
-      OVERSIZE_FILENAME,
-      Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
-    )
-    await page.evaluate(() =>
-      document.querySelector('form[data-max-file-size]').submit()
-    )
+    await fillMetadata(page)
+    await setUploadFile(page, OVERSIZE_FILENAME)
+    await submitAdd(page)
 
     const link = errorLink(page, oversizeMessage(copy))
     await expect(link).toBeVisible()
@@ -556,22 +594,24 @@ test.describe('document upload continue', () => {
     await openDocuments(page)
   })
 
-  test('continue saves the document the trader filled in, then leaves once it is scanned', async ({
+  test('continue keeps the answers and asks for the add action, and adding the re-picked file saves a row showing the chosen type', async ({
     page
   }) => {
     test.slow()
     await fillDocument(page)
     await submitContinue(page)
 
+    await expect(errorLink(page, copy.errors.notYetAdded)).toBeVisible()
+    await expectPreservedMetadata(page)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await setUploadFile(page, validDocument.filename)
+    await submitAdd(page)
     const row = documentRowFor(
       page,
       validDocument.accompanyingDocumentReference
     )
     await expect(row).toContainText(copy.types.ITAHC)
-    await expect(row).toContainText(copy.scanTags.complete)
-
-    await submitContinue(page)
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('continue with a document type and nothing else says what is missing', async ({
@@ -584,7 +624,6 @@ test.describe('document upload continue', () => {
 
     await expect(errorLink(page, copy.errors.referenceRequired)).toBeVisible()
     await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
@@ -736,7 +775,7 @@ test.describe('document upload capacity and accessibility', () => {
     await openDocuments(page)
   })
 
-  test('refuses a sixteenth document with the limit message in the summary and on the Attachment field, keeping the typed reference', async ({
+  test('closes the add control once the maximum document capacity is reached, so no further file is sent', async ({
     page
   }) => {
     test.slow()
@@ -747,24 +786,16 @@ test.describe('document upload capacity and accessibility', () => {
         filename: `itahc-capacity-${index}.pdf`
       })
     }
-    await fillDocument(page, {
-      ...validDocument,
-      accompanyingDocumentReference: 'ITAHC-ONE-TOO-MANY',
-      filename: 'itahc-one-too-many.pdf'
-    })
-    await submitAdd(page)
 
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
-    const link = errorLink(page, message)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(uploadControl(page)).toBeFocused()
-    await expect(page.locator('#file-error')).toHaveText(
-      `${copy.errors.hiddenPrefix} ${message}`
-    )
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      'ITAHC-ONE-TOO-MANY'
-    )
+    await expect(page.getByText(message)).toBeVisible()
+
+    // The control keeps its place in the tab order and says why it refuses,
+    // rather than taking a file the claim would then turn away.
+    const addButton = page.getByRole('button', { name: copy.addAnother })
+    await expect(addButton).toHaveAttribute('aria-disabled', 'true')
+    await expect(addButton).not.toHaveAttribute('formaction', /./)
+    await expect(addButton).toHaveAccessibleDescription(new RegExp(message))
   })
 
   test('empty upload state has no serious or critical axe violations', async ({

@@ -21,13 +21,40 @@ Platform services include:
 - [`countries`](../services/countries/index.js)
 - [`ports`](../services/ports/index.js)
 - [`document-uploads`](../services/document-uploads/index.js)
+- [`cdp-uploader`](../services/cdp-uploader/index.js)
 - [`address-book`](../services/address-book/index.js)
 - [`transport-reference`](../services/transport-reference/index.js)
 - [`import-reason-purpose`](../services/import-reason-purpose/index.js)
+- [`document-types`](../services/document-types/index.js)
+- [`certification-purposes`](../services/certification-purposes/index.js)
 
 Countries and ports expose `prime()` operations. The set's gateway
 (`routes-<set-id>.js`, re-exported by the `routes.js` barrel) primes them when
 the application runs in real mode, before Hapi routes are registered.
+
+Document types and certification purposes answer from a local fixture in both
+run modes, so they have no real implementation to select between.
+
+Uploading a document takes both upload services. `cdp-uploader` opens the
+upload session the browser posts the file to and reads back what it submitted;
+`document-uploads` registers that session against the notification on the
+backend and claims it once the trader has answered the document's own
+questions.
+
+A return link naming a handle the notification never opened is an ordinary
+outcome — a stale or hand-edited link — so the session lookup answers nothing
+rather than failing. A rejected scan carries its reason: cdp-uploader declares
+six refusal codes in `file-errors.js` and sends the code beside its own prose,
+so the page maps each to a message true of it and names the reason on the row
+where it has wording for it.
+
+A stub run holds the scan lifecycle and nothing else — no uploaded bytes — so
+downloading a document there serves the same placeholder PDF whichever document
+is asked for.
+
+[`set-context`](../services/set-context/index.js) is not an IO service: it
+re-exports the active set id so the model can read it without crossing the
+`model-import-boundary` rule in `.dependency-cruiser.cjs`.
 
 The `address-book` client keeps three facts out of its code:
 
@@ -74,13 +101,22 @@ The live-animals commodities service is documented in the
 
 ## Configuration
 
-| Convict key                             | Env var                             | Default                 |
-| --------------------------------------- | ----------------------------------- | ----------------------- |
-| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://localhost:8085` |
-| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`  | `http://localhost:8086` |
-| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`    | `http://localhost:8089` |
-| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002` |
+| Convict key                             | Env var                             | Default                                                       |
+| --------------------------------------- | ----------------------------------- | ------------------------------------------------------------- |
+| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://localhost:8085`                                       |
+| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`  | `http://localhost:8086`                                       |
+| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`    | `http://localhost:8089`                                       |
+| `cdpUploader.baseUrl`                   | `CDP_UPLOADER_BASE_URL`             | `http://localhost:7337`                                       |
+| `cdpUploader.scanResultCallbackUrl`     | `CDP_UPLOADER_CALLBACK_URL`         | `http://localhost:8085/document-uploads/pending/scan-results` |
+| `cdpUploader.documentsBucket`           | `CDP_UPLOADER_DOCUMENTS_BUCKET`     | `trade-imports-animals-documents`                             |
+| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002`                                       |
 
-The last one is browser-visible (the service navigation's Address book link
-and the address handshake), so under the workspace stack it stays `localhost`
-while the three API URLs use `host.docker.internal`.
+`tradeImportsInsFrontend.baseUrl` is browser-visible (the service navigation's
+Address book link and the address handshake), so under the workspace stack it
+stays `localhost` while the backend, reference-data and address-book URLs use
+`host.docker.internal`.
+
+`cdpUploader.scanResultCallbackUrl` is resolved by cdp-uploader itself, not by
+this service or the browser, so it has to name the backend from inside the
+platform's network. Left at its localhost default, cdp-uploader scans the file
+and posts the result nowhere, and the document stays pending for good.

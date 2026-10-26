@@ -1,5 +1,7 @@
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 
+const addAnother = 'Save and add another'
+
 export const copy = {
   title: 'Upload documents',
   guidance: {
@@ -60,7 +62,7 @@ export const copy = {
     enteredDropZone: 'Entered drop zone',
     leftDropZone: 'Left drop zone'
   },
-  addAnother: 'Save and add another',
+  addAnother,
   table: {
     caption: 'Documents you have added',
     reference: 'Document reference',
@@ -95,31 +97,52 @@ export const copy = {
   notProvided: 'Not provided',
   scanTags: {
     complete: 'Check completed',
+    rejected: 'Rejected',
     virusFound: 'Virus found',
+    uploadFailed: 'Upload failed',
+    downloadFailed: 'Download failed',
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
   scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',
+    rejected:
+      'Document check failed: the file cannot be used. Remove it and try again.',
     virusFound:
-      'Document scan failed: a virus was found. Remove the file and try again.'
+      'Document check failed: the file contains a virus. Remove it and try again.',
+    uploadFailed:
+      'Document check failed: the file could not be uploaded. Remove it and try again.',
+    downloadFailed:
+      'Document check failed: the file could not be downloaded. Remove it and try again.'
   },
   errors: {
     hiddenPrefix: 'Error:',
-    referenceMaxLength: 'Document reference must be 58 characters or fewer',
+    referenceMaxLength: 'Document reference must be 100 characters or fewer',
+    referenceCharacters:
+      'Document reference must only include letters, numbers, spaces, hyphens, full stops and forward slashes',
     dateInvalid: 'Enter a real date',
     referenceRequired: 'Enter a document reference',
     typeRequired: 'Select a document type',
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
+    fileEmpty: 'The selected file is empty',
+    fileVirus: 'The selected file contains a virus',
+    fileDownloadFailed: 'The selected file could not be downloaded',
+    notYetAdded: `Choose a file and select ‘${addAnother}’ to add this document`,
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
-    uploadFailed: 'The file could not be uploaded. Try again.',
+    documentNotSaved: (saveAction) =>
+      `Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘${saveAction}’ to try again.`,
+    documentsUnchecked: (saveAction) =>
+      `Sorry, there is a problem with the service. We could not check that every document you uploaded is saved to this notification. Select ‘${saveAction}’ to try again.`,
+    uploadFailed: 'The selected file could not be uploaded. Try again.',
+    uploadUnavailable:
+      'Documents cannot be uploaded at the moment. Reload the page or come back later.',
     maxDocuments: (max) => `You can upload a maximum of ${max} files`,
     fileFallbackName: 'The file',
-    virusFound: (filename) =>
-      `${filename} contains a virus. Remove it and try again with a different file.`,
+    rejected: (filename) =>
+      `${filename} cannot be used. Remove it and try again with a different file.`,
     fileType: (allowedTypesHint) =>
       `The selected file must be a ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>
