@@ -104,9 +104,13 @@ For a conditional field, use `scope.has(fieldName)` to decide whether to render
 and validate it. Do not commit a hidden value. The evaluator removes stored
 data when the obligation leaves scope.
 
-Wrap the write in `kit.recoverableSave()`. On a marked persistence failure,
-render the same values with `recoverableError: true` and return 500. Let other
-errors throw.
+Wrap the write in `kit.recoverableSave(request, …)`. On a marked persistence
+failure it logs the fallback once; render the same values with
+`recoverableError: true` and return 500. Let other errors throw. When
+validation fails, render the page again with status 400 and log nothing: a user's
+own field errors shown back on the form are not logged. A refusal that is not the
+user's input error (a state refusal, a bare 400, another service refusing) logs
+once through `kit.logRefusal(request, { …details })` with the journey id.
 
 Run `npm run test:live-animals`. `buildDispatch` should now pass. Update the existing
 case for this controller in
@@ -147,8 +151,11 @@ copy test.
 
 Add the row to the matching card under
 [`journeys/linear/features/check-answers/view-model/cards/`](../journeys/linear/features/check-answers/view-model/index.js).
-Add its label and any displayed value labels to both check-answers copy
-bundles.
+Add its label to both check-answers copy bundles. A value label that the
+feature's own page already shows is read from that feature's label function
+(for example `meansOfTransportLabel` in the transport feature), never copied
+into the check-answers copy. Value labels only the review shows go in the
+check-answers copy bundles.
 
 Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
 heading carries the one link for every answer inside it, so adding a field to
@@ -177,7 +184,12 @@ an explicit omission assertion. Do not invent a payload property.
 
 ## 7. Register client JavaScript when the field needs it
 
-Prefer server-rendered controls. If the page needs a new client bundle:
+Prefer server-rendered controls. If the page needs client JavaScript, use a
+component in `src/client/javascripts/components/` registered in `application.js`,
+or a feature entry: [add-a-page.md section 8](add-a-page.md#8-register-client-javascript-when-needed)
+holds the steps for the component route.
+
+For the feature entry route:
 
 1. Put its entry module under the feature, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
@@ -215,7 +227,7 @@ set-up in the test file:
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`
+  `selectSpecies`, `chooseTypeAheadOption` and `choosePortOfEntry`
 - set-up shared only inside one feature: that feature's `test-support.js`, as in
   [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
 
@@ -225,11 +237,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 
@@ -262,12 +270,12 @@ Add an axe test for both page states the field changes:
 - initial render
 - validation error state, after the inline error and error summary appear
 
-Use `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail when any
-violation has `impact` equal to `serious` or `critical`. Use the initial and
-error-state examples in
+Call `expectNoSeriousOrCriticalViolations(page, subject)` from
+[`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
+It holds the five WCAG tags, fails on any violation with `impact` equal to
+`serious` or `critical`, and applies the one proved conditional-reveal filter.
+Do not build `AxeBuilder` in a spec. Use the initial and error-state examples in
 [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js).
-Filter a known component false positive only when the exemplar does and the
-same markup proves it applies.
 
 ## 9. Run every check
 

@@ -62,6 +62,29 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it('Should complete the origin row only once a country is chosen and the region question is answered, with a code under Yes', () => {
+    expect(statusIn('origin', { countryOfOrigin: 'FR' })).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes'
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no'
+      })
+    ).toBe(FULFILLED)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'FR-75'
+      })
+    ).toBe(FULFILLED)
+  })
+
   it('Should walk the import-reason row through Not yet started, In progress and Completed for the reasons that open a reveal', () => {
     expect(statusIn('importReason', unlocked)).toBe(NOT_STARTED)
     expect(
@@ -148,9 +171,6 @@ describe('#rowStatus — one status per hub task row', () => {
 })
 
 describe('#rowStatus — the commodities/details/identification facet split of commodityLines', () => {
-  // With no line there is nothing to identify, so the identification row is
-  // Not applicable rather than Not yet started — the conditional-row describe
-  // below covers it.
   it('Should read Not yet started on the commodities and details rows while no line exists', () => {
     expect(statusIn('commodities', {})).toBe(NOT_STARTED)
     expect(statusIn('consignmentDetails', {})).toBe(NOT_STARTED)
@@ -418,8 +438,6 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
       PASSING.includes(sectionStatus(section, answers, inScope, evaluation))
     )
 
-  // A second identified commodity line — a complete Horse line — turns the
-  // identifiers from optional into one record per line.
   const horseLine = {
     commodityCode: '0101',
     speciesLatinName: EQUUS_CABALUS,
@@ -440,8 +458,6 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
       transporterType: 'Private',
       commercialTransporter: null
     },
-    // The transit row is in scope overland but optional, so an empty list
-    // reads Optional and does not hold submission up.
     'the happy path leaving transit countries empty': {
       ...happyPath,
       transitedCountries: []
@@ -452,17 +468,12 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
         { ...happyPath.commodityLines[0], animalIdentifiers: [] }
       ]
     },
-    // Nor does the declared number of animals gate the submission: one
-    // identifier record stands for the line however many animals it counts.
     'the happy path declaring more animals than it identifies': {
       ...happyPath,
       commodityLines: [
         { ...happyPath.commodityLines[0], numberOfAnimalsQuantity: '2' }
       ]
     },
-    // Two identified species, one identifier record each — four horses
-    // covered by one record, which is what "at least one identifier per
-    // species" asks for.
     'two identified species carrying one identifier each': {
       ...happyPath,
       commodityLines: [
@@ -496,9 +507,6 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
     },
     'the happy path without a contact': { ...happyPath, contactAddress: null },
     'the happy path without an importer': { ...happyPath, importer: null },
-    // The multi-species rule: a second identified species owes one
-    // identifier record of its own before the notification can be
-    // submitted, however many animals either line declares.
     'a second identified species carrying no identifier': {
       ...happyPath,
       commodityLines: [...happyPath.commodityLines, horseLine]

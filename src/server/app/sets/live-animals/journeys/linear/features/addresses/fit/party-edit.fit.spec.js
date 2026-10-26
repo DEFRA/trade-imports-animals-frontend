@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
+  addressesSection,
+  expectNoSeriousOrCriticalViolations,
   partyPickerName,
   signIn,
   startNotification,
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as editCopy } from '../party-edit/copy/copy.en.js'
@@ -16,11 +17,6 @@ const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 const EDITED_NAME = 'Edited Consignor Ltd'
 
-const rowFor = (page, title) =>
-  page.locator('.govuk-summary-list__row', {
-    has: page.getByText(title, { exact: true })
-  })
-
 const saveAndContinue = (page) =>
   page
     .getByRole('button', {
@@ -29,19 +25,18 @@ const saveAndContinue = (page) =>
     })
     .click()
 
-/** Picks the consignor from the book, then opens its Edit details link. */
 const openConsignorEdit = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
-  await rowFor(page, CONSIGNOR.title)
-    .getByRole('link', { name: copy.hub.add })
+  await addressesSection(page, CONSIGNOR.title)
+    .getByRole('link', { name: CONSIGNOR.add })
     .click()
   await page
     .getByRole('radio', { name: partyPickerName(values.consignor) })
     .check()
   await saveAndContinue(page)
-  await rowFor(page, CONSIGNOR.title)
+  await addressesSection(page, CONSIGNOR.title)
     .getByRole('link', { name: copy.hub.editDetails })
     .click()
   await expect(
@@ -79,7 +74,9 @@ test.describe('edit a copied address', () => {
     await expect(
       page.getByRole('heading', { name: copy.hub.title })
     ).toBeVisible()
-    await expect(rowFor(page, CONSIGNOR.title)).toContainText(EDITED_NAME)
+    await expect(addressesSection(page, CONSIGNOR.title)).toContainText(
+      EDITED_NAME
+    )
   })
 
   test('shows the address-book messages for a field that breaks the rules', async ({
@@ -103,7 +100,7 @@ test.describe('edit a copied address', () => {
     await expect(
       page.getByRole('heading', { name: copy.hub.title })
     ).toBeVisible()
-    await expect(rowFor(page, CONSIGNOR.title)).toContainText(
+    await expect(addressesSection(page, CONSIGNOR.title)).toContainText(
       partyPickerName(values.consignor)
     )
   })

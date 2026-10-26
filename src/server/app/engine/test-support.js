@@ -1,15 +1,28 @@
 import { readFileSync } from 'node:fs'
+import Crumb from '@hapi/crumb'
+import Hapi from '@hapi/hapi'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
+import { config } from '../../../config/config.js'
 import { SET_ID } from '../../../../test/fixtures/index.js'
-import { store } from './store.js'
-import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
-import { configureRecords, records } from './persistence/records.js'
-import { configureSession } from './persistence/session.js'
-import { configureReadyForCheckYourAnswers } from './read.js'
+import { buildDispatch } from '../flow/dispatch.js'
+import { currentSetId } from '../shared/set-context.js'
+import { pagePath } from '../shared/paths.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
+import { BackendRequestError } from '../services/persistence/records/errors.js'
+import {
+  REFUSAL_LOG_MESSAGE,
+  SAVE_FALLBACK_LOG_MESSAGE
+} from '../shared/kit.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments/index.js'
+import { store } from './store.js'
+import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
+import { configureRecords, records } from './persistence/records.js'
+import { configureSession, openingRunCookie } from './persistence/session.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -55,6 +68,20 @@ export const registerTestSessionAuth = (server) => {
       h.authenticated({ credentials: authenticatedCredentials })
   }))
   server.auth.strategy('session', 'test-session')
+}
+
+export const crumbProtectedServerMounting = async (routes, prefix) => {
+  const server = Hapi.server()
+  await server.register(Crumb)
+  registerTestSessionAuth(server)
+  await server.register(
+    {
+      name: 'routes-under-test',
+      register: (inner) => inner.route(routes)
+    },
+    { routes: { prefix } }
+  )
+  return server
 }
 
 const cookieRecorder = () => {
@@ -131,6 +158,11 @@ export const journeyRequest = (
   }
 })
 
+/** The text a copy leaf gives: the string itself, or what the copy function
+ * returns for the sample arguments. */
+export const sampleText = (value, sampleArguments) =>
+  typeof value === 'function' ? value(...sampleArguments) : value
+
 export const recordingH = () => cookieRecorder()
 
 export const backendJourneyId = 'GBN-AG-26-ABC123'
@@ -165,10 +197,30 @@ const requestLocation = (pathOf, journeyId, query) => {
 const flowOnlyState = (journeyId, flowOnly) =>
   flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
 
+const openingRunState = (journeyId, openingRun) =>
+  openingRun ? { [openingRunCookie()]: { [journeyId]: openingRun } } : {}
+
+/** The recoverable records error for a backend that answered 503 to `operation`. */
+export const unavailableBackendError = (operation) =>
+  new BackendRequestError(operation, {
+    status: 503,
+    statusText: 'Service Unavailable'
+  })
+
+const recordsRejectingSaves = (failure) => ({
+  ...recordsStub,
+  replaceFulfilment: async () => {
+    throw failure
+  }
+})
+
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after. `flowOnly` seeds the journey's session-only answers. `amend`
- * submits the journey and opens an amendment first; `pathOf(journeyId)` gives
- * the request the path it was made to. */
+ * and after, with the cookies the handler set. `flowOnly` seeds the journey's
+ * session-only answers. `amend` submits the journey and opens an amendment
+ * first; `openingRun` (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of
+ * the opening run for the journey; `pathOf(journeyId)` gives the request the
+ * path it was made to; `saveFailure` makes the records store refuse every save
+ * the handler makes with that error. */
 export const driveHandler = async (
   handler,
   {
@@ -179,6 +231,8 @@ export const driveHandler = async (
     query = {},
     state = {},
     amend = false,
+    openingRun,
+    saveFailure,
     pathOf
   } = {}
 ) => {
@@ -192,11 +246,23 @@ export const driveHandler = async (
     payload,
     params,
     query,
-    state: { ...flowOnlyState(journey.journeyId, flowOnly), ...state },
+    state: {
+      ...flowOnlyState(journey.journeyId, flowOnly),
+      ...openingRunState(journey.journeyId, openingRun),
+      ...state
+    },
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
-  const response = await handler(request, h)
+  if (saveFailure) {
+    configureRecords(currentSetId(), recordsRejectingSaves(saveFailure))
+  }
+  let response
+  try {
+    response = await handler(request, h)
+  } finally {
+    configureRecords(currentSetId(), recordsStub)
+  }
   const after = (await store.get(journey.journeyId)).answers
   return {
     journeyId: journey.journeyId,
@@ -204,7 +270,8 @@ export const driveHandler = async (
     after,
     response,
     view: h.captured.view,
-    cookies: h.cookies
+    cookies: h.cookies,
+    logger: request.logger
   }
 }
 
@@ -257,6 +324,12 @@ export const purgeTestJourney = async () => {
   }
 }
 
+export const getHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'GET').handler
+
+export const expectBackLinkIsPage = (result, slug) =>
+  expect(result.view.context.backLink).toBe(pagePath(result.journeyId, slug))
+
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler
 
@@ -264,3 +337,103 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
+
+const fetchMock = createFetchMock(vi)
+
+export const resetMocksAndConfigAfterTests = (...configKeys) => {
+  const originals = ['stubMode', ...configKeys].map((key) => [
+    key,
+    config.get(key)
+  ])
+  afterEach(() => {
+    fetchMock.resetMocks()
+    vi.unstubAllGlobals()
+    originals.forEach(([key, value]) => config.set(key, value))
+  })
+}
+
+export const referenceDataServing = () => {
+  resetMocksAndConfigAfterTests()
+  return (rows) => {
+    config.set('stubMode', false)
+    fetchMock.enableMocks()
+    fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
+  }
+}
+
+const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'US', name: 'United States' }
+])
+
+/** Puts the address book on the network boundary: every request to its
+ * `/addresses` paths gets `addressResponse` (or, for a function, what it
+ * returns for the request) and the country list gets the United Kingdom,
+ * Switzerland and the United States. Call it inside a test; pair it with
+ * `resetMocksAndConfigAfterTests()` in the describe. */
+export const addressBookAnswering = (addressResponse) => {
+  const answerAddresses = (request) =>
+    typeof addressResponse === 'function'
+      ? addressResponse(request)
+      : addressResponse
+  fetchMock.enableMocks()
+  config.set('stubMode', false)
+  fetchMock.mockResponse(async (request) =>
+    request.url.includes('/addresses')
+      ? answerAddresses(request)
+      : { body: ADDRESS_BOOK_COUNTRY_LIST }
+  )
+}
+
+/** Serves the address book country list and refuses every address request. */
+export const addressBookCountriesServing = () =>
+  addressBookAnswering({ status: 500 })
+
+/** The urls of the address book requests made since `addressBookAnswering()`. */
+export const addressBookRequestUrls = () =>
+  fetchMock
+    .requests()
+    .map((request) => request.url)
+    .filter((url) => url.includes('/addresses'))
+
+/** Asserts the logger holds exactly one line. */
+export const expectOneLogged = (logger, { level, fields, message }) =>
+  expect(logger.entries).toEqual([{ level, fields, message }])
+
+export const expectNoRefusalLogged = (logger) =>
+  expect(
+    logger.entries.filter(({ message }) => message === REFUSAL_LOG_MESSAGE)
+  ).toEqual([])
+
+const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
+  level: 'info',
+  message: REFUSAL_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, errorCodes, ...details })
+})
+
+export const expectOneRefusalLogged = (logger, refusal) =>
+  expectOneLogged(logger, refusalEntry(refusal))
+
+/** The log entry for a save fallback: the journey id, the caught error and
+ * any ids the page passed. */
+export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
+  level: 'warn',
+  message: SAVE_FALLBACK_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, ...ids, err })
+})
+
+export const expectOneSaveFallbackLogged = (logger, fallback) =>
+  expectOneLogged(logger, saveFallbackEntry(fallback))
+
+export const useStubbedJourney = (setId, dispatchPages) => {
+  beforeAll(() => {
+    configureRecords(setId, recordsStub)
+    configureSession(setId, sessionStub)
+    buildDispatch(setId, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+}
+
+export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>
+  expectOneRefusalLogged(logger, { journeyId, errorCodes: [], ...details })

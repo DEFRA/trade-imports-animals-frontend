@@ -14,7 +14,7 @@ export const copy = {
     email: 'Cyfeiriad e-bost'
   },
   phoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
-  countryPlaceholder: 'Dewiswch wlad',
+  countrySelectText: 'Dewiswch wlad',
   save: 'Cadw’r newidiadau',
   cancel: 'Canslo',
   errors: {

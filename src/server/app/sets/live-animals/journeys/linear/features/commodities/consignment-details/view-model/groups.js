@@ -1,11 +1,11 @@
 import { packagesApply } from '../../../check-answers/view-model/applicability.js'
 import { animalsField, packagesField } from '../fields.js'
-import { commodityCodesOf, linesOfCode } from '../lines.js'
 import { speciesLabel } from '../../species-label.js'
+import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
 
 export const groupLine = ({ index, entry }, values, errors) => ({
   index,
-  speciesText: speciesLabel(entry),
+  latinName: speciesLabel(entry),
   animalsField: animalsField(index),
   packagesField: packagesField(index),
   animalsValue: values[animalsField(index)] ?? '',
@@ -14,13 +14,9 @@ export const groupLine = ({ index, entry }, values, errors) => ({
   packagesError: errors[packagesField(index)]
 })
 
-export const linesForGroup = (lines, code, values, errors) =>
-  linesOfCode(lines, code).map((line) => groupLine(line, values, errors))
-
 export const buildGroups = (lines, values, errors) =>
-  commodityCodesOf(lines).map((code, index) => ({
-    index,
-    code,
-    showPackages: packagesApply(code),
-    lines: linesForGroup(lines, code, values, errors)
+  buildCommodityGroups(lines).map((group) => ({
+    ...group,
+    showPackages: packagesApply(group.code),
+    lines: group.lines.map((line) => groupLine(line, values, errors))
   }))

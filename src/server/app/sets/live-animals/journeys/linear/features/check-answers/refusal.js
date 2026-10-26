@@ -45,31 +45,33 @@ export const speciesCardErrors = async (journey, answers, { refused }) => {
   }
 }
 
-const documentScanStatuses = async (answers) => {
+const documentScanStatuses = async (request, answers) => {
   const documents = toArray(answers.documents)
   if (documents.length === 0) {
     return []
   }
   return withScanStatus(
     documents.map((entry) => ({ entry })),
-    false
+    { refresh: false, request }
   )
 }
 
 /**
- * The documents card error for the stored documents.
+ * The card errors for the uploaded documents' scans.
  *
- * @param {object} answers - the stored answers.
- * @param {{ includePending?: boolean }} [options] - include an error for a
- *   PENDING scan (default true).
- * @returns {Promise<object>} `someRejected` for any REJECTED scan, else
- *   `someStillScanning` for a PENDING one when `includePending`, else `{}`.
+ * @param {object} request - the request being answered.
+ * @param {object} answers - the journey's answers.
+ * @param {object} [options]
+ * @param {boolean} [options.includePending=true] - whether a pending scan counts as an error
+ * @returns {Promise<object>} the `documents` error for a rejected scan, or for
+ * a pending one when `includePending` is true, else none.
  */
 export const documentScanCardErrors = async (
+  request,
   answers,
   { includePending = true } = {}
 ) => {
-  const withStatus = await documentScanStatuses(answers)
+  const withStatus = await documentScanStatuses(request, answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }
@@ -100,7 +102,7 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(invalidCardErrors).length > 0) {
     return true
   }
-  if (Object.keys(await documentScanCardErrors(answers)).length > 0) {
+  if (Object.keys(await documentScanCardErrors(request, answers)).length > 0) {
     return true
   }
   const speciesErrors = await speciesCardErrors(journey, answers, {

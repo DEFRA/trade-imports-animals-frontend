@@ -1,6 +1,6 @@
 import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import {
   dashboardPath,
@@ -9,20 +9,23 @@ import {
   hubPath,
   pagePath
 } from '../../../../../shared/paths.js'
-import { store } from '../../../../../engine/store.js'
-import { configureRecords } from '../../../../../engine/persistence/records.js'
 import {
-  configureSession,
-  flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie
 } from '../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
+  driveHandler,
+  expectOneLogged,
+  getHandlerOf,
+  journeyRequest,
   postHandlerOf,
-  recordingLogger
+  stubH,
+  useStubbedJourney
 } from '../../../../../engine/test-support.js'
+import {
+  typedInCommercialTransporterPayload,
+  typedInPrivateTransporterPayload
+} from '../features/transport/test-support.js'
 import { lineKey } from '../features/commodities/search/selection/line-key.js'
 import { SHOWN_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
 import {
@@ -32,7 +35,6 @@ import {
 } from '../features/commodities/search/test-support.js'
 import { STUB_BOOK } from '../../../../../services/address-book/stub/index.js'
 import { dispatchPages } from '../features/index.js'
-import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
 import { documentsPage } from '../features/documents/page.js'
 import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
@@ -62,52 +64,9 @@ const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
 
-const captureH = () => {
-  const captured = { cookies: {} }
-  return {
-    view: (view, context) => {
-      captured.view = { view, context }
-      return captured.view
-    },
-    redirect: (to) => {
-      captured.redirect = to
-      return { redirect: to }
-    },
-    state: (name, value) => {
-      captured.cookies[name] = value
-    },
-    unstate: (name) => {
-      delete captured.cookies[name]
-    },
-    captured
-  }
-}
-
-const buildRequest = (journeyId, { record, flowOnly, ...overrides } = {}) => ({
-  payload: {},
-  params: journeyId ? { journeyId } : {},
-  query: {},
-  headers: {},
-  logger: recordingLogger(),
-  state: {
-    ...(journeyId ? { [knownJourneysCookie()]: [journeyId] } : {}),
-    ...(record ? { [openingRunCookie()]: record } : {}),
-    ...(flowOnly
-      ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } }
-      : {})
-  },
-  ...overrides
+const runRecord = (journeyId, phase = RUN_ACTIVE) => ({
+  [openingRunCookie()]: { [journeyId]: phase }
 })
-
-const drive = async (handler, { seed = {}, ...overrides } = {}) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, seed)
-  const h = captureH()
-  await handler(buildRequest(journey.journeyId, overrides), h)
-  return { journeyId: journey.journeyId, h }
-}
-
-const active = (journeyId) => ({ [journeyId]: RUN_ACTIVE })
 
 const lineSeed = {
   countryOfOrigin: 'FR',
@@ -123,6 +82,16 @@ const { values: completeSeed } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
 
+const postBreedingInternalMarketReason = (openingRun) =>
+  driveHandler(postHandlerOf(importReason), {
+    seed: lineSeed,
+    payload: {
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: 'breeding'
+    },
+    openingRun
+  })
+
 const startPostHandler = () =>
   dashboard.routes.find(
     (route) => route.method === 'POST' && route.path === createRoutePath()
@@ -133,39 +102,42 @@ const originPayload = {
   regionOfOriginCodeRequirement: 'no'
 }
 
-const createNotification = async (overrides) => {
-  const h = captureH()
-  await startPostHandler()(buildRequest(undefined, overrides), h)
+const createNotification = async (state = {}) => {
+  const request = journeyRequest(undefined, { state })
+  const h = stubH(request)
+  const response = await startPostHandler()(request, h)
   return {
-    journeyId: h.captured.cookies[knownJourneysCookie()][0],
-    record: h.captured.cookies[openingRunCookie()],
-    h
+    journeyId: h.cookies[knownJourneysCookie()][0],
+    record: h.cookies[openingRunCookie()],
+    cookies: h.cookies,
+    response
   }
 }
 
 const creatingANotificationOpensTheRun = () => {
   it('Should land Start a new notification on origin with the run already begun', async () => {
-    const { journeyId, h } = await createNotification()
-    expect(h.captured.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
-    expect(h.captured.cookies[openingRunCookie()]).toEqual(active(journeyId))
+    const { journeyId, response, cookies } = await createNotification()
+    expect(response.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
+    expect(cookies[openingRunCookie()]).toEqual({ [journeyId]: RUN_ACTIVE })
   })
 
   it('Should sequence a created notification on from origin to the commodities page rather than the hub', async () => {
     const { journeyId, record } = await createNotification()
-    const h = captureH()
-    await postHandlerOf(origin)(
-      buildRequest(journeyId, { payload: originPayload, record }),
-      h
-    )
-    expect(h.captured.redirect).toBe(pagePath(journeyId, 'commodities'))
+    const request = journeyRequest(journeyId, {
+      payload: originPayload,
+      state: { [openingRunCookie()]: record }
+    })
+    const response = await postHandlerOf(origin)(request, stubH(request))
+    expect(response.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
-  it('Should send a journey with no run record to the hub after origin', async () => {
-    const { journeyId, h } = await drive(postHandlerOf(origin), {
-      payload: originPayload
-    })
-    expect(h.captured.redirect).toBe(hubPath(journeyId))
-    expect(openingRunCookie() in h.captured.cookies).toBe(false)
+  it('Should send a journey with no run record to the hub after origin, not into the opening run', async () => {
+    const { journeyId, response, cookies } = await driveHandler(
+      postHandlerOf(origin),
+      { payload: originPayload }
+    )
+    expect(response.redirect).toBe(hubPath(journeyId))
+    expect(openingRunCookie() in cookies).toBe(false)
   })
 }
 
@@ -173,264 +145,191 @@ const saveAndContinueFollowsTheRunSequence = () => {
   const originPost = postHandlerOf(origin)
 
   it('Should send origin to the commodity search mid-run', async () => {
-    const journey = await store.create()
-    const h = captureH()
-    await originPost(
-      buildRequest(journey.journeyId, {
-        payload: originPayload,
-        record: active(journey.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(pagePath(journey.journeyId, 'commodities'))
+    const { journeyId, response } = await driveHandler(originPost, {
+      payload: originPayload,
+      openingRun: RUN_ACTIVE
+    })
+    expect(response.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
-  it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
-    const shownCat = { [SHOWN_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
-    const choice = { species: [lineKey(FELIS_CATUS_ROW)] }
-    const inRun = await store.create()
-    await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
-    const h = captureH()
-    await postHandlerOf(commoditiesSearch)(
-      buildRequest(inRun.journeyId, {
-        payload: choice,
-        flowOnly: shownCat,
-        record: active(inRun.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(pagePath(inRun.journeyId, 'import-reason'))
-
-    const outside = await drive(postHandlerOf(commoditiesSearch), {
-      payload: choice,
-      flowOnly: shownCat,
-      seed: { countryOfOrigin: 'FR' }
+  it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
+    const payload = { species: [lineKey(FELIS_CATUS_ROW)] }
+    const seed = { countryOfOrigin: 'FR' }
+    const flowOnly = { [SHOWN_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
+    const inRun = await driveHandler(postHandlerOf(commoditiesSearch), {
+      payload,
+      seed,
+      flowOnly,
+      openingRun: RUN_ACTIVE
     })
-    expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
+    expect(inRun.response.redirect).toBe(
+      pagePath(inRun.journeyId, 'import-reason')
+    )
+
+    const outside = await driveHandler(postHandlerOf(commoditiesSearch), {
+      payload,
+      seed,
+      flowOnly
+    })
+    expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
   it('Should send the consignment details page to the identification surface mid-run, and to the hub outside the run', async () => {
-    const inRun = await store.create()
-    await store.seedAnswers(inRun.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(consignmentDetails)(
-      buildRequest(inRun.journeyId, {
-        payload: { 'numberOfAnimalsQuantity-0': '2' },
-        record: active(inRun.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(
+    const payload = { 'numberOfAnimalsQuantity-0': '2' }
+    const inRun = await driveHandler(postHandlerOf(consignmentDetails), {
+      payload,
+      seed: lineSeed,
+      openingRun: RUN_ACTIVE
+    })
+    expect(inRun.response.redirect).toBe(
       pagePath(inRun.journeyId, 'commodities/identification')
     )
 
-    const outside = await drive(postHandlerOf(consignmentDetails), {
-      payload: { 'numberOfAnimalsQuantity-0': '2' },
+    const outside = await driveHandler(postHandlerOf(consignmentDetails), {
+      payload,
       seed: lineSeed
     })
-    expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
+    expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
   it('Should pass a zero-record identification Save-and-finish through to additional details mid-run', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(animalIdentification)(
-      buildRequest(journey.journeyId, {
-        payload: { action: 'finish' },
-        record: active(journey.journeyId)
-      }),
-      h
+    const { journeyId, response } = await driveHandler(
+      postHandlerOf(animalIdentification),
+      { payload: { action: 'finish' }, seed: lineSeed, openingRun: RUN_ACTIVE }
     )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'additional-details')
-    )
+    expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
   })
 
-  it('Should carry a consignment with nothing to identify on to additional details mid-run', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, unidentifiedLineSeed)
-    const h = captureH()
-    const getHandler = animalIdentification.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-    await getHandler(
-      buildRequest(journey.journeyId, { record: active(journey.journeyId) }),
-      h
+  it('Should log the skip and carry a consignment with nothing to identify on to additional details mid-run', async () => {
+    const { journeyId, response, view, logger } = await driveHandler(
+      getHandlerOf(animalIdentification),
+      { seed: unidentifiedLineSeed, openingRun: RUN_ACTIVE }
     )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'additional-details')
-    )
-    expect(h.captured.view).toBeUndefined()
+    expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
+    expect(view).toBeUndefined()
+    expectOneLogged(logger, {
+      level: 'info',
+      fields: { journeyId, commodityCodes: ['01063300'] },
+      message:
+        'Animal identification skipped: nothing on the consignment carries an identifier'
+    })
   })
 
   it('Should send import reason on to the consignment details mid-run', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(importReason)(
-      buildRequest(journey.journeyId, {
-        payload: {
-          reasonForImport: 'internalMarket',
-          purposeInInternalMarket: 'breeding'
-        },
-        record: active(journey.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, CONSIGNMENT_DETAILS_SLUG)
+    const { journeyId, response } =
+      await postBreedingInternalMarketReason(RUN_ACTIVE)
+    expect(response.redirect).toBe(
+      pagePath(journeyId, CONSIGNMENT_DETAILS_SLUG)
     )
   })
 
   it('Should carry additional details on to the arrival details mid-run rather than ending on the hub', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(additionalDetails)(
-      buildRequest(journey.journeyId, {
+    const { journeyId, response } = await driveHandler(
+      postHandlerOf(additionalDetails),
+      {
         payload: { animalsCertifiedFor: 'slaughter' },
-        record: active(journey.journeyId)
-      }),
-      h
+        seed: lineSeed,
+        openingRun: RUN_ACTIVE
+      }
     )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'port-of-entry')
-    )
+    expect(response.redirect).toBe(pagePath(journeyId, 'port-of-entry'))
   })
 
-  const driveAddSpoke = async (featureModule, { seed, payload }) => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, { ...completeSeed, ...seed })
-    const h = captureH()
-    await postHandlerOf(featureModule)(
-      buildRequest(journey.journeyId, {
-        payload,
-        record: active(journey.journeyId)
-      }),
-      h
-    )
-    return { journeyId: journey.journeyId, h }
-  }
+  const driveAddSpoke = (featureModule, { seed, payload }) =>
+    driveHandler(postHandlerOf(featureModule), {
+      seed: { ...completeSeed, ...seed },
+      payload,
+      openingRun: RUN_ACTIVE
+    })
 
   it('Should carry a commercial register pick on to the documents mid-run, continuing from the list rather than the spoke', async () => {
-    const { journeyId, h } = await driveAddSpoke(transportersSelect, {
+    const { journeyId, response } = await driveAddSpoke(transportersSelect, {
       seed: { transporterType: 'Commercial' },
       payload: { commercialTransporter: 'garcia-livestock-transport' }
     })
 
-    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
-    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
+    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(response.redirect).not.toBe(hubPath(journeyId))
   })
 
   it('Should carry a hand-entered commercial transporter on to the documents mid-run, continuing from the list rather than the spoke', async () => {
-    const { journeyId, h } = await driveAddSpoke(commercialTransporterDetails, {
-      seed: { transporterType: 'Commercial' },
-      payload: {
-        approvalNumber: 'UK/BELF/T2/00104115',
-        nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
-        addressLine1: '4 Quay Road',
-        addressLine2: '',
-        townOrCity: 'Belfast',
-        county: 'County Antrim',
-        postcode: 'BT1 3LG',
-        country: 'Northern Ireland',
-        email: 'movements@lough-neagh.example.com',
-        phone: '+44 28 9000 0111'
+    const { journeyId, response } = await driveAddSpoke(
+      commercialTransporterDetails,
+      {
+        seed: { transporterType: 'Commercial' },
+        payload: typedInCommercialTransporterPayload
       }
-    })
+    )
 
-    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
-    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
+    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(response.redirect).not.toBe(hubPath(journeyId))
   })
 
   it('Should carry a private add-spoke save on to the documents mid-run, continuing from the list rather than the spoke', async () => {
-    const { journeyId, h } = await driveAddSpoke(privateTransporterDetails, {
-      seed: { transporterType: 'Private' },
-      payload: {
-        nameOrOrganisationName: 'Jean Dupont',
-        addressLine1: '12 Rue des Fermes',
-        addressLine2: '',
-        townOrCity: 'Amiens',
-        county: '',
-        postcode: '80000',
-        country: 'France',
-        phone: '+33 3 22 55 01 44',
-        email: 'jean.dupont@example.fr'
+    const { journeyId, response } = await driveAddSpoke(
+      privateTransporterDetails,
+      {
+        seed: { transporterType: 'Private' },
+        payload: typedInPrivateTransporterPayload
       }
-    })
+    )
 
-    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
-    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
+    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(response.redirect).not.toBe(hubPath(journeyId))
   })
 }
 
 const endOfTheRunFollowsTheRunSequence = () => {
   it('Should carry roles and addresses on to the contact address mid-run', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(addresses)(
-      buildRequest(journey.journeyId, { record: active(journey.journeyId) }),
-      h
+    const { journeyId, response } = await driveHandler(
+      postHandlerOf(addresses),
+      { seed: lineSeed, openingRun: RUN_ACTIVE }
     )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'consignment/contact/select')
+    expect(response.redirect).toBe(
+      pagePath(journeyId, 'consignment/contact/select')
     )
   })
 
   it('Should send roles and addresses to the overview mid-run once every task is complete', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, completeSeed)
-    const h = captureH()
-    await postHandlerOf(addresses)(
-      buildRequest(journey.journeyId, { record: active(journey.journeyId) }),
-      h
+    const { journeyId, response } = await driveHandler(
+      postHandlerOf(addresses),
+      { seed: completeSeed, openingRun: RUN_ACTIVE }
     )
-    expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+    expect(response.redirect).toBe(hubPath(journeyId))
   })
 
   it('Should hand the CPH number back to the roles and addresses, mid-run and outside it', async () => {
     const payload = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
-    const inRun = await store.create()
-    await store.seedAnswers(inRun.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(cphNumber)(
-      buildRequest(inRun.journeyId, {
-        payload,
-        record: active(inRun.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(pagePath(inRun.journeyId, 'addresses'))
+    const inRun = await driveHandler(postHandlerOf(cphNumber), {
+      payload,
+      seed: lineSeed,
+      openingRun: RUN_ACTIVE
+    })
+    expect(inRun.response.redirect).toBe(pagePath(inRun.journeyId, 'addresses'))
 
-    const outside = await drive(postHandlerOf(cphNumber), {
+    const outside = await driveHandler(postHandlerOf(cphNumber), {
       payload,
       seed: lineSeed
     })
-    expect(outside.h.captured.redirect).toBe(
+    expect(outside.response.redirect).toBe(
       pagePath(outside.journeyId, 'addresses')
     )
   })
 
   it('Should end the run on the review page from the contact address mid-run, even with tasks outstanding', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, lineSeed)
-    const h = captureH()
-    await postHandlerOf(contact)(
-      buildRequest(journey.journeyId, {
-        payload: { contactAddress: CONTACT.id },
-        record: active(journey.journeyId)
-      }),
-      h
-    )
-    expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, NOTIFICATION_VIEW_SLUG)
-    )
+    const { journeyId, response } = await driveHandler(postHandlerOf(contact), {
+      payload: { contactAddress: CONTACT.id },
+      seed: lineSeed,
+      openingRun: RUN_ACTIVE
+    })
+    expect(response.redirect).toBe(pagePath(journeyId, NOTIFICATION_VIEW_SLUG))
   })
 }
 
 const deepLinkGuardTests = () => {
+  const guardFor = (options) =>
+    driveHandler(entryGuardTarget, { pathOf: hubPath, ...options })
+
   it('Should exempt the dashboard, the entry page and its children, and start', () => {
     expect(guardedJourneyPath(dashboardPath())).toBe(false)
     expect(guardedJourneyPath('/')).toBe(false)
@@ -452,85 +351,54 @@ const deepLinkGuardTests = () => {
   })
 
   it('Should redirect a journey with neither a run record nor answers to the entry page', async () => {
-    const journey = await store.create()
-    const target = await entryGuardTarget(
-      buildRequest(journey.journeyId, { path: hubPath(journey.journeyId) }),
-      captureH()
-    )
-    expect(target).toBe(pagePath(journey.journeyId, ORIGIN_SLUG))
+    const { journeyId, response } = await guardFor()
+    expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })
 
   it('Should admit a notification created in this session before any page is answered', async () => {
     const { journeyId, record } = await createNotification()
-    const target = await entryGuardTarget(
-      buildRequest(journeyId, { path: hubPath(journeyId), record }),
-      captureH()
-    )
-    expect(target).toBeNull()
+    const request = journeyRequest(journeyId, {
+      path: hubPath(journeyId),
+      state: { [openingRunCookie()]: record }
+    })
+    expect(await entryGuardTarget(request, stubH(request))).toBeNull()
   })
 
   it('Should let a journey with a committed answer straight through', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, { countryOfOrigin: 'FR' })
-    const target = await entryGuardTarget(
-      buildRequest(journey.journeyId, { path: hubPath(journey.journeyId) }),
-      captureH()
-    )
-    expect(target).toBeNull()
+    const { response } = await guardFor({ seed: { countryOfOrigin: 'FR' } })
+    expect(response).toBeNull()
   })
 
   it('Should treat a journey whose only answer is a flow-only key as fresh', async () => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, { declaration: 'confirmed' })
-    const target = await entryGuardTarget(
-      buildRequest(journey.journeyId, { path: hubPath(journey.journeyId) }),
-      captureH()
-    )
-    expect(target).toBe(pagePath(journey.journeyId, ORIGIN_SLUG))
+    const { journeyId, response } = await guardFor({
+      seed: { declaration: 'confirmed' }
+    })
+    expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })
 
-  it('Should let a journey that entered through the journey entry straight through — any phase', async () => {
-    const journey = await store.create()
-    for (const phase of [RUN_ACTIVE, RUN_COMPLETE]) {
-      const target = await entryGuardTarget(
-        buildRequest(journey.journeyId, {
-          path: hubPath(journey.journeyId),
-          record: { [journey.journeyId]: phase }
-        }),
-        captureH()
-      )
-      expect(target).toBeNull()
+  it.each([RUN_ACTIVE, RUN_COMPLETE])(
+    'Should let a journey that entered through the journey entry straight through while the run is %s',
+    async (openingRun) => {
+      const { response } = await guardFor({ openingRun })
+      expect(response).toBeNull()
     }
-  })
+  )
 
   it('Should not let another journey entry vouch for a fresh journey', async () => {
-    const journey = await store.create()
-    const target = await entryGuardTarget(
-      buildRequest(journey.journeyId, {
-        path: hubPath(journey.journeyId),
-        record: active('some-other-journey')
-      }),
-      captureH()
-    )
-    expect(target).toBe(pagePath(journey.journeyId, ORIGIN_SLUG))
+    const { journeyId, response } = await guardFor({
+      state: runRecord('some-other-journey')
+    })
+    expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })
 
   it('Should never consult the journey for an exempt path', async () => {
-    const target = await entryGuardTarget(
-      buildRequest(undefined, { path: createPath() }),
-      captureH()
-    )
-    expect(target).toBeNull()
+    const request = journeyRequest(undefined, { path: createPath() })
+    expect(await entryGuardTarget(request, stubH(request))).toBeNull()
   })
 }
 
 describe('the opening run', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   describe('creating a notification opens it', creatingANotificationOpensTheRun)
 
@@ -548,38 +416,21 @@ describe('the opening run', () => {
     const originPost = postHandlerOf(origin)
 
     it('Should honour Save and return to overview mid-run', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await originPost(
-        buildRequest(journey.journeyId, {
-          payload: {
-            countryOfOrigin: 'FR',
-            regionOfOriginCodeRequirement: 'no',
-            exit: 'hub'
-          },
-          record: active(journey.journeyId)
-        }),
-        h
-      )
-      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+      const { journeyId, response } = await driveHandler(originPost, {
+        payload: { ...originPayload, exit: 'hub' },
+        openingRun: RUN_ACTIVE
+      })
+      expect(response.redirect).toBe(hubPath(journeyId))
     })
 
     it('Should honour the change context over the run target', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await originPost(
-        buildRequest(journey.journeyId, {
-          payload: {
-            countryOfOrigin: 'FR',
-            regionOfOriginCodeRequirement: 'no'
-          },
-          query: { change: '1' },
-          record: active(journey.journeyId)
-        }),
-        h
-      )
-      expect(h.captured.redirect).toBe(
-        pagePath(journey.journeyId, NOTIFICATION_VIEW_SLUG)
+      const { journeyId, response } = await driveHandler(originPost, {
+        payload: originPayload,
+        query: { change: '1' },
+        openingRun: RUN_ACTIVE
+      })
+      expect(response.redirect).toBe(
+        pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
       )
     })
   })
@@ -588,152 +439,113 @@ describe('the opening run', () => {
     const hubGet = hub.routes[0].handler
 
     it('Should flip the record to complete on hub arrival', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await hubGet(
-        buildRequest(journey.journeyId, {
-          record: active(journey.journeyId)
-        }),
-        h
-      )
-      expect(h.captured.cookies[openingRunCookie()]).toEqual({
-        [journey.journeyId]: RUN_COMPLETE
+      const { journeyId, cookies } = await driveHandler(hubGet, {
+        openingRun: RUN_ACTIVE
+      })
+      expect(cookies[openingRunCookie()]).toEqual({
+        [journeyId]: RUN_COMPLETE
       })
     })
 
     it('Should leave a completed record alone on later hub visits', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await hubGet(
-        buildRequest(journey.journeyId, {
-          record: { [journey.journeyId]: RUN_COMPLETE }
-        }),
-        h
-      )
-      expect(openingRunCookie() in h.captured.cookies).toBe(false)
+      const { cookies } = await driveHandler(hubGet, {
+        openingRun: RUN_COMPLETE
+      })
+      expect(openingRunCookie() in cookies).toBe(false)
     })
 
-    const postOriginAfterTheRun = async (query) => {
-      const journey = await store.create()
-      const h = captureH()
-      await postHandlerOf(origin)(
-        buildRequest(journey.journeyId, {
-          payload: {
-            countryOfOrigin: 'FR',
-            regionOfOriginCodeRequirement: 'no'
-          },
-          query,
-          record: { [journey.journeyId]: RUN_COMPLETE }
-        }),
-        h
+    it('Should send origin to the overview and write no run record once the run is complete', async () => {
+      const { journeyId, response, cookies } = await driveHandler(
+        postHandlerOf(origin),
+        { payload: originPayload, openingRun: RUN_COMPLETE }
       )
-      return { journeyId: journey.journeyId, h }
-    }
-
-    it('Should send a plain origin save to the hub once the run is complete', async () => {
-      const { journeyId, h } = await postOriginAfterTheRun({})
-      expect(h.captured.redirect).toBe(hubPath(journeyId))
-      expect(openingRunCookie() in h.captured.cookies).toBe(false)
+      expect(response.redirect).toBe(hubPath(journeyId))
+      expect(openingRunCookie() in cookies).toBe(false)
     })
 
     it('Should send a change=1 origin save to check your answers once the run is complete', async () => {
-      const { journeyId, h } = await postOriginAfterTheRun({ change: '1' })
-      expect(h.captured.redirect).toBe(
+      const { journeyId, response, cookies } = await driveHandler(
+        postHandlerOf(origin),
+        {
+          payload: originPayload,
+          query: { change: '1' },
+          openingRun: RUN_COMPLETE
+        }
+      )
+      expect(response.redirect).toBe(
         pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
       )
-      expect(openingRunCookie() in h.captured.cookies).toBe(false)
+      expect(openingRunCookie() in cookies).toBe(false)
     })
   })
 
   describe('a page opened from its overview task returns to the overview', () => {
-    const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
+    it('Should send the main import reason to the overview, not on to the additional details', async () => {
+      const { journeyId, response } =
+        await postBreedingInternalMarketReason(RUN_COMPLETE)
+      expect(response.redirect).toBe(hubPath(journeyId))
+    })
 
-    it('Should send the main reason for import to the overview, not on to the additional details', async () => {
-      const journey = await store.create()
-      await store.seedAnswers(journey.journeyId, lineSeed)
-      const h = captureH()
-      await postHandlerOf(importReason)(
-        buildRequest(journey.journeyId, {
-          payload: {
-            reasonForImport: 'internalMarket',
-            purposeInInternalMarket: 'breeding'
-          },
-          record: complete(journey.journeyId)
-        }),
-        h
+    it('Should send additional details to the overview, not on to the arrival details', async () => {
+      const { journeyId, response } = await driveHandler(
+        postHandlerOf(additionalDetails),
+        {
+          payload: { animalsCertifiedFor: 'slaughter' },
+          seed: lineSeed,
+          openingRun: RUN_COMPLETE
+        }
       )
-      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+      expect(response.redirect).toBe(hubPath(journeyId))
     })
 
     it('Should send the arrival details on to the transit countries mid-run, and to the overview outside the run', async () => {
       const payload = { meansOfTransport: 'ROAD_VEHICLE' }
-      const inRun = await store.create()
-      await store.seedAnswers(inRun.journeyId, completeSeed)
-      const runH = captureH()
-      await postHandlerOf(portOfEntry)(
-        buildRequest(inRun.journeyId, {
-          payload,
-          record: active(inRun.journeyId)
-        }),
-        runH
-      )
-      expect(runH.captured.redirect).toBe(
+      const inRun = await driveHandler(postHandlerOf(portOfEntry), {
+        payload,
+        seed: completeSeed,
+        openingRun: RUN_ACTIVE
+      })
+      expect(inRun.response.redirect).toBe(
         pagePath(inRun.journeyId, 'transit-countries')
       )
 
-      const outside = await store.create()
-      await store.seedAnswers(outside.journeyId, completeSeed)
-      const outsideH = captureH()
-      await postHandlerOf(portOfEntry)(
-        buildRequest(outside.journeyId, {
-          payload,
-          record: complete(outside.journeyId)
-        }),
-        outsideH
-      )
-      expect(outsideH.captured.redirect).toBe(hubPath(outside.journeyId))
+      const outside = await driveHandler(postHandlerOf(portOfEntry), {
+        payload,
+        seed: completeSeed,
+        openingRun: RUN_COMPLETE
+      })
+      expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
     })
 
     it('Should send roles and addresses to the overview outside the run, even for a consignment that needs a CPH number', async () => {
-      const journey = await store.create()
       const withoutCph = structuredClone(completeSeed)
       delete withoutCph.countyParishHoldingCph
-      await store.seedAnswers(journey.journeyId, withoutCph)
-      const h = captureH()
-      await postHandlerOf(addresses)(
-        buildRequest(journey.journeyId, {
-          record: complete(journey.journeyId)
-        }),
-        h
+      const { journeyId, response } = await driveHandler(
+        postHandlerOf(addresses),
+        { seed: withoutCph, openingRun: RUN_COMPLETE }
       )
-      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+      expect(response.redirect).toBe(hubPath(journeyId))
     })
   })
 
   describe('reaching the review ends the run', () => {
     it('Should flip the record to complete when the review page is shown', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await checkAnswers.routes
-        .find((route) => route.method === 'GET')
-        .handler(
-          buildRequest(journey.journeyId, {
-            record: active(journey.journeyId)
-          }),
-          h
-        )
-      expect(h.captured.cookies[openingRunCookie()]).toEqual({
-        [journey.journeyId]: RUN_COMPLETE
+      const { journeyId, cookies } = await driveHandler(
+        getHandlerOf(checkAnswers),
+        { openingRun: RUN_ACTIVE }
+      )
+      expect(cookies[openingRunCookie()]).toEqual({
+        [journeyId]: RUN_COMPLETE
       })
     })
   })
 
   describe('the run is scoped to its journey', () => {
     it('Should open its own run alongside a record belonging to a different journey', async () => {
-      const { journeyId, h } = await createNotification({
-        record: active('some-other-journey')
-      })
-      expect(h.captured.cookies[openingRunCookie()]).toEqual({
+      const { journeyId, cookies } = await createNotification(
+        runRecord('some-other-journey')
+      )
+      expect(cookies[openingRunCookie()]).toEqual({
         'some-other-journey': RUN_ACTIVE,
         [journeyId]: RUN_ACTIVE
       })

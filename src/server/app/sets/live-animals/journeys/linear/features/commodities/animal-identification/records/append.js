@@ -3,6 +3,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { addressRecordProvided } from '../address/fields.js'
+import { identifierCapOf } from '../line-cap.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -27,12 +28,8 @@ const unitFromForm = (form) => {
 
 const recordCapFailure = async (request, h, index) => {
   const { answers: current } = await state.get(request, h)
-  const cap = state.collectionCapAt(current, [
-    'commodityLines',
-    index,
-    'animalIdentifiers'
-  ])
-  return { index, text: copy.errors.capReached(cap) }
+  const cap = identifierCapOf(current, index)
+  return { index, cap, text: copy.errors.capReached(cap) }
 }
 
 export const appendLineRecords = async (request, h, forms) => {

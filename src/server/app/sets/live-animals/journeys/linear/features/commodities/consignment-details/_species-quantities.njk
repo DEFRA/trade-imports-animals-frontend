@@ -1,9 +1,9 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 
 {% macro speciesQuantityGroup(group, copy) %}
-  <h2 class="govuk-heading-l">{{ group.code }}</h2>
+  <h2 class="govuk-heading-l">{{ group.heading }}</h2>
   {% for line in group.lines %}
-    <h3 class="govuk-heading-m">{{ line.speciesText }}</h3>
+    <h3 class="govuk-heading-m">{{ line.latinName }}</h3>
 
     {{ govukInput({
       id: line.animalsField,
@@ -28,5 +28,4 @@
       }) }}
     {% endif %}
   {% endfor %}
-  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
 {% endmacro %}

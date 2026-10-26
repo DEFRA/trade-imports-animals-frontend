@@ -20,6 +20,7 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
+import * as cancelAmend from '../cancel-amend/controller.js'
 import {
   continueRequest,
   declarationRoutesFromReview
@@ -28,7 +29,11 @@ import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persis
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as ports from '../../../../../../services/ports/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -95,7 +100,7 @@ const sectionsFor = async (seed) =>
 const summaryFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.errorSummary
 
-const viewForStatus = async (status, seed = fullSeed, query = {}) => {
+const journeyIdForStatus = async (status, seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (status === SUBMITTED || status === AMEND) {
@@ -104,9 +109,21 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
+  return journey.journeyId
+}
+
+const viewOfJourney = async (journeyId, query = {}) => {
   const h = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), h)
+  await getHandler(journeyRequest(journeyId, { query }), h)
   return h.captured.view
+}
+
+const viewForStatus = async (status, seed = fullSeed, query = {}) =>
+  viewOfJourney(await journeyIdForStatus(status, seed), query)
+
+const viewAndJourneyIdForStatus = async (status) => {
+  const journeyId = await journeyIdForStatus(status, fullSeed)
+  return { view: await viewOfJourney(journeyId), journeyId }
 }
 
 const cardsOf = (sections) =>
@@ -138,10 +155,7 @@ const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
 const NOT_APPLICABLE = 'Not applicable'
-const MISSING_HTML =
-  '<span class="app-summary-list__value--missing">' +
-  '<span class="govuk-visually-hidden">Missing</span>' +
-  '</span>'
+const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
@@ -317,6 +331,38 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(submitted.context.amendmentCancelled).toBe(true)
     expect(draft.context.amendmentCancelled).toBe(false)
   })
+
+  it('Should go Back to the notification list from a submitted notification', async () => {
+    const view = await viewForStatus(SUBMITTED)
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the notification list from the submitted view shown after an amendment is cancelled', async () => {
+    const journeyId = await journeyIdForStatus(AMEND, fullSeed)
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'AmendedRef'
+    })
+    const cancelRequest = journeyRequest(journeyId)
+    await postHandlerOf(cancelAmend)(cancelRequest, stubH(cancelRequest))
+
+    const view = await viewOfJourney(journeyId, { cancelled: '1' })
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the overview from the review of a draft notification', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
+  })
+
+  it('Should go Back to the overview from the review of a notification being amended', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(AMEND)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
+  })
 })
 
 describe(`${SUITE} — section and subsection headings`, () => {
@@ -354,7 +400,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
       )
     ).toEqual([
       'Where is this consignment coming from?',
-      'Main reason for import',
+      'Main import reason',
       'Commodity details',
       'Additional details',
       ARRIVAL_DETAILS_CARD,
@@ -377,7 +423,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ).toEqual([
       [
         'about-the-consignment',
-        ['Where is this consignment coming from?', 'Main reason for import']
+        ['Where is this consignment coming from?', 'Main import reason']
       ],
       ['description-of-the-goods', ['Commodity details', 'Additional details']],
       [
@@ -408,11 +454,16 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(rows, UNWEANED_KEY)).toBe('No')
   })
 
-  it('Should map the means-of-transport enum to its display label', async () => {
-    const rows = rowsOf(await sectionsFor(fullSeed))
-    expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(
-      'Road Vehicle'
+  it.each([
+    ['AIRPLANE', 'Air'],
+    ['RAILWAY', 'Rail'],
+    ['ROAD_VEHICLE', 'Road'],
+    ['VESSEL', 'Sea']
+  ])('Should read %s back as %s', async (code, label) => {
+    const rows = rowsOf(
+      await sectionsFor({ ...fullSeed, meansOfTransport: code })
     )
+    expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(label)
   })
 
   it('Should include the region-of-origin-code row when the requirement is yes', async () => {
@@ -710,7 +761,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
+  it('Should show whatever region-of-origin code is stored on its row, even when the requirement is no', async () => {
     const rows = rowsOf(
       await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
     )
@@ -784,19 +835,19 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should mark a blank plain answer missing', async () => {
+  it('Should leave a blank plain answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(await sectionsFor(gatedOffSeed))
     expect(htmlOf(rows, INTERNAL_REFERENCE_KEY)).toBe(MISSING_HTML)
     expect(htmlOf(rows, 'Port of entry')).toBe(MISSING_HTML)
   })
 
-  it('Should mark a coded answer with no matching label missing', async () => {
+  it('Should leave a coded answer with no matching label with only a visually hidden Missing', async () => {
     expect(
       htmlOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark a blank date missing', async () => {
+  it('Should leave a blank date with only a visually hidden Missing', async () => {
     expect(
       htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
@@ -805,7 +856,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark an unset party missing', async () => {
+  it('Should leave an unset party with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
@@ -835,7 +886,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 
-  it('Should give the same optional row no text at all on an unfinished card', async () => {
+  it('Should leave the same optional row with only a visually hidden Missing on an unfinished card', async () => {
     const sections = await sectionsFor(
       without(fullSeed, 'internalReferenceNumber', 'countryOfOrigin')
     )
@@ -868,7 +919,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(reference.value.html).toBeUndefined()
   })
 
-  it('Should mark the blank rows inside an unfinished documents card missing', async () => {
+  it('Should leave the blank rows inside an unfinished documents card with only a visually hidden Missing', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
@@ -987,7 +1038,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keys).not.toContain(PORT_OF_EXIT_KEY)
   })
 
-  it('Should mark an in-scope exit answer left blank missing', async () => {
+  it('Should leave a blank in-scope exit answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'temporaryAdmissionHorses' })
@@ -1160,7 +1211,7 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(texts).toContain(ADDRESSES_INCOMPLETE)
   })
 
-  it('Should mark a role that has never been answered missing', async () => {
+  it('Should leave a role that has never been answered with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
       ROLES_AND_ADDRESSES_CARD

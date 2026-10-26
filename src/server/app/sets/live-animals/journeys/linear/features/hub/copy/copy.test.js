@@ -49,7 +49,7 @@ const unlockedSeed = {
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
-const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
+const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
@@ -69,6 +69,19 @@ const COMPLETE_STATUS = {
   tag: { text: 'Complete', classes: 'govuk-tag--green' }
 }
 const DESIGN_STATUSES = [TO_DO_STATUS, COMPLETE_STATUS]
+
+const UNLOCKED_ROW_TITLES_BY_GROUP = [
+  [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
+  [
+    CONSIGNMENT_DETAILS_ROW_TITLE,
+    'Identification details',
+    'Additional details'
+  ],
+  [ARRIVAL_ROW_TITLE, 'Transport details'],
+  ['Upload documents'],
+  [ADDRESSES_ROW_TITLE],
+  ['Contact address for this consignment']
+]
 
 const owingExitQuestionsSeed = {
   ...unlockedSeed,
@@ -136,7 +149,7 @@ describe('#copy', () => {
     expect(titlesCy).toEqual({
       origin: 'O ble mae’r llwyth hwn yn dod?',
       commodities: 'Beth ydych chi’n ei fewnforio?',
-      importReason: 'Prif reswm dros fewnforio',
+      importReason: 'Prif reswm mewnforio',
       consignmentDetails: 'Manylion y nwyddau',
       additionalDetails: 'Manylion ychwanegol',
       animalIdentification: 'Manylion adnabod',
@@ -191,18 +204,7 @@ describe('#hubHandler', () => {
     const { groups } = await renderHub(unlockedSeed)
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
-    ).toEqual([
-      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
-      [
-        CONSIGNMENT_DETAILS_ROW_TITLE,
-        'Identification details',
-        'Additional details'
-      ],
-      [ARRIVAL_ROW_TITLE, 'Transport details'],
-      ['Upload documents'],
-      [ADDRESSES_ROW_TITLE],
-      ['Contact address for this consignment']
-    ])
+    ).toEqual(UNLOCKED_ROW_TITLES_BY_GROUP)
   })
 
   it('Should hold "About the consignment" at three rows once a reason opens its exit questions', async () => {
@@ -336,15 +338,13 @@ describe('#hubHandler', () => {
     )
   })
 
-  it('Should offer the review as a button under the list, not as a task row', async () => {
-    const context = await renderHub()
+  it('Should offer the review as a Review and submit button', async () => {
+    const context = await renderHub(unlockedSeed)
 
     expect(context.reviewHref).toBe(
       pagePath(context.journeyId, 'notification-view')
     )
     expect(copy.reviewAndSubmit).toBe('Review and submit')
-    expect(rowByTitle(context, 'Check and submit')).toBeUndefined()
-    expect(copy.groups['check-and-submit']).toBeUndefined()
   })
 
   it('Should offer the same review button on a part-answered notification', async () => {
@@ -380,7 +380,6 @@ describe('#hubHandler — the task statuses', () => {
 
   it('Should hold the two design statuses in both locales', () => {
     expect(copy.statuses).toEqual({ complete: 'Complete', toDo: 'To do' })
-
     expect(copyCy.statuses).toEqual({
       complete: 'Wedi’i gwblhau',
       toDo: 'I’w wneud'

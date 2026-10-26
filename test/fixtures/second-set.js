@@ -1,17 +1,3 @@
-/**
- * A second obligation set, defined only for tests.
- *
- * Co-residency is a property of the platform, not of any particular set, so
- * proving it needs two sets mounted in one process — but shipping a second
- * real set would mean shipping a journey nobody asked for. This fixture is the
- * smallest thing that satisfies every configure* seam and mounts under its own
- * prefix, so the co-residency and tripwire suites can register it alongside
- * live-animals.
- *
- * Its routes deliberately echo the configuration they resolve rather than
- * render anything. A test asserting "this route saw its own set's obligations"
- * needs to read them back, and a template would only get in the way.
- */
 import {
   feature,
   scalar
@@ -53,8 +39,6 @@ import { session as sessionStub } from '../../src/server/app/services/persistenc
 export const SET_ID = 'sundry-goods'
 export const SET_BASE = `/${SET_ID}`
 
-/** Named so it cannot collide with any live-animals feature name — the point
- * a per-set registry assertion turns on. */
 export const FEATURE_NAME = 'sundry-details'
 
 export const SESSION_COOKIE_NAMES = Object.freeze({
@@ -82,8 +66,6 @@ export const dispatchPages = [
 
 const sections = [{ id: 'details', pages: [detailsPage] }]
 
-/** The set's own in-memory records store, so nothing is shared with any other
- * set by accident — the point most of these tests are making. */
 const createRecordsStub = () => {
   const journeys = new Map()
   let next = 0
@@ -124,12 +106,9 @@ const createRecordsStub = () => {
 
 export const records = createRecordsStub()
 
-/** A route shape whose handler renders a real Nunjucks view. */
 export const RENDERED_ROUTE_PATH = '/rendered'
 export const RENDERED_TITLE = 'Sundry goods rendered'
 
-/** Reports which set answered, and with whose configuration — the two facts
- * every co-residency assertion turns on. */
 const whoAnswered = () => ({
   setId: SET_ID,
   dashboardPath: dashboardPath(),
@@ -160,8 +139,6 @@ export const routes = [
     handler: (request) => ({
       ...whoAnswered(),
       journeyId: request.params.journeyId,
-      // A link built inside this request — the prefix it carries is the set
-      // context's answer, which is what an interleaving test reads back.
       selfHref: pagePath(request.params.journeyId, detailsPage.slug)
     })
   },
@@ -171,18 +148,11 @@ export const routes = [
     options: { auth: false },
     handler: async (request, h) => {
       const journey = await records.create()
-      // The live-animals gateway starts a journey through the engine, which
-      // records it in the session. Without this the set issues no journey
-      // cookie at all, and a test asserting the cookie does not cross into the
-      // other set would pass on an empty jar.
       await session.addKnownJourney(request, h, journey.journeyId)
       return h.redirect(pagePath(journey.journeyId, detailsPage.slug))
     }
   },
   {
-    // The only route here that renders a template rather than echoing JSON:
-    // the view is marshalled after the handler returns, so it is the one shape
-    // that proves the RENDER path resolves this set with two sets mounted.
     method: 'GET',
     path: RENDERED_ROUTE_PATH,
     options: { auth: false },
@@ -195,12 +165,6 @@ export const routes = [
   }
 ]
 
-/**
- * Mirrors routes-live-animals.js: mount registration, a sandboxed onPreAuth to
- * enter the set context, every seam configured with this set's id, per-set
- * cookies scoped to the set base, a sandboxed entry guard, and routes wrapped
- * so handlers run inside the context.
- */
 export const secondSet = {
   plugin: {
     name: SET_ID,
@@ -230,6 +194,7 @@ export const secondSet = {
           taskRows: [],
           rowStatus: () => 'notStarted',
           nextRunTarget: () => null,
+          previousRunTarget: () => null,
           flowOnlyKeys: [],
           entryGuardTarget: async () => null,
           layout: 'shared/layout.njk'
@@ -241,9 +206,6 @@ export const secondSet = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            // Wrapped the way routes-live-animals.js wraps it: authentication
-            // crosses an async boundary after the onPreAuth above, so the guard
-            // has to re-enter the context itself.
             const target = await withSetContext(SET_ID, () =>
               journeyEntryGuardTarget(request, h)
             )

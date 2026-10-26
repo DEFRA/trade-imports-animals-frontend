@@ -1,0 +1,19 @@
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+
+{% macro transporterSelectCell(row, copy) %}
+  {{ govukRadios({
+    idPrefix: row.idPrefix,
+    name: "transporter",
+    classes: "govuk-radios--small",
+    items: [{
+      value: row.id,
+      html: '<span class="govuk-visually-hidden">' + copy.selectRowPrefix + " " + (row.name | escape) + '</span>',
+      checked: row.checked
+    }]
+  }) }}
+{% endmacro %}
+
+{% macro transporterStatusCell(row) %}
+  {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+{% endmacro %}

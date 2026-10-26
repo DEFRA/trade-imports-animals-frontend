@@ -36,6 +36,7 @@ export const copy = {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
   },
+  dateExample: 'Er enghraifft, 27/3/2026',
   errorPage: {
     notFound: 'Heb ddod o hyd i’r dudalen',
     forbidden: 'Gwaharddedig',

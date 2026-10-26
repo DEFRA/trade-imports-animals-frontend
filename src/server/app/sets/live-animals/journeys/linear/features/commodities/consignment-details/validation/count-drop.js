@@ -4,6 +4,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { animalIdentificationPage } from '../../page.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { identificationCardAnchor } from '../../animal-identification/card/error-summary.js'
 import { animalsField } from '../fields.js'
 import { speciesLabel } from '../../species-label.js'
 
@@ -26,7 +27,7 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
       href: `${kit.withChangeContext(
         request,
         pagePath(request.params.journeyId, animalIdentificationPage.slug)
-      )}#identification-card-${index}`
+      )}#${identificationCardAnchor(index)}`
     }
   ]
 }

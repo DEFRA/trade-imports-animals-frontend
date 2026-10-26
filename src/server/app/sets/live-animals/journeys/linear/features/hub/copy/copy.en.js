@@ -30,7 +30,7 @@ export const copy = {
       title: 'What are you importing?'
     },
     importReason: {
-      title: 'Main reason for import'
+      title: 'Main import reason'
     },
     consignmentDetails: {
       title: 'Commodity details'

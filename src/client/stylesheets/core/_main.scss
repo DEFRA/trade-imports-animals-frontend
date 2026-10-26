@@ -1,6 +1,4 @@
-@use "govuk-frontend" as *;
-
-// Example namespaced custom element style CSS classes
+@use 'govuk-frontend' as *;
 
 .app-main-wrapper {
   display: block;
@@ -18,7 +16,6 @@
   display: inline;
   vertical-align: baseline;
   line-height: inherit;
-  // govuk-link sets colour via :link which only matches <a> elements, not <button>
   color: $govuk-link-colour;
 
   &:hover {
@@ -32,4 +29,8 @@
 
 .app-form-inline {
   display: contents;
+}
+
+.govuk-template__body:not(.govuk-frontend-supported) .app-js-only {
+  display: none;
 }

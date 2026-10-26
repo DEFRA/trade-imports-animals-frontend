@@ -1,21 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const guidance = copy.guidance
 const additional = guidance.additional
-
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
 
 const openExpander = async (page) => {
   await page.getByText(additional.summary).click()
@@ -73,6 +65,18 @@ test.describe('document upload guidance', () => {
         table.getByRole('row').filter({ hasText: row.consignment })
       ).toContainText(row.documents)
     }
+  })
+
+  test('states the file size and the allowed file types as the first two bullets of the file hint', async ({
+    page
+  }) => {
+    const hintBullets = page.locator('#file-hint li')
+    await expect(hintBullets.nth(0)).toHaveText(
+      'files that are smaller than 10MB'
+    )
+    await expect(hintBullets.nth(1)).toHaveText(
+      'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'
+    )
   })
 
   test('links out to the GOV.UK guidance in a new tab', async ({ page }) => {

@@ -12,6 +12,7 @@ import {
   driveHandler,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
+import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import { base, hubExitTarget } from '../../../../../shared/kit.js'
 
@@ -144,12 +145,12 @@ describe('save actions — hub exit semantics', () => {
     expect(after.commodityLines[0].numberOfAnimalsQuantity).toBe(2)
   })
 
-  it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit', async () => {
+  it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit for a one-animal line', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
-        seed: { commodityLines: [FELIS_CATUS_ROW] }
+        seed: seedWithCommodityLineOfAnimals(1)
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })

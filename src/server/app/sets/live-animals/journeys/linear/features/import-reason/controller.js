@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -35,31 +34,28 @@ const view = `${TEMPLATES}/features/import-reason/template`
 
 const copy = copyFor({ en, cy })
 
-// The lists feed type-aheads that enhance these selects, so each carries only the
-// placeholder and the real options — a scroll-only list needed a divider rule
-// under the placeholder, a searchable one does not.
 const countryItems = async () => [
-  { value: '', text: copy.country.placeholder },
-  ...(await countries.destinationCountryOptions())
+  { value: '', text: copy.country.selectText },
+  ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
 
 const portItems = async () => [
-  { value: '', text: copy.port.placeholder },
+  { value: '', text: copy.port.selectText },
   ...(await ports.portOptions())
 ]
 
 const render = async (
+  request,
   h,
-  journey,
+  current,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
@@ -81,21 +77,23 @@ const render = async (
     portItems: await portItems(),
     exitDateField: kit.dateField(TEMPORARY_ADMISSION_DATE_FIELD, {
       label: copy.date.label,
+      labelClasses: '',
+      formGroupClasses: 'govuk-!-margin-bottom-6',
       hint: copy.date.hint,
       value: values[TEMPORARY_ADMISSION_DATE_FIELD],
       error: errors[TEMPORARY_ADMISSION_DATE_FIELD]
     })
   })
 
-// The stored answers go back through the page's own rules on the way in, so an
-// answer the reference data has moved past is named here rather than surviving
-// to the review page. A stale answer is blanked in every field it prefills —
-// not only the one the current reason happens to reveal — so neither reveal
-// can render it as chosen.
+const putStoredAnswersThroughPageRules = (answers) =>
+  validation.onStored(answers)
+
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values, errors)
+  const current = await state.get(request, h)
+  const { values, errors } = await putStoredAnswersThroughPageRules(
+    current.answers
+  )
+  return render(request, h, current, values, { errors })
 }
 
 const post = async (request, h) => {
@@ -104,22 +102,20 @@ const post = async (request, h) => {
     { allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
-    return (await render(h, journey, values, errors)).code(
+    const current = await state.get(request, h)
+    return (await render(request, h, current, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  let committed
-  const { failure } = await kit.recoverableSave(
+  const { value: committed, failure } = await kit.recoverableSave(
+    request,
+    () => state.commit(request, h, answers),
     async () => {
-      committed = await state.commit(request, h, answers)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return (await render(h, journey, values, {}, true)).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      const current = await state.get(request, h)
+      return (
+        await render(request, h, current, values, { recoverableError: true })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {

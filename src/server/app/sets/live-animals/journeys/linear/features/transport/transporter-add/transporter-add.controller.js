@@ -1,7 +1,10 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import {
   compose,
   oneOf,
@@ -73,10 +76,13 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(request, h, journey, values, { errors })
+    return render(request, h, journey, values, { errors }).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, values)
     },

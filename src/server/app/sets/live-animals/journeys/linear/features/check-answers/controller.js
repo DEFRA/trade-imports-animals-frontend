@@ -1,4 +1,8 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -38,18 +42,6 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const PARTY_KEY_PREFIX = 'party:'
 
-const incompleteOverridesInvalid = ({
-  invalidCardErrors,
-  scanDocErrors,
-  speciesErrors,
-  incompleteErrors
-}) => ({
-  ...invalidCardErrors,
-  ...scanDocErrors,
-  ...speciesErrors,
-  ...incompleteErrors
-})
-
 const reviewErrorSummary = (
   journeyId,
   cardErrors,
@@ -78,6 +70,11 @@ const reviewErrorSummary = (
       disableAutoFocus
     }
   )
+
+const backLinkFor = (journey) =>
+  journey.status === state.SUBMITTED
+    ? dashboardPath()
+    : hubPath(journey.journeyId)
 
 const renderCya = async (
   h,
@@ -130,9 +127,21 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    backLink: hubPath(journey.journeyId)
+    backLink: backLinkFor(journey)
   })
 }
+
+const mergeCardErrorsByPrecedence = ({
+  invalid,
+  scan,
+  species,
+  incomplete
+}) => ({
+  ...invalid,
+  ...scan,
+  ...species,
+  ...incomplete
+})
 
 export const renderNotificationView = async (
   request,
@@ -151,7 +160,9 @@ export const renderNotificationView = async (
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
   const scanDocErrors = hidesAnswerErrors
     ? {}
-    : await documentScanCardErrors(answers, { includePending: refused })
+    : await documentScanCardErrors(request, answers, {
+        includePending: refused
+      })
   const speciesErrors = hidesAnswerErrors
     ? {}
     : await speciesCardErrors(journey, answers, { refused })
@@ -166,11 +177,11 @@ export const renderNotificationView = async (
     partyErrors: hidesAnswerErrors ? {} : await invalidPartyErrors(answers),
     cardErrors: hidesAnswerErrors
       ? {}
-      : incompleteOverridesInvalid({
-          invalidCardErrors,
-          scanDocErrors,
-          speciesErrors,
-          incompleteErrors: incompleteCardErrors(answers, scope, evaluation)
+      : mergeCardErrorsByPrecedence({
+          invalid: invalidCardErrors,
+          scan: scanDocErrors,
+          species: speciesErrors,
+          incomplete: incompleteCardErrors(answers, scope, evaluation)
         }),
     disableAutoFocus: !refused
   })

@@ -9,13 +9,26 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectBackLinkIsPage,
+  expectNoRefusalLogged,
+  expectOneSaveFallbackLogged,
+  getHandlerOf,
+  postHandlerOf,
+  unavailableBackendError,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import {
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../commodities/search/test-support.js'
 import { hubPath } from '../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { dispatchPages } from '../index.js'
 
 import * as additionalDetails from './controller.js'
 
+const get = getHandlerOf(additionalDetails)
 const post = postHandlerOf(additionalDetails)
 
 const UNWEANED_SEED = { commodityLines: [{ commodityCode: '0102' }] }
@@ -35,6 +48,32 @@ describe('POST additional-details — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.animalsCertifiedFor).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectNoRefusalLogged(result.logger)
+  })
+})
+
+describe('POST additional-details — backend unavailable', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should re-render at 500 with the unweaned question still asked and log the save fallback once', async () => {
+    const failure = unavailableBackendError('save answers')
+
+    const result = await driveHandler(post, {
+      seed: { commodityLines: [BOS_TAURUS_ROW] },
+      payload: {
+        animalsCertifiedFor: 'slaughter',
+        containsUnweanedAnimals: 'no'
+      },
+      saveFailure: failure
+    })
+
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.view.context.showUnweaned).toBe(true)
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure
+    })
   })
 })
 
@@ -57,5 +96,45 @@ describe('POST additional-details — Save and return to overview', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.containsUnweanedAnimals).toBeDefined()
     expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('additional-details — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const catLine = FELIS_CATUS_ROW
+  const ostrichLine = STRUTHIO_ROW
+
+  it('Should go Back to identification in the opening run when a chosen species needs identifiers', async () => {
+    const result = await driveHandler(get, {
+      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'commodities/identification')
+  })
+
+  it('Should go Back to the consignment details in the opening run when no chosen species needs identifiers', async () => {
+    const result = await driveHandler(get, {
+      seed: { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'consignment-details')
+  })
+
+  it('Should keep Back on identification when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
+      payload: { animalsCertifiedFor: 'not-a-real-purpose' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.response.statusCode).toBe(400)
+    expectBackLinkIsPage(result, 'commodities/identification')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get, {
+      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] }
+    })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

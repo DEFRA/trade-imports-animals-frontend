@@ -12,7 +12,11 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
-import { stubH, journeyRequest } from '../../../../../engine/test-support.js'
+import {
+  stubH,
+  journeyRequest,
+  getHandlerOf
+} from '../../../../../engine/test-support.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { dispatchPages } from './index.js'
 
@@ -66,18 +70,16 @@ const privateTransportFixture = {
 delete privateTransportFixture.commercialTransporter
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
+const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
 const CONSIGNMENT_PARTIES = 'Consignment parties'
 const TRANSPORT_AND_ARRIVAL = 'Transport and arrival'
 const NEW_TRANSPORTER = 'Add a new transporter'
-
-const getHandlerOf = (routes) =>
-  routes.find((route) => route.method === 'GET').handler
 
 const renderOf = async (routes, answers = {}) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, answers)
   const h = stubH()
-  await getHandlerOf(routes)(journeyRequest(journey.journeyId), h)
+  await getHandlerOf({ routes })(journeyRequest(journey.journeyId), h)
   return h.captured.view
 }
 
@@ -88,9 +90,6 @@ const SETS_ROOT = path.resolve(
 const templateSourceOf = (view) =>
   readFileSync(path.join(SETS_ROOT, `${view}.njk`), 'utf8')
 
-// Every page the caption map names, with the section it must show. One case
-// per page, so a page that loses its `page` argument or its template call
-// names itself in the failure.
 const CAPTIONED_PAGES = [
   ['dashboard', 'Dashboard', dashboardRoutes, {}],
   ['origin', ABOUT_THE_CONSIGNMENT, originRoutes, parityFixture],
@@ -102,7 +101,7 @@ const CAPTIONED_PAGES = [
   ],
   [
     'consignment details',
-    ABOUT_THE_CONSIGNMENT,
+    DESCRIPTION_OF_THE_GOODS,
     consignmentDetailsRoutes,
     parityFixture
   ],

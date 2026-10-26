@@ -7,8 +7,8 @@ import {
 } from '../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import {
+  countryAndSubdivisionOptionsNamedWithCountry,
   isSubdivisionCode,
-  originCountryOptions,
   parentCountryCode
 } from '../../../../../../services/countries/index.js'
 import { copy as en } from './copy/copy.en.js'
@@ -16,12 +16,9 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-const REGION_CODE_SUFFIX_MAX_LENGTH = 5
+export const REGION_CODE_SUFFIX_MAX_LENGTH = 5
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 
-// Country is a fixed prefix on the form; the trader only types the part after
-// it. The stored answer is the whole joined code — nothing downstream sees
-// two fields.
 export const REGION_CODE_SUFFIX_FIELD = 'regionOfOriginCodeSuffix'
 const REGION_CODE_SEPARATOR = '-'
 const REGION_CODE_REQUIRED_ANSWER = 'yes'
@@ -56,28 +53,33 @@ const formValuesFrom = (source) =>
 export const prefixFor = (countryOfOrigin) =>
   parentCountryCode((countryOfOrigin ?? '').trim()).toUpperCase()
 
-// Also forgives a user who typed the prefix themselves.
-const suffixOf = (prefix, code) => {
+const normalisedSuffixOf = (prefix, code) => {
   const value = (code ?? '').trim().toUpperCase()
   return prefix && value.startsWith(`${prefix}${REGION_CODE_SEPARATOR}`)
     ? value.slice(prefix.length + REGION_CODE_SEPARATOR.length)
     : value
 }
 
-const regionCodeFrom = (countryOfOrigin, suffix) => {
+const regionCodeFrom = ({
+  countryOfOrigin,
+  regionOfOriginCodeRequirement,
+  [REGION_CODE_SUFFIX_FIELD]: suffix
+}) => {
   const prefix = prefixFor(countryOfOrigin)
-  const rest = suffixOf(prefix, suffix)
-  if (!rest) {
+  const rest = normalisedSuffixOf(prefix, suffix)
+  if (
+    regionOfOriginCodeRequirement !== REGION_CODE_REQUIRED_ANSWER ||
+    !prefix ||
+    !rest
+  ) {
     return ''
   }
-  return prefix ? `${prefix}${REGION_CODE_SEPARATOR}${rest}` : rest
+  return `${prefix}${REGION_CODE_SEPARATOR}${rest}`
 }
 
 const countryMessage = (stored) =>
   stored ? copy.errors.countryNoLongerAvailable : copy.errors.countryFromList
 
-// Required under Yes, left alone under No. The obligation would stop the
-// notification later either way; the rule here tells the user in-page.
 const regionCodeSuffixRule = (requirement) =>
   requirement === REGION_CODE_REQUIRED_ANSWER
     ? requiredMaxText(REGION_CODE_SUFFIX_FIELD, REGION_CODE_SUFFIX_MAX_LENGTH, {
@@ -90,17 +92,14 @@ const regionCodeSuffixRule = (requirement) =>
         copy.errors.regionCodeMaxLength
       )
 
-// Membership only, not required — the obligation model requires the country
-// separately, so a user waiting on paperwork can save what they know and
-// come back.
 const fields = async (values, { stored } = {}) => {
-  const countryValues = (await originCountryOptions()).map(({ value }) => value)
+  const countryValues = (
+    await countryAndSubdivisionOptionsNamedWithCountry()
+  ).map(({ value }) => value)
   return compose(
     oneOf('countryOfOrigin', countryValues, countryMessage(stored)),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(values.regionOfOriginCodeRequirement),
-    // The reference is the user's own; the service never reads it. Length
-    // only — no character rules.
     maxText(
       'internalReferenceNumber',
       INTERNAL_REFERENCE_MAX_LENGTH,
@@ -109,19 +108,15 @@ const fields = async (values, { stored } = {}) => {
   )
 }
 
-// Rules measure the storable code, not the raw box — a box holding only the
-// prefix is an empty code. `values` keeps the raw text `render` shows back.
 const normalise = (values) => ({
   ...values,
-  [REGION_CODE_SUFFIX_FIELD]: suffixOf(
+  [REGION_CODE_SUFFIX_FIELD]: normalisedSuffixOf(
     prefixFor(values.countryOfOrigin),
     values[REGION_CODE_SUFFIX_FIELD]
   )
 })
 
-// Blank the suffix with the country — its prefix mechanic depends on the
-// country still matching, or the whole stored code cascades into a 5-char field.
-const blanks = (field) =>
+const fieldsToBlankWhenChanged = (field) =>
   field === 'countryOfOrigin'
     ? [
         'countryOfOrigin',
@@ -138,23 +133,20 @@ export const validation = pageValidation({
     countryOfOrigin:
       answers.countryOfOriginSubdivisionCode || answers.countryOfOrigin || '',
     regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
-    [REGION_CODE_SUFFIX_FIELD]: suffixOf(
+    [REGION_CODE_SUFFIX_FIELD]: normalisedSuffixOf(
       prefixFor(answers.countryOfOrigin),
       answers.regionOfOriginCode
     ),
     internalReferenceNumber: answers.internalReferenceNumber ?? ''
   }),
-  blanks,
+  blanks: fieldsToBlankWhenChanged,
   toAnswers: (values) => ({
     countryOfOrigin: values.countryOfOrigin,
     countryOfOriginSubdivisionCode: isSubdivisionCode(values.countryOfOrigin)
       ? values.countryOfOrigin
       : '',
     regionOfOriginCodeRequirement: values.regionOfOriginCodeRequirement,
-    regionOfOriginCode: regionCodeFrom(
-      values.countryOfOrigin,
-      values[REGION_CODE_SUFFIX_FIELD]
-    ),
+    regionOfOriginCode: regionCodeFrom(values),
     internalReferenceNumber: values.internalReferenceNumber
   })
 })

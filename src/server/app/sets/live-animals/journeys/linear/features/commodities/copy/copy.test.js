@@ -1,20 +1,17 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import { leaves } from '../../../../../../../shared/copy-leaves.js'
+import {
+  driveHandler,
+  sampleText,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
   identifiedCommodityCodes,
   identifiersFor
 } from '../../../../../services/commodities/index.js'
-
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
@@ -28,8 +25,7 @@ describe('#copy', () => {
     'Should have a non-empty string (or string-returning function) at every %s leaf',
     (_language, block) => {
       for (const { path, value } of leaves(block)) {
-        const text =
-          typeof value === 'function' ? value('sample', 2, 3, 4) : value
+        const text = sampleText(value, ['sample', 2, 3, 4])
         expect(typeof text, `${path} must resolve to a string`).toBe('string')
         expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(
           0
@@ -50,56 +46,44 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  it('Should label each identifier entry field with its saved-animals column heading', () => {
-    for (const field of [
-      'animalIdentifierPassport',
-      'animalIdentifierTattoo',
-      'animalIdentifierEarTag',
-      'horseName'
-    ]) {
-      expect(copy.identification.typeFields[field].label).toBe(
-        copy.identification.identifierLabels[field]
-      )
-      expect(copyCy.identification.typeFields[field].label).toBe(
-        copyCy.identification.identifierLabels[field]
-      )
-    }
-  })
-
-  const expectLabelledIn = (block, commodityCode, identifier) => {
-    const where = `${commodityCode} asks for ${identifier}`
-    expect(block.identification.typeFields[identifier]?.label, where).toEqual(
-      expect.any(String)
-    )
-    expect(block.identification.identifierLabels[identifier], where).toEqual(
-      expect.any(String)
-    )
-  }
-
-  it('Should carry an entry field and a column heading for every identifier a commodity code asks for', () => {
-    const pairs = identifiedCommodityCodes().flatMap((commodityCode) =>
-      identifiersFor(commodityCode).map((identifier) => [
-        commodityCode,
-        identifier
-      ])
+  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity code asks for', () => {
+    const identifiers = new Set(
+      identifiedCommodityCodes().flatMap((code) => identifiersFor(code))
     )
     expect(
-      pairs.length,
+      identifiers.size,
       'no commodity code carries any identifier'
     ).toBeGreaterThan(0)
 
-    for (const [commodityCode, identifier] of pairs) {
-      expectLabelledIn(copy, commodityCode, identifier)
-      expectLabelledIn(copyCy, commodityCode, identifier)
+    for (const block of [copy, copyCy]) {
+      for (const identifier of identifiers) {
+        const { identifierLabels, errors } = block.identification
+        expect(identifierLabels[identifier], `${identifier} label`).toMatch(
+          /\S/
+        )
+        expect(
+          errors.identifierMax[identifier],
+          `${identifier} length error`
+        ).toMatch(/\S/)
+      }
     }
   })
 
-  it('Should tell the user that a consignment without a health certificate must still be notified', () => {
+  it('Should tell the user to submit one notification per ITAHC and one for goods that need none', () => {
     expect(copy.search.inset).toBe(
-      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.'
+      'You must submit a separate notification for every single ITAHC. You must also submit a notification for goods that do not need an ITAHC.'
     )
-    expect(copyCy.search.inset).toContain(
-      'Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.'
+    expect(copyCy.search.inset).toBe(
+      'Rhaid i chi gyflwyno hysbysiad ar wahân ar gyfer pob ITAHC unigol. Rhaid i chi hefyd gyflwyno hysbysiad ar gyfer nwyddau nad oes angen ITAHC arnynt.'
+    )
+  })
+
+  it('Should hint searching by common name, commodity code or Latin name', () => {
+    expect(copy.search.searchHint).toBe(
+      'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).'
+    )
+    expect(copyCy.search.searchHint).toBe(
+      'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).'
     )
   })
 
@@ -121,19 +105,6 @@ describe('#copy', () => {
   it('Should interpolate overCount', () => {
     expect(copy.identification.overCount(1, BOS_TAURUS, 2, 1)).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
-    )
-  })
-
-  it('Should head the identification summary with the code, the species and the animal count', () => {
-    expect(copy.identification.summary).toMatchObject({
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      species: 'Species',
-      numberOfAnimals: 'Number of animals',
-      change: 'Change'
-    })
-    expect(copy.identification.addAnotherCommodity).toBe(
-      'Add another commodity'
     )
   })
 
@@ -196,12 +167,7 @@ describe('#copy', () => {
 })
 
 describe('GET commodities search — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the page copy namespace and the shared chrome copy', async () => {
     const get = search.routes.find((route) => route.method === 'GET').handler

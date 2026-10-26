@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -30,6 +29,7 @@ const view = `${TEMPLATES}/features/commodities/search/search`
 
 const copy = copyFor({ en, cy }).search
 
+export const SEARCH_FIELD = 'commoditySearch'
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
@@ -39,22 +39,22 @@ const searchFor = (query) =>
 const rowsFor = (keys, knownRowsByKey) =>
   keys.map((key) => knownRowsByKey.get(key))
 
-const render = (
+const render = async (
+  request,
   h,
-  journey,
+  current,
   { selected, results = null, query = '', errorText = null }
 ) => {
   const groups = commodityGroups(results, selected)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
-  const fieldToFix = groups.length > 0 ? 'species' : 'commoditySearch'
-  const errors = errorText ? { [fieldToFix]: errorText } : {}
+  const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page
     }),
     copy,
@@ -69,8 +69,10 @@ const render = (
 }
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  return render(h, journey, { selected: storedKeys(answers) })
+  const current = await state.get(request, h)
+  return render(request, h, current, {
+    selected: storedKeys(current.answers)
+  })
 }
 
 const searchStoreRowsAndRender = async (
@@ -84,13 +86,13 @@ const searchStoreRowsAndRender = async (
     ...knownRowsByKey.values(),
     ...resultRows(results)
   ])
-  const { journey } = await state.get(request, h)
-  return render(h, journey, { selected, results, query, errorText })
+  const current = await state.get(request, h)
+  return render(request, h, current, { selected, results, query, errorText })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const query = normaliseQuery(payload.commoditySearch)
+  const query = normaliseQuery(payload[SEARCH_FIELD])
   const knownRowsByKey = knownRows(await state.get(request, h))
 
   if (payload.action === CLEAR_ACTION) {
@@ -117,6 +119,9 @@ const post = async (request, h) => {
   }
 
   if (selected.length === 0 && !kit.isHubExit(request)) {
+    kit.logRefusal(request, {
+      fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
+    })
     const response = await searchStoreRowsAndRender(
       request,
       h,

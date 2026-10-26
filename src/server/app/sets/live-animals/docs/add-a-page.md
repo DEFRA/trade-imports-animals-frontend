@@ -98,21 +98,28 @@ Use `collects: []` only when the page owns no obligation or edits a collection
 whose root another page already owns.
 
 Use one `render()` helper for GET and POST errors. Build the common view with
-`kit.base()`. Pass `journey` so the shared reference strip renders, and `page`
-so the section caption does. The normal back link is
-`hubPath(journey.journeyId)`.
+`kit.base()`. Pass `journey` so the shared reference strip renders. A page that
+shows no status strip still passes `journey`, with `showJourneyStrip: false`.
+Pass `page` so the section caption renders. The normal back link is
+`hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
+back link from `kit.runBackLink()`, which opens the previous run step while the
+run is active and falls back to the overview when the run is over or no named
+earlier step applies.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
 
 1. reads raw payload values
 2. validates with [`src/server/app/lib/validate/index.js`](../../../lib/validate/index.js)
-3. re-renders raw values with status 400 on error
+3. re-renders raw values with status 400 on error and logs nothing, because a
+   user's own field errors shown back on the form are not logged (a refusal that
+   is not the user's input error logs once through `kit.logRefusal` with the
+   journey id)
 4. commits cleaned values with `state.commit()`
 5. redirects through `await kit.nextTarget(request, page, committed.scope)`
 
-Wrap the write in `kit.recoverableSave()`. A marked persistence failure renders
-the same values with `recoverableError: true` and status 500. Unexpected errors
-must throw.
+Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
+failure is logged once by `recoverableSave`; render the same values with
+`recoverableError: true` and status 500. Unexpected errors must throw.
 
 "Save and return to overview" posts `exit=hub`. When the page has a required
 rule, opt in to saving a blank answer on that exit by passing
@@ -151,17 +158,17 @@ caption size that matches the heading. `journeys/linear/features/origin/template
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
-Pass `amend = amend` to `saveActions` on every page listed in a task row's `pages`
+Pass `amend: amend` in the object `saveActions` takes on every page listed in a task row's `pages`
 ([`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js)) and on
 every role or party picker. `kit.base()` supplies `amend` when the controller passes
 it the request (`request`, or `h.request` where the render has only the toolkit):
 the two form actions the save buttons carry while the notification is being amended,
 and null otherwise. While amending, a task-row page shows Save and return, Save and
 continue and Save and return to overview. A page that also passes
-`showReturnControls = false` (the CPH number page, the role address pickers) or
-`hubExitWhileAmending = false` (the contact address page) shows only the first two.
+`showReturnControls: false` (the CPH number page, the role address pickers) or
+`hubExitWhileAmending: false` (the contact address page) shows only the first two.
 Do not pass `amend` on an add-another sub-page that returns to its own list page:
-the transporter add, select and details pages pass `showReturnControls = false`
+the transporter add, select and details pages pass `showReturnControls: false`
 alone, and the list page carries the amend ending.
 [`amend-endings.test.js`](../journeys/linear/features/amend-endings.test.js) renders
 every task-row page while amending and fails if one loses the ending.
@@ -238,8 +245,13 @@ do; its coverage invariant fails if you forget.
 
 ## 7. Add check-answers and backend mapping when needed
 
-Add the page's fields to the matching check-answers card and both
-check-answers copy bundles. Rows carry no Change link — `row(key, value)` is a
+Add the page's rows to the matching check-answers card and their row labels to
+both check-answers copy bundles. A value label that the page itself already
+shows is read from that feature's label function (for example
+`meansOfTransportLabel`), never copied into the check-answers copy. Value
+labels only the review shows go in the check-answers copy bundles.
+
+Rows carry no Change link — `row(key, value)` is a
 key and a value. If the page's fields go into a NEW card, the card needs one
 `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
 `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf in BOTH
@@ -261,7 +273,30 @@ omission. Do not invent one.
 
 ## 8. Register client JavaScript when needed
 
-Most pages need no page-specific JavaScript. If this page does:
+Most pages need no page-specific JavaScript. If this page does, pick the route:
+
+- A small enhancement that reacts to one control is a `data-module` component,
+  scripted below.
+- A page that orchestrates its own behaviour gets a feature entry module and a
+  webpack entry, scripted after it.
+
+For the component route:
+
+1. Add the class under `src/client/javascripts/components/` with a
+   `static moduleName` matching the template's `data-module`, following
+   [`status-announcer.js`](../../../../../client/javascripts/components/status-announcer.js)
+   and
+   [`region-code-prefix.js`](../../../../../client/javascripts/components/region-code-prefix.js).
+2. Register it with `createAll` in `src/client/javascripts/application.js`.
+3. Add a jsdom unit test beside the class (`<name>.test.js`), following
+   [`region-code-prefix.test.js`](../../../../../client/javascripts/components/region-code-prefix.test.js),
+   that initialises it through `createAll`.
+4. For server-rendered markup that must not show without JavaScript, give it
+   the existing `app-js-only` class (hidden by
+   `.govuk-template__body:not(.govuk-frontend-supported) .app-js-only` in
+   `src/client/stylesheets/core/_main.scss`). Never add a second hide mechanism.
+
+For the feature entry route:
 
 1. Add a feature entry module, following
    [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
@@ -303,14 +338,39 @@ Build test set-up from the shared helpers, and extend them rather than writing
 set-up in the test file:
 
 - controller tests:
-  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
-  seeds a journey, runs one handler and returns the answers before and after;
-  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
-  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+  [`engine/test-support.js`](../../../engine/test-support.js) exports:
+  - `driveHandler` seeds a journey, runs one handler and returns the answers
+    before and after, the response, the view, the cookies and the logger; its
+    `openingRun` option (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the
+    opening run, and `saveFailure` makes every save the handler makes fail with
+    the error it is given
+  - `getHandlerOf` returns the GET handler of a feature module
+  - `postHandlerOf` and `postHandlerEndingWith` return its POST handler
+  - `useStubbedJourney` registers the stub records, the stub session, the
+    dispatch and a cleared store for a describe
+  - `journeyRequest`, `stubH`, `recordingH` and `recordingLogger` build the
+    request, toolkit and logger
+  - `expectBackLinkIsPage` asserts the Back link is a page of the journey
+  - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
+  - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
+  - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
+  - `unavailableBackendError` builds the error a save failure is given
+  - `addressBookAnswering` puts the address book on the network boundary, and
+    `resetMocksAndConfigAfterTests` resets it after each test
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
-  `selectSpecies`, `chooseAutocompleteByLabel` and `choosePortOfEntry`
+  `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
+  `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
+  `expectThreeSaveControls` proves the primary and Save and return to
+  overview sit in the button group and Cancel and return to overview follows
+  it, and `expectPageEndsWithPrimaryAlone` proves a page ends with the primary
+  alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
+  `answerOriginDetails` takes the country, region code and internal reference
+  to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
+  URL matcher at the origin and the mount, because `toHaveURL` matches the whole
+  URL, so a pattern anchored nowhere passes on a doubled prefix and one anchored
+  at the mount alone never matches
 - set-up shared only inside one feature: that feature's `test-support.js`, as in
   [`journeys/linear/features/declaration/test-support.js`](../journeys/linear/features/declaration/test-support.js)
 
@@ -320,11 +380,7 @@ helper is fine.
 
 ## Logging
 
-A branch that changes what the request does — a refusal, a redirect away from
-the normal next page, a retry or a fallback — logs once through
-`request.logger` with `journeyId` and the reason. A validation 400 that
-re-renders the page does not log. See "Logging" in
-[`architecture.md`](../../../docs/architecture.md).
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
 
 ## Playwright feature test
 
@@ -359,9 +415,11 @@ state. Use
 [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
 as the example.
 
-Build axe with `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])`. Fail if
-any result has `impact` equal to `serious` or `critical`. Only filter a known
-component false positive when the same component and condition apply.
+Call `expectNoSeriousOrCriticalViolations(page, subject)` from
+[`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
+It holds the five WCAG tags, fails if any result has `impact` equal to
+`serious` or `critical`, and applies the one proved conditional-reveal filter.
+Do not build `AxeBuilder` in a spec.
 
 ## 10. Run every check
 

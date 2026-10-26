@@ -25,8 +25,10 @@ const PART_ORDER = [
 
 const stripNonDigits = (value) => String(value ?? '').replace(/\D/g, '')
 
-const splitStored = (stored) => {
-  const digits = stripNonDigits(stored)
+const NINE_DIGITS = /^\d{9}$/
+
+const splitIntoParts = (number) => {
+  const digits = stripNonDigits(number)
   let taken = 0
   return Object.fromEntries(
     PART_ORDER.map(([part, count]) => {
@@ -41,11 +43,23 @@ const joinParts = (values) => PART_ORDER.map(([part]) => values[part]).join('')
 
 const isBlank = (values) => PART_ORDER.every(([part]) => values[part] === '')
 
-const NINE_DIGITS = /^\d{9}$/
+const readTrimmedParts = (payload) =>
+  Object.fromEntries(
+    PART_ORDER.map(([part]) => [part, String(payload[part] ?? '').trim()])
+  )
 
-// Stored path skips the per-part rules — their copy is written for a trader
-// filling in the form, not for one being told a stored value has gone bad.
-// `checks` fires one whole-value message instead.
+const isWholeNumberInCounty = (values) =>
+  values[PARISH_FIELD] === '' &&
+  values[HOLDING_FIELD] === '' &&
+  NINE_DIGITS.test(values[COUNTY_FIELD].replace(/[\s/]/g, ''))
+
+const readSubmittedParts = (payload) => {
+  const values = readTrimmedParts(payload)
+  return isWholeNumberInCounty(values)
+    ? splitIntoParts(values[COUNTY_FIELD])
+    : values
+}
+
 const fields = (values, { stored } = {}) => {
   if (stored || isBlank(values)) {
     return compose()
@@ -70,11 +84,9 @@ const fields = (values, { stored } = {}) => {
 }
 
 const checks = (values, { stored } = {}) => {
-  // A trader who submits the page untouched has one problem, not three.
   if (!stored && isBlank(values)) {
     return { [COUNTY_FIELD]: copy.errors.cphRequired }
   }
-  // Keyed to county — where the review-page card link lands.
   if (stored && !isBlank(values) && !NINE_DIGITS.test(joinParts(values))) {
     return { [COUNTY_FIELD]: copy.errors.cphNoLongerValid }
   }
@@ -84,13 +96,8 @@ const checks = (values, { stored } = {}) => {
 export const validation = pageValidation({
   fields,
   checks,
-  fromPayload: (payload) =>
-    Object.fromEntries(
-      PART_ORDER.map(([part]) => [part, String(payload[part] ?? '').trim()])
-    ),
-  fromAnswers: (answers) => splitStored(answers.countyParishHoldingCph),
+  fromPayload: readSubmittedParts,
+  fromAnswers: (answers) => splitIntoParts(answers.countyParishHoldingCph),
   toAnswers: (values) => ({ countyParishHoldingCph: joinParts(values) }),
-  // A rejected stored value is one thing; clear every part or the widget
-  // re-renders two stray digits from a value the rules just refused.
   blanks: () => [COUNTY_FIELD, PARISH_FIELD, HOLDING_FIELD]
 })

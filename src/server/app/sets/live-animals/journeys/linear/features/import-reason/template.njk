@@ -5,16 +5,28 @@
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
+{% macro revealAutocomplete(params) %}
+  {{ appAccessibleAutocomplete({
+    id: params.id,
+    name: params.id,
+    label: { text: params.copy.label, classes: "govuk-label--s" },
+    value: params.values[params.id],
+    errorMessage: params.errors[params.id] and { text: params.errors[params.id] },
+    items: params.items,
+    autocomplete: {
+      showAllValues: true,
+      noResults: params.copy.noResults,
+      placeholder: params.copy.searchPlaceholder
+    }
+  }) }}
+{% endmacro %}
+
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# Each reason that needs follow-up questions opens them underneath itself,
-     so the whole reason is answered in one go. A question two reasons ask
-     carries a form field per reason — two inputs cannot share a name — and the
-     controller maps both back to the one answer. #}
   {% set internalMarketReveal %}
     {{ govukRadios({
       name: "purposeInInternalMarket",
@@ -30,51 +42,19 @@
   {% endset %}
 
   {% set transhipmentReveal %}
-    {{ appAccessibleAutocomplete({
-      id: "transhipmentDestinationCountry",
-      name: "transhipmentDestinationCountry",
-      label: { text: copy.country.label, classes: "govuk-label--s" },
-      value: values.transhipmentDestinationCountry,
-      errorMessage: errors.transhipmentDestinationCountry and { text: errors.transhipmentDestinationCountry },
-      items: countryItems,
-      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
-    }) }}
+    {{ revealAutocomplete({ id: "transhipmentDestinationCountry", items: countryItems, values: values, errors: errors, copy: copy.country }) }}
   {% endset %}
 
   {% set transitReveal %}
-    {{ appAccessibleAutocomplete({
-      id: "transitPortOfExit",
-      name: "transitPortOfExit",
-      label: { text: copy.port.label, classes: "govuk-label--s" },
-      value: values.transitPortOfExit,
-      errorMessage: errors.transitPortOfExit and { text: errors.transitPortOfExit },
-      items: portItems,
-      autocomplete: { showAllValues: true, noResults: copy.port.noResults }
-    }) }}
+    {{ revealAutocomplete({ id: "transitPortOfExit", items: portItems, values: values, errors: errors, copy: copy.port }) }}
 
-    {{ appAccessibleAutocomplete({
-      id: "transitDestinationCountry",
-      name: "transitDestinationCountry",
-      label: { text: copy.country.label, classes: "govuk-label--s" },
-      value: values.transitDestinationCountry,
-      errorMessage: errors.transitDestinationCountry and { text: errors.transitDestinationCountry },
-      items: countryItems,
-      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
-    }) }}
+    {{ revealAutocomplete({ id: "transitDestinationCountry", items: countryItems, values: values, errors: errors, copy: copy.country }) }}
   {% endset %}
 
   {% set temporaryAdmissionReveal %}
     {{ mojDatePicker(exitDateField) }}
 
-    {{ appAccessibleAutocomplete({
-      id: "temporaryAdmissionPortOfExit",
-      name: "temporaryAdmissionPortOfExit",
-      label: { text: copy.port.label, classes: "govuk-label--s" },
-      value: values.temporaryAdmissionPortOfExit,
-      errorMessage: errors.temporaryAdmissionPortOfExit and { text: errors.temporaryAdmissionPortOfExit },
-      items: portItems,
-      autocomplete: { showAllValues: true, noResults: copy.port.noResults }
-    }) }}
+    {{ revealAutocomplete({ id: "temporaryAdmissionPortOfExit", items: portItems, values: values, errors: errors, copy: copy.port }) }}
   {% endset %}
 
   {% set reveals = {
@@ -83,17 +63,6 @@
     transit: transitReveal,
     temporaryAdmissionHorses: temporaryAdmissionReveal
   } %}
-
-  {% set reasonItems = [] %}
-  {% for option in reasonOptions %}
-    {% set ignored = reasonItems.push({
-      value: option.value,
-      text: option.text,
-      hint: option.hint,
-      checked: option.checked,
-      conditional: { html: reveals[option.value] }
-    }) %}
-  {% endfor %}
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -108,9 +77,9 @@
         }
       },
       errorMessage: errors.reasonForImport and { text: errors.reasonForImport },
-      items: reasonItems
+      items: withReveals(reasonOptions, reveals)
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

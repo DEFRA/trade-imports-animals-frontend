@@ -1,19 +1,21 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
   BOS_TAURUS,
   answerOriginEntry,
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
-  openCphNumberFromRow,
+  openCphNumberFromAddLink,
   selectSpecies,
+  startNotificationAtOrigin,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
+const WHOLE_NUMBER = '123456789'
+const SLASHED_NUMBER = '12/345/6789'
 
 const partBoxes = (page) => ({
   county: page.getByLabel(copy.cph.county, { exact: true }),
@@ -28,27 +30,35 @@ const fillCph = async (page, { county, parish, holding }) => {
   await boxes.holding.fill(holding)
 }
 
-const expectNoSeriousAxeViolations = async (page, label) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
+const saveAndExpectAddresses = async (page) => {
+  await page.locator(SUBMIT_BUTTON).first().click()
+  await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
+}
 
-  expect(
-    seriousOrCritical,
-    `${label} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
+const expectSavedNumberSplit = async (page, cphUrl) => {
+  await page.goto(cphUrl)
+  const boxes = partBoxes(page)
+  await expect(boxes.county).toHaveValue('12')
+  await expect(boxes.parish).toHaveValue('345')
+  await expect(boxes.holding).toHaveValue('6789')
+}
+
+const typeKeyByKey = (keyboard, text) => keyboard.type(text)
+const insertInOneGo = (keyboard, text) => keyboard.insertText(text)
+
+const enterInCountyAndExpectSavedSplit = async (page, number, enterText) => {
+  const cphUrl = page.url()
+  const { county } = partBoxes(page)
+  await county.focus()
+  await enterText(page.keyboard, number)
+  await expect(county).toHaveValue(number)
+  await expect(county).toBeFocused()
+  await saveAndExpectAddresses(page)
+  await expectSavedNumberSplit(page, cphUrl)
 }
 
 const startAtCphNumber = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+  await startNotificationAtOrigin(page)
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
   await answerOriginEntry(page)
@@ -61,7 +71,7 @@ const startAtCphNumber = async (page) => {
   )
 
   await page.goto(commodityUrl.replace(/\/commodities$/, '/addresses'))
-  await openCphNumberFromRow(page)
+  await openCphNumberFromAddLink(page)
   await expect(page).toHaveURL(/\/cph-number\?return=addresses$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
@@ -73,15 +83,10 @@ test.describe('cph-number feature', () => {
   })
 
   test('renders the CPH copy', async ({ page }) => {
-    // The page heading is an instruction in its own right, directly under the
-    // caption — the group of boxes beneath it carries the shorter legend, so the
-    // two are separate strings rather than one label doubling as the heading.
     await expect(
       page.locator('span.govuk-caption-l + h1.govuk-heading-l')
     ).toHaveText(copy.title)
 
-    // The question's name is a legend, not the heading: a revert to
-    // `isPageHeading: true` would put it back into a second h1.
     await expect(
       page.getByRole('heading', { name: copy.cph.legend })
     ).toHaveCount(0)
@@ -97,14 +102,9 @@ test.describe('cph-number feature', () => {
   }) => {
     const boxes = partBoxes(page)
 
-    // The widths and the maxlengths are what teach the 2/3/4 shape — they are
-    // the reason the page needs no copy to explain how the digits divide up.
     await expect(boxes.county).toHaveClass(/govuk-input--width-2/)
-    await expect(boxes.county).toHaveAttribute('maxlength', '2')
     await expect(boxes.parish).toHaveClass(/govuk-input--width-3/)
-    await expect(boxes.parish).toHaveAttribute('maxlength', '3')
     await expect(boxes.holding).toHaveClass(/govuk-input--width-4/)
-    await expect(boxes.holding).toHaveAttribute('maxlength', '4')
 
     for (const box of Object.values(boxes)) {
       await expect(box).toHaveAttribute('inputmode', 'numeric')
@@ -127,15 +127,27 @@ test.describe('cph-number feature', () => {
     }
   })
 
-  test('describes the whole number once, in the real 2/3/4 grouping', async ({
-    page
-  }) => {
-    // The hint sits on the group rather than on any one box, because it
-    // explains the whole number. 123/456/789 is a grouping no CPH number uses.
+  test('describes the group with the hint', async ({ page }) => {
     await expect(
       page.getByRole('group', { name: copy.cph.legend })
     ).toHaveAccessibleDescription(copy.cph.hint)
-    await expect(page.getByText('123/456/789')).toHaveCount(0)
+  })
+
+  test('keeps focus in an emptied box on Backspace, and every digit typed straight through the county box with focus in it', async ({
+    page
+  }) => {
+    const { parish } = partBoxes(page)
+    await parish.focus()
+    await page.keyboard.press('Backspace')
+    await expect(parish).toBeFocused()
+
+    await enterInCountyAndExpectSavedSplit(page, WHOLE_NUMBER, typeKeyByKey)
+  })
+
+  test('saves a whole number inserted in one go into the county box', async ({
+    page
+  }) => {
+    await enterInCountyAndExpectSavedSplit(page, SLASHED_NUMBER, insertInOneGo)
   })
 
   test('keeps the CPH help collapsed above the field until it is opened', async ({
@@ -144,13 +156,9 @@ test.describe('cph-number feature', () => {
     const summary = page.getByText(copy.help.summary, { exact: true })
     await expect(summary).toBeVisible()
 
-    // Collapsed by default: the help costs a trader who already knows what a
-    // CPH number is nothing but a line of summary text.
     await expect(page.getByText(copy.help.definition)).toBeHidden()
     await expect(page.getByText(copy.help.whereToFind)).toBeHidden()
 
-    // Above the input, not below it — the explanation has to arrive before the
-    // question it explains.
     await expect(
       page.locator('details').filter({ hasText: copy.help.summary })
     ).toHaveCount(1)
@@ -182,19 +190,63 @@ test.describe('cph-number feature', () => {
     const cphUrl = page.url()
 
     await fillCph(page, { county: '12', parish: '345', holding: '6789' })
-    await page.locator(SUBMIT_BUTTON).first().click()
-
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
-
-    await page.goto(cphUrl)
-    const boxes = partBoxes(page)
-    await expect(boxes.county).toHaveValue('12')
-    await expect(boxes.parish).toHaveValue('345')
-    await expect(boxes.holding).toHaveValue('6789')
+    await saveAndExpectAddresses(page)
+    await expectSavedNumberSplit(page, cphUrl)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousAxeViolations(page, 'CPH number')
+    await expectNoSeriousOrCriticalViolations(page, 'CPH number')
+  })
+
+  test('has no serious or critical axe violations with the whole number typed into the county box', async ({
+    page
+  }) => {
+    await partBoxes(page).county.fill(WHOLE_NUMBER)
+
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'CPH number with the whole number in the county box'
+    )
+  })
+})
+
+test.describe('cph-number without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtCphNumber(page)
+  })
+
+  test('keeps all nine digits typed into the county box and saves them', async ({
+    page
+  }) => {
+    await enterInCountyAndExpectSavedSplit(page, WHOLE_NUMBER, typeKeyByKey)
+  })
+
+  test('saves a whole number with slashes inserted into the county box', async ({
+    page
+  }) => {
+    await enterInCountyAndExpectSavedSplit(page, SLASHED_NUMBER, insertInOneGo)
+  })
+
+  test('names each part and keeps what was typed when the county box holds fewer than nine digits', async ({
+    page
+  }) => {
+    await partBoxes(page).county.fill('1234')
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const summary = page.getByRole('alert')
+    await expect(
+      summary.getByRole('link', { name: copy.errors.countyLength })
+    ).toBeVisible()
+    await expect(
+      summary.getByRole('link', { name: copy.errors.parishRequired })
+    ).toBeVisible()
+    await expect(
+      summary.getByRole('link', { name: copy.errors.holdingRequired })
+    ).toBeVisible()
+    await expect(partBoxes(page).county).toHaveValue('1234')
   })
 })
 
@@ -294,8 +346,6 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    // One red bar on the question, not three inside the row of boxes — the
-    // date-input pattern the layout is borrowed from keeps the boxes aligned.
     await expect(page.locator('form > .govuk-form-group--error')).toHaveCount(1)
     await expect(
       page.locator('.govuk-date-input__item .govuk-error-message')
@@ -317,6 +367,9 @@ test.describe('cph-number validation', () => {
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
-    await expectNoSeriousAxeViolations(page, 'CPH number in its error state')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'CPH number in its error state'
+    )
   })
 })

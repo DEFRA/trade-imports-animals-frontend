@@ -1,23 +1,20 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import {
-  configureSession,
-  flowOnlyAnswersCookie
-} from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   driveHandler,
+  expectBackLinkIsPage,
   journeyRequest,
   postHandlerOf,
-  stubH
+  expectOneRefusalLogged,
+  stubH,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 
 import * as search from './search.controller.js'
 import { lineKey } from './selection/line-key.js'
@@ -45,7 +42,11 @@ const storedSearchRowsOf = (result) =>
 
 const searchFor = (commoditySearch, payload = {}, flowOnly = undefined) =>
   driveHandler(post, {
-    payload: { action: 'search', commoditySearch, ...payload },
+    payload: {
+      action: 'search',
+      [search.SEARCH_FIELD]: commoditySearch,
+      ...payload
+    },
     flowOnly
   })
 
@@ -59,12 +60,7 @@ const textsOf = (result) =>
 const keysOf = (lines) => lines.map(lineKey)
 
 describe('commodity search', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list nothing until the page is searched', async () => {
     const result = await driveHandler(get)
@@ -216,7 +212,7 @@ describe('commodity search', () => {
     const request = journeyRequest(journey.journeyId, {
       payload: {
         action: 'search',
-        commoditySearch: 'felis',
+        [search.SEARCH_FIELD]: 'felis',
         selection: BOS_TAURUS_KEY
       }
     })
@@ -245,12 +241,7 @@ describe('commodity search', () => {
 })
 
 describe('commodity search — what has been chosen so far', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should summarise the stored selection, counted and grouped by code', async () => {
     const result = await driveHandler(get, {
@@ -291,7 +282,7 @@ describe('commodity search — what has been chosen so far', () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'clear',
-        commoditySearch: 'buffalo',
+        [search.SEARCH_FIELD]: 'buffalo',
         selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
       },
       flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
@@ -304,21 +295,22 @@ describe('commodity search — what has been chosen so far', () => {
 })
 
 describe('commodity search — saving the selection', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should require at least one chosen species and create nothing', async () => {
     const result = await driveHandler(post, { payload: {} })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.commoditySearch).toBe(SELECT_COMMODITY)
+    expect(result.view.context.errors[search.SEARCH_FIELD]).toBe(
+      SELECT_COMMODITY
+    )
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#commoditySearch' }
+      { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [search.SEARCH_FIELD]
+    })
   })
 
   it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
@@ -328,15 +320,41 @@ describe('commodity search — saving the selection', () => {
     expect(result.after.commodityLines ?? []).toEqual([])
   })
 
-  it('Should key the error to the tick boxes, keeping the query and the results', async () => {
+  it('Should empty a saved selection on Save and return to overview with nothing chosen', async () => {
     const result = await driveHandler(post, {
-      payload: { commoditySearch: 'buffalo' }
+      seed: { commodityLines: [BOS_TAURUS_ROW] },
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.commodityLines ?? []).toEqual([])
+  })
+
+  it('Should clear a saved unweaned answer when the new choice holds only 01061900 species', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        containsUnweanedAnimals: 'yes',
+        commodityLines: [BOS_TAURUS_ROW]
+      },
+      payload: { species: [FELIS_CATUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
+      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW, CANIS_FAMILIARIS_ROW)
+    })
+    expect('containsUnweanedAnimals' in result.after).toBe(false)
+    expect(keysOf(result.after.commodityLines)).toEqual([
+      lineKey(CANIS_FAMILIARIS_ROW),
+      FELIS_CATUS_KEY
+    ])
+  })
+
+  it('Should key the error to the search box even with results listed, keeping the query and the results', async () => {
+    const result = await driveHandler(post, {
+      payload: { [search.SEARCH_FIELD]: 'buffalo' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.species).toBe(SELECT_COMMODITY)
-    expect(result.view.context.errors.commoditySearch).toBeUndefined()
+    expect(result.view.context.errors).toEqual({
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
+    })
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#species' }
+      { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.view.context.query).toBe('buffalo')
     expect(legendsOf(result)).toEqual(['0102'])
@@ -378,7 +396,7 @@ describe('commodity search — saving the selection', () => {
   it('Should save what is carried alongside what is ticked on screen', async () => {
     const result = await driveHandler(post, {
       payload: {
-        commoditySearch: 'felis',
+        [search.SEARCH_FIELD]: 'felis',
         selection: BOS_TAURUS_KEY,
         species: FELIS_CATUS_KEY
       },
@@ -452,5 +470,27 @@ describe('commodity search — saving the selection', () => {
       flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
     })
     expect(keysOf(result.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
+  })
+})
+
+describe('commodity search — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back to the origin of the import while the opening run is on', async () => {
+    const result = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should keep Back on the origin of the import when the page is shown again by a search in the run', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'search', [search.SEARCH_FIELD]: 'cat' },
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, 'origin')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

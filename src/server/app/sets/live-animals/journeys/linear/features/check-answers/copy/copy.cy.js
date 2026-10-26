@@ -4,12 +4,6 @@ export const copy = {
   notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
-  means: {
-    AIRPLANE: 'Awyren',
-    RAILWAY: 'Rheilffordd',
-    ROAD_VEHICLE: 'Cerbyd ffordd',
-    VESSEL: 'Llong'
-  },
   documentTypes: {
     ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Tystysgrif iechyd milfeddygol',
@@ -44,7 +38,7 @@ export const copy = {
   },
   groups: {
     whereFrom: 'O ble mae’r llwyth hwn yn dod?',
-    mainReasonForImport: 'Prif reswm dros fewnforio',
+    mainImportReason: 'Prif reswm mewnforio',
     commodityDetails: 'Manylion y nwyddau',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',

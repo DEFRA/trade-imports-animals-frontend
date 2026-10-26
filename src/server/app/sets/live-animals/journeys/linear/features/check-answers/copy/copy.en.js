@@ -3,12 +3,6 @@ export const copy = {
   notApplicable: 'Not applicable',
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
-  means: {
-    AIRPLANE: 'Airplane',
-    RAILWAY: 'Railway',
-    ROAD_VEHICLE: 'Road Vehicle',
-    VESSEL: 'Vessel'
-  },
   documentTypes: {
     ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
@@ -43,7 +37,7 @@ export const copy = {
   },
   groups: {
     whereFrom: 'Where is this consignment coming from?',
-    mainReasonForImport: 'Main reason for import',
+    mainImportReason: 'Main import reason',
     commodityDetails: 'Commodity details',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',

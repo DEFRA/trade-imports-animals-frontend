@@ -269,13 +269,15 @@ describe('#speciesCardErrors', () => {
 })
 
 describe('#documentScanCardErrors', () => {
+  const request = journeyRequest('journey-1')
+
   it('Should return no errors when no documents are stored', async () => {
-    expect(await documentScanCardErrors({})).toEqual({})
+    expect(await documentScanCardErrors(request, {})).toEqual({})
   })
 
   it('Should return no errors when every stored document has completed scanning', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: 'clean.pdf' })]
       })
     ).toEqual({})
@@ -283,7 +285,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a document still being scanned', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: PENDING_FILENAME })]
       })
     ).toEqual({ documents: documentsEn.errors.someStillScanning })
@@ -292,6 +294,7 @@ describe('#documentScanCardErrors', () => {
   it('Should not name a document still being scanned when pending is excluded', async () => {
     expect(
       await documentScanCardErrors(
+        request,
         { documents: [doc({ filename: PENDING_FILENAME })] },
         { includePending: false }
       )
@@ -300,7 +303,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a REJECTED scan ahead of one still scanning', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [
           doc({ filename: PENDING_FILENAME }),
           doc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })

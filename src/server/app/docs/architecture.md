@@ -93,6 +93,13 @@ Dependency Cruiser scans all of `src/server/app`. Its error-level rules prevent:
 - model, bridge and flow imports that cross their allowed boundaries
 - circular dependencies
 
+The bridge reaches nothing in `flow`: the journey's flow-only keys are held in
+[`bridge/flow-only-keys.js`](../bridge/flow-only-keys.js) and forwarded there by
+`configureJourneyFlow`, and the check-your-answers readiness roll-up reaches
+[`bridge/readiness-config.js`](../bridge/readiness-config.js) by injection from
+the set's gateway, `routes-live-animals.js`. Unconfigured, that seam is
+fail-closed.
+
 Tests may compose real layers, but production code cannot use test exemptions.
 
 ## Feature folders
@@ -108,9 +115,10 @@ function or a test helper — is fine.
 way:
 
 - page chrome: `base()`, `setlessBase()`, `journeyStrip()` and `SURFACES`
-- errors: `errorSummary()` and `fieldError()`
+- errors: `errorSummary()`, `fieldError()` and `logRefusal()`
 - where a POST goes next: `hubExitTarget()`, `isHubExit()`, `exitTarget()`,
   `nextTarget()` and `amendReviewTarget()`
+- where a page's Back link goes: `runBackLink()`
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`
 
@@ -166,9 +174,27 @@ A branch that changes what a request does — a refusal, a redirect away from th
 normal next page, a retry or a fallback — logs once through `request.logger`,
 so the line carries the request's trace id. Log the ids support searches by:
 `journeyId` always, plus the reason and any token or code the decision turned
-on. Log a caught error as `{ err }`, never only its message. A validation 400
-that re-renders the page does not log, and nothing logs a request or response
-body at INFO.
+on. Log a caught error as `{ err }`, never only its message.
+
+A user's own field errors, shown back on the form, are not logged. Every other
+refusal that shows the page again, such as a state refusal, a bare 400 or
+another service refusing what this one accepted, calls
+`kit.logRefusal(request, { fieldErrors, ...details })` once, before it renders,
+whatever status code it answers with. `fieldErrors` is the map of field key to
+the message the page shows (empty when it shows none). The line is info, carries
+`journeyId`, the route and the error codes (the field keys, never the
+messages), and takes any named reason or ids the branch decided on as further
+keys of the options. The
+[transit countries controller](../sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js)
+is the example of a refusal that passes its reason.
+
+`kit.recoverableSave()` takes the request and logs every save fallback once at
+warn, with `journeyId` and the caught error as `err`, plus any ids the page
+passes it. `recoverableSave` writes that line; a page's fallback callback only
+builds the response.
+
+A refusal answered by a redirect logs its own named line with the journey id
+and the reason.
 
 The canonical example is the declaration refusal in
 [`declaration/controller.js`](../sets/live-animals/journeys/linear/features/declaration/controller.js):
@@ -187,3 +213,5 @@ request.logger.info(
 
 `refusal` is one of the `DECLARATION_REFUSAL` values, so support can search for
 each reason by name.
+
+Nothing logs a request or response body at INFO.

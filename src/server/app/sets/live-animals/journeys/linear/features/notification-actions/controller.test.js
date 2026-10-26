@@ -15,6 +15,7 @@ import {
 import {
   backendJourneyId,
   backendNotification,
+  expectOneLogged,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -160,12 +161,21 @@ describe('copy notification action', () => {
         status: 409
       }))
 
-      const response = await copyPost(
-        journeyRequest(backendJourneyId, { payload: copyPayload }),
-        stubH()
-      )
+      const request = journeyRequest(backendJourneyId, {
+        payload: copyPayload
+      })
+
+      const response = await copyPost(request, stubH())
 
       expect(response.redirect).toBe(`${dashboardPath()}?staleAction=1`)
+      expectOneLogged(request.logger, {
+        level: 'info',
+        fields: {
+          journeyId: backendJourneyId,
+          reason: 'stale-concurrency-token'
+        },
+        message: 'Copy refused as stale'
+      })
     })
 
     it('Should propagate a network failure that is not a backend response', async () => {

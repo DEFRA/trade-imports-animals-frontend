@@ -19,21 +19,37 @@
       id: "countryOfOrigin",
       name: "countryOfOrigin",
       label: { text: copy.country.label, classes: "govuk-label--m" },
-      hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
       items: countryItems,
-      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
+      autocomplete: {
+        showAllValues: true,
+        noResults: copy.country.noResults,
+        placeholder: copy.country.searchPlaceholder
+      }
     }) }}
+
+    {% set regionCodePrefixHtml %}<span data-region-code-prefix-text>{{ regionCodePrefix }}</span>{% endset %}
 
     {% set regionCodeHtml %}
       {{ govukInput({
         id: "regionOfOriginCodeSuffix",
         name: "regionOfOriginCodeSuffix",
-        label: { text: copy.regionCode.label },
+        label: { text: copy.regionCode.label, classes: "govuk-label--s" },
         hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
-        prefix: { text: regionCodePrefix },
+        autocomplete: "off",
+        spellcheck: false,
+        attributes: { maxlength: regionCodeSuffixMaxLength },
+        prefix: {
+          html: regionCodePrefixHtml,
+          classes: "app-js-only",
+          attributes: {
+            "data-module": "app-region-code-prefix",
+            "data-country-field-name": "countryOfOrigin",
+            "data-prefixes-by-country": regionCodePrefixesByCountry | dump
+          }
+        },
         value: values.regionOfOriginCodeSuffix,
         errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }
       }) }}
@@ -54,11 +70,10 @@
       name: "internalReferenceNumber",
       label: { text: copy.internalReference.label, classes: "govuk-label--m" },
       hint: { text: copy.internalReference.hint },
-      classes: "govuk-!-width-three-quarters",
       value: values.internalReferenceNumber,
       errorMessage: errors.internalReferenceNumber and { text: errors.internalReferenceNumber }
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

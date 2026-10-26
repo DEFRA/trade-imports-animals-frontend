@@ -11,6 +11,7 @@ import {
   passportCommodityCodes,
   permanentAddressCodeSpecies,
   listsSpeciesIndividually,
+  needsIdentifying,
   tattooCommodityCodes,
   typeIdFor,
   typeTextForId
@@ -90,6 +91,12 @@ describe('the identifier allowlists', () => {
       CATTLE_CODE,
       OTHER_LIVE_MAMMALS_CODE
     ])
+  })
+
+  it('Should need identifying for a line whose code carries identifiers and not for one whose code does not', () => {
+    expect(needsIdentifying({ commodityCode: CATTLE_CODE })).toBe(true)
+    expect(needsIdentifying({ commodityCode: OSTRICHES_CODE })).toBe(false)
+    expect(needsIdentifying(undefined)).toBe(false)
   })
 
   it('Should key every permanent-address species to an identified code', () => {

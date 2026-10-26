@@ -1,11 +1,28 @@
+import {
+  hiddenActionsHeading,
+  removeActionCell
+} from '../../../../../../../../common/constants/table-cells.js'
 import { removeActionFor } from './remove-action.js'
 
-/** One row per country the trader has added, in the order they added them, each
- * with its own Remove control. The list read back is the
- * whole record of the answer, so it names the country rather than its code. */
-export const countryRows = (selected, labelOf) =>
-  selected.map((code) => ({
+/** The table rows of the added countries, each with its Remove action. */
+export const countryRows = (labelled) =>
+  labelled.map(({ code, label }) => ({
     code,
-    name: labelOf(code) ?? code,
+    name: label,
     removeAction: removeActionFor(code)
   }))
+
+export const countriesTable = (rows, copy) => ({
+  head: [
+    { text: copy.table.country },
+    hiddenActionsHeading(copy.table.actionsHidden)
+  ],
+  rows: rows.map((row) => [
+    { text: row.name },
+    removeActionCell({
+      action: row.removeAction,
+      text: copy.remove,
+      hiddenText: copy.removeHidden(row.name)
+    })
+  ])
+})

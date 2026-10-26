@@ -14,6 +14,7 @@ import {
   journeyRequest,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
+import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import { exitTarget, withChangeContext } from '../../../../../shared/kit.js'
 
@@ -127,7 +128,7 @@ describe('change context — context survives the internal loop navigation', () 
     expect(after.commodityLines ?? []).toHaveLength(0)
   })
 
-  it('Should carry the context through an identifier Save-and-add-another PRG cycle with the unit committed', async () => {
+  it('Should carry the context through an identifier Save-and-add-another PRG cycle for a two-animal line with the unit committed', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
@@ -136,7 +137,7 @@ describe('change context — context survives the internal loop navigation', () 
           'animalIdentifierPassport-0': 'UK123456789'
         },
         query: change,
-        seed: lineSeed
+        seed: seedWithCommodityLineOfAnimals(2)
       }
     )
     expect(response).toEqual({

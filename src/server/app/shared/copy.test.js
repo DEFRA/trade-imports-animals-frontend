@@ -1,15 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { copyFor } from './copy.js'
+import { leaves } from './copy-leaves.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('#copyFor', () => {
   it('Should resolve the requested locale', () => {

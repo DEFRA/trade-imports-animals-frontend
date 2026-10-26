@@ -5,8 +5,7 @@ import {
   countries,
   countriesOrigin,
   countriesOriginEntries,
-  destinationPageCountryEntries,
-  originPageCountryEntries,
+  countryAndSubdivisionEntriesNamedWithCountry,
   portsOfEntry
 } from './fixtures.js'
 
@@ -36,23 +35,16 @@ describe('#captured reference fixtures', () => {
     })
   })
 
-  it('Should flatten origin-page country options with subdivisions sorted by name', () => {
-    expect(originPageCountryEntries()).toContainEqual({
-      code: 'ES-CN',
-      name: 'Canary Islands'
-    })
-    expect(originPageCountryEntries().length).toBeGreaterThan(
-      countriesOriginEntries().length
-    )
-  })
-
-  it('Should flatten destination-page country options with each subdivision named with its parent', () => {
-    expect(destinationPageCountryEntries()).toContainEqual({
+  it('Should flatten country options with each subdivision named with its country, sorted by name', () => {
+    const entries = countryAndSubdivisionEntriesNamedWithCountry()
+    expect(entries).toContainEqual({
       code: 'ES-CN',
       name: 'Canary Islands (Spain)'
     })
-    expect(destinationPageCountryEntries()).toHaveLength(
-      originPageCountryEntries().length
+    expect(entries.length).toBeGreaterThan(countriesOriginEntries().length)
+    const names = entries.map(({ name }) => name)
+    expect(names).toEqual(
+      [...names].sort((left, right) => left.localeCompare(right))
     )
   })
 

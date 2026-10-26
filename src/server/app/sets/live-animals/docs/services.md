@@ -25,9 +25,10 @@ so generic notification-mapper code does not import the set.
   (cattle) is asked for its ear tag first, `0101` (horses) for its microchip.
 - The per-identifier allow-lists are derived from that map, so an identifier's
   gate and its place on the page cannot drift apart. Adding an identifier to a
-  code is one edit.
+  code is one edit. `IDENTIFIED_CODES` is derived from the same map, so whether
+  a code is asked to identify at all is part of that edit.
 - A code with no identifiers, such as poultry (`01051111`), is asked for none.
-  There is no free-text identifier, so its line gets no identification panel and
+  There is no free-text identifier, so its line gets no identification card and
   no animal records.
 - Animal identifiers are optional unless more than one commodity line carries a
   code with identifiers. Then each such line needs at least one complete

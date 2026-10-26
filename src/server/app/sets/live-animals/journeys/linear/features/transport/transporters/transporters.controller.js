@@ -1,7 +1,10 @@
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -11,16 +14,14 @@ import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { transporterAnswer } from './transporter-record.js'
-import { matchingTransporters, transporterRows } from './rows.js'
+import {
+  matchingTransporters,
+  shownCountMessages,
+  transporterRows,
+  transporterTableRows
+} from './rows.js'
 import { validation } from './validate.js'
 
-/** The transporter list — the journey's one transporter step.
- *
- * It declares all three transporter answers because picking a row settles all
- * of them: the record carries its own type, so the type is read off the pick
- * rather than asked in front of the list. The add spokes behind
- * "Add a transporter" write the same answers without declaring them, the way
- * the address pickers write the parties the addresses page declares. */
 export const meta = {
   ...page,
   collects: ['transporterType', 'commercialTransporter', 'privateTransporter'],
@@ -30,14 +31,9 @@ const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 
-/** The transporters this organisation can pick — the ones it has added for
- * itself as well as the ones the service ships. Per-organisation, so it is read
- * per request rather than held at module load. */
 const availableTransporters = (request) =>
   transporters.partiesFor(organisationIdOf(request))
 
-/** The search button and the page's own submits share the one form, told apart
- * by their `action` value — the address picker's shape. */
 const isSearchAction = (payload) => payload.action === 'search'
 
 const render = (
@@ -48,10 +44,13 @@ const render = (
   { errors = {}, recoverableError = false } = {}
 ) => {
   const query = String(values.query ?? '')
+  const available = availableTransporters(request)
   const rows = transporterRows(
-    matchingTransporters(availableTransporters(request), query),
+    matchingTransporters(available, String(values.narrowBy ?? '')),
     { selectedId: values.selectedId }
   )
+  const queryMatchesNothing =
+    matchingTransporters(available, query).length === 0
   return h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
@@ -62,33 +61,21 @@ const render = (
     }),
     copy,
     errors,
-    // A search that matches nothing leaves no radio for the summary to link
-    // to, so the entry sends the trader to the only control they can act on —
-    // the search box. The address picker switches its anchor the same way
-    // (addresses/party-picker/view-model/error-summary.js).
     errorSummary: kit.errorSummary(errors, {
-      href: (field) => (rows.length ? `#${field}` : '#search')
+      href: (field) => (queryMatchesNothing ? '#search' : `#${field}`)
     }),
-    // Reached from a Change link, the add route has to keep the context or
-    // the trader is dropped into the journey instead of the summary.
     addHref: kit.withChangeContext(
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
     ),
     query,
     selectedId: values.selectedId,
-    transporterRows: rows
+    shownMessages: shownCountMessages(rows.length),
+    transporterRows: rows,
+    transporterTableRows: transporterTableRows(rows)
   })
 }
 
-/** The record behind the answers already on the notification, so a returning
- * trader sees their pick still checked. Matched on name: the notification
- * stores the transporter's details, not the id of the row it came from.
- *
- * The match folds case and spacing the way the register does, so a record whose
- * spelling was corrected still resolves for a notification that recorded the
- * old one — re-adding a transporter overwrites its stored name, and an exact
- * match would leave the earlier notification with nothing checked. */
 const selectedIdFor = (request, answers) => {
   const chosenName =
     answers.commercialTransporter?.name ?? answers.privateTransporter?.name
@@ -125,13 +112,11 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = String(payload.search ?? '')
 
-  // Searching filters the list in place: nothing is validated and nothing is
-  // committed, and the row the trader had picked stays picked if the search
-  // leaves it on the list.
   if (isSearchAction(payload)) {
     const { journey, answers } = await state.get(request, h)
     return render(request, h, journey, {
       query,
+      narrowBy: query,
       selectedId:
         payload.transporter ||
         payload.selected ||
@@ -143,12 +128,19 @@ const post = async (request, h) => {
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
-    return render(request, h, journey, { query }, { errors })
+    return render(
+      request,
+      h,
+      journey,
+      { query, narrowBy: query },
+      { errors }
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = records.find((record) => record.id === payload.transporter)
   let committed
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       committed = await commitOrSkip(request, h, chosen)
     },
@@ -158,7 +150,7 @@ const post = async (request, h) => {
         request,
         h,
         journey,
-        { selectedId: chosen?.id, query },
+        { selectedId: chosen?.id, query, narrowBy: query },
         { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }

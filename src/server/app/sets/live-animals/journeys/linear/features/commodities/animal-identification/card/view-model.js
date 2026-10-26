@@ -1,7 +1,13 @@
-import * as state from '../../../../../../../../engine/index.js'
+import {
+  hiddenActionsHeading,
+  removeActionCell,
+  wrappingCell
+} from '../../../../../../../../../common/constants/table-cells.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
+import { speciesLabel } from '../../species-label.js'
 import { addressFieldsFor, blankAddress } from '../address/fields.js'
 import { fieldName } from '../fields.js'
 import {
@@ -10,25 +16,15 @@ import {
   scopedFields
 } from '../identifier/fields.js'
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
-import { lineTitle } from '../../line-title.js'
-import { speciesLabel } from '../../species-label.js'
+import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
+import { identificationCardAnchor } from './error-summary.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const counterOf = (species, records, cap) =>
-  cap === null
-    ? copy.counterNoCap(species)
-    : copy.counter(species, records + 1, cap)
-
-const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
-  if (overBy > 0) {
-    return copy.overCount(cap, species, units, overBy)
-  }
-  if (atMax) {
-    return copy.allEntered(cap, species)
-  }
-  return null
-}
+const overCountTextFor = (cap, species, units) =>
+  cap !== null && units > cap
+    ? copy.overCount(cap, species, units, units - cap)
+    : null
 
 const animalLabelOf = (species, number) =>
   species ? copy.animalRowNamed(species, number) : copy.animalRow(number)
@@ -42,35 +38,38 @@ const unitEntries = (index, species, columns, units) =>
     removeAria: copy.removeRowAria(unitIndex + 1)
   }))
 
-const capacityStateFor = (answers, index, unitCount) => {
-  const cap = state.collectionCapAt(answers, [
-    'commodityLines',
-    index,
-    'animalIdentifiers'
+const wrappingCells = (texts) => texts.map((text) => wrappingCell({ text }))
+
+const savedAnimalsTableOf = (columns, unitRows) => ({
+  head: [
+    ...wrappingCells([copy.table.animalColumn, ...columns]),
+    hiddenActionsHeading(copy.table.actionsHidden)
+  ],
+  rows: unitRows.map((unitRow) => [
+    ...wrappingCells([unitRow.label, ...unitRow.cells]),
+    removeActionCell({
+      action: `remove:${unitRow.line}:${unitRow.unitIndex}`,
+      text: copy.removeRow,
+      hiddenText: unitRow.removeAria
+    })
   ])
-  const atMax = cap !== null && unitCount >= cap
-  const overBy = cap !== null ? unitCount - cap : 0
-  return { cap, atMax, overBy }
-}
+})
 
 const saveButtonTextFor = (cap, records) => {
-  if (cap === null) {
-    return copy.saveAndAddAnother
-  }
-  if (cap <= 1) {
+  if (holdsOneAnimal(cap)) {
     return null
   }
   return cap - records === 1 ? copy.saveAndFinish : copy.saveAndAddAnother
 }
 
 const visibleIdentifierFields = (
-  atMax,
+  atCap,
   commodityCode,
   index,
   values,
   errors
 ) =>
-  atMax
+  atCap
     ? []
     : scopedFields(commodityCode).map((field) => ({
         ...field,
@@ -81,56 +80,66 @@ const visibleIdentifierFields = (
 
 const visibleAddressFields = (
   showAddress,
-  atMax,
+  atCap,
   index,
   addressValues,
   errors
 ) =>
-  showAddress && !atMax ? addressFieldsFor(index, addressValues, errors) : []
+  showAddress && !atCap ? addressFieldsFor(index, addressValues, errors) : []
 
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
   const commodityCode = entry.commodityCode
   const units = entry.animalIdentifiers ?? []
-  const { cap, atMax, overBy } = capacityStateFor(answers, index, units.length)
+  const cap = identifierCapOf(answers, index)
+  const atCap = isAtCap(cap, units.length)
   const species = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
   const showAddress = permanentAddressApplies(commodityCode, species)
   const columns = identifierColumns(commodityCode, species)
+  const unitRows = unitEntries(index, species, columns, units)
   return {
     index,
-    anchor: `identification-card-${index}`,
-    title: lineTitle(entry),
-    species,
+    anchor: identificationCardAnchor(index),
+    title: species,
     changeCountHref,
-    counter: atMax ? null : counterOf(species, units.length, cap),
-    maxReachedText: maxReachedTextFor(
-      cap,
-      species,
-      units.length,
-      overBy,
-      atMax
+    counter: atCap ? null : copy.counter(species, units.length + 1, cap),
+    overCountText: overCountTextFor(cap, species, units.length),
+    saveButtonText: atCap ? null : saveButtonTextFor(cap, units.length),
+    savedAnimalsTable: savedAnimalsTableOf(
+      columns.map(([, label]) => label),
+      unitRows
     ),
-    atMax,
-    saveButtonText: atMax ? null : saveButtonTextFor(cap, units.length),
-    identifierColumns: columns.map(([, label]) => label),
-    units: unitEntries(index, species, columns, units),
     hasUnits: units.length > 0,
     fields: visibleIdentifierFields(
-      atMax,
+      atCap,
       commodityCode,
       index,
       values,
       errors
     ),
-    showAddress: showAddress && !atMax,
+    showAddress: showAddress && !atCap,
     addressFields: visibleAddressFields(
       showAddress,
-      atMax,
+      atCap,
       index,
       addressValues,
       errors
     )
   }
 }
+
+export const buildSections = (
+  answers,
+  cardLines,
+  forms,
+  errors,
+  changeCountHref
+) =>
+  buildCommodityGroups(cardLines).map(({ heading, lines }) => ({
+    heading,
+    cards: lines.map((line) =>
+      buildCard(answers, line, forms.get(line.index), errors, changeCountHref)
+    )
+  }))

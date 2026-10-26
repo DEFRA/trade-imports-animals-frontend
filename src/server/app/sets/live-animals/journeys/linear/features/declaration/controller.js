@@ -54,13 +54,13 @@ const render = (
   journey,
   reviewedConcurrencyToken,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, kit.CYA_SLUG),
       journey,
+      showJourneyStrip: false,
       recoverableError
     }),
     concurrencyToken: reviewedConcurrencyToken,
@@ -97,42 +97,60 @@ const get = async (request, h) => {
   return h.redirect(reviewHref(journey.journeyId))
 }
 
+const submitDeclaration = async (
+  request,
+  h,
+  journey,
+  reviewedConcurrencyToken,
+  values
+) => {
+  try {
+    return await kit.recoverableSave(
+      request,
+      async () => {
+        await state.commit(request, h, values)
+        return state.submitJourney(request, h, {
+          concurrencyToken: reviewedConcurrencyToken
+        })
+      },
+      () =>
+        render(h, journey, reviewedConcurrencyToken, values, {
+          recoverableError: true
+        }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    )
+  } catch (error) {
+    if (error?.code === STALE_CONCURRENCY_TOKEN) {
+      return {
+        failure: logRefusalAndRedirect(request, h, {
+          journey,
+          refusal: DECLARATION_REFUSAL.changedSinceReview,
+          target: reviewHref(journey.journeyId, { changed: true })
+        })
+      }
+    }
+    throw error
+  }
+}
+
 const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   const payload = request.payload
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    return render(h, journey, reviewedConcurrencyToken, values, errors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return render(h, journey, reviewedConcurrencyToken, values, {
+      errors
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  let result
-  try {
-    const { failure } = await kit.recoverableSave(
-      async () => {
-        await state.commit(request, h, values)
-        result = await state.submitJourney(request, h, {
-          concurrencyToken: reviewedConcurrencyToken
-        })
-      },
-      () =>
-        render(h, journey, reviewedConcurrencyToken, values, {}, true).code(
-          HTTP_STATUS_INTERNAL_SERVER_ERROR
-        )
-    )
-    if (failure) {
-      return failure
-    }
-  } catch (error) {
-    if (error?.code === STALE_CONCURRENCY_TOKEN) {
-      return logRefusalAndRedirect(request, h, {
-        journey,
-        refusal: DECLARATION_REFUSAL.changedSinceReview,
-        target: reviewHref(journey.journeyId, { changed: true })
-      })
-    }
-    throw error
+  const { value: result, failure } = await submitDeclaration(
+    request,
+    h,
+    journey,
+    reviewedConcurrencyToken,
+    values
+  )
+  if (failure) {
+    return failure
   }
 
   if (!result.ok) {
@@ -191,7 +209,6 @@ const post = async (request, h) => {
     })
   }
 
-  // Never pre-tick: a tick left by a submit refused as stale was given to older content.
   if (payload.step === STEP_REVIEW) {
     return render(h, journey, reviewedConcurrencyToken, {
       declaration: ''

@@ -10,7 +10,11 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
-import { journeyRequest, stubH } from '../../../../../engine/test-support.js'
+import {
+  getHandlerOf,
+  journeyRequest,
+  stubH
+} from '../../../../../engine/test-support.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -37,9 +41,6 @@ import * as animalIdentification from './commodities/animal-identification/anima
 import * as documents from './documents/controller.js'
 import * as hub from './hub/controller.js'
 import * as checkAnswers from './check-answers/controller.js'
-
-const getHandlerOf = (feature) =>
-  feature.routes.find((route) => route.method === 'GET').handler
 
 const declarationFromReview = { routes: declarationRoutesFromReview }
 

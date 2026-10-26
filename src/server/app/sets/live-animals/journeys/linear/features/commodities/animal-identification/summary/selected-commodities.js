@@ -1,10 +1,23 @@
-import { speciesLabel } from '../../species-label.js'
+import { hasAnimalCount } from '../../lines.js'
+import { buildSelectedCommodityRows } from '../../view-model/selected-commodity-rows.js'
 
-const countText = (value) => String(value ?? '')
+const sumOfCounts = (lines) =>
+  lines.reduce(
+    (total, { entry }) => total + Number(entry.numberOfAnimalsQuantity),
+    0
+  )
+
+const totalAnimalsText = (lines) => {
+  const counted = lines.filter(hasAnimalCount)
+  return counted.length === 0 ? '' : String(sumOfCounts(counted))
+}
 
 export const buildSelectedCommodities = (lines) =>
-  lines.map(({ entry }) => ({
-    code: entry.commodityCode,
-    name: speciesLabel(entry),
-    animals: countText(entry.numberOfAnimalsQuantity)
-  }))
+  buildSelectedCommodityRows(lines).map(
+    ({ code, name, latinNames, lines: rowLines }) => ({
+      code,
+      name,
+      latinNames,
+      animals: totalAnimalsText(rowLines)
+    })
+  )

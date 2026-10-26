@@ -30,7 +30,7 @@ const comprehensive = characterisationCorpus.find(
 
 const taskRowPages = taskRows.flatMap((row) => row.pages)
 
-const getHandlerOf = (page) =>
+const pageGetHandler = (page) =>
   allRoutes.find(
     (route) =>
       route.method === 'GET' &&
@@ -38,7 +38,7 @@ const getHandlerOf = (page) =>
   ).handler
 
 const renderAmending = async (page) => {
-  const { journeyId, view } = await driveHandler(getHandlerOf(page), {
+  const { journeyId, view } = await driveHandler(pageGetHandler(page), {
     seed: comprehensive,
     amend: true,
     pathOf: (id) => pagePath(id, page.slug)

@@ -1,18 +1,23 @@
 import { expect, test } from '@playwright/test'
 import {
+  BISON_BISON,
   BOS_TAURUS,
   CANIS_FAMILIARIS,
   EQUUS_CABALUS,
   FELIS_CATUS,
+  PHONE_VIEWPORT,
   SAVE_AND_CONTINUE,
   STRUTHIO,
   animalsQuantityInputUnder,
+  expectNoHorizontalOverflow,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openCommodityDetails,
-  signIn
+  signIn,
+  withinFullWidthColumn,
+  withinTwoThirdsColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { animalIdentificationPage } from '../page.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
@@ -20,6 +25,10 @@ const IDENTIFICATION_SLUG = animalIdentificationPage.slug
 const PASSPORT_FIELD = '#animalIdentifierPassport-0'
 const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
+const SECOND_EAR_TAG_FIELD = '#animalIdentifierEarTag-1'
+const CATTLE_HEADING = BOS_TAURUS.commodityCode
+const GOVUK_GREEN = 'rgb(15, 122, 82)'
+const REGULAR_FONT_WEIGHT = '400'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -56,7 +65,7 @@ const openCatIdentification = (page) =>
   openIdentification(page, [[FELIS_CATUS, '2']])
 
 const entryLabelsOf = (fields) =>
-  fields.map((field) => copy.identification.typeFields[field].label)
+  fields.map((field) => copy.identification.identifierLabels[field])
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -110,20 +119,52 @@ const savedAnimalRow = (page, chosen, number) =>
     hasText: copy.identification.animalRowNamed(chosen.latinName, number)
   })
 
+const submitOverLongMicrochip = async (page) => {
+  await openIdentification(page, [[FELIS_CATUS, '1']])
+  await page
+    .locator(MICROCHIP_FIELD)
+    .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
+  await saveAndContinue(page)
+}
+
+const expectCompleteCard = async (page, chosen, savedRows) => {
+  const card = speciesCard(page, chosen)
+  await expect(card.getByRole('heading')).toHaveText([chosen.latinName])
+  await expect(card.getByRole('button')).toHaveText(
+    Array(savedRows).fill(new RegExp(`^${copy.identification.removeRow}`))
+  )
+  await expect(card.getByRole('textbox')).toHaveCount(0)
+}
+
 const columnHeader = (page, name) =>
   page.getByRole('columnheader', { name, exact: true })
 
 const selectedCommoditiesSummary = (page) =>
-  page.getByRole('table', { name: copy.identification.summary.caption })
+  page.getByRole('table', { name: copy.selectedCommodities.caption })
 
-const expectSummaryRow = async (summary, chosen, animals) => {
-  const row = summary.getByRole('row').filter({ hasText: chosen.latinName })
-  for (const cell of [chosen.commodityCode, chosen.latinName, animals]) {
-    await expect(
-      row.getByRole('cell', { name: cell, exact: true })
-    ).toBeVisible()
+const expectSummaryRow = async (
+  summary,
+  { code, name, latinNames, animals }
+) => {
+  const cells = summary
+    .getByRole('row')
+    .filter({
+      has: summary.page().getByRole('cell', { name: latinNames[0] })
+    })
+    .getByRole('cell')
+  await expect(cells.nth(0)).toHaveText(code)
+  await expect(cells.nth(1)).toHaveText(name)
+  for (const latinName of latinNames) {
+    await expect(cells.nth(2)).toContainText(latinName)
   }
+  await expect(cells.nth(3)).toHaveText(animals)
 }
+
+const commodityHeading = (page, heading) =>
+  page.getByRole('heading', { level: 2, name: heading })
+
+const speciesCard = (page, chosen) =>
+  page.getByRole('region', { name: chosen.latinName, exact: true })
 
 const removeAnimalRow = async (page, chosen, number) => {
   const row = savedAnimalRow(page, chosen, number)
@@ -228,7 +269,7 @@ test.describe('animal identification', () => {
     await expect(page.locator(PASSPORT_FIELD)).toBeVisible()
     await expect(page.locator(MICROCHIP_FIELD)).toBeVisible()
     await expect(page.locator('#horseName-0')).toBeVisible()
-    await expect(page.locator('#animalIdentifierEarTag-1')).toBeVisible()
+    await expect(page.locator(SECOND_EAR_TAG_FIELD)).toBeVisible()
     await expect(page.locator('#animalIdentifierTattoo-1')).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-1')).toHaveCount(0)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
@@ -337,7 +378,7 @@ test.describe('animal identification', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('offers Change number of animals on every card and lands on the consignment details page', async ({
+  test('offers Change number of animals on every card, naming its species, and lands on the consignment details page', async ({
     page
   }) => {
     await openIdentification(page, [
@@ -348,6 +389,18 @@ test.describe('animal identification', () => {
       name: copy.identification.changeAnimalCount
     })
     await expect(changeCount).toHaveCount(2)
+    await expect(
+      speciesCard(page, BOS_TAURUS).getByRole('link', {
+        name: `${copy.identification.changeAnimalCount} ${BOS_TAURUS.latinName}`,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      speciesCard(page, EQUUS_CABALUS).getByRole('link', {
+        name: `${copy.identification.changeAnimalCount} ${EQUUS_CABALUS.latinName}`,
+        exact: true
+      })
+    ).toBeVisible()
 
     await changeCount.first().click()
 
@@ -420,9 +473,7 @@ test.describe('animal identification in-card save button', () => {
     ).toHaveCount(0)
 
     await addCowRecord(page, 'UK000000000002', { last: true })
-    await expect(
-      page.getByText(copy.identification.allEntered(2, BOS_TAURUS.latinName))
-    ).toBeVisible()
+    await expectCompleteCard(page, BOS_TAURUS, 2)
   })
 
   test('offers no in-card button on a line of one animal and saves it on Save and continue', async ({
@@ -475,39 +526,54 @@ test.describe('animal identification selected commodities summary', () => {
     await signIn(page)
   })
 
-  test('opens with a summary of what the consignment holds, one line per card', async ({
+  test('heads the summary with the code, common name, species and number of animals', async ({
+    page
+  }) => {
+    await openIdentification(page, [[BOS_TAURUS, '2']])
+
+    await expect(
+      selectedCommoditiesSummary(page).getByRole('columnheader')
+    ).toHaveText([
+      copy.selectedCommodities.commodityCode,
+      copy.selectedCommodities.commonName,
+      copy.selectedCommodities.species,
+      copy.selectedCommodities.numberOfAnimals,
+      copy.selectedCommodities.actionsHidden
+    ])
+  })
+
+  test('sums two cattle species into one row and gives each species on code 01061900 its own row', async ({
     page
   }) => {
     await openIdentification(page, [
-      [EQUUS_CABALUS, '3'],
-      [BOS_TAURUS, '2']
+      [BOS_TAURUS, '2'],
+      [BISON_BISON, '3'],
+      [FELIS_CATUS, '4']
     ])
     const summary = selectedCommoditiesSummary(page)
 
-    for (const head of [
-      copy.identification.summary.commodityCode,
-      copy.identification.summary.species,
-      copy.identification.summary.numberOfAnimals
-    ]) {
-      await expect(
-        summary.getByRole('columnheader', { name: head, exact: true })
-      ).toBeVisible()
-    }
-
-    await expectSummaryRow(summary, BOS_TAURUS, '2')
-    await expectSummaryRow(summary, EQUUS_CABALUS, '3')
-
-    const main = await page.locator('main').innerHTML()
-    expect(main.indexOf(copy.identification.summary.caption)).toBeLessThan(
-      main.indexOf('identification-card-0')
-    )
+    await expectSummaryRow(summary, {
+      code: BOS_TAURUS.commodityCode,
+      name: 'Bisons Spp, Cattle or Cow',
+      latinNames: [BISON_BISON.latinName, BOS_TAURUS.latinName],
+      animals: '5'
+    })
+    await expectSummaryRow(summary, {
+      code: FELIS_CATUS.commodityCode,
+      name: 'Domestic Cat',
+      latinNames: [FELIS_CATUS.latinName],
+      animals: '4'
+    })
+    await expect(
+      summary.or(commodityHeading(page, CATTLE_HEADING))
+    ).toContainText([copy.selectedCommodities.caption, CATTLE_HEADING])
   })
 
   test('changes the commodity list from a summary row', async ({ page }) => {
     await openIdentification(page, [[BOS_TAURUS, '2']])
     await selectedCommoditiesSummary(page)
       .getByRole('link', {
-        name: `${copy.identification.summary.change} ${BOS_TAURUS.latinName}`
+        name: `${copy.identification.summary.change} ${BOS_TAURUS.commodityCode} ${BOS_TAURUS.latinName}`
       })
       .click()
 
@@ -570,11 +636,7 @@ test.describe('animal identification identifier validation', () => {
   test('has no serious or critical axe violations in the microchip error state', async ({
     page
   }) => {
-    await openCatIdentification(page)
-    await page
-      .locator(MICROCHIP_FIELD)
-      .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
-    await saveAndContinue(page)
+    await submitOverLongMicrochip(page)
 
     await expect(
       errorLink(
@@ -753,9 +815,7 @@ test.describe('animal identification records', () => {
     await openIdentification(page, [[BOS_TAURUS, '2']])
     await addCowRecord(page, 'UK000000000001')
     await addCowRecord(page, 'UK000000000002', { last: true })
-    await expect(
-      page.getByText(copy.identification.allEntered(2, BOS_TAURUS.latinName))
-    ).toBeVisible()
+    await expectCompleteCard(page, BOS_TAURUS, 2)
 
     await submitStaleAdd(page)
 
@@ -777,9 +837,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
     await addCowRecord(page, 'UK000000000001')
     await addCowRecord(page, 'UK000000000002', { last: true })
-    await expect(
-      page.getByText(copy.identification.allEntered(2, BOS_TAURUS.latinName))
-    ).toBeVisible()
+    await expectCompleteCard(page, BOS_TAURUS, 2)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
 
     await saveAndContinue(page)
@@ -801,6 +859,12 @@ test.describe('animal identification records', () => {
     )
     await expect(errorLink(page, countDrop)).toBeVisible()
     await errorLink(page, countDrop).click()
+    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(
+      commodityHeading(page, CATTLE_HEADING)
+        .locator('xpath=following::*[@id="identification-card-0"]')
+        .first()
+    ).toBeVisible()
 
     await removeAnimalRow(page, BOS_TAURUS, 2)
     await expect(
@@ -808,5 +872,194 @@ test.describe('animal identification records', () => {
         name: copy.identification.counter(BOS_TAURUS.latinName, 2, 2)
       })
     ).toBeVisible()
+  })
+})
+
+test.describe('animal identification sections and species cards', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('groups a commodity code into a section headed by the code holding one card per species in the order the species are listed for selection', async ({
+    page
+  }) => {
+    await openIdentification(page, [
+      [BOS_TAURUS, '3'],
+      [BISON_BISON, '2']
+    ])
+
+    await expect(commodityHeading(page, CATTLE_HEADING)).toBeVisible()
+    await expect(page.locator('main h1, main h2, main h3, main h4')).toHaveText(
+      [
+        copy.identification.title,
+        CATTLE_HEADING,
+        BISON_BISON.latinName,
+        copy.identification.counter(BISON_BISON.latinName, 1, 2),
+        BOS_TAURUS.latinName,
+        copy.identification.counter(BOS_TAURUS.latinName, 1, 3)
+      ]
+    )
+  })
+
+  test('puts the entry form and its button above the saved animals while animals remain', async ({
+    page
+  }) => {
+    await openIdentification(page, [[BOS_TAURUS, '3']])
+    await addCowRecord(page, 'UK000000000001')
+
+    const card = speciesCard(page, BOS_TAURUS)
+    const button = card.getByRole('button', {
+      name: copy.identification.saveAndAddAnother
+    })
+    const inDocumentOrder = card
+      .getByRole('heading', { level: 4 })
+      .or(card.locator(EAR_TAG_FIELD))
+      .or(button)
+      .or(card.getByRole('table'))
+    await expect
+      .poll(() =>
+        inDocumentOrder.evaluateAll((elements) =>
+          elements.map((element) => element.tagName)
+        )
+      )
+      .toEqual(['H4', 'INPUT', 'BUTTON', 'TABLE'])
+  })
+
+  test('shows the card button as a primary button', async ({ page }) => {
+    await openIdentification(page, [[BOS_TAURUS, '2']])
+
+    await expect(
+      page.getByRole('button', { name: copy.identification.saveAndAddAnother })
+    ).toHaveCSS('background-color', GOVUK_GREEN)
+  })
+
+  test('labels the identifier fields in regular weight with no hint', async ({
+    page
+  }) => {
+    await openIdentification(page, [[FELIS_CATUS, '2']])
+
+    for (const field of [
+      'animalIdentifierMicrochip',
+      'animalIdentifierPassport',
+      'animalIdentifierTattoo'
+    ]) {
+      await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
+        copy.identification.identifierLabels[field]
+      )
+      await expect(page.locator(`label[for="${field}-0"]`)).toHaveCSS(
+        'font-weight',
+        REGULAR_FONT_WEIGHT
+      )
+      await expect(page.locator(`#${field}-0`)).toHaveAccessibleDescription('')
+    }
+  })
+
+  test('lays out the intro in a two-thirds column and the cards in the full-width column', async ({
+    page
+  }) => {
+    await openIdentification(page, [[BOS_TAURUS, '2']])
+
+    await expect(
+      withinTwoThirdsColumn(
+        page.getByRole('heading', { name: copy.identification.title })
+      )
+    ).toHaveCount(1)
+    await expect(
+      withinTwoThirdsColumn(page.getByText(copy.identification.inset))
+    ).toHaveCount(1)
+    const card = speciesCard(page, BOS_TAURUS)
+    await expect(withinFullWidthColumn(card)).toHaveCount(1)
+    await expect(withinTwoThirdsColumn(card)).toHaveCount(0)
+  })
+
+  test('shows the length error text for an over-long microchip', async ({
+    page
+  }) => {
+    await submitOverLongMicrochip(page)
+
+    await expect(
+      errorLink(
+        page,
+        copy.identification.errors.identifierMax.animalIdentifierMicrochip
+      )
+    ).toBeVisible()
+  })
+
+  test('has no serious or critical axe violations with one complete card and one card mid-entry', async ({
+    page
+  }) => {
+    await openIdentification(page, [
+      [BOS_TAURUS, '2'],
+      [FELIS_CATUS, '1']
+    ])
+    await addCowRecord(page, 'UK000000000001')
+    await addCowRecord(page, 'UK000000000002', { last: true })
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with a complete card and a card mid-entry'
+    )
+  })
+})
+
+test.describe('animal identification on a phone', () => {
+  test.use({ viewport: PHONE_VIEWPORT })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('keeps the summary and a cat card with a saved animal inside the screen width', async ({
+    page
+  }) => {
+    await openCatIdentification(page)
+    await fillCatRecord(page)
+    await submitAdd(page)
+
+    await expectNoHorizontalOverflow(
+      selectedCommoditiesSummary(page),
+      'Selected commodities summary'
+    )
+    await expectNoHorizontalOverflow(
+      speciesCard(page, FELIS_CATUS),
+      'Felis catus card'
+    )
+  })
+})
+
+test.describe('animal identification without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test("saves only the pressed card's species and reloads with its form empty", async ({
+    page
+  }) => {
+    await openIdentification(page, [
+      [BOS_TAURUS, '2'],
+      [BISON_BISON, '2']
+    ])
+    await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
+    await page
+      .locator(SECOND_EAR_TAG_FIELD)
+      .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
+    await speciesCard(page, BISON_BISON)
+      .getByRole('button', { name: copy.identification.saveAndAddAnother })
+      .click()
+
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(savedAnimalRow(page, BISON_BISON, 1)).toBeVisible()
+    await expect(page.locator(EAR_TAG_FIELD)).toHaveValue('')
+    await expect(page.locator(SECOND_EAR_TAG_FIELD)).toHaveValue('')
+    await expect(
+      speciesCard(page, BOS_TAURUS).getByRole('heading', {
+        name: copy.identification.counter(BOS_TAURUS.latinName, 1, 2),
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(speciesCard(page, BOS_TAURUS).getByRole('table')).toHaveCount(
+      0
+    )
   })
 })

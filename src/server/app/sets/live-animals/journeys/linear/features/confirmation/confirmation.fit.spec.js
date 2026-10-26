@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
@@ -10,6 +10,7 @@ import {
   startNotification,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -21,13 +22,12 @@ const expectPanelCopy = async (page) => {
   await expect(page.getByText(reference, { exact: true })).toBeVisible()
 }
 
-const expectNoDeclarationDate = async (page) => {
-  await expect(page.getByText(/date of declaration/i)).toHaveCount(0)
+const expectPanelBodyIsReferenceOnly = async (page, reference) => {
+  await expect(page.locator('.govuk-panel__body')).toHaveText(
+    `${copy.panel.referencePrefix}${reference}`
+  )
 }
 
-// The journey these tests submit uploads no documents, and documents are
-// optional at submission, so the outstanding-work section is the one this page
-// has to carry.
 const expectOutstandingCopy = async (page) => {
   await expect(
     page.getByRole('heading', { name: copy.outstanding.heading })
@@ -92,6 +92,9 @@ test.describe('confirmation feature', () => {
     await page.goto(journeyUrl(page, 'confirmation'))
 
     await expect(page).toHaveURL(hubUrl)
+    await expect(
+      page.getByRole('heading', { level: 2, name: hubCopy.taskListHeading })
+    ).toBeVisible()
   })
 })
 
@@ -116,11 +119,11 @@ test.describe('submitted confirmation feature', () => {
     )
   })
 
-  test('renders the notification reference and all feature copy, with no declaration date and no back link', async ({
+  test('renders the notification reference and all feature copy, with only the reference in the panel body and no back link', async ({
     page
   }) => {
     await expectPanelCopy(page)
-    await expectNoDeclarationDate(page)
+    await expectPanelBodyIsReferenceOnly(page, journeyIdFromPage(page))
     await expectOutstandingCopy(page)
     await expectTransportingCopy(page)
     await expectViewOrAmendCopy(page)
@@ -141,8 +144,6 @@ test.describe('submitted confirmation feature', () => {
     await expect(page).toHaveURL(BASE)
   })
 
-  // Second consignment, no detour: the page starts a fresh notification without
-  // sending the trader back to the dashboard for the start button.
   test('create-a-new-notification starts a fresh notification', async ({
     page
   }) => {
@@ -159,15 +160,6 @@ test.describe('submitted confirmation feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-    expect(
-      seriousOrCritical,
-      `Confirmation has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Confirmation')
   })
 })

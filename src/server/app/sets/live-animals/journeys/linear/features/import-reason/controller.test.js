@@ -1,37 +1,30 @@
-import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  expectBackLinkIsPage,
+  expectNoRefusalLogged,
+  getHandlerOf,
+  postHandlerOf,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
+import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
 
 const post = postHandlerOf(importReason)
-const get = importReason.routes.find((route) => route.method === 'GET').handler
+const get = getHandlerOf(importReason)
 
 const EXIT_DATE_TEXT = '20/12/2026'
 const EXIT_DATE_PARTS = { day: '20', month: '12', year: '2026' }
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe('POST import-reason — invalid payload', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should answer 400 and re-render an out-of-list reason, committing nothing', async () => {
     const result = await driveHandler(post, {
@@ -40,6 +33,7 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.reasonForImport).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should answer 400 for a reason that names an Object.prototype member, committing nothing', async () => {
@@ -222,8 +216,7 @@ describe('POST import-reason — invalid payload', () => {
 })
 
 describe('POST import-reason — the reveal the reason opens', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should commit the transit reveal as the two answers behind its fields', async () => {
     const result = await driveHandler(post, {
@@ -305,8 +298,7 @@ describe('POST import-reason — the reveal the reason opens', () => {
 })
 
 describe('GET import-reason — the reveals prefill from the one answer behind them', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should offer a stored port of exit to both reveals that ask for it', async () => {
     const result = await driveHandler(get, {
@@ -363,8 +355,7 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
 // from the captured ports fixture, so each doubles as a stale stored value.
 
 describe('GET import-reason — a stored destination country the reader no longer offers', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the stale country in both country reveals so both selects render unselected', async () => {
     const result = await driveHandler(get, {
@@ -433,8 +424,7 @@ describe('GET import-reason — a stored destination country the reader no longe
 })
 
 describe('GET import-reason — a stored port of exit the reader no longer offers', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should blank the stale port in both port reveals so both selects render unselected', async () => {
     const result = await driveHandler(get, {
@@ -488,8 +478,7 @@ describe('GET import-reason — a stored port of exit the reader no longer offer
 })
 
 describe('POST import-reason — a stale destination country submitted verbatim reads the same as empty', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should reject a payload with the stale code using the standard countryRequired copy', async () => {
     const result = await driveHandler(post, {
@@ -511,8 +500,7 @@ describe('POST import-reason — a stale destination country submitted verbatim 
 })
 
 describe('POST import-reason — Save and return to overview', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should save a transit reason with its port and country left blank and go to the overview', async () => {
     const result = await driveHandler(post, {
@@ -576,5 +564,34 @@ describe('POST import-reason — Save and return to overview', () => {
       copy.errors.portRequired
     )
     expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('import-reason — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [FELIS_CATUS_ROW]
+  }
+
+  it('Should go Back to What are you importing? while the opening run is on', async () => {
+    const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
+    expectBackLinkIsPage(result, 'commodities')
+  })
+
+  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { reasonForImport: 'not-a-real-reason' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.response.statusCode).toBe(400)
+    expectBackLinkIsPage(result, 'commodities')
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(get, { seed })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

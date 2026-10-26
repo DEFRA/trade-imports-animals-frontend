@@ -1,6 +1,4 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import Crumb from '@hapi/crumb'
-import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
@@ -12,20 +10,28 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  expectNoRefusalLogged,
+  expectOneRefusalLogged,
+  expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
-  registerTestSessionAuth,
+  crumbProtectedServerMounting,
   stubH
 } from '../../../../../../../engine/test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 import { consignmentDetailsPage } from '../page.js'
 
 import {
+  BISON_BISON,
+  BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
   EQUUS_CABALUS,
   EQUUS_CABALUS_ROW,
+  FELIS_CATUS,
   FELIS_CATUS_ROW,
+  STRUTHIO,
   STRUTHIO_ROW,
   lineOf
 } from '../search/test-support.js'
@@ -41,10 +47,23 @@ const MICROCHIP_FIELD_0 = 'animalIdentifierMicrochip-0'
 const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
+const EAR_TAG_FIELD_1 = 'animalIdentifierEarTag-1'
 const IDENTIFICATION_PAGE = 'commodities/identification'
 const REMOVE_FIRST_UNIT = 'remove:0:0'
 const BOS_TAURUS_1 = 'Bos taurus 1'
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
+const CATTLE_HEADING = '0102'
+const EAR_TAG_REFUSED = 'Ear tag must be 58 characters or less'
+
+const felisCatusLine = (extra = {}) => lineOf(FELIS_CATUS_ROW, extra)
+
+const bosTaurusLine = (extra = {}) => lineOf(BOS_TAURUS_ROW, extra)
+
+const bisonBisonLine = (extra = {}) => lineOf(BISON_BISON_ROW, extra)
+
+const equusLine = (extra = {}) => lineOf(EQUUS_CABALUS_ROW, extra)
+
+const struthioLine = (extra = {}) => lineOf(STRUTHIO_ROW, extra)
 
 const viewContext = async (seed) => {
   const journey = await store.create()
@@ -54,7 +73,23 @@ const viewContext = async (seed) => {
   return h.captured.view.context
 }
 
-const viewCards = async (seed) => (await viewContext(seed)).cards
+const viewCards = async (seed) =>
+  (await viewContext(seed)).sections.flatMap((section) => section.cards)
+
+const textsOf = (cells) => cells.map((cell) => cell.text)
+
+const savedAnimalLabels = (card) =>
+  card.savedAnimalsTable.rows.map(([animalCell]) => animalCell.text)
+
+const savedIdentifierColumns = (card) =>
+  textsOf(card.savedAnimalsTable.head.slice(1, -1))
+
+const savedIdentifierCells = (card, unitIndex) =>
+  textsOf(card.savedAnimalsTable.rows[unitIndex].slice(1, -1))
+
+const HIDDEN_ANIMAL_1 = '<span class="govuk-visually-hidden"> animal 1</span>'
+
+const firstRemoveCellHtml = (card) => card.savedAnimalsTable.rows[0].at(-1).html
 
 const SUITE =
   '#animalIdentificationController — the single card-per-species surface'
@@ -80,64 +115,93 @@ describe(`${SUITE} — the cards view`, () => {
         })
       ]
     })
-    expect(card.title).toBe('0102 — Bos taurus')
+    expect(card.title).toBe(BOS_TAURUS)
     expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
-    expect(card.atMax).toBe(false)
-    expect(card.units).toHaveLength(1)
-    expect(card.units[0].label).toBe(BOS_TAURUS_1)
+    expect(card.savedAnimalsTable.rows).toHaveLength(1)
+    expect(savedAnimalLabels(card)[0]).toBe(BOS_TAURUS_1)
   })
 
-  it('Should drop the M from the counter while the count is unanswered — no cap, entry still allowed', async () => {
-    const [card] = await viewCards({
-      commodityLines: [lineOf(FELIS_CATUS_ROW)]
+  it('Should group the cards into one section per commodity code, headed by the code', async () => {
+    const { sections } = await viewContext({
+      commodityLines: [
+        bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
+        bisonBisonLine({ numberOfAnimalsQuantity: '3' }),
+        equusLine({ numberOfAnimalsQuantity: '1' })
+      ]
     })
-    expect(card.counter).toBe('Enter details for Felis catus')
-    expect(card.atMax).toBe(false)
+    expect(
+      sections.map(({ heading, cards }) => [
+        heading,
+        cards.map((card) => card.title)
+      ])
+    ).toEqual([
+      [CATTLE_HEADING, [BOS_TAURUS, BISON_BISON]],
+      ['0101', [EQUUS_CABALUS]]
+    ])
+  })
+
+  it('Should give a line with identifier fields and no number of animals no card while the summary still lists it', async () => {
+    const context = await viewContext({ commodityLines: [felisCatusLine()] })
+    expect(context.sections).toEqual([])
+    expect(context.selectedCommodities).toEqual([
+      {
+        code: '01061900',
+        name: 'Domestic Cat',
+        latinNames: [FELIS_CATUS],
+        animals: ''
+      }
+    ])
   })
 
   it('Should show only the commodity-gated fields per card — typed for Cats with the address, no fallbacks', async () => {
     const [card] = await viewCards({
-      commodityLines: [lineOf(FELIS_CATUS_ROW)]
+      commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
     })
     const labels = card.fields.map((field) => field.label)
-    expect(labels).toEqual(['Microchip number', 'Passport', 'Tattoo'])
+    expect(labels).toEqual(['Microchip', 'Passport', 'Tattoo'])
     expect(card.showAddress).toBe(true)
     const ids = card.fields.map((field) => field.id)
     expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])
   })
 
   it("Should order each commodity's entry fields by that commodity's own identifier list", async () => {
-    const [cow] = await viewCards({ commodityLines: [lineOf(BOS_TAURUS_ROW)] })
+    const [cow] = await viewCards({
+      commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+    })
     expect(cow.fields.map((field) => field.id)).toEqual([
       EAR_TAG_FIELD_0,
       PASSPORT_FIELD_0
     ])
 
     const [horse] = await viewCards({
-      commodityLines: [lineOf(EQUUS_CABALUS_ROW)]
+      commodityLines: [equusLine({ numberOfAnimalsQuantity: '2' })]
     })
     expect(horse.fields.map((field) => field.label)).toEqual([
-      'Microchip number',
+      'Microchip',
       'Passport',
       'Horse name'
     ])
   })
 
-  it('Should replace the entry form with the maximum-reached state at N = M, keeping the rows removable', async () => {
+  it('Should leave only the saved animals on a card once every animal is entered', async () => {
     const [card] = await viewCards({
       commodityLines: [
-        lineOf(BOS_TAURUS_ROW, {
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        bosTaurusLine({
+          numberOfAnimalsQuantity: '3',
+          animalIdentifiers: [
+            { animalIdentifierEarTag: 'UK1' },
+            { animalIdentifierEarTag: 'UK2' },
+            { animalIdentifierEarTag: 'UK3' }
+          ]
         })
       ]
     })
-    expect(card.atMax).toBe(true)
     expect(card.counter).toBeNull()
     expect(card.fields).toEqual([])
-    expect(card.maxReachedText).toContain('all 1 Bos taurus animals')
-    expect(card.units).toHaveLength(1)
-    expect(card.units[0].removeAria).toBe('animal 1')
+    expect(card.saveButtonText).toBeNull()
+    expect(card.overCountText).toBeNull()
+    expect(card.savedAnimalsTable.rows).toHaveLength(3)
+    expect(firstRemoveCellHtml(card)).toContain(HIDDEN_ANIMAL_1)
   })
 
   it('Should name the count mismatch when the declared number drops below the entered records', async () => {
@@ -152,12 +216,12 @@ describe(`${SUITE} — the cards view`, () => {
         })
       ]
     })
-    expect(card.atMax).toBe(true)
-    expect(card.maxReachedText).toBe(
+    expect(card.counter).toBeNull()
+    expect(card.overCountText).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
     )
-    expect(card.units).toHaveLength(2)
-    expect(card.units[0].removeAria).toBe('animal 1')
+    expect(card.savedAnimalsTable.rows).toHaveLength(2)
+    expect(firstRemoveCellHtml(card)).toContain(HIDDEN_ANIMAL_1)
   })
 })
 
@@ -205,14 +269,7 @@ describe(`${SUITE} — the in-card save button`, () => {
     expect(card.saveButtonText).toBeNull()
   })
 
-  it('Should keep the open wording while the count is unanswered — no last animal to name', async () => {
-    const [card] = await viewCards({
-      commodityLines: [lineOf(FELIS_CATUS_ROW)]
-    })
-    expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
-  })
-
-  it('Should drop the button with the rest of the entry block at N = M', async () => {
+  it('Should drop the button with the rest of the entry block once every animal is entered', async () => {
     const [card] = await viewCards({
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, {
@@ -224,7 +281,7 @@ describe(`${SUITE} — the in-card save button`, () => {
         })
       ]
     })
-    expect(card.atMax).toBe(true)
+    expect(card.counter).toBeNull()
     expect(card.saveButtonText).toBeNull()
   })
 
@@ -248,23 +305,34 @@ describe(`${SUITE} — the in-card save button`, () => {
 describe(`${SUITE} — the Selected commodities summary`, () => {
   setupIdentificationEngine()
 
-  it('Should summarise every line with its code, the Latin name of its species and declared count', async () => {
+  it('Should summarise each commodity code with every common name, every Latin name and the total declared count', async () => {
     const context = await viewContext({
       commodityLines: [
-        lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' }),
-        lineOf(EQUUS_CABALUS_ROW, { numberOfAnimalsQuantity: '3' })
+        bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
+        bisonBisonLine({ numberOfAnimalsQuantity: '5' }),
+        equusLine({ numberOfAnimalsQuantity: '3' })
       ]
     })
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: BOS_TAURUS, animals: '2' },
-      { code: '0101', name: EQUUS_CABALUS, animals: '3' }
+      {
+        code: '0102',
+        name: 'Cattle or Cow, Bisons Spp',
+        latinNames: [BOS_TAURUS, BISON_BISON],
+        animals: '7'
+      },
+      {
+        code: '0101',
+        name: 'Horse',
+        latinNames: [EQUUS_CABALUS],
+        animals: '3'
+      }
     ])
   })
 
   it('Should offer the route back to the commodity question alongside the cards', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
-      commodityLines: [lineOf(FELIS_CATUS_ROW)]
+      commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
     })
     const h = stubH()
     await getHandler(journeyRequest(journey.journeyId), h)
@@ -283,7 +351,9 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     })
     const h = stubH()
     await getHandler(journeyRequest(journey.journeyId), h)
-    const { cards } = h.captured.view.context
+    const cards = h.captured.view.context.sections.flatMap(
+      (section) => section.cards
+    )
 
     expect(cards.map((card) => card.changeCountHref)).toEqual([
       pagePath(journey.journeyId, 'consignment-details'),
@@ -304,7 +374,9 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
       journeyRequest(journey.journeyId, { query: { change: '1' } }),
       h
     )
-    const { cards } = h.captured.view.context
+    const cards = h.captured.view.context.sections.flatMap(
+      (section) => section.cards
+    )
 
     const expected = `${pagePath(journey.journeyId, consignmentDetailsPage.slug)}?change=1`
     expect(cards.map((card) => card.changeCountHref)).toEqual([
@@ -326,8 +398,8 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.identifierColumns).toEqual(['Ear tag', 'Passport'])
-    expect(card.units[0].cells).toEqual(['UK1', ''])
+    expect(savedIdentifierColumns(card)).toEqual(['Ear tag', 'Passport'])
+    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', ''])
   })
 
   it('Should number the rows within a commodity line by the species and the row position', async () => {
@@ -342,11 +414,8 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.units.map((unit) => unit.label)).toEqual([
-      BOS_TAURUS_1,
-      'Bos taurus 2'
-    ])
-    expect(card.units[1].cells).toEqual(['', 'UK2'])
+    expect(savedAnimalLabels(card)).toEqual([BOS_TAURUS_1, 'Bos taurus 2'])
+    expect(savedIdentifierCells(card, 1)).toEqual(['', 'UK2'])
   })
 
   it('Should key each row by its own line\'s species so two commodity lines do not both start at "Animal 1"', async () => {
@@ -363,8 +432,8 @@ describe(`${SUITE} — the saved-animals table`, () => {
       ]
     })
     expect(cards).toHaveLength(2)
-    expect(cards[0].units.map((unit) => unit.label)).toEqual([BOS_TAURUS_1])
-    expect(cards[1].units.map((unit) => unit.label)).toEqual(['Felis catus 1'])
+    expect(savedAnimalLabels(cards[0])).toEqual([BOS_TAURUS_1])
+    expect(savedAnimalLabels(cards[1])).toEqual(['Felis catus 1'])
   })
 
   it('Should fall back to the positional label when the line names no species', async () => {
@@ -377,7 +446,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.units[0].label).toBe('Animal 1')
+    expect(savedAnimalLabels(card)[0]).toBe('Animal 1')
   })
 
   it('Should give the permanent address its own column where the code and species require one', async () => {
@@ -394,13 +463,18 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.identifierColumns).toEqual([
+    expect(savedIdentifierColumns(card)).toEqual([
       'Microchip',
       'Passport',
       'Tattoo',
       'Permanent address'
     ])
-    expect(card.units[0].cells).toEqual(['', 'UK123456789', '', 'Pet Owner'])
+    expect(savedIdentifierCells(card, 0)).toEqual([
+      '',
+      'UK123456789',
+      '',
+      'Pet Owner'
+    ])
   })
 
   it('Should head a horse line with the three identifiers it carries and no permanent address', async () => {
@@ -412,12 +486,12 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.identifierColumns).toEqual([
+    expect(savedIdentifierColumns(card)).toEqual([
       'Microchip',
       'Passport',
       'Horse name'
     ])
-    expect(card.units[0].cells).toEqual(['', '', 'Shergar'])
+    expect(savedIdentifierCells(card, 0)).toEqual(['', '', 'Shergar'])
   })
 })
 
@@ -441,18 +515,22 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should reject an empty Save and add another — never append a blank record', async () => {
+  it('Should reject an empty Save and add another — never append a blank record, and log nothing', async () => {
     const result = await driveHandler(post, {
-      seed: { commodityLines: [lineOf(BOS_TAURUS_ROW)] },
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
       'Enter at least one identifier for this animal'
     )
-    expect(result.after).toEqual(result.before)
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
+    expectNoRefusalLogged(result.logger)
   })
 
-  it('Should surface the engine cap rejection as a card-level error when a stale form posts at N = M', async () => {
+  it('Should surface the engine cap rejection as a card-level error when a stale form posts once every animal is entered, and log the refusal', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
@@ -468,11 +546,21 @@ describe(`${SUITE} — Save and add another`, () => {
     const { errorSummary } = result.view.context
     expect(errorSummary.errorList).toHaveLength(1)
     expect(errorSummary.errorList[0].href).toBe('#identification-card-0')
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [],
+      reason: 'animal-identifier-cap-reached',
+      lineIndex: 0,
+      cap: 1
+    })
   })
 
-  it('Should refuse a permanent address with address line 1 blank and save nothing', async () => {
+  it('Should block a partial permanent address on the pressed card', async () => {
     const result = await driveHandler(post, {
-      seed: { commodityLines: [lineOf(FELIS_CATUS_ROW)] },
+      seed: {
+        commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
+      },
       payload: {
         action: 'add:0',
         [PASSPORT_FIELD_0]: 'UK123456789',
@@ -482,19 +570,68 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(result.view.context.errors['addressLine1-0']).toBe(
       'Enter address line 1'
     )
-    expect(result.after).toEqual(result.before)
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
+  })
+
+  it("Should save only the pressed card's animal and show no error for another species' over-long value", async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
+          bisonBisonLine({ numberOfAnimalsQuantity: '2' })
+        ]
+      },
+      payload: {
+        action: 'add:0',
+        [EAR_TAG_FIELD_0]: 'UK1',
+        [EAR_TAG_FIELD_1]: 'x'.repeat(59)
+      }
+    })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
+    })
+    expect(
+      result.after.commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierEarTag
+      )
+    ).toEqual(['UK1'])
+    expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+  })
+
+  it('Should save a 58-character identifier typed with spaces around it without them', async () => {
+    const identifier = 'x'.repeat(58)
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      },
+      payload: { action: 'add:0', [EAR_TAG_FIELD_0]: `  ${identifier}  ` }
+    })
+    expect(
+      result.after.commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierEarTag
+      )
+    ).toEqual([identifier])
+  })
+
+  it('Should refuse a 59-character identifier with the field-named message', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      },
+      payload: { action: 'add:0', [EAR_TAG_FIELD_0]: 'x'.repeat(59) }
+    })
+    expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(EAR_TAG_REFUSED)
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
   })
 })
 
 describe(`${SUITE} — Save and continue`, () => {
   setupIdentificationEngine()
 
-  it('Should append the held record then exit along the section flow to the hub', async () => {
+  it('Should append the held record of a one-animal line then exit along the section flow to the hub', async () => {
     const result = await driveHandler(post, {
       seed: {
-        commodityLines: [
-          lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' })
-        ]
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
       },
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
@@ -508,19 +645,26 @@ describe(`${SUITE} — Save and continue`, () => {
 
   it('Should exit without appending when no form holds data — the zero-record pass', async () => {
     const result = await driveHandler(post, {
-      seed: { commodityLines: [lineOf(BOS_TAURUS_ROW)] },
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
+      },
       payload: {}
     })
     expect(result.response).toEqual({
       redirect: hubPath(result.journeyId)
     })
-    expect(result.after).toEqual(result.before)
+    expect(result.after).toEqual({
+      commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: 1 })]
+    })
   })
 
-  it('Should append every card whose form holds data across a multi-species surface', async () => {
+  it('Should save the one-animal line and leave a multi-animal line unsaved when both hold typed values', async () => {
     const result = await driveHandler(post, {
       seed: {
-        commodityLines: [lineOf(BOS_TAURUS_ROW), lineOf(FELIS_CATUS_ROW)]
+        commodityLines: [
+          bosTaurusLine({ numberOfAnimalsQuantity: '1' }),
+          felisCatusLine({ numberOfAnimalsQuantity: '2' })
+        ]
       },
       payload: {
         'animalIdentifierEarTag-0': 'UK1',
@@ -530,17 +674,24 @@ describe(`${SUITE} — Save and continue`, () => {
     expect(
       result.after.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
     ).toBe('UK1')
-    expect(
-      result.after.commodityLines[1].animalIdentifiers[0]
-        .animalIdentifierPassport
-    ).toBe('UK123456789')
+    expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+  })
+
+  it('Should show no error for an over-long value typed into a multi-animal line', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      },
+      payload: { 'animalIdentifierEarTag-0': 'x'.repeat(59) }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
   })
 })
 
 describe(`${SUITE} — Implicit submit — Enter mid-entry fires the safe default, never a remove`, () => {
   setupIdentificationEngine()
 
-  it('Should treat the finish default as non-destructive — keeps existing records and appends the half-filled entry', async () => {
+  it('Should keep existing records and save nothing typed into a multi-animal line', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
@@ -558,7 +709,7 @@ describe(`${SUITE} — Implicit submit — Enter mid-entry fires the safe defaul
     const tags = result.after.commodityLines[0].animalIdentifiers.map(
       (unit) => unit.animalIdentifierEarTag
     )
-    expect(tags).toEqual(['UK1', 'UK2'])
+    expect(tags).toEqual(['UK1'])
   })
 })
 
@@ -595,7 +746,12 @@ describe(`${SUITE} — Remove`, () => {
       seed,
       payload: { action: 'remove:5:0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      lineIndex: 5,
+      unitIndex: 0,
+      reason: 'no-animal-identifier-at-index'
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -611,20 +767,19 @@ describe(`${SUITE} — Remove`, () => {
       seed,
       payload: { action: 'remove:0:5' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      lineIndex: 0,
+      unitIndex: 5,
+      reason: 'no-animal-identifier-at-index'
+    })
     expect(result.after).toEqual(seed)
   })
 
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
-    const server = Hapi.server()
-    await server.register(Crumb)
-    registerTestSessionAuth(server)
-    await server.register(
-      {
-        name: 'animal-identification-under-test',
-        register: (inner) => inner.route(animalIdentification.routes)
-      },
-      { routes: { prefix: SET_BASE } }
+    const server = await crumbProtectedServerMounting(
+      animalIdentification.routes,
+      SET_BASE
     )
 
     const forged = await server.inject({
@@ -647,12 +802,17 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
 
   const renderFor = async (commodityCode, speciesLatinName) => {
     const [card] = await viewCards({
-      commodityLines: [lineOf({ commodityCode, speciesLatinName })]
+      commodityLines: [
+        lineOf(
+          { commodityCode, speciesLatinName },
+          { numberOfAnimalsQuantity: '2' }
+        )
+      ]
     })
     return {
       fieldIds: card.fields.map((field) => field.id),
       showAddress: card.showAddress,
-      identifierColumns: card.identifierColumns
+      columnHeadings: card.savedAnimalsTable.head.map(({ text }) => text)
     }
   }
 
@@ -695,7 +855,7 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
       const rendered = await renderFor(commodityCode, speciesLatinName)
       expect(rendered.fieldIds).toEqual(fieldIds)
       expect(rendered.showAddress).toBe(showAddress)
-      expect(rendered.identifierColumns.includes('Permanent address')).toBe(
+      expect(rendered.columnHeadings.includes('Permanent address')).toBe(
         showAddress
       )
     }
@@ -713,19 +873,29 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     return { journeyId: journey.journeyId, response, view: h.captured.view }
   }
 
-  it('Should give an ostrich line no panel but keep it in the summary', async () => {
+  it('Should give an ostrich line no card but keep it in the summary', async () => {
     const context = await viewContext({
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' }),
         lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })
       ]
     })
-    expect(context.cards.map((card) => card.title)).toEqual([
-      '0102 — Bos taurus'
+    expect(context.sections.map((section) => section.heading)).toEqual([
+      CATTLE_HEADING
     ])
     expect(context.selectedCommodities).toEqual([
-      { code: '0102', name: BOS_TAURUS, animals: '2' },
-      { code: '01063300', name: 'Struthio', animals: '3' }
+      {
+        code: '0102',
+        name: 'Cattle or Cow',
+        latinNames: [BOS_TAURUS],
+        animals: '2'
+      },
+      {
+        code: '01063300',
+        name: 'Ostriches',
+        latinNames: [STRUTHIO],
+        animals: '3'
+      }
     ])
   })
 
@@ -736,10 +906,11 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
         lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' })
       ]
     })
-    expect(context.cards).toHaveLength(1)
-    expect(context.cards[0].index).toBe(1)
-    expect(context.cards[0].anchor).toBe('identification-card-1')
-    expect(context.cards[0].fields.map((field) => field.id)).toEqual([
+    const cards = context.sections.flatMap((section) => section.cards)
+    expect(cards).toHaveLength(1)
+    expect(cards[0].index).toBe(1)
+    expect(cards[0].anchor).toBe('identification-card-1')
+    expect(cards[0].fields.map((field) => field.id)).toEqual([
       'animalIdentifierEarTag-1',
       'animalIdentifierPassport-1'
     ])
@@ -761,11 +932,11 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 
-  const untouchedOstrichAnswers = {
-    commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: 3 })]
+  const untouchedStruthioAnswers = {
+    commodityLines: [struthioLine({ numberOfAnimalsQuantity: 3 })]
   }
 
-  it('Should carry a stale add post on without writing a record', async () => {
+  it('Should carry a stale add post on without writing a record, logging the skip once', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
@@ -774,7 +945,15 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedOstrichAnswers)
+    expect(result.after).toEqual(untouchedStruthioAnswers)
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodes: ['01063300'] },
+        message:
+          'Animal identification skipped: nothing on the consignment carries an identifier'
+      }
+    ])
   })
 
   it('Should carry a stale remove post on without deleting a record', async () => {
@@ -786,6 +965,6 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedOstrichAnswers)
+    expect(result.after).toEqual(untouchedStruthioAnswers)
   })
 })
