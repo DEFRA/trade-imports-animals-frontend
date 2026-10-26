@@ -25,16 +25,15 @@ const copy = copyFor({ en, cy })
 
 const EDITABLE_PARTIES = [...PARTIES, CONTACT_PARTY]
 
-/** A closed list, not a free path: `return` arrives in the query string. */
-const RETURN_SLUGS = ['addresses', kit.CYA_SLUG, CONTACT_PARTY.slug]
-
 const returnHref = (request, party) => {
-  const slug = RETURN_SLUGS.includes(request.query.return)
-    ? request.query.return
-    : party.returnSlug
+  const { honouredSlug } = kit.readReturnMarker(request, [
+    'addresses',
+    kit.CYA_SLUG,
+    CONTACT_PARTY.slug
+  ])
   return kit.withChangeContext(
     request,
-    pagePath(request.params.journeyId, slug)
+    pagePath(request.params.journeyId, honouredSlug ?? party.returnSlug)
   )
 }
 

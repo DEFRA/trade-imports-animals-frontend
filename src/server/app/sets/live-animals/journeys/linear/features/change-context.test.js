@@ -97,19 +97,18 @@ describe('change context — context survives the internal loop navigation', () 
     expect(after.commodityLines).toHaveLength(1)
   })
 
-  it('Should carry the context on the details page Add-another affordance', async () => {
+  it('Should carry the context and the return marker on the details page Add-another affordance', async () => {
     const { journeyId, view } = await driveHandler(
       getHandlerOf(consignmentDetails),
       { seed: lineSeed, query: change }
     )
     const { addHref, groups } = view.context
-    expect(addHref).toBe(`${pagePath(journeyId, 'commodities')}?change=1`)
+    expect(addHref).toBe(
+      `${pagePath(journeyId, 'commodities')}?return=consignment-details&change=1`
+    )
     expect(groups[0].index).toBe(0)
   })
 
-  // The seed holds one line, so this removal empties the notification and the
-  // user goes back to the commodity question rather than to an empty details
-  // page. The context has to travel with that redirect too.
   it('Should carry the context through a commodity remove round-trip', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
