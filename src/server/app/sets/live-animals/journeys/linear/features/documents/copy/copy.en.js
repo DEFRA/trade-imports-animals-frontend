@@ -129,7 +129,6 @@ export const copy = {
     fileEmpty: 'The selected file is empty',
     fileVirus: 'The selected file contains a virus',
     fileDownloadFailed: 'The selected file could not be downloaded',
-    notYetAdded: `Choose a file and select ‘${addAnother}’ to add this document`,
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     documentNotSaved: (saveAction) =>

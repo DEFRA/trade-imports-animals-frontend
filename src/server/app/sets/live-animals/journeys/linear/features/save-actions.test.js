@@ -102,6 +102,29 @@ describe('save actions — hub exit semantics', () => {
     expect(exit.after.purposeInInternalMarket).toBeUndefined()
   })
 
+  it('Should refuse Save and return to overview with a required answer blank, with the same errors as Save and continue', async () => {
+    const blankTransit = {
+      reasonForImport: 'transit',
+      transitPortOfExit: '',
+      transitDestinationCountry: ''
+    }
+    const plain = await driveHandler(postHandlerOf(importReason), {
+      payload: blankTransit,
+      seed: reasonPrerequisites
+    })
+    const exit = await driveHandler(postHandlerOf(importReason), {
+      payload: { ...blankTransit, exit: 'hub' },
+      seed: reasonPrerequisites
+    })
+    expect(exit.response.redirect).toBeUndefined()
+    expect(exit.view.context.errors).toEqual(plain.view.context.errors)
+    expect(Object.keys(exit.view.context.errors)).toEqual([
+      'transitPortOfExit',
+      'transitDestinationCountry'
+    ])
+    expect(exit.after.reasonForImport).toBeUndefined()
+  })
+
   it('Should send a change-context Save and continue back to check your answers', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(importReason),

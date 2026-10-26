@@ -5,7 +5,6 @@ import {
   driveHandler,
   expectBackLinkIsPage,
   postHandlerOf,
-  expectOneRefusalLogged,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -192,30 +191,31 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: [search.SEARCH_FIELD]
-    })
+    expect(result.logger.entries).toEqual([])
   })
 
-  it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
+  it('Should refuse nothing chosen on Save and return to overview with the same error as Save and continue', async () => {
     const result = await driveHandler(post, { payload: { exit: 'hub' } })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.view).toBeUndefined()
-    expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
+    })
+    expect(result.after).toEqual(result.before)
+    expect(result.logger.entries).toEqual([])
   })
 
-  it('Should empty a saved selection on Save and return to overview with nothing chosen', async () => {
-    const result = await driveHandler(post, {
-      seed: {
-        commodityLines: [
-          { commoditySelection: 'Cow', speciesSelection: '1148346' }
-        ]
-      },
-      payload: { exit: 'hub' }
+  it('Should leave the saved selection unchanged when Save and return to overview is refused with nothing chosen', async () => {
+    const seed = {
+      commodityLines: [
+        { commoditySelection: 'Cow', speciesSelection: '1148346' }
+      ]
+    }
+    const result = await driveHandler(post, { seed, payload: { exit: 'hub' } })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should clear a saved unweaned answer when the new choice holds only 01061900 species', async () => {

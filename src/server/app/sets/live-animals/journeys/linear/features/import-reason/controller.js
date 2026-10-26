@@ -98,8 +98,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { values, answers, errors } = await validation.onSubmit(
-    request.payload ?? {},
-    { allowMissing: kit.isHubExit(request) }
+    request.payload ?? {}
   )
   if (hasErrors(errors)) {
     const current = await state.get(request, h)

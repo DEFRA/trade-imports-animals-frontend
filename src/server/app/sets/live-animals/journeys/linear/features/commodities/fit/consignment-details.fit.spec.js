@@ -7,12 +7,12 @@ import {
   expectThreeSaveControls,
   expectSpeciesSelected,
   journeyUrl,
+  saveAndReturnToHub,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
-import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 
 const BISON_BISON = 'Bison bison'
@@ -366,9 +366,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     page
   }) => {
     await fillValidQuantities(page)
-    await page
-      .getByRole('button', { name: sharedCopy.saveActions.saveAndReturnToHub })
-      .click()
+    await saveAndReturnToHub(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 

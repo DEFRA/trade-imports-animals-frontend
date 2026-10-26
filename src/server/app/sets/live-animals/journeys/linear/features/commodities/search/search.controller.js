@@ -78,10 +78,7 @@ const post = async (request, h) => {
     return rerender(request, h, { selected, query })
   }
 
-  if (selected.length === 0 && !kit.isHubExit(request)) {
-    kit.logRefusal(request, {
-      fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
-    })
+  if (selected.length === 0) {
     const response = await rerender(request, h, {
       selected,
       query,
