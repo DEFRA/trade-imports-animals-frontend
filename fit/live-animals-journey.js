@@ -22,10 +22,6 @@ export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
 
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
-const BLOCKING_IMPACTS = ['serious', 'critical']
-const JSON_INDENT = 2
-
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
   violation.nodes.every((node) =>
@@ -39,14 +35,17 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
  * @param {string} subject - names the page in the failure message.
  */
 export const expectNoSeriousOrCriticalViolations = async (page, subject) => {
-  const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()
+  const jsonIndent = 2
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze()
   const blocking = results.violations
-    .filter(({ impact }) => BLOCKING_IMPACTS.includes(impact))
+    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
     .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
 
   expect(
     blocking,
-    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, JSON_INDENT)}`
+    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, jsonIndent)}`
   ).toEqual([])
 }
 
@@ -85,6 +84,12 @@ export const expectNoHorizontalOverflow = async (element, subject) => {
 export const FORM_GROUP_ANCESTOR_XPATH =
   'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
 
+export const expectStyle = async (element, styles) => {
+  for (const [property, value] of Object.entries(styles)) {
+    await expect(element).toHaveCSS(property, value)
+  }
+}
+
 export const PHONE_VIEWPORT = { width: 360, height: 740 }
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
@@ -120,10 +125,10 @@ export const addressBookInsetText = (party) => {
   return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
 }
 
-const JOURNEY_ID_IN_URL = new RegExp(`^${BASE}/notifications/([^/]+)`)
-
 export const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(JOURNEY_ID_IN_URL)
+  const match = new URL(page.url()).pathname
+    .slice(BASE.length)
+    .match(/^\/notifications\/([^/]+)/)
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
@@ -235,8 +240,6 @@ export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
  */
 export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
 
-const WIDTH_TOLERANCE_PX = 1
-
 /**
  * Fails unless the page's search box has its hint and one button,
  * named as the copy says, joined flush to its right edge, together
@@ -267,9 +270,8 @@ export const expectSearchBoxJoinedToItsButton = async (
   expect(buttonEdge).toBeCloseTo(boxEdge, 0)
 
   const { width } = await wrapper.boundingBox()
-  expect(Math.abs(width - expectedWidth)).toBeLessThanOrEqual(
-    WIDTH_TOLERANCE_PX
-  )
+  const widthTolerancePx = 1
+  expect(Math.abs(width - expectedWidth)).toBeLessThanOrEqual(widthTolerancePx)
 }
 
 /**
@@ -329,28 +331,25 @@ export const { values } = JSON.parse(
 const arrivalDate = addUtcMonths(new Date(), 1)
 export const ARRIVAL_DATE_IN_WINDOW = formatDateText(arrivalDate)
 
-const SHORT_MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-]
-export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHORT_MONTHS[arrivalDate.getUTCMonth()]} ${arrivalDate.getUTCFullYear()}`
-
-const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
-
-const REGION_CODE_SEPARATOR = '-'
-const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
-  values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
-)
+const formatArrivalDateForDisplay = (date) => {
+  const shortMonths = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ]
+  return `${date.getUTCDate()} ${shortMonths[date.getUTCMonth()]} ${date.getUTCFullYear()}`
+}
+export const ARRIVAL_DATE_IN_WINDOW_DISPLAY =
+  formatArrivalDateForDisplay(arrivalDate)
 
 /**
  * Starts a notification from the dashboard and stops on the origin page.
@@ -382,9 +381,7 @@ export const chooseTypeAheadOption = async (
 ) => {
   await page.waitForLoadState('domcontentloaded')
   const scope = inputId
-    ? page
-        .locator(`#${inputId}`)
-        .locator('xpath=ancestor::*[contains(@class,"govuk-form-group")][1]')
+    ? page.locator(`#${inputId}`).locator(FORM_GROUP_ANCESTOR_XPATH)
     : page
   const field = scope.getByLabel(label, { exact: true })
   if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
@@ -396,7 +393,10 @@ export const chooseTypeAheadOption = async (
   await page.getByRole('option', { name: optionName, exact: true }).click()
 }
 
-export const chooseCountryOfOrigin = (page, name = FIXTURE_COUNTRY) =>
+export const chooseCountryOfOrigin = (
+  page,
+  name = COUNTRY_LABELS[values.countryOfOrigin]
+) =>
   chooseTypeAheadOption(page, {
     label: originCopy.country.label,
     query: name,
@@ -521,15 +521,15 @@ export const carryOpeningRunToImportReason = async (page) => {
   ).toBeVisible()
 }
 
-const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
-const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
-
-export const choosePortOfEntry = (page, option = FIXTURE_PORT_OPTION) =>
-  chooseTypeAheadOption(page, {
+export const choosePortOfEntry = (page, option) => {
+  const fixturePort = PORTS.find((port) => port.code === values.portOfEntry)
+  const chosenOption = option ?? `${fixturePort.name} - ${fixturePort.code}`
+  return chooseTypeAheadOption(page, {
     label: transportCopy.portOfEntry.port.label,
-    query: option,
-    optionName: option
+    query: chosenOption,
+    optionName: chosenOption
   })
+}
 
 export const answerCountryOfOrigin = async (page) => {
   await page
@@ -571,22 +571,22 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await expectOverview(page)
 }
 
-const SET_FILE_TIMEOUT_MS = 60_000
-
 export const setUploadFile = (
   page,
   filename,
   bytes,
   mimeType = 'application/pdf'
-) =>
-  page.locator('input[type="file"]').setInputFiles(
+) => {
+  const setFileTimeoutMs = 60_000
+  return page.locator('input[type="file"]').setInputFiles(
     {
       name: filename,
       mimeType,
       buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
     },
-    { timeout: SET_FILE_TIMEOUT_MS }
+    { timeout: setFileTimeoutMs }
   )
+}
 
 /**
  * Opens the document upload page from a fresh notification with the sections
@@ -624,7 +624,9 @@ export const answerOriginDetails = async (
   page,
   {
     countryName,
-    regionCode = FIXTURE_REGION_CODE_SUFFIX,
+    regionCode = values.regionOfOriginCode.slice(
+      `${values.countryOfOrigin}-`.length
+    ),
     internalReference = values.internalReferenceNumber
   } = {}
 ) => {
@@ -707,20 +709,16 @@ export const answerRolesAndAddresses = async (page) => {
   await save(page)
 }
 
-const [FIXTURE_CPH_COUNTY, FIXTURE_CPH_PARISH, FIXTURE_CPH_HOLDING] =
-  values.countyParishHoldingCph.split('/')
-
 export const answerCphNumber = async (page) => {
+  const [county, parish, holding] = values.countyParishHoldingCph.split('/')
   await expect(
     page.getByRole('heading', {
       name: 'Add the county parish holding number (CPH)'
     })
   ).toBeVisible()
-  await page.getByLabel('County', { exact: true }).fill(FIXTURE_CPH_COUNTY)
-  await page.getByLabel('Parish', { exact: true }).fill(FIXTURE_CPH_PARISH)
-  await page
-    .getByLabel('Holding number', { exact: true })
-    .fill(FIXTURE_CPH_HOLDING)
+  await page.getByLabel('County', { exact: true }).fill(county)
+  await page.getByLabel('Parish', { exact: true }).fill(parish)
+  await page.getByLabel('Holding number', { exact: true }).fill(holding)
   await save(page)
 }
 

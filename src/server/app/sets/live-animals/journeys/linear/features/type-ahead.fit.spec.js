@@ -5,6 +5,7 @@ import {
   PHONE_VIEWPORT,
   chooseOutOfListCountry,
   expectNoSeriousOrCriticalViolations,
+  expectStyle,
   openArrival,
   openTransit,
   saveAndContinue,
@@ -20,13 +21,9 @@ import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as transportCopy } from './transport/copy/copy.en.js'
 
-const AUTOCOMPLETE_BUTTON = '.app-autocomplete__button'
 const AUTOCOMPLETE_CONTAINER =
   'xpath=ancestor::*[contains(@class,"app-autocomplete")][1]'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
-const ireland = countriesOrigin.find(({ code }) => code === 'IE')
-const dover = portsOfEntry.find(({ code }) => code === 'GB DVR')
-const DOVER_OPTION = `${dover.name} - ${dover.code}`
 
 const inputFor = (page, inputId) => page.locator(`input#${inputId}`)
 
@@ -43,13 +40,16 @@ const countryCase = (fields) => ({
   ...fields
 })
 
-const portCase = (fields) => ({
-  typed: 'dov',
-  suggestion: DOVER_OPTION,
-  bold: 'Dov',
-  labelSize: 'small',
-  ...fields
-})
+const portCase = (fields) => {
+  const dover = portsOfEntry.find(({ code }) => code === 'GB DVR')
+  return {
+    typed: 'dov',
+    suggestion: `${dover.name} - ${dover.code}`,
+    bold: 'Dov',
+    labelSize: 'small',
+    ...fields
+  }
+}
 
 const typeAheads = [
   countryCase({
@@ -180,7 +180,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       const input = inputFor(page, inputId)
       const button = input
         .locator(AUTOCOMPLETE_CONTAINER)
-        .locator(AUTOCOMPLETE_BUTTON)
+        .locator('.app-autocomplete__button')
       const urlBeforeClick = page.url()
 
       await expect(button).toHaveAttribute('aria-hidden', 'true')
@@ -311,6 +311,7 @@ test.describe('country of origin change announcement', () => {
   test('announces one change when a suggestion is chosen with Enter', async ({
     page
   }) => {
+    const ireland = countriesOrigin.find(({ code }) => code === 'IE')
     const input = inputFor(page, 'countryOfOrigin')
     const suggestion = page.getByRole('option', {
       name: ireland.name,
@@ -385,7 +386,7 @@ test.describe('country of origin type-ahead styles', () => {
     )
   })
 
-  test('gives the enhanced input the standard GOV.UK error border', async ({
+  test('gives the enhanced input the GOV.UK error border width and the same error colour as the inline error message', async ({
     page
   }) => {
     await chooseOutOfListCountry(page)
@@ -416,41 +417,50 @@ test.describe('country of origin type-ahead styles', () => {
   })
 })
 
-const govukColourOf = (page, token) =>
-  page.evaluate((name) => {
-    const reference = document.createElement('span')
-    reference.style.color = `var(--govuk-${name}-colour)`
-    document.body.append(reference)
-    const { color } = window.getComputedStyle(reference)
-    reference.remove()
-    return color
-  }, token)
-
-const readInputStyleInBrowser = ({ classes, properties, focused }) => {
-  const reference = document.createElement('input')
-  reference.className = classes
-  document.body.append(reference)
-  if (focused) {
-    reference.focus()
-  }
-  const style = window.getComputedStyle(reference)
-  const values = Object.fromEntries(
-    properties.map((name) => [name, style.getPropertyValue(name)])
+const measureReferenceElement = (
+  page,
+  { tagName, className = '', cssText = '', focused = false, properties }
+) =>
+  page.evaluate(
+    (request) => {
+      const reference = document.createElement(request.tagName)
+      reference.className = request.className
+      reference.style.cssText = request.cssText
+      document.body.append(reference)
+      try {
+        if (request.focused) {
+          reference.focus()
+        }
+        const style = window.getComputedStyle(reference)
+        return Object.fromEntries(
+          request.properties.map((name) => [name, style.getPropertyValue(name)])
+        )
+      } finally {
+        reference.remove()
+      }
+    },
+    { tagName, className, cssText, focused, properties }
   )
-  reference.remove()
-  return values
+
+const govukColourOf = async (page, token) => {
+  const { color } = await measureReferenceElement(page, {
+    tagName: 'span',
+    cssText: `color: var(--govuk-${token}-colour)`,
+    properties: ['color']
+  })
+  return color
 }
 
 const govukInputStyleOf = (
   page,
   { classes = 'govuk-input', properties, focused = false }
-) => page.evaluate(readInputStyleInBrowser, { classes, properties, focused })
-
-const expectStyle = async (locator, style) => {
-  for (const [property, value] of Object.entries(style)) {
-    await expect(locator).toHaveCSS(property, value)
-  }
-}
+) =>
+  measureReferenceElement(page, {
+    tagName: 'input',
+    className: classes,
+    focused,
+    properties
+  })
 
 const shadowInColour = (shadow, colour) =>
   shadow.replace(/^rgba?\([^)]*\)/, colour)

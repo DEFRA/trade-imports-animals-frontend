@@ -8,6 +8,7 @@ import {
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectStyle,
   openReviewFromHub,
   selectSpecies,
   signIn,
@@ -495,9 +496,7 @@ test.describe('hub feature — commodity totals', () => {
       ]
     ]
     for (const [element, styles] of panelStyles) {
-      for (const [property, value] of Object.entries(styles)) {
-        await expect(element).toHaveCSS(property, value)
-      }
+      await expectStyle(element, styles)
     }
   })
 
