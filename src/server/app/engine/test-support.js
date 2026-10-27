@@ -8,6 +8,7 @@ import { SET_ID } from '../../../../test/fixtures/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
 import { pagePath } from '../shared/paths.js'
+import { records as recordsReal } from '../services/persistence/records/real/index.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
@@ -345,7 +346,7 @@ export const getHandlerEndingWith = (featureModule, pathSuffix) =>
     (route) => route.method === 'GET' && route.path.endsWith(pathSuffix)
   ).handler
 
-const fetchMock = createFetchMock(vi)
+export const fetchMock = createFetchMock(vi)
 
 export const resetMocksAndConfigAfterTests = (...configKeys) => {
   const originals = ['stubMode', ...configKeys].map((key) => [
@@ -359,7 +360,7 @@ export const resetMocksAndConfigAfterTests = (...configKeys) => {
   })
 }
 
-export const referenceDataServing = () => {
+export const useReferenceDataServing = () => {
   resetMocksAndConfigAfterTests()
   return (rows) => {
     config.set('stubMode', false)
@@ -368,18 +369,17 @@ export const referenceDataServing = () => {
   }
 }
 
-const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'US', name: 'United States' }
-])
-
 /** Puts the address book on the network boundary: every request to its
  * `/addresses` paths gets `addressResponse` (or, for a function, what it
  * returns for the request) and the country list gets the United Kingdom,
  * Switzerland and the United States. Call it inside a test; pair it with
  * `resetMocksAndConfigAfterTests()` in the describe. */
 export const addressBookAnswering = (addressResponse) => {
+  const countryList = JSON.stringify([
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'CH', name: 'Switzerland' },
+    { code: 'US', name: 'United States' }
+  ])
   const answerAddresses = (request) =>
     typeof addressResponse === 'function'
       ? addressResponse(request)
@@ -389,12 +389,11 @@ export const addressBookAnswering = (addressResponse) => {
   fetchMock.mockResponse(async (request) =>
     request.url.includes('/addresses')
       ? answerAddresses(request)
-      : { body: ADDRESS_BOOK_COUNTRY_LIST }
+      : { body: countryList }
   )
 }
 
-/** Serves the address book country list and refuses every address request. */
-export const addressBookCountriesServing = () =>
+export const addressBookRefusingAddresses = () =>
   addressBookAnswering({ status: 500 })
 
 /** The urls of the address book requests made since `addressBookAnswering()`. */
@@ -440,11 +439,25 @@ export const expectOneSaveFallbackLogged = (logger, fallback) =>
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {
-    configureRecords(setId, recordsStub)
     configureSession(setId, sessionStub)
     buildDispatch(setId, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  beforeEach(async () => {
+    configureRecords(setId, recordsStub)
+    await store.clear()
+  })
+}
+
+export const useBackendRecords = (setId) => {
+  beforeAll(() => {
+    configureRecords(setId, recordsReal)
+    configureSession(setId, sessionStub)
+  })
+  beforeEach(() => {
+    fetchMock.enableMocks()
+    fetchMock.mockClear()
+  })
+  resetMocksAndConfigAfterTests()
 }
 
 export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>

@@ -126,7 +126,9 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
  * @param {object} request - the request being answered.
  * @param {object} [options] - other keys (the named reason, ids) are logged as given.
  * @param {object} [options.fieldErrors] - map of field key to the message the
- * page shows (may be empty).
+ * page shows (may be empty). Only for a refusal that is not the user's own
+ * input (a state refusal, a tampered post, another service refusing), never
+ * for errors the user can correct on the form.
  */
 export const logRefusal = (
   request,

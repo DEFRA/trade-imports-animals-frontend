@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../set.js'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { pagePath } from '../../../../../../shared/paths.js'
 import { store } from '../../../../../../engine/store.js'
@@ -8,11 +8,15 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
+  addressBookRefusingAddresses,
+  addressBookRequestUrls,
   expectOneLogged,
   expectNoRefusalLogged,
+  fetchMock,
   journeyRequest,
   postHandlerOf,
   recordingLogger,
+  resetMocksAndConfigAfterTests,
   stubH,
   expectOneSaveFallbackLogged,
   unavailableBackendError,
@@ -23,10 +27,6 @@ import { dispatchPages } from '../index.js'
 import * as declaration from './controller.js'
 import { continueRequest, reviewedState } from './test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../engine/persistence/session.js'
-import * as addressBook from '../../../../../../services/address-book/index.js'
-import * as refusal from '../check-answers/refusal.js'
-import { records } from '../../../../../../engine/persistence/records.js'
-import * as kit from '../../../../../../shared/kit.js'
 
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
@@ -98,15 +98,6 @@ const expectRefusalLogged = (result, expectedRefusal) =>
     message: 'Declaration refused'
   })
 
-const CURRENT_CONCURRENCY_TOKEN = 'current-token'
-const movePageTokenAwayFromReviewedToken = () => {
-  const base = kit.base
-  vi.spyOn(kit, 'base').mockImplementation((...args) => ({
-    ...base(...args),
-    concurrencyToken: CURRENT_CONCURRENCY_TOKEN
-  }))
-}
-
 const editElsewhere = (journeyId) =>
   store.seedAnswers(journeyId, { countryOfOrigin: 'DE' })
 
@@ -116,7 +107,7 @@ const REFUSED = '?refused=1'
 const useReadyDeclarationJourney = () => {
   useStubbedJourney(SET_ID, dispatchPages)
   beforeEach(() => configureReadyForCheckYourAnswers(SET_ID, () => true))
-  afterEach(() => vi.restoreAllMocks())
+  resetMocksAndConfigAfterTests()
 }
 
 describe('#declaration', () => {
@@ -193,8 +184,6 @@ describe('#declaration', () => {
     it.each(['review', 'declare'])(
       'Should log the refusal and send step=%s back to the review when the session never rendered it',
       async (step) => {
-        const finaliseSpy = vi.spyOn(records, 'finalise')
-
         const result = await drivePost({
           step,
           payload: { declaration: 'confirmed' },
@@ -204,7 +193,7 @@ describe('#declaration', () => {
         expect(result.response).toEqual({
           redirect: reviewPath(result.journeyId)
         })
-        expect(finaliseSpy).not.toHaveBeenCalled()
+        expect((await store.get(result.journeyId)).status).toBe('draft')
         expectRefusalLogged(
           result,
           declaration.DECLARATION_REFUSAL.reviewNotRecorded
@@ -226,8 +215,6 @@ describe('#declaration', () => {
 
   describe('POST /declaration with no recognised step', () => {
     it('Should log the refusal and send the trader back to the review', async () => {
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
       const result = await drivePost({
         step: null,
         payload: { declaration: 'confirmed' }
@@ -236,7 +223,7 @@ describe('#declaration', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId)
       })
-      expect(finaliseSpy).not.toHaveBeenCalled()
+      expect((await store.get(result.journeyId)).status).toBe('draft')
       expectRefusalLogged(result, declaration.DECLARATION_REFUSAL.unknownStep)
     })
   })
@@ -247,8 +234,6 @@ describe('#declaration submit', () => {
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
-      movePageTokenAwayFromReviewedToken()
-
       const result = await drivePost({ payload: { declaration: '' } })
 
       expect(result.response.statusCode).toBe(400)
@@ -270,19 +255,16 @@ describe('#declaration submit', () => {
       })
     })
 
-    it('Should finalise at the token the review was rendered with', async () => {
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
+    it('Should submit the notification and redirect to the confirmation page when the declaration is confirmed', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
-      expect(finaliseSpy).toHaveBeenCalledTimes(1)
-      expect(finaliseSpy.mock.calls[0][0]).toBe(result.journeyId)
-      expect(finaliseSpy.mock.calls[0][2]).toBe(result.reviewedConcurrencyToken)
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'confirmation')
+      })
+      expect((await store.get(result.journeyId)).status).toBe('submitted')
     })
 
     it('Should refuse the submit when the notification changed after the declaration rendered', async () => {
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
       const result = await drivePost({
         payload: { declaration: 'confirmed' },
         afterReview: editElsewhere
@@ -291,7 +273,6 @@ describe('#declaration submit', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, CHANGED)
       })
-      expect(finaliseSpy).not.toHaveBeenCalled()
       expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
@@ -307,7 +288,7 @@ describe('#declaration submit', () => {
     })
 
     it('Should submit the copied address as stored, never consulting the address book', async () => {
-      const partySpy = vi.spyOn(addressBook, 'party')
+      addressBookRefusingAddresses()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed' },
@@ -318,12 +299,10 @@ describe('#declaration submit', () => {
         redirect: pagePath(result.journeyId, 'confirmation')
       })
       expect(result.after.consignor).toEqual(VALID_COPY)
-      expect(partySpy).not.toHaveBeenCalled()
+      expect(addressBookRequestUrls()).toEqual([])
     })
 
     it('Should refuse the submit while a copied address breaks the rules', async () => {
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
       const result = await drivePost({
         payload: { declaration: 'confirmed' },
         seed: { consignor: { ...VALID_COPY, email: 'not-an-email' } }
@@ -332,7 +311,7 @@ describe('#declaration submit', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, REFUSED)
       })
-      expect(finaliseSpy).not.toHaveBeenCalled()
+      expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
     it('Should keep the not-ready outcome as a redirect to the review', async () => {
@@ -346,20 +325,18 @@ describe('#declaration submit', () => {
     })
 
     it('Should redirect to the review when a stored answer has gone stale', async () => {
-      vi.spyOn(refusal, 'isReviewRefused').mockResolvedValue(true)
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
-      const result = await drivePost({ payload: { declaration: 'confirmed' } })
+      const result = await drivePost({
+        payload: { declaration: 'confirmed' },
+        seed: { animalsCertifiedFor: 'not-a-purpose' }
+      })
 
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, REFUSED)
       })
-      expect(finaliseSpy).not.toHaveBeenCalled()
+      expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
     it('Should redirect to the review when a stored port has been withdrawn', async () => {
-      const finaliseSpy = vi.spyOn(records, 'finalise')
-
       const result = await drivePost({
         payload: { declaration: 'confirmed' },
         seed: { portOfEntry: 'GB ZZZ' }
@@ -368,7 +345,7 @@ describe('#declaration submit', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, REFUSED)
       })
-      expect(finaliseSpy).not.toHaveBeenCalled()
+      expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
     it('Should redirect an already-submitted POST retry to confirmation', async () => {
@@ -393,11 +370,15 @@ describe('#declaration submit against the real records adapter', () => {
   useReadyDeclarationJourney()
 
   describe('backend submit', () => {
-    const backendResponds = (response) =>
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({ ...response, clone: () => response }))
-      )
+    const backendResponds = (response) => {
+      fetchMock.enableMocks()
+      fetchMock.mockResponse(async () => response)
+    }
+    const staleConcurrencyTokenResponse = {
+      status: 409,
+      statusText: 'Conflict',
+      body: JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' })
+    }
 
     beforeEach(() => {
       configureRecords(SET_ID, {
@@ -406,18 +387,8 @@ describe('#declaration submit against the real records adapter', () => {
       })
     })
 
-    afterEach(() => {
-      configureRecords(SET_ID, recordsStub)
-      vi.unstubAllGlobals()
-    })
-
     it('Should send the trader back to the review when an edit lands between the check and the submit', async () => {
-      backendResponds({
-        ok: false,
-        status: 409,
-        statusText: 'Conflict',
-        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
-      })
+      backendResponds(staleConcurrencyTokenResponse)
 
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
@@ -427,12 +398,7 @@ describe('#declaration submit against the real records adapter', () => {
     })
 
     it('Should render the declaration unticked when the trader continues from the review after a submit refused as changed', async () => {
-      backendResponds({
-        ok: false,
-        status: 409,
-        statusText: 'Conflict',
-        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
-      })
+      backendResponds(staleConcurrencyTokenResponse)
       const refused = await drivePost({ payload: { declaration: 'confirmed' } })
       const sessionAfterRefusal = refused.cookies[flowOnlyAnswersCookie()]
       expect(sessionAfterRefusal[refused.journeyId]).toEqual({
@@ -457,11 +423,10 @@ describe('#declaration submit against the real records adapter', () => {
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
       const failure = unavailableBackendError('submit notification')
       backendResponds({
-        ok: false,
         status: 503,
-        statusText: 'Service Unavailable'
+        statusText: 'Service Unavailable',
+        body: ''
       })
-      movePageTokenAwayFromReviewedToken()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed', crumb: 'test-crumb' }

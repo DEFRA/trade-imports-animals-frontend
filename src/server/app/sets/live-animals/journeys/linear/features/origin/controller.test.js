@@ -6,7 +6,7 @@ import {
   expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
-  referenceDataServing,
+  useReferenceDataServing,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -649,7 +649,7 @@ describe('GET /origin — country subdivisions', () => {
 })
 
 describe('POST /origin — country membership follows the primed list', () => {
-  const serveReferenceData = referenceDataServing()
+  const serveReferenceData = useReferenceDataServing()
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
     serveReferenceData([{ code: 'ZZ', name: 'Zedland' }])

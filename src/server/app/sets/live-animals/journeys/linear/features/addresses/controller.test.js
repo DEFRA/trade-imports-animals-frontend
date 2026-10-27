@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { store } from '../../../../../../engine/store.js'
 import {
-  addressBookCountriesServing,
+  addressBookRefusingAddresses,
   driveHandler,
   journeyRequest,
   resetMocksAndConfigAfterTests,
@@ -179,7 +179,7 @@ describe('GET addresses — sections for parties copied onto the notification', 
   })
 
   it('Should show the held party in its section from the copy alone when the address book refuses every address request', async () => {
-    addressBookCountriesServing()
+    addressBookRefusingAddresses()
 
     const result = await driveAddresses({
       placeOfOrigin: {
