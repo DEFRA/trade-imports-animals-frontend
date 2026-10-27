@@ -7,6 +7,7 @@ import {
   getHandlerOf,
   postHandlerOf,
   referenceDataServing,
+  resetMocksAndConfigAfterTests,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -649,6 +650,7 @@ describe('GET /origin — country subdivisions', () => {
 })
 
 describe('POST /origin — country membership follows the primed list', () => {
+  resetMocksAndConfigAfterTests()
   const serveReferenceData = referenceDataServing()
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {

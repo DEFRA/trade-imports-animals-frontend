@@ -6,6 +6,7 @@ import {
   expectNoRefusalLogged,
   postHandlerOf,
   referenceDataServing,
+  resetMocksAndConfigAfterTests,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -295,6 +296,7 @@ describe('POST port-of-entry — empty port overwrites a stored answer', () => {
 })
 
 describe('POST port-of-entry — port membership follows the primed list', () => {
+  resetMocksAndConfigAfterTests()
   const serveReferenceData = referenceDataServing()
 
   useStubbedJourney(SET_ID, dispatchPages)

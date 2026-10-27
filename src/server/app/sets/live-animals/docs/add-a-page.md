@@ -348,8 +348,15 @@ set-up in the test file:
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
   - `unavailableBackendError` builds the error a save failure is given
-  - `addressBookAnswering` puts the address book on the network boundary, and
-    `resetMocksAndConfigAfterTests` resets it after each test
+  - `useBackendRecords(setId)` registers the real records and the stub session
+    for a describe, enables the shared `fetchMock` and clears its calls before
+    each test, and resets the mocks and config after each test
+  - `addressBookAnswering` and `addressBookRefusingAddresses` put the address
+    book on the network boundary, and `resetMocksAndConfigAfterTests` resets it
+    after each test
+  - `referenceDataServing` returns the function that serves given rows as the
+    reference-data response; the describe that calls it registers
+    `resetMocksAndConfigAfterTests()`
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
