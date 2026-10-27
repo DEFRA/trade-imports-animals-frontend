@@ -106,7 +106,11 @@ contact address and then the review page, so the primary button — "Save and
 continue" on every one of them but the review page, which ends with "Continue" —
 carries a new notification from the entry page to the review page in one pass.
 The CPH number page is not a step: it opens from the CPH section's add link on Roles and addresses
-and saves back to it. Roles and addresses ends the run on the hub when every
+and saves back to it.
+What are you importing? is likewise a detour, not a step, when Commodity details or Identification details opens it:
+it saves back to the page that opened it, carrying any change context, and its Back opens that page.
+Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the run's next step or the review's change target applies.
+Roles and addresses ends the run on the hub when every
 task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
@@ -128,7 +132,7 @@ back to the overview when the run is over or no named earlier step applies.
 
 | Step                    | Back opens                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------- |
-| What are you importing? | Origin                                                                                |
+| What are you importing? | Origin, or Commodity details or Identification details when one of them opened it     |
 | Reason for import       | What are you importing?                                                               |
 | Commodity details       | What are you importing?, not the reason between them                                  |
 | Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |

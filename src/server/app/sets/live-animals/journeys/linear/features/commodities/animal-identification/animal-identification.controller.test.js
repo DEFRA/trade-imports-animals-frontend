@@ -20,7 +20,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { consignmentDetailsPage } from '../page.js'
+import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 
 import {
   BISON_BISON,
@@ -53,6 +53,7 @@ const REMOVE_FIRST_UNIT = 'remove:0:0'
 const BOS_TAURUS_1 = 'Bos taurus 1'
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 const CATTLE_HEADING = '0102'
+const IMPLICIT_SUBMIT = 'implicit-submit'
 const EAR_TAG_REFUSED = 'Ear tag must be 58 characters or less'
 
 const felisCatusLine = (extra = {}) => lineOf(FELIS_CATUS_ROW, extra)
@@ -326,7 +327,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     ])
   })
 
-  it('Should offer the route back to the commodity question alongside the cards', async () => {
+  it('Should offer the commodity question marked to return to identification details alongside the cards', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
@@ -335,7 +336,9 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     await getHandler(journeyRequest(journey.journeyId), h)
     const { addHref } = h.captured.view.context
 
-    expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
+    expect(addHref).toBe(
+      `${pagePath(journey.journeyId, 'commodities')}?return=${encodeURIComponent(animalIdentificationPage.slug)}`
+    )
   })
 
   it('Should point every card at the consignment-details page to change the animal count', async () => {
@@ -685,10 +688,10 @@ describe(`${SUITE} — Save and continue`, () => {
   })
 })
 
-describe(`${SUITE} — Implicit submit — Enter mid-entry fires the safe default, never a remove`, () => {
+describe(`${SUITE} — Enter in a field`, () => {
   setupIdentificationEngine()
 
-  it('Should keep existing records and save nothing typed into a multi-animal line', async () => {
+  it('Should save the value typed into a multi-animal line after its existing records and stay on identification details', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
@@ -698,15 +701,79 @@ describe(`${SUITE} — Implicit submit — Enter mid-entry fires the safe defaul
           })
         ]
       },
-      payload: { action: 'finish', 'animalIdentifierEarTag-0': 'UK2' }
+      payload: {
+        action: IMPLICIT_SUBMIT,
+        [EAR_TAG_FIELD_0]: 'UK2'
+      }
     })
     expect(result.response).toEqual({
-      redirect: hubPath(result.journeyId)
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
     })
     const tags = result.after.commodityLines[0].animalIdentifiers.map(
       (unit) => unit.animalIdentifierEarTag
     )
-    expect(tags).toEqual(['UK1'])
+    expect(tags).toEqual(['UK1', 'UK2'])
+  })
+
+  it('Should refuse an over-long value typed into a multi-animal line, keep it in the field and save nothing', async () => {
+    const tooLong = 'x'.repeat(59)
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      },
+      payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: tooLong }
+    })
+    expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(EAR_TAG_REFUSED)
+    const [card] = result.view.context.sections.flatMap(
+      (section) => section.cards
+    )
+    expect(
+      card.fields.find((field) => field.id === EAR_TAG_FIELD_0).value
+    ).toBe(tooLong)
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
+  })
+
+  it('Should save the values typed into a one-animal line and a multi-animal line and stay on identification details', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          bosTaurusLine({ numberOfAnimalsQuantity: '1' }),
+          felisCatusLine({ numberOfAnimalsQuantity: '2' })
+        ]
+      },
+      payload: {
+        action: IMPLICIT_SUBMIT,
+        [EAR_TAG_FIELD_0]: 'UK1',
+        'animalIdentifierPassport-1': 'UK123456789'
+      }
+    })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
+    })
+    const [oneAnimalLine, severalAnimalsLine] = result.after.commodityLines
+    expect(
+      oneAnimalLine.animalIdentifiers.map((unit) => unit.animalIdentifierEarTag)
+    ).toEqual(['UK1'])
+    expect(
+      severalAnimalsLine.animalIdentifiers.map(
+        (unit) => unit.animalIdentifierPassport
+      )
+    ).toEqual(['UK123456789'])
+  })
+
+  it('Should save the value typed into a one-animal line and go on to the hub', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
+      },
+      payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: 'UK1' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(
+      result.after.commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierEarTag
+      )
+    ).toEqual(['UK1'])
   })
 })
 

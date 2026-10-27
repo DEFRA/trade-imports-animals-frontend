@@ -502,7 +502,7 @@ describe('POST import-reason — a stale destination country submitted verbatim 
 describe('POST import-reason — Save and return to overview', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should save a transit reason with its port and country left blank and go to the overview', async () => {
+  it('Should refuse a transit reason with its port and country left blank, naming both, and save nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         reasonForImport: 'transit',
@@ -512,8 +512,50 @@ describe('POST import-reason — Save and return to overview', () => {
       }
     })
 
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      transitPortOfExit: copy.errors.portRequired,
+      transitDestinationCountry: copy.errors.countryRequired
+    })
+    expect(result.view.context.values.reasonForImport).toBe('transit')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a transit reason with a destination country and no port of exit, naming the port and keeping the country', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: '',
+        transitDestinationCountry: 'FR',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      transitPortOfExit: copy.errors.portRequired
+    })
+    expect(result.view.context.values.transitDestinationCountry).toBe('FR')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should clear the purpose saved for a reason no longer chosen when a transit reason with its answers is saved', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: 'FR',
+        exit: 'hub'
+      }
+    })
+
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.after.reasonForImport).toBe('transit')
+    expect(result.after.purposeInInternalMarket).toBeUndefined()
   })
 
   it('Should refuse a date that names no day and save nothing', async () => {

@@ -22,6 +22,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
+import { consignmentDetailsPage } from '../page.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
 import {
@@ -52,7 +53,6 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
-const PAGE_SLUG = 'consignment-details'
 const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
@@ -265,7 +265,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed: seedLines(),
       payload: { action: 'remove:0' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     expect(
       result.after.commodityLines.map((line) => line.commodityCode)
     ).toEqual(['01063300'])
@@ -346,7 +346,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
 
     const forged = await server.inject({
       method: 'POST',
-      url: pagePath('journey-1', PAGE_SLUG),
+      url: pagePath('journey-1', consignmentDetailsPage.slug),
       payload: { action: 'remove:0' }
     })
     expect(forged.statusCode).toBe(403)
@@ -388,7 +388,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:2' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     expect(
       result.after.commodityLines.map(({ commodityCode, speciesLatinName }) => [
         commodityCode,
@@ -406,7 +406,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed: seedTwoSpeciesOfOneCommodity(),
       payload: { action: 'remove-species:1' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     const lines = result.after.commodityLines
     expect(
       lines.map(({ commodityCode, speciesLatinName }) => [
@@ -590,6 +590,19 @@ describe('#consignmentDetailsController — the animal count must be answered be
       { href: '#numberOfPackages-1', text: PACKAGES_WHOLE_NUMBER_MESSAGE }
     ])
     expect(result.after.commodityLines).toHaveLength(2)
+  })
+})
+
+describe('#consignmentDetailsController — Add another commodity', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should offer the commodity question marked to return to commodity details', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed: seedLines()
+    })
+    expect(result.view.context.addHref).toBe(
+      `${pagePath(result.journeyId, COMMODITIES_SLUG)}?return=${consignmentDetailsPage.slug}`
+    )
   })
 })
 

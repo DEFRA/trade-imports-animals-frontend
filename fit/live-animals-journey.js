@@ -30,10 +30,6 @@ export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
 
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
-const BLOCKING_IMPACTS = ['serious', 'critical']
-const JSON_INDENT = 2
-
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
   violation.nodes.every((node) =>
@@ -47,14 +43,17 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
  * @param {string} subject - names the page in the failure message.
  */
 export const expectNoSeriousOrCriticalViolations = async (page, subject) => {
-  const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()
+  const jsonIndent = 2
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze()
   const blocking = results.violations
-    .filter(({ impact }) => BLOCKING_IMPACTS.includes(impact))
+    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
     .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
 
   expect(
     blocking,
-    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, JSON_INDENT)}`
+    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, jsonIndent)}`
   ).toEqual([])
 }
 
@@ -93,18 +92,14 @@ export const expectNoHorizontalOverflow = async (element, subject) => {
 export const FORM_GROUP_ANCESTOR_XPATH =
   'xpath=ancestor::*[contains(@class,"govuk-form-group")][1]'
 
+export const expectStyle = async (element, styles) => {
+  for (const [property, value] of Object.entries(styles)) {
+    await expect(element).toHaveCSS(property, value)
+  }
+}
+
 export const PHONE_VIEWPORT = { width: 360, height: 740 }
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
-
-export const GOVUK_BLUE = 'rgb(29, 112, 184)'
-export const GOVUK_SECONDARY_TEXT = 'rgb(72, 73, 73)'
-export const GOVUK_FOCUS = 'rgb(255, 221, 0)'
-export const GOVUK_FOCUS_OUTLINE_WIDTH = '3px'
-export const GOVUK_FOCUS_INSET_SHADOW = 'rgb(0, 0, 0) 0px 0px 0px 2px inset'
-export const GOVUK_ERROR = 'rgb(202, 53, 53)'
-export const GOVUK_FONT_FAMILY = '"GDS Transport", arial, sans-serif'
-export const GOVUK_BODY_FONT_SIZE = '19px'
-export const GOVUK_BORDER_WIDTH = '2px'
 
 const documentTop = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
@@ -135,10 +130,10 @@ export const addressBookInsetText = (party) => {
   return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
 }
 
-const JOURNEY_ID_IN_URL = new RegExp(`^${BASE}/notifications/([^/]+)`)
-
 export const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(JOURNEY_ID_IN_URL)
+  const match = new URL(page.url()).pathname
+    .slice(BASE.length)
+    .match(/^\/notifications\/([^/]+)/)
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
@@ -250,8 +245,6 @@ export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
  */
 export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
 
-const WIDTH_TOLERANCE_PX = 1
-
 /**
  * Fails unless the page's search box has its hint and one button,
  * named as the copy says, joined flush to its right edge, together
@@ -282,9 +275,8 @@ export const expectSearchBoxJoinedToItsButton = async (
   expect(buttonEdge).toBeCloseTo(boxEdge, 0)
 
   const { width } = await wrapper.boundingBox()
-  expect(Math.abs(width - expectedWidth)).toBeLessThanOrEqual(
-    WIDTH_TOLERANCE_PX
-  )
+  const widthTolerancePx = 1
+  expect(Math.abs(width - expectedWidth)).toBeLessThanOrEqual(widthTolerancePx)
 }
 
 /**
@@ -344,28 +336,25 @@ export const { values } = JSON.parse(
 const arrivalDate = addUtcMonths(new Date(), 1)
 export const ARRIVAL_DATE_IN_WINDOW = formatDateText(arrivalDate)
 
-const SHORT_MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-]
-export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHORT_MONTHS[arrivalDate.getUTCMonth()]} ${arrivalDate.getUTCFullYear()}`
-
-const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
-
-const REGION_CODE_SEPARATOR = '-'
-const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
-  values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
-)
+const formatArrivalDateForDisplay = (date) => {
+  const shortMonths = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ]
+  return `${date.getUTCDate()} ${shortMonths[date.getUTCMonth()]} ${date.getUTCFullYear()}`
+}
+export const ARRIVAL_DATE_IN_WINDOW_DISPLAY =
+  formatArrivalDateForDisplay(arrivalDate)
 
 /**
  * Starts a notification from the dashboard and stops on the origin page.
@@ -397,9 +386,7 @@ export const chooseTypeAheadOption = async (
 ) => {
   await page.waitForLoadState('domcontentloaded')
   const scope = inputId
-    ? page
-        .locator(`#${inputId}`)
-        .locator('xpath=ancestor::*[contains(@class,"govuk-form-group")][1]')
+    ? page.locator(`#${inputId}`).locator(FORM_GROUP_ANCESTOR_XPATH)
     : page
   const field = scope.getByLabel(label, { exact: true })
   if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
@@ -411,7 +398,10 @@ export const chooseTypeAheadOption = async (
   await page.getByRole('option', { name: optionName, exact: true }).click()
 }
 
-export const chooseCountryOfOrigin = (page, name = FIXTURE_COUNTRY) =>
+export const chooseCountryOfOrigin = (
+  page,
+  name = COUNTRY_LABELS[values.countryOfOrigin]
+) =>
   chooseTypeAheadOption(page, {
     label: originCopy.country.label,
     query: name,
@@ -536,15 +526,15 @@ export const carryOpeningRunToImportReason = async (page) => {
   ).toBeVisible()
 }
 
-const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
-const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
-
-export const choosePortOfEntry = (page, option = FIXTURE_PORT_OPTION) =>
-  chooseTypeAheadOption(page, {
+export const choosePortOfEntry = (page, option) => {
+  const fixturePort = PORTS.find((port) => port.code === values.portOfEntry)
+  const chosenOption = option ?? `${fixturePort.name} - ${fixturePort.code}`
+  return chooseTypeAheadOption(page, {
     label: transportCopy.portOfEntry.port.label,
-    query: option,
-    optionName: option
+    query: chosenOption,
+    optionName: chosenOption
   })
+}
 
 export const answerCountryOfOrigin = async (page) => {
   await page
@@ -552,7 +542,7 @@ export const answerCountryOfOrigin = async (page) => {
     .click()
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await save(page)
   await expectOverview(page)
 }
 
@@ -635,27 +625,22 @@ export const unlockSections = async (page, chosen = FELIS_CATUS) => {
   await expectOverview(page)
 }
 
-// Handing a file to the input is one action, and `test.slow()` does not extend
-// an action's own deadline. An oversize case has to send a genuinely over-cap
-// file — the browser check reads the limit once, at load, so a smaller file
-// cannot provoke it — and writing the whole cap through the browser outlasts
-// the default deadline on a machine running every worker at once.
-const SET_FILE_TIMEOUT_MS = 60_000
-
 export const setUploadFile = (
   page,
   filename,
   bytes,
   mimeType = 'application/pdf'
-) =>
-  page.locator('input[type="file"]').setInputFiles(
+) => {
+  const setFileTimeoutMs = 60_000
+  return page.locator('input[type="file"]').setInputFiles(
     {
       name: filename,
       mimeType,
       buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
     },
-    { timeout: SET_FILE_TIMEOUT_MS }
+    { timeout: setFileTimeoutMs }
   )
+}
 
 /**
  * Opens the document upload page from a fresh notification with the sections
@@ -687,14 +672,15 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
+const save = (page) => saveAndContinue(page).click()
 
 export const answerOriginDetails = async (
   page,
   {
     countryName,
-    regionCode = FIXTURE_REGION_CODE_SUFFIX,
+    regionCode = values.regionOfOriginCode.slice(
+      `${values.countryOfOrigin}-`.length
+    ),
     internalReference = values.internalReferenceNumber
   } = {}
 ) => {
@@ -777,20 +763,16 @@ export const answerRolesAndAddresses = async (page) => {
   await save(page)
 }
 
-const [FIXTURE_CPH_COUNTY, FIXTURE_CPH_PARISH, FIXTURE_CPH_HOLDING] =
-  values.countyParishHoldingCph.split('/')
-
 export const answerCphNumber = async (page) => {
+  const [county, parish, holding] = values.countyParishHoldingCph.split('/')
   await expect(
     page.getByRole('heading', {
       name: 'Add the county parish holding number (CPH)'
     })
   ).toBeVisible()
-  await page.getByLabel('County', { exact: true }).fill(FIXTURE_CPH_COUNTY)
-  await page.getByLabel('Parish', { exact: true }).fill(FIXTURE_CPH_PARISH)
-  await page
-    .getByLabel('Holding number', { exact: true })
-    .fill(FIXTURE_CPH_HOLDING)
+  await page.getByLabel('County', { exact: true }).fill(county)
+  await page.getByLabel('Parish', { exact: true }).fill(parish)
+  await page.getByLabel('Holding number', { exact: true }).fill(holding)
   await save(page)
 }
 
@@ -960,43 +942,56 @@ export const saveAndContinue = (page) =>
     exact: true
   })
 
-const buttonGroupOf = (page) =>
-  page.locator('.govuk-button-group', { has: saveAndContinue(page) })
+export const saveAndReturnToHub = (page) =>
+  page.getByRole('button', {
+    name: sharedAppCopy.saveActions.saveAndReturnToHub,
+    exact: true
+  })
+
+const cancelAndReturnToHub = (page) =>
+  page.getByRole('link', {
+    name: sharedAppCopy.saveActions.cancelAndReturnToHub
+  })
 
 /**
- * Fails unless the page offers Save and continue and Save and return to
- * overview in its button group and Cancel and return to overview in the
- * paragraph after the group.
+ * Fails unless the journey form offers Save and continue, Save and return to
+ * overview and Cancel and return to overview in that order, with Save and
+ * return to overview as the form's last button.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const expectThreeSaveControls = async (page) => {
-  const buttonGroup = buttonGroupOf(page)
+  const form = journeyFormOf(page)
+  const saveControls = form
+    .locator(saveAndContinue(page))
+    .or(form.locator(saveAndReturnToHub(page)))
+    .or(form.locator(cancelAndReturnToHub(page)))
 
-  await expect(buttonGroup.getByRole('button')).toHaveText([
+  await expect(saveControls).toHaveText([
     sharedAppCopy.saveActions.saveAndContinue,
-    sharedAppCopy.saveActions.saveAndReturnToHub
+    sharedAppCopy.saveActions.saveAndReturnToHub,
+    sharedAppCopy.saveActions.cancelAndReturnToHub
   ])
-  await expect(
-    buttonGroup.locator('xpath=following-sibling::p[1]').getByRole('link', {
-      name: sharedAppCopy.saveActions.cancelAndReturnToHub
-    })
-  ).toBeVisible()
+  await expect(form.getByRole('button').last()).toHaveText(
+    sharedAppCopy.saveActions.saveAndReturnToHub
+  )
 }
 
 /**
- * Fails unless the page's button group holds Save and continue alone and ends
- * the journey form.
+ * Fails unless Save and continue is the journey form's last button, nothing
+ * follows it in the form, and Save and return to overview is not offered.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
-  const buttonGroup = buttonGroupOf(page)
+  const form = journeyFormOf(page)
+  const lastControl = form.getByRole('button').or(form.getByRole('link')).last()
 
-  await expect(buttonGroup.getByRole('button')).toHaveText([
+  await expect(lastControl).toHaveText(
     sharedAppCopy.saveActions.saveAndContinue
-  ])
-  await expect(
-    journeyFormOf(page).locator(':scope > :not(input[type="hidden"])').last()
-  ).toHaveClass(/govuk-button-group/)
+  )
+  await expect(saveAndReturnToHub(page)).toHaveCount(0)
+
+  const lastVisibleChild = form.locator('> *:visible').last()
+  await expect(lastVisibleChild.locator(saveAndContinue(page))).toBeVisible()
 }

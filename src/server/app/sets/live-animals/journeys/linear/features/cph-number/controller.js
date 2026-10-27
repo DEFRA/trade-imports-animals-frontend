@@ -22,10 +22,10 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
-const hubEntryReturn = (request) =>
-  request.query.return === 'addresses'
-    ? pagePath(request.params.journeyId, 'addresses')
-    : null
+const hubEntryReturn = (request) => {
+  const { honouredSlug } = kit.readReturnMarker(request, ['addresses'])
+  return honouredSlug ? pagePath(request.params.journeyId, honouredSlug) : null
+}
 
 const render = (
   request,

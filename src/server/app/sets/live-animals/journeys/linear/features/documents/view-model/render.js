@@ -43,6 +43,13 @@ const addFormState = (copy, documents, uploadFormUnavailable) => {
   }
 }
 
+const saveButtonsUploadPath = (extra, addFormClosed) =>
+  addFormClosed ||
+  extra.unsavedDocument?.correlationId ||
+  extra.pendingDocumentRemoval
+    ? undefined
+    : extra.uploadPath
+
 /**
  * The error summary, or none when nothing is wrong.
  *
@@ -92,6 +99,7 @@ export const render = ({
     (item) => item.scanStatus === SCAN_STATUS.PENDING
   )
   const uploadFormUnavailable = !extra.uploadPath
+  const addForm = addFormState(copy, documents, uploadFormUnavailable)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -111,7 +119,8 @@ export const render = ({
         sharedCopy.saveActions.saveAndContinue,
         extra.unsavedDocument
       ),
-    ...addFormState(copy, documents, uploadFormUnavailable),
+    ...addForm,
+    saveButtonsUploadPath: saveButtonsUploadPath(extra, addForm.addFormClosed),
     copy,
     rows: documentRows(documents, journey.journeyId),
     additionalDocumentRows: copy.guidance.additional.rows.map((row) => [

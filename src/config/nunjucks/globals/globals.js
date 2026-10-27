@@ -6,3 +6,8 @@ export const withReveals = (options, reveals) =>
     checked,
     conditional: { html: reveals[value] }
   }))
+
+export const withAttributes = (button, attributes) => ({
+  ...button,
+  attributes: { ...button.attributes, ...attributes }
+})

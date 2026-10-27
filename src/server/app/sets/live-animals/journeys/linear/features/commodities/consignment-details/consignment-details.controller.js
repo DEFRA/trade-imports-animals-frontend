@@ -6,6 +6,7 @@ import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { commoditiesPage, consignmentDetailsPage as page } from '../page.js'
+import { commodityQuestionHref } from '../commodity-question-detour.js'
 import { lineKey } from '../search/search.controller.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -65,10 +66,7 @@ const render = async ({
     }),
     copy,
     selectedCommoditiesCopy,
-    addHref: kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, commoditiesPage.slug)
-    ),
+    addHref: commodityQuestionHref(request, page),
     groups: buildGroups(lines, values, errors),
     ...selectedCommoditiesContext(lines),
     errors,

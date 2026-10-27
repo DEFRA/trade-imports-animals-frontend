@@ -121,20 +121,10 @@ Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
 failure is logged once by `recoverableSave`; render the same values with
 `recoverableError: true` and status 500. Unexpected errors must throw.
 
-"Save and return to overview" posts `exit=hub`. When the page has a required
-rule, opt in to saving a blank answer on that exit by passing
-`{ allowMissing: kit.isHubExit(request) }` to `validate` (or to `onSubmit` of a
-`pageValidation`), as
-[`journeys/linear/features/origin/controller.js`](../journeys/linear/features/origin/controller.js)
-does. Every other rule still refuses. Do not opt in when the page has no
-required rule: `oneOf` and an empty `compose()` already accept a blank, so the
-option would change nothing. These task-row pages stay strict and refuse a
-blank answer on every exit:
-
-- commodity details
-  ([`journeys/linear/features/commodities/consignment-details/consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
-- CPH number
-  ([`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js))
+"Save and return to overview" posts `exit=hub`. It runs the same validation as
+"Save and continue", with no opt-in, and only changes where a valid save goes.
+A page with no required rule accepts a blank on both buttons: `oneOf` and an
+empty `compose()` already accept one.
 
 Export the standard routes:
 
@@ -163,7 +153,10 @@ Pass `amend: amend` in the object `saveActions` takes on every page listed in a 
 every role or party picker. `kit.base()` supplies `amend` when the controller passes
 it the request (`request`, or `h.request` where the render has only the toolkit):
 the two form actions the save buttons carry while the notification is being amended,
-and null otherwise. While amending, a task-row page shows Save and return, Save and
+and null otherwise. The two amend buttons tell themselves apart by form action.
+On a page whose save buttons post to another service, the Upload documents page,
+neither has a URL of its own, so the amend Save and return also posts the
+submitted value `amendFormActions` returns. While amending, a task-row page shows Save and return, Save and
 continue and Save and return to overview. A page that also passes
 `showReturnControls: false` (the CPH number page, the role address pickers) or
 `hubExitWhileAmending: false` (the contact address page) shows only the first two.
@@ -362,10 +355,10 @@ set-up in the test file:
   — journey steps such as `startNotification`, `answerOriginEntry`,
   `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
   `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
-  `expectThreeSaveControls` proves the primary and Save and return to
-  overview sit in the button group and Cancel and return to overview follows
-  it, and `expectPageEndsWithPrimaryAlone` proves a page ends with the primary
-  alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
+  `expectThreeSaveControls` proves, by role inside the journey form, that the
+  primary, Save and return to overview and Cancel and return to overview
+  appear in that order, and `expectPageEndsWithPrimaryAlone` proves a page
+  ends with the primary alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
   `answerOriginDetails` takes the country, region code and internal reference
   to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
   URL matcher at the origin and the mount, because `toHaveURL` matches the whole

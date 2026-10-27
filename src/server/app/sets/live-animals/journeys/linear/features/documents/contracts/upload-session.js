@@ -3,15 +3,8 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { documentsPage as page } from '../page.js'
 
-// The key is the trader-facing word for what they are returning from. The value
-// is the correlation handle, which is all that exists when the session opens —
-// cdp-uploader has not assigned an upload id at that point.
 export const RETURNED_HANDLE_QUERY = 'upload'
 
-// The session the add form on the page being left is posting to, carried into the next render of
-// the same page — in the refresh link's query, and in the form a Continue or a Remove posts. One
-// key for both, and the value is a correlation handle as RETURNED_HANDLE_QUERY's is. A page view
-// that carries none opens a session of its own, so two adds never share a handle.
 export const OPEN_SESSION_KEY = 'uploadSession'
 
 const CORRELATION_ID_PATTERN =
@@ -30,8 +23,7 @@ export const documentsPageHref = (request, journeyId) =>
   kit.withChangeContext(request, pagePath(journeyId, page.slug))
 
 /**
- * Where the upload service returns the browser once it has the file. Relative, because the
- * upload service refuses an absolute redirect outside development.
+ * Where the upload service returns the browser once it has the file.
  *
  * @param {object} request - the request the page is being rendered for
  * @param {string} journeyId - the notification being worked on

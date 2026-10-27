@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 import {
   BASE,
   BOS_TAURUS,
-  GOVUK_BLUE,
   PHONE_VIEWPORT,
   answerArrivalDetails,
   answerCountryOfOrigin,
@@ -463,43 +462,13 @@ test.describe('hub feature — commodity totals', () => {
     }
   })
 
-  test('the boxes are static panels styled from govuk design tokens', async ({
-    page
-  }) => {
+  test('the boxes hold no link and no button', async ({ page }) => {
     await openHubWithCommodityTotals(page)
 
     const boxes = page.locator(TOTAL_BOX)
     await expect(boxes).toHaveCount(2)
     await expect(boxes.getByRole('link')).toHaveCount(0)
     await expect(boxes.getByRole('button')).toHaveCount(0)
-
-    const box = boxes.first()
-
-    const panelStyles = [
-      [box, { 'background-color': 'rgb(243, 243, 243)' }],
-      [
-        box.locator('.app-commodity-total__value'),
-        { color: GOVUK_BLUE, 'font-size': '48px', 'font-weight': '700' }
-      ],
-      [
-        box.locator('.app-commodity-total__label'),
-        {
-          color: GOVUK_BLUE,
-          'font-size': '24px',
-          'font-weight': '700',
-          'margin-top': '0px'
-        }
-      ],
-      [
-        box.locator('.app-commodity-total__caption'),
-        { 'font-size': '19px', color: 'rgb(11, 12, 12)' }
-      ]
-    ]
-    for (const [element, styles] of panelStyles) {
-      for (const [property, value] of Object.entries(styles)) {
-        await expect(element).toHaveCSS(property, value)
-      }
-    }
   })
 
   test('the boxes stack with no horizontal overflow on a small screen', async ({

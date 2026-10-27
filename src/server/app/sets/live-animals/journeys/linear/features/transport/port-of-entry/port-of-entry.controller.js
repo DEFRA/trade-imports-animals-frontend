@@ -95,7 +95,7 @@ const post = async (request, h) => {
   const dateWindow = arrivalWindow()
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},
-    { dateWindow, allowMissing: kit.isHubExit(request) }
+    { dateWindow }
   )
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)

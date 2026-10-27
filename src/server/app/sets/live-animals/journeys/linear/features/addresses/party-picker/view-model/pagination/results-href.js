@@ -1,4 +1,5 @@
 import { pagePath } from '../../../../../../../../../shared/paths.js'
+import { appendChangeContext } from '../../../../../../../../../shared/kit.js'
 
 export const resultsHref = (
   journeyId,
@@ -13,10 +14,6 @@ export const resultsHref = (
   if (selectedId) {
     params.set('selected', selectedId)
   }
-  // Built here rather than appended, because this href already carries a query
-  // string.
-  if (changing) {
-    params.set('change', '1')
-  }
-  return `${pagePath(journeyId, party.slug)}?${params.toString()}`
+  const href = `${pagePath(journeyId, party.slug)}?${params.toString()}`
+  return changing ? appendChangeContext(href) : href
 }
