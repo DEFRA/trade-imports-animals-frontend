@@ -47,7 +47,6 @@ import {
   scanned,
   withScanStatus
 } from './scan/status.js'
-import { rejectedErrors } from './scan/summary-errors.js'
 import { render as renderView } from './view-model/render.js'
 
 export const meta = { ...page, collects: ['documents'], validation }
@@ -309,7 +308,7 @@ const continueToNextPage = async (request, h, pageState, saveChoice) =>
 
 const renderRejectedDocumentRefusal = async (request, h, pageState) => {
   kit.logRefusal(request, {
-    fieldErrors: { documents: rejectedErrors(pageState.documents) },
+    fieldErrors: { documents: copy.errors.someRejected },
     reason: 'scan-rejected',
     rejectedScans: rejectedScans(pageState.documents)
   })

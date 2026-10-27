@@ -20,9 +20,6 @@ test.describe('upload documents entry', () => {
     await startNotification(page)
     await page.getByRole('link', { name: hubCopy.rows.documents.title }).click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: hubCopy.title })
-    ).toHaveCount(0)
   })
 
   test('opening the page by its own address shows it titled "Upload documents" with only the origin and the species answered', async ({

@@ -135,6 +135,7 @@ const DOCUMENTS_UNCHECKED_BANNER =
 const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
+const WITHHELD_TYPE = 'HEALTH_CERTIFICATE'
 const OFFERED_DOCUMENT_TYPE_CODES = [
   'ITAHC',
   'VETERINARY_HEALTH_CERTIFICATE',
@@ -393,6 +394,17 @@ describe('documents — taking on an upload the browser returns with', () => {
   it('Should refuse a document type the page never offered and append nothing', async () => {
     const result = await driveClaim(
       submittedDocument({ accompanyingDocumentType: UNOFFERED_TYPE })
+    )
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      TYPE_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a document type the backend holds but the page withholds, and append nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({ accompanyingDocumentType: WITHHELD_TYPE })
     )
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
