@@ -32,8 +32,6 @@ const openSession = async (request, journeyId) => {
   return { uploadPath, uploadSession: correlationId }
 }
 
-// Looked up on the notification rather than taken from the handle alone, so a handle another
-// notification opened reaches nothing and this page view opens a session of its own.
 const sessionCarriedIn = async (request, journeyId) => {
   const correlationId = carriedCorrelationId(request)
   if (!correlationId) {

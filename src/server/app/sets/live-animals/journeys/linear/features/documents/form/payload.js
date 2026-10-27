@@ -17,9 +17,6 @@ import { offeredDocumentTypes } from '../contracts/document-type-options.js'
 
 const copy = copyFor({ en, cy })
 
-// Built per add, not frozen at module load: the offered types are
-// service-backed and the list is primed at boot. The order is the order the
-// fields appear on the page, so the error summary reads down the form.
 export const fields = () =>
   compose(
     maxText(
@@ -32,8 +29,6 @@ export const fields = () =>
       REFERENCE_PATTERN,
       copy.errors.referenceCharacters
     ),
-    // One message covers both mistakes a select can make: left on the
-    // placeholder, or carrying a value the page never offered.
     requiredOneOf(
       'accompanyingDocumentType',
       offeredDocumentTypes(),
@@ -53,20 +48,23 @@ export const documentFromPayload = (payload) => ({
   )
 })
 
-export const startsADocument = (payload) =>
-  offeredDocumentTypes().includes(
-    (payload.accompanyingDocumentType ?? '').trim()
-  )
-
 const answered = (value) => Boolean(String(value ?? '').trim())
 
-export const answersADocument = (payload) =>
-  startsADocument(payload) ||
-  answered(payload.accompanyingDocumentType) ||
-  answered(payload.accompanyingDocumentReference) ||
-  Object.values(
-    kit.readDate(payload, 'accompanyingDocumentDateOfIssue') ?? {}
-  ).some(answered)
+/**
+ * Whether a submitted form has started a document: it has a reference, a type
+ * (offered or not), any date of issue text, or a chosen file.
+ *
+ * @param {object} form - the submitted fields, with the file entry the upload
+ *   service returned where the form went through it
+ * @returns {boolean} whether any part of a document was given
+ */
+export const startsADocument = (form) =>
+  answered(form.accompanyingDocumentReference) ||
+  answered(form.accompanyingDocumentType) ||
+  answered(form.accompanyingDocumentDateOfIssue) ||
+  Boolean(form.file?.filename)
+
+export const addsAnotherDocument = (form) => form.action === 'add'
 
 export const EMPTY_FORM = {
   accompanyingDocumentReference: '',

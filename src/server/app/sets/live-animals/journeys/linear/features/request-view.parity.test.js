@@ -126,6 +126,7 @@ const withoutKeysThatChangePerSave = ({
   concurrencyToken: _token,
   uploadPath: _uploadPath,
   uploadSession: _uploadSession,
+  saveButtonsUploadPath: _saveButtonsUploadPath,
   refreshHref: _refreshHref,
   ...rest
 }) => rest

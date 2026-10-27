@@ -38,6 +38,13 @@ export const MESSAGE_BY_FILE_ERROR_CODE = {
 }
 
 /**
+ * No file was submitted.
+ *
+ * @returns {object} a file error to merge with the field rules
+ */
+export const fileRequiredFieldError = () => ({ file: copy.errors.fileRequired })
+
+/**
  * What to tell the trader about the file they submitted.
  *
  * @param {object} [file] - the file entry the upload service returned
@@ -45,7 +52,7 @@ export const MESSAGE_BY_FILE_ERROR_CODE = {
  */
 export const submittedFileError = (file) => {
   if (!file?.filename) {
-    return { file: copy.errors.fileRequired }
+    return fileRequiredFieldError()
   }
   if (file.hasError) {
     return {
@@ -87,22 +94,11 @@ export const capacityExceededError = () => [
 ]
 
 /**
- * The file's own name resolves to no attachment type the service accepts. Worded here rather
- * than at the call site so every file message comes from one copy deck.
+ * The file's own name resolves to no attachment type the service accepts.
  *
  * @returns {object} a file error to merge with the field rules
  */
 export const fileTypeFieldError = () => ({ file: fileTypeMessage(copy) })
-
-/**
- * The add step itself is what is outstanding. Returned as an error on the file field rather than
- * as a summary line of its own, so the summary entry leads to a control that says what is wrong —
- * the file input takes its message from the field errors, so a summary-only entry pointed a
- * trader at an input with nothing on it.
- *
- * @returns {object} a file error to merge with the field rules
- */
-export const notYetAddedFileError = () => ({ file: copy.errors.notYetAdded })
 
 export const uploadUnavailableError = () => [
   { text: copy.errors.uploadUnavailable, href: ADD_DOCUMENT_ANCHOR }

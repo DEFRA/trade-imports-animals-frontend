@@ -16,6 +16,7 @@ import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from './upload-config.js'
 export const documentsPageHandler = getHandlerEndingWith(documents, page.slug)
 
 export const addDocumentSubmission = (overrides = {}) => ({
+  action: 'add',
   accompanyingDocumentReference: 'GBHC1234567890',
   accompanyingDocumentType: 'ITAHC',
   accompanyingDocumentDateOfIssue: '12/12/2025',

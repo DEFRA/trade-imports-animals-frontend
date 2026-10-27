@@ -1,6 +1,31 @@
 import { describe, expect, it } from 'vitest'
 
-import { withReveals } from './globals.js'
+import { withAttributes, withReveals } from './globals.js'
+
+describe('#withAttributes', () => {
+  it('Should add the attributes beside the button own and keep every other param', () => {
+    expect(
+      withAttributes(
+        {
+          text: 'Save',
+          classes: 'govuk-button--warning',
+          attributes: { 'data-a': 'b' }
+        },
+        { formaction: '/upload' }
+      )
+    ).toEqual({
+      text: 'Save',
+      classes: 'govuk-button--warning',
+      attributes: { 'data-a': 'b', formaction: '/upload' }
+    })
+  })
+
+  it('Should give a button with no attributes the ones passed', () => {
+    expect(withAttributes({ text: 'Save' }, { formaction: '/upload' })).toEqual(
+      { text: 'Save', attributes: { formaction: '/upload' } }
+    )
+  })
+})
 
 describe('#withReveals', () => {
   it('Should attach to each option the reveal held under its value and leave the others without one', () => {
