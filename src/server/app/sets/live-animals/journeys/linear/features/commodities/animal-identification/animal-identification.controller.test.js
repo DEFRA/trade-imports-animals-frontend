@@ -20,7 +20,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { consignmentDetailsPage } from '../page.js'
+import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
 
@@ -339,7 +339,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     ])
   })
 
-  it('Should offer the route back to the commodity question alongside the cards', async () => {
+  it('Should offer the commodity question marked to return to identification details alongside the cards', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [catLine({ numberOfAnimalsQuantity: '2' })]
@@ -348,7 +348,9 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     await getHandler(journeyRequest(journey.journeyId), h)
     const { addHref } = h.captured.view.context
 
-    expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
+    expect(addHref).toBe(
+      `${pagePath(journey.journeyId, 'commodities')}?return=${encodeURIComponent(animalIdentificationPage.slug)}`
+    )
   })
 
   it('Should point every card at the consignment-details page to change the animal count', async () => {

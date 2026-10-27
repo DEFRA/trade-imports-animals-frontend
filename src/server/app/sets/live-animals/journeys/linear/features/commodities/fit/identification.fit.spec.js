@@ -4,7 +4,9 @@ import {
   answerCountryOfOrigin,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectSpeciesSelected,
   journeyUrl,
+  searchCommodities,
   selectSpecies,
   signIn,
   startNotification,
@@ -27,6 +29,7 @@ const CANIS_LUPUS_FAMILIARIS = 'Canis lupus familiaris'
 const SALMO_SALAR = 'Salmo salar'
 const BISON_BISON = 'Bison bison'
 const COW = 'Cow'
+const CAT = 'Cat'
 const COW_HEADING = 'Cow (0102)'
 const GOVUK_GREEN = 'rgb(15, 122, 82)'
 const REGULAR_FONT_WEIGHT = '400'
@@ -69,15 +72,18 @@ const addLines = async (page, selections, counts = []) => {
   }
 }
 
+const expectIdentificationDetails = (page) =>
+  expect(
+    page.getByRole('heading', { name: 'Identification details', exact: true })
+  ).toBeVisible()
+
 const openIdentification = async (page, selections, counts = []) => {
   await addLines(page, selections, counts)
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page
     .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
     .click()
-  await expect(
-    page.getByRole('heading', { name: 'Identification details', exact: true })
-  ).toBeVisible()
+  await expectIdentificationDetails(page)
 }
 
 const openCatIdentification = (page) =>
@@ -572,8 +578,8 @@ test.describe('animal identification selected commodities summary', () => {
     await openIdentification(
       page,
       [
-        ['Cow', [BOS_TAURUS, BISON_BISON]],
-        ['Cat', [FELIS_CATUS]]
+        [COW, [BOS_TAURUS, BISON_BISON]],
+        [CAT, [FELIS_CATUS]]
       ],
       ['2', '3', '4']
     )
@@ -587,7 +593,7 @@ test.describe('animal identification selected commodities summary', () => {
     })
     await expectSummaryRow(summary, {
       code: '01061900',
-      name: 'Cat',
+      name: CAT,
       latinNames: [FELIS_CATUS],
       animals: '4'
     })
@@ -596,8 +602,10 @@ test.describe('animal identification selected commodities summary', () => {
     )
   })
 
-  test('changes the commodity list from a summary row', async ({ page }) => {
-    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+  test('changes the commodity list from a summary row and returns to identification details listing the added commodity', async ({
+    page
+  }) => {
+    await openIdentification(page, [[COW, [BOS_TAURUS]]], ['2'])
     await selectedCommoditiesSummary(page)
       .getByRole('link', {
         name: `${copy.identification.summary.change} ${COW}`
@@ -607,12 +615,57 @@ test.describe('animal identification selected commodities summary', () => {
     await expect(
       page.getByRole('heading', { name: copy.search.title })
     ).toBeVisible()
+    await expectSpeciesSelected(page, BOS_TAURUS)
+
+    await selectSpecies(page, [FELIS_CATUS])
+    await saveAndContinue(page)
+
+    await expectIdentificationDetails(page)
+    await expect(
+      selectedCommoditiesSummary(page).getByRole('cell', {
+        name: CAT,
+        exact: true
+      })
+    ).toBeVisible()
   })
 
-  test('offers Add another commodity while there are commodities to identify', async ({
+  test('removes a commodity from a summary row and returns to identification details listing only the commodities left', async ({
     page
   }) => {
-    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await openIdentification(
+      page,
+      [
+        [COW, [BOS_TAURUS]],
+        [CAT, [FELIS_CATUS]]
+      ],
+      ['2', '3']
+    )
+    await selectedCommoditiesSummary(page)
+      .getByRole('link', {
+        name: `${copy.identification.summary.change} ${CAT}`
+      })
+      .click()
+    await searchCommodities(page, FELIS_CATUS)
+    await page.getByRole('checkbox', { name: FELIS_CATUS }).uncheck()
+    await saveAndContinue(page)
+
+    await expectIdentificationDetails(page)
+    const summary = selectedCommoditiesSummary(page)
+    await expectSummaryRow(summary, {
+      code: '0102',
+      name: COW,
+      latinNames: [BOS_TAURUS],
+      animals: '2'
+    })
+    await expect(summary.locator('tbody').getByRole('row')).toHaveText([
+      new RegExp(`0102\\s*${COW}`)
+    ])
+  })
+
+  test('offers Add another commodity while there are commodities to identify and returns to identification details after one is added', async ({
+    page
+  }) => {
+    await openIdentification(page, [[COW, [BOS_TAURUS]]], ['2'])
     await page
       .getByRole('link', { name: copy.identification.addAnotherCommodity })
       .click()
@@ -620,6 +673,11 @@ test.describe('animal identification selected commodities summary', () => {
     await expect(
       page.getByRole('heading', { name: copy.search.title })
     ).toBeVisible()
+
+    await selectSpecies(page, [FELIS_CATUS])
+    await saveAndContinue(page)
+
+    await expectIdentificationDetails(page)
   })
 })
 

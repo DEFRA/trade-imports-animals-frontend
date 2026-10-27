@@ -11,12 +11,14 @@ import {
 } from '../engine/test-support.js'
 import {
   amendReviewTarget,
+  appendChangeContext,
   base,
   dateField,
   exitTarget,
   logRefusal,
   pageRoutes,
   REFUSAL_LOG_MESSAGE,
+  readReturnMarker,
   recoverableSave,
   requestSaveChoice,
   returnedSaveChoice
@@ -434,5 +436,35 @@ describe('#logRefusal', () => {
       errorCodes: [],
       reason: 'no-line'
     })
+  })
+})
+
+describe('#appendChangeContext — the change marker on an href', () => {
+  it('Should start the query string on an href without one', () => {
+    expect(appendChangeContext('/a')).toBe('/a?change=1')
+  })
+
+  it('Should join to the query string an href already has', () => {
+    expect(appendChangeContext('/a?x=1')).toBe('/a?x=1&change=1')
+  })
+})
+
+describe('#readReturnMarker — the page a request says it came from', () => {
+  const allowedSlugs = ['addresses', 'notification-view']
+
+  it('Should be empty when the request carries no marker', () => {
+    expect(readReturnMarker({ query: {} }, allowedSlugs)).toEqual({})
+  })
+
+  it('Should honour a marker naming an allowed slug', () => {
+    expect(
+      readReturnMarker({ query: { return: 'addresses' } }, allowedSlugs)
+    ).toEqual({ honouredSlug: 'addresses' })
+  })
+
+  it('Should refuse a marker naming anything else, holding the value received', () => {
+    expect(
+      readReturnMarker({ query: { return: '//evil.example' } }, allowedSlugs)
+    ).toEqual({ refusedMarker: '//evil.example' })
   })
 })

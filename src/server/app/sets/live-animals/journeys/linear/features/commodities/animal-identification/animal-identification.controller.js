@@ -6,6 +6,7 @@ import {
   animalIdentificationPage as page,
   consignmentDetailsPage
 } from '../page.js'
+import { commodityQuestionHref } from '../commodity-question-detour.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -60,10 +61,7 @@ const render = (
   const selectedCommodities = buildSelectedCommodities(
     linesOf(answers, evaluation)
   )
-  const addHref = kit.withChangeContext(
-    request,
-    pagePath(request.params.journeyId, 'commodities')
-  )
+  const addHref = commodityQuestionHref(request, page)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,

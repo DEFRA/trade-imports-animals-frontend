@@ -177,8 +177,31 @@ export const hubExitTarget = (
 
 export const changeContext = (request) => requestSaveChoice(request).change
 
+/** The href with `change=1` added to its query string. */
+export const appendChangeContext = (href) =>
+  `${href}${href.includes('?') ? '&' : '?'}change=1`
+
 export const withChangeContext = (request, href) =>
-  changeContext(request) ? `${href}?change=1` : href
+  changeContext(request) ? appendChangeContext(href) : href
+
+/**
+ * Reads the `return` marker a request carries.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string[]} allowedSlugs - the page slugs the marker may name.
+ * @returns {{ honouredSlug?: string, refusedMarker?: string }} `{}` without a
+ * marker, `{ honouredSlug }` when the marker is one of `allowedSlugs`, else
+ * `{ refusedMarker }` holding the value received.
+ */
+export const readReturnMarker = (request, allowedSlugs) => {
+  const marker = request.query?.return
+  if (marker === undefined) {
+    return {}
+  }
+  return allowedSlugs.includes(marker)
+    ? { honouredSlug: marker }
+    : { refusedMarker: marker }
+}
 
 /**
  * Where a valid save goes.

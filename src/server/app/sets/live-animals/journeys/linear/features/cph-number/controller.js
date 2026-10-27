@@ -30,10 +30,10 @@ export const isCphApplicable = (answers) =>
     commodities.cphCommodities().includes(line?.commoditySelection)
   )
 
-const hubEntryReturn = (request) =>
-  request.query.return === 'addresses'
-    ? pagePath(request.params.journeyId, 'addresses')
-    : null
+const hubEntryReturn = (request) => {
+  const { honouredSlug } = kit.readReturnMarker(request, ['addresses'])
+  return honouredSlug ? pagePath(request.params.journeyId, honouredSlug) : null
+}
 
 const render = (
   request,
