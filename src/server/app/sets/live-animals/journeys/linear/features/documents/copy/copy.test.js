@@ -99,16 +99,16 @@ describe('#copy', () => {
   })
 
   it('Should state the file size as files smaller than the size it is given', () => {
-    expect(copy.file.smallerThan('10MB')).toBe(
-      'files that are smaller than 10MB'
+    expect(copy.file.smallerThan('20MB')).toBe(
+      'files that are smaller than 20MB'
     )
-    expect(copy.file.smallerThan('50MB')).toBe(
-      'files that are smaller than 50MB'
+    expect(copy.file.smallerThan('35MB')).toBe(
+      'files that are smaller than 35MB'
     )
   })
 
   it('Should state the file size and the allowed file types in Welsh', () => {
-    expect(copyCy.file.smallerThan('10MB')).toBe('yn llai na 10MB')
+    expect(copyCy.file.smallerThan('20MB')).toBe('yn llai na 20MB')
     expect(copyCy.file.allowedTypes('PDF, DOC')).toBe('yn PDF, DOC')
   })
 
@@ -130,12 +130,6 @@ describe('#copy', () => {
     expect(copy.file.leftDropZone).toBe('Left drop zone')
   })
 
-  /**
-   * The failed tag must not name a cause. cdp-uploader reports a rejection as a
-   * message in its own wording with no code, so the page cannot tell a virus from
-   * any other refusal the scan makes, and a file rejected for another reason would
-   * otherwise be announced to its owner as infected.
-   */
   it('Should state that the check failed without claiming what the scan found', () => {
     expect(copy.scanTags.scanning).toBe('Scanning for virus')
     expect(copy.scanTags.complete).toBe('Check completed')

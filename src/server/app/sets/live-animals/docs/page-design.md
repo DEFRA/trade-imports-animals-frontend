@@ -352,6 +352,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   form is closed, or a taken-on document or a removal is waiting to be
   retried, the save buttons post to this service and send no file, so the
   retry runs before anything else on the page.
+- A file carrying no bytes is the right type and under the size limit, so it
+  reaches the page rather than being stopped before it; the page is where it
+  is refused, and nothing is added.
+- With JavaScript on, the upload control the page shows is not the original
+  file input, so the oversize summary error points at the control a trader
+  can focus rather than at the hidden input behind it.
+- The upload service decides for itself whether to take a file and may refuse
+  one as too large on receipt; the page renders that refusal in its own
+  wording.
 - The page uses the full-width surface so the added-documents table fits. The
   guidance and the fields keep a two-thirds reading width.
 - With no documents, the File upload card shows no table and no sentence.

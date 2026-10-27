@@ -332,7 +332,7 @@ test.describe('document upload reference validation', () => {
     )
   })
 
-  test('reference validation: over 58 characters links to and focuses the preserved value', async ({
+  test('reference validation: over the maximum length links to and focuses the preserved value', async ({
     page
   }) => {
     const reference = 'R'.repeat(REFERENCE_MAX_LENGTH + 1)
@@ -487,9 +487,6 @@ test.describe('document upload file validation', () => {
     await expectNoDocumentsAdded(page)
   })
 
-  // A file with nothing in it is the right type and under the size limit, so
-  // neither the browser's check nor the upload service stops it: the page is
-  // where it is refused, and nothing is added.
   test('file validation: a file carrying no bytes is refused on receipt', async ({
     page
   }) => {
@@ -568,9 +565,6 @@ test.describe('document upload oversize validation', () => {
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
-  // The enhanced upload renames the input to file-input and gives the new
-  // button the original id, so the summary link has to point at the button.
-  // Pointing it at the input sends focus to a hidden element.
   test('file validation: the client-side oversize summary link focuses the upload control', async ({
     page
   }) => {
@@ -591,12 +585,6 @@ test.describe('document upload oversize validation', () => {
     await expect(uploadControl(page)).toBeFocused()
   })
 
-  // The upload service decides for itself whether to take a file, and the page
-  // has to render the refusal it sends back. The file here is deliberately
-  // small, so the browser's own size check never fires and cannot be what
-  // produces the message: the stand-in refuses it on its name, the way
-  // cdp-uploader refuses one that arrives over the cap, and the wording comes
-  // from mapping the service's FILE_TOO_LARGE verdict.
   test('file validation: a file the upload service refuses as too large is reported on receipt', async ({
     page
   }) => {
@@ -803,8 +791,6 @@ test.describe('document upload capacity and accessibility', () => {
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
     await expect(page.getByText(message)).toBeVisible()
 
-    // The control keeps its place in the tab order and says why it refuses,
-    // rather than taking a file the claim would then turn away.
     const addButton = page.getByRole('button', { name: copy.addAnother })
     await expect(addButton).toHaveAttribute('aria-disabled', 'true')
     await expect(addButton).not.toHaveAttribute('formaction', /./)
