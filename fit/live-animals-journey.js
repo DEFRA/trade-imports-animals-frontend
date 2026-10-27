@@ -907,6 +907,12 @@ export const saveAndContinue = (page) =>
     exact: true
   })
 
+export const saveAndReturnToHub = (page) =>
+  page.getByRole('button', {
+    name: sharedAppCopy.saveActions.saveAndReturnToHub,
+    exact: true
+  })
+
 const buttonGroupOf = (page) =>
   page.locator('.govuk-button-group', { has: saveAndContinue(page) })
 

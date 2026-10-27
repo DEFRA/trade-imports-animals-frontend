@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   openDatePicker,
   openDocuments,
+  saveAndReturnToHub,
   setUploadFile,
   signIn,
   values,
@@ -137,6 +138,17 @@ const submitContinue = (page) =>
       exact: true
     })
     .click()
+
+const expectCompleteDocumentSavedByReturnToOverview = async (page) => {
+  await fillDocument(page)
+  await saveAndReturnToHub(page).click()
+
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: copy.title }).click()
+  await expect(
+    documentRowFor(page, validDocument.accompanyingDocumentReference)
+  ).toContainText(copy.types.ITAHC)
+}
 
 const uploadDocument = async (page, document = validDocument) => {
   await fillDocument(page, document)
@@ -527,7 +539,7 @@ test.describe('document upload oversize validation', () => {
     await expectNoDocumentsAdded(page)
   })
 
-  test('file validation: an oversize file in the input does not stop Continue leaving the page', async ({
+  test('file validation: an oversize file in the input stops Save and continue with the client oversize summary', async ({
     page
   }) => {
     test.slow()
@@ -538,8 +550,10 @@ test.describe('document upload oversize validation', () => {
     )
     await submitContinue(page)
 
-    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toHaveCount(0)
-    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
+    await expect(page.locator(CLIENT_SIZE_SUMMARY)).toContainText(
+      oversizeMessage(copy)
+    )
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
   // The enhanced upload renames the input to file-input and gives the new
@@ -593,24 +607,11 @@ test.describe('document upload continue', () => {
     await openDocuments(page)
   })
 
-  test('continue keeps the answers and asks for the add action, and adding the re-picked file saves a row showing the chosen type', async ({
+  test('Save and return to overview with every detail filled in shows Overview, and reopening lists the document with its chosen type', async ({
     page
   }) => {
     test.slow()
-    await fillDocument(page)
-    await submitContinue(page)
-
-    await expect(errorLink(page, copy.errors.notYetAdded)).toBeVisible()
-    await expectPreservedMetadata(page)
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-
-    await setUploadFile(page, validDocument.filename)
-    await submitAdd(page)
-    const row = documentRowFor(
-      page,
-      validDocument.accompanyingDocumentReference
-    )
-    await expect(row).toContainText(copy.types.ITAHC)
+    await expectCompleteDocumentSavedByReturnToOverview(page)
   })
 
   test('continue with a document type and nothing else says what is missing', async ({
@@ -623,6 +624,7 @@ test.describe('document upload continue', () => {
 
     await expect(errorLink(page, copy.errors.referenceRequired)).toBeVisible()
     await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
+    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
@@ -873,5 +875,29 @@ test.describe('document upload page without JavaScript', () => {
     await expectViewFileAndRemoveInCell(
       actionsCellOf(documentRowFor(page, LONG_REFERENCE))
     )
+  })
+
+  test('Save and return to overview with every detail filled in shows Overview, and reopening lists the document with its chosen type', async ({
+    page
+  }) => {
+    test.slow()
+    await expectCompleteDocumentSavedByReturnToOverview(page)
+  })
+
+  test('Save and return to overview with a part-filled document stays on the page with an error for each missing detail and the typed reference kept', async ({
+    page
+  }) => {
+    await page
+      .getByLabel(copy.reference.label)
+      .fill(validDocument.accompanyingDocumentReference)
+    await saveAndReturnToHub(page).click()
+
+    await expect(errorLink(page, copy.errors.typeRequired)).toBeVisible()
+    await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
+    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
+    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
+      validDocument.accompanyingDocumentReference
+    )
+    await expectNoDocumentsAdded(page)
   })
 })

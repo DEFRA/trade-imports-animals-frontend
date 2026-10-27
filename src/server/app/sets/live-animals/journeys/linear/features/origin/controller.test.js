@@ -10,7 +10,6 @@ import {
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { hubPath } from '../../../../../../shared/paths.js'
 import * as countries from '../../../../../../services/countries/index.js'
 
 import * as origin from './controller.js'
@@ -362,12 +361,15 @@ describe('POST /origin — Save and return to overview', () => {
       }
     })
 
-  it('Should save "Yes" with the region code left blank and go to the overview', async () => {
+  it('Should refuse "Yes" with the region code left blank, keep "Yes" chosen and save nothing', async () => {
     const result = await postRegion('', { exit: 'hub' })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.regionOfOriginCodeRequirement).toBe('yes')
-    expect(result.after.regionOfOriginCode).toBe('')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.values.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should refuse a region code over 5 characters and save nothing', async () => {

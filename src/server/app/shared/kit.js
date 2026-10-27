@@ -12,7 +12,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
-import { amendFormActions } from './amend-form-actions.js'
+import { AMEND_RETURN_CHOICE, amendFormActions } from './amend-form-actions.js'
 
 export const routeOptions = { auth: 'session' }
 
@@ -139,21 +139,88 @@ export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
     REFUSAL_LOG_MESSAGE
   )
 
-export const hubExitTarget = (request) =>
-  request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
+const HUB_EXIT_FIELD = 'exit'
+const HUB_EXIT_VALUE = 'hub'
 
-export const isHubExit = (request) => hubExitTarget(request) !== null
+/**
+ * The save choice a request carries: whether Save and return to overview was
+ * pressed, and whether the save returns to the review.
+ *
+ * @param {object} request - the request being answered.
+ * @returns {{ hubExit: boolean, change: boolean }} the save choice.
+ */
+export const requestSaveChoice = (request) => ({
+  hubExit: request.payload?.[HUB_EXIT_FIELD] === HUB_EXIT_VALUE,
+  change: Boolean(request.query?.change)
+})
 
-export const changeContext = (request) => Boolean(request.query.change)
+/**
+ * The save choice carried by a returned form.
+ *
+ * @param {object} request - the returning request.
+ * @param {object} returnedForm - the returned form values.
+ * @param {object} [journey] - the journey the page belongs to.
+ * @returns {{ hubExit: boolean, change: boolean }} the save choice.
+ */
+export const returnedSaveChoice = (request, returnedForm, journey) => ({
+  hubExit: returnedForm[HUB_EXIT_FIELD] === HUB_EXIT_VALUE,
+  change:
+    journey?.status === AMEND
+      ? returnedForm[AMEND_RETURN_CHOICE.name] === AMEND_RETURN_CHOICE.value
+      : requestSaveChoice(request).change
+})
+
+export const hubExitTarget = (
+  request,
+  { saveChoice = requestSaveChoice(request) } = {}
+) => (saveChoice.hubExit ? hubPath(request.params.journeyId) : null)
+
+export const changeContext = (request) => requestSaveChoice(request).change
+
+/** The href with `change=1` added to its query string. */
+export const appendChangeContext = (href) =>
+  `${href}${href.includes('?') ? '&' : '?'}change=1`
 
 export const withChangeContext = (request, href) =>
-  changeContext(request) ? `${href}?change=1` : href
+  changeContext(request) ? appendChangeContext(href) : href
 
-export const exitTarget = (request, fallback) =>
-  hubExitTarget(request) ??
-  (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
-    : fallback)
+/**
+ * Reads the `return` marker a request carries.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string[]} allowedSlugs - the page slugs the marker may name.
+ * @returns {{ honouredSlug?: string, refusedMarker?: string }} `{}` without a
+ * marker, `{ honouredSlug }` when the marker is one of `allowedSlugs`, else
+ * `{ refusedMarker }` holding the value received.
+ */
+export const readReturnMarker = (request, allowedSlugs) => {
+  const marker = request.query?.return
+  if (marker === undefined) {
+    return {}
+  }
+  return allowedSlugs.includes(marker)
+    ? { honouredSlug: marker }
+    : { refusedMarker: marker }
+}
+
+/**
+ * Where a valid save goes.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string} fallback - where a save goes when it neither exits to the
+ * overview nor returns to the review.
+ * @param {object} [options]
+ * @param {{ hubExit: boolean, change: boolean }} [options.saveChoice] - the
+ * save choice to follow. Defaults to the request's own.
+ * @returns {string} the path to go to.
+ */
+export const exitTarget = (
+  request,
+  fallback,
+  { saveChoice = requestSaveChoice(request) } = {}
+) =>
+  hubExitTarget(request, { saveChoice }) ??
+  (saveChoice.change ? pagePath(request.params.journeyId, CYA_SLUG) : fallback)
 
 /** The review's path for a save made while amending from a Change link, else null. */
 export const amendReviewTarget = (request, journey) =>
@@ -181,11 +248,23 @@ export const runBackLink = async (request, stepId, current) => {
   return previousRunTarget ?? hubPath(journey.journeyId)
 }
 
-export const nextTarget = async (request, page, scope) =>
+/**
+ * Where a valid save on a page goes next.
+ *
+ * @param {object} request - the request being answered.
+ * @param {object} page - the page being saved.
+ * @param {object} scope - the journey's scope.
+ * @param {object} [options]
+ * @param {{ hubExit: boolean, change: boolean }} [options.saveChoice] - the
+ * save choice to follow. Defaults to the request's own.
+ * @returns {Promise<string>} the path to go to.
+ */
+export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
   exitTarget(
     request,
     (await runTarget(request, page.id, scope)) ??
-      nextInTaskRow(page.id, scope, request.params.journeyId)
+      nextInTaskRow(page.id, scope, request.params.journeyId),
+    { saveChoice }
   )
 
 /**
@@ -198,8 +277,8 @@ export const nextTarget = async (request, page, scope) =>
  * omit it on a page the journey deliberately leaves uncaptioned.
  * @param {object} [options.request] - the request being answered. Supply it
  * on a page that ends with `saveActions`, and the view gains `amend`: the two
- * form actions its save buttons carry while the journey is being amended, or
- * null otherwise.
+ * form actions its save buttons carry while the journey is being amended, and
+ * `returnChoice`, or null otherwise.
  * @param {string} [options.surface] - a key of `SURFACES` naming the width of
  * the content column. Defaults to `form`, the reading measure; an unknown
  * surface throws.

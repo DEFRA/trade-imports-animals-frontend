@@ -51,8 +51,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - While a notification is being amended, a page ends with "Save and return"
   (back to the review) and "Save and continue" (on, never back to the review)
   side by side, then a secondary "Save and return to overview" button on its
-  own line below them, with no cancel link. Each save button carries its own
-  form action, so no new field is posted. A page reached from another page or a
+  own line below them, with no cancel link. The two amend buttons tell
+  themselves apart by form action, so no new field is posted. The exception is
+  a page whose save buttons post to another service (Upload documents while its
+  add form is open): there the amend "Save and return" also posts the submitted
+  value `amendFormActions` returns. A page reached from another page or a
   picker ends with the first two only.
 
 ## Check your answers (review)
@@ -334,17 +337,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the page has wording for it ("Virus found", "Upload failed", "Download
   failed"); a reason it has no wording for stays "Rejected" rather than being
   named wrongly.
-- A chosen document type means a document is on its way, and only the add
-  action attaches a file. So Continue keeps every answer typed and names the
-  action that attaches it, rather than dropping the part-filled form.
+- A document is started by any of its reference, type (offered or not), date
+  of issue text or a chosen file. Any save button then keeps every answer
+  typed, says what is missing, and adds nothing, or adds the document when it
+  is complete, rather than dropping the part-filled form.
 - The file size limit is whatever `MAX_FILE_SIZE_MB` in
   `journeys/linear/features/documents/upload-config.js` holds; nothing else
-  states a figure. "Save and add another" posts the file to the upload
-  service's `/upload-and-scan` session rather than to this service, and that
-  session is opened with that limit to enforce, so the CDP ingress body cap
-  does not bound it. The page states the same figure and checks it in the
-  browser, so a trader learns a file is too large before spending time
-  uploading it.
+  states a figure. While the add form is open, every save button posts the form
+  and its file to the upload service's `/upload-and-scan` session rather than
+  to this service, and that session is opened with that limit to enforce, so
+  the CDP ingress body cap does not bound it. The page states the same figure
+  and checks it in the browser for any submit that sends the file, so a trader
+  learns a file is too large before spending time uploading it. When the add
+  form is closed, or a taken-on document or a removal is waiting to be
+  retried, the save buttons post to this service and send no file, so the
+  retry runs before anything else on the page.
 - The page uses the full-width surface so the added-documents table fits. The
   guidance and the fields keep a two-thirds reading width.
 - With no documents, the File upload card shows no table and no sentence.
@@ -368,13 +375,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a form left on it submits an empty type. One message covers both mistakes a
   select can make: left on the select text, or carrying a value the page never
   offered.
-- The select offers fewer document types than the vocabulary this service may
-  send to the backend. The page's own list is what both the select's items
-  and the add form's type check read; a document already recorded as a type
-  outside that list still reads back on its saved row and is still sent with
-  that type.
-- A saved document returns the trader to the page, so a reload cannot replay
-  the save. Continue is pressed again from the fresh page once scans settle.
+- The offered document types are service-backed and primed at boot, so the
+  type check is built for each add, not frozen at module load. The page offers
+  fewer of them than the vocabulary this service may send to the backend: the
+  page's own list is what both the select's items and the add form's type check
+  read, and a document already recorded as a type the page withholds still reads
+  back on its saved row and is still sent with that type.
+- A document saved by "Save and add another" or "Save and return to overview"
+  is followed by a redirect, so a reload cannot replay the save. One saved by
+  "Save and continue" or an amend button is answered on the returned request
+  with the scan hold: the document is listed as "Scanning for virus" and the
+  trader stays on the page. A reload of that response saves nothing twice,
+  because a document already listed is not added again. Continue is pressed
+  again from the fresh page once scans settle.
 - A file still being checked holds Continue back, and so does a document the
   upload service has taken on that this notification does not list — otherwise
   the trader would carry on with a claimed document missing from the
@@ -383,7 +396,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   reuses the session the page is already showing, carried in the refresh link
   and a hidden field, so a scan being polled does not leave a run of
   registrations behind. A page view carrying no handle opens its own, which is
-  what keeps two concurrent adds off one handle.
+  what keeps two concurrent adds off one handle. The carried handle is looked
+  up on the notification, not trusted alone, so a handle another notification
+  opened reaches nothing.
+- The returned query key is the trader-facing word for what they return from.
+  Its value is the correlation handle, because no upload id exists when the
+  session opens. The return path is relative, because the upload service
+  refuses an absolute redirect outside development.
+- The reason the add control is shut sits before the control it refuses, and
+  the control keeps its place in the tab order so the error summary can reach
+  it.
 - A well-formed upload id from another journey answers 404, not 403, so the
   journey never confirms that upload exists.
 - The drop zone wording matches the design system's own defaults.

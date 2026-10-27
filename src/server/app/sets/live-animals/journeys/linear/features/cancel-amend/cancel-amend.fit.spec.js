@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   openReviewFromHub,
+  saveAndReturnToHub,
   signIn,
   startNotification,
   values
@@ -171,12 +172,7 @@ test.describe('amend review', () => {
       .click()
     await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
     await page.getByLabel('Arrival date at port of entry').fill('')
-    await page
-      .getByRole('button', {
-        name: sharedCopy.saveActions.saveAndReturnToHub,
-        exact: true
-      })
-      .click()
+    await saveAndReturnToHub(page).click()
     await openReviewFromHub(page)
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })

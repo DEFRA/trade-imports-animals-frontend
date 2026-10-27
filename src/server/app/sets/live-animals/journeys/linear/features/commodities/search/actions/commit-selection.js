@@ -2,13 +2,11 @@ import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
+import { commodityQuestionReturn } from '../../commodity-question-detour.js'
 import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { splitKey } from '../selection/keys.js'
 import { lineKey } from '../selection/line-key.js'
 
-// The line's type is its species' owning type id — always non-blank, so every
-// line completes. Multi-type commodities (Cow) carry the type determined by
-// the checked species; single-type commodities collapse to their one type id.
 export const seedLine = (key) => {
   const [commoditySelection, speciesSelection] = splitKey(key)
   return {
@@ -29,8 +27,31 @@ const detailsPath = (request) =>
     pagePath(request.params.journeyId, consignmentDetailsPage.slug)
   )
 
+const logAndResolveDetourReturn = (request) => {
+  const { honouredReturn, refusedMarker } = commodityQuestionReturn(request)
+  const { journeyId } = request.params
+  const maxLoggedMarkerLength = 100
+  if (refusedMarker !== undefined) {
+    request.logger.warn(
+      {
+        journeyId,
+        refusedMarker: String(refusedMarker).slice(0, maxLoggedMarkerLength)
+      },
+      'Commodity question return refused: not a page that opens it'
+    )
+  }
+  if (honouredReturn) {
+    request.logger.info(
+      { journeyId, honouredReturn },
+      'Commodity question saved: returning to the page that opened it'
+    )
+  }
+  return honouredReturn
+}
+
 const selectionTarget = async (request, scope) =>
   kit.hubExitTarget(request) ??
+  logAndResolveDetourReturn(request) ??
   (kit.changeContext(request)
     ? detailsPath(request)
     : await kit.nextTarget(request, commoditiesPage, scope))

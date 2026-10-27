@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { amendFormActions } from './amend-form-actions.js'
+import { AMEND_RETURN_CHOICE, amendFormActions } from './amend-form-actions.js'
 
 const PATH = '/n/j-1/origin'
 
@@ -8,7 +8,8 @@ describe('#amendFormActions', () => {
   it('Should send Save and return to the page with change=1 and Save and continue to the plain page', () => {
     expect(amendFormActions(PATH, new URLSearchParams())).toEqual({
       returnAction: `${PATH}?change=1`,
-      continueAction: PATH
+      continueAction: PATH,
+      returnChoice: AMEND_RETURN_CHOICE
     })
   })
 
@@ -35,7 +36,8 @@ describe('#amendFormActions', () => {
   it('Should cope with no search params at all', () => {
     expect(amendFormActions(PATH, undefined)).toEqual({
       returnAction: `${PATH}?change=1`,
-      continueAction: PATH
+      continueAction: PATH,
+      returnChoice: AMEND_RETURN_CHOICE
     })
   })
 })

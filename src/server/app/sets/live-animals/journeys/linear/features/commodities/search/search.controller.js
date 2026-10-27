@@ -3,6 +3,7 @@ import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import { commodityQuestionReturn } from '../commodity-question-detour.js'
 import { commoditiesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -20,8 +21,6 @@ const view = `${TEMPLATES}/features/commodities/search/search`
 const copy = copyFor({ en, cy }).search
 
 export const SEARCH_FIELD = 'commoditySearch'
-const SEARCH_ACTION = 'search'
-const CLEAR_ACTION = 'clear'
 
 const render = async (
   request,
@@ -37,7 +36,9 @@ const render = async (
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink:
+        commodityQuestionReturn(request).honouredReturn ??
+        (await kit.runBackLink(request, page.id, current)),
       journey: current.journey,
       page
     }),
@@ -65,6 +66,8 @@ const rerender = async (request, h, { selected, query, errorText }) => {
 }
 
 const post = async (request, h) => {
+  const SEARCH_ACTION = 'search'
+  const CLEAR_ACTION = 'clear'
   const payload = request.payload ?? {}
   const query = normaliseQuery(payload[SEARCH_FIELD])
 
@@ -78,10 +81,7 @@ const post = async (request, h) => {
     return rerender(request, h, { selected, query })
   }
 
-  if (selected.length === 0 && !kit.isHubExit(request)) {
-    kit.logRefusal(request, {
-      fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
-    })
+  if (selected.length === 0) {
     const response = await rerender(request, h, {
       selected,
       query,

@@ -11,26 +11,119 @@ import {
 } from '../engine/test-support.js'
 import {
   amendReviewTarget,
+  appendChangeContext,
   base,
   dateField,
-  isHubExit,
+  exitTarget,
   logRefusal,
   pageRoutes,
   REFUSAL_LOG_MESSAGE,
-  recoverableSave
+  readReturnMarker,
+  recoverableSave,
+  requestSaveChoice,
+  returnedSaveChoice
 } from './kit.js'
+import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
 
-describe('#isHubExit — the Save and return to overview submit', () => {
+describe('#requestSaveChoice — what a request says about how it was saved', () => {
   const params = { journeyId: 'journey-1' }
 
-  it('Should be true only for the named hub exit', () => {
-    expect(isHubExit({ payload: { exit: 'hub' }, params })).toBe(true)
+  it('Should be the hub exit only for the named hub exit', () => {
+    expect(
+      requestSaveChoice({ payload: { exit: 'hub' }, params, query: {} })
+    ).toEqual({ hubExit: true, change: false })
+    expect(requestSaveChoice({ params, query: {} }).hubExit).toBe(false)
+    expect(
+      requestSaveChoice({ payload: { exit: 'other' }, params, query: {} })
+        .hubExit
+    ).toBe(false)
   })
 
-  it('Should be false with no payload, no exit or another exit', () => {
-    expect(isHubExit({ params })).toBe(false)
-    expect(isHubExit({ payload: {}, params })).toBe(false)
-    expect(isHubExit({ payload: { exit: 'other' }, params })).toBe(false)
+  it('Should carry the change context of the query', () => {
+    expect(requestSaveChoice({ params, query: { change: '1' } }).change).toBe(
+      true
+    )
+  })
+})
+
+describe('#returnedSaveChoice — a save choice made on the form the upload service returns', () => {
+  const params = { journeyId: 'journey-1' }
+  const openedWithChange = { params, query: { change: '1' } }
+  const openedWithoutChange = { params, query: {} }
+  const reviewPath = /journey-1\/notification-view$/
+  const fallback = '/next'
+
+  const exitFor = (request, returnedForm, journey) =>
+    exitTarget(request, fallback, {
+      saveChoice: returnedSaveChoice(request, returnedForm, journey)
+    })
+
+  it('Should go on, not to the review, for the amend Save and continue from a page opened with change context', () => {
+    expect(
+      exitFor(openedWithChange, { action: 'continue' }, { status: AMEND })
+    ).toBe(fallback)
+  })
+
+  it('Should go to the review for the amend Save and return from a page opened without change context', () => {
+    expect(
+      exitFor(
+        openedWithoutChange,
+        { [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value },
+        { status: AMEND }
+      )
+    ).toMatch(reviewPath)
+  })
+
+  it('Should go on, not to the review, for the amend Save and return choice on a journey that is not being amended', () => {
+    expect(
+      exitFor(
+        openedWithoutChange,
+        { [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value },
+        { status: DRAFT }
+      )
+    ).toBe(fallback)
+  })
+
+  it('Should go on, not to the review, for the amend Save and return choice when no journey is given', () => {
+    expect(
+      exitFor(openedWithoutChange, {
+        [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value
+      })
+    ).toBe(fallback)
+  })
+
+  it('Should go to the review for a form saved from a page opened with change context when the journey is not being amended', () => {
+    expect(
+      exitFor(openedWithChange, { action: 'continue' }, { status: DRAFT })
+    ).toMatch(reviewPath)
+  })
+
+  it('Should go to the overview for the hub exit, whatever the change context', () => {
+    expect(
+      exitFor(openedWithChange, { exit: 'hub' }, { status: AMEND })
+    ).toMatch(/journey-1$/)
+    expect(
+      exitFor(openedWithChange, { exit: 'hub' }, { status: DRAFT })
+    ).toMatch(/journey-1$/)
+  })
+})
+
+describe('#exitTarget given a save choice', () => {
+  const request = {
+    params: { journeyId: 'journey-1' },
+    payload: { exit: 'hub' },
+    query: { change: '1' }
+  }
+  const plainSave = { hubExit: false, change: false }
+
+  it('Should follow the given save choice, not the request payload and query', () => {
+    expect(exitTarget(request, '/next', { saveChoice: plainSave })).toBe(
+      '/next'
+    )
+  })
+
+  it('Should read the request when no save choice is given', () => {
+    expect(exitTarget(request, '/next')).toMatch(/journey-1$/)
   })
 })
 
@@ -136,7 +229,8 @@ describe('#base — amending', () => {
       base('t', { journey: { status: AMEND }, request: originRequest }).amend
     ).toEqual({
       returnAction: `${ORIGIN_PATH}?change=1&return=addresses`,
-      continueAction: `${ORIGIN_PATH}?return=addresses`
+      continueAction: `${ORIGIN_PATH}?return=addresses`,
+      returnChoice: AMEND_RETURN_CHOICE
     })
   })
 
@@ -342,5 +436,35 @@ describe('#logRefusal', () => {
       errorCodes: [],
       reason: 'no-line'
     })
+  })
+})
+
+describe('#appendChangeContext — the change marker on an href', () => {
+  it('Should start the query string on an href without one', () => {
+    expect(appendChangeContext('/a')).toBe('/a?change=1')
+  })
+
+  it('Should join to the query string an href already has', () => {
+    expect(appendChangeContext('/a?x=1')).toBe('/a?x=1&change=1')
+  })
+})
+
+describe('#readReturnMarker — the page a request says it came from', () => {
+  const allowedSlugs = ['addresses', 'notification-view']
+
+  it('Should be empty when the request carries no marker', () => {
+    expect(readReturnMarker({ query: {} }, allowedSlugs)).toEqual({})
+  })
+
+  it('Should honour a marker naming an allowed slug', () => {
+    expect(
+      readReturnMarker({ query: { return: 'addresses' } }, allowedSlugs)
+    ).toEqual({ honouredSlug: 'addresses' })
+  })
+
+  it('Should refuse a marker naming anything else, holding the value received', () => {
+    expect(
+      readReturnMarker({ query: { return: '//evil.example' } }, allowedSlugs)
+    ).toEqual({ refusedMarker: '//evil.example' })
   })
 })

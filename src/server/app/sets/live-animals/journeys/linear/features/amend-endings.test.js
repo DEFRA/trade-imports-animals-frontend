@@ -14,6 +14,7 @@ import { pagePath } from '../../../../../shared/paths.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { taskRows } from '../flow/task-rows.js'
 import { allRoutes, dispatchPages } from './index.js'
+import { documentsPage } from './documents/page.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
@@ -29,6 +30,9 @@ const comprehensive = characterisationCorpus.find(
 ).answers
 
 const taskRowPages = taskRows.flatMap((row) => row.pages)
+const pagesPostingToThemselves = taskRowPages.filter(
+  (page) => page.id !== documentsPage.id
+)
 
 const pageGetHandler = (page) =>
   allRoutes.find(
@@ -52,9 +56,7 @@ const renderAmending = async (page) => {
   }
 }
 
-// Every page in a task row takes the amend ending, so a page whose template
-// stops passing `amend` to saveActions fails here rather than in a browser.
-describe('amend endings on every task-row page', () => {
+describe('amend endings on task-row pages that post to themselves', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -63,7 +65,7 @@ describe('amend endings on every task-row page', () => {
   })
   beforeEach(() => store.clear())
 
-  it.each(taskRowPages.map((page) => [page.id, page]))(
+  it.each(pagesPostingToThemselves.map((page) => [page.id, page]))(
     'Should end the %s page with Save and return to the review while amending',
     async (_id, page) => {
       const { path, html } = await renderAmending(page)
@@ -72,4 +74,17 @@ describe('amend endings on every task-row page', () => {
       expect(html).toContain(`formaction="${path}"`)
     }
   )
+
+  it('Should end the accompanying-documents page with the amend Save and return posting its choice to the upload service', async () => {
+    const { path, html } = await renderAmending(documentsPage)
+
+    const saveAndReturn = html
+      .split('<button')
+      .find((fragment) => />\s*Save and return\s*</.test(fragment))
+
+    expect(saveAndReturn).toContain('name="amendSave"')
+    expect(saveAndReturn).toContain('value="return"')
+    expect(saveAndReturn).toContain('formenctype="multipart/form-data"')
+    expect(saveAndReturn).not.toContain(`formaction="${path}?change=1"`)
+  })
 })

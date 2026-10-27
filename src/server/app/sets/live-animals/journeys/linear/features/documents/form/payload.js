@@ -48,20 +48,23 @@ export const documentFromPayload = (payload) => ({
   )
 })
 
-export const startsADocument = (payload) =>
-  offeredDocumentTypes().includes(
-    (payload.accompanyingDocumentType ?? '').trim()
-  )
-
 const answered = (value) => Boolean(String(value ?? '').trim())
 
-export const answersADocument = (payload) =>
-  startsADocument(payload) ||
-  answered(payload.accompanyingDocumentType) ||
-  answered(payload.accompanyingDocumentReference) ||
-  Object.values(
-    kit.readDate(payload, 'accompanyingDocumentDateOfIssue') ?? {}
-  ).some(answered)
+/**
+ * Whether a submitted form has started a document: it has a reference, a type
+ * (offered or not), any date of issue text, or a chosen file.
+ *
+ * @param {object} form - the submitted fields, with the file entry the upload
+ *   service returned where the form went through it
+ * @returns {boolean} whether any part of a document was given
+ */
+export const startsADocument = (form) =>
+  answered(form.accompanyingDocumentReference) ||
+  answered(form.accompanyingDocumentType) ||
+  answered(form.accompanyingDocumentDateOfIssue) ||
+  Boolean(form.file?.filename)
+
+export const addsAnotherDocument = (form) => form.action === 'add'
 
 export const EMPTY_FORM = {
   accompanyingDocumentReference: '',
