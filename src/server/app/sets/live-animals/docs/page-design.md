@@ -384,14 +384,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A document saved by "Save and add another" or "Save and return to overview"
   is followed by a redirect, so a reload cannot replay the save. One saved by
   "Save and continue" or an amend button is answered on the returned request
-  with the scan hold: the document is listed as "Scanning for virus" and the
-  trader stays on the page. A reload of that response saves nothing twice,
-  because a document already listed is not added again. Continue is pressed
-  again from the fresh page once scans settle.
-- A file still being checked holds Continue back, and so does a document the
+  by the save choice, exactly as any other save: a reload of that response
+  saves nothing twice, because a document already listed is not added again.
+  Nothing holds the trader for a scan still running.
+- A document the scan rejected holds Continue back, and so does a document the
   upload service has taken on that this notification does not list — otherwise
   the trader would carry on with a claimed document missing from the
-  notification. The exit to the overview does not wait for either.
+  notification. The exit to the overview waits for neither.
 - An upload session is opened once per page view, not per render: a render
   reuses the session the page is already showing, carried in the refresh link
   and a hidden field, so a scan being polled does not leave a run of

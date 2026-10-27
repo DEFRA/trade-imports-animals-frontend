@@ -265,8 +265,10 @@ While the add form is open, every save button sends the entry and its file to
 the upload session, as Add does, and each carries its own choice. A save then
 takes the entry on exactly as Add does, and goes on by the choice the returned
 form carries: back to the page for Add, to the overview for Save and return to
-overview, and held on the page with the scan message for Save and continue. An
-entry is started by any of its reference, type, date of issue or a chosen file:
+overview, and on by its own choice for Save and continue too — a document the
+scan is still checking does not hold any of them; only one the scan rejected
+holds the trader on the page. An entry is started by any of its reference,
+type, date of issue or a chosen file:
 `startsADocument` in
 [`form/payload.js`](../journeys/linear/features/documents/form/payload.js) owns
 that rule. A started entry is refused on every save button rather than dropped:

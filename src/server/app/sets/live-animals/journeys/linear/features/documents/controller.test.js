@@ -128,8 +128,6 @@ const FILE_EMPTY_MESSAGE = 'The selected file is empty'
 const CONTINUE_AT_CAPACITY_LINE =
   'Continue refused: the notification is at its document capacity'
 const UPLOAD_SESSION_OPENED_LINE = 'Upload session opened'
-const SETTLING_MESSAGE =
-  'You cannot continue until all documents have been scanned or removed'
 const DOCUMENT_NOT_SAVED_BANNER =
   'Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘Save and continue’ to try again.'
 const DOCUMENTS_UNCHECKED_BANNER =
@@ -272,7 +270,9 @@ const submittedDocument = (overrides = {}) => ({
 })
 
 const SAVE_AND_CONTINUE = { action: 'continue' }
+const SAVE_AND_CONTINUE_LABEL = 'Save and continue'
 const SAVE_AND_RETURN_TO_OVERVIEW = { action: 'continue', exit: 'hub' }
+const SAVE_AND_RETURN_TO_OVERVIEW_LABEL = 'Save and return to overview'
 const AMEND_SAVE_AND_RETURN = { amendSave: 'return' }
 
 let nextUploadSession = 0
@@ -321,17 +321,14 @@ const configureEngine = () => {
   buildDispatch(SET_ID, dispatchPages)
 }
 
-// The refusal render keeps the add form live, which opens a session and logs a
-// line of its own, so the refusal is asserted as present rather than as the
-// only line the page logged.
-const expectContinueRefusedLogged = (result, scansNotCleared) =>
+const expectContinueRefusedLogged = (result, rejectedScans) =>
   expect(result.logger.entries).toContainEqual({
     level: 'info',
     message: REFUSAL_LOG_MESSAGE,
     fields: expect.objectContaining({
       journeyId: result.journeyId,
       errorCodes: ['documents'],
-      scansNotCleared
+      rejectedScans
     })
   })
 
@@ -434,47 +431,45 @@ describe('documents — leaving the page by the save choice a returned upload ca
   const completeDocument = (choice) =>
     submittedDocument({ action: null, ...choice })
 
-  it('Should append a complete document returned with Save and return to overview once and redirect to the overview', async () => {
-    const result = await driveClaim(
-      completeDocument(SAVE_AND_RETURN_TO_OVERVIEW)
-    )
-
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.documents).toEqual([
-      expect.objectContaining({
-        uploadId: result.session.uploadId,
-        accompanyingDocumentReference:
-          validDocument.accompanyingDocumentReference
-      })
-    ])
-  })
-
-  it('Should append a complete document returned with Save and continue once and hold the trader on the page with the settling message', async () => {
-    const result = await driveClaim(completeDocument(SAVE_AND_CONTINUE))
-
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
-    expect(result.view.context.rows[0][3].html).toContain(TAG_SCANNING)
-    expect(result.after.documents).toEqual([
-      expect.objectContaining({ uploadId: result.session.uploadId })
-    ])
-  })
-
   it.each([
-    ['Save and return', AMEND_SAVE_AND_RETURN],
-    ['Save and continue', SAVE_AND_CONTINUE]
+    [
+      SAVE_AND_RETURN_TO_OVERVIEW_LABEL,
+      SAVE_AND_RETURN_TO_OVERVIEW,
+      {},
+      (journeyId) => hubPath(journeyId)
+    ],
+    [
+      SAVE_AND_CONTINUE_LABEL,
+      SAVE_AND_CONTINUE,
+      {},
+      (journeyId) => hubPath(journeyId)
+    ],
+    [
+      'the amend Save and return',
+      AMEND_SAVE_AND_RETURN,
+      { query: { change: '1' }, amend: true },
+      (journeyId) => pagePath(journeyId, CYA_SLUG)
+    ],
+    [
+      'the amend Save and continue',
+      SAVE_AND_CONTINUE,
+      { query: { change: '1' }, amend: true },
+      (journeyId) => hubPath(journeyId)
+    ]
   ])(
-    'Should append a complete document returned with the amend %s and hold the trader on the page with the settling message',
-    async (_button, choice) => {
-      const result = await driveClaim(completeDocument(choice), {
-        query: { change: '1' },
-        amend: true
-      })
+    'Should append the returned document once and redirect to where %s leads',
+    async (_choiceLabel, choice, requestOptions, expectedRedirect) => {
+      const result = await driveClaim(completeDocument(choice), requestOptions)
 
-      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-      expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
+      expect(result.response).toEqual({
+        redirect: expectedRedirect(result.journeyId)
+      })
       expect(result.after.documents).toEqual([
-        expect.objectContaining({ uploadId: result.session.uploadId })
+        expect.objectContaining({
+          uploadId: result.session.uploadId,
+          accompanyingDocumentReference:
+            validDocument.accompanyingDocumentReference
+        })
       ])
     }
   )
@@ -1012,12 +1007,6 @@ describe('documents — saving a document the service has taken on', () => {
   it('Should carry Continue past the page when the notification lists the document the service has taken on', async () => {
     const journey = await store.create()
     const session = await takenOnUpload(journey.journeyId)
-    // Settles the scan, so it is this gate and not the settling one that answers the press.
-    await documentUploads.scanStatus({
-      uploadId: session.uploadId,
-      filename: PDF_FILENAME,
-      refresh: true
-    })
 
     const result = await driveHandler(post, {
       journeyId: journey.journeyId,
@@ -1155,25 +1144,23 @@ describe('documents — listing, scanning and removing', () => {
     expect(settled.response.redirect).toBeDefined()
   })
 
-  it('Should block Continue while a scan is PENDING, naming the reason and leaving the add form open', async () => {
-    const uploadId = await registeredUpload('itahc.pdf')
-    const result = await driveHandler(post, {
-      seed: {
-        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
-      },
-      payload: { action: 'continue' }
-    })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(result.response.redirect).toBeUndefined()
-    expect(summaryTexts(result)).toContain(
-      'You cannot continue until all documents have been scanned or removed'
-    )
-    expect(result.view.context.uploadFormUnavailable).toBe(false)
-    expect(result.view.context.uploadPath).toBeDefined()
-    expectContinueRefusedLogged(result, [
-      { uploadId, scanStatus: 'PENDING', tagKey: 'PENDING' }
-    ])
-  })
+  it.each([
+    [SAVE_AND_CONTINUE_LABEL, { action: 'continue' }],
+    [SAVE_AND_RETURN_TO_OVERVIEW_LABEL, { action: 'continue', exit: 'hub' }]
+  ])(
+    'Should let %s leave the page while a scan is PENDING',
+    async (_button, payload) => {
+      const uploadId = await registeredUpload('itahc.pdf')
+      const result = await driveHandler(post, {
+        seed: {
+          documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+        },
+        payload
+      })
+      expect(result.response.redirect).toBeDefined()
+      expect(result.view).toBeUndefined()
+    }
+  )
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
     const uploadId = await registeredUpload(VIRUS_NOTES_FILENAME)
@@ -1198,17 +1185,6 @@ describe('documents — listing, scanning and removing', () => {
     expectContinueRefusedLogged(result, [
       { uploadId, scanStatus: 'REJECTED', tagKey: 'REJECTED_FILE_VIRUS' }
     ])
-  })
-
-  it('Should let the hub exit leave the page while a scan is PENDING', async () => {
-    const uploadId = await registeredUpload('itahc.pdf')
-    const result = await driveHandler(post, {
-      seed: {
-        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
-      },
-      payload: { action: 'continue', exit: 'hub' }
-    })
-    expect(result.response.redirect).toBeDefined()
   })
 })
 
@@ -2199,7 +2175,7 @@ describe('documents — where the save buttons post', () => {
     [
       ...renderedPageOf(result).querySelectorAll('.govuk-button-group button')
     ].filter((button) =>
-      ['Save and continue', 'Save and return to overview'].includes(
+      [SAVE_AND_CONTINUE_LABEL, SAVE_AND_RETURN_TO_OVERVIEW_LABEL].includes(
         trimmedTextOf(button)
       )
     )

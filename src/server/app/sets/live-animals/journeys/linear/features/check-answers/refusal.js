@@ -2,7 +2,7 @@ import * as state from '../../../../../../engine/index.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
-import { withScanStatus } from '../documents/scan/status.js'
+import { isRejectedByScan, withScanStatus } from '../documents/scan/status.js'
 import { SCAN_STATUS } from '../documents/scan-poll.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from '../documents/copy/copy.en.js'
@@ -37,7 +37,7 @@ export const documentScanCardErrors = async (
   { includePending = true } = {}
 ) => {
   const withStatus = await documentScanStatuses(request, answers)
-  if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
+  if (withStatus.some(isRejectedByScan)) {
     return { documents: documentsCopy.errors.someRejected }
   }
   if (

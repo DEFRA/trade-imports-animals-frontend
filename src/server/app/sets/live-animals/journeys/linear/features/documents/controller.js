@@ -42,12 +42,12 @@ import { unsavedClaimedUpload } from './handlers/unsaved-claim.js'
 import { documentsPage as page } from './page.js'
 import { validation } from './validate.js'
 import {
-  hasDocumentsNotClearedByScan,
+  hasRejectedDocuments,
+  rejectedScans,
   scanned,
-  scansNotCleared,
   withScanStatus
 } from './scan/status.js'
-import { settlingSummaryErrors } from './scan/summary-errors.js'
+import { rejectedErrors } from './scan/summary-errors.js'
 import { render as renderView } from './view-model/render.js'
 
 export const meta = { ...page, collects: ['documents'], validation }
@@ -307,15 +307,14 @@ const continueToNextPage = async (request, h, pageState, saveChoice) =>
     await kit.nextTarget(request, page, pageState.scope, { saveChoice })
   )
 
-const renderStillSettling = async (request, h, pageState) => {
+const renderRejectedDocumentRefusal = async (request, h, pageState) => {
   kit.logRefusal(request, {
-    fieldErrors: { documents: copy.errors.cannotContinue },
-    reason: 'scans-not-cleared',
-    scansNotCleared: scansNotCleared(pageState.documents)
+    fieldErrors: { documents: rejectedErrors(pageState.documents) },
+    reason: 'scan-rejected',
+    rejectedScans: rejectedScans(pageState.documents)
   })
   return (
     await render(request, h, pageState, EMPTY_FORM, {
-      summaryErrors: settlingSummaryErrors(pageState.documents),
       extra: await addFormSessionFields(request, pageState.journey.journeyId)
     })
   ).code(HTTP_STATUS_BAD_REQUEST)
@@ -326,8 +325,8 @@ const leavePage = async (request, h, saveChoice) => {
   if (saveChoice.hubExit) {
     return continueToNextPage(request, h, pageState, saveChoice)
   }
-  if (hasDocumentsNotClearedByScan(pageState.documents)) {
-    return renderStillSettling(request, h, pageState)
+  if (hasRejectedDocuments(pageState.documents)) {
+    return renderRejectedDocumentRefusal(request, h, pageState)
   }
   const unsaved = await unsavedClaimedUpload(request, pageState)
   if (unsaved.uploadId) {
