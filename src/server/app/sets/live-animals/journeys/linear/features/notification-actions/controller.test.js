@@ -1,16 +1,9 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../../engine/persistence/records.js'
-import {
-  configureSession,
-  knownJourneysCookie
-} from '../../../../../../engine/persistence/session.js'
+import { records } from '../../../../../../engine/persistence/records.js'
+import { knownJourneysCookie } from '../../../../../../engine/persistence/session.js'
 import {
   backendJourneyId,
   backendNotification,
@@ -18,10 +11,9 @@ import {
   fetchMock,
   journeyRequest,
   stubH,
-  useBackendRecords
+  useBackendRecords,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
@@ -53,16 +45,8 @@ const backendAnsweringCopyWith = (copyResponse) =>
   })
 
 describe('copy notification action', () => {
-  beforeAll(() => {
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-
   describe('against the stub store', () => {
-    beforeEach(() => {
-      configureRecords(SET_ID, recordsStub)
-      records.clear()
-    })
+    useStubbedJourney(SET_ID, dispatchPages)
 
     it('Should copy into a known new draft and redirect to its journey-scoped hub', async () => {
       const source = await records.create()

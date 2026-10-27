@@ -1,14 +1,9 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   crumbProtectedServerMounting,
   driveHandler,
@@ -147,12 +142,7 @@ const contextOf = async (seed) => {
 }
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it("Should save each line's own quantities, keeping a package count only where the commodity takes one", async () => {
     const result = await driveHandler(post, {
@@ -353,12 +343,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
 })
 
 describe('#consignmentDetailsController — commodities on code 01061900 are listed species by species', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list each chosen species of a 01061900 commodity as its own row, and every other commodity as one row', async () => {
     const { selectedRows } = await contextOf(seedPerSpeciesLines())
@@ -480,12 +465,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
 })
 
 describe('#consignmentDetailsController — the animal count must be answered before the page saves', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should hold the page on a blank count rather than saving the blank, leaving the stored count and its identifier records alone', async () => {
     const seed = {

@@ -413,9 +413,10 @@ what it declares. Add a case shaped like the matching layout:
 
 ## Test support
 
-The controller-test helpers are listed in
-[Test support](add-a-page.md#test-support), with `useStubbedJourney` as the
-set-up. Extend the shared helpers rather than writing set-up in the test file:
+Build test set-up from the shared helpers, and extend them rather than writing
+set-up in the test file.
+
+The controller-test helpers are listed in [Test support](add-a-page.md#test-support), with `useStubbedJourney` as the set-up.
 
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)

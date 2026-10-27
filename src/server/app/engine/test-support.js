@@ -299,10 +299,13 @@ export const resetMocksAndConfigAfterTests = (...configKeys) => {
   })
 }
 
-export const referenceDataServing = () => (rows) => {
-  config.set('stubMode', false)
-  fetchMock.enableMocks()
-  fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
+export const useReferenceDataServing = () => {
+  resetMocksAndConfigAfterTests()
+  return (rows) => {
+    config.set('stubMode', false)
+    fetchMock.enableMocks()
+    fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
+  }
 }
 
 /** Puts the address book on the network boundary: every request to its
@@ -370,11 +373,13 @@ export const expectOneSaveFallbackLogged = (logger, fallback) =>
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {
-    configureRecords(setId, recordsStub)
     configureSession(setId, sessionStub)
     buildDispatch(setId, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  beforeEach(() => {
+    configureRecords(setId, recordsStub)
+    store.clear()
+  })
 }
 
 export const useBackendRecords = (setId) => {
