@@ -11,6 +11,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { FELIS_CATUS_ROW } from '../../commodities/search/test-support.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -477,7 +478,7 @@ describe('transit-countries — the Back link', () => {
   const catSeed = {
     ...seed,
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+    commodityLines: [FELIS_CATUS_ROW]
   }
 
   it('Should go Back to the arrival details while the opening run is on', async () => {

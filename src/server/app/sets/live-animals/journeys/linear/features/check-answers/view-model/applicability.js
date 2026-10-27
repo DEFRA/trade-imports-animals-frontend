@@ -1,9 +1,9 @@
-import { appliesForCommodity } from '../../../../../../../bridge/applicability.js'
+import { appliesForGateValue } from '../../../../../../../bridge/applicability.js'
 import { toArray } from './rows/value-text.js'
 
 export const anyLineApplies = (answers, name) =>
   toArray(answers.commodityLines).some((line) =>
-    appliesForCommodity(name, line?.commoditySelection)
+    appliesForGateValue(name, line?.commodityCode)
   )
 
 export const regionCodeApplies = (_answers, scope) =>
@@ -12,9 +12,6 @@ export const regionCodeApplies = (_answers, scope) =>
 export const purposeApplies = (_answers, scope) =>
   scope.has('purposeInInternalMarket')
 
-// The three answers the reason for import reveals beyond the purpose. Each
-// row stands on the same scope entry that puts its question to the trader, so
-// the review shows an exit answer exactly when one was asked for.
 export const destinationCountryApplies = (_answers, scope) =>
   scope.has('destinationCountry')
 
@@ -31,5 +28,5 @@ export const unweanedApplies = (answers) =>
 export const cphApplies = (answers) =>
   anyLineApplies(answers, 'countyParishHoldingCph')
 
-export const packagesApply = (commoditySelection) =>
-  appliesForCommodity('numberOfPackages', commoditySelection)
+export const packagesApply = (commodityCode) =>
+  appliesForGateValue('numberOfPackages', commodityCode)

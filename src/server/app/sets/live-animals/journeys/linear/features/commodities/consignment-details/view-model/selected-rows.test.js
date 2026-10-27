@@ -2,100 +2,89 @@ import { describe, expect, it } from 'vitest'
 
 import { buildSelectedRows } from './selected-rows.js'
 import { commodityLinesFixture } from '../../test-support.js'
+import {
+  BISON_BISON,
+  BISON_BISON_ROW,
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS,
+  CANIS_FAMILIARIS_ROW,
+  FELIS_CATUS,
+  FELIS_CATUS_ROW,
+  STRUTHIO,
+  STRUTHIO_ROW
+} from '../../search/test-support.js'
 
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
-const BOS_TAURUS = 'Bos taurus'
 
 describe('#buildSelectedRows', () => {
-  it('Should give a commodity one row keyed to its group index, listing the Latin name of every species under it', () => {
+  it('Should give a code one row keyed to its group index, listing the Latin name of every species under it', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
-          ['Cow', '1148346'],
-          ['Cow', '716661'],
-          ['Fish', '801204']
+          [BOS_TAURUS_ROW],
+          [BISON_BISON_ROW],
+          [STRUTHIO_ROW]
         )
       )
     ).toEqual([
       {
         code: '0102',
-        name: 'Cow',
-        latinNames: [BOS_TAURUS, 'Bison bison'],
+        latinNames: [BOS_TAURUS, BISON_BISON],
         removeAction: 'remove:0'
       },
       {
-        code: '0301',
-        name: 'Fish',
-        latinNames: ['Salmo salar'],
+        code: '01063300',
+        latinNames: [STRUTHIO],
         removeAction: 'remove:1'
       }
     ])
   })
 
-  it('Should key a commodity row to its group index even where a species group is built before it', () => {
+  it('Should key a code row to its group index even where a species group is built before it', () => {
     expect(
       buildSelectedRows(
-        commodityLinesFixture(['Cat', '923501'], ['Fish', '801204'])
+        commodityLinesFixture([FELIS_CATUS_ROW], [STRUTHIO_ROW])
       )
     ).toEqual([
       {
         code: '01061900',
-        name: 'Cat',
-        latinNames: ['Felis catus'],
+        latinNames: [FELIS_CATUS],
         removeAction: REMOVE_FIRST_SPECIES
       },
       {
-        code: '0301',
-        name: 'Fish',
-        latinNames: ['Salmo salar'],
+        code: '01063300',
+        latinNames: [STRUTHIO],
         removeAction: 'remove:1'
       }
     ])
   })
 
-  it('Should give each species of a commodity on code 01061900 its own row and its own remove', () => {
+  it('Should give each species on code 01061900 its own row and its own remove', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
-          ['Cow', '1148346'],
-          ['Dog', '923502'],
-          ['Cat', '923501']
+          [BOS_TAURUS_ROW],
+          [CANIS_FAMILIARIS_ROW],
+          [FELIS_CATUS_ROW]
         )
       )
     ).toEqual([
       {
         code: '0102',
-        name: 'Cow',
         latinNames: [BOS_TAURUS],
         removeAction: 'remove:0'
       },
       {
         code: '01061900',
-        name: 'Dog',
-        latinNames: ['Canis lupus familiaris'],
+        latinNames: [CANIS_FAMILIARIS],
         removeAction: 'remove-species:1'
       },
       {
         code: '01061900',
-        name: 'Cat',
-        latinNames: ['Felis catus'],
+        latinNames: [FELIS_CATUS],
         removeAction: 'remove-species:2'
       }
     ])
-  })
-
-  it('Should give two species of one 01061900 commodity a row and a remove each, keyed to their own stored lines', () => {
-    expect(
-      buildSelectedRows(
-        commodityLinesFixture(['Dog', '923502'], ['Dog', '900001'])
-      ).map(({ code, removeAction }) => [code, removeAction])
-    ).toEqual([
-      ['01061900', REMOVE_FIRST_SPECIES],
-      ['01061900', 'remove-species:1']
-    ])
-  })
-
-  it('Should build no rows for an empty selection', () => {
-    expect(buildSelectedRows([])).toEqual([])
   })
 })

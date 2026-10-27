@@ -40,6 +40,13 @@ expresses over the identified-commodity allowlist. The gate counts lines whose
 commodity has an identifier set, not distinct species, so two lines of the same
 species satisfy it.
 
+A leaf the floor reads through `admitsValue` must expose `metadata.values`, which
+only the allowlist and complement shapes define. A leaf gated by any other shape
+(equals, present, includes, branched), or by an allowlist fanned onto some other
+group, cannot be judged from the parent's stored values, so the floor keeps
+asking for a record rather than going vacuous. Going vacuous would report an
+empty collection satisfied and leave the notification submittable.
+
 ## Value-linked append caps
 
 [`src/server/app/engine/evaluate/cardinality.js`](../engine/evaluate/cardinality.js)

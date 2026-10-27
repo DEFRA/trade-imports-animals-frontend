@@ -3,11 +3,11 @@ import {
   removeActionCell,
   wrappingCell
 } from '../../../../../../../../../common/constants/table-cells.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
+import { speciesLabel } from '../../species-label.js'
 import { addressFieldsFor, blankAddress } from '../address/fields.js'
 import { fieldName } from '../fields.js'
 import {
@@ -20,9 +20,6 @@ import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
 import { identificationCardAnchor } from './error-summary.js'
 
 const copy = copyFor({ en, cy }).identification
-
-const speciesTextOf = (entry) =>
-  commodities.speciesLatinName(entry.speciesSelection) ?? ''
 
 const overCountTextFor = (cap, species, units) =>
   cap !== null && units > cap
@@ -65,10 +62,16 @@ const saveButtonTextFor = (cap, records) => {
   return cap - records === 1 ? copy.saveAndFinish : copy.saveAndAddAnother
 }
 
-const visibleIdentifierFields = (atCap, commodity, index, values, errors) =>
+const visibleIdentifierFields = (
+  atCap,
+  commodityCode,
+  index,
+  values,
+  errors
+) =>
   atCap
     ? []
-    : scopedFields(commodity).map((field) => ({
+    : scopedFields(commodityCode).map((field) => ({
         ...field,
         id: fieldName(field.id, index),
         value: values[field.id] ?? '',
@@ -86,15 +89,15 @@ const visibleAddressFields = (
 
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
-  const commodity = entry.commoditySelection
+  const commodityCode = entry.commodityCode
   const units = entry.animalIdentifiers ?? []
   const cap = identifierCapOf(answers, index)
   const atCap = isAtCap(cap, units.length)
-  const species = speciesTextOf(entry)
-  const values = form?.values ?? blankValuesFor(commodity)
+  const species = speciesLabel(entry)
+  const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(commodity)
-  const columns = identifierColumns(commodity)
+  const showAddress = permanentAddressApplies(commodityCode, species)
+  const columns = identifierColumns(commodityCode, species)
   const unitRows = unitEntries(index, species, columns, units)
   return {
     index,
@@ -109,7 +112,13 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
       unitRows
     ),
     hasUnits: units.length > 0,
-    fields: visibleIdentifierFields(atCap, commodity, index, values, errors),
+    fields: visibleIdentifierFields(
+      atCap,
+      commodityCode,
+      index,
+      values,
+      errors
+    ),
     showAddress: showAddress && !atCap,
     addressFields: visibleAddressFields(
       showAddress,

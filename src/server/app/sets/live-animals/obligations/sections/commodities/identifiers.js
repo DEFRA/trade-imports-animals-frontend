@@ -1,17 +1,18 @@
 import {
-  earTagCommodities,
-  horseNameCommodities,
-  identifiedCommodities,
-  microchipCommodities,
-  passportCommodities,
-  permanentAddressCommodities,
-  tattooCommodities
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  identifiedCommodityCodes,
+  microchipCommodityCodes,
+  passportCommodityCodes,
+  permanentAddressCodeSpecies,
+  tattooCommodityCodes
 } from '../../../services/commodities/index.js'
 import {
   allowListed,
+  allowListedPairs,
   moreThanOne
 } from '../../../../../model/obligations/helpers/index.js'
-import { commodityCode, commodityLine } from './lines.js'
+import { commodityCode, commodityLine, speciesLatinName } from './lines.js'
 
 const microchipReason = {
   code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
@@ -43,120 +44,76 @@ const horseNameReason = {
 }
 
 const permanentAddressReason = {
-  code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
+  code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
   explanation:
-    'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
+    'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
 
-// -----------------------------------------------------------------------------
-// Unit record — nested user-driven indexed group inside commodityLine.
-// Composite keys have length 2: `lineId/unitId`. Instance-ids are
-// opaque orchestrator-generated ULIDs.
-// -----------------------------------------------------------------------------
+const MICROCHIP_ID = '8f030bfa-0734-40c8-9d9e-b9e95dac4724'
+const PASSPORT_ID = '39657a80-91a2-4fc6-8345-9f0617284a51'
+const TATTOO_ID = '3a768b91-a2b3-4fd7-8456-a01728395b62'
+const EAR_TAG_ID = '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73'
+const HORSE_NAME_ID = '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84'
 
 export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
   name: 'animalIdentifiers',
   within: commodityLine,
-  // No applyTo — structural user-driven group, always in scope.
-  //
-  // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
-  // to Submit - At least one Animal Identifier". Every unit-record
-  // must carry ≥ 1 of the five identifier obligations. Listed as
-  // literal ids in `requires.anyOfIds` rather than obligation
-  // references — id-based deferred resolution avoids
-  // declaration-order coupling and makes the "requires-any-of" edge
-  // legible as data to the reachability prover.
-  //
-  // `groupInvariantErrors` (state-queries.js) walks in-scope
-  // instances and emits one error per instance that violates the
-  // invariant, so the per-unit-records subsection stays In progress
-  // until the user fixes it.
-  //
-  // Every listed identifier is commodity-gated, so on a line whose
-  // commodity carries none of them the rule has nothing it could
-  // ask for. It is vacuous there rather than unsatisfiable:
-  // `checkAnyOfIds` skips an instance no listed leaf is in scope
-  // for, and the empty-collection floor the bridge derives from
-  // this key does the same (bridge/status/completeness/invariants.js).
-  //
-  // `floorAppliesToParent` narrows the empty-collection floor to the lines
-  // of a multi-species consignment: `moreThanOne` stands the whole floor
-  // down unless more than one line carries a commodity with an identifier
-  // set of its own.
   requires: {
-    anyOfIds: [
-      '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
-      '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
-      '3a768b91-a2b3-4fd7-8456-a01728395b62', // tattoo
-      '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73', // earTag
-      '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84' // horseName
-    ],
+    anyOfIds: [MICROCHIP_ID, PASSPORT_ID, TATTOO_ID, EAR_TAG_ID, HORSE_NAME_ID],
     errorCode: 'obligation.unitRecord.identifiersRequired',
     floorAppliesToParent: moreThanOne(
-      allowListed(commodityCode, identifiedCommodities, null)
+      allowListed(commodityCode, identifiedCommodityCodes, null)
     )
   }
 }
 
-// -----------------------------------------------------------------------------
-// Per-unit identifier field records — depth-2, commodity-gated via
-// `allowListed` with projection to unitRecord's instance-paths.
-// The evaluator's pre-purge enumeration supplies the paths; the
-// obligation code doesn't enumerate them itself. Allowlists come from
-// the commodities service in the stored picker-name vocabulary.
-// -----------------------------------------------------------------------------
-
 export const microchip = {
-  id: '8f030bfa-0734-40c8-9d9e-b9e95dac4724',
+  id: MICROCHIP_ID,
   name: 'animalIdentifierMicrochip',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, microchipCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, microchipCommodityCodes, unitRecord, [
     microchipReason
   ])
 }
 
 export const passport = {
-  id: '39657a80-91a2-4fc6-8345-9f0617284a51',
+  id: PASSPORT_ID,
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, passportCommodityCodes, unitRecord, [
     passportReason
   ])
-  // Note: `unitRecord` is a structural gatedParentGroup (the closure's
-  // 3rd arg), not a value read. Only the gate obligation
-  // (`commodityCode.id`) is a dependency — gatedParentGroups are
-  // structural and are not part of the reachability dependency graph.
 }
 
 export const tattoo = {
-  id: '3a768b91-a2b3-4fd7-8456-a01728395b62',
+  id: TATTOO_ID,
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, tattooCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, tattooCommodityCodes, unitRecord, [
     tattooReason
   ])
 }
 
 export const earTag = {
-  id: '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73',
+  id: EAR_TAG_ID,
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, earTagCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, earTagCommodityCodes, unitRecord, [
     earTagReason
   ])
 }
 
 export const horseName = {
-  id: '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84',
+  id: HORSE_NAME_ID,
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, horseNameCommodities, unitRecord, [
+  applyTo: allowListed(commodityCode, horseNameCommodityCodes, unitRecord, [
     horseNameReason
   ])
 }
@@ -166,7 +123,11 @@ export const permanentAddress = {
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(commodityCode, permanentAddressCommodities, unitRecord, [
-    permanentAddressReason
-  ])
+  applyTo: allowListedPairs(
+    commodityCode,
+    speciesLatinName,
+    permanentAddressCodeSpecies,
+    unitRecord,
+    [permanentAddressReason]
+  )
 }

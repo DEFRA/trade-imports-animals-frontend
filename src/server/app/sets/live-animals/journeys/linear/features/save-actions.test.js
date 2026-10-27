@@ -21,25 +21,28 @@ import * as consignmentDetails from './commodities/consignment-details/consignme
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
 import * as cphNumber from './cph-number/controller.js'
+import {
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW
+} from './commodities/search/test-support.js'
 
 const reasonPrerequisites = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat' }]
+  commodityLines: [FELIS_CATUS_ROW]
 }
-
 const internalMarketPayload = {
   reasonForImport: 'internalMarket',
   purposeInInternalMarket: 'breeding'
 }
 
-describe('save actions — hub exit semantics', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
+})
+beforeEach(() => store.clear())
 
+describe('save actions — hub exit semantics', () => {
   it('Should expose the hub href for the cancel link from kit.base', () => {
     expect(
       base('Any page', { journey: { journeyId: 'journey-1' } }).hubHref
@@ -153,16 +156,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should commit the consolidated details page and redirect to the hub on the exit submit', async () => {
-    const seed = {
-      commodityLines: [
-        {
-          commoditySelection: 'Cat',
-          speciesSelection: '923501',
-          numberOfAnimalsQuantity: '',
-          numberOfPackages: ''
-        }
-      ]
-    }
+    const seed = { commodityLines: [FELIS_CATUS_ROW] }
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
@@ -215,10 +209,7 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should let the hub exit win over a return-to-addresses entry context', async () => {
-    // The CPH obligation is anyItem-gated on a CPH-triggering commodity line.
-    const cphInScope = {
-      commodityLines: [{ commoditySelection: 'Cow' }]
-    }
+    const cphInScope = { commodityLines: [BOS_TAURUS_ROW] }
     const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
     const returned = await driveHandler(postHandlerOf(cphNumber), {
       payload: cphParts,
@@ -240,13 +231,6 @@ describe('save actions — hub exit semantics', () => {
 })
 
 describe('save actions — amend endings', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
     const postAmending = (query) =>
       driveHandler(postHandlerOf(importReason), {

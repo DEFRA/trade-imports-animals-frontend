@@ -3,7 +3,6 @@ import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
@@ -25,6 +24,8 @@ export const meta = {
 const view = `${TEMPLATES}/features/addresses/template`
 
 const copy = copyFor({ en, cy }).hub
+
+const CPH_OBLIGATION = 'countyParishHoldingCph'
 
 const CPH_SLUG = 'cph-number?return=addresses'
 
@@ -67,9 +68,9 @@ const cphSection = (journeyId, answers) => {
   })
 }
 
-const sections = (request, journeyId, answers, parties) => [
+const sections = (request, journeyId, answers, scope, parties) => [
   ...PARTIES.map(partySectionBuilder(request, journeyId, parties)),
-  ...(isCphApplicable(answers) ? [cphSection(journeyId, answers)] : [])
+  ...(scope.has(CPH_OBLIGATION) ? [cphSection(journeyId, answers)] : [])
 ]
 
 const backLinkOf = (request, journey) =>
@@ -78,7 +79,7 @@ const backLinkOf = (request, journey) =>
     : hubPath(journey.journeyId)
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, scope } = await state.get(request, h)
   const parties = await partiesFromStoredAnswers(answers)
   return h.view(view, {
     ...kit.base(copy.title, {
@@ -88,7 +89,7 @@ const get = async (request, h) => {
       page
     }),
     copy,
-    sections: sections(request, journey.journeyId, answers, parties)
+    sections: sections(request, journey.journeyId, answers, scope, parties)
   })
 }
 

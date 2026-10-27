@@ -72,7 +72,7 @@ export const copy = {
     exitDate: 'Dyddiad ymadael',
     portOfExit: 'Porthladd ymadael',
     commodityCode: 'Cod nwyddau',
-    commonName: 'Enw cyffredin',
+    speciesCommonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
     numberOfPackages: 'Nifer y pecynnau',
@@ -138,6 +138,10 @@ export const copy = {
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
+    },
+    species: {
+      notListed: (speciesWithCodes) =>
+        `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch y rhywogaeth eto`
     },
     parties: {
       placeOfOrigin: 'Cywirwch fanylion y cyfeiriad ar gyfer y man tarddiad',

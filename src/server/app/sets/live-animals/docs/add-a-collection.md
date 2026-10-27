@@ -50,7 +50,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -71,7 +71,7 @@ Collection-level facts:
   import). A member with no `applyTo` is always in scope for every instance; a
   member with `applyTo` is scoped per instance (see step 2).
 - Member names are the keys inside each request-local instance object
-  (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
+  (`answers.commodityLines[0].commodityCode`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
   boot ([`src/server/app/flow/dispatch.js`](../../../flow/dispatch.js)).
 
@@ -101,7 +101,7 @@ const unit = {
 
 export const evaluationBindings = feature('commodities', [
   grouped({
-    field: 'commoditySelection',
+    field: 'commodityCode',
     obligation: commodityCode,
     groups: [line]
   }),
@@ -132,7 +132,7 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }
@@ -300,8 +300,10 @@ forms; each delegates to the `…At` form with a single-segment path
 
 The commodities collection uses two pages. The SEARCH page
 ([`journeys/linear/features/commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js))
-declares the group in `collects` and, on save, reconciles one line per selected
-species in a single write:
+declares the group in `collects` and, on save, hands the chosen search rows to
+[`actions/commit-selection.js`](../journeys/linear/features/commodities/search/actions/commit-selection.js),
+which reconciles one line per chosen search row (a commodity code plus a Latin
+name) in a single write, then clears the stored search rows:
 
 ```js
 await state.reconcileEntriesAt(
@@ -309,9 +311,12 @@ await state.reconcileEntriesAt(
   h,
   ['commodityLines'],
   lineKey,
-  selected.map(seedLine)
+  rows.map(seedLine)
 )
 ```
+
+Each row carries `commodityCode`, `speciesLatinName` and `speciesCommonName` from the
+search results the page showed.
 
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected
@@ -357,7 +362,7 @@ Some collections cap their instance count at a sibling field. The declaration
 is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
 
 ```js
-export const MAX_ENTRIES_FROM = {
+export const ENTRY_CAP_FIELD_BY_COLLECTION = {
   animalIdentifiers: 'numberOfAnimalsQuantity'
 }
 ```

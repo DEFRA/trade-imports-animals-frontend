@@ -4,14 +4,11 @@ import {
   requiredIntegerInRange
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import * as commodities from '../../../../../services/commodities/index.js'
+import { packagesApply } from '../../check-answers/view-model/applicability.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).consignmentDetails
-
-export const packagesApply = (commoditySelection) =>
-  commodities.packageCountCommodities().includes(commoditySelection)
 
 export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`
@@ -29,7 +26,7 @@ const animalsValidatorsFor = (lines) =>
 
 const packagesValidatorsFor = (lines) =>
   lines
-    .filter(({ entry }) => packagesApply(entry.commoditySelection))
+    .filter(({ entry }) => packagesApply(entry.commodityCode))
     .map(({ index }) =>
       integerInRange(packagesField(index), {
         min: 1,

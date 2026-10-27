@@ -20,7 +20,7 @@ const VALID_PARTS = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
 
 const seed = () => ({
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cow' }]
+  commodityLines: [{ commodityCode: '0102' }]
 })
 
 const driveWithQuery = (handler, options = {}) =>

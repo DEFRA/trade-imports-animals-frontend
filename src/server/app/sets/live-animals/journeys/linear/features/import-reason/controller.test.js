@@ -8,6 +8,7 @@ import {
   postHandlerOf,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
@@ -613,7 +614,7 @@ describe('import-reason — the Back link', () => {
 
   const seed = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+    commodityLines: [FELIS_CATUS_ROW]
   }
 
   it('Should go Back to What are you importing? while the opening run is on', async () => {

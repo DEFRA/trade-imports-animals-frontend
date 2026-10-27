@@ -2,10 +2,8 @@ import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import {
-  walkObligations,
-  obligationByName
-} from './bridge/obligation-source.js'
+import { walkObligations } from './bridge/obligation-source.js'
+import { obligationByName } from './model/obligations/manifest.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -51,6 +49,13 @@ import * as commercialTransporterDetails from './sets/live-animals/journeys/line
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
+import {
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW,
+  lineOf
+} from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import { lineKey } from './sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
 
 const drive = driveHandler
 
@@ -93,14 +98,18 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
   },
   {
@@ -228,26 +237,17 @@ describe('controller <-> model commit contract', () => {
   it('Should commit commodity lines via the search (batch create) handler it declares', async () => {
     expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
     const result = await drive(postHandlerOf(commoditiesSearch), {
-      payload: { species: ['Cow|1148346', 'Cat|923501'] }
+      flowOnly: {
+        commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
+      },
+      payload: { species: [BOS_TAURUS_ROW, FELIS_CATUS_ROW].map(lineKey) }
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(commoditiesSearch.meta.collects))
     )
     expect(result.after.commodityLines).toEqual([
-      {
-        commoditySelection: 'Cow',
-        speciesSelection: '1148346',
-        commodityType: '16',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      },
-      {
-        commoditySelection: 'Cat',
-        speciesSelection: '923501',
-        commodityType: '2',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      }
+      lineOf(BOS_TAURUS_ROW, { commodityType: '16' }),
+      lineOf(FELIS_CATUS_ROW, { commodityType: '2' })
     ])
   })
 
@@ -256,15 +256,18 @@ describe('controller <-> model commit contract', () => {
     const result = await drive(postHandlerOf(consignmentDetails), {
       seed: {
         commodityLines: [
-          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+          {
+            commodityCode: BOS_TAURUS_ROW.commodityCode,
+            speciesLatinName: BOS_TAURUS
+          }
         ]
       },
       payload: { 'numberOfAnimalsQuantity-0': '25', 'numberOfPackages-0': '5' }
     })
     expect(committedIds(result)).toEqual([])
     expect(result.after.commodityLines[0]).toEqual({
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: BOS_TAURUS_ROW.commodityCode,
+      speciesLatinName: BOS_TAURUS,
       numberOfAnimalsQuantity: 25,
       numberOfPackages: '5'
     })

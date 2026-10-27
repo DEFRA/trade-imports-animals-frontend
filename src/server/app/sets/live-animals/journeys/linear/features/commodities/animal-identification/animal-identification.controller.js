@@ -13,7 +13,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { summaryOf } from './card/error-summary.js'
 import { buildSections } from './card/view-model.js'
-import { linesOf } from '../lines.js'
+import { commodityCodesOf, linesOf } from '../lines.js'
 import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { capAllowsEntry, identifierCapOf } from './line-cap.js'
 import {
@@ -110,7 +110,8 @@ const logCapRefusalsAndRender = (
     kit.logRefusal(request, {
       reason: 'animal-identifier-cap-reached',
       lineIndex: index,
-      cap
+      cap,
+      level: 'warn'
     })
   }
   return renderRefused(request, h, journey, answers, evaluation, options)
@@ -121,7 +122,10 @@ const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
     return null
   }
   request.logger.info(
-    { journeyId: request.params.journeyId },
+    {
+      journeyId: request.params.journeyId,
+      commodityCodes: commodityCodesOf(linesOf(answers, evaluation))
+    },
     'Animal identification skipped: nothing on the consignment carries an identifier'
   )
   return kit.nextTarget(request, page, scope)

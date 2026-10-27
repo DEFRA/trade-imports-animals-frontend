@@ -1,22 +1,18 @@
-import * as commodities from '../../../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
 import { packagesApply } from '../../../applicability.js'
 import { row } from '../../../rows/summary-row.js'
-import { speciesText } from './species-text.js'
+import { speciesLabel } from '../../../../../commodities/species-label.js'
 
 const copy = copyFor({ en, cy })
 
 export const speciesCardRows = (entry) => [
-  row(
-    copy.rows.commodityCode,
-    commodities.commodityCodeFor(entry.commoditySelection)
-  ),
-  row(copy.rows.commonName, entry.commoditySelection),
-  row(copy.rows.species, speciesText(entry)),
+  row(copy.rows.commodityCode, entry.commodityCode),
+  row(copy.rows.speciesCommonName, entry.speciesCommonName),
+  row(copy.rows.species, speciesLabel(entry)),
   row(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
-  ...(packagesApply(entry.commoditySelection)
+  ...(packagesApply(entry.commodityCode)
     ? [row(copy.rows.numberOfPackages, entry.numberOfPackages)]
     : [])
 ]

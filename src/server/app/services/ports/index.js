@@ -1,6 +1,6 @@
-import Boom from '@hapi/boom'
 import { PORTS } from './stub.js'
 import { fetchPortsOfEntry } from './client.js'
+import { referenceDataUnavailable } from '../reference-data/request.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
 let ports = [...PORTS]
@@ -21,10 +21,7 @@ export const ensureLoaded = async () => {
     ports = await fetchPortsOfEntry()
     loaded = true
   } catch (err) {
-    throw Boom.serverUnavailable('Reference data unavailable', {
-      dataset: 'ports',
-      cause: err
-    })
+    throw referenceDataUnavailable('ports', err)
   }
 }
 

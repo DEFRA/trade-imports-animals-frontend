@@ -1,14 +1,9 @@
-import * as commodities from '../../../../../services/commodities/index.js'
-import { commodityNamesOf, linesOfCommodity } from '../lines.js'
+import { commodityCodesOf, linesOfCode } from '../lines.js'
 
 export const buildCommodityGroups = (lines) =>
-  commodityNamesOf(lines).map((name, index) => {
-    const code = commodities.commodityCodeFor(name) ?? ''
-    return {
-      index,
-      name,
-      code,
-      heading: commodities.commodityLabel(name, code),
-      lines: linesOfCommodity(lines, name)
-    }
-  })
+  commodityCodesOf(lines).map((code, index) => ({
+    index,
+    code,
+    heading: code,
+    lines: linesOfCode(lines, code)
+  }))

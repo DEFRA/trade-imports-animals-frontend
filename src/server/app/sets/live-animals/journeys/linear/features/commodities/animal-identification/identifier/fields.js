@@ -1,5 +1,5 @@
 import { compose, maxText } from '../../../../../../../../lib/validate/index.js'
-import { appliesForCommodity } from '../../../../../../../../bridge/applicability.js'
+import { appliesForGateValue } from '../../../../../../../../bridge/applicability.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
@@ -10,19 +10,21 @@ const copy = copyFor({ en, cy }).identification
 
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
-const IDENTIFIER_MAX_LENGTH = 58
-export const scopedFields = (commodity) =>
+export const scopedFields = (commodityCode) =>
   commodities
-    .identifiersFor(commodity)
-    .filter((id) => appliesForCommodity(id, commodity))
+    .identifiersFor(commodityCode)
+    .filter((id) => appliesForGateValue(id, commodityCode))
     .map((id) => ({ id, label: copy.identifierLabels[id] }))
 
-export const permanentAddressApplies = (commodity) =>
-  appliesForCommodity('permanentAddress', commodity)
+export const PERMANENT_ADDRESS = 'permanentAddress'
 
-export const identifierChecksFor = (commodity, index) =>
-  compose(
-    ...scopedFields(commodity).map((field) =>
+export const permanentAddressApplies = (commodityCode, speciesLatinName) =>
+  appliesForGateValue(PERMANENT_ADDRESS, [commodityCode, speciesLatinName])
+
+export const identifierChecksFor = (commodityCode, index) => {
+  const IDENTIFIER_MAX_LENGTH = 58
+  return compose(
+    ...scopedFields(commodityCode).map((field) =>
       maxText(
         fieldName(field.id, index),
         IDENTIFIER_MAX_LENGTH,
@@ -30,14 +32,15 @@ export const identifierChecksFor = (commodity, index) =>
       )
     )
   )
+}
 
-export const identifierValuesFromPayload = (payload, commodity, index) =>
+export const identifierValuesFromPayload = (payload, commodityCode, index) =>
   Object.fromEntries(
-    scopedFields(commodity).map((field) => [
+    scopedFields(commodityCode).map((field) => [
       field.id,
       (payload[fieldName(field.id, index)] ?? '').trim()
     ])
   )
 
-export const blankValuesFor = (commodity) =>
-  Object.fromEntries(scopedFields(commodity).map((field) => [field.id, '']))
+export const blankValuesFor = (commodityCode) =>
+  Object.fromEntries(scopedFields(commodityCode).map((field) => [field.id, '']))

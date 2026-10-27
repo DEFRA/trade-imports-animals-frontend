@@ -6,9 +6,12 @@ export const linesOf = (answers, evaluation) =>
 export const hasAnimalCount = ({ entry }) =>
   String(entry.numberOfAnimalsQuantity ?? '') !== ''
 
-export const commodityNamesOf = (lines) => [
-  ...new Set(lines.map(({ entry }) => entry.commoditySelection))
+export const commodityCodesOf = (lines) => [
+  ...new Set(lines.map(({ entry }) => entry.commodityCode))
 ]
 
-export const linesOfCommodity = (lines, name) =>
-  lines.filter(({ entry }) => entry.commoditySelection === name)
+export const linesOfCode = (lines, code) =>
+  lines.filter(({ entry }) => entry.commodityCode === code)
+
+export const entriesNotOfCode = (entries, code) =>
+  entries.filter((entry) => entry.commodityCode !== code)

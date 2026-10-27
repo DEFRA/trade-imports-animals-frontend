@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   BASE,
+  BOS_TAURUS,
   PHONE_VIEWPORT,
   answerArrivalDetails,
   answerCountryOfOrigin,
@@ -42,7 +43,7 @@ const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: copy.rows.commodities.title }).click()
-  await selectSpecies(page, ['Bos taurus'])
+  await selectSpecies(page, [BOS_TAURUS])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expectHub(page)
   await page

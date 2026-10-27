@@ -130,8 +130,11 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
  * input (a state refusal, a tampered post, another service refusing), never
  * for errors the user can correct on the form.
  */
-export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
-  request.logger.info(
+export const logRefusal = (
+  request,
+  { fieldErrors = {}, level = 'info', ...details } = {}
+) =>
+  request.logger[level](
     {
       ...details,
       journeyId: request.params.journeyId,

@@ -157,6 +157,24 @@ state.obligations.documentUploadId ===
   }
 ```
 
+## Choosing a gate helper
+
+The gate helpers live in `helpers/`. Each builds an `applyTo` and attaches
+metadata that names its gate obligation, so `obligationMetadata()` can derive
+`dependsOn` without a second declaration.
+
+- `equals`-shape gate: `equalsGate(gate, value, whenTrue, whenFalse)`. For a
+  status flip where both branches are in scope, give both branches
+  `inScope: true` and different `status` values.
+- `includes`-shape gate: `includesGate(gate, values, whenTrue, whenFalse)`.
+- `isFilled`-shape gate: `presentGate(gate, whenTrue, whenFalse)`.
+- Line gates on a list of codes: `allowListed`, `anyAllowListed`,
+  `notInUnionOf`, `anyNotInUnionOf`, `matches`.
+- Line gates on code+Latin-name pairs: `allowListedPairs`.
+
+Use `branchedGate` only for a predicate none of these can express: its closure
+is opaque, so it must declare `dependsOn` itself.
+
 ## File map
 
 Top-level primitives (used everywhere else in the module):
@@ -167,7 +185,7 @@ Top-level primitives (used everywhere else in the module):
 - `is-blank-value.js` — the "blank fulfilment" predicate used by the read-side queries.
 - `state-queries.js` — read-side queries over evaluator output (`leafSatisfied`, `effectiveStatus`, `groupInvariantErrors`).
 - `instance-complete.js` — per-instance completeness verdict.
-- `helper-internals.js` — shape-level utilities shared by gate helpers (`isNonArrayObject`, `readGate`).
+- `helper-internals.js` — shape-level utilities shared by gate helpers (`isNonArrayObject`, `readGate`), and the one owner of the complement rule: `resolveUnion` and `isOutsideUnion` (a blank value is never outside the union), used by `notInUnionOf` and `anyNotInUnionOf`, and `admitsValue`, which answers from a gate's metadata whether it admits a value.
 
 `evaluator/`:
 
@@ -182,7 +200,7 @@ Top-level primitives (used everywhere else in the module):
 
 `helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
 
-- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `notInUnionOf`).
+- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `build-any-candidate-gate.js` (the factory used by `anyAllowListed` / `anyNotInUnionOf`, which reads the candidates through `readGate`), `stamp-gate-metadata.js` (stamps `gateType`, `obligationId` and the lazy `values` on both factories' gates), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `resolveUnion`).
 - `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.
 
 ## Algorithm
@@ -194,3 +212,7 @@ The per-call evaluation algorithm is described in
 2. Fixpoint (`convergePurge`): repeat `{enumerate → applyTo → isInScope → purge}` until the fulfilments map stops shrinking. Guarantees every `applyTo` sees the same post-purge view its neighbours see.
 3. Post-purge enumeration for group implications.
 4. Build per-obligation implications.
+
+## Tests with their own manifest
+
+A test that needs its own manifest calls `configureObligationSet(SET_ID, syntheticSet)` once, in `beforeAll`, and never configures it back. Vitest isolates module state per test file, and configuring the set to `undefined` would leave it configured to `undefined`, which turns the manifest's named "not configured" error into a `TypeError`.

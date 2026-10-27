@@ -1,22 +1,17 @@
 import { SET_ID } from '../../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, appendEntryAt, submitJourney } from './index.js'
-import { records, configureRecords, DRAFT } from '../persistence/records.js'
+import { records, configureRecords, SUBMITTED } from '../persistence/records.js'
 import { configureSession } from '../persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from '../read.js'
+import { configureReadyForCheckYourAnswers, get } from '../read.js'
 import { stubH, journeyRequest } from '../test-support.js'
-
-// Every key-introducing write asserts the whole resulting answers tree
-// against the recognition surface (bridge/obligation-source.js), and
-// submitJourney asserts stored trees the write guards never saw — an
-// unrecognised key is inert to the evaluator yet ships raw at finalise.
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('#write.js — answer-key guard', () => {
+describe('engine write — answer-key guard', () => {
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -33,9 +28,7 @@ describe('#write.js — answer-key guard', () => {
 
   it('Should reject an appended entry carrying an unrecognised key', async () => {
     await commit(buildRequest(), stubH(), {
-      commodityLines: [
-        { commoditySelection: 'Horse', numberOfAnimalsQuantity: '1' }
-      ]
+      commodityLines: [{ commodityCode: '0101', numberOfAnimalsQuantity: '1' }]
     })
     await expect(
       appendEntryAt(
@@ -56,17 +49,18 @@ describe('#write.js — answer-key guard', () => {
     expect(answers.countryOfOrigin).toBe('FR')
   })
 
-  it('Should not project an unknown historic UUID into page answers at submit', async () => {
+  it('Should not project an unknown obligation id into page answers at submit', async () => {
     await records.replaceFulfilment(journeyId, {
-      'historic-obligation-uuid': 'Dobbin'
+      'unknown-obligation-uuid': 'Dobbin'
     })
     const { concurrencyToken } = await records.load({ journeyId })
+    expect((await get(buildRequest(), stubH())).answers).toEqual({})
 
     const result = await submitJourney(buildRequest(), stubH(), {
       concurrencyToken
     })
 
     expect(result.ok).toBe(true)
-    expect((await records.load({ journeyId })).status).not.toBe(DRAFT)
+    expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 })
