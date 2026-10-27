@@ -93,9 +93,6 @@ export const expectStyle = async (element, styles) => {
 export const PHONE_VIEWPORT = { width: 360, height: 740 }
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
-export const GOVUK_BLUE = 'rgb(29, 112, 184)'
-export const GOVUK_SECONDARY_TEXT = 'rgb(72, 73, 73)'
-
 const documentTop = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
 
@@ -894,43 +891,50 @@ export const saveAndReturnToHub = (page) =>
     exact: true
   })
 
-const buttonGroupOf = (page) =>
-  page.locator('.govuk-button-group', { has: saveAndContinue(page) })
+const cancelAndReturnToHub = (page) =>
+  page.getByRole('link', {
+    name: sharedAppCopy.saveActions.cancelAndReturnToHub
+  })
 
 /**
- * Fails unless the page offers Save and continue and Save and return to
- * overview in its button group and Cancel and return to overview in the
- * paragraph after the group.
+ * Fails unless the journey form offers Save and continue, Save and return to
+ * overview and Cancel and return to overview in that order, with Save and
+ * return to overview as the form's last button.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const expectThreeSaveControls = async (page) => {
-  const buttonGroup = buttonGroupOf(page)
+  const form = journeyFormOf(page)
+  const saveControls = form
+    .locator(saveAndContinue(page))
+    .or(form.locator(saveAndReturnToHub(page)))
+    .or(form.locator(cancelAndReturnToHub(page)))
 
-  await expect(buttonGroup.getByRole('button')).toHaveText([
+  await expect(saveControls).toHaveText([
     sharedAppCopy.saveActions.saveAndContinue,
-    sharedAppCopy.saveActions.saveAndReturnToHub
+    sharedAppCopy.saveActions.saveAndReturnToHub,
+    sharedAppCopy.saveActions.cancelAndReturnToHub
   ])
-  await expect(
-    buttonGroup.locator('xpath=following-sibling::p[1]').getByRole('link', {
-      name: sharedAppCopy.saveActions.cancelAndReturnToHub
-    })
-  ).toBeVisible()
+  await expect(form.getByRole('button').last()).toHaveText(
+    sharedAppCopy.saveActions.saveAndReturnToHub
+  )
 }
 
 /**
- * Fails unless the page's button group holds Save and continue alone and ends
- * the journey form.
+ * Fails unless Save and continue is the journey form's last button, nothing
+ * follows it in the form, and Save and return to overview is not offered.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
-  const buttonGroup = buttonGroupOf(page)
+  const form = journeyFormOf(page)
+  const lastControl = form.getByRole('button').or(form.getByRole('link')).last()
 
-  await expect(buttonGroup.getByRole('button')).toHaveText([
+  await expect(lastControl).toHaveText(
     sharedAppCopy.saveActions.saveAndContinue
-  ])
-  await expect(
-    journeyFormOf(page).locator(':scope > :not(input[type="hidden"])').last()
-  ).toHaveClass(/govuk-button-group/)
+  )
+  await expect(saveAndReturnToHub(page)).toHaveCount(0)
+
+  const lastVisibleChild = form.locator('> *:visible').last()
+  await expect(lastVisibleChild.locator(saveAndContinue(page))).toBeVisible()
 }
