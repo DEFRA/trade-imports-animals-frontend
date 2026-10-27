@@ -21,6 +21,13 @@ import { copy as copyCy } from './copy.cy.js'
 
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
+})
+beforeEach(() => store.clear())
+
 const renderHub = async (seed = {}) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
@@ -36,7 +43,7 @@ const rowByTitle = (context, title) =>
 
 const unlockedSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat' }]
+  commodityLines: [{ commodityCode: '01061900' }]
 }
 
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
@@ -52,7 +59,9 @@ const ADDRESSES_ROW_HINT_CY =
   'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
 const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 
-const A_JOURNEY_PAGE_URL = new RegExp(`^${SET_BASE}/notifications/[^/]+/.+`)
+const A_JOURNEY_PAGE_URL_UNDER_SET_BASE = new RegExp(
+  `^${SET_BASE}/notifications/[^/]+/.+`
+)
 const TO_DO_STATUS = {
   tag: { text: 'To do', classes: 'govuk-tag--blue' }
 }
@@ -74,10 +83,36 @@ const UNLOCKED_ROW_TITLES_BY_GROUP = [
   ['Contact address for this consignment']
 ]
 
-const temporaryAdmissionSeed = {
+const owingExitQuestionsSeed = {
   ...unlockedSeed,
   reasonForImport: 'temporaryAdmissionHorses',
   portOfExit: 'GB DVR'
+}
+const cattleLine = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos taurus',
+  commodityType: '16'
+}
+const twoIdentifiedSpeciesSeed = {
+  countryOfOrigin: 'FR',
+  commodityLines: [
+    {
+      ...cattleLine,
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25'
+    },
+    {
+      commodityCode: '0101',
+      speciesLatinName: 'Equus cabalus',
+      commodityType: '2',
+      numberOfPackages: '3',
+      numberOfAnimalsQuantity: '4'
+    }
+  ]
+}
+const roadSeedShowingEveryRow = {
+  ...unlockedSeed,
+  meansOfTransport: 'ROAD_VEHICLE'
 }
 const EXIT_DATE = { day: '20', month: '12', year: '2026' }
 
@@ -131,19 +166,8 @@ describe('#copy', () => {
 })
 
 describe('GET /hub', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   test('Should supply the feature copy module and the shared chrome copy', async () => {
-    const journey = await store.create()
-    const h = stubH()
-    const handler = routes.find((route) => route.method === 'GET').handler
-    await handler(journeyRequest(journey.journeyId), h)
-    const { context } = h.captured.view
+    const context = await renderHub()
     expect(context.copy).toBe(copy)
     expect(context.pageTitle).toBe(copy.title)
     expect(context.sharedCopy.layout.serviceName).toBe(
@@ -156,13 +180,6 @@ describe('GET /hub', () => {
 })
 
 describe('#hubHandler', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should title the hub Overview with the design chrome — Return to dashboard, no back link, no breadcrumbs, no progress line', async () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
@@ -194,7 +211,7 @@ describe('#hubHandler', () => {
 
   it('Should hold "About the consignment" at three rows once a reason opens its exit questions', async () => {
     const { groups } = await renderHub({
-      ...temporaryAdmissionSeed,
+      ...owingExitQuestionsSeed,
       exitDate: EXIT_DATE
     })
     expect(groups[0].items.map((item) => item.title.text)).toEqual([
@@ -205,13 +222,13 @@ describe('#hubHandler', () => {
   })
 
   it('Should carry the exit questions in the import-reason row status rather than a task of their own', async () => {
-    const owingTheExitDate = await renderHub(temporaryAdmissionSeed)
+    const owingTheExitDate = await renderHub(owingExitQuestionsSeed)
     expect(
       rowByTitle(owingTheExitDate, IMPORT_REASON_ROW_TITLE).status
     ).toEqual(TO_DO_STATUS)
 
     const answered = await renderHub({
-      ...temporaryAdmissionSeed,
+      ...owingExitQuestionsSeed,
       exitDate: EXIT_DATE
     })
     expect(rowByTitle(answered, IMPORT_REASON_ROW_TITLE).status).toEqual(
@@ -244,7 +261,7 @@ describe('#hubHandler', () => {
     expect(rows).not.toHaveLength(0)
     for (const row of rows) {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
-        A_JOURNEY_PAGE_URL
+        A_JOURNEY_PAGE_URL_UNDER_SET_BASE
       )
       expect(row.status.classes, `${row.title.text} is shut`).not.toBe(
         CANNOT_START_CLASS
@@ -270,26 +287,7 @@ describe('#hubHandler', () => {
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
-    const cowLine = {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
-      commodityType: '16',
-      numberOfPackages: '5',
-      numberOfAnimalsQuantity: '25'
-    }
-    const context = await renderHub({
-      countryOfOrigin: 'FR',
-      commodityLines: [
-        cowLine,
-        {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
-          commodityType: '2',
-          numberOfPackages: '3',
-          numberOfAnimalsQuantity: '4'
-        }
-      ]
-    })
+    const context = await renderHub(twoIdentifiedSpeciesSeed)
     expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual(
       COMPLETE_STATUS
     )
@@ -310,10 +308,7 @@ describe('#hubHandler', () => {
     })
     expect(rowByTitle(byAir, TRANSIT_ROW_TITLE)).toBeUndefined()
 
-    const byRoad = await renderHub({
-      ...unlockedSeed,
-      meansOfTransport: 'ROAD_VEHICLE'
-    })
+    const byRoad = await renderHub(roadSeedShowingEveryRow)
     const transitRow = rowByTitle(byRoad, TRANSIT_ROW_TITLE)
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
@@ -361,19 +356,12 @@ describe('#hubHandler', () => {
 })
 
 describe('#hubHandler — the task statuses', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should tag every row with one of the two design statuses, whatever is answered', async () => {
     const seeds = [
       {},
       unlockedSeed,
-      temporaryAdmissionSeed,
-      { ...temporaryAdmissionSeed, meansOfTransport: 'ROAD_VEHICLE' },
+      owingExitQuestionsSeed,
+      { ...owingExitQuestionsSeed, meansOfTransport: 'ROAD_VEHICLE' },
       { countryOfOrigin: 'FR', regionOfOriginCodeRequirement: 'no' }
     ]
 
@@ -399,13 +387,6 @@ describe('#hubHandler — the task statuses', () => {
 })
 
 describe('#hubHandler — the commodity totals', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should read both commodity totals as 0 on a journey with no commodity lines', async () => {
     expect((await renderHub()).commodityTotals).toEqual({
       animals: 0,
@@ -417,17 +398,17 @@ describe('#hubHandler — the commodity totals', () => {
     const { commodityTotals } = await renderHub({
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '25',
           numberOfPackages: '5'
         },
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '3',
           numberOfPackages: ''
         },
         {
-          commoditySelection: 'Cow',
+          commodityCode: '0102',
           numberOfAnimalsQuantity: '',
           numberOfPackages: '2'
         }
@@ -438,17 +419,10 @@ describe('#hubHandler — the commodity totals', () => {
 })
 
 describe('#hubHandler — the Commodity details row', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should lead the second group with a Commodity details row linking to the consignment-details page', async () => {
     const context = await renderHub({
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     })
     const [firstItem] = context.groups[1].items
 
@@ -462,14 +436,7 @@ describe('#hubHandler — the Commodity details row', () => {
   it('Should carry a status the commodities row does not answer for', async () => {
     const seedLine = (entry) => ({
       countryOfOrigin: 'FR',
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
-          commodityType: '16',
-          ...entry
-        }
-      ]
+      commodityLines: [{ ...cattleLine, ...entry }]
     })
 
     const owingTheNumbers = await renderHub(seedLine({}))
@@ -490,18 +457,8 @@ describe('#hubHandler — the Commodity details row', () => {
 })
 
 describe('#hubHandler — the row hints', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should build a hint slot on the roles and addresses row alone', async () => {
-    const context = await renderHub({
-      ...unlockedSeed,
-      meansOfTransport: 'ROAD_VEHICLE'
-    })
+    const context = await renderHub(roadSeedShowingEveryRow)
 
     expect(
       allItems(context)
@@ -515,15 +472,8 @@ describe('#hubHandler — the row hints', () => {
 })
 
 describe('#hubHandler — the way back to the exit questions', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should open the import-reason page from its row while the exit date is still owing', async () => {
-    const context = await renderHub(temporaryAdmissionSeed)
+    const context = await renderHub(owingExitQuestionsSeed)
 
     expect(rowByTitle(context, IMPORT_REASON_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'import-reason')
@@ -532,7 +482,7 @@ describe('#hubHandler — the way back to the exit questions', () => {
 
   it('Should still link that row once both exit questions are answered', async () => {
     const context = await renderHub({
-      ...temporaryAdmissionSeed,
+      ...owingExitQuestionsSeed,
       exitDate: EXIT_DATE
     })
 
@@ -542,12 +492,12 @@ describe('#hubHandler — the way back to the exit questions', () => {
   })
 
   it('Should leave no row on that hub without a way in', async () => {
-    const rows = allItems(await renderHub(temporaryAdmissionSeed))
+    const rows = allItems(await renderHub(owingExitQuestionsSeed))
 
     expect(rows).not.toHaveLength(0)
     for (const row of rows) {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
-        A_JOURNEY_PAGE_URL
+        A_JOURNEY_PAGE_URL_UNDER_SET_BASE
       )
     }
   })

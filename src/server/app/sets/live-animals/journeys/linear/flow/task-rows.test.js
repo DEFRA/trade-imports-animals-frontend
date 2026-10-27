@@ -1,9 +1,9 @@
 import { pagePath } from '../../../../../shared/paths.js'
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
 import {
@@ -22,10 +22,14 @@ import {
 import { rowEntry } from '../../../../../flow/navigation.js'
 import { sectionGatePasses } from '../../../../../flow/gates.js'
 import { rowStatus, taskRowById, taskRows } from './task-rows.js'
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
-const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const happyPath = completeNotification()
 
 const statusIn = (rowId, answers) => {
   const evaluation = evaluateAnswers(answers)
@@ -39,7 +43,7 @@ const statusIn = (rowId, answers) => {
 
 const unlocked = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat' }]
+  commodityLines: [{ commodityCode: FELIS_CATUS_ROW.commodityCode }]
 }
 
 beforeAll(() => {
@@ -178,8 +182,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          ...BOS_TAURUS_ROW,
           commodityType: '16'
         }
       ]
@@ -192,7 +195,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         }
@@ -206,14 +209,12 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         },
         {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
+          ...EQUUS_CABALUS_ROW,
           commodityType: '2'
         }
       ]
@@ -226,8 +227,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
@@ -243,15 +243,13 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         },
         {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
+          ...EQUUS_CABALUS_ROW,
           commodityType: '2',
           numberOfPackages: '3',
           numberOfAnimalsQuantity: '4'
@@ -266,7 +264,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ]
@@ -279,10 +277,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
-        { commoditySelection: 'Horse' }
+        { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
       ]
     }
     expect(statusIn('animalIdentification', answers)).toBe(IN_PROGRESS)
@@ -292,10 +290,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
-        { commoditySelection: 'Fish' }
+        { commodityCode: STRUTHIO_ROW.commodityCode }
       ]
     }
     expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
@@ -304,7 +302,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
   it('Should resolve the enclosing-commodity activations through the facet (a Cat identifier owes its permanent address)', () => {
     const catLine = (identifier) => ({
       commodityLines: [
-        { commoditySelection: 'Cat', animalIdentifiers: [identifier] }
+        {
+          ...FELIS_CATUS_ROW,
+          animalIdentifiers: [identifier]
+        }
       ]
     })
     expect(
@@ -335,7 +336,7 @@ describe('#rowStatus — the conditional animal-identification row', () => {
     expect(
       statusIn('animalIdentification', {
         countryOfOrigin: 'FR',
-        commodityLines: [{ commoditySelection: 'Fish' }]
+        commodityLines: [{ commodityCode: STRUTHIO_ROW.commodityCode }]
       })
     ).toBe(NA)
   })
@@ -345,14 +346,14 @@ describe('#rowStatus — the conditional animal-identification row', () => {
       statusIn('animalIdentification', {
         countryOfOrigin: 'FR',
         commodityLines: [
-          { commoditySelection: 'Fish' },
-          { commoditySelection: 'Cow' }
+          { commodityCode: STRUTHIO_ROW.commodityCode },
+          { commodityCode: BOS_TAURUS_ROW.commodityCode }
         ]
       })
     ).toBe(FULFILLED)
   })
 
-  it('Should be marked conditional so the hub drops it while it is Not applicable', () => {
+  it('Should mark the animal-identification row conditional', () => {
     expect(taskRowById('animalIdentification').conditional).toBe(true)
   })
 })
@@ -425,7 +426,7 @@ describe('#rowEntry — every row opens on a page, in any order', () => {
   })
 })
 
-describe('submit-readiness equivalence — the row roll-up admits exactly the journeys the section roll-up did', () => {
+describe('submit-readiness equivalence — the row roll-up and the section roll-up admit the same journeys', () => {
   const PASSING = [FULFILLED, NA, OPTIONAL]
   const sectionRollUp = (answers, inScope, evaluation) =>
     answerSections.every((section) =>
@@ -433,8 +434,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     )
 
   const horseLine = {
-    commoditySelection: 'Horse',
-    speciesSelection: '822332',
+    ...EQUUS_CABALUS_ROW,
     commodityType: '2',
     numberOfPackages: '3',
     numberOfAnimalsQuantity: '4'
@@ -493,7 +493,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     },
     'the happy path without the species': {
       ...happyPath,
-      commodityLines: [{ ...happyPath.commodityLines[0], speciesSelection: '' }]
+      commodityLines: [{ ...happyPath.commodityLines[0], speciesLatinName: '' }]
     },
     'the happy path with a partial document': {
       ...happyPath,
@@ -508,7 +508,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
   }
 
   it.each(Object.entries({ ...submittable, ...notSubmittable }))(
-    'Should agree with the retired section roll-up for %s',
+    'Should agree with the section roll-up for %s',
     (_label, answers) => {
       const { inScope } = makeScope(answers)
       const evaluation = evaluateAnswers(answers)
@@ -538,7 +538,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     }
   )
 
-  it('Should keep the review section gated on the row roll-up exactly as before', () => {
+  it('Should gate the review section on the row roll-up', () => {
     const review = sections.find((section) => section.id === 'review')
     expect(sectionGatePasses(review, makeScope({}))).toBe(false)
     expect(sectionGatePasses(review, makeScope(happyPath))).toBe(true)

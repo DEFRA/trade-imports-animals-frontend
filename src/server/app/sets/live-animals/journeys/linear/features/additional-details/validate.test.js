@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
+import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { validation } from './validate.js'
 
-const UNWEANED_COMMODITY_LINE = { commoditySelection: 'Cow' }
-const NON_UNWEANED_COMMODITY_LINE = { commoditySelection: 'Cat' }
+const UNWEANED_COMMODITY_LINE = { commodityCode: '0102' }
+const NON_UNWEANED_COMMODITY_LINE = { commodityCode: '01061900' }
 
 describe('#validation for additional-details — onSubmit', () => {
   it('Should accept a valid certification with the unweaned answer when the reveal is open', async () => {
@@ -14,12 +15,12 @@ describe('#validation for additional-details — onSubmit', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should reject a certification value the catalogue no longer offers', async () => {
+  it('Should reject a certification value outside the catalogue on submit', async () => {
     const { errors } = await validation.onSubmit(
       { animalsCertifiedFor: 'not-a-purpose', containsUnweanedAnimals: 'no' },
       { showUnweaned: true }
     )
-    expect(errors).toHaveProperty('animalsCertifiedFor')
+    expect(errors.animalsCertifiedFor).toBe(validatorDefaults.oneOf)
   })
 
   it('Should skip the unweaned rule when the reveal is closed', async () => {

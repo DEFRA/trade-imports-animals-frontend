@@ -1,6 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const originalMode = process.env.STUB_MODE
+import {
+  resetModulesAndRunModeEachTest,
+  switchToRealMode,
+  switchToStubMode
+} from '../../common/test-helpers/run-mode.js'
 
 const okResponse = (body) => ({ ok: true, json: async () => body })
 
@@ -13,17 +17,10 @@ const okOnlyForBlock = (block, body) => async (url) => {
   return okResponse(body)
 }
 
-beforeEach(() => {
-  vi.resetModules()
-})
+resetModulesAndRunModeEachTest()
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  if (originalMode === undefined) {
-    delete process.env.STUB_MODE
-  } else {
-    process.env.STUB_MODE = originalMode
-  }
 })
 
 describe('countries client', () => {
@@ -70,7 +67,7 @@ describe('ports client', () => {
 
 describe('countries service — stub mode', () => {
   it('Should serve stub data through the accessors without loading', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     const countries = await import('./countries/index.js')
     expect(await countries.originLabel('AT')).toBe('Austria')
     expect(await countries.originCountries()).toContainEqual({
@@ -84,7 +81,7 @@ describe('countries service — stub mode', () => {
   })
 
   it('Should offer the stub countries and their subdivisions, each subdivision named with its country, in one list sorted by label', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     const countries = await import('./countries/index.js')
     const options =
       await countries.countryAndSubdivisionOptionsNamedWithCountry()
@@ -101,7 +98,7 @@ describe('countries service — stub mode', () => {
   })
 
   it('Should short-circuit ensureLoaded and never fetch in stub mode', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     const fetchMock = vi.fn(async () =>
       okResponse([{ code: 'ZZ', name: 'Zedland' }])
     )
@@ -116,7 +113,7 @@ describe('countries service — stub mode', () => {
 
 describe('countries service — real mode', () => {
   it('Should self-load on the first reader call and serve fetched data', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
@@ -132,7 +129,7 @@ describe('countries service — real mode', () => {
   })
 
   it('Should offer address countries from the unfiltered list, as the address book does', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const unfiltered = [
       { code: 'GB', name: 'United Kingdom' },
       { code: 'US', name: 'United States' }
@@ -151,7 +148,7 @@ describe('countries service — real mode', () => {
   })
 
   it('Should offer countries and subdivisions as whatever reference data serves, each subdivision named with its country, in one list sorted by label', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(
       okOnlyForBlock('GBNAG_SPS_EX', [
         {
@@ -174,7 +171,7 @@ describe('countries service — real mode', () => {
   })
 
   it('Should fetch once across many reader calls once loaded', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const fetchMock = vi.fn(
       okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }])
     )
@@ -190,7 +187,7 @@ describe('countries service — real mode', () => {
   })
 
   it('Should re-attempt on a reader call after a prior load failure', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(new Error('MDM down'))
@@ -206,7 +203,7 @@ describe('countries service — real mode', () => {
   })
 
   it('Should reject with a serverUnavailable Boom error on load failure', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
     const countries = await import('./countries/index.js')
 
@@ -223,7 +220,7 @@ describe('countries service — real mode', () => {
 
 describe('ports service — stub mode', () => {
   it('Should serve stub data through list() without loading', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     const ports = await import('./ports/index.js')
     expect(await ports.list()).toContainEqual({
       code: 'GB ABD',
@@ -235,7 +232,7 @@ describe('ports service — stub mode', () => {
 
 describe('ports service — real mode', () => {
   it('Should self-load on the first reader call and serve fetched ports', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')
 
@@ -243,7 +240,7 @@ describe('ports service — real mode', () => {
   })
 
   it("Should offer each served port as '<name> - <code>' valued by its code, in the order reference data serves them, matching its label", async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(async () =>
       okResponse([
         { code: 'GB DYC', name: 'Aberdeen Airport', type: 'airport' },
@@ -260,7 +257,7 @@ describe('ports service — real mode', () => {
   })
 
   it('Should fetch once across many reader calls once loaded', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const fetchMock = vi.fn(async () =>
       okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }])
     )
@@ -274,7 +271,7 @@ describe('ports service — real mode', () => {
   })
 
   it('Should re-attempt on a reader call after a prior load failure', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(new Error('MDM down'))
@@ -290,7 +287,7 @@ describe('ports service — real mode', () => {
   })
 
   it('Should reject with a serverUnavailable Boom error on load failure', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
     const ports = await import('./ports/index.js')
 
@@ -309,7 +306,7 @@ describe('mode resolution', () => {
   })
 
   it('Should select stub when the flag is set', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     const { isStubMode } = await import('../../common/services/mode.js')
     expect(isStubMode()).toBe(true)
   })

@@ -1,5 +1,4 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -14,6 +13,7 @@ import {
   openingRunCookie
 } from '../../../../../engine/persistence/session.js'
 import {
+  completeNotification,
   driveHandler,
   expectOneLogged,
   getHandlerOf,
@@ -26,6 +26,13 @@ import {
   typedInCommercialTransporterPayload,
   typedInPrivateTransporterPayload
 } from '../features/transport/test-support.js'
+import { lineKey } from '../features/commodities/search/selection/line-key.js'
+import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
+import {
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
+  lineOf
+} from '../features/commodities/search/test-support.js'
 import { STUB_BOOK } from '../../../../../services/address-book/stub/index.js'
 import { dispatchPages } from '../features/index.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
@@ -63,31 +70,15 @@ const runRecord = (journeyId, phase = RUN_ACTIVE) => ({
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [
-    {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
-      numberOfAnimalsQuantity: '',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(FELIS_CATUS_ROW)]
 }
 
-const fishLineSeed = {
+const unidentifiedLineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [
-    {
-      commoditySelection: 'Fish',
-      speciesSelection: '801204',
-      numberOfAnimalsQuantity: '3',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
 }
 
-const { values: completeSeed } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const completeSeed = completeNotification()
 
 const postBreedingInternalMarketReason = (openingRun) =>
   driveHandler(postHandlerOf(importReason), {
@@ -160,11 +151,13 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
-    const payload = { species: ['Cat|923501'] }
+    const payload = { species: [lineKey(FELIS_CATUS_ROW)] }
     const seed = { countryOfOrigin: 'FR' }
+    const flowOnly = { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
     const inRun = await driveHandler(postHandlerOf(commoditiesSearch), {
       payload,
       seed,
+      flowOnly,
       openingRun: RUN_ACTIVE
     })
     expect(inRun.response.redirect).toBe(
@@ -173,7 +166,8 @@ const saveAndContinueFollowsTheRunSequence = () => {
 
     const outside = await driveHandler(postHandlerOf(commoditiesSearch), {
       payload,
-      seed
+      seed,
+      flowOnly
     })
     expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
@@ -211,13 +205,13 @@ const saveAndContinueFollowsTheRunSequence = () => {
   it('Should log the skip and carry a consignment with nothing to identify on to additional details mid-run', async () => {
     const { journeyId, response, view, logger } = await driveHandler(
       getHandlerOf(animalIdentification),
-      { seed: fishLineSeed, openingRun: RUN_ACTIVE }
+      { seed: unidentifiedLineSeed, openingRun: RUN_ACTIVE }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
     expect(view).toBeUndefined()
     expectOneLogged(logger, {
       level: 'info',
-      fields: { journeyId },
+      fields: { journeyId, commodityCodes: ['01063300'] },
       message:
         'Animal identification skipped: nothing on the consignment carries an identifier'
     })
@@ -468,6 +462,21 @@ describe('the opening run', () => {
         { payload: originPayload, openingRun: RUN_COMPLETE }
       )
       expect(response.redirect).toBe(hubPath(journeyId))
+      expect(openingRunCookie() in cookies).toBe(false)
+    })
+
+    it('Should send a change=1 origin save to check your answers once the run is complete', async () => {
+      const { journeyId, response, cookies } = await driveHandler(
+        postHandlerOf(origin),
+        {
+          payload: originPayload,
+          query: { change: '1' },
+          openingRun: RUN_COMPLETE
+        }
+      )
+      expect(response.redirect).toBe(
+        pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
+      )
       expect(openingRunCookie() in cookies).toBe(false)
     })
   })

@@ -71,7 +71,7 @@ export const copy = {
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
     commodityCode: 'Commodity code',
-    commonName: 'Common name',
+    speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     numberOfPackages: 'Number of packages',
@@ -136,6 +136,10 @@ export const copy = {
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
+    },
+    species: {
+      notListed: (speciesWithCodes) =>
+        `${speciesWithCodes} can no longer be selected. Select a species from the list.`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',

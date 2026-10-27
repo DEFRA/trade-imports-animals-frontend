@@ -10,6 +10,14 @@ import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
@@ -21,6 +29,13 @@ import { copy as transportCopy } from '../src/server/app/sets/live-animals/journ
 export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
+
+export const BISON_BISON = BISON_BISON_ROW
+export const BOS_TAURUS = BOS_TAURUS_ROW
+export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
+export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
+export const FELIS_CATUS = FELIS_CATUS_ROW
+export const STRUTHIO = STRUTHIO_ROW
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
@@ -543,20 +558,64 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-export const selectSpecies = async (page, speciesNames) => {
-  for (const name of speciesNames) {
-    await searchCommodities(page, name)
-    await page.getByRole('checkbox', { name }).check()
+const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
+  page
+    .getByRole('group', { name: commodityCode })
+    .getByRole('checkbox', { name: speciesLatinName, exact: true })
+    .check()
+
+export const selectSpecies = async (page, speciesToSelect) => {
+  for (const chosen of speciesToSelect) {
+    await searchCommodities(page, chosen.speciesLatinName)
+    await tickSpecies(page, chosen)
   }
 }
 
-export const expectSpeciesSelected = async (page, name) =>
-  expect(page.locator('#commodity-selection')).toContainText(name)
+export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
+  page
+    .getByRole('heading', { level: 3, name: speciesLatinName })
+    .locator('+ .govuk-form-group')
+    .getByLabel('Number of animals')
 
-export const unlockSections = async (page, species = 'Felis catus') => {
+export const openCommoditySearch = async (page) => {
+  await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [species])
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+}
+
+export const openCommodityDetails = async (page, speciesToSelect) => {
+  await openCommoditySearch(page)
+  await selectSpecies(page, speciesToSelect)
+  await save(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page
+    .getByRole('link', { name: 'Commodity details', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Commodity details' })
+  ).toBeVisible()
+}
+
+export const expectSpeciesSelected = async (
+  page,
+  { commodityCode, speciesLatinName }
+) =>
+  expect(
+    page
+      .getByRole('heading', { name: /\d+ selected/ })
+      .locator('+ ul')
+      .getByRole('listitem')
+      .filter({ hasText: `${commodityCode}:` })
+      .filter({ hasText: speciesLatinName })
+  ).toBeVisible()
+
+export const unlockSections = async (page, chosen = FELIS_CATUS) => {
+  await answerCountryOfOrigin(page)
+  await page.getByRole('link', { name: 'What are you importing?' }).click()
+  await selectSpecies(page, [chosen])
   await save(page)
   await expectOverview(page)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -639,7 +698,7 @@ export const answerOriginDetails = async (
 }
 
 export const answerWhatYouAreImporting = async (page) => {
-  await selectSpecies(page, ['Bos taurus'])
+  await selectSpecies(page, [BOS_TAURUS])
   await save(page)
 }
 

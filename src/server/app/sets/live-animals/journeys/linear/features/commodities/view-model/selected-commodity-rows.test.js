@@ -7,30 +7,43 @@ import {
 
 const headings = {
   commodityCode: 'Commodity code',
-  commonName: 'Common name',
   species: 'Species',
   numberOfAnimals: 'Number of animals',
   actionsHidden: 'Actions'
 }
 
-const COW_AND_CALF = 'Cow & calf'
 const BOS_TAURUS = 'Bos taurus'
 const WRAPPING = 'app-table__cell--break-anywhere'
 const RIGHT = 'govuk-!-text-align-right'
 
 const leadingCells = [
   { text: '0102', classes: WRAPPING },
-  { text: COW_AND_CALF, classes: WRAPPING },
   { html: BOS_TAURUS, classes: WRAPPING }
 ]
 
 describe('#buildRemovableCommoditiesTable', () => {
-  it('Should end each row with a Remove button named for its commodity, escaping the name', () => {
+  it('Should escape a Latin name that contains HTML characters in the species cell', () => {
+    const table = buildRemovableCommoditiesTable(
+      [
+        {
+          code: '01061900',
+          latinNames: ['Felis <catus> & friends'],
+          removeAction: 'remove-species:0'
+        }
+      ],
+      headings,
+      { remove: 'Remove' }
+    )
+
+    expect(table.rows[0][1].html).toBe('Felis &lt;catus&gt; &amp; friends')
+    expect(table.rows[0][1].html).not.toContain('<catus>')
+  })
+
+  it('Should end each row with a Remove button named for its code and species', () => {
     const table = buildRemovableCommoditiesTable(
       [
         {
           code: '0102',
-          name: COW_AND_CALF,
           latinNames: [BOS_TAURUS],
           removeAction: 'remove:0'
         }
@@ -46,7 +59,7 @@ describe('#buildRemovableCommoditiesTable', () => {
       [
         ...leadingCells,
         {
-          html: '<button type="submit" class="govuk-link app-link-button" name="action" value="remove:0">Remove<span class="govuk-visually-hidden"> Cow &amp; calf</span></button>',
+          html: '<button type="submit" class="govuk-link app-link-button" name="action" value="remove:0">Remove<span class="govuk-visually-hidden"> 0102 Bos taurus</span></button>',
           classes: RIGHT
         }
       ]
@@ -55,12 +68,11 @@ describe('#buildRemovableCommoditiesTable', () => {
 })
 
 describe('#buildChangeableCommoditiesTable', () => {
-  it('Should follow each row with its animal total and a Change link to the commodity list', () => {
+  it('Should follow each row with its animal total and a Change link to the commodity list named for its code and species', () => {
     const table = buildChangeableCommoditiesTable(
       [
         {
           code: '0102',
-          name: COW_AND_CALF,
           latinNames: [BOS_TAURUS],
           animals: '5'
         }
@@ -79,7 +91,7 @@ describe('#buildChangeableCommoditiesTable', () => {
         ...leadingCells,
         { text: '5' },
         {
-          html: '<a class="govuk-link" href="/notifications/journey-1/commodities">Change<span class="govuk-visually-hidden"> Cow &amp; calf</span></a>',
+          html: '<a class="govuk-link" href="/notifications/journey-1/commodities">Change<span class="govuk-visually-hidden"> 0102 Bos taurus</span></a>',
           classes: RIGHT
         }
       ]

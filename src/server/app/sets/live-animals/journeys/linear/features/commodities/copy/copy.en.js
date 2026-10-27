@@ -32,7 +32,6 @@ export const copy = {
   selectedCommodities: {
     caption: 'Selected commodities',
     commodityCode: 'Commodity code',
-    commonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     actionsHidden: 'Actions'

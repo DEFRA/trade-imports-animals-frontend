@@ -2,16 +2,49 @@ import * as state from '../../../../../../engine/index.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { toArray } from './view-model/rows/value-text.js'
 import { withScanStatus } from '../documents/scan/status.js'
 import { SCAN_STATUS } from '../documents/scan-poll.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from '../documents/copy/copy.en.js'
 import { copy as cy } from '../documents/copy/copy.cy.js'
+import { copy as reviewEn } from './copy/copy.en.js'
+import { copy as reviewCy } from './copy/copy.cy.js'
+import { linesWithUnlistedSpecies } from '../../../../services/commodities/species-check.js'
 
 const documentsCopy = copyFor({ en, cy })
+const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
+
+const chosenSpecies = (answers) =>
+  toArray(answers.commodityLines)
+    .filter((line) => line?.commodityCode && line?.speciesLatinName)
+    .map((line) => ({
+      code: line.commodityCode,
+      latinName: line.speciesLatinName
+    }))
+
+const draftUnlistedSpecies = async (journey, answers, { refused }) => {
+  if (!refused || journey.status !== state.DRAFT) {
+    return []
+  }
+  return linesWithUnlistedSpecies(chosenSpecies(answers))
+}
+
+export const speciesCardErrors = async (journey, answers, options) => {
+  const unlisted = await draftUnlistedSpecies(journey, answers, options)
+  if (unlisted.length === 0) {
+    return {}
+  }
+  const speciesWithCodes = unlisted
+    .map(({ code, latinName }) => `${latinName} (${code})`)
+    .join(', ')
+  return {
+    species: reviewCopy.errors.species.notListed(speciesWithCodes)
+  }
+}
 
 const documentScanStatuses = async (request, answers) => {
-  const documents = [answers.documents ?? []].flat()
+  const documents = toArray(answers.documents)
   if (documents.length === 0) {
     return []
   }
@@ -67,5 +100,18 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(invalidCardErrors).length > 0) {
     return true
   }
-  return Object.keys(await documentScanCardErrors(request, answers)).length > 0
+  if (Object.keys(await documentScanCardErrors(request, answers)).length > 0) {
+    return true
+  }
+  const unlisted = await draftUnlistedSpecies(journey, answers, {
+    refused: true
+  })
+  if (unlisted.length === 0) {
+    return false
+  }
+  request.logger.warn(
+    { journeyId: journey.journeyId, unlisted },
+    'Draft refused: reference data no longer lists a chosen species'
+  )
+  return true
 }

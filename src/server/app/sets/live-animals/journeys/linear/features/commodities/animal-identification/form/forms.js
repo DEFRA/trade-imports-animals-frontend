@@ -54,14 +54,18 @@ const addressErrorsFor = (showAddress, addressValues, index, payload) => {
   }
 }
 
-const buildLineForm = (payload, commodity, index) => {
-  const values = identifierValuesFromPayload(payload, commodity, index)
+const buildLineForm = (payload, entry, index) => {
+  const { commodityCode } = entry
+  const values = identifierValuesFromPayload(payload, commodityCode, index)
   const addressValues = addressValuesFromPayload(payload, index)
-  const showAddress = permanentAddressApplies(commodity)
+  const showAddress = permanentAddressApplies(
+    commodityCode,
+    entry.speciesLatinName
+  )
   const holdsData = formHoldsData(showAddress, values, addressValues)
 
   const { errors: idErrors } = validate(
-    identifierChecksFor(commodity, index),
+    identifierChecksFor(commodityCode, index),
     payload
   )
   const errors = {
@@ -70,7 +74,7 @@ const buildLineForm = (payload, commodity, index) => {
   }
 
   return {
-    form: { commodity, values, addressValues, showAddress, holdsData },
+    form: { commodityCode, values, addressValues, showAddress, holdsData },
     errors
   }
 }
@@ -100,7 +104,7 @@ export const buildLineForms = (payload, answers, lines, action) => {
     .filter(({ index }) => !capByLineAtCap.has(index))
     .map(({ index, entry }) => ({
       index,
-      ...buildLineForm(payload, entry.commoditySelection, index)
+      ...buildLineForm(payload, entry, index)
     }))
   const forms = new Map(built.map(({ index, form }) => [index, form]))
   const errors = Object.assign({}, ...built.map((line) => line.errors))
@@ -133,8 +137,8 @@ export const withEmptyFormGuard = (errors, forms, addIndex) => {
   if (addIndex === null || anyData || !forms.has(addIndex)) {
     return errors
   }
-  const { commodity } = forms.get(addIndex)
-  const [first] = scopedFields(commodity)
+  const { commodityCode } = forms.get(addIndex)
+  const [first] = scopedFields(commodityCode)
   return {
     ...errors,
     [fieldName(first.id, addIndex)]: copy.errors.atLeastOneIdentifier

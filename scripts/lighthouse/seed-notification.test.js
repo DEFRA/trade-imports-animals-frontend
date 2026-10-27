@@ -37,6 +37,22 @@ describe('#journeyIdIn', () => {
   })
 })
 
+describe('#seedSteps commodities', () => {
+  const commoditySteps = () =>
+    seedSteps(SEED_SHAPES.draft).filter((step) => step.slug === 'commodities')
+
+  it('Should search for Bos taurus then choose 0102|Bos taurus', () => {
+    expect(commoditySteps()).toEqual([
+      {
+        slug: 'commodities',
+        fields: { commoditySearch: 'Bos taurus', action: 'search' },
+        expectedStatus: 200
+      },
+      { slug: 'commodities', fields: { species: ['0102|Bos taurus'] } }
+    ])
+  })
+})
+
 describe('#seedSteps cph-number', () => {
   it('Should post the three parts the page asks for, split two, three and four', () => {
     expect(stepFor('cph-number').fields).toEqual({

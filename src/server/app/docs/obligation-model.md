@@ -34,6 +34,43 @@ Use the narrowest helper that expresses the rule. `branchedGate` is the escape h
 for a rule that cannot use the standard equality, presence, inclusion or allow-list
 helpers.
 
+Each gate helper returns `applyTo(fulfilments, fulfilmentIndexesByObligationId)`,
+which gives a decision, and carries a `.metadata` property that describes the gate. An
+obligation may also declare `dependsOn`, the ids of the obligations its gate reads.
+The reachability prover inverts gates from this data, and a coverage assertion fails
+the build for a gated obligation without a complete declared or derived `dependsOn`.
+
+Which helper to pick:
+
+- One verdict for the whole obligation, typically when it is not indexed:
+  `equalsGate`, `includesGate`, `presentGate`, `alwaysInScope` or `matches`.
+- A decision naming which fulfilment indexes are in scope, typically when the
+  obligation is indexed: `allowListed` or `notInUnionOf`. Pass `null` for
+  `gatedParentGroup` when the gate and the gated obligation sit at the same level,
+  or the group when the gated obligation is deeper; the engine then fans across
+  that group's fulfilment indexes for each matching parent.
+- The same decision from two obligations read at the same fulfilment index:
+  `allowListedPairs`, which admits an index whose two values form a listed pair.
+  The permanent address is asked only of a line whose CN code and Latin name
+  are listed together.
+- One decision from any value across a group: `anyAllowListed` when the rule names
+  the members, `anyNotInUnionOf` when it names the exceptions and the members are
+  open-ended. A blank candidate is skipped rather than counted as outside the
+  exceptions.
+- `branchedGate` for a predicate that cannot be derived. Pair it with
+  `predicateMeta` so the prover can build a witness.
+- `present`, a predicate rather than an `applyTo`, for `branchedGate` to compose.
+- `moreThanOne` is a combinator, not a gate: it stands another helper down unless
+  that helper admits more than one entry. It goes on a group's `requires` (for
+  example `floorAppliesToParent`), never on an obligation's `applyTo`.
+
+The reachability prover builds a witness for a complement gate (`notInUnionOf`,
+`anyNotInUnionOf`) from a stable sentinel string that is not in the gate's derived
+union. If the union held the sentinel and its fallback as well, the prover reports
+the gate opaque instead of vacuously green, because a gate no input can open is an
+authoring defect. A commodity-code union covers a handful of codes, so any other
+string opens the gate.
+
 ## Evaluation
 
 [`src/server/app/model/obligations/evaluator.js`](../model/obligations/evaluator.js)

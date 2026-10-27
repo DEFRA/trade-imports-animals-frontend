@@ -1,40 +1,27 @@
-import { deriveUnion } from './internals/derive-union.js'
+import { isOutsideUnion, resolveUnion } from '../helper-internals.js'
 import { buildGate } from './internals/build-gate.js'
 
 /**
  * notInUnionOf — dual of `allowListed`. In scope on entries whose
- * `gateObligation` stored value is NOT in the union of the given
- * allowlists. The union is derived at call-time and exposed on
- * `.metadata.values`, so static analysis can ask "would this value be
- * admitted?" without executing the closure.
+ * `gateObligation` stored value is not blank and not in the union of the
+ * given allowlists. The union is derived at call-time and exposed on
+ * `.metadata.values`.
  *
  * Accepts either `[[a, b], [c, d]]` (list of allowlists — duplicates
  * collapse) or `[a, b, c]` (flat single-list shorthand).
- *
- * The derived-union approach is deliberately stronger than a
- * hand-restated multi-allowlist complement: adding a fifth entry to a
- * source allowlist widens the union automatically, whereas a
- * hand-written `!a.includes(x) && !b.includes(x) && …` predicate would
- * silently double-gate if the author forgot to add the fifth
- * conjunct.
  */
 export const notInUnionOf = (
   gateObligation,
-  unionOfAllowlists,
+  allowlists,
   gatedParentGroup,
   reasons
 ) => {
-  const currentValues = () =>
-    deriveUnion(
-      typeof unionOfAllowlists === 'function'
-        ? unionOfAllowlists()
-        : unionOfAllowlists
-    )
+  const currentValues = () => resolveUnion(allowlists)
   return buildGate({
     gateType: 'notInUnionOf',
     gateObligation,
     currentValues,
-    admits: (value) => !currentValues().includes(value),
+    admits: (value) => isOutsideUnion(value, currentValues()),
     gatedParentGroup,
     reasons
   })

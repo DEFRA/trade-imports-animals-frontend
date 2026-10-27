@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+
+import {
+  resetModulesAndRunModeEachTest,
+  switchToRealMode,
+  switchToStubMode
+} from '../../../common/test-helpers/run-mode.js'
 
 // Address-book toRecord translates a countryCode to a display name via
 // addressBookCountryName; with self-loading readers, calling it in real mode
@@ -9,8 +15,6 @@ const COUNTRY_LABELS = { BE: 'Belgium', FR: 'France' }
 vi.mock('../countries/index.js', () => ({
   addressBookCountryName: async (code) => COUNTRY_LABELS[code] ?? code
 }))
-
-const originalMode = process.env.STUB_MODE
 
 const ORG = '5900001'
 const PHONE = '01632 960000'
@@ -56,29 +60,18 @@ const bookOf = (total, apiPageSize = 25) => {
   }
 }
 
-const realMode = () => {
-  process.env.STUB_MODE = 'false'
-}
-
 const addressBook = () => import('./index.js')
 
-beforeEach(() => {
-  vi.resetModules()
-})
+resetModulesAndRunModeEachTest()
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  if (originalMode === undefined) {
-    delete process.env.STUB_MODE
-  } else {
-    process.env.STUB_MODE = originalMode
-  }
 })
 
 describe('#search against the real address book', () => {
   test('Should scope the request to the organisation in both path and header', async () => {
     const fetched = vi.fn(bookOf(10))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     const { search } = await addressBook()
@@ -91,7 +84,7 @@ describe('#search against the real address book', () => {
 
   test('Should carry the request trace on to the address book', async () => {
     const fetched = vi.fn(bookOf(10))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     const { search } = await addressBook()
@@ -102,7 +95,7 @@ describe('#search against the real address book', () => {
   })
 
   test('Should serve five records a page out of the API page of twenty-five', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(bookOf(60))
 
     const { search } = await addressBook()
@@ -117,7 +110,7 @@ describe('#search against the real address book', () => {
 
   test('Should read a later page out of the API page that holds it', async () => {
     const fetched = vi.fn(bookOf(60))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     // Our page 6 starts at offset 25 — the first record of their page 2.
@@ -130,7 +123,7 @@ describe('#search against the real address book', () => {
   })
 
   test('Should fall back to the first page when asked for one past the end', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(bookOf(10))
 
     const { search } = await addressBook()
@@ -142,7 +135,7 @@ describe('#search against the real address book', () => {
 
   test('Should re-slice against the size the server actually reports', async () => {
     const fetched = vi.fn(bookOf(60, 10))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     // Assuming 25 puts our page 6 on their page 2; at a real size of 10 the
@@ -158,7 +151,7 @@ describe('#search against the real address book', () => {
 
   test('Should pass a search term through to the API', async () => {
     const fetched = vi.fn(bookOf(10))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     const { search } = await addressBook()
@@ -170,7 +163,7 @@ describe('#search against the real address book', () => {
   })
 
   test('Should raise a failure rather than serving an empty book', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () => ({
       ok: false,
       status: 503,
@@ -186,7 +179,7 @@ describe('#search against the real address book', () => {
 
 describe('mapping the wire onto the journey', () => {
   test('Should map the API field names onto the ones the journey renders', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(bookOf(1))
 
     const { search } = await addressBook()
@@ -206,7 +199,7 @@ describe('mapping the wire onto the journey', () => {
   })
 
   test('Should show a country by name, not by its code', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(bookOf(1))
 
     const { search } = await addressBook()
@@ -216,7 +209,7 @@ describe('mapping the wire onto the journey', () => {
   })
 
   test('Should keep an unrecognised country code rather than dropping it', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () =>
       okResponse({
         items: [operator('record-1', { countryCode: 'ZZ' })],
@@ -241,7 +234,7 @@ describe('without an organisation', () => {
     // name, and an empty book comes back. A search then looks like "you have
     // saved nothing" and a resolve like "that address was deleted", when in
     // truth nobody was signed in. Fail here instead, and say why.
-    realMode()
+    switchToRealMode()
     stubFetch(async () => okResponse(operator('record-7')))
 
     const { search, party } = await addressBook()
@@ -258,7 +251,7 @@ describe('without an organisation', () => {
 
 describe('#party', () => {
   test('Should resolve a record by its id', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () => okResponse(operator('record-7')))
 
     const { party } = await addressBook()
@@ -270,7 +263,7 @@ describe('#party', () => {
   })
 
   test('Should surface a soft-deleted record as deleted, not as missing', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () => okResponse(operator('record-7', { deleted: true })))
 
     const { party } = await addressBook()
@@ -279,7 +272,7 @@ describe('#party', () => {
   })
 
   test('Should resolve to nothing for a record this organisation cannot see', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () => ({ ok: false, status: 404, statusText: 'Not Found' }))
 
     const { party } = await addressBook()
@@ -288,7 +281,7 @@ describe('#party', () => {
   })
 
   test('Should raise on an outage rather than reporting the record gone', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(async () => ({
       ok: false,
       status: 500,
@@ -304,7 +297,7 @@ describe('#party', () => {
 
 describe('#all', () => {
   test('Should gather every page for the unpaginated contact list', async () => {
-    realMode()
+    switchToRealMode()
     stubFetch(bookOf(60))
 
     const { all } = await addressBook()
@@ -316,7 +309,7 @@ describe('#all', () => {
 
   test('Should make a single call when the book fits one page', async () => {
     const fetched = vi.fn(bookOf(3))
-    realMode()
+    switchToRealMode()
     stubFetch(fetched)
 
     const { all } = await addressBook()
@@ -344,7 +337,7 @@ describe('writes', () => {
 describe('in stub mode', () => {
   test('Should page the stub book without calling the API', async () => {
     const fetched = vi.fn()
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
     stubFetch(fetched)
 
     const { search } = await addressBook()
@@ -356,7 +349,7 @@ describe('in stub mode', () => {
   })
 
   test('Should search the stub book by free text', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
 
     const { search } = await addressBook()
     const found = await search(ORG, { query: 'nordvik' })
@@ -368,7 +361,7 @@ describe('in stub mode', () => {
 
 describe('the book is untyped (D3)', () => {
   test('Should offer the same records whichever role is being filled', async () => {
-    process.env.STUB_MODE = 'true'
+    switchToStubMode()
 
     const { search } = await addressBook()
     const forConsignor = await search(ORG, { page: 1 })

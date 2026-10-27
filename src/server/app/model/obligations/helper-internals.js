@@ -1,17 +1,46 @@
-/**
- * Shape-level utilities shared by the gate helpers — the
- * "stored fulfilment → candidate values" normalisation used by
- * `anyAllowListed`, `runGate`, and `present`.
- *
- * Kept in a separate module (not re-exported through `helpers/index.js`)
- * so the `analysis/coverage.test.js` invariant — "every `helpers/index.js`
- * named export is an applyTo factory" — still holds.
- */
+import { isBlankValue } from './is-blank-value.js'
+import { deriveUnion } from './helpers/internals/derive-union.js'
 
-// True iff `value` is a non-null non-array object — the shape check that
-// separates indexedFulfilments from unindexed fulfilments in callers.
 export const isNonArrayObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
+
+const samePair = (listed, value) =>
+  Array.isArray(listed) &&
+  listed.length === value.length &&
+  listed.every((part, position) => part === value[position])
+
+// Whether a gate's list holds `value`: a pair such as `[code, species]`
+// matches a listed pair part for part, any other value matches by identity.
+export const listsGateValue = (values, value) =>
+  Array.isArray(value)
+    ? values.some((listed) => samePair(listed, value))
+    : values.includes(value)
+
+const COMPLEMENT_GATE_TYPES = new Set(['notInUnionOf', 'anyNotInUnionOf'])
+
+export const resolveUnion = (unionOfLists) =>
+  deriveUnion(
+    typeof unionOfLists === 'function' ? unionOfLists() : unionOfLists
+  )
+
+export const isOutsideUnion = (value, union) =>
+  !isBlankValue(value) && !union.includes(value)
+
+/**
+ * Whether a gate admits a value, read from the gate's metadata alone: a
+ * complement gate admits a value that is not blank and not in its union,
+ * every other gate admits what its list holds.
+ *
+ * @param {object} [metadata] - the gate's `applyTo.metadata`.
+ * @param {*} value - the value to test against the gate's list.
+ * @returns {boolean}
+ */
+export const admitsValue = (metadata, value) => {
+  const values = metadata?.values ?? []
+  return COMPLEMENT_GATE_TYPES.has(metadata?.gateType)
+    ? isOutsideUnion(value, values)
+    : listsGateValue(values, value)
+}
 
 // Read `fulfilments[gateId]` and normalise to `{ present, candidates }`:
 //   - undefined            → { present: false, candidates: [] }

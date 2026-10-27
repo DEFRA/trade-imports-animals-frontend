@@ -74,6 +74,26 @@ notification projections through
 [`src/server/app/services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/).
 The projections are downstream views, not resume sources.
 
+A commodity line is one CN code with one species and its own counts and nested
+identifier records. The backend commodity is one complement per CN code, holding
+a species array. The mapper groups the lines by CN code and sums the counts up
+to the complement totals as numbers, as the backend's own lodash sum does. The
+per-species counts stay the raw string answers. A complement's `typeOfCommodity`
+is the text of the line's stored commodity type, and is left out when that text is
+blank.
+
+The backend stores parties as they are and hands them back the same way, so the
+records adapter never sends the reader's organisation to it. The organisation is
+the address book's business, not the backend's.
+
+GBN-AG's `TradeCountry` carries an ISO 3166-1 alpha-2 code, so a territory the
+destination and transit selects offer must leave as its country. The identification
+page stores the ISO code, so persistence carries it through without a reverse
+lookup.
+
+Each line also carries a species common name. The mapper does not send it yet;
+EUDPA-669 maps it into the payload.
+
 ## Boot wiring
 
 Each set's gateway — today

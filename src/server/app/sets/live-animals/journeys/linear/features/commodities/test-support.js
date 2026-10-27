@@ -1,10 +1,5 @@
-export const commodityLinesFixture = (...triples) =>
-  triples.map(
-    (
-      [commoditySelection, speciesSelection, numberOfAnimalsQuantity],
-      index
-    ) => ({
-      index,
-      entry: { commoditySelection, speciesSelection, numberOfAnimalsQuantity }
-    })
-  )
+export const commodityLinesFixture = (...rowAndCounts) =>
+  rowAndCounts.map(([row, numberOfAnimalsQuantity], index) => ({
+    index,
+    entry: { ...row, numberOfAnimalsQuantity }
+  }))

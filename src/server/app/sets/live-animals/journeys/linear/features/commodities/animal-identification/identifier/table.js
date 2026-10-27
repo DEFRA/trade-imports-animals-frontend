@@ -1,20 +1,22 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { permanentAddressApplies, scopedFields } from './fields.js'
+import {
+  PERMANENT_ADDRESS,
+  permanentAddressApplies,
+  scopedFields
+} from './fields.js'
 
 const copy = copyFor({ en, cy }).identification
 
 export const IDENTIFIER_LABELS = copy.identifierLabels
 
-const PERMANENT_ADDRESS = 'permanentAddress'
-
-export const identifierColumns = (commodity) => [
-  ...scopedFields(commodity).map((field) => [
+export const identifierColumns = (commodityCode, speciesLatinName) => [
+  ...scopedFields(commodityCode).map((field) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),
-  ...(permanentAddressApplies(commodity)
+  ...(permanentAddressApplies(commodityCode, speciesLatinName)
     ? [[PERMANENT_ADDRESS, copy.table.permanentAddressColumn]]
     : [])
 ]

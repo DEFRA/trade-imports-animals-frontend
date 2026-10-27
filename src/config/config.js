@@ -402,7 +402,7 @@ export const config = convict({
   tradeImportsReferenceDataApi: {
     baseUrl: {
       doc: 'Trade Imports Reference Data API base URL',
-      format: String,
+      format: 'url',
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
     }
