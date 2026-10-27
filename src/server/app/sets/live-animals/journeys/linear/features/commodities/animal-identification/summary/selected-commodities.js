@@ -14,9 +14,8 @@ const totalAnimalsText = (lines) => {
 
 export const buildSelectedCommodities = (lines) =>
   buildSelectedCommodityRows(lines).map(
-    ({ code, name, latinNames, lines: rowLines }) => ({
+    ({ code, latinNames, lines: rowLines }) => ({
       code,
-      name,
       latinNames,
       animals: totalAnimalsText(rowLines)
     })

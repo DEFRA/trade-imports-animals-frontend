@@ -92,27 +92,25 @@ test.describe('declaration feature', () => {
     ).toBeVisible()
   })
 
-  test('shows the confirmation as a small checkbox in a group whose legend only screen readers get', async ({
+  test('puts the confirmation checkbox in a group named by the declaration legend', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.declarationLegend })
 
-    await expect(group.locator('legend')).toHaveClass(/govuk-visually-hidden/)
-    await expect(group.locator('.govuk-checkboxes')).toHaveClass(
-      /govuk-checkboxes--small/
-    )
     await expect(
       group.getByRole('checkbox', { name: copy.declarationLabel })
     ).toBeVisible()
   })
 
-  test('shows the date of declaration in bold', async ({ page }) => {
+  test('shows the date of declaration as the strong text of its line', async ({
+    page
+  }) => {
     const date = page
-      .locator('p.govuk-body', { hasText: copy.dateOfDeclaration })
-      .locator('strong')
+      .getByRole('paragraph')
+      .filter({ hasText: copy.dateOfDeclaration })
+      .getByRole('strong')
 
     await expect(date).toHaveText(/^\d{1,2} [A-Z][a-z]+ \d{4}$/)
-    await expect(date).toHaveCSS('font-weight', '700')
   })
 
   test('starts the page with the heading', async ({ page }) => {

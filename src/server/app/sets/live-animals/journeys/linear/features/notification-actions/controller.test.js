@@ -1,34 +1,23 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import createFetchMock from 'vitest-fetch-mock'
+import { describe, expect, it } from 'vitest'
 
 import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../../engine/persistence/records.js'
-import {
-  configureSession,
-  knownJourneysCookie
-} from '../../../../../../engine/persistence/session.js'
+import { records } from '../../../../../../engine/persistence/records.js'
+import { knownJourneysCookie } from '../../../../../../engine/persistence/session.js'
 import {
   backendJourneyId,
   backendNotification,
   expectOneLogged,
+  fetchMock,
   journeyRequest,
-  stubH
+  stubH,
+  useBackendRecords,
+  useStubbedJourney
 } from '../../../../../../engine/test-support.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { records as recordsReal } from '../../../../../../services/persistence/records/real/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
 const copyPost = routes[0].handler
-
-const fetchMocker = createFetchMock(vi)
-fetchMocker.enableMocks()
 
 const copyPayload = { concurrencyToken: '0', copyOrigin: 'dashboard' }
 
@@ -41,7 +30,7 @@ const emptyNotificationList = JSON.stringify({
 })
 
 const backendAnsweringCopyWith = (copyResponse) =>
-  fetchMocker.mockResponse(async (request) => {
+  fetchMock.mockResponse(async (request) => {
     if (request.url.includes('/copy')) {
       return copyResponse()
     }
@@ -56,16 +45,8 @@ const backendAnsweringCopyWith = (copyResponse) =>
   })
 
 describe('copy notification action', () => {
-  beforeAll(() => {
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-
   describe('against the stub store', () => {
-    beforeEach(() => {
-      configureRecords(SET_ID, recordsStub)
-      records.clear()
-    })
+    useStubbedJourney(SET_ID, dispatchPages)
 
     it('Should copy into a known new draft and redirect to its journey-scoped hub', async () => {
       const source = await records.create()
@@ -131,10 +112,7 @@ describe('copy notification action', () => {
   })
 
   describe('against the backend', () => {
-    beforeEach(() => {
-      configureRecords(SET_ID, recordsReal)
-      fetchMocker.resetMocks()
-    })
+    useBackendRecords(SET_ID)
 
     it('Should re-render the dashboard at 500 after a recoverable backend failure', async () => {
       backendAnsweringCopyWith(() => ({

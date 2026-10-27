@@ -15,8 +15,12 @@ The `addresses` section holds the CPH number page and then Roles and addresses, 
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
 
-`FLOW_ONLY_KEYS` contains `declaration`. That value uses the session's flow-only
-store rather than canonical obligation fulfilment.
+`FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`. Both are kept in
+the session's flow-only store rather than canonical obligation fulfilment, and are
+never sent to the backend.
+
+The transport section lists one transporter step, the transporter list. The pages
+that add a transporter are detours off that list and belong to no section.
 
 ## Task rows
 

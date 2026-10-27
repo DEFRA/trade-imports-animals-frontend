@@ -1,5 +1,5 @@
-@use "../../../../node_modules/govuk-frontend" as *;
-@use "../helpers";
+@use '../../../../node_modules/govuk-frontend' as *;
+@use '../helpers';
 
 $app-date-picker-calendar-max-width: 360px;
 
@@ -17,11 +17,11 @@ $app-date-picker-calendar-max-width: 360px;
 
 .app-date-picker .moj-datepicker__button--selected:focus:not(:focus-visible) {
   outline-color: transparent;
-  color: govuk-colour("white");
-  background-color: govuk-colour("blue");
+  color: govuk-colour('white');
+  background-color: govuk-colour('blue');
 
   &::after {
-    background-color: govuk-colour("blue");
+    background-color: govuk-colour('blue');
   }
 }
 

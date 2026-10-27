@@ -36,7 +36,6 @@ export const copy = {
   selectedCommodities: {
     caption: 'Nwyddau a ddewiswyd',
     commodityCode: 'Cod nwyddau',
-    commonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
     actionsHidden: ACTIONS_HIDDEN

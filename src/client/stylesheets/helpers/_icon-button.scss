@@ -1,14 +1,14 @@
-@use "../../../../node_modules/govuk-frontend" as *;
+@use '../../../../node_modules/govuk-frontend' as *;
 
 %blue-icon-button {
   border: 0;
   box-shadow: inset 0 (-$govuk-border-width-form-element) 0
-    govuk-colour("blue", $variant: "shade-50");
-  color: govuk-colour("white");
-  background-color: govuk-colour("blue");
+    govuk-colour('blue', $variant: 'shade-50');
+  color: govuk-colour('white');
+  background-color: govuk-colour('blue');
 
   &:hover {
-    background-color: govuk-colour("blue", $variant: "shade-25");
+    background-color: govuk-colour('blue', $variant: 'shade-25');
   }
 
   &:focus,
@@ -33,13 +33,13 @@ $app-search-icon-size: 1.25rem;
 $app-search-icon: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20.3765 20%27%3E%3Cpath d=%27M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z%27 stroke=%27%23000000%27 stroke-width=%272.22222%27 fill=%27none%27/%3E%3Cpath d=%27M13.2347 12.8583L19.5908 19.2143%27 stroke=%27%23000000%27 stroke-width=%272.22222%27 fill=%27none%27/%3E%3C/svg%3E');
 
 %app-search-icon {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   margin: auto;
   width: $app-search-icon-size;
   height: $app-search-icon-size;
-  background-color: govuk-colour("white");
+  background-color: govuk-colour('white');
   mask: $app-search-icon no-repeat center / contain;
 
   @media (forced-colors: active) {

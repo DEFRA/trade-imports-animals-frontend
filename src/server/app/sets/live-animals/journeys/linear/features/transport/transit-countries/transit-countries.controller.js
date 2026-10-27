@@ -17,6 +17,7 @@ import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
   TRANSIT_REFUSAL,
+  isUsersOwnInputRefusal,
   offeredCodes,
   partitionByOffered,
   refusalMessage,
@@ -108,17 +109,27 @@ const addRefusal = async (chosen, selected) => {
   return reason && { reason, message: await refusalMessage(reason, chosen) }
 }
 
+const logRefusalUnlessUsersOwnInput = (
+  request,
+  refusal,
+  { errors, chosen }
+) => {
+  if (!isUsersOwnInputRefusal(refusal.reason)) {
+    kit.logRefusal(request, {
+      fieldErrors: errors,
+      reason: refusal.reason,
+      code: chosen
+    })
+  }
+}
+
 const postAdd = async (request, h, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
   const current = await state.get(request, h)
   const refusal = await addRefusal(chosen, selected)
   if (refusal) {
     const errors = { [COUNTRY_FIELD]: refusal.message }
-    kit.logRefusal(request, {
-      fieldErrors: errors,
-      reason: refusal.reason,
-      code: chosen
-    })
+    logRefusalUnlessUsersOwnInput(request, refusal, { errors, chosen })
     return (
       await render(request, h, current, selected, { errors, chosen })
     ).code(HTTP_STATUS_BAD_REQUEST)

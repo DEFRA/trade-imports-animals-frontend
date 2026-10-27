@@ -1,23 +1,19 @@
-import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { commoditiesPage, consignmentDetailsPage as page } from '../page.js'
+import { consignmentDetailsPage as page } from '../page.js'
+import { redirectEmptyLinesToCommodityQuestion } from './empty-lines-redirect.js'
 import { commodityQuestionHref } from '../commodity-question-detour.js'
 import { lineKey } from '../search/search.controller.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
-import {
-  animalsField,
-  fieldsFor,
-  packagesApply,
-  packagesField
-} from './fields.js'
+import { packagesApply } from '../../check-answers/view-model/applicability.js'
+import { animalsField, fieldsFor, packagesField } from './fields.js'
 import { linesOf } from '../lines.js'
 import {
   isRemoveAction,
@@ -85,12 +81,9 @@ const get = async (request, h) => {
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
-    return h.redirect(
-      kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, commoditiesPage.slug)
-      )
-    )
+    return redirectEmptyLinesToCommodityQuestion(request, h, {
+      commodityCodeCount: 0
+    })
   }
   return render({
     request,
@@ -142,7 +135,7 @@ const post = async (request, h) => {
     await state.updateEntryAt(request, h, ['commodityLines'], index, {
       ...entry,
       numberOfAnimalsQuantity: values[animalsField(index)],
-      ...(packagesApply(entry.commoditySelection)
+      ...(packagesApply(entry.commodityCode)
         ? { numberOfPackages: values[packagesField(index)] }
         : {})
     })

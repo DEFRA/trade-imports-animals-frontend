@@ -1,10 +1,10 @@
-import Boom from '@hapi/boom'
 import {
   ADDRESS_BOOK_COUNTRY_LABELS,
   COUNTRY_LABELS,
   COUNTRY_SUBDIVISIONS
 } from './stub.js'
 import { fetchCountries } from './client.js'
+import { referenceDataUnavailable } from '../reference-data/request.js'
 import { compareLabels, subdivisionNamedWithCountry } from './country-labels.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
@@ -43,10 +43,7 @@ export const ensureLoaded = async () => {
     indexSubDivisions(countries)
     loaded = true
   } catch (err) {
-    throw Boom.serverUnavailable('Reference data unavailable', {
-      dataset: 'countries',
-      cause: err
-    })
+    throw referenceDataUnavailable('countries', err)
   }
 }
 
@@ -132,10 +129,7 @@ const ensureAddressBookCountriesLoaded = async () => {
     )
     addressBookLoaded = true
   } catch (err) {
-    throw Boom.serverUnavailable('Reference data unavailable', {
-      dataset: 'countries',
-      cause: err
-    })
+    throw referenceDataUnavailable('countries', err)
   }
 }
 

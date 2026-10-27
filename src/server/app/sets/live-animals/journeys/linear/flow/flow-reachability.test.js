@@ -153,13 +153,9 @@ describe('#proveFlowReachability', () => {
     }
   })
 
-  // fish-line is the one variant that opens no gate — it is the corpus's only
-  // state where no commodity line carries a typed identifier. Pin that, so
-  // re-adding a free-text fallback obligation, or wrongly adding Fish to an
-  // allowlist, turns this red instead of leaving the state inert.
-  it('Should scope no identifier leaf on the fish-line variant', () => {
+  it('Should scope no identifier leaf on the unidentified-line variant', () => {
     const { answers } = seedVariants().find(
-      (variant) => variant.id === 'fish-line'
+      (variant) => variant.id === 'unidentified-line'
     )
     const scopedNames = new Set()
     for (const state of enumerateScopeStates()) {

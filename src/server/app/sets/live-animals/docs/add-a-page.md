@@ -341,8 +341,10 @@ set-up in the test file:
     the error it is given
   - `getHandlerOf` returns the GET handler of a feature module
   - `postHandlerOf` and `postHandlerEndingWith` return its POST handler
-  - `useStubbedJourney` registers the stub records, the stub session, the
-    dispatch and a cleared store for a describe
+  - `useStubbedJourney` registers the stub records, the stub session and the
+    dispatch for a describe, and restores the stub records and clears the store
+    before each test; it and `useBackendRecords` go on sibling describes, never
+    nested
   - `journeyRequest`, `stubH`, `recordingH` and `recordingLogger` build the
     request, toolkit and logger
   - `expectBackLinkIsPage` asserts the Back link is a page of the journey
@@ -350,17 +352,28 @@ set-up in the test file:
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
   - `unavailableBackendError` builds the error a save failure is given
-  - `addressBookAnswering` puts the address book on the network boundary, and
-    `resetMocksAndConfigAfterTests` resets it after each test
+  - `useBackendRecords(setId)` registers the real records and the stub session
+    for a describe, enables the shared `fetchMock` and clears its calls before
+    each test, and resets the mocks and config after each test
+  - `fetchMock` is the shared `vitest-fetch-mock` instance that
+    `useBackendRecords`, `addressBookAnswering` and `useReferenceDataServing`
+    drive; a test enables it and sets its response, with
+    `resetMocksAndConfigAfterTests()` registered
+  - `addressBookAnswering` and `addressBookRefusingAddresses` put the address
+    book on the network boundary, and `resetMocksAndConfigAfterTests` resets it
+    after each test
+  - `useReferenceDataServing` registers `resetMocksAndConfigAfterTests()` for the
+    describe that calls it, and returns the function that serves given rows as
+    the reference-data response
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
   `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
   `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
-  `expectThreeSaveControls` proves the primary and Save and return to
-  overview sit in the button group and Cancel and return to overview follows
-  it, and `expectPageEndsWithPrimaryAlone` proves a page ends with the primary
-  alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
+  `expectThreeSaveControls` proves, by role inside the journey form, that the
+  primary, Save and return to overview and Cancel and return to overview
+  appear in that order, and `expectPageEndsWithPrimaryAlone` proves a page
+  ends with the primary alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
   `answerOriginDetails` takes the country, region code and internal reference
   to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
   URL matcher at the origin and the mount, because `toHaveURL` matches the whole

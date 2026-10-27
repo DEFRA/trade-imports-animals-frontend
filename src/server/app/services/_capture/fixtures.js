@@ -13,6 +13,7 @@ const load = (file) =>
 export const countries = load('countries.json')
 export const countriesOrigin = load('countries-origin.json')
 export const portsOfEntry = load('ports-of-entry.json')
+export const commodityGroups = load('commodities.json')
 
 /** { code, name } rows for each SPS origin country in fixture order. */
 export const countriesOriginEntries = () =>

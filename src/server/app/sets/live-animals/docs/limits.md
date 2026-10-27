@@ -7,9 +7,10 @@ the cardinality and the documents feature enforces it on its write path.
 
 ## Commodity rules are set data
 
-Species options, Cow Domestic/Game mapping and obligation allow-lists come from the
-set-owned commodities service. They are stub data in this application and do not
-prove compatibility with an external master-data source.
+Species come from MDM through reference-data. The rules in
+[`rules.js`](../services/commodities/rules.js) are set data: the identifier,
+package-count, permanent-address, unweaned, CPH-exemption and type rules. They must
+match MDM's spelling exactly.
 
 ## Backend notification projections differ
 

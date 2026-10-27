@@ -8,7 +8,6 @@ import {
 import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import * as commodities from '../../../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -22,13 +21,6 @@ export const meta = {
 const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
-
-const asArray = (value) => [value ?? []].flat()
-
-export const isCphApplicable = (answers) =>
-  asArray(answers.commodityLines).some((line) =>
-    commodities.cphCommodities().includes(line?.commoditySelection)
-  )
 
 const hubEntryReturn = (request) => {
   const { honouredSlug } = kit.readReturnMarker(request, ['addresses'])

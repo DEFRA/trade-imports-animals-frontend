@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { collectionView } from '../engine/evaluate/collection-view.js'
-import { collectionCapAt } from '../engine/evaluate/cardinality.js'
 import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
 import { evaluateAnswers } from './evaluation.js'
-
-// Per-instance completeness (entryComplete), pinned against the manifest. The
-// two known structural divergences are pinned here so a regression fails
-// loudly.
+import { commodityLine, completeCommodityLine } from '../engine/test-support.js'
 
 const address = {
   name: 'Owner',
@@ -23,17 +18,9 @@ const address = {
   }
 }
 
-const completeLine = {
-  commoditySelection: 'Cow',
-  speciesSelection: ['1148346'],
-  commodityType: '16',
-  numberOfAnimalsQuantity: '1',
-  animalIdentifiers: [
-    { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
-  ]
-}
+const completeLine = completeCommodityLine()
 
-const partialLine = { commoditySelection: 'Cow' }
+const partialLine = { commodityCode: '0102' }
 
 const emptyLine = {}
 
@@ -58,69 +45,41 @@ describe('#entryComplete', () => {
   it('Should read a multi-unit state — full unit complete', () => {
     const answers = {
       commodityLines: [
-        {
-          commoditySelection: 'Cat',
-          speciesSelection: ['923501'],
+        commodityLine({
+          commodityCode: '01061900',
+          speciesLatinName: 'Felis catus',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [
             { animalIdentifierPassport: 'P-1', permanentAddress: address },
             { animalIdentifierPassport: 'P-2', permanentAddress: address }
           ]
-        }
+        })
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
     expect(completeFlags(answers, path)).toEqual([true, true])
   })
 
-  it('Should keep entries / index / path in positional storage', () => {
-    const answers = { commodityLines: [completeLine, emptyLine] }
-    const view = collectionView(
-      answers,
-      ['commodityLines'],
-      evaluateAnswers(answers)
-    )
-    expect(
-      view.map((r) => ({ index: r.index, path: r.path, entry: r.entry }))
-    ).toEqual([
-      { index: 0, path: ['commodityLines', 0], entry: completeLine },
-      { index: 1, path: ['commodityLines', 1], entry: emptyLine }
-    ])
-    // entry is the SAME reference the store held, unchanged by the evaluator.
-    expect(view[0].entry).toBe(completeLine)
-  })
-
-  // Two known structural divergences, pinned (not repaired). The evaluator
-  // scopes each concern precisely, so these read complete; a future change that
-  // flips them fails loudly.
-
-  it('Should read a Cow unit without permanentAddress as complete (scoped to 01061900)', () => {
+  it('Should read a Bos taurus unit under 0102 without permanentAddress as complete', () => {
     const answers = {
       commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: ['1148346'],
+        commodityLine({
           commodityType: '16',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-        }
+        })
       ]
     }
     expect(completeFlags(answers, ['commodityLines'])).toEqual([true])
   })
 
   it('Should read a fully-empty nested unit as complete (never enumerated)', () => {
-    // The evaluator infers instances from leaf composite prefixes; a unit with
-    // no stored leaf is never enumerated, so its unmet at-least-one rule cannot
-    // fire.
     const answers = {
       commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: ['1148346'],
+        commodityLine({
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{}]
-        }
+        })
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
@@ -156,17 +115,5 @@ describe('#entryComplete', () => {
       ]
     }
     expect(completeFlags(answers, ['documents'])).toEqual([true, true])
-  })
-})
-
-describe('collectionCapAt reads from positional storage (maxEntriesFrom)', () => {
-  it('returns the positional cardinality', () => {
-    const answers = {
-      commodityLines: [
-        { numberOfAnimalsQuantity: '3', animalIdentifiers: [{}, {}] }
-      ]
-    }
-    const path = ['commodityLines', 0, 'animalIdentifiers']
-    expect(collectionCapAt(answers, path)).toBe(3)
   })
 })

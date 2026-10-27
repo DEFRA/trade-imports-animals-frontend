@@ -1,36 +1,29 @@
 import {
-  cphCommodities,
-  unweanedCommodities
+  cphExemptCommodityCodes,
+  unweanedCommodityCodes
 } from '../../../services/commodities/index.js'
-import { anyAllowListed } from '../../../../../model/obligations/helpers/index.js'
+import {
+  anyAllowListed,
+  anyNotInUnionOf
+} from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode } from './lines.js'
 
 const cphReason = {
-  code: 'obligation.cph.applicable.becauseCphCommodity',
+  code: 'obligation.cph.applicable.becauseNotCphExempt',
   explanation:
-    'CPH applies when any commodity line has a CPH-required commodityCode'
+    'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }
-
-// -----------------------------------------------------------------------------
-// CPH — notification-level single, aggregated across commodity lines.
-// -----------------------------------------------------------------------------
 
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'countyParishHoldingCph',
-  applyTo: anyAllowListed(
+  applyTo: anyNotInUnionOf(
     commodityCode,
-    cphCommodities,
+    cphExemptCommodityCodes,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
   )
 }
-
-// -----------------------------------------------------------------------------
-// Contains unweaned animals — notification-level yes/no, gated on the
-// commodities unweanedCommodities() names. Declared after commodityCode
-// because the applyTo closure captures it.
-// -----------------------------------------------------------------------------
 
 const unweanedApplicableReason = {
   code: 'obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity',
@@ -43,7 +36,7 @@ export const containsUnweanedAnimals = {
   name: 'containsUnweanedAnimals',
   applyTo: anyAllowListed(
     commodityCode,
-    unweanedCommodities,
+    unweanedCommodityCodes,
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
   )

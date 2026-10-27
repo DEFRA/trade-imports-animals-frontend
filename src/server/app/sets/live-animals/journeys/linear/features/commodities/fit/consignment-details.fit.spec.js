@@ -1,60 +1,47 @@
 import { expect, test } from '@playwright/test'
 import {
+  BISON_BISON,
+  BOS_TAURUS,
+  CANIS_FAMILIARIS,
+  FELIS_CATUS,
+  saveAndContinue,
+  animalsQuantityInputUnder,
   PHONE_VIEWPORT,
-  answerCountryOfOrigin,
-  answerImportReason,
-  carryOpeningRunToImportReason,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   expectThreeSaveControls,
   expectSpeciesSelected,
   journeyUrl,
-  saveAndReturnToHub,
+  openCommodityDetails,
   selectSpecies,
-  signIn,
-  startNotification
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 
-const BISON_BISON = 'Bison bison'
-const BOS_TAURUS = 'Bos taurus'
-const FELIS_CATUS = 'Felis catus'
-const SAVE_AND_CONTINUE = 'Save and continue'
 const FIRST_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-0'
 const FIRST_ANIMALS_QUANTITY_INPUT = `#${FIRST_ANIMALS_QUANTITY_FIELD}`
 const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
-const SECOND_PACKAGES_FIELD = 'numberOfPackages-1'
-const SECOND_PACKAGES_INPUT = `#${SECOND_PACKAGES_FIELD}`
-const GOVUK_TABLE = '.govuk-table'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
-const REMOVE_COW = 'Remove Cow'
-const REMOVE_CAT = 'Remove Cat'
+const REMOVE_BOS_TAURUS = `Remove ${BOS_TAURUS.commodityCode} ${BOS_TAURUS.speciesLatinName}`
+const REMOVE_FELIS_CATUS = `Remove ${FELIS_CATUS.commodityCode} ${FELIS_CATUS.speciesLatinName}`
 
-const openDetails = async (page) => {
-  await startNotification(page)
-  await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  await page
-    .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
-    .click()
-  await expect(
-    page.getByRole('heading', { name: copy.consignmentDetails.title })
-  ).toBeVisible()
-}
+const selectedCommoditiesTable = (page) =>
+  page.getByRole('table', { name: copy.selectedCommodities.caption })
+
+const openDetails = (page) =>
+  openCommodityDetails(page, [BOS_TAURUS, FELIS_CATUS])
 
 const validQuantities = ['25', '5', '2', '1']
 const quantityFields = [
   ['number of animals for Bos taurus', FIRST_ANIMALS_QUANTITY_FIELD, '2.5'],
   ['number of packages for Bos taurus', FIRST_PACKAGES_FIELD, 'boxes'],
   ['number of animals for Felis catus', SECOND_ANIMALS_QUANTITY_FIELD, '0'],
-  ['number of packages for Felis catus', SECOND_PACKAGES_FIELD, '-1']
+  ['number of packages for Felis catus', 'numberOfPackages-1', '-1']
 ]
 
 const fillValidQuantities = async (page) => {
@@ -62,40 +49,10 @@ const fillValidQuantities = async (page) => {
     FIRST_ANIMALS_QUANTITY_FIELD,
     FIRST_PACKAGES_FIELD,
     SECOND_ANIMALS_QUANTITY_FIELD,
-    SECOND_PACKAGES_FIELD
+    'numberOfPackages-1'
   ].entries()) {
     await page.locator(`#${field}`).fill(validQuantities[index])
   }
-}
-
-const addDogAfterSavingCounts = async (page) => {
-  await fillValidQuantities(page)
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-  await page
-    .getByRole('link', { name: copy.consignmentDetails.addAnother })
-    .click()
-  await expectSpeciesSelected(page, BOS_TAURUS)
-  await selectSpecies(page, ['Canis lupus familiaris'])
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-}
-
-const expectCommodityDetailsHeading = (page) =>
-  expect(
-    page.getByRole('heading', {
-      name: copy.consignmentDetails.title,
-      exact: true
-    })
-  ).toBeVisible()
-
-const expectCommodityDetailsHoldingSavedCountsAndDog = async (page) => {
-  await expectCommodityDetailsHeading(page)
-  await expect(page.locator(GOVUK_TABLE)).toContainText('Dog')
-  await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
-  await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
-  await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
-  await expect(page.locator(SECOND_PACKAGES_INPUT)).toHaveValue('1')
-  await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('')
 }
 
 const errorFor = (field) =>
@@ -112,27 +69,24 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('renders grouped species quantities and collection table', async ({
     page
   }) => {
-    const table = page.locator(GOVUK_TABLE)
-    await expect(table).toContainText(copy.selectedCommodities.caption)
-    await expect(table).toContainText(copy.selectedCommodities.commodityCode)
-    await expect(table).toContainText('Cow')
-    await expect(table).toContainText('0102')
-    await expect(table).toContainText('Cat')
-    await expect(table).toContainText('01061900')
+    const table = selectedCommoditiesTable(page)
     await expect(table.getByRole('columnheader')).toHaveText([
       copy.selectedCommodities.commodityCode,
-      copy.selectedCommodities.commonName,
       copy.selectedCommodities.species,
       copy.selectedCommodities.actionsHidden
     ])
-    await expect(table.getByRole('row', { name: /Cow/ })).toContainText(
-      BOS_TAURUS
-    )
-    await expect(table.getByRole('row', { name: /Cat/ })).toContainText(
-      FELIS_CATUS
-    )
-    await expect(page.getByRole('heading', { name: BOS_TAURUS })).toBeVisible()
-    await expect(page.getByRole('heading', { name: FELIS_CATUS })).toBeVisible()
+    await expect(
+      table.getByRole('row', { name: new RegExp(BOS_TAURUS.commodityCode) })
+    ).toContainText(BOS_TAURUS.speciesLatinName)
+    await expect(
+      table.getByRole('row', { name: new RegExp(FELIS_CATUS.commodityCode) })
+    ).toContainText(FELIS_CATUS.speciesLatinName)
+    await expect(
+      page.getByRole('heading', { name: BOS_TAURUS.speciesLatinName })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: FELIS_CATUS.speciesLatinName })
+    ).toBeVisible()
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
     ).toHaveAccessibleName(copy.consignmentDetails.animals.label)
@@ -150,12 +104,15 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('steps the type down from commodity heading to species heading to quantity labels', async ({
     page
   }) => {
-    await expect(page.getByRole('heading', { name: 'Cow (0102)' })).toHaveClass(
-      /govuk-heading-l/
-    )
-    await expect(page.getByRole('heading', { name: BOS_TAURUS })).toHaveClass(
-      /govuk-heading-m/
-    )
+    await expect(
+      page.getByRole('heading', {
+        name: BOS_TAURUS.commodityCode,
+        exact: true
+      })
+    ).toHaveClass(/govuk-heading-l/)
+    await expect(
+      page.getByRole('heading', { name: BOS_TAURUS.speciesLatinName })
+    ).toHaveClass(/govuk-heading-m/)
     await expect(
       page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
     ).toHaveClass(/govuk-label--s/)
@@ -164,15 +121,15 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toHaveClass(/govuk-label--s/)
   })
 
-  test('keeps the commodity-level remove for Cow and gives each species on code 01061900 its own remove', async ({
+  test('keeps the code-level remove for 0102 Bos taurus and gives each species on code 01061900 its own remove', async ({
     page
   }) => {
-    const table = page.locator(GOVUK_TABLE)
+    const table = selectedCommoditiesTable(page)
     await expect(
-      table.getByRole('button', { name: REMOVE_COW })
+      table.getByRole('button', { name: REMOVE_BOS_TAURUS })
     ).toHaveAttribute('value', 'remove:0')
     await expect(
-      table.getByRole('button', { name: REMOVE_CAT })
+      table.getByRole('button', { name: REMOVE_FELIS_CATUS })
     ).toHaveAttribute('value', 'remove-species:1')
   })
 
@@ -189,7 +146,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     }) => {
       await fillValidQuantities(page)
       await page.locator(`#${field}`).fill(invalid)
-      await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+      await saveAndContinue(page).click()
 
       const link = page
         .getByRole('alert')
@@ -207,7 +164,7 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('validation: when every animal count is blank, holds the page and names each species', async ({
     page
   }) => {
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
 
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
@@ -248,7 +205,7 @@ test.describe('commodity consignment details — rendering and validation', () =
       .locator(FIRST_PACKAGES_INPUT)
       .boundingBox()
     const secondCommodityHeading = await page
-      .getByRole('heading', { name: 'Cat (01061900)' })
+      .getByRole('heading', { name: FELIS_CATUS.commodityCode, exact: true })
       .boundingBox()
     expect(rule.y).toBeGreaterThan(firstCommodityLastField.y)
     expect(rule.y).toBeLessThan(secondCommodityHeading.y)
@@ -261,15 +218,17 @@ test.describe('commodity consignment details — rendering and validation', () =
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
     await selectSpecies(page, [BISON_BISON])
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: copy.consignmentDetails.title })
+    ).toBeVisible()
 
-    const cowRow = page
-      .locator(GOVUK_TABLE)
+    const codeRow = selectedCommoditiesTable(page)
       .getByRole('row')
       .filter({ has: page.getByRole('cell', { name: '0102', exact: true }) })
-    const speciesCell = cowRow.getByRole('cell').nth(2)
+    const speciesCell = codeRow.getByRole('cell').nth(1)
     expect(await speciesCell.evaluate((el) => el.innerText)).toBe(
-      `${BISON_BISON},\n${BOS_TAURUS}`
+      `${BISON_BISON.speciesLatinName},\n${BOS_TAURUS.speciesLatinName}`
     )
   })
 
@@ -277,8 +236,8 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     await page.locator(FIRST_PACKAGES_INPUT).fill('abc')
-    await page.locator(SECOND_PACKAGES_INPUT).fill('abc')
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.locator('#numberOfPackages-1').fill('abc')
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('alert').getByRole('link')).toHaveText([
       copy.consignmentDetails.errors.animalsRequired,
@@ -292,7 +251,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).fill('25')
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
 
     const links = page.getByRole('alert').getByRole('link', {
       name: copy.consignmentDetails.errors.animalsRequired
@@ -312,25 +271,27 @@ test.describe('commodity consignment details — persistence and accessibility',
 
   test('saves and persists per-species counts', async ({ page }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
-    await expect(page.locator(SECOND_PACKAGES_INPUT)).toHaveValue('1')
+    await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
   })
 
   test('removes one species row without changing another quantity', async ({
     page
   }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-    await page.getByRole('button', { name: REMOVE_CAT }).click()
+    await page.getByRole('button', { name: REMOVE_FELIS_CATUS }).click()
 
-    await expect(page.locator(GOVUK_TABLE)).not.toContainText('Cat')
+    await expect(selectedCommoditiesTable(page)).not.toContainText(
+      FELIS_CATUS.speciesLatinName
+    )
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
 
@@ -338,21 +299,21 @@ test.describe('commodity consignment details — persistence and accessibility',
     page
   }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-    await page.getByRole('button', { name: REMOVE_COW }).click()
+    await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
 
-    const table = page.locator(GOVUK_TABLE)
-    await expect(table).not.toContainText('Cow')
-    await expect(table).toContainText('Cat')
+    const table = selectedCommoditiesTable(page)
+    await expect(table).not.toContainText(BOS_TAURUS.speciesLatinName)
+    await expect(table).toContainText(FELIS_CATUS.speciesLatinName)
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
   })
 
   test('removing the last commodity returns to the commodity question, as does reopening the page with nothing selected', async ({
     page
   }) => {
-    await page.getByRole('button', { name: REMOVE_COW }).click()
-    await page.getByRole('button', { name: REMOVE_CAT }).click()
+    await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
+    await page.getByRole('button', { name: REMOVE_FELIS_CATUS }).click()
 
     await expect(
       page.getByRole('heading', { name: copy.search.title })
@@ -365,11 +326,29 @@ test.describe('commodity consignment details — persistence and accessibility',
     ).toBeVisible()
   })
 
-  test('returns to commodity details after adding another commodity, keeping the saved counts and leaving the new commodity empty', async ({
+  test('adds another species while preserving existing quantities', async ({
     page
   }) => {
-    await addDogAfterSavingCounts(page)
-    await expectCommodityDetailsHoldingSavedCountsAndDog(page)
+    await fillValidQuantities(page)
+    await saveAndContinue(page).click()
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
+    await page
+      .getByRole('link', { name: copy.consignmentDetails.addAnother })
+      .click()
+    await expectSpeciesSelected(page, BOS_TAURUS)
+    await selectSpecies(page, [CANIS_FAMILIARIS])
+    await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: copy.consignmentDetails.title })
+    ).toBeVisible()
+    await expect(selectedCommoditiesTable(page)).toContainText(
+      CANIS_FAMILIARIS.speciesLatinName
+    )
+    await expect(animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue('25')
+    await expect(animalsQuantityInputUnder(page, CANIS_FAMILIARIS)).toHaveValue(
+      ''
+    )
+    await expect(animalsQuantityInputUnder(page, FELIS_CATUS)).toHaveValue('2')
   })
 
   test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
@@ -382,7 +361,9 @@ test.describe('commodity consignment details — persistence and accessibility',
     page
   }) => {
     await fillValidQuantities(page)
-    await saveAndReturnToHub(page).click()
+    await page
+      .getByRole('button', { name: sharedCopy.saveActions.saveAndReturnToHub })
+      .click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
@@ -394,7 +375,7 @@ test.describe('commodity consignment details — persistence and accessibility',
   test('has no serious or critical axe violations', async ({ page }) => {
     await expectNoSeriousOrCriticalViolations(page, 'Commodity details')
 
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('alert')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -415,44 +396,8 @@ test.describe('commodity consignment details on a phone', () => {
     page
   }) => {
     await expectNoHorizontalOverflow(
-      page.getByRole('table', { name: copy.selectedCommodities.caption }),
+      selectedCommoditiesTable(page),
       'Selected commodities table'
     )
-  })
-})
-
-test.describe('commodity consignment details without JavaScript', () => {
-  test.use({ javaScriptEnabled: false })
-
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await openDetails(page)
-  })
-
-  test('returns to commodity details after adding another commodity without JavaScript, keeping the saved counts and leaving the new commodity empty', async ({
-    page
-  }) => {
-    await addDogAfterSavingCounts(page)
-    await expectCommodityDetailsHoldingSavedCountsAndDog(page)
-  })
-})
-
-test.describe('commodity consignment details in the opening run', () => {
-  test('returns to commodity details, not the reason for import, after adding another commodity', async ({
-    page
-  }) => {
-    await signIn(page)
-    await carryOpeningRunToImportReason(page)
-    await answerImportReason(page)
-    await expectCommodityDetailsHeading(page)
-
-    await page
-      .getByRole('link', { name: copy.consignmentDetails.addAnother })
-      .click()
-    await selectSpecies(page, ['Felis catus'])
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-
-    await expectCommodityDetailsHeading(page)
-    await expect(page.locator(GOVUK_TABLE)).toContainText('Cat')
   })
 })

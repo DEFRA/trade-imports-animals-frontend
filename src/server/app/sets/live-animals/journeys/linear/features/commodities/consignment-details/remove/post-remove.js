@@ -3,34 +3,36 @@ import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { commoditiesPage, consignmentDetailsPage as page } from '../../page.js'
-import { commodityNamesOf, linesOf } from '../../lines.js'
+import { consignmentDetailsPage as page } from '../../page.js'
+import { commodityCodesOf, entriesNotOfCode, linesOf } from '../../lines.js'
+import { redirectEmptyLinesToCommodityQuestion } from '../empty-lines-redirect.js'
 
-export const groupNames = (answers, evaluation) =>
-  commodityNamesOf(linesOf(answers, evaluation))
+export const groupCodes = (answers, evaluation) =>
+  commodityCodesOf(linesOf(answers, evaluation))
 
-const afterRemoval = (request, h, kept) =>
-  h.redirect(
+const afterRemoval = (request, h, kept) => {
+  if (kept.length === 0) {
+    return redirectEmptyLinesToCommodityQuestion(request, h, {
+      commodityCodeCount: 0
+    })
+  }
+  return h.redirect(
     kit.withChangeContext(
       request,
-      pagePath(
-        request.params.journeyId,
-        kept.length > 0 ? page.slug : commoditiesPage.slug
-      )
+      pagePath(request.params.journeyId, page.slug)
     )
   )
+}
 
 export const postRemove = async (request, h, index, lineKey) => {
   const { answers, evaluation } = await state.get(request, h)
-  const name = groupNames(answers, evaluation)[index]
-  if (name === undefined) {
+  const code = groupCodes(answers, evaluation)[index]
+  if (code === undefined) {
     kit.logRefusal(request, { reason: 'no-commodity-at-index', index })
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const kept = (answers.commodityLines ?? []).filter(
-    (entry) => entry.commoditySelection !== name
-  )
+  const kept = entriesNotOfCode(answers.commodityLines ?? [], code)
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
   return afterRemoval(request, h, kept)
 }
@@ -41,9 +43,13 @@ export const postRemoveSpecies = async (request, h, index, lineKey) => {
   const line = stored[index]
   if (
     line === undefined ||
-    !commodities.speciesListedIndividually(line.commoditySelection)
+    !commodities.listsSpeciesIndividually(line.commodityCode)
   ) {
-    kit.logRefusal(request, { reason: 'no-species-at-index', index })
+    kit.logRefusal(request, {
+      reason: 'no-species-at-index',
+      index,
+      commodityCode: line?.commodityCode
+    })
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 

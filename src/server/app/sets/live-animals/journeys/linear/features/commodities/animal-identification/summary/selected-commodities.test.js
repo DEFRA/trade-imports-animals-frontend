@@ -2,32 +2,38 @@ import { describe, expect, it } from 'vitest'
 
 import { buildSelectedCommodities } from './selected-commodities.js'
 import { commodityLinesFixture } from '../../test-support.js'
-
-const BOS_TAURUS = '1148346'
-const BISON_BISON = '716661'
-const BOS_TAURUS_LATIN = 'Bos taurus'
+import {
+  BISON_BISON,
+  BISON_BISON_ROW,
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS,
+  CANIS_FAMILIARIS_ROW,
+  FELIS_CATUS,
+  FELIS_CATUS_ROW,
+  STRUTHIO,
+  STRUTHIO_ROW
+} from '../../search/test-support.js'
 
 describe('#buildSelectedCommodities', () => {
-  it('Should give a commodity one row listing every species under it and the total of their animals', () => {
+  it('Should give a code one row listing every species under it and the total of their animals', () => {
     expect(
       buildSelectedCommodities(
         commodityLinesFixture(
-          ['Cow', BOS_TAURUS, 2],
-          ['Cow', BISON_BISON, 5],
-          ['Fish', '801204', 1]
+          [BOS_TAURUS_ROW, 2],
+          [BISON_BISON_ROW, 5],
+          [STRUTHIO_ROW, 1]
         )
       )
     ).toEqual([
       {
         code: '0102',
-        name: 'Cow',
-        latinNames: [BOS_TAURUS_LATIN, 'Bison bison'],
+        latinNames: [BOS_TAURUS, BISON_BISON],
         animals: '7'
       },
       {
-        code: '0301',
-        name: 'Fish',
-        latinNames: ['Salmo salar'],
+        code: '01063300',
+        latinNames: [STRUTHIO],
         animals: '1'
       }
     ])
@@ -36,66 +42,46 @@ describe('#buildSelectedCommodities', () => {
   it('Should read the declared count as text whether it was stored as a number or re-rendered as an entered string', () => {
     expect(
       buildSelectedCommodities(
-        commodityLinesFixture(['Cow', BOS_TAURUS, 25], ['Fish', '801204', '7'])
+        commodityLinesFixture([BOS_TAURUS_ROW, 25], [STRUTHIO_ROW, '7'])
       ).map(({ animals }) => animals)
     ).toEqual(['25', '7'])
   })
 
-  it('Should give an empty animals count for a commodity whose lines have no count yet', () => {
+  it('Should give an empty animals count for a code whose lines have no count yet', () => {
     expect(
-      buildSelectedCommodities(
-        commodityLinesFixture(['Cow', BOS_TAURUS, undefined])
-      )
+      buildSelectedCommodities(commodityLinesFixture([BOS_TAURUS_ROW]))
     ).toEqual([
       {
         code: '0102',
-        name: 'Cow',
-        latinNames: [BOS_TAURUS_LATIN],
+        latinNames: [BOS_TAURUS],
         animals: ''
       }
     ])
   })
 
-  it('Should give each species of a commodity on code 01061900 its own row counted on its own', () => {
+  it('Should give each species on code 01061900 its own row counted on its own', () => {
     expect(
       buildSelectedCommodities(
-        commodityLinesFixture(['Dog', '923502', 1], ['Cat', '923501', 4])
-      ).map(({ code, name, latinNames, animals }) => [
-        code,
-        name,
-        latinNames,
-        animals
-      ])
+        commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
+      ).map(({ code, latinNames, animals }) => [code, latinNames, animals])
     ).toEqual([
-      ['01061900', 'Dog', ['Canis lupus familiaris'], '1'],
-      ['01061900', 'Cat', ['Felis catus'], '4']
+      ['01061900', [CANIS_FAMILIARIS], '1'],
+      ['01061900', [FELIS_CATUS], '4']
     ])
   })
 
-  it('Should total only the counted lines of a commodity', () => {
+  it('Should total only the counted lines of a code', () => {
     expect(
       buildSelectedCommodities(
-        commodityLinesFixture(
-          ['Cow', BOS_TAURUS, '2'],
-          ['Cow', BISON_BISON, '']
-        )
+        commodityLinesFixture([BOS_TAURUS_ROW, '2'], [BISON_BISON_ROW, ''])
       )
     ).toEqual([
       {
         code: '0102',
-        name: 'Cow',
-        latinNames: [BOS_TAURUS_LATIN, 'Bison bison'],
+        latinNames: [BOS_TAURUS, BISON_BISON],
         animals: '2'
       }
     ])
-  })
-
-  it('Should leave the code blank for a commodity the catalogue holds no code for', () => {
-    expect(
-      buildSelectedCommodities(
-        commodityLinesFixture(['Unlisted', '999999', 1])
-      ).map(({ code }) => code)
-    ).toEqual([''])
   })
 
   it('Should build no rows for an empty selection', () => {
