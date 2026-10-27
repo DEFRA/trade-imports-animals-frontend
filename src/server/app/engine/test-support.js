@@ -376,9 +376,9 @@ export const useStubbedJourney = (setId, dispatchPages) => {
     configureSession(setId, sessionStub)
     buildDispatch(setId, dispatchPages)
   })
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(setId, recordsStub)
-    store.clear()
+    await store.clear()
   })
 }
 
