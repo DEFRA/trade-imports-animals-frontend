@@ -119,11 +119,6 @@ export {
   unitRecord
 }
 
-// -----------------------------------------------------------------------------
-// Manifest — order does not affect evaluation (evaluator builds group
-// hierarchy via `within` back-references).
-// -----------------------------------------------------------------------------
-
 export const obligations = [
   poApprovedReferenceNumber,
   countryOfOrigin,
@@ -177,7 +172,6 @@ export const obligations = [
   documentFilename
 ]
 
-// Groups are obligations that other obligations reference via `within`.
 export const groups = obligations.filter((obligation) =>
   obligations.some((other) => other.within === obligation)
 )

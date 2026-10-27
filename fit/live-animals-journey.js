@@ -30,6 +30,13 @@ export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
 
+export const BISON_BISON = BISON_BISON_ROW
+export const BOS_TAURUS = BOS_TAURUS_ROW
+export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
+export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
+export const FELIS_CATUS = FELIS_CATUS_ROW
+export const STRUTHIO = STRUTHIO_ROW
+
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
   violation.nodes.every((node) =>
@@ -551,39 +558,24 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-const species = ({ commodityCode, speciesLatinName }) => ({
-  commodityCode,
-  latinName: speciesLatinName
-})
-
-export const BISON_BISON = species(BISON_BISON_ROW)
-export const BOS_TAURUS = species(BOS_TAURUS_ROW)
-export const EQUUS_CABALUS = species(EQUUS_CABALUS_ROW)
-export const FELIS_CATUS = species(FELIS_CATUS_ROW)
-export const CANIS_FAMILIARIS = species(CANIS_FAMILIARIS_ROW)
-export const STRUTHIO = species(STRUTHIO_ROW)
-
-export const SAVE_AND_CONTINUE = 'Save and continue'
-
-const tickSpecies = (page, { commodityCode, latinName }) =>
+const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
   page
     .getByRole('group', { name: commodityCode })
-    .getByRole('checkbox', { name: latinName, exact: true })
+    .getByRole('checkbox', { name: speciesLatinName, exact: true })
     .check()
 
 export const selectSpecies = async (page, speciesToSelect) => {
   for (const chosen of speciesToSelect) {
-    await searchCommodities(page, chosen.latinName)
+    await searchCommodities(page, chosen.speciesLatinName)
     await tickSpecies(page, chosen)
   }
 }
 
-export const animalsQuantityInputUnder = (page, { latinName }) =>
+export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
   page
-    .getByRole('heading', { level: 3, name: latinName })
-    .locator(
-      'xpath=following::input[starts-with(@id, "numberOfAnimalsQuantity")][1]'
-    )
+    .getByRole('heading', { level: 3, name: speciesLatinName })
+    .locator('+ .govuk-form-group')
+    .getByLabel('Number of animals')
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -597,7 +589,7 @@ export const openCommoditySearch = async (page) => {
 export const openCommodityDetails = async (page, speciesToSelect) => {
   await openCommoditySearch(page)
   await selectSpecies(page, speciesToSelect)
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page
     .getByRole('link', { name: 'Commodity details', exact: true })
@@ -607,8 +599,18 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
-export const expectSpeciesSelected = async (page, name) =>
-  expect(page.locator('#commodity-selection')).toContainText(name)
+export const expectSpeciesSelected = async (
+  page,
+  { commodityCode, speciesLatinName }
+) =>
+  expect(
+    page
+      .getByRole('heading', { name: /\d+ selected/ })
+      .locator('+ ul')
+      .getByRole('listitem')
+      .filter({ hasText: `${commodityCode}:` })
+      .filter({ hasText: speciesLatinName })
+  ).toBeVisible()
 
 export const unlockSections = async (page, chosen = FELIS_CATUS) => {
   await answerCountryOfOrigin(page)

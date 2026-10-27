@@ -49,9 +49,14 @@ describe('increment 0 golden boundary characterisation', () => {
     )
   )(
     'Should send the first commodity line CN code as the commodity name for $name',
-    ({ name, answers }) => {
+    ({ answers }) => {
       const firstLineCode = answers.commodityLines[0].commodityCode
-      expect(oracles[name].mapperA.commodity.name).toBe(firstLineCode)
+      expect(
+        fulfilmentToNotification(
+          assembleFulfilments(answers),
+          answers.referenceNumber
+        ).commodity.name
+      ).toBe(firstLineCode)
     }
   )
 

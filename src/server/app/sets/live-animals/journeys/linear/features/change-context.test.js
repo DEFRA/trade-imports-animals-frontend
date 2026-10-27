@@ -22,8 +22,8 @@ import * as consignmentDetails from './commodities/consignment-details/consignme
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
 import { lineKey } from './commodities/search/selection/line-key.js'
-import { SHOWN_SEARCH_ROWS } from './commodities/search/selection/rows.js'
-import { FELIS_CATUS_ROW } from './commodities/search/test-support.js'
+import { STORED_SEARCH_ROWS } from './commodities/search/selection/rows.js'
+import { FELIS_CATUS_ROW, lineOf } from './commodities/search/test-support.js'
 import { driveReturnFromUpload } from './documents/test-support.js'
 
 const change = { change: '1' }
@@ -32,14 +32,7 @@ const IMPLICIT_SUBMIT = 'implicit-submit'
 const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 
 const lineSeed = {
-  commodityLines: [
-    {
-      commodityCode: '01061900',
-      speciesLatinName: 'Felis catus',
-      numberOfAnimalsQuantity: '',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(FELIS_CATUS_ROW)]
 }
 
 const savableLineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
@@ -86,7 +79,7 @@ describe('change context — context survives the internal loop navigation', () 
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
-        flowOnly: { [SHOWN_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
+        flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
         payload: { species: [lineKey(FELIS_CATUS_ROW)] },
         query: change
       }

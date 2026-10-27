@@ -20,7 +20,7 @@ import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 
 import * as search from './search.controller.js'
 import { lineKey } from './selection/line-key.js'
-import { SHOWN_SEARCH_ROWS } from './selection/rows.js'
+import { STORED_SEARCH_ROWS } from './selection/rows.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
@@ -38,10 +38,10 @@ const FELIS_CATUS_KEY = lineKey(FELIS_CATUS_ROW)
 const SELECT_COMMODITY = 'Select a commodity'
 const UNLISTED_RETURN = 'https://example.test/elsewhere'
 
-const searchRowsShownEarlier = (...rows) => ({ [SHOWN_SEARCH_ROWS]: rows })
+const searchRowsShownEarlier = (...rows) => ({ [STORED_SEARCH_ROWS]: rows })
 
 const storedSearchRowsOf = (result) =>
-  result.cookies[flowOnlyAnswersCookie()][result.journeyId][SHOWN_SEARCH_ROWS]
+  result.cookies[flowOnlyAnswersCookie()][result.journeyId][STORED_SEARCH_ROWS]
 
 const searchFor = (commoditySearch, payload = {}, flowOnly = undefined) =>
   driveHandler(post, {
@@ -178,7 +178,7 @@ describe('commodity search', () => {
     expect(unticked.view.context.selectedSummary.count).toBe(0)
   })
 
-  it("Should store this search's rows beside the rows already shown, until the page saves", async () => {
+  it("Should store this search's rows beside the rows already shown", async () => {
     const result = await searchFor(
       'ferret',
       { selection: BOS_TAURUS_KEY },
@@ -205,7 +205,7 @@ describe('commodity search', () => {
 
     const saved = await driveHandler(post, {
       payload: { species: BOS_TAURUS_KEY },
-      flowOnly: { [SHOWN_SEARCH_ROWS]: storedSearchRowsOf(later) }
+      flowOnly: { [STORED_SEARCH_ROWS]: storedSearchRowsOf(later) }
     })
     expect(keysOf(saved.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
   })
@@ -316,20 +316,29 @@ describe('commodity search — saving the selection', () => {
     })
   })
 
-  it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
+  it('Should refuse nothing chosen on Save and return to overview with the same error as Save and continue', async () => {
     const result = await driveHandler(post, { payload: { exit: 'hub' } })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.view).toBeUndefined()
-    expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
+    })
+    expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [search.SEARCH_FIELD]
+    })
   })
 
-  it('Should empty a saved selection on Save and return to overview with nothing chosen', async () => {
+  it('Should leave the saved selection unchanged when Save and return to overview is refused with nothing chosen', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [BOS_TAURUS_ROW] },
       payload: { exit: 'hub' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      [search.SEARCH_FIELD]: SELECT_COMMODITY
+    })
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should clear a saved unweaned answer when the new choice holds only 01061900 species', async () => {
@@ -443,7 +452,7 @@ describe('commodity search — saving the selection', () => {
     ])
   })
 
-  it('Should save a species MDM gives no common name without a speciesCommonName key', async () => {
+  it('Should save a species with no common name without a speciesCommonName key', async () => {
     const unnamedRow = {
       commodityCode: '01061900',
       speciesLatinName: 'Carnivora excluding Canis familiaris',

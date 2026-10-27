@@ -9,6 +9,7 @@ import { copy as transportCopy } from '../src/server/app/sets/live-animals/journ
 import {
   addDocument,
   BASE,
+  BOS_TAURUS,
   FELIS_CATUS,
   STRUTHIO,
   answerAdditionalDetails,
@@ -156,7 +157,7 @@ test.describe('live-animals journey glue', () => {
 
     await followBack(page)
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
-    await expectSpeciesSelected(page, 'Bos taurus')
+    await expectSpeciesSelected(page, BOS_TAURUS)
 
     await saveAndContinue()
     await expect(exactHeading(page, importReasonCopy.title)).toBeVisible()
@@ -181,7 +182,7 @@ test.describe('live-animals journey glue', () => {
     await followBack(page)
 
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
-    await expectSpeciesSelected(page, 'Bos taurus')
+    await expectSpeciesSelected(page, BOS_TAURUS)
   })
 
   test('in the opening run, Back from Additional details opens Identification details when a chosen species needs identifiers', async ({

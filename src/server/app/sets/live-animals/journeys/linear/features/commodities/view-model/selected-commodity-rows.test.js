@@ -22,6 +22,23 @@ const leadingCells = [
 ]
 
 describe('#buildRemovableCommoditiesTable', () => {
+  it('Should escape a Latin name that contains HTML characters in the species cell', () => {
+    const table = buildRemovableCommoditiesTable(
+      [
+        {
+          code: '01061900',
+          latinNames: ['Felis <catus> & friends'],
+          removeAction: 'remove-species:0'
+        }
+      ],
+      headings,
+      { remove: 'Remove' }
+    )
+
+    expect(table.rows[0][1].html).toBe('Felis &lt;catus&gt; &amp; friends')
+    expect(table.rows[0][1].html).not.toContain('<catus>')
+  })
+
   it('Should end each row with a Remove button named for its code and species', () => {
     const table = buildRemovableCommoditiesTable(
       [

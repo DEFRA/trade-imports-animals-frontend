@@ -3,22 +3,26 @@ import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { commoditiesPage, consignmentDetailsPage as page } from '../../page.js'
+import { consignmentDetailsPage as page } from '../../page.js'
 import { commodityCodesOf, entriesNotOfCode, linesOf } from '../../lines.js'
+import { redirectEmptyLinesToCommodityQuestion } from '../empty-lines-redirect.js'
 
 export const groupCodes = (answers, evaluation) =>
   commodityCodesOf(linesOf(answers, evaluation))
 
-const afterRemoval = (request, h, kept) =>
-  h.redirect(
+const afterRemoval = (request, h, kept) => {
+  if (kept.length === 0) {
+    return redirectEmptyLinesToCommodityQuestion(request, h, {
+      commodityCodeCount: 0
+    })
+  }
+  return h.redirect(
     kit.withChangeContext(
       request,
-      pagePath(
-        request.params.journeyId,
-        kept.length > 0 ? page.slug : commoditiesPage.slug
-      )
+      pagePath(request.params.journeyId, page.slug)
     )
   )
+}
 
 export const postRemove = async (request, h, index, lineKey) => {
   const { answers, evaluation } = await state.get(request, h)

@@ -75,7 +75,7 @@ export const PERMANENT_ADDRESS_CODE_SPECIES = Object.entries(
   latinNames.map((latinName) => [code, latinName])
 )
 
-export const UNWEANED_CODES = [CATTLE_CODE, SWINE_CODE]
+export const UNWEANED_CODES = [CATTLE_CODE]
 
 export const CPH_EXEMPT_CODES = [HORSES_CODE, OTHER_LIVE_MAMMALS_CODE]
 
@@ -83,7 +83,7 @@ const DOMESTIC = { id: '16', text: 'Domestic' }
 const GAME = { id: '24', text: 'Game' }
 const SINGLE_TYPE = { id: '2', text: '' }
 
-const GAME_SPECIES = new Set(['Bos spp.'])
+const GAME_SPECIES = new Set(['Bos sp.', 'Bos spp.'])
 
 const TYPES_BY_CODE = {
   [CATTLE_CODE]: {

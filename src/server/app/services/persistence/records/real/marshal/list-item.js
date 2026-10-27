@@ -1,8 +1,5 @@
 import { mapStatus } from '../status.js'
 
-/** Maps one NotificationDto from the backend's /notifications list to the
- * engine-facing row the dashboard consumes. The journeyId is the
- * notification's referenceNumber. */
 export const marshalListItem = (notification) => ({
   journeyId: notification.referenceNumber,
   status: mapStatus(notification.status),

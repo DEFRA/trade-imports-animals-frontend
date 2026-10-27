@@ -11,9 +11,7 @@ import { copy as cy } from '../documents/copy/copy.cy.js'
 import { copy as reviewEn } from './copy/copy.en.js'
 import { copy as reviewCy } from './copy/copy.cy.js'
 import { linesWithUnlistedSpecies } from '../../../../services/commodities/species-check.js'
-import { createLogger } from '../../../../../../../common/helpers/logging/logger.js'
 
-const logger = createLogger()
 const documentsCopy = copyFor({ en, cy })
 const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
 
@@ -25,18 +23,18 @@ const chosenSpecies = (answers) =>
       latinName: line.speciesLatinName
     }))
 
-export const speciesCardErrors = async (journey, answers, { refused }) => {
+const draftUnlistedSpecies = async (journey, answers, { refused }) => {
   if (!refused || journey.status !== state.DRAFT) {
-    return {}
+    return []
   }
-  const unlisted = await linesWithUnlistedSpecies(chosenSpecies(answers))
+  return linesWithUnlistedSpecies(chosenSpecies(answers))
+}
+
+export const speciesCardErrors = async (journey, answers, options) => {
+  const unlisted = await draftUnlistedSpecies(journey, answers, options)
   if (unlisted.length === 0) {
     return {}
   }
-  logger.warn(
-    { journeyId: journey.journeyId, unlisted },
-    'Draft refused: reference data no longer lists a chosen species'
-  )
   const speciesWithCodes = unlisted
     .map(({ code, latinName }) => `${latinName} (${code})`)
     .join(', ')
@@ -105,8 +103,15 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(await documentScanCardErrors(request, answers)).length > 0) {
     return true
   }
-  const speciesErrors = await speciesCardErrors(journey, answers, {
+  const unlisted = await draftUnlistedSpecies(journey, answers, {
     refused: true
   })
-  return Object.keys(speciesErrors).length > 0
+  if (unlisted.length === 0) {
+    return false
+  }
+  request.logger.warn(
+    { journeyId: journey.journeyId, unlisted },
+    'Draft refused: reference data no longer lists a chosen species'
+  )
+  return true
 }

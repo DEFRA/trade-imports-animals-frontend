@@ -1,14 +1,9 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   crumbProtectedServerMounting,
   driveHandler,
@@ -53,6 +48,8 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
+const EMPTY_DETAILS_REDIRECT_LOG =
+  'Consignment details has no commodities, commodity question shown'
 const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
@@ -154,12 +151,7 @@ const contextOf = async (seed) => {
 }
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it("Should save each line's own quantities, keeping a package count only where the commodity takes one", async () => {
     const result = await driveHandler(post, {
@@ -182,7 +174,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect('numberOfPackages' in lines[2]).toBe(false)
   })
 
-  it('Should re-render a non-numeric quantity against its own line and save nothing, and log the refusal', async () => {
+  it('Should re-render a non-numeric quantity against its own line and save nothing', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -226,7 +218,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     })
   })
 
-  it('Should save a count equal to or above the identifier-record count', async () => {
+  it('Should save a count equal to the identifier-record count', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
@@ -259,6 +251,10 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(groups[0].showPackages).toBe(true)
     expect(groups[1].showPackages).toBe(false)
   })
+})
+
+describe('#consignmentDetailsController — remove and empty-selection redirects', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should remove every line of a commodity on the remove POST, leaving other commodities intact', async () => {
     const result = await driveHandler(post, {
@@ -288,6 +284,13 @@ describe('#consignmentDetailsController — per-species quantities over every li
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
@@ -298,6 +301,13 @@ describe('#consignmentDetailsController — per-species quantities over every li
       redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
     })
     expect(result.view).toBeUndefined()
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
@@ -360,12 +370,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
 })
 
 describe('#consignmentDetailsController — commodities on code 01061900 are listed species by species', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should list each chosen species on code 01061900 as its own row, and every other code as one row', async () => {
     const { selectedRows } = await contextOf(seedPerSpeciesLines())
@@ -439,6 +444,13 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should refuse a species remove aimed at a commodity the page lists as one row, and delete nothing', async () => {
@@ -450,7 +462,8 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
-      index: 0
+      index: 0,
+      commodityCode: '0102'
     })
     expect(result.after).toEqual(seed)
   })
@@ -485,12 +498,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
 })
 
 describe('#consignmentDetailsController — the animal count must be answered before the page saves', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should hold the page on a blank count rather than saving the blank, leaving the stored count and its identifier records alone', async () => {
     const seed = {

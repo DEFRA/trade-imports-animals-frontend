@@ -1,11 +1,11 @@
-import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { commoditiesPage, consignmentDetailsPage as page } from '../page.js'
+import { consignmentDetailsPage as page } from '../page.js'
+import { redirectEmptyLinesToCommodityQuestion } from './empty-lines-redirect.js'
 import { commodityQuestionHref } from '../commodity-question-detour.js'
 import { lineKey } from '../search/search.controller.js'
 import { copy as en } from '../copy/copy.en.js'
@@ -73,14 +73,6 @@ const render = async ({
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-const redirectToCommodityQuestion = (request, h) =>
-  h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, commoditiesPage.slug)
-    )
-  )
-
 const renderRefusal = async (renderOptions) =>
   (await render(renderOptions)).code(HTTP_STATUS_BAD_REQUEST)
 
@@ -89,7 +81,9 @@ const get = async (request, h) => {
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
-    return redirectToCommodityQuestion(request, h)
+    return redirectEmptyLinesToCommodityQuestion(request, h, {
+      commodityCodeCount: 0
+    })
   }
   return render({
     request,

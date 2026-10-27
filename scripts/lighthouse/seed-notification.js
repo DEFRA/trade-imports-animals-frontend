@@ -93,7 +93,7 @@ const BEFORE_REASON = [
   ...values.commodityLines.map((line) => ({
     slug: 'commodities',
     fields: { commoditySearch: line.speciesLatinName, action: 'search' },
-    answersWith: HTTP_OK
+    expectedStatus: HTTP_OK
   })),
   {
     slug: 'commodities',
@@ -274,7 +274,7 @@ export const fillNotification = async (client, journeyId, shape) => {
       throw new Error(`Seed step ${step.slug} did not render (${page.status})`)
     }
     const posted = await client.submit(path, fieldsFor(step, page), page.crumb)
-    if (posted.status !== (step.answersWith ?? HTTP_FOUND)) {
+    if (posted.status !== (step.expectedStatus ?? HTTP_FOUND)) {
       throw new Error(
         `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
           'fields have moved on from what this seed sends'

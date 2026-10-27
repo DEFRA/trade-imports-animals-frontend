@@ -13,7 +13,7 @@ describe('#appliesForGateValue', () => {
     ).toBe(true)
   })
 
-  it('Should not apply permanentAddress for the species Felis catus under another code', () => {
+  it('Should not apply permanentAddress for the species Felis catus under 0102', () => {
     expect(
       appliesForGateValue('permanentAddress', ['0102', 'Felis catus'])
     ).toBe(false)

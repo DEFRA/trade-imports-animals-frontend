@@ -16,6 +16,7 @@ import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 import {
+  BISON_BISON,
   BOS_TAURUS,
   FELIS_CATUS
 } from '../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
@@ -200,7 +201,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       })
       await reconcileLines([
         { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
-        { commodityCode: '0102', speciesLatinName: 'Bison bison' }
+        { commodityCode: '0102', speciesLatinName: BISON_BISON }
       ])
       const lines = (await answersNow()).commodityLines
       expect(lines).toHaveLength(2)
@@ -209,7 +210,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       ])
       expect(lines[1]).toEqual({
         commodityCode: '0102',
-        speciesLatinName: 'Bison bison'
+        speciesLatinName: BISON_BISON
       })
     })
 

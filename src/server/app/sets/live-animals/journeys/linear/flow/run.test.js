@@ -1,8 +1,8 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import {
   animalIdentificationPage,
@@ -31,7 +31,10 @@ import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { nextRunTarget, previousRunTarget, RUN_STEPS } from './run.js'
 import { allFlowPages } from './flow.js'
-import { STRUTHIO_ROW } from '../features/commodities/search/test-support.js'
+import {
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
 const JOURNEY_ID = 'journey-1'
 const next = (stepId, answers) =>
@@ -39,16 +42,10 @@ const next = (stepId, answers) =>
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [
-    { commodityCode: '01061900', speciesLatinName: 'Felis catus' }
-  ]
+  commodityLines: [FELIS_CATUS_ROW]
 }
 
-// A whole notification, so the tail of the run can be walked with every later
-// question already answerable and the review page open.
-const { values: completeSeed } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const completeSeed = completeNotification()
 
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {

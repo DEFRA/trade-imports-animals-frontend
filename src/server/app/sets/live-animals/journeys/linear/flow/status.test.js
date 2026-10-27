@@ -1,8 +1,8 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { makeScopeFromEvaluation } from '../../../../../bridge/scope.js'
 import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
@@ -20,13 +20,15 @@ import {
   FULFILLED,
   OPTIONAL
 } from '../../../../../bridge/status/index.js'
-import { BOS_TAURUS } from '../features/commodities/search/test-support.js'
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
-const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const happyPath = completeNotification()
 
-// Row order is taskRows order; section order is answerSections order.
 const cases = {
   'a blank journey': {
     answers: {},
@@ -86,13 +88,10 @@ const cases = {
     ],
     ready: false
   },
-  // The identification row reads Completed from the first line onwards: a
-  // consignment of one identified species is asked for no identifier at all,
-  // so the row owes nothing even before anything is entered on it.
-  'a partial single-line journey': {
+  'a partial single-line journey with identifiers fulfilled with no records': {
     answers: {
       countryOfOrigin: 'FR',
-      commodityLines: [{ commodityCode: '0102' }]
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
     },
     rows: [
       IN_PROGRESS,
@@ -126,8 +125,7 @@ const cases = {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commodityCode: '0102',
-          speciesLatinName: BOS_TAURUS,
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
@@ -278,20 +276,18 @@ describe('statusOf — the commodities/identification facet split', () => {
     only: ['animalIdentifiers']
   }
 
-  // [answers, exceptIdentifiers status, onlyIdentifiers status]
-  // A consignment of ONE identified commodity line owes no identifier at all,
-  // so the identifiers facet reads Completed from the first line onwards. A
-  // second identified commodity line is what turns it back into outstanding
-  // work.
   const facetCases = [
     [{}, NOT_STARTED, NOT_STARTED],
-    [{ commodityLines: [{ commodityCode: '0102' }] }, IN_PROGRESS, FULFILLED],
+    [
+      { commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }] },
+      IN_PROGRESS,
+      FULFILLED
+    ],
     [
       {
         commodityLines: [
           {
-            commodityCode: '0102',
-            speciesLatinName: BOS_TAURUS,
+            ...BOS_TAURUS_ROW,
             commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
@@ -302,7 +298,10 @@ describe('statusOf — the commodities/identification facet split', () => {
     ],
     [
       {
-        commodityLines: [{ commodityCode: '0102' }, { commodityCode: '0101' }]
+        commodityLines: [
+          { commodityCode: BOS_TAURUS_ROW.commodityCode },
+          { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
+        ]
       },
       IN_PROGRESS,
       NOT_STARTED
@@ -311,7 +310,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commodityCode: '0102',
+            commodityCode: BOS_TAURUS_ROW.commodityCode,
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           }
         ]
@@ -323,8 +322,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commodityCode: '01061900',
-            speciesLatinName: 'Felis catus',
+            ...FELIS_CATUS_ROW,
             animalIdentifiers: [
               {
                 permanentAddress: {
@@ -367,8 +365,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   }
 
   const cowLine = (quantity, identifiers) => ({
-    commodityCode: '0102',
-    speciesLatinName: BOS_TAURUS,
+    ...BOS_TAURUS_ROW,
     numberOfAnimalsQuantity: quantity,
     animalIdentifiers: identifiers
   })
@@ -391,7 +388,10 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   it('Should block the identifiers facet while a second identified species carries no record', () => {
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', [earTag]), { commodityCode: '0101' }]
+        commodityLines: [
+          cowLine('5', [earTag]),
+          { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
+        ]
       })
     ).toBe(IN_PROGRESS)
   })
@@ -402,7 +402,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
         commodityLines: [
           cowLine('5', [earTag]),
           {
-            commodityCode: '0101',
+            ...EQUUS_CABALUS_ROW,
             numberOfAnimalsQuantity: '4',
             animalIdentifiers: [{ horseName: 'Shergar' }]
           }
@@ -414,7 +414,10 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   it('Should ask no record of a second species that carries no identifier of its own', () => {
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', []), { commodityCode: '01063300' }]
+        commodityLines: [
+          cowLine('5', []),
+          { commodityCode: STRUTHIO_ROW.commodityCode }
+        ]
       })
     ).toBe(FULFILLED)
   })

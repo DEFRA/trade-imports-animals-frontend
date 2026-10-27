@@ -1,5 +1,5 @@
-export const commodityLinesFixture = (...lines) =>
-  lines.map(([row, numberOfAnimalsQuantity], index) => ({
+export const commodityLinesFixture = (...rowAndCounts) =>
+  rowAndCounts.map(([row, numberOfAnimalsQuantity], index) => ({
     index,
     entry: { ...row, numberOfAnimalsQuantity }
   }))

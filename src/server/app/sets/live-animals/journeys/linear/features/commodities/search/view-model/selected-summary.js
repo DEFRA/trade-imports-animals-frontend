@@ -20,12 +20,6 @@ const groupsFor = (selected) =>
     )
   }))
 
-/**
- * The chosen species, counted and grouped by commodity code in the order given.
- *
- * @param {string[]} selected - the selection keys already chosen.
- * @returns {{count: number, heading: string, groups: Array<{legend: string, items: string[]}>}} the panel view model.
- */
 export const selectedSummary = (selected) => ({
   count: selected.length,
   heading: copy.selected.heading(selected.length),

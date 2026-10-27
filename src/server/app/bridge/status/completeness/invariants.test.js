@@ -143,7 +143,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       }
     }
 
-    it('Should report an empty collection satisfied when the gate admits only one entry', () => {
+    it('Should report an empty collection satisfied when moreThanOne sees only one matching line', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,

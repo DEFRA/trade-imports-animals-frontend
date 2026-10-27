@@ -52,7 +52,6 @@ const IDENTIFICATION_PAGE = 'commodities/identification'
 const REMOVE_FIRST_UNIT = 'remove:0:0'
 const BOS_TAURUS_1 = 'Bos taurus 1'
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
-const CATTLE_HEADING = '0102'
 const IMPLICIT_SUBMIT = 'implicit-submit'
 const EAR_TAG_REFUSED = 'Ear tag must be 58 characters or less'
 
@@ -136,7 +135,7 @@ describe(`${SUITE} — the cards view`, () => {
         cards.map((card) => card.title)
       ])
     ).toEqual([
-      [CATTLE_HEADING, [BOS_TAURUS, BISON_BISON]],
+      ['0102', [BOS_TAURUS, BISON_BISON]],
       ['0101', [EQUUS_CABALUS]]
     ])
   })
@@ -153,7 +152,7 @@ describe(`${SUITE} — the cards view`, () => {
     ])
   })
 
-  it('Should show only the commodity-gated fields per card — typed for Cats with the address, no fallbacks', async () => {
+  it('Should show only the commodity-gated fields per card — typed for 01061900 Felis catus with the address, no fallbacks', async () => {
     const [card] = await viewCards({
       commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
     })
@@ -165,18 +164,18 @@ describe(`${SUITE} — the cards view`, () => {
   })
 
   it("Should order each commodity's entry fields by that commodity's own identifier list", async () => {
-    const [cow] = await viewCards({
+    const [bosTaurus] = await viewCards({
       commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
     })
-    expect(cow.fields.map((field) => field.id)).toEqual([
+    expect(bosTaurus.fields.map((field) => field.id)).toEqual([
       EAR_TAG_FIELD_0,
       PASSPORT_FIELD_0
     ])
 
-    const [horse] = await viewCards({
+    const [equusCabalus] = await viewCards({
       commodityLines: [equusLine({ numberOfAnimalsQuantity: '2' })]
     })
-    expect(horse.fields.map((field) => field.label)).toEqual([
+    expect(equusCabalus.fields.map((field) => field.label)).toEqual([
       'Microchip',
       'Passport',
       'Horse name'
@@ -477,7 +476,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
     ])
   })
 
-  it('Should head a horse line with the three identifiers it carries and no permanent address', async () => {
+  it('Should head an 0101 Equus cabalus line with the three identifiers it carries and no permanent address', async () => {
     const [card] = await viewCards({
       commodityLines: [
         lineOf(EQUUS_CABALUS_ROW, {
@@ -548,6 +547,7 @@ describe(`${SUITE} — Save and add another`, () => {
     expect(errorSummary.errorList[0].href).toBe('#identification-card-0')
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectOneRefusalLogged(result.logger, {
+      level: 'warn',
       journeyId: result.journeyId,
       errorCodes: [],
       reason: 'animal-identifier-cap-reached',
@@ -944,9 +944,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
         lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })
       ]
     })
-    expect(context.sections.map((section) => section.heading)).toEqual([
-      CATTLE_HEADING
-    ])
+    expect(context.sections.map((section) => section.heading)).toEqual(['0102'])
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',

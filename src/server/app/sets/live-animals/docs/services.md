@@ -40,7 +40,7 @@ so generic notification-mapper code does not import the set.
   [`index.test.js`](../services/commodities/index.test.js) pins this: every
   permanent-address species MDM holds sits under an identified code.
 - The unweaned-animals question is asked of a line whose code is in
-  `UNWEANED_CODES`: `0102` (cattle) and `0103` (swine).
+  `UNWEANED_CODES`: `0102` (cattle).
 - Every consignment is asked for a CPH number unless every line's code is
   exempt. `CPH_EXEMPT_CODES` names the exemptions by code: `0101` (horses and
   donkeys) and `01061900` (cats, dogs and ferrets, which are asked for each
@@ -72,8 +72,7 @@ so generic notification-mapper code does not import the set.
   `commodity.name`, until reference-data supplies commodity names. The backend
   passes it to PIMS as each trade line's description and common name, and
   both dashboards show it as the commodity. Each line stores MDM's common
-  name, which the notification mapper does not send yet; EUDPA-669 maps it
-  into the payload.
+  name; the real names land when the notification payload carries them.
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
   `commoditySearchRows`. They are never sent to the backend. The chosen species

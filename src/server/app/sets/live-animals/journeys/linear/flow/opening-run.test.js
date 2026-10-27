@@ -1,5 +1,4 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -14,6 +13,7 @@ import {
   openingRunCookie
 } from '../../../../../engine/persistence/session.js'
 import {
+  completeNotification,
   driveHandler,
   expectOneLogged,
   getHandlerOf,
@@ -27,7 +27,7 @@ import {
   typedInPrivateTransporterPayload
 } from '../features/transport/test-support.js'
 import { lineKey } from '../features/commodities/search/selection/line-key.js'
-import { SHOWN_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
+import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
 import {
   FELIS_CATUS_ROW,
   STRUTHIO_ROW,
@@ -78,9 +78,7 @@ const unidentifiedLineSeed = {
   commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
 }
 
-const { values: completeSeed } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const completeSeed = completeNotification()
 
 const postBreedingInternalMarketReason = (openingRun) =>
   driveHandler(postHandlerOf(importReason), {
@@ -155,7 +153,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
   it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
     const payload = { species: [lineKey(FELIS_CATUS_ROW)] }
     const seed = { countryOfOrigin: 'FR' }
-    const flowOnly = { [SHOWN_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
+    const flowOnly = { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
     const inRun = await driveHandler(postHandlerOf(commoditiesSearch), {
       payload,
       seed,

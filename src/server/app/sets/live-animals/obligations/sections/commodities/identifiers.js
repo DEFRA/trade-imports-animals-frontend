@@ -49,24 +49,18 @@ const permanentAddressReason = {
     'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
 
-// -----------------------------------------------------------------------------
-// Unit record — nested user-driven indexed group inside commodityLine.
-// Composite keys have length 2: `lineId/unitId`. Instance-ids are
-// opaque orchestrator-generated ULIDs.
-// -----------------------------------------------------------------------------
+const MICROCHIP_ID = '8f030bfa-0734-40c8-9d9e-b9e95dac4724'
+const PASSPORT_ID = '39657a80-91a2-4fc6-8345-9f0617284a51'
+const TATTOO_ID = '3a768b91-a2b3-4fd7-8456-a01728395b62'
+const EAR_TAG_ID = '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73'
+const HORSE_NAME_ID = '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84'
 
 export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
   name: 'animalIdentifiers',
   within: commodityLine,
   requires: {
-    anyOfIds: [
-      '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
-      '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
-      '3a768b91-a2b3-4fd7-8456-a01728395b62', // tattoo
-      '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73', // earTag
-      '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84' // horseName
-    ],
+    anyOfIds: [MICROCHIP_ID, PASSPORT_ID, TATTOO_ID, EAR_TAG_ID, HORSE_NAME_ID],
     errorCode: 'obligation.unitRecord.identifiersRequired',
     floorAppliesToParent: moreThanOne(
       allowListed(commodityCode, identifiedCommodityCodes, null)
@@ -75,7 +69,7 @@ export const unitRecord = {
 }
 
 export const microchip = {
-  id: '8f030bfa-0734-40c8-9d9e-b9e95dac4724',
+  id: MICROCHIP_ID,
   name: 'animalIdentifierMicrochip',
   within: unitRecord,
   status: 'optional',
@@ -85,7 +79,7 @@ export const microchip = {
 }
 
 export const passport = {
-  id: '39657a80-91a2-4fc6-8345-9f0617284a51',
+  id: PASSPORT_ID,
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
@@ -95,7 +89,7 @@ export const passport = {
 }
 
 export const tattoo = {
-  id: '3a768b91-a2b3-4fd7-8456-a01728395b62',
+  id: TATTOO_ID,
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
@@ -105,7 +99,7 @@ export const tattoo = {
 }
 
 export const earTag = {
-  id: '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73',
+  id: EAR_TAG_ID,
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
@@ -115,7 +109,7 @@ export const earTag = {
 }
 
 export const horseName = {
-  id: '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84',
+  id: HORSE_NAME_ID,
   name: 'horseName',
   within: unitRecord,
   status: 'optional',

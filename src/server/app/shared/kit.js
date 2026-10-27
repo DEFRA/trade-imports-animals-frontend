@@ -128,8 +128,11 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
  * @param {object} [options.fieldErrors] - map of field key to the message the
  * page shows (may be empty).
  */
-export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
-  request.logger.info(
+export const logRefusal = (
+  request,
+  { fieldErrors = {}, level = 'info', ...details } = {}
+) =>
+  request.logger[level](
     {
       ...details,
       journeyId: request.params.journeyId,

@@ -127,6 +127,7 @@ describe('the CPH exemption', () => {
 describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
     expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
+    expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
     expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
   })
 

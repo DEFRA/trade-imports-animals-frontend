@@ -5,7 +5,7 @@ import {
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW
 } from '../test-support.js'
-import { knownRows, lineRow, resultRows } from './rows.js'
+import { knownRowsByKey, lineRow, resultRows } from './rows.js'
 
 describe('#resultRows', () => {
   it('Should give every species of every group its own row, carrying its group code', () => {
@@ -34,9 +34,9 @@ describe('#resultRows', () => {
   })
 })
 
-describe('#knownRows', () => {
+describe('#knownRowsByKey', () => {
   it('Should know the rows earlier searches showed and the lines already saved, by key', () => {
-    const known = knownRows({
+    const known = knownRowsByKey({
       answers: {
         commodityLines: [{ ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '3' }]
       },
@@ -51,7 +51,7 @@ describe('#knownRows', () => {
   })
 
   it('Should know nothing on a fresh notification', () => {
-    expect(knownRows({ answers: {} }).size).toBe(0)
+    expect(knownRowsByKey({ answers: {} }).size).toBe(0)
   })
 })
 

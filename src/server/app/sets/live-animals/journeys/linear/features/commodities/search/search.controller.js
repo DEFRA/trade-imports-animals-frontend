@@ -16,7 +16,7 @@ import {
   storedKeys
 } from './selection/selected-keys.js'
 import {
-  knownRows,
+  knownRowsByKey,
   replaceStoredSearchRows,
   resultRows
 } from './selection/rows.js'
@@ -37,8 +37,7 @@ const CLEAR_ACTION = 'clear'
 const searchFor = (query) =>
   isSearchable(query) ? search(query, { size: 100 }) : null
 
-const rowsFor = (keys, knownRowsByKey) =>
-  keys.map((key) => knownRowsByKey.get(key))
+const rowsFor = (keys, rowsByKey) => keys.map((key) => rowsByKey.get(key))
 
 const render = async (
   request,
@@ -81,12 +80,12 @@ const get = async (request, h) => {
 const searchStoreRowsAndRender = async (
   request,
   h,
-  knownRowsByKey,
+  rowsByKey,
   { selected, query, errorText }
 ) => {
   const results = await searchFor(query)
   await replaceStoredSearchRows(request, h, [
-    ...knownRowsByKey.values(),
+    ...rowsByKey.values(),
     ...resultRows(results)
   ])
   const current = await state.get(request, h)
@@ -96,17 +95,17 @@ const searchStoreRowsAndRender = async (
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = normaliseQuery(payload[SEARCH_FIELD])
-  const knownRowsByKey = knownRows(await state.get(request, h))
+  const rowsByKey = knownRowsByKey(await state.get(request, h))
 
   if (payload.action === CLEAR_ACTION) {
-    return searchStoreRowsAndRender(request, h, knownRowsByKey, {
+    return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected: [],
       query
     })
   }
 
-  const selected = mergedKeysFromPayload(payload, knownRowsByKey)
-  const droppedKeys = droppedKeysFromPayload(payload, knownRowsByKey)
+  const selected = mergedKeysFromPayload(payload, rowsByKey)
+  const droppedKeys = droppedKeysFromPayload(payload, rowsByKey)
   if (droppedKeys.length > 0) {
     request.logger.warn(
       { journeyId: request.params.journeyId, droppedKeys },
@@ -115,26 +114,25 @@ const post = async (request, h) => {
   }
 
   if (payload.action === SEARCH_ACTION) {
-    return searchStoreRowsAndRender(request, h, knownRowsByKey, {
+    return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected,
       query
     })
   }
 
-  if (selected.length === 0 && !kit.hubExitTarget(request)) {
+  if (selected.length === 0) {
     kit.logRefusal(request, {
       fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
     })
-    const response = await searchStoreRowsAndRender(
-      request,
-      h,
-      knownRowsByKey,
-      { selected, query, errorText: copy.errors.selectCommodity }
-    )
+    const response = await searchStoreRowsAndRender(request, h, rowsByKey, {
+      selected,
+      query,
+      errorText: copy.errors.selectCommodity
+    })
     return response.code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, rowsFor(selected, knownRowsByKey))
+  return commitSelection(request, h, rowsFor(selected, rowsByKey))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

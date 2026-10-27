@@ -168,8 +168,9 @@ metadata that names its gate obligation, so `obligationMetadata()` can derive
   `inScope: true` and different `status` values.
 - `includes`-shape gate: `includesGate(gate, values, whenTrue, whenFalse)`.
 - `isFilled`-shape gate: `presentGate(gate, whenTrue, whenFalse)`.
-- Line gates on a list of codes or names: `allowListed`, `anyAllowListed`,
+- Line gates on a list of codes: `allowListed`, `anyAllowListed`,
   `notInUnionOf`, `anyNotInUnionOf`, `matches`.
+- Line gates on code+Latin-name pairs: `allowListedPairs`.
 
 Use `branchedGate` only for a predicate none of these can express: its closure
 is opaque, so it must declare `dependsOn` itself.

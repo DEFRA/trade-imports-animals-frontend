@@ -1,9 +1,9 @@
 import { pagePath } from '../../../../../shared/paths.js'
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
 import {
@@ -22,12 +22,14 @@ import {
 import { rowEntry } from '../../../../../flow/navigation.js'
 import { sectionGatePasses } from '../../../../../flow/gates.js'
 import { rowStatus, taskRowById, taskRows } from './task-rows.js'
-import { BOS_TAURUS } from '../features/commodities/search/test-support.js'
-const EQUUS_CABALUS = 'Equus cabalus'
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
-const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const happyPath = completeNotification()
 
 const statusIn = (rowId, answers) => {
   const evaluation = evaluateAnswers(answers)
@@ -41,7 +43,7 @@ const statusIn = (rowId, answers) => {
 
 const unlocked = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commodityCode: '01061900' }]
+  commodityLines: [{ commodityCode: FELIS_CATUS_ROW.commodityCode }]
 }
 
 beforeAll(() => {
@@ -180,8 +182,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
-          speciesLatinName: BOS_TAURUS,
+          ...BOS_TAURUS_ROW,
           commodityType: '16'
         }
       ]
@@ -194,7 +195,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         }
@@ -208,14 +209,12 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
-          speciesLatinName: BOS_TAURUS,
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         },
         {
-          commodityCode: '0101',
-          speciesLatinName: EQUUS_CABALUS,
+          ...EQUUS_CABALUS_ROW,
           commodityType: '2'
         }
       ]
@@ -228,8 +227,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
-          speciesLatinName: BOS_TAURUS,
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
@@ -245,15 +243,13 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
-          speciesLatinName: BOS_TAURUS,
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         },
         {
-          commodityCode: '0101',
-          speciesLatinName: EQUUS_CABALUS,
+          ...EQUUS_CABALUS_ROW,
           commodityType: '2',
           numberOfPackages: '3',
           numberOfAnimalsQuantity: '4'
@@ -268,7 +264,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ]
@@ -281,10 +277,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
-        { commodityCode: '0101' }
+        { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
       ]
     }
     expect(statusIn('animalIdentification', answers)).toBe(IN_PROGRESS)
@@ -294,10 +290,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          commodityCode: '0102',
+          commodityCode: BOS_TAURUS_ROW.commodityCode,
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         },
-        { commodityCode: '01063300' }
+        { commodityCode: STRUTHIO_ROW.commodityCode }
       ]
     }
     expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
@@ -307,8 +303,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const catLine = (identifier) => ({
       commodityLines: [
         {
-          commodityCode: '01061900',
-          speciesLatinName: 'Felis catus',
+          ...FELIS_CATUS_ROW,
           animalIdentifiers: [identifier]
         }
       ]
@@ -341,7 +336,7 @@ describe('#rowStatus — the conditional animal-identification row', () => {
     expect(
       statusIn('animalIdentification', {
         countryOfOrigin: 'FR',
-        commodityLines: [{ commodityCode: '01063300' }]
+        commodityLines: [{ commodityCode: STRUTHIO_ROW.commodityCode }]
       })
     ).toBe(NA)
   })
@@ -351,8 +346,8 @@ describe('#rowStatus — the conditional animal-identification row', () => {
       statusIn('animalIdentification', {
         countryOfOrigin: 'FR',
         commodityLines: [
-          { commodityCode: '01063300' },
-          { commodityCode: '0102' }
+          { commodityCode: STRUTHIO_ROW.commodityCode },
+          { commodityCode: BOS_TAURUS_ROW.commodityCode }
         ]
       })
     ).toBe(FULFILLED)
@@ -439,8 +434,7 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
     )
 
   const horseLine = {
-    commodityCode: '0101',
-    speciesLatinName: EQUUS_CABALUS,
+    ...EQUUS_CABALUS_ROW,
     commodityType: '2',
     numberOfPackages: '3',
     numberOfAnimalsQuantity: '4'

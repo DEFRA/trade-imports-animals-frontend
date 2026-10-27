@@ -139,7 +139,7 @@ export const copy = {
     },
     species: {
       notListed: (speciesWithCodes) =>
-        `${speciesWithCodes} can no longer be selected. Choose the species again`
+        `${speciesWithCodes} can no longer be selected. Select a species from the list.`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',

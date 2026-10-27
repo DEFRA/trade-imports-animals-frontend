@@ -290,8 +290,7 @@ const happyPathValues = JSON.parse(
 /** A complete notification, a fresh copy of the happy-path fixture. */
 export const completeNotification = () => structuredClone(happyPathValues)
 
-/** A commodity line in the shape the search page saves: a commodity code and
- * the Latin name of one species, with any further fields given. */
+/** A commodity line with commodityCode and speciesLatinName, plus any further fields. */
 export const commodityLine = ({
   commodityCode = '0102',
   speciesLatinName = 'Bos taurus',
@@ -304,9 +303,9 @@ export const completeCommodityLine = (overrides = {}) => ({
   ...overrides
 })
 
-/** Configures the stub ports, creates a journey and returns what the purge
- * tests drive it with: `seed` stores answers, `durable` reads them back,
- * `wipeOf` names the keys the evaluator purges and `buildRequest` makes a
+/** Configures the records and session stubs, creates a journey and returns what
+ * the purge tests drive it with: `seed` stores answers, `durable` reads them
+ * back, `wipeOf` names the keys the evaluator purges and `buildRequest` makes a
  * request for the journey. */
 export const purgeTestJourney = async () => {
   configureRecords(SET_ID, recordsStub)
@@ -414,8 +413,13 @@ export const expectNoRefusalLogged = (logger) =>
     logger.entries.filter(({ message }) => message === REFUSAL_LOG_MESSAGE)
   ).toEqual([])
 
-const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
-  level: 'info',
+const refusalEntry = ({
+  journeyId,
+  errorCodes,
+  level = 'info',
+  ...details
+}) => ({
+  level,
   message: REFUSAL_LOG_MESSAGE,
   fields: expect.objectContaining({ journeyId, errorCodes, ...details })
 })

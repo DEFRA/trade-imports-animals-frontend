@@ -18,6 +18,15 @@ describe('#admitsValue', () => {
     ).toBe(false)
   })
 
+  it('Should admit a matching allowListedPairs pair and refuse a mismatched one', () => {
+    const gate = {
+      gateType: 'allowListedPairs',
+      values: [['01061900', 'Felis catus']]
+    }
+    expect(admitsValue(gate, ['01061900', 'Felis catus'])).toBe(true)
+    expect(admitsValue(gate, ['01061900', 'Canis familiaris'])).toBe(false)
+  })
+
   it('Should invert for a notInUnionOf complement gate', () => {
     const gate = { gateType: 'notInUnionOf', values: ['0102'] }
     expect(admitsValue(gate, '01063300')).toBe(true)

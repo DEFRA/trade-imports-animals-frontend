@@ -9,6 +9,7 @@ import { obligationSet } from '../../obligations/manifest.js'
 import {
   obligationMetadata,
   allowListed,
+  allowListedPairs,
   alwaysInScope,
   anyAllowListed,
   anyNotInUnionOf,
@@ -151,6 +152,31 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     expect(decision.inScope).toBe(true)
   })
 
+  it('Should return the first pair as witness for allowListedPairs', () => {
+    const speciesObligation = { id: 'species-obligation' }
+    const gate = allowListedPairs(codeObligation, speciesObligation, [
+      ['01061900', 'Felis catus'],
+      ['0102', 'Bos taurus']
+    ])
+    const obligation = { id: 'gated', applyTo: gate }
+    const witness = synthesiseWitness(obligation)
+    expect(witness).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObligation.id,
+      pairedObligationId: speciesObligation.id,
+      value: ['01061900', 'Felis catus'],
+      gatedParentGroupId: null
+    })
+    const decision = obligation.applyTo(
+      {
+        [witness.obligationId]: { line1: witness.value[0] },
+        [witness.pairedObligationId]: { line1: witness.value[1] }
+      },
+      new Map()
+    )
+    expect(decision.inScope).toBe(true)
+  })
+
   it('Should carry the gatedParentGroupId when allowListed has a gatedParentGroup', () => {
     const groupObligation = { id: 'group-obligation' }
     const gate = allowListed(codeObligation, ['a'], groupObligation)
@@ -229,7 +255,9 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     const witness = synthesiseWitness({ id: 'gated', applyTo: gate })
     expect(witness).toEqual({ kind: WITNESS_KIND.TRIVIAL })
   })
+})
 
+describe('#synthesiseWitness — branchedGate and notInUnionOf', () => {
   it('Should synthesise a witness that opens the gate for branchedGate with predicateMeta.equals', () => {
     const gate = branchedGate(
       (answers) => answers[booleanObligation.id] === 'yes',

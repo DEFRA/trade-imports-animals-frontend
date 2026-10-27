@@ -1,10 +1,7 @@
 import { isStubMode } from '../../../../../common/services/mode.js'
 import { referenceDataUnavailable } from '../../../../services/reference-data/request.js'
 
-export const commoditiesFromStubOrReferenceData = async ({
-  stubCall,
-  realCall
-}) => {
+export const fromStubOrReferenceData = async ({ stubCall, realCall }) => {
   if (isStubMode()) {
     return stubCall()
   }

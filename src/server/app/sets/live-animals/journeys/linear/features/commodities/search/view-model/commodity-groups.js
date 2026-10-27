@@ -12,14 +12,6 @@ const itemFor = (row, selected) => {
   }
 }
 
-/**
- * One group per CN code, in the order each code first appears in the results,
- * with a tick box per species; an empty list when results is null.
- *
- * @param {object | null} results - the search page, or null.
- * @param {string[]} selected - the selection keys already chosen.
- * @returns {Array<{legend: string, items: object[]}>} the result groups.
- */
 export const commodityGroups = (results, selected) =>
   [...Map.groupBy(resultRows(results), (row) => row.commodityCode)].map(
     ([commodityCode, rows]) => ({

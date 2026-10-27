@@ -41,12 +41,12 @@ describe('#seedSteps commodities', () => {
   const commoditySteps = () =>
     seedSteps(SEED_SHAPES.draft).filter((step) => step.slug === 'commodities')
 
-  it('Should search for each line by its Latin name, then choose every line by code and Latin name', () => {
+  it('Should search for Bos taurus then choose 0102|Bos taurus', () => {
     expect(commoditySteps()).toEqual([
       {
         slug: 'commodities',
         fields: { commoditySearch: 'Bos taurus', action: 'search' },
-        answersWith: 200
+        expectedStatus: 200
       },
       { slug: 'commodities', fields: { species: ['0102|Bos taurus'] } }
     ])

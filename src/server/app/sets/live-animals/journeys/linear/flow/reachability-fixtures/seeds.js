@@ -1,10 +1,13 @@
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
+  lineOf
+} from '../../features/commodities/search/test-support.js'
+
 const UNITED_KINGDOM = 'United Kingdom'
 
-/**
- * A maximal happy-path answer set that puts (almost) every obligation in
- * scope, overlaid per state with the scope-flag cross-product above.
- * Answer-shaped, which is exactly what `makeScope` consumes.
- */
 export const submitReadySeed = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no',
@@ -14,13 +17,11 @@ export const submitReadySeed = {
   containsUnweanedAnimals: 'no',
   countyParishHoldingCph: '12/345/6789',
   commodityLines: [
-    {
-      commodityCode: '0102',
-      speciesLatinName: 'Bos taurus',
+    lineOf(BOS_TAURUS_ROW, {
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-    }
+    })
   ],
   consignor: {
     name: 'Astra Rosales',
@@ -69,62 +70,46 @@ export const submitReadySeed = {
   declaration: 'confirmed'
 }
 
-/**
- * The base seed and the overlays on it that open the gates it leaves shut.
- *
- * @returns {Array<{ id: string, answers: object }>} named answer sets.
- */
 export const seedVariants = () => [
   { id: 'base', answers: submitReadySeed },
   {
-    // 0101 Equus cabalus: horseName (and passport) per unit record.
     id: 'horse-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commodityCode: '0101',
-          speciesLatinName: 'Equus cabalus',
+        lineOf(EQUUS_CABALUS_ROW, {
           numberOfPackages: '2',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0001' }]
-        }
+        })
       ]
     }
   },
   {
-    // 01061900 Felis catus: permanentAddress (mandatory when in scope) per unit record.
     id: 'cat-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commodityCode: '01061900',
-          speciesLatinName: 'Felis catus',
+        lineOf(FELIS_CATUS_ROW, {
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0002' }]
-        }
+        })
       ]
     }
   },
   {
-    // 01063300 Struthio: the code carries no identifier list, so no identifier
-    // obligation applies to its line and it carries no animal records.
     id: 'unidentified-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commodityCode: '01063300',
-          speciesLatinName: 'Struthio',
+        lineOf(STRUTHIO_ROW, {
           numberOfAnimalsQuantity: '40'
-        }
+        })
       ]
     }
   },
   {
-    // A document record scopes the four per-document mandatory fields.
     id: 'with-documents',
     answers: {
       ...submitReadySeed,

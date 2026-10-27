@@ -1,4 +1,4 @@
-import { commoditiesFromStubOrReferenceData } from './stub-or-reference-data.js'
+import { fromStubOrReferenceData } from './stub-or-reference-data.js'
 import { checkSpecies } from './client.js'
 import { unlistedLinesInStub } from './stub.js'
 
@@ -19,7 +19,7 @@ export const linesWithUnlistedSpecies = async (lines) => {
   if (lines.length === 0) {
     return []
   }
-  return commoditiesFromStubOrReferenceData({
+  return fromStubOrReferenceData({
     stubCall: () => unlistedLinesInStub(lines),
     realCall: async () => unlistedFrom(await checkSpecies(lines))
   })

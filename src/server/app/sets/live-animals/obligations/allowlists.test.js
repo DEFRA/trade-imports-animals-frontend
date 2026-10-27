@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createObligationEvaluator } from '../../../model/obligations/evaluator.js'
 import {
-  obligations as v4Obligations,
+  obligations,
   commodityCode,
   numberOfPackages,
   cph,
@@ -30,7 +30,7 @@ const UNLISTED_VALUE = 'Unicorn'
 
 let evaluate
 beforeAll(() => {
-  const evaluator = createObligationEvaluator({ obligations: v4Obligations })
+  const evaluator = createObligationEvaluator({ obligations })
   evaluate = (fulfilments) => evaluator.evaluate(fulfilments)
 })
 
@@ -229,7 +229,7 @@ const EXPECTED = {
     '01064900'
   ],
   'CPH exemptions': ['0101', '01061900'],
-  'unweaned list': ['0102', '0103'],
+  'unweaned list': ['0102'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
   'tattoo list': ['01061900'],

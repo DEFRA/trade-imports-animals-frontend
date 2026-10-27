@@ -141,7 +141,7 @@ const synthesiseFromMetadata = (meta) =>
  * its gate can be built.
  *
  * @param {object} obligation - manifest entry with `.applyTo` (or not).
- * @returns {{ kind: 'witness', obligationId: string, value: any, gatedParentGroupId?: string | null }
+ * @returns {{ kind: 'witness', obligationId: string, value: any, gatedParentGroupId?: string | null, pairedObligationId?: string }
  *          | { kind: 'trivial' }
  *          | { kind: 'opaque', reason: string }}
  */

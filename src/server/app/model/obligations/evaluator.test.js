@@ -106,7 +106,7 @@ const numberOfPackagesReason = {
 }
 
 const cphReason = {
-  code: 'obligation.cph.applicable.becauseCphCommodity',
+  code: 'obligation.cph.applicable.becauseNotCphExempt',
   explanation:
     'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }
@@ -510,16 +510,16 @@ describe('commodity line field fulfilments (round-trip)', () => {
     })
   })
 
-  it('speciesLatinName stores an array of Latin names per line', () => {
+  it('speciesLatinName stores one Latin name per line', () => {
     const result = evaluator.evaluate({
       [speciesLatinName.id]: {
-        [LINE_OSTRICHES]: ['Struthio'],
-        [LINE_CATTLE]: [BOS_TAURUS, 'Bison bison']
+        [LINE_OSTRICHES]: 'Struthio',
+        [LINE_CATTLE]: BOS_TAURUS
       }
     })
     expect(result.fulfilments[speciesLatinName.id]).toEqual({
-      [LINE_OSTRICHES]: ['Struthio'],
-      [LINE_CATTLE]: [BOS_TAURUS, 'Bison bison']
+      [LINE_OSTRICHES]: 'Struthio',
+      [LINE_CATTLE]: BOS_TAURUS
     })
   })
 })

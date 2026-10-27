@@ -50,7 +50,8 @@ import {
 import {
   CATTLE_CODE,
   HORSES_CODE,
-  OTHER_LIVE_MAMMALS_CODE
+  OTHER_LIVE_MAMMALS_CODE,
+  SWINE_CODE
 } from '../../../../services/commodities/rules.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
@@ -1362,12 +1363,12 @@ describe(`${SUITE} — Continue on an amend review`, () => {
 describe(`${SUITE} — commodity-gate render matrix — model metadata per code`, () => {
   setupCheckAnswersEngine()
 
-  const gatesFor = async (commodity) => {
+  const gatesFor = async (commodityCode) => {
     const sections = await sectionsFor({
-      commodityLines: [{ commodityCode: commodity }]
+      commodityLines: [{ commodityCode }]
     })
     const allKeys = keysOf(rowsOf(sections))
-    const speciesCard = cardByTitle(sections, commodity)
+    const speciesCard = cardByTitle(sections, commodityCode)
     return {
       packages: keysOf(speciesCard.rows).includes(PACKAGES_KEY),
       unweaned: allKeys.includes(UNWEANED_KEY),
@@ -1376,22 +1377,31 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
   }
 
   const MATRIX = [
-    { commodity: CATTLE_CODE, packages: true, unweaned: true, cph: true },
-    { commodity: '0103', packages: true, unweaned: true, cph: true },
-    { commodity: HORSES_CODE, packages: true, unweaned: false, cph: false },
+    { commodityCode: CATTLE_CODE, packages: true, unweaned: true, cph: true },
+    { commodityCode: SWINE_CODE, packages: true, unweaned: false, cph: true },
+    { commodityCode: HORSES_CODE, packages: true, unweaned: false, cph: false },
     {
-      commodity: OTHER_LIVE_MAMMALS_CODE,
+      commodityCode: OTHER_LIVE_MAMMALS_CODE,
       packages: true,
       unweaned: false,
       cph: false
     },
-    { commodity: OSTRICHES_CODE, packages: false, unweaned: false, cph: true }
+    {
+      commodityCode: OSTRICHES_CODE,
+      packages: false,
+      unweaned: false,
+      cph: true
+    }
   ]
 
   it.each(MATRIX)(
-    'Should gate packages/unweaned/CPH for $commodity',
-    async ({ commodity, packages, unweaned, cph }) => {
-      expect(await gatesFor(commodity)).toEqual({ packages, unweaned, cph })
+    'Should gate packages/unweaned/CPH for $commodityCode',
+    async ({ commodityCode, packages, unweaned, cph }) => {
+      expect(await gatesFor(commodityCode)).toEqual({
+        packages,
+        unweaned,
+        cph
+      })
     }
   )
 })

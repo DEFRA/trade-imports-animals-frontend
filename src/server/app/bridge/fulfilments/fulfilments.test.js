@@ -100,7 +100,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
     })
   })
 
-  it('Should round-trip a commodity code of any length exactly', () => {
+  it('Should round-trip 4- and 8-digit commodity codes exactly', () => {
     for (const code of ['0102', '0101', '01063300', '01061900']) {
       const answers = { commodityLines: [{ commodityCode: code }] }
       expect(projectAnswers(assembleFulfilments(answers))).toEqual(answers)
@@ -384,7 +384,7 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
   const fulfilments = assembleFulfilments(happyPath)
   const result = evaluator.evaluate(fulfilments)
 
-  it('Should store the commodity code the gates compare', () => {
+  it('Should store the first line commodity code as 0102', () => {
     expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
   })
 

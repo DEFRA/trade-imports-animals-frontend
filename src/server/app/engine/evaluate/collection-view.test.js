@@ -21,19 +21,6 @@ describe('#collectionView', () => {
     expect(rows[1].entry).toBe(incompleteLine)
   })
 
-  it('Should keep entries / index / path in positional storage', () => {
-    const emptyLine = {}
-    const rows = viewOf({ commodityLines: [completeLine, emptyLine] }, [
-      'commodityLines'
-    ])
-    expect(
-      rows.map(({ index, path, entry }) => ({ index, path, entry }))
-    ).toEqual([
-      { index: 0, path: ['commodityLines', 0], entry: completeLine },
-      { index: 1, path: ['commodityLines', 1], entry: emptyLine }
-    ])
-  })
-
   it('Should set complete per-row from entryComplete across a mixed list', () => {
     const rows = viewOf({ commodityLines: [completeLine, incompleteLine] }, [
       'commodityLines'

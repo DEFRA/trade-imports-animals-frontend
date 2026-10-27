@@ -9,7 +9,7 @@ import {
 import { commodityCode } from './lines.js'
 
 const cphReason = {
-  code: 'obligation.cph.applicable.becauseCphCommodity',
+  code: 'obligation.cph.applicable.becauseNotCphExempt',
   explanation:
     'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
 }

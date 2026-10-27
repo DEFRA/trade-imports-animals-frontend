@@ -98,14 +98,18 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    seed: { commodityLines: [{ commodityCode: '0102' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    seed: { commodityLines: [{ commodityCode: '0102' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
   },
   {
@@ -252,14 +256,17 @@ describe('controller <-> model commit contract', () => {
     const result = await drive(postHandlerOf(consignmentDetails), {
       seed: {
         commodityLines: [
-          { commodityCode: '0102', speciesLatinName: BOS_TAURUS }
+          {
+            commodityCode: BOS_TAURUS_ROW.commodityCode,
+            speciesLatinName: BOS_TAURUS
+          }
         ]
       },
       payload: { 'numberOfAnimalsQuantity-0': '25', 'numberOfPackages-0': '5' }
     })
     expect(committedIds(result)).toEqual([])
     expect(result.after.commodityLines[0]).toEqual({
-      commodityCode: '0102',
+      commodityCode: BOS_TAURUS_ROW.commodityCode,
       speciesLatinName: BOS_TAURUS,
       numberOfAnimalsQuantity: 25,
       numberOfPackages: '5'

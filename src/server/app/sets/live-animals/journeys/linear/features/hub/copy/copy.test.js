@@ -91,14 +91,16 @@ const owingExitQuestionsSeed = {
 const cattleLine = {
   commodityCode: '0102',
   speciesLatinName: 'Bos taurus',
-  commodityType: '16',
-  numberOfPackages: '5',
-  numberOfAnimalsQuantity: '25'
+  commodityType: '16'
 }
 const twoIdentifiedSpeciesSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [
-    cattleLine,
+    {
+      ...cattleLine,
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25'
+    },
     {
       commodityCode: '0101',
       speciesLatinName: 'Equus cabalus',
@@ -306,10 +308,7 @@ describe('#hubHandler', () => {
     })
     expect(rowByTitle(byAir, TRANSIT_ROW_TITLE)).toBeUndefined()
 
-    const byRoad = await renderHub({
-      ...unlockedSeed,
-      meansOfTransport: 'ROAD_VEHICLE'
-    })
+    const byRoad = await renderHub(roadSeedShowingEveryRow)
     const transitRow = rowByTitle(byRoad, TRANSIT_ROW_TITLE)
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
@@ -437,14 +436,7 @@ describe('#hubHandler — the Commodity details row', () => {
   it('Should carry a status the commodities row does not answer for', async () => {
     const seedLine = (entry) => ({
       countryOfOrigin: 'FR',
-      commodityLines: [
-        {
-          commodityCode: '0102',
-          speciesLatinName: 'Bos taurus',
-          commodityType: '16',
-          ...entry
-        }
-      ]
+      commodityLines: [{ ...cattleLine, ...entry }]
     })
 
     const owingTheNumbers = await renderHub(seedLine({}))
