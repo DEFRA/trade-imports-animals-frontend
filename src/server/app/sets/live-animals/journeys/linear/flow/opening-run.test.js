@@ -196,10 +196,14 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
-  it('Should pass a zero-record identification Save-and-finish through to additional details mid-run', async () => {
+  it('Should pass an identification Enter post with no records through to additional details mid-run', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
-      { payload: { action: 'finish' }, seed: lineSeed, openingRun: RUN_ACTIVE }
+      {
+        payload: { action: 'implicit-submit' },
+        seed: lineSeed,
+        openingRun: RUN_ACTIVE
+      }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
   })

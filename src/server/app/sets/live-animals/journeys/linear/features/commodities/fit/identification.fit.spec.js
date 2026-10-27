@@ -1149,4 +1149,29 @@ test.describe('animal identification without JavaScript', () => {
       0
     )
   })
+
+  test('saves the card typed in when Enter is pressed and stays on identification details', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
+    await page.locator(EAR_TAG_FIELD).press('Enter')
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.identification.title })
+    ).toBeVisible()
+    await expect(
+      speciesCard(page, BOS_TAURUS).getByRole('heading', {
+        name: copy.identification.counter(BOS_TAURUS, 2, 2),
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      savedAnimalRow(page, BOS_TAURUS, 1).getByRole('cell', {
+        name: 'UK000000000001',
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(page.locator(EAR_TAG_FIELD)).toHaveValue('')
+  })
 })

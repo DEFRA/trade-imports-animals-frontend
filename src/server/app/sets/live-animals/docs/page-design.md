@@ -224,6 +224,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - "Save and continue", "Save and return to overview" and the amend buttons
   save only the forms of species with one animal. Values typed into the form
   of a species with more animals are neither validated nor saved by them.
+- Pressing Enter in any field presses the page's hidden default button. It
+  saves every card holding typed values, species with more animals included,
+  and keeps the trader on the page when one of those was saved. The hidden
+  button comes first in the form so that Enter never presses a Remove button
+  or the visible "Save and continue".
 - An identifier has one name, used both on the entry field and as the
   saved-animals column heading, and no identifier field has a hint. Labels
   are regular weight.
