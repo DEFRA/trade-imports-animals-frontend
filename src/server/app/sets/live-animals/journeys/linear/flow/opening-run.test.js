@@ -196,7 +196,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
-  it('Should pass a identification Enter post with no records through to additional details mid-run', async () => {
+  it('Should pass an identification Enter post with no records through to additional details mid-run', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {

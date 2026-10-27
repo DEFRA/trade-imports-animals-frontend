@@ -686,9 +686,6 @@ describe(`${SUITE} — Save and continue`, () => {
 describe(`${SUITE} — Enter in a field`, () => {
   setupIdentificationEngine()
 
-  const identificationPageOf = (result) =>
-    pagePath(result.journeyId, IDENTIFICATION_PAGE)
-
   it('Should save the value typed into a multi-animal line after its existing records and stay on identification details', async () => {
     const result = await driveHandler(post, {
       seed: {
@@ -704,7 +701,9 @@ describe(`${SUITE} — Enter in a field`, () => {
         [EAR_TAG_FIELD_0]: 'UK2'
       }
     })
-    expect(result.response).toEqual({ redirect: identificationPageOf(result) })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
+    })
     const tags = result.after.commodityLines[0].animalIdentifiers.map(
       (unit) => unit.animalIdentifierEarTag
     )
@@ -741,14 +740,15 @@ describe(`${SUITE} — Enter in a field`, () => {
         'animalIdentifierPassport-1': 'UK123456789'
       }
     })
-    expect(result.response).toEqual({ redirect: identificationPageOf(result) })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
+    })
+    const [oneAnimalLine, severalAnimalsLine] = result.after.commodityLines
     expect(
-      result.after.commodityLines[0].animalIdentifiers.map(
-        (unit) => unit.animalIdentifierEarTag
-      )
+      oneAnimalLine.animalIdentifiers.map((unit) => unit.animalIdentifierEarTag)
     ).toEqual(['UK1'])
     expect(
-      result.after.commodityLines[1].animalIdentifiers.map(
+      severalAnimalsLine.animalIdentifiers.map(
         (unit) => unit.animalIdentifierPassport
       )
     ).toEqual(['UK123456789'])
