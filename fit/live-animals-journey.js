@@ -565,10 +565,7 @@ export const expectSpeciesSelected = async (page, name) =>
 
 export const unlockSections = async (page, species = 'Felis catus') => {
   await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [species])
-  await save(page)
-  await expectOverview(page)
+  await answerWhatYouAreImportingFromOverview(page, species)
   await page.getByRole('link', { name: 'Commodity details' }).click()
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
@@ -601,8 +598,8 @@ export const setUploadFile = (
   )
 
 /**
- * Opens the document upload page from a fresh notification with the sections
- * it depends on answered.
+ * Opens the document upload page from a fresh notification with the origin,
+ * commodity and commodity details answered.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -652,9 +649,18 @@ export const answerOriginDetails = async (
   await save(page)
 }
 
-export const answerWhatYouAreImporting = async (page) => {
-  await selectSpecies(page, ['Bos taurus'])
+export const answerWhatYouAreImporting = async (
+  page,
+  species = 'Bos taurus'
+) => {
+  await selectSpecies(page, [species])
   await save(page)
+}
+
+export const answerWhatYouAreImportingFromOverview = async (page, species) => {
+  await page.getByRole('link', { name: hubCopy.rows.commodities.title }).click()
+  await answerWhatYouAreImporting(page, species)
+  await expectOverview(page)
 }
 
 export const answerCommodityCounts = async (page) => {
@@ -787,8 +793,8 @@ export const answerTransitCountries = async (page) => {
 }
 
 /**
- * Opens the arrival details page from a fresh notification with the sections
- * it depends on answered.
+ * Opens the arrival details page from a fresh notification with the origin,
+ * commodity and commodity details answered.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -856,9 +862,7 @@ export const completeAnswerSections = async (
   await task('Where is this consignment coming from?')
   await answerOriginDetails(page)
 
-  await task('What are you importing?')
-  await answerWhatYouAreImporting(page)
-  await expectOverview(page)
+  await answerWhatYouAreImportingFromOverview(page)
   await task('Commodity details')
   await answerCommodityCounts(page)
   await expectOverview(page)
