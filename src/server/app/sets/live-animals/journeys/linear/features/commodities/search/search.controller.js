@@ -3,6 +3,7 @@ import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import { commodityQuestionReturn } from '../commodity-question-detour.js'
 import { commoditiesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -53,7 +54,9 @@ const render = async (
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink:
+        commodityQuestionReturn(request).honouredReturn ??
+        (await kit.runBackLink(request, page.id, current)),
       journey: current.journey,
       page
     }),
@@ -118,7 +121,7 @@ const post = async (request, h) => {
     })
   }
 
-  if (selected.length === 0 && !kit.isHubExit(request)) {
+  if (selected.length === 0 && !kit.hubExitTarget(request)) {
     kit.logRefusal(request, {
       fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
     })
