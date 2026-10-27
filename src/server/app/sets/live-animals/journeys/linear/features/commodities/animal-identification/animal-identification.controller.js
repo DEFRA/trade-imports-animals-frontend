@@ -20,6 +20,7 @@ import {
   buildLineForms,
   capReachedResponse,
   parseAddAction,
+  staysOnIdentification,
   withEmptyFormGuard
 } from './form/forms.js'
 import { appendLineRecords } from './records/append.js'
@@ -196,7 +197,7 @@ const post = async (request, h) => {
     )
   }
 
-  if (addIndex !== null) {
+  if (staysOnIdentification(action, forms, answers)) {
     return h.redirect(
       kit.withChangeContext(
         request,

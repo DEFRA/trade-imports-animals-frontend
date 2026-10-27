@@ -25,6 +25,7 @@ import { driveReturnFromUpload } from './documents/test-support.js'
 
 const change = { change: '1' }
 const TEST_JOURNEY_ID = 'journey-1'
+const IMPLICIT_SUBMIT = 'implicit-submit'
 const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 
 const lineSeed = {
@@ -187,11 +188,11 @@ describe('change context — only the collection exit repoints to check your ans
     expect(response).toEqual({ redirect: cya(journeyId) })
   })
 
-  it('Should send the identification Save-and-finish back to check your answers under change context', async () => {
+  it('Should send the identification Enter post with nothing typed back to check your answers under change context', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { action: 'finish' },
+        payload: { action: IMPLICIT_SUBMIT },
         query: change,
         seed: lineSeed
       }
@@ -220,11 +221,11 @@ describe('change context — only the collection exit repoints to check your ans
     expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 
-  it('Should keep the identification Save-and-finish on the section flow (the hub) without change context', async () => {
+  it('Should keep the identification Enter post with nothing typed on the section flow (the hub) without change context', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { action: 'finish' },
+        payload: { action: IMPLICIT_SUBMIT },
         seed: lineSeed
       }
     )
@@ -244,7 +245,7 @@ describe('change context — only the collection exit repoints to check your ans
     const identifiers = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { exit: 'hub', action: 'finish' },
+        payload: { exit: 'hub', action: IMPLICIT_SUBMIT },
         query: change,
         seed: lineSeed
       }

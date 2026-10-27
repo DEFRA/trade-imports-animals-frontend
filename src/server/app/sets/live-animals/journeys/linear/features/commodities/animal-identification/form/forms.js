@@ -25,6 +25,16 @@ const identifierProvided = (values) =>
 export const parseAddAction = (action) =>
   action.startsWith('add:') ? Number(action.slice('add:'.length)) : null
 
+const isImplicitSubmitAction = (action) => action === 'implicit-submit'
+
+export const staysOnIdentification = (action, forms, answers) =>
+  parseAddAction(action) !== null ||
+  (isImplicitSubmitAction(action) &&
+    [...forms].some(
+      ([index, form]) =>
+        form.holdsData && !holdsOneAnimal(identifierCapOf(answers, index))
+    ))
+
 const formHoldsData = (showAddress, values, addressValues) =>
   identifierProvided(values) ||
   (showAddress && addressRecordProvided(addressValues))
@@ -69,6 +79,9 @@ const capIfAtCap = (answers, { index, entry }) => {
 }
 
 const linesToReadFormsFor = (action, answers, lines) => {
+  if (isImplicitSubmitAction(action)) {
+    return lines
+  }
   const addIndex = parseAddAction(action)
   return addIndex === null
     ? lines.filter(({ index }) =>
