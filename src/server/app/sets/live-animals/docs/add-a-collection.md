@@ -414,13 +414,10 @@ what it declares. Add a case shaped like the matching layout:
 ## Test support
 
 Build test set-up from the shared helpers, and extend them rather than writing
-set-up in the test file:
+set-up in the test file.
 
-- controller tests:
-  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
-  seeds a journey, runs one handler and returns the answers before and after;
-  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
-  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+The controller-test helpers are listed in [Test support](add-a-page.md#test-support), with `useStubbedJourney` as the set-up.
+
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `selectSpecies`,
