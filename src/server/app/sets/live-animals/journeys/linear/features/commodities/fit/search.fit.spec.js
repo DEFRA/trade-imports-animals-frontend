@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  answerOriginEntry,
   expectNoSeriousOrCriticalViolations,
+  expectThreeSaveControls,
   searchCommodities,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  startNotificationAtOrigin
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -19,7 +22,6 @@ const FELIS_CATUS_LABEL = 'Cat (Felis catus)'
 const CANIS_LUPUS_LABEL = 'Dog (Canis lupus familiaris)'
 const COW_LEGEND = 'Cow (0102)'
 const SAVE_AND_CONTINUE = 'Save and continue'
-const BACK_LINK = '.govuk-back-link'
 const SEARCH_BOX_DESCRIPTION_WITH_ERROR = `${copy.search.searchHint} Error: ${copy.search.errors.selectCommodity}`
 
 const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
@@ -38,8 +40,10 @@ const openSelection = async (page) => {
   ).toBeVisible()
 }
 
+const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
+
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.getByRole('alert').getByRole('link', { name: message })
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
@@ -122,10 +126,10 @@ test.describe('commodity search', () => {
     page
   }) => {
     await searchCommodities(page, 'Bos')
-    await expect(page.locator('.govuk-checkboxes__label')).toHaveText([
-      BOS_SPP_LABEL,
-      BOS_TAURUS_LABEL
-    ])
+    const species = page.getByRole('checkbox')
+    await expect(species).toHaveCount(2)
+    await expect(species.nth(0)).toHaveAccessibleName(BOS_SPP_LABEL)
+    await expect(species.nth(1)).toHaveAccessibleName(BOS_TAURUS_LABEL)
   })
 
   test('finds a species by its common name', async ({ page }) => {
@@ -178,7 +182,7 @@ test.describe('commodity search', () => {
   })
 
   test('back link returns to the overview', async ({ page }) => {
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -203,9 +207,9 @@ test.describe('commodity search', () => {
     await searchCommodities(page, 'Bos')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await expect(
-      page.locator('.govuk-error-summary').getByRole('link')
-    ).toHaveText([copy.search.errors.selectCommodity])
+    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+      copy.search.errors.selectCommodity
+    ])
     await expect(searchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
     )
@@ -231,7 +235,7 @@ test.describe('commodity search', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await reopenSelection(page)
     await expectSelectedHeading(page, 3)
     for (const label of canonicalSelectionLabels) {
@@ -276,5 +280,22 @@ test.describe('commodity search', () => {
       page,
       'Commodity search with error'
     )
+  })
+})
+
+test.describe('commodity search reached through the opening sequence', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+    await answerOriginEntry(page)
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  test('offers Save and continue, then Save and return to overview, then Cancel and return to overview', async ({
+    page
+  }) => {
+    await expectThreeSaveControls(page)
   })
 })
