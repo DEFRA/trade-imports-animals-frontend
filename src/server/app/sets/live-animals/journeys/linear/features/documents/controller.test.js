@@ -49,7 +49,6 @@ import {
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
 import { recordSubmittedUpload } from '../../../../../../services/cdp-uploader/stub.js'
-import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
@@ -123,6 +122,21 @@ const DOCUMENTS_UNCHECKED_BANNER =
 const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
+const OFFERED_DOCUMENT_TYPE_CODES = [
+  'ITAHC',
+  'VETERINARY_HEALTH_CERTIFICATE',
+  'AIR_WAYBILL',
+  'IMPORT_PERMIT',
+  'LETTER_OF_AUTHORITY',
+  'COMMERCIAL_INVOICE',
+  'SEA_WAYBILL',
+  'RAIL_WAYBILL',
+  'BILL_OF_LADING',
+  'CATCH_CERTIFICATE',
+  'LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN',
+  'JOURNEY_LOG',
+  'OTHER'
+]
 
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
@@ -863,6 +877,21 @@ describe('documents — listing, scanning and removing', () => {
     expect(row[4].html).not.toContain('href')
   })
 
+  it('Should label a document recorded as Health certificate with that type while the select offers thirteen', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        documents: [
+          storedDocument({ accompanyingDocumentType: 'HEALTH_CERTIFICATE' })
+        ]
+      }
+    })
+
+    expect(result.view.context.rows[0][1].text).toBe('Health certificate')
+    expect(
+      result.view.context.documentTypeItems.slice(1).map(({ value }) => value)
+    ).toEqual(OFFERED_DOCUMENT_TYPE_CODES)
+  })
+
   it('Should precede the status tag with a hidden label naming the document', async () => {
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }
@@ -1459,12 +1488,12 @@ describe('documents — naming the reason a scan refused a document', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer all fourteen document types behind the select text, in the service order', async () => {
+  it('Should offer thirteen document types behind the select text, in the order the page offers them', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })
     expect(items.slice(1).map(({ value }) => value)).toEqual(
-      documentTypes.documentTypes()
+      OFFERED_DOCUMENT_TYPE_CODES
     )
     expect(items.slice(1).map(({ text }) => text)).toEqual([
       'Intra Trade Animal Health Certificate (ITAHC)',
@@ -1478,7 +1507,6 @@ describe('documents — naming the reason a scan refused a document', () => {
       'Bill of lading',
       'Catch certificate',
       'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-      'Health certificate',
       'Journey log',
       'Other'
     ])

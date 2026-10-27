@@ -368,8 +368,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a form left on it submits an empty type. One message covers both mistakes a
   select can make: left on the select text, or carrying a value the page never
   offered.
-- The offered document types are service-backed and primed at boot, so the
-  type check is built for each add, not frozen at module load.
+- The select offers fewer document types than the vocabulary this service may
+  send to the backend. The page's own list is what both the select's items
+  and the add form's type check read; a document already recorded as a type
+  outside that list still reads back on its saved row and is still sent with
+  that type.
 - A saved document returns the trader to the page, so a reload cannot replay
   the save. Continue is pressed again from the fresh page once scans settle.
 - A file still being checked holds Continue back, and so does a document the

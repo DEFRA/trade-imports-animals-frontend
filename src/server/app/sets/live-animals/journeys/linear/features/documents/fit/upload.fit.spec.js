@@ -199,7 +199,7 @@ test.describe('document upload page', () => {
     ).toBeVisible()
   })
 
-  test('offers all fourteen document types behind the select text, between the reference and the date', async ({
+  test('offers thirteen document types behind the select text, between the reference and the date', async ({
     page
   }) => {
     const select = page.getByLabel(copy.documentType.label)
@@ -216,7 +216,6 @@ test.describe('document upload page', () => {
       copy.types.BILL_OF_LADING,
       copy.types.CATCH_CERTIFICATE,
       copy.types.LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN,
-      copy.types.HEALTH_CERTIFICATE,
       copy.types.JOURNEY_LOG,
       copy.types.OTHER
     ])
