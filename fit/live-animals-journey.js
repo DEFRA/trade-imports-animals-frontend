@@ -90,13 +90,6 @@ export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
 export const GOVUK_BLUE = 'rgb(29, 112, 184)'
 export const GOVUK_SECONDARY_TEXT = 'rgb(72, 73, 73)'
-export const GOVUK_FOCUS = 'rgb(255, 221, 0)'
-export const GOVUK_FOCUS_OUTLINE_WIDTH = '3px'
-export const GOVUK_FOCUS_INSET_SHADOW = 'rgb(0, 0, 0) 0px 0px 0px 2px inset'
-export const GOVUK_ERROR = 'rgb(202, 53, 53)'
-export const GOVUK_FONT_FAMILY = '"GDS Transport", arial, sans-serif'
-export const GOVUK_BODY_FONT_SIZE = '19px'
-export const GOVUK_BORDER_WIDTH = '2px'
 
 const documentTop = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
@@ -544,7 +537,7 @@ export const answerCountryOfOrigin = async (page) => {
     .click()
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await save(page)
   await expectOverview(page)
 }
 
@@ -578,11 +571,6 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await expectOverview(page)
 }
 
-// Handing a file to the input is one action, and `test.slow()` does not extend
-// an action's own deadline. An oversize case has to send a genuinely over-cap
-// file — the browser check reads the limit once, at load, so a smaller file
-// cannot provoke it — and writing the whole cap through the browser outlasts
-// the default deadline on a machine running every worker at once.
 const SET_FILE_TIMEOUT_MS = 60_000
 
 export const setUploadFile = (
@@ -630,8 +618,7 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
+const save = (page) => saveAndContinue(page).click()
 
 export const answerOriginDetails = async (
   page,

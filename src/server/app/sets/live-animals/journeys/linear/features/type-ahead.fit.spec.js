@@ -2,18 +2,12 @@ import { expect, test } from '@playwright/test'
 
 import {
   FORM_GROUP_ANCESTOR_XPATH,
-  GOVUK_BODY_FONT_SIZE,
-  GOVUK_ERROR,
-  GOVUK_BORDER_WIDTH,
-  GOVUK_FOCUS,
-  GOVUK_FOCUS_OUTLINE_WIDTH,
-  GOVUK_FOCUS_INSET_SHADOW,
-  GOVUK_FONT_FAMILY,
   PHONE_VIEWPORT,
   chooseOutOfListCountry,
   expectNoSeriousOrCriticalViolations,
   openArrival,
   openTransit,
+  saveAndContinue,
   signIn,
   startNotificationAtImportReason,
   startNotificationAtOrigin
@@ -345,8 +339,6 @@ test.describe('country of origin change announcement', () => {
 })
 
 test.describe('country of origin type-ahead styles', () => {
-  const COUNTRY_ERROR = '#countryOfOrigin-error'
-
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startNotificationAtOrigin(page)
@@ -360,22 +352,37 @@ test.describe('country of origin type-ahead styles', () => {
     const option = page.getByRole('option', { name: france.name, exact: true })
     await expect(option).toBeVisible()
 
+    const govukInputFont = await govukInputStyleOf(page, {
+      properties: ['font-family', 'font-size']
+    })
+    await expect(input).toHaveCSS('font-family', /^"?GDS Transport/)
     for (const element of [input, option]) {
-      await expect(element).toHaveCSS('font-family', GOVUK_FONT_FAMILY)
-      await expect(element).toHaveCSS('font-size', GOVUK_BODY_FONT_SIZE)
+      await expectStyle(element, govukInputFont)
     }
   })
 
-  test('keeps the upstream focus indicator on the enhanced input', async ({
+  test('gives the enhanced input the GOV.UK input focus outline and inset shadow', async ({
     page
   }) => {
     const input = inputFor(page, 'countryOfOrigin')
+    const focusColour = await govukColourOf(page, 'focus')
+    const { 'outline-width': govukOutlineWidth, 'box-shadow': govukShadow } =
+      await govukInputStyleOf(page, {
+        properties: ['outline-width', 'box-shadow'],
+        focused: true
+      })
 
     await input.focus()
+    const inputColour = await input.evaluate(
+      (element) => window.getComputedStyle(element).color
+    )
 
-    await expect(input).toHaveCSS('outline-color', GOVUK_FOCUS)
-    await expect(input).toHaveCSS('outline-width', GOVUK_FOCUS_OUTLINE_WIDTH)
-    await expect(input).toHaveCSS('box-shadow', GOVUK_FOCUS_INSET_SHADOW)
+    await expect(input).toHaveCSS('outline-color', focusColour)
+    await expect(input).toHaveCSS('outline-width', govukOutlineWidth)
+    await expect(input).toHaveCSS(
+      'box-shadow',
+      shadowInColour(govukShadow, inputColour)
+    )
   })
 
   test('gives the enhanced input the standard GOV.UK error border', async ({
@@ -385,19 +392,68 @@ test.describe('country of origin type-ahead styles', () => {
     await page
       .getByRole('radio', { name: originCopy.regionRequirement.no })
       .check()
-    await page.locator('form button[type="submit"]').first().click()
+    await saveAndContinue(page).click()
     await expect(
       page.getByRole('alert').getByRole('link', {
         name: originCopy.errors.countryFromList
       })
     ).toBeVisible()
 
+    const errorColour = await govukColourOf(page, 'error')
     const input = inputFor(page, 'countryOfOrigin')
-    await expect(input).toHaveCSS('border-top-color', GOVUK_ERROR)
-    await expect(input).toHaveCSS('border-top-width', GOVUK_BORDER_WIDTH)
-    await expect(page.locator(COUNTRY_ERROR)).toHaveCSS('color', GOVUK_ERROR)
+    await expect(input).toHaveCSS('border-top-color', errorColour)
+    await expectStyle(
+      input,
+      await govukInputStyleOf(page, {
+        classes: 'govuk-input govuk-input--error',
+        properties: ['border-top-width']
+      })
+    )
+    await expect(page.locator('#countryOfOrigin-error')).toHaveCSS(
+      'color',
+      errorColour
+    )
   })
 })
+
+const govukColourOf = (page, token) =>
+  page.evaluate((name) => {
+    const reference = document.createElement('span')
+    reference.style.color = `var(--govuk-${name}-colour)`
+    document.body.append(reference)
+    const { color } = window.getComputedStyle(reference)
+    reference.remove()
+    return color
+  }, token)
+
+const readInputStyleInBrowser = ({ classes, properties, focused }) => {
+  const reference = document.createElement('input')
+  reference.className = classes
+  document.body.append(reference)
+  if (focused) {
+    reference.focus()
+  }
+  const style = window.getComputedStyle(reference)
+  const values = Object.fromEntries(
+    properties.map((name) => [name, style.getPropertyValue(name)])
+  )
+  reference.remove()
+  return values
+}
+
+const govukInputStyleOf = (
+  page,
+  { classes = 'govuk-input', properties, focused = false }
+) => page.evaluate(readInputStyleInBrowser, { classes, properties, focused })
+
+const expectStyle = async (locator, style) => {
+  for (const [property, value] of Object.entries(style)) {
+    await expect(locator).toHaveCSS(property, value)
+  }
+}
+
+const shadowInColour = (shadow, colour) =>
+  shadow.replace(/^rgba?\([^)]*\)/, colour)
 
 const measureJoinedSearchButton = (input) =>
   input.evaluate((inputElement) => {

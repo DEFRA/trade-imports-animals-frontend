@@ -30,6 +30,30 @@ or AA violations.
 live-animals helper uses
 [`src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json`](../journeys/linear/flow/fixtures/happy-path.json).
 
+## Type-ahead style tests
+
+The type-ahead style tests (typography, focus indicator, error border) compare
+the enhanced input with a plain GOV.UK input and with GOV.UK colour tokens read
+at run time.
+
+Their readers live in `type-ahead.fit.spec.js`, so the coverage report never
+counts them as source. The readers are `govukColourOf`, `govukInputStyleOf`,
+`expectStyle` and `shadowInColour`. When a second spec needs one, move it to
+`fit/live-animals-journey.js` in the same change and delete every local copy.
+
+Browser tests prove appearance only by position, size relative to another
+element, a GOV.UK colour token read at run time, or comparison with a plain
+GOV.UK element. Exact colours, font sizes and icons are proved by the
+screenshot tests in `trade-imports-ins-tests` under
+`tests/animals/e2e/visual/`. Do not add fixed `rgb()` values, `box-shadow`
+strings or pixel sizes to a fit spec.
+
+`setUploadFile` hands the file to the input with a 60 second action timeout.
+`test.slow()` does not extend one action's own deadline. An oversize-file test
+has to send a file genuinely over the cap, because the page reads the limit
+once at load. Writing a file that large through the browser can outlast the
+default deadline when every worker runs at once.
+
 ## Required checks for a journey change
 
 ```bash
