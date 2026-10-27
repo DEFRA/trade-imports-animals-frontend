@@ -19,7 +19,11 @@ import {
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
-import { REFUSAL_LOG_MESSAGE, SURFACES } from '../../../../../../shared/kit.js'
+import {
+  CYA_SLUG,
+  REFUSAL_LOG_MESSAGE,
+  SURFACES
+} from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   knownJourneysCookie,
@@ -37,6 +41,7 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   getHandlerOf,
+  expectBackLinkIsPage,
   expectOneLogged,
   postHandlerOf,
   registerTestRequestLogger,
@@ -52,6 +57,7 @@ import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
+import { driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../../../../../../services/document-uploads/claim-contract.js'
@@ -427,7 +433,6 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   const completeDocument = (choice) =>
     submittedDocument({ action: null, ...choice })
-  const REVIEW = 'notification-view'
 
   it('Should append a complete document returned with Save and return to overview once and redirect to the overview', async () => {
     const result = await driveClaim(
@@ -533,7 +538,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, REVIEW)
+      redirect: pagePath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -544,7 +549,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, REVIEW)
+      redirect: pagePath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -591,6 +596,39 @@ describe('documents — leaving the page by the save choice a returned upload ca
       expect(result.after).toEqual(result.before)
     }
   )
+})
+
+describe('documents — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back to the review when the page was opened by changing an answer from the review', async () => {
+    const result = await driveHandler(get, { query: { change: '1' } })
+
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
+
+  it('Should go Back to the review while the notification is being amended, with nothing in the address saying where the trader came from', async () => {
+    const result = await driveHandler(get, { amend: true })
+
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview on a draft', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should keep the review back link after the page refuses a part-filled document returned from the upload service', async () => {
+    const result = await driveReturnFromUpload({
+      submission: validDocument,
+      query: { change: '1' }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
 })
 
 describe('documents — refusing an upload the browser returns with', () => {

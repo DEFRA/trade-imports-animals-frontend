@@ -4,6 +4,7 @@ import {
   documentRowFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  journeyUrl,
   openDatePicker,
   openDocuments,
   saveAndReturnToHub,
@@ -286,6 +287,17 @@ test.describe('document upload page', () => {
   test('back link returns to the overview', async ({ page }) => {
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  test('back link opens the review when the page was opened by changing an answer from the review', async ({
+    page
+  }) => {
+    await page.goto(`${journeyUrl(page, 'accompanying-documents')}?change=1`)
+    await page.locator('.govuk-back-link').click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Review your notification' })
+    ).toBeVisible()
   })
 
   describeCalendarPosition({

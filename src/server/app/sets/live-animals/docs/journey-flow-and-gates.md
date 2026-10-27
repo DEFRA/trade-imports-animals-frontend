@@ -124,7 +124,11 @@ overview, and following it does not end the run: a later Save and continue goes
 on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
 may open, nearest first, and `previousRunTarget` returns the first whose gate
 passes, so a skipped step is skipped going back too. `kit.runBackLink()` falls
-back to the overview when the run is over or no named earlier step applies.
+back to the overview when the run is over or no named earlier step applies. A
+page that has declared, through the helper's `returnsToReview` option, that it
+returns to the review is answered with the review instead when the request
+carries change context or the notification is being amended; every other page
+is unaffected.
 
 | Step                    | Back opens                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------- |
@@ -134,11 +138,15 @@ back to the overview when the run is over or no named earlier step applies.
 | Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |
 | Transit countries       | Arrival details                                                                       |
 
-Animal identification, arrival details, the transporter, the documents, roles
-and addresses and the contact address keep their Back link on the overview.
-Origin goes back to the dashboard until something is saved, then to the
-overview. The identification condition is `identifiesAnAnimal`, the rule that also decides
+Animal identification, arrival details, the transporter, roles and addresses
+and the contact address keep their Back link on the overview. Origin goes back
+to the dashboard until something is saved, then to the overview. The
+identification condition is `identifiesAnAnimal`, the rule that also decides
 whether the identification task row applies.
+
+The documents page's Back link opens the review while the notification is
+being amended, or when the page was opened by changing the uploaded documents
+from the review; it opens the overview otherwise.
 
 The review page's Back link follows the notification's status instead. A
 submitted notification, including the one shown after an amendment is cancelled,

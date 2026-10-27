@@ -344,12 +344,17 @@ state.collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
 ### Thread the change context through the loop
 
 A collection reached from a Change link on check-your-answers carries a change
-context. Wrap every internal link and redirect — row actions, back links,
+context. Wrap every internal link and redirect — row actions,
 add/remove/save round-trips — in `kit.withChangeContext(request, href)` so the
 context survives the loop. Resolve the loop's exiting Continue with
 `kit.nextTarget(request, page, scope)`, and let a hub exit win first via
 `kit.hubExitTarget(request)`. Only the exit repoints to check-your-answers;
 mid-loop actions must never bounce there early.
+
+A collection page's Back link carries the context on like any other internal
+link, unless the page returns to the review itself: such a page declares that
+to `kit.runBackLink()` through its `returnsToReview` option and takes its back
+link from there instead of wrapping it in `kit.withChangeContext()`.
 
 ## 5. Cap the count where the model demands it
 

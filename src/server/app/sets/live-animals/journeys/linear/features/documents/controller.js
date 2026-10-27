@@ -91,20 +91,24 @@ const renderAfterServiceFailure = async (
   values,
   { unsavedDocument } = {}
 ) =>
-  render(request, h, pageState, values, {
-    extra: {
-      recoverableError: true,
-      unsavedDocument,
-      ...(await addFormSessionFields(request, pageState.journey.journeyId))
-    }
-  }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  (
+    await render(request, h, pageState, values, {
+      extra: {
+        recoverableError: true,
+        unsavedDocument,
+        ...(await addFormSessionFields(request, pageState.journey.journeyId))
+      }
+    })
+  ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
 const renderRefusedClaim = async (request, h, pageState, claimed) =>
-  render(request, h, pageState, claimed.values, {
-    errors: claimed.errors ?? {},
-    summaryErrors: claimed.summaryErrors ?? [],
-    extra: await addFormSessionFields(request, pageState.journey.journeyId)
-  }).code(HTTP_STATUS_BAD_REQUEST)
+  (
+    await render(request, h, pageState, claimed.values, {
+      errors: claimed.errors ?? {},
+      summaryErrors: claimed.summaryErrors ?? [],
+      extra: await addFormSessionFields(request, pageState.journey.journeyId)
+    })
+  ).code(HTTP_STATUS_BAD_REQUEST)
 
 const saveClaimedEntry = (request, h, pageState, entry, correlationId) =>
   kit.recoverableSave(
@@ -206,13 +210,15 @@ const renderRemovalLeftToRetry = async (
   pageState,
   pendingDocumentRemoval
 ) =>
-  render(request, h, pageState, EMPTY_FORM, {
-    extra: {
-      recoverableError: true,
-      pendingDocumentRemoval,
-      ...(await addFormSessionFields(request, pageState.journey.journeyId))
-    }
-  }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  (
+    await render(request, h, pageState, EMPTY_FORM, {
+      extra: {
+        recoverableError: true,
+        pendingDocumentRemoval,
+        ...(await addFormSessionFields(request, pageState.journey.journeyId))
+      }
+    })
+  ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 
 const retryProjectionSave = async (
   request,
@@ -307,10 +313,12 @@ const renderStillSettling = async (request, h, pageState) => {
     reason: 'scans-not-cleared',
     scansNotCleared: scansNotCleared(pageState.documents)
   })
-  return render(request, h, pageState, EMPTY_FORM, {
-    summaryErrors: settlingSummaryErrors(pageState.documents),
-    extra: await addFormSessionFields(request, pageState.journey.journeyId)
-  }).code(HTTP_STATUS_BAD_REQUEST)
+  return (
+    await render(request, h, pageState, EMPTY_FORM, {
+      summaryErrors: settlingSummaryErrors(pageState.documents),
+      extra: await addFormSessionFields(request, pageState.journey.journeyId)
+    })
+  ).code(HTTP_STATUS_BAD_REQUEST)
 }
 
 const leavePage = async (request, h, saveChoice) => {
@@ -347,20 +355,24 @@ const refuseUnaddedDocument = async (request, h, payload) => {
       { journeyId },
       'Continue refused: the notification is at its document capacity'
     )
-    return render(request, h, pageState, values, {
-      summaryErrors: capacityExceededError(),
-      extra: addForm
-    }).code(HTTP_STATUS_BAD_REQUEST)
+    return (
+      await render(request, h, pageState, values, {
+        summaryErrors: capacityExceededError(),
+        extra: addForm
+      })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const errors = documentAddErrors(
     payload,
     values,
     addForm.uploadPath ? fileRequiredFieldError() : {}
   )
-  return render(request, h, pageState, values, {
-    errors,
-    extra: addForm
-  }).code(HTTP_STATUS_BAD_REQUEST)
+  return (
+    await render(request, h, pageState, values, {
+      errors,
+      extra: addForm
+    })
+  ).code(HTTP_STATUS_BAD_REQUEST)
 }
 
 const retryTakingOnTheUpload = async (request, h, correlationId) => {

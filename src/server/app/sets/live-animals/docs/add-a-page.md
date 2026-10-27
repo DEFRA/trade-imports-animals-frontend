@@ -104,7 +104,9 @@ Pass `page` so the section caption renders. The normal back link is
 `hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
 back link from `kit.runBackLink()`, which opens the previous run step while the
 run is active and falls back to the overview when the run is over or no named
-earlier step applies.
+earlier step applies. A page that returns to the review rather than the
+overview says so to the same helper, with its `returnsToReview` option,
+rather than building its own target.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
 
