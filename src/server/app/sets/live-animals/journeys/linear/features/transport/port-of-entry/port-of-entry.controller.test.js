@@ -73,6 +73,21 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
   })
+
+  it('Should save the port and go to the overview on Save and return to overview with no means of transport', async () => {
+    const [firstPort] = await ports.list()
+
+    const result = await driveHandler(post, {
+      payload: {
+        portOfEntry: firstPort.code,
+        meansOfTransport: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.portOfEntry).toBe(firstPort.code)
+  })
 })
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {

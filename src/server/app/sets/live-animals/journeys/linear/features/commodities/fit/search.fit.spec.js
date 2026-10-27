@@ -3,12 +3,15 @@ import {
   BISON_BISON,
   BOS_TAURUS,
   FELIS_CATUS,
+  answerOriginEntry,
   saveAndContinue,
   expectNoSeriousOrCriticalViolations,
+  expectThreeSaveControls,
   openCommoditySearch,
   searchCommodities,
   selectSpecies,
-  signIn
+  signIn,
+  startNotificationAtOrigin
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import {
@@ -16,7 +19,6 @@ import {
   OTHER_LIVE_MAMMALS_CODE
 } from '../../../../../services/commodities/rules.js'
 
-const BACK_LINK = '.govuk-back-link'
 const SEARCH_BOX_DESCRIPTION_WITH_ERROR = `${copy.search.searchHint} Error: ${copy.search.errors.selectCommodity}`
 
 const canonicalSelectionOrder = [
@@ -25,8 +27,10 @@ const canonicalSelectionOrder = [
   FELIS_CATUS.speciesLatinName
 ]
 
+const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
+
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.getByRole('alert').getByRole('link', { name: message })
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
@@ -199,7 +203,7 @@ test.describe('commodity search — choosing and saving species', () => {
   })
 
   test('back link returns to the overview', async ({ page }) => {
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -224,9 +228,9 @@ test.describe('commodity search — choosing and saving species', () => {
     await searchCommodities(page, 'Bos')
     await saveAndContinue(page).click()
 
-    await expect(
-      page.locator('.govuk-error-summary').getByRole('link')
-    ).toHaveText([copy.search.errors.selectCommodity])
+    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+      copy.search.errors.selectCommodity
+    ])
     await expect(searchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
     )
@@ -252,7 +256,7 @@ test.describe('commodity search — choosing and saving species', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await reopenSelection(page)
     await expectSelectedHeading(page, 3)
     await expect(selectedSummary(page).getByRole('listitem')).toHaveText([
@@ -340,5 +344,22 @@ test.describe('commodity search by code', () => {
   }) => {
     await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
     await expect(page.getByRole('checkbox')).toHaveCount(100)
+  })
+})
+
+test.describe('commodity search reached through the opening sequence', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+    await answerOriginEntry(page)
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  test('offers Save and continue, then Save and return to overview, then Cancel and return to overview', async ({
+    page
+  }) => {
+    await expectThreeSaveControls(page)
   })
 })

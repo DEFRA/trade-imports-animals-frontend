@@ -71,8 +71,16 @@ describe('GET /confirmation', () => {
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
-  it('Should list nothing outstanding when a document has been uploaded', async () => {
+  it('Should list the outstanding documents when only a veterinary health certificate has been uploaded', async () => {
     const view = await submittedView({ documents: [DOCUMENT] })
+
+    expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
+  })
+
+  it('Should list nothing outstanding when an ITAHC has been uploaded', async () => {
+    const view = await submittedView({
+      documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
+    })
 
     expect(view.context.outstandingItems).toEqual([])
   })
