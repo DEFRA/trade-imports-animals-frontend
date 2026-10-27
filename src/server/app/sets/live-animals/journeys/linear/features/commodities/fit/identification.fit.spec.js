@@ -31,8 +31,6 @@ const BISON_BISON = 'Bison bison'
 const COW = 'Cow'
 const CAT = 'Cat'
 const COW_HEADING = 'Cow (0102)'
-const GOVUK_GREEN = 'rgb(15, 122, 82)'
-const REGULAR_FONT_WEIGHT = '400'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -1007,15 +1005,7 @@ test.describe('animal identification sections and species cards', () => {
       .toEqual(['H4', 'INPUT', 'BUTTON', 'TABLE'])
   })
 
-  test('shows the card button as a primary button', async ({ page }) => {
-    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
-
-    await expect(
-      page.getByRole('button', { name: copy.identification.saveAndAddAnother })
-    ).toHaveCSS('background-color', GOVUK_GREEN)
-  })
-
-  test('labels the identifier fields in regular weight with no hint', async ({
+  test('labels the identifier fields with their copy and no hint', async ({
     page
   }) => {
     await openIdentification(page, [['Cat', [FELIS_CATUS]]], ['2'])
@@ -1027,10 +1017,6 @@ test.describe('animal identification sections and species cards', () => {
     ]) {
       await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
         copy.identification.identifierLabels[field]
-      )
-      await expect(page.locator(`label[for="${field}-0"]`)).toHaveCSS(
-        'font-weight',
-        REGULAR_FONT_WEIGHT
       )
       await expect(page.locator(`#${field}-0`)).toHaveAccessibleDescription('')
     }

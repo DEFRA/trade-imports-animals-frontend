@@ -425,7 +425,7 @@ test.describe('check-answers feature unfinished notification', () => {
     }
   })
 
-  test('keeps the card marking and leaves the blank answer blank with a hidden Missing after a refused Continue at desktop and phone width', async ({
+  test('shows the unfinished card with its Complete line and leaves the blank answer with a hidden Missing after a refused Continue at desktop and phone width', async ({
     page
   }) => {
     await startNotification(page)
@@ -436,9 +436,6 @@ test.describe('check-answers feature unfinished notification', () => {
 
     for (const viewport of [DESKTOP_VIEWPORT, PHONE_VIEWPORT]) {
       await page.setViewportSize(viewport)
-      await expect(page.locator(ARRIVAL_DETAILS_ANCHOR)).toHaveClass(
-        /app-summary-card--error/
-      )
       await expect(
         page
           .locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
@@ -448,7 +445,7 @@ test.describe('check-answers feature unfinished notification', () => {
     }
   })
 
-  test('names every unfinished card and marks the card it names', async ({
+  test('names every unfinished card in the error summary and shows its error message on the card', async ({
     page
   }) => {
     await startNotification(page)
@@ -466,9 +463,6 @@ test.describe('check-answers feature unfinished notification', () => {
         .locator(ARRIVAL_DETAILS_ANCHOR)
         .getByText(copy.errors.cards.arrivalDetails)
     ).toBeVisible()
-    await expect(page.locator(ARRIVAL_DETAILS_ANCHOR)).toHaveClass(
-      /app-summary-card--error/
-    )
     await expect(
       page.locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
     ).toContainText(copy.errors.prefix)

@@ -372,7 +372,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectCommodityDetailsHoldingSavedCountsAndDog(page)
   })
 
-  test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
+  test('offers Save and continue, then Save and return to overview, then Cancel and return to overview', async ({
     page
   }) => {
     await expectThreeSaveControls(page)

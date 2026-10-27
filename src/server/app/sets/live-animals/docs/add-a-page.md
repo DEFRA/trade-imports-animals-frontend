@@ -355,10 +355,10 @@ set-up in the test file:
   — journey steps such as `startNotification`, `answerOriginEntry`,
   `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
   `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
-  `expectThreeSaveControls` proves the primary and Save and return to
-  overview sit in the button group and Cancel and return to overview follows
-  it, and `expectPageEndsWithPrimaryAlone` proves a page ends with the primary
-  alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
+  `expectThreeSaveControls` proves, by role inside the journey form, that the
+  primary, Save and return to overview and Cancel and return to overview
+  appear in that order, and `expectPageEndsWithPrimaryAlone` proves a page
+  ends with the primary alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
   `answerOriginDetails` takes the country, region code and internal reference
   to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
   URL matcher at the origin and the mount, because `toHaveURL` matches the whole

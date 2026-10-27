@@ -65,8 +65,16 @@ The screenshot tests in `trade-imports-ins-tests`
 (`tests/animals/e2e/visual/origin-of-import.visual.spec.ts`) capture the
 type-ahead on first load and with a chosen country and the region box showing.
 No screenshot captures its focused or error state, so those two states are
-proved only by the type-ahead style tests. Do not add fixed `rgb()` values,
-`box-shadow` strings or pixel sizes to a fit spec.
+proved by the type-ahead style tests.
+
+## Appearance
+
+The screenshot specs live in `trade-imports-ins-tests` under
+`tests/animals/e2e/visual/`.
+
+Do not add fixed `rgb()` values, `box-shadow` strings, pixel sizes or font
+weights to a fit spec; prove appearance by position, relative size or a colour
+read at run time, or with a screenshot.
 
 ## Required checks for a journey change
 

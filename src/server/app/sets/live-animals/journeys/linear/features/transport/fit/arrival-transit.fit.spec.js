@@ -5,7 +5,6 @@ import {
   addTransitCountry,
   choosePortOfEntry,
   describeCalendarPosition,
-  GOVUK_SECONDARY_TEXT,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -214,22 +213,21 @@ test.describe('arrival details rendering', () => {
     })
   }
 
-  test('shows the identification lead-in, every list item and the document reference hint in the GOV.UK secondary text colour', async ({
+  test('shows the identification lead-in and every list item in the colour of the document reference hint', async ({
     page
   }) => {
     await openArrival(page)
+    const hintColour = await page
+      .locator(documentReferenceHint)
+      .evaluate((hint) => getComputedStyle(hint).color)
 
     await expect(page.locator(`${identificationHint} p`)).toHaveCount(1)
     await expect(page.locator(`${identificationHint} p`)).toHaveCSS(
       'color',
-      GOVUK_SECONDARY_TEXT
-    )
-    await expect(page.locator(documentReferenceHint)).toHaveCSS(
-      'color',
-      GOVUK_SECONDARY_TEXT
+      hintColour
     )
     for (const item of await page.locator(`${identificationHint} li`).all()) {
-      await expect(item).toHaveCSS('color', GOVUK_SECONDARY_TEXT)
+      await expect(item).toHaveCSS('color', hintColour)
     }
   })
 
