@@ -6,7 +6,11 @@ import {
   documentUploadSessions,
   stubUploadRoutes
 } from './stub.js'
-import { UPLOAD_AWAITING_FILE, UPLOAD_SCANNING } from './upload-statuses.js'
+import {
+  UPLOAD_AWAITING_FILE,
+  UPLOAD_READY,
+  UPLOAD_SCANNING
+} from './upload-statuses.js'
 import { ALLOWED_MIME_TYPES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const HTTP_STATUS_FOUND = 302
@@ -46,17 +50,20 @@ const buildServer = async () => {
   return { server, logged }
 }
 
-/**
- * A real multipart body, so the route's own `output: 'annotated'` parsing is what produces the
- * filename, content type and length the stub reads — rather than a test inventing that shape.
- */
-const multipartBody = ({ filename, contentType, bytes, fields }) => {
-  const text = Object.entries(fields)
+const textFieldParts = (fields) =>
+  Object.entries(fields)
     .map(
       ([name, value]) =>
         `--${BOUNDARY}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
     )
     .join('')
+
+/**
+ * A real multipart body, so the route's own `output: 'annotated'` parsing is what produces the
+ * filename, content type and length the stub reads — rather than a test inventing that shape.
+ */
+const multipartBody = ({ filename, contentType, bytes, fields }) => {
+  const text = textFieldParts(fields)
   const fileHead =
     `--${BOUNDARY}\r\n` +
     `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
@@ -78,6 +85,14 @@ const postFile = (
     method: 'POST',
     url: uploadPath,
     payload: multipartBody({ filename, contentType, bytes, fields }),
+    headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` }
+  })
+
+const postWithoutFile = (server, uploadPath, fields) =>
+  server.inject({
+    method: 'POST',
+    url: uploadPath,
+    payload: `${textFieldParts(fields)}--${BOUNDARY}--\r\n`,
     headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` }
   })
 
@@ -118,6 +133,31 @@ describe('#documentUploadSessions (stub)', () => {
 
       const { uploadStatus } = await documentUploadSessions.read(uploadId)
       expect(uploadStatus).toBe(UPLOAD_SCANNING)
+    })
+
+    it('Should answer a session ready once a rejected file has been uploaded to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postFile(server, uploadPath, {
+        filename: OVERSIZE_FILENAME,
+        contentType: PDF
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(uploadStatus).toBe(UPLOAD_READY)
+    })
+
+    it('Should answer a session ready once a submission carrying no file has been posted to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postWithoutFile(server, uploadPath, {
+        accompanyingDocumentReference: 'GBHC1234567890'
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(uploadStatus).toBe(UPLOAD_READY)
     })
 
     it('Should throw a not-found for a session that was never opened', async () => {
@@ -197,13 +237,8 @@ describe('#stubUploadRoutes', () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
-      await server.inject({
-        method: 'POST',
-        url: uploadPath,
-        payload: `--${BOUNDARY}\r\nContent-Disposition: form-data; name="accompanyingDocumentReference"\r\n\r\nGBHC1234567890\r\n--${BOUNDARY}--\r\n`,
-        headers: {
-          'content-type': `multipart/form-data; boundary=${BOUNDARY}`
-        }
+      await postWithoutFile(server, uploadPath, {
+        accompanyingDocumentReference: 'GBHC1234567890'
       })
 
       const { form } = await documentUploadSessions.read(uploadId)
@@ -315,7 +350,7 @@ describe('#stubUploadRoutes', () => {
       expect(response.headers.location).toBe(RETURN_PATH)
     })
 
-    it('Should answer a not-found for a session that was never opened', async () => {
+    it('Should answer a not-found saying the upload id does not exist, for a session that was never opened', async () => {
       const { server } = await buildServer()
 
       const response = await postFile(
@@ -325,9 +360,12 @@ describe('#stubUploadRoutes', () => {
       )
 
       expect(response.statusCode).toBe(HTTP_STATUS_NOT_FOUND)
+      expect(response.result.message).toBe(
+        'Failed to upload - uploadId does not exist'
+      )
     })
 
-    it('Should refuse a second file to one session, keeping the file it already holds', async () => {
+    it('Should refuse a second file to one session, naming the upload already used, and keep the file it already holds', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
       await postFile(server, uploadPath, {
@@ -341,6 +379,9 @@ describe('#stubUploadRoutes', () => {
       })
 
       expect(response.statusCode).toBe(HTTP_STATUS_UNPROCESSABLE_CONTENT)
+      expect(response.result.message).toBe(
+        `uploadId ${uploadId} has already been used to upload files`
+      )
       expect(await fileOf(uploadId)).toMatchObject({ filename: 'first.pdf' })
     })
 
