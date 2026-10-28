@@ -429,6 +429,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The drop zone wording matches the design system's own defaults.
 - A document's file is opened with a link, not a submit, so it needs no crumb.
   A file is offered only once its scan has settled clean.
+- The file is served with no cache directive of its own: no-store is on the
+  page because a kept copy of it can post to a spent upload session, and a
+  file carries no session, so what a cache may keep of a trader's own document
+  is a question still to be settled.
 - The Status tag carries a visually hidden name for the document it belongs
   to, so a screen reader hears what was checked.
 
