@@ -121,9 +121,6 @@ const post = async (request, h) => {
   }
 
   if (selected.length === 0) {
-    kit.logRefusal(request, {
-      fieldErrors: { [SEARCH_FIELD]: copy.errors.selectCommodity }
-    })
     const response = await searchStoreRowsAndRender(request, h, rowsByKey, {
       selected,
       query,

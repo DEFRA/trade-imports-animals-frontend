@@ -5,16 +5,14 @@ import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { consignmentDetailsPage as page } from '../../page.js'
 import { commodityCodesOf, entriesNotOfCode, linesOf } from '../../lines.js'
-import { redirectEmptyLinesToCommodityQuestion } from '../empty-lines-redirect.js'
+import { commodityQuestionPath } from '../../commodity-question-detour.js'
 
 export const groupCodes = (answers, evaluation) =>
   commodityCodesOf(linesOf(answers, evaluation))
 
 const afterRemoval = (request, h, kept) => {
   if (kept.length === 0) {
-    return redirectEmptyLinesToCommodityQuestion(request, h, {
-      commodityCodeCount: 0
-    })
+    return h.redirect(commodityQuestionPath(request))
   }
   return h.redirect(
     kit.withChangeContext(
