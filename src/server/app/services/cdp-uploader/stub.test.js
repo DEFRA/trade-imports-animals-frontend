@@ -6,11 +6,7 @@ import {
   documentUploadSessions,
   stubUploadRoutes
 } from './stub.js'
-import {
-  UPLOAD_AWAITING_FILE,
-  UPLOAD_SCANNING,
-  awaitsItsFile
-} from './upload-statuses.js'
+import { UPLOAD_AWAITING_FILE, UPLOAD_SCANNING } from './upload-statuses.js'
 import { ALLOWED_MIME_TYPES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const HTTP_STATUS_FOUND = 302
@@ -111,7 +107,7 @@ describe('#documentUploadSessions (stub)', () => {
       })
     })
 
-    it('Should answer a session no longer awaiting its file once one has been uploaded to it', async () => {
+    it('Should answer a session scanning once an accepted file has been uploaded to it', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
@@ -121,7 +117,7 @@ describe('#documentUploadSessions (stub)', () => {
       })
 
       const { uploadStatus } = await documentUploadSessions.read(uploadId)
-      expect(awaitsItsFile(uploadStatus)).toBe(false)
+      expect(uploadStatus).toBe(UPLOAD_SCANNING)
     })
 
     it('Should throw a not-found for a session that was never opened', async () => {
