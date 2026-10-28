@@ -11,6 +11,7 @@ import {
 } from './file-error-codes.js'
 import {
   UPLOAD_AWAITING_FILE,
+  UPLOAD_READY,
   UPLOAD_SCANNING,
   awaitsItsFile
 } from './upload-statuses.js'
@@ -130,6 +131,9 @@ const formFromSubmission = (session, payload) => {
   }
 }
 
+const uploadStatusFor = (form) =>
+  form.file && !form.file.hasError ? UPLOAD_SCANNING : UPLOAD_READY
+
 /**
  * Records against an opened session what the add-a-document form submitted to it, judging the
  * file by the limits the session was opened with.
@@ -145,7 +149,7 @@ export const recordSubmittedUpload = (uploadId, payload) => {
     return undefined
   }
   session.form = formFromSubmission(session, payload)
-  session.uploadStatus = UPLOAD_SCANNING
+  session.uploadStatus = uploadStatusFor(session.form)
   return session.form
 }
 
@@ -156,7 +160,9 @@ const takeUpload = (request, h) => {
       { uploadId: request.params.uploadId },
       'Upload posted to a session that was never opened'
     )
-    return h.response().code(HTTP_STATUS_NOT_FOUND)
+    return h
+      .response({ message: 'Failed to upload - uploadId does not exist' })
+      .code(HTTP_STATUS_NOT_FOUND)
   }
   if (!awaitsItsFile(session.uploadStatus)) {
     request.logger.info(
@@ -167,7 +173,11 @@ const takeUpload = (request, h) => {
       },
       'Upload posted to a session that has already taken a file'
     )
-    return h.response().code(HTTP_STATUS_UNPROCESSABLE_CONTENT)
+    return h
+      .response({
+        message: `uploadId ${request.params.uploadId} has already been used to upload files`
+      })
+      .code(HTTP_STATUS_UNPROCESSABLE_CONTENT)
   }
   recordSubmittedUpload(request.params.uploadId, request.payload ?? {})
   if (session.form.file?.hasError) {

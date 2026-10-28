@@ -1,5 +1,6 @@
 export const UPLOAD_AWAITING_FILE = 'initiated'
 export const UPLOAD_SCANNING = 'pending'
+export const UPLOAD_READY = 'ready'
 
 /**
  * Whether a file posted to an upload session now would still be taken.
