@@ -405,20 +405,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   upload service has taken on that this notification does not list — otherwise
   the trader would carry on with a claimed document missing from the
   notification. The exit to the overview waits for neither.
-- An upload session is opened once per page view, not per render: a render
-  reuses the session the page is already showing, carried in the refresh link
-  and a hidden field, so a scan being polled does not leave a run of
-  registrations behind. A page view carrying no handle opens its own, which is
-  what keeps two concurrent adds off one handle. The carried handle is looked
-  up on the notification, not trusted alone, so a handle another notification
-  opened reaches nothing.
-- A session is only reused while the upload service is still waiting for its
-  file. One file closes a session, so a handle whose session has already taken
-  one opens a new session instead. The save buttons post the file straight to
-  the upload service, so a form carrying a closed session is answered by that
-  service and never by this one: the page is served with no store, and the
-  feature's client bundle opens it again by its own address when the browser
-  hands back a copy it kept.
+- A render reuses the session the page is already showing while that session
+  is still waiting for its file, carried in the refresh link and a hidden
+  field, so a scan being polled does not leave a run of registrations behind.
+  A render that carries no handle, and one whose session has already taken its
+  file, opens a session of its own, which is what keeps two concurrent adds
+  off one handle. The carried handle is looked up on the notification, not
+  trusted alone, so a handle another notification opened reaches nothing.
+- A form carrying a session that has already taken its file is answered by the
+  upload service and never by this one, because the save buttons post the file
+  straight there: the page is served with no store, and the feature's client
+  bundle opens it again by its own address when the browser hands back a copy
+  it kept.
 - The returned query key is the trader-facing word for what they return from.
   Its value is the correlation handle, because no upload id exists when the
   session opens. The return path is relative, because the upload service
