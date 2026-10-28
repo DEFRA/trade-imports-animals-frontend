@@ -12,14 +12,11 @@ const withQuery = (href, name, value) =>
   `${href}${href.includes('?') ? '&' : '?'}${name}=${value}`
 
 /**
- * Where the page sends a trader whose documents are still being checked, and where the client
- * bundle sends them once a scan settles. It carries the open upload session, so coming back to
- * the page reuses it rather than opening another, as long as no file has reached it.
- *
  * @param {object} request - the request the page is being rendered for
  * @param {number} attempt - the refresh this href is the next one after
  * @param {string} [uploadSession] - the handle of the session the add form is posting to
- * @returns {string} the page's path, with what the next render needs
+ * @returns {string} the page's path, carrying the attempt counter and, when given, the
+ *   handle of the open upload session
  */
 export const refreshHref = (request, attempt, uploadSession) => {
   const refresh = withQuery(
