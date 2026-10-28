@@ -134,5 +134,5 @@ export const render = async ({
         error: errors.accompanyingDocumentDateOfIssue
       })
     })
-    .header('cache-control', 'no-store')
+    .header('Cache-Control', 'no-store')
 }
