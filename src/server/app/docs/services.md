@@ -58,8 +58,9 @@ re-exports the active set id so the model can read it without crossing the
 
 The `address-book` client keeps three facts out of its code:
 
-- The page size is the address book's own, not a request parameter. The
-  service re-slices to it and reads it back from each response.
+- The address book takes a page size from 1 to 100 and serves 25 when none is
+  given. The client sends none, so the service re-slices the default page to
+  its own size and reads the size served back from each response.
 - The organisation id in the path and in the organisation header always comes
   from the signed-in session, never from a payload or a stored field. A read
   without one is refused, not sent: the path would name an organisation

@@ -8,10 +8,7 @@ const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 
-/** Page size the API serves. Server-owned (cv-025) — it is deliberately not a
- * request parameter, so the service re-slices to its own page size rather than
- * asking for one. Read back off each response in case the server is configured
- * differently. */
+/** The page size the address book serves when the request names none. */
 export const API_PAGE_SIZE = 25
 
 const addressesUrl = (orgId, addressId) => {

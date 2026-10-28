@@ -3,10 +3,7 @@ import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
 import * as client from './client.js'
 import { STUB_BOOK } from './stub/index.js'
 
-/** Rows per page of the picker's results table (design 05-03..06). Owned here,
- * not by the pages — the address book owns its own search and pagination, and
- * the API's page size is server-owned (cv-025), so this service re-slices an
- * API page down to this size rather than asking for it. */
+/** Rows per page of the picker's results table. */
 export const PAGE_SIZE = 5
 
 /** Addresses have no type in the address book (D3) — the same record may be a
@@ -56,8 +53,8 @@ const sliceAt = async (orgId, query, requested) => {
   let apiPage = Math.floor(offset / client.API_PAGE_SIZE) + 1
   let found = await client.listAddresses(orgId, { page: apiPage, query })
 
-  // The server owns its page size. If it is not what we assumed, the page we
-  // just asked for was the wrong one — redo the arithmetic with the real size.
+  // A page served at another size was the wrong page: redo the arithmetic with
+  // the size served.
   if (found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE) {
     apiPage = Math.floor(offset / found.pageSize) + 1
     found = await client.listAddresses(orgId, { page: apiPage, query })
