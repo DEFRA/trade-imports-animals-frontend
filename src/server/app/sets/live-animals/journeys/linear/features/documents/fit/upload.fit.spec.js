@@ -342,7 +342,10 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.referenceMaxLength)
+    const link = errorLink(
+      page,
+      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.reference.label)).toBeFocused()
@@ -897,5 +900,40 @@ test.describe('document upload page without JavaScript', () => {
       validDocument.accompanyingDocumentReference
     )
     await expectNoDocumentsAdded(page)
+  })
+})
+
+test.describe('document upload page across the browser history', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDocuments(page)
+  })
+
+  test('answers a GET of the page with cache-control no-store', async ({
+    page
+  }) => {
+    const response = await page.request.get(page.url())
+
+    expect(response.status()).toBe(HTTP_OK)
+    expect(response.headers()['cache-control']).toBe('no-store')
+  })
+
+  test('renders a new upload session when a persisted pageshow fires', async ({
+    page
+  }) => {
+    const addButton = page.getByRole('button', { name: copy.addAnother })
+    const uploadPathBeforeRestore = await addButton.getAttribute('formaction')
+
+    await page.evaluate(() => {
+      const restored = new Event('pageshow')
+      Object.defineProperty(restored, 'persisted', { value: true })
+      globalThis.dispatchEvent(restored)
+    })
+
+    await expect(addButton).not.toHaveAttribute(
+      'formaction',
+      uploadPathBeforeRestore
+    )
+    await expect(addButton).toHaveAttribute('formaction', /upload-and-scan/)
   })
 })

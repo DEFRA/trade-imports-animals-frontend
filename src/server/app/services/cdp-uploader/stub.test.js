@@ -6,22 +6,29 @@ import {
   documentUploadSessions,
   stubUploadRoutes
 } from './stub.js'
+import {
+  UPLOAD_AWAITING_FILE,
+  UPLOAD_READY,
+  UPLOAD_SCANNING
+} from './upload-statuses.js'
+import {
+  expectOneLogged,
+  registerSharedTestRequestLogger
+} from '../../engine/test-support.js'
 import { ALLOWED_MIME_TYPES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const HTTP_STATUS_FOUND = 302
 const HTTP_STATUS_NOT_FOUND = 404
+const HTTP_STATUS_UNPROCESSABLE_CONTENT = 422
 const PDF = 'application/pdf'
 const ZIP = 'application/zip'
 const CORRELATION_ID = 'correlation-1'
 const JOURNEY_ID = 'GBN-AG-26-000001'
 const RETURN_PATH = `/live-animals/notifications/${JOURNEY_ID}/accompanying-documents?upload=${CORRELATION_ID}`
-// A cap the test can exceed in a few bytes, rather than the real one in megabytes.
 const SESSION_CAP_BYTES = 1000
 const BOUNDARY = 'stubuploadboundary'
 const OVERSIZE_FILENAME = 'oversize.pdf'
 
-// The five fields and the handle-carrying return path that the one production
-// caller, handlers/add-form-session.js, hands the real adapter.
 const openSession = (maxFileSize = SESSION_CAP_BYTES) =>
   documentUploadSessions.open({
     journeyId: JOURNEY_ID,
@@ -31,30 +38,23 @@ const openSession = (maxFileSize = SESSION_CAP_BYTES) =>
     mimeTypes: ALLOWED_MIME_TYPES
   })
 
-// The real server has request.logger from hapi-pino. Recording it here keeps the
-// same contract and lets a test read what the route reported.
 const buildServer = async () => {
   const server = Hapi.server()
-  const logged = []
-  server.decorate('request', 'logger', {
-    info: (data, message) => logged.push({ data, message }),
-    error: (data, message) => logged.push({ data, message })
-  })
+  const logger = registerSharedTestRequestLogger(server)
   await server.register(stubUploadRoutes)
-  return { server, logged }
+  return { server, logger }
 }
 
-/**
- * A real multipart body, so the route's own `output: 'annotated'` parsing is what produces the
- * filename, content type and length the stub reads — rather than a test inventing that shape.
- */
-const multipartBody = ({ filename, contentType, bytes, fields }) => {
-  const text = Object.entries(fields)
+const textFieldParts = (fields) =>
+  Object.entries(fields)
     .map(
       ([name, value]) =>
         `--${BOUNDARY}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
     )
     .join('')
+
+const multipartBody = ({ filename, contentType, bytes, fields }) => {
+  const text = textFieldParts(fields)
   const fileHead =
     `--${BOUNDARY}\r\n` +
     `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
@@ -79,6 +79,14 @@ const postFile = (
     headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` }
   })
 
+const postWithoutFile = (server, uploadPath, fields) =>
+  server.inject({
+    method: 'POST',
+    url: uploadPath,
+    payload: `${textFieldParts(fields)}--${BOUNDARY}--\r\n`,
+    headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` }
+  })
+
 const fileOf = async (uploadId) => {
   const { form } = await documentUploadSessions.read(uploadId)
   return form.file
@@ -96,13 +104,51 @@ describe('#documentUploadSessions (stub)', () => {
   })
 
   describe('#read', () => {
-    it('Should answer an empty form until something is uploaded to the session', async () => {
+    it('Should answer an empty form and a session awaiting its file until something is uploaded', async () => {
       const { uploadId } = await openSession()
 
       await expect(documentUploadSessions.read(uploadId)).resolves.toEqual({
-        uploadStatus: 'pending',
+        uploadStatus: UPLOAD_AWAITING_FILE,
         form: {}
       })
+    })
+
+    it('Should answer a session scanning once an accepted file has been uploaded to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postFile(server, uploadPath, {
+        filename: 'cert.pdf',
+        contentType: PDF
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(uploadStatus).toBe(UPLOAD_SCANNING)
+    })
+
+    it('Should answer a session ready once a rejected file has been uploaded to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postFile(server, uploadPath, {
+        filename: OVERSIZE_FILENAME,
+        contentType: PDF
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(uploadStatus).toBe(UPLOAD_READY)
+    })
+
+    it('Should answer a session ready once a submission carrying no file has been posted to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postWithoutFile(server, uploadPath, {
+        accompanyingDocumentReference: 'GBHC1234567890'
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(uploadStatus).toBe(UPLOAD_READY)
     })
 
     it('Should throw a not-found for a session that was never opened', async () => {
@@ -111,7 +157,9 @@ describe('#documentUploadSessions (stub)', () => {
       ).rejects.toMatchObject({ status: HTTP_STATUS_NOT_FOUND })
     })
   })
+})
 
+describe('#stubUploadRoutes', () => {
   describe('the upload stand-in route', () => {
     it('Should keep the text fields submitted alongside the file and return the browser', async () => {
       const { server } = await buildServer()
@@ -139,10 +187,6 @@ describe('#documentUploadSessions (stub)', () => {
       })
     })
 
-    /**
-     * The browser's own check refuses an oversize file before it is ever posted, so a test that
-     * wants the service's refusal instead asks for it by name. It is the only name the stub reads.
-     */
     it('Should mark a file named as oversize rejected, with the too-large code', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
@@ -180,13 +224,8 @@ describe('#documentUploadSessions (stub)', () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
-      await server.inject({
-        method: 'POST',
-        url: uploadPath,
-        payload: `--${BOUNDARY}\r\nContent-Disposition: form-data; name="accompanyingDocumentReference"\r\n\r\nGBHC1234567890\r\n--${BOUNDARY}--\r\n`,
-        headers: {
-          'content-type': `multipart/form-data; boundary=${BOUNDARY}`
-        }
+      await postWithoutFile(server, uploadPath, {
+        accompanyingDocumentReference: 'GBHC1234567890'
       })
 
       const { form } = await documentUploadSessions.read(uploadId)
@@ -210,12 +249,7 @@ describe('#documentUploadSessions (stub)', () => {
       })
     })
 
-    /**
-     * Judged on the declared content type against the session's own list, the way cdp-uploader
-     * judges it. An extension rule here would take a file cdp-uploader refuses, and refuse one it
-     * takes — which is what a stub must never do.
-     */
-    it('Should reject a content type the session was not opened for', async () => {
+    it('Should reject a declared content type the session was not opened for', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
@@ -230,12 +264,7 @@ describe('#documentUploadSessions (stub)', () => {
       })
     })
 
-    /**
-     * The case an extension rule gets wrong in the direction that matters: a GIF is on no
-     * plausible deny-list, so a stub judging names takes it, while cdp-uploader refuses it for
-     * not being on the session's list. The trader would then meet a refusal no stub run had shown.
-     */
-    it('Should reject a type that is off the list even when its extension looks harmless', async () => {
+    it('Should reject a declared type the session was not opened for, even when its extension looks harmless', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
@@ -263,7 +292,7 @@ describe('#documentUploadSessions (stub)', () => {
     })
 
     it('Should report a refusal in the log, naming the upload and the reason', async () => {
-      const { server, logged } = await buildServer()
+      const { server, logger } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
       await postFile(server, uploadPath, {
@@ -271,20 +300,17 @@ describe('#documentUploadSessions (stub)', () => {
         contentType: PDF
       })
 
-      expect(logged).toEqual([
-        {
-          data: {
-            uploadId,
-            correlationId: CORRELATION_ID,
-            errorCode: 'FILE_TOO_LARGE'
-          },
-          message: 'Upload refused by the stand-in upload service'
-        }
-      ])
+      expectOneLogged(logger, {
+        level: 'info',
+        fields: {
+          uploadId,
+          correlationId: CORRELATION_ID,
+          errorCode: 'FILE_TOO_LARGE'
+        },
+        message: 'Upload refused by the stand-in upload service'
+      })
     })
 
-    // A refusal is a rejected file entry and a returned browser, not a failed request — which is
-    // what makes the page's own error reachable.
     it('Should return the browser even when the file is refused', async () => {
       const { server } = await buildServer()
       const { uploadPath } = await openSession()
@@ -298,7 +324,7 @@ describe('#documentUploadSessions (stub)', () => {
       expect(response.headers.location).toBe(RETURN_PATH)
     })
 
-    it('Should answer a not-found for a session that was never opened', async () => {
+    it('Should answer a not-found saying the upload id does not exist, for a session that was never opened', async () => {
       const { server } = await buildServer()
 
       const response = await postFile(
@@ -308,6 +334,53 @@ describe('#documentUploadSessions (stub)', () => {
       )
 
       expect(response.statusCode).toBe(HTTP_STATUS_NOT_FOUND)
+      expect(response.result.message).toBe(
+        'Failed to upload - uploadId does not exist'
+      )
+    })
+
+    it('Should refuse a second file to one session, naming the upload already used, and keep the file it already holds', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+      await postFile(server, uploadPath, {
+        filename: 'first.pdf',
+        contentType: PDF
+      })
+
+      const response = await postFile(server, uploadPath, {
+        filename: 'second.pdf',
+        contentType: PDF
+      })
+
+      expect(response.statusCode).toBe(HTTP_STATUS_UNPROCESSABLE_CONTENT)
+      expect(response.result.message).toBe(
+        `uploadId ${uploadId} has already been used to upload files`
+      )
+      expect(await fileOf(uploadId)).toMatchObject({ filename: 'first.pdf' })
+    })
+
+    it('Should report a second file to one session in the log, naming the session and its status', async () => {
+      const { server, logger } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+      await postFile(server, uploadPath, {
+        filename: 'first.pdf',
+        contentType: PDF
+      })
+
+      await postFile(server, uploadPath, {
+        filename: 'second.pdf',
+        contentType: PDF
+      })
+
+      expectOneLogged(logger, {
+        level: 'info',
+        fields: {
+          uploadId,
+          correlationId: CORRELATION_ID,
+          uploadStatus: UPLOAD_SCANNING
+        },
+        message: 'Upload posted to a session that has already taken a file'
+      })
     })
   })
 })

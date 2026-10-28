@@ -1,0 +1,10 @@
+export const UPLOAD_AWAITING_FILE = 'initiated'
+export const UPLOAD_SCANNING = 'pending'
+export const UPLOAD_READY = 'ready'
+
+/**
+ * @param {string} uploadStatus - the status the upload service reports for the session
+ * @returns {boolean} whether the session is still waiting for its file
+ */
+export const awaitsItsFile = (uploadStatus) =>
+  uploadStatus === UPLOAD_AWAITING_FILE
