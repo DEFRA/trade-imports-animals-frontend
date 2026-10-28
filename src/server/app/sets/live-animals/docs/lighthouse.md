@@ -84,11 +84,20 @@ SEO findings are not included in that file.
 `.github/workflows/lighthouse.yml` runs after a successful branch image
 publish, or by manual dispatch.
 
-It checks out the workspace, starts the stack for the chosen branch, installs
-this frontend and runs `npm run lighthouse`. It always tears the stack down.
-The workflow uploads the report for 14 days, publishes it to GitHub Pages and
-passes the result, report URL and flagged findings to the workspace status
-action.
+It splits the pages across two runners. Each runner checks out the workspace,
+starts its own stack for the chosen branch, installs this frontend and runs
+`npm run lighthouse` with `LIGHTHOUSE_SHARD` and `LIGHTHOUSE_SHARD_TOTAL` set.
+The setup step seeds that runner's own notifications, then keeps every
+`LIGHTHOUSE_SHARD_TOTAL`th URL starting from the shard's position, so each page
+is audited on exactly one runner. Locally both variables default to 1, which
+audits every page. Two Chromes never share a runner, because that would skew
+the performance scores.
+
+A merge job joins the two runners' reports, manifests and flagged findings into
+one report. The workflow uploads that report for 14 days, publishes it to
+GitHub Pages and passes the result, report URL and flagged findings to the
+workspace status action. The runner is discarded afterwards, so the stack is
+not torn down.
 
 When a Lighthouse change fails in CI, use the uploaded report for that branch.
 Reproduce it against the same route and stack before changing code or limits.

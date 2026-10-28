@@ -5,7 +5,12 @@ import process from 'node:process'
 import puppeteer from 'puppeteer'
 
 import signIn from '../../tests/lighthouse/auth-setup.cjs'
-import { auditUrls, reportNames, TARGETS_FILE } from './audit-targets.js'
+import {
+  auditUrls,
+  reportNames,
+  shardOf,
+  TARGETS_FILE
+} from './audit-targets.js'
 import { createJourneyClient } from './journey-client.js'
 import { ensureAddressBookHasAnAddress } from './seed-address-book.js'
 import {
@@ -76,9 +81,15 @@ const write = (payload) => {
 
 await ensureAddressBookHasAnAddress()
 const journeyIds = await seedNotifications(await signedInCookies())
-const urls = auditUrls(origin, journeyIds)
+const allUrls = auditUrls(origin, journeyIds)
+const reports = reportNames(allUrls, journeyIds)
+const urls = shardOf(
+  allUrls,
+  Number(process.env.LIGHTHOUSE_SHARD ?? 1),
+  Number(process.env.LIGHTHOUSE_SHARD_TOTAL ?? 1)
+)
 await assertUrlsRenderTheirOwnPage(urls, await signedInCookies())
-write({ origin, journeyIds, urls, reports: reportNames(urls, journeyIds) })
+write({ origin, journeyIds, urls, reports })
 
 const seeded = Object.entries(journeyIds)
   .map(([name, journeyId]) => `${name} ${journeyId}`)

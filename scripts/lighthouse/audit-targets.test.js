@@ -10,6 +10,7 @@ import {
   QUERY,
   reportName,
   reportNames,
+  shardOf,
   SKIPPED
 } from './audit-targets.js'
 
@@ -182,5 +183,29 @@ describe('#reportNames', () => {
     expect(() => reportNames(urls, journeyIds)).toThrow(
       /would write both .* to notifications_origin\.report\.html/
     )
+  })
+})
+
+describe('#shardOf', () => {
+  const urls = ['a', 'b', 'c', 'd', 'e']
+
+  it('Should give every URL to exactly one of the runners', () => {
+    expect([...shardOf(urls, 1, 2), ...shardOf(urls, 2, 2)].sort()).toEqual(
+      urls
+    )
+  })
+
+  it('Should deal the URLs round-robin', () => {
+    expect(shardOf(urls, 1, 2)).toEqual(['a', 'c', 'e'])
+    expect(shardOf(urls, 2, 2)).toEqual(['b', 'd'])
+  })
+
+  it('Should give a single runner every URL', () => {
+    expect(shardOf(urls)).toEqual(urls)
+  })
+
+  it('Should refuse a shard outside the runners', () => {
+    expect(() => shardOf(urls, 3, 2)).toThrow(/from 1 to 2, not 3/)
+    expect(() => shardOf(urls, 1, 0)).toThrow(/whole number from 1, not 0/)
   })
 })

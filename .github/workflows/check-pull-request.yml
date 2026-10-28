@@ -12,6 +12,10 @@ on:
       - synchronize
       - ready_for_review
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   pr-validator:
     name: Run Pull Request Checks
@@ -30,12 +34,14 @@ jobs:
         run: npm ci
 
       - run: |
-          npm run build:frontend
           npm run format:check
           npm run lint
           npm test
 
       - name: Test Docker Image Build
+        if: >
+          github.actor == 'dependabot[bot]' ||
+          github.event.pull_request.head.repo.full_name != github.repository
         run: |
           set +e
           docker build --no-cache --tag trade-imports-animals-frontend .
@@ -110,9 +116,13 @@ jobs:
         run: npm run security-audit
 
   playwright:
-    name: FIT Tests
+    name: FIT Tests ${{ matrix.shard }} of 3
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -130,15 +140,58 @@ jobs:
       - name: Install the Playwright browser
         run: npm run playwright:install
 
-      - name: Run the frontend-owned Playwright suites
-        run: npm run test:fit:ci
+      - name: Run this shard of the frontend-owned Playwright suites
+        run: >-
+          npm run test:fit:ci --
+          --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+          --reporter=list,blob,github
+
+      - name: Upload this shard's blob report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fit-blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  playwright-report:
+    name: FIT Tests
+    needs: playwright
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download every shard's blob report
+        uses: actions/download-artifact@v8
+        with:
+          pattern: fit-blob-report-*
+          path: all-blob-reports/
+          merge-multiple: true
+
+      - name: Merge the shards into one HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: frontend-playwright-report
-          path: |
-            playwright-report/
-            test-results/
+          path: playwright-report/
           retention-days: 14
+
+      - name: Fail unless every shard passed
+        if: needs.playwright.result != 'success'
+        run: |
+          echo "::error::A FIT shard finished ${{ needs.playwright.result }}; the merged report shows which tests failed"
+          exit 1

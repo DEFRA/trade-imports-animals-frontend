@@ -156,6 +156,22 @@ export const reportName = (url, journeyIds) => {
   return name === '' ? ROOT_REPORT_NAME : name
 }
 
+/** The URLs one of `total` runners audits, dealt round-robin so every URL
+ * lands on exactly one runner. */
+export const shardOf = (urls, shard = 1, total = 1) => {
+  if (!Number.isInteger(total) || total < 1) {
+    throw new Error(
+      `Lighthouse shard total must be a whole number from 1, not ${total}`
+    )
+  }
+  if (!Number.isInteger(shard) || shard < 1 || shard > total) {
+    throw new Error(
+      `Lighthouse shard must be a whole number from 1 to ${total}, not ${shard}`
+    )
+  }
+  return urls.filter((_, index) => index % total === shard - 1)
+}
+
 export const reportNames = (urls, journeyIds) => {
   const taken = new Map()
   const names = {}

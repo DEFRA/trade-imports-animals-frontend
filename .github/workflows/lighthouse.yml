@@ -33,12 +33,17 @@ jobs:
           lighthouse-result: pending
 
   lighthouse-test:
+    name: Lighthouse ${{ matrix.shard }} of 2
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'pull_request')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     outputs:
       tag: ${{ steps.branch-tag.outputs.sanitised }}
     steps:
@@ -84,15 +89,65 @@ jobs:
         id: lhci
         run: npm run lighthouse
         working-directory: frontend
+        env:
+          LIGHTHOUSE_SHARD: ${{ matrix.shard }}
+          LIGHTHOUSE_SHARD_TOTAL: ${{ strategy.job-total }}
+
+      - name: Flag simple findings
+        if: always() && steps.lhci.outcome != 'skipped'
+        run: node scripts/lighthouse/flag-simple-findings.cjs
+        working-directory: frontend
+
+      - name: Upload this shard's Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-report-shard-${{ matrix.shard }}
+          path: frontend/lighthouse-report/
+          retention-days: 1
+
+  lighthouse-merge:
+    name: Lighthouse report
+    needs: lighthouse-test
+    if: >
+      always() &&
+      needs.lighthouse-test.result != 'skipped' &&
+      needs.lighthouse-test.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download every shard's Lighthouse report
+        uses: actions/download-artifact@v8
+        with:
+          pattern: lighthouse-report-shard-*
+          path: shards/
+
+      - name: Merge the shard reports
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p lighthouse-report
+          reports=(shards/*/*.report.*)
+          manifests=(shards/*/manifest.json)
+          flagged=(shards/*/flagged-audits.json)
+          if [ ${#reports[@]} -gt 0 ]; then
+            cp "${reports[@]}" lighthouse-report/
+          fi
+          if [ ${#manifests[@]} -gt 0 ]; then
+            jq -s 'add' "${manifests[@]}" > lighthouse-report/manifest.json
+          fi
+          if [ ${#flagged[@]} -gt 0 ]; then
+            jq -s '{generatedAt: (map(.generatedAt) | max), pages: (map(.pages) | add)}' \
+              "${flagged[@]}" > lighthouse-report/flagged-audits.json
+          fi
 
       - name: Generate report index
-        if: always() && steps.lhci.outcome != 'skipped'
+        if: hashFiles('lighthouse-report/manifest.json') != ''
         run: |
           node -e "
             const fs = require('fs');
             const path = require('path');
             const cats = ['performance', 'accessibility', 'best-practices'];
-            const manifest = JSON.parse(fs.readFileSync('./frontend/lighthouse-report/manifest.json', 'utf8'));
+            const manifest = JSON.parse(fs.readFileSync('./lighthouse-report/manifest.json', 'utf8'));
             const rows = manifest.filter(e => e.isRepresentativeRun).map(e => {
               const file = path.basename(e.htmlPath);
               const scores = cats.map(k => \`<td>\${Math.round(e.summary[k] * 100)}</td>\`).join('');
@@ -104,32 +159,23 @@ jobs:
             </head><body><h1>Lighthouse Reports</h1>
             <table><thead><tr><th>Page</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th></tr></thead>
             <tbody>\${rows}</tbody></table></body></html>\`;
-            fs.writeFileSync('./frontend/lighthouse-report/index.html', html);
+            fs.writeFileSync('./lighthouse-report/index.html', html);
           "
 
-      - name: Flag simple findings
-        if: always() && steps.lhci.outcome != 'skipped'
-        run: node scripts/lighthouse/flag-simple-findings.cjs
-        working-directory: frontend
-
       - name: Upload Lighthouse report artifact
-        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-report
-          path: frontend/lighthouse-report/
+          path: lighthouse-report/
           retention-days: 14
 
-      - name: Tear down stack
-        if: always()
-        run: docker compose -p trade-imports down
-
   lighthouse-publish:
-    needs: lighthouse-test
+    needs: [lighthouse-test, lighthouse-merge]
     if: >
       always() &&
       needs.lighthouse-test.result != 'skipped' &&
-      needs.lighthouse-test.result != 'cancelled'
+      needs.lighthouse-test.result != 'cancelled' &&
+      needs.lighthouse-merge.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -167,7 +213,7 @@ jobs:
           echo "url=https://${owner_lc}.github.io/${name}/lighthouse/${{ needs.lighthouse-test.outputs.tag }}/" >> "$GITHUB_OUTPUT"
 
   report-status:
-    needs: [lighthouse-test, lighthouse-publish]
+    needs: [lighthouse-test, lighthouse-merge, lighthouse-publish]
     if: >
       always() &&
       github.event_name == 'workflow_run' &&
@@ -175,7 +221,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Lighthouse report artifact
-        if: needs.lighthouse-test.result == 'success' || needs.lighthouse-test.result == 'failure'
+        if: needs.lighthouse-merge.result == 'success'
         uses: actions/download-artifact@v8
         with:
           name: lighthouse-report
