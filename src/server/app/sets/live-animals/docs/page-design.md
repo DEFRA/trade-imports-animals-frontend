@@ -412,6 +412,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   what keeps two concurrent adds off one handle. The carried handle is looked
   up on the notification, not trusted alone, so a handle another notification
   opened reaches nothing.
+- A session is only reused while the upload service is still waiting for its
+  file. One file closes a session, so a handle whose session has already taken
+  one opens a new session instead. The save buttons post the file straight to
+  the upload service, so a form carrying a closed session is answered by that
+  service and never by this one: the page is served with no store, and the
+  feature's client bundle opens it again by its own address when the browser
+  hands back a copy it kept.
 - The returned query key is the trader-facing word for what they return from.
   Its value is the correlation handle, because no upload id exists when the
   session opens. The return path is relative, because the upload service

@@ -6,10 +6,16 @@ import {
   documentUploadSessions,
   stubUploadRoutes
 } from './stub.js'
+import {
+  UPLOAD_AWAITING_FILE,
+  UPLOAD_SCANNING,
+  awaitsItsFile
+} from './upload-statuses.js'
 import { ALLOWED_MIME_TYPES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const HTTP_STATUS_FOUND = 302
 const HTTP_STATUS_NOT_FOUND = 404
+const HTTP_STATUS_UNPROCESSABLE_CONTENT = 422
 const PDF = 'application/pdf'
 const ZIP = 'application/zip'
 const CORRELATION_ID = 'correlation-1'
@@ -96,13 +102,26 @@ describe('#documentUploadSessions (stub)', () => {
   })
 
   describe('#read', () => {
-    it('Should answer an empty form until something is uploaded to the session', async () => {
+    it('Should answer an empty form and a session awaiting its file until something is uploaded', async () => {
       const { uploadId } = await openSession()
 
       await expect(documentUploadSessions.read(uploadId)).resolves.toEqual({
-        uploadStatus: 'pending',
+        uploadStatus: UPLOAD_AWAITING_FILE,
         form: {}
       })
+    })
+
+    it('Should answer a session no longer awaiting its file once one has been uploaded to it', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+
+      await postFile(server, uploadPath, {
+        filename: 'cert.pdf',
+        contentType: PDF
+      })
+
+      const { uploadStatus } = await documentUploadSessions.read(uploadId)
+      expect(awaitsItsFile(uploadStatus)).toBe(false)
     })
 
     it('Should throw a not-found for a session that was never opened', async () => {
@@ -111,7 +130,9 @@ describe('#documentUploadSessions (stub)', () => {
       ).rejects.toMatchObject({ status: HTTP_STATUS_NOT_FOUND })
     })
   })
+})
 
+describe('#stubUploadRoutes', () => {
   describe('the upload stand-in route', () => {
     it('Should keep the text fields submitted alongside the file and return the browser', async () => {
       const { server } = await buildServer()
@@ -308,6 +329,48 @@ describe('#documentUploadSessions (stub)', () => {
       )
 
       expect(response.statusCode).toBe(HTTP_STATUS_NOT_FOUND)
+    })
+
+    it('Should refuse a second file to one session, keeping the file it already holds', async () => {
+      const { server } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+      await postFile(server, uploadPath, {
+        filename: 'first.pdf',
+        contentType: PDF
+      })
+
+      const response = await postFile(server, uploadPath, {
+        filename: 'second.pdf',
+        contentType: PDF
+      })
+
+      expect(response.statusCode).toBe(HTTP_STATUS_UNPROCESSABLE_CONTENT)
+      expect(await fileOf(uploadId)).toMatchObject({ filename: 'first.pdf' })
+    })
+
+    it('Should report a second file to one session in the log, naming the session and its status', async () => {
+      const { server, logged } = await buildServer()
+      const { uploadId, uploadPath } = await openSession()
+      await postFile(server, uploadPath, {
+        filename: 'first.pdf',
+        contentType: PDF
+      })
+
+      await postFile(server, uploadPath, {
+        filename: 'second.pdf',
+        contentType: PDF
+      })
+
+      expect(logged).toEqual([
+        {
+          data: {
+            uploadId,
+            correlationId: CORRELATION_ID,
+            uploadStatus: UPLOAD_SCANNING
+          },
+          message: 'Upload posted to a session that has already taken a file'
+        }
+      ])
     })
   })
 })

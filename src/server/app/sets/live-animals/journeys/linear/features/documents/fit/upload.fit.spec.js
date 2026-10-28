@@ -342,7 +342,10 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.referenceMaxLength)
+    const link = errorLink(
+      page,
+      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.reference.label)).toBeFocused()
@@ -897,5 +900,37 @@ test.describe('document upload page without JavaScript', () => {
       validDocument.accompanyingDocumentReference
     )
     await expectNoDocumentsAdded(page)
+  })
+})
+
+test.describe('document upload page across the browser history', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDocuments(page)
+  })
+
+  test('serves the page with no store, so the browser holds no copy to post a spent session from', async ({
+    page
+  }) => {
+    const response = await page.request.get(page.url())
+
+    expect(response.status()).toBe(HTTP_OK)
+    expect(response.headers()['cache-control']).toBe('no-store')
+  })
+
+  test('opens the page again with a session of its own when the browser hands back a copy it kept', async ({
+    page
+  }) => {
+    const addButton = page.getByRole('button', { name: copy.addAnother })
+    const spentUploadPath = await addButton.getAttribute('formaction')
+
+    await page.evaluate(() => {
+      const restored = new Event('pageshow')
+      Object.defineProperty(restored, 'persisted', { value: true })
+      globalThis.dispatchEvent(restored)
+    })
+
+    await expect(addButton).not.toHaveAttribute('formaction', spentUploadPath)
+    await expect(addButton).toHaveAttribute('formaction', /upload-and-scan/)
   })
 })

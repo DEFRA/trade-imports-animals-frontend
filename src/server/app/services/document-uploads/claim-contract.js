@@ -1,4 +1,4 @@
-export const REFERENCE_MAX_LENGTH = 100
+export const REFERENCE_MAX_LENGTH = 58
 
 // The characters a document reference may carry. Alphanumerics plus the
 // separators real references use: an air waybill is written 125-12345675, a

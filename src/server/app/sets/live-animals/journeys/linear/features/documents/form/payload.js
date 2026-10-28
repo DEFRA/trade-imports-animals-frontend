@@ -22,7 +22,7 @@ export const fields = () =>
     maxText(
       'accompanyingDocumentReference',
       REFERENCE_MAX_LENGTH,
-      copy.errors.referenceMaxLength
+      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
     ),
     pattern(
       'accompanyingDocumentReference',

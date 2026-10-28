@@ -53,11 +53,12 @@ import {
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
 import { recordSubmittedUpload } from '../../../../../../services/cdp-uploader/stub.js'
+import { UPLOAD_SCANNING } from '../../../../../../services/cdp-uploader/upload-statuses.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
-import { driveReturnFromUpload } from './test-support.js'
+import { addDocumentSubmission, driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../../../../../../services/document-uploads/claim-contract.js'
@@ -1953,6 +1954,15 @@ describe('documents — the session the add form posts to', () => {
   const uploadsRegisteredAgainst = async (journeyId) =>
     documentUploads.listByNotification({ journeyId })
 
+  const uploadAFileInto = async (journeyId, correlationId) => {
+    const registered = await documentUploads.findByCorrelationId({
+      journeyId,
+      correlationId
+    })
+    recordSubmittedUpload(registered.uploadId, addDocumentSubmission())
+    return registered.uploadId
+  }
+
   it('Should reuse the session it is already showing when the refresh link brings its handle back', async () => {
     const opened = await driveHandler(get)
 
@@ -2055,6 +2065,79 @@ describe('documents — the session the add form posts to', () => {
           'Could not read the upload session this page already opened, opening another'
       }
     ])
+  })
+
+  it('Should open a session of its own when the session the request names has already taken a file', async () => {
+    const opened = await driveHandler(get)
+    const spentSession = opened.view.context.uploadSession
+    await uploadAFileInto(opened.journeyId, spentSession)
+
+    const refreshed = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { attempt: 1, uploadSession: spentSession }
+    })
+
+    expect(refreshed.view.context.uploadSession).not.toBe(spentSession)
+    expect(refreshed.view.context.uploadPath).toBeDefined()
+    await expect(
+      uploadsRegisteredAgainst(opened.journeyId)
+    ).resolves.toContainEqual({
+      uploadId: expect.any(String),
+      correlationId: refreshed.view.context.uploadSession,
+      claimed: false
+    })
+  })
+
+  it('Should say which session had already taken a file, and that another was opened', async () => {
+    const opened = await driveHandler(get)
+    const spentSession = opened.view.context.uploadSession
+    const spentUploadId = await uploadAFileInto(opened.journeyId, spentSession)
+
+    const refreshed = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { attempt: 1, uploadSession: spentSession }
+    })
+
+    expect(refreshed.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: {
+          journeyId: opened.journeyId,
+          uploadId: spentUploadId,
+          correlationId: spentSession,
+          uploadStatus: UPLOAD_SCANNING
+        },
+        message: 'Upload session has already taken a file, opening another'
+      },
+      {
+        level: 'info',
+        fields: {
+          journeyId: opened.journeyId,
+          uploadId: expect.any(String),
+          correlationId: refreshed.view.context.uploadSession
+        },
+        message: UPLOAD_SESSION_OPENED_LINE
+      }
+    ])
+  })
+})
+
+describe('documents — what the page response lets the browser keep', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should forbid the browser storing the page it serves', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.headers['cache-control']).toBe('no-store')
+  })
+
+  it('Should forbid the browser storing the page it serves with a refusal on it', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue', ...validDocument }
+    })
+
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.headers['cache-control']).toBe('no-store')
   })
 })
 

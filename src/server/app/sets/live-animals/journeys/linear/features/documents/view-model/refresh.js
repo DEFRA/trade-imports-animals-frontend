@@ -14,7 +14,7 @@ const withQuery = (href, name, value) =>
 /**
  * Where the page sends a trader whose documents are still being checked, and where the client
  * bundle sends them once a scan settles. It carries the open upload session, so coming back to
- * the page reuses it rather than opening another.
+ * the page reuses it rather than opening another, as long as no file has reached it.
  *
  * @param {object} request - the request the page is being rendered for
  * @param {number} attempt - the refresh this href is the next one after

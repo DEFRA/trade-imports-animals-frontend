@@ -50,8 +50,13 @@ const stubView = (captured) => (view, context) => {
     view,
     context,
     statusCode: 200,
+    headers: {},
     code(statusCode) {
       this.statusCode = statusCode
+      return this
+    },
+    header(name, value) {
+      this.headers[name] = value
       return this
     }
   }

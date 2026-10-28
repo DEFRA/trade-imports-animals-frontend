@@ -1,15 +1,23 @@
 import { randomUUID } from 'node:crypto'
 
-import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
+import {
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_UNPROCESSABLE_CONTENT
+} from '../../lib/http-status.js'
 import {
   FILE_EMPTY,
   FILE_INVALID_TYPE,
   FILE_TOO_LARGE
 } from './file-error-codes.js'
+import {
+  UPLOAD_AWAITING_FILE,
+  UPLOAD_SCANNING,
+  awaitsItsFile
+} from './upload-statuses.js'
 
-// The one rule a stub run cannot reach honestly, so a test asks for it by name:
-// the browser's own check refuses an oversize file before it is ever posted, and
-// a test that wants the service's refusal instead has no way to provoke it.
+// A rule a stub run cannot reach honestly, so a test asks for it by name: the
+// browser's own check refuses an oversize file before it is ever posted, and a
+// test that wants the service's refusal instead has no way to provoke it.
 const OVERSIZE_FILENAME = /oversize|too-?big/i
 
 // The transport ceiling for the stand-in route, not the file cap. cdp-uploader
@@ -76,6 +84,7 @@ export const documentUploadSessions = {
       returnPath,
       maxFileSize,
       mimeTypes,
+      uploadStatus: UPLOAD_AWAITING_FILE,
       form: {}
     })
     return {
@@ -91,7 +100,7 @@ export const documentUploadSessions = {
       error.status = HTTP_STATUS_NOT_FOUND
       throw error
     }
-    return { uploadStatus: 'pending', form: session.form }
+    return { uploadStatus: session.uploadStatus, form: session.form }
   }
 }
 
@@ -136,6 +145,7 @@ export const recordSubmittedUpload = (uploadId, payload) => {
     return undefined
   }
   session.form = formFromSubmission(session, payload)
+  session.uploadStatus = UPLOAD_SCANNING
   return session.form
 }
 
@@ -147,6 +157,17 @@ const takeUpload = (request, h) => {
       'Upload posted to a session that was never opened'
     )
     return h.response().code(HTTP_STATUS_NOT_FOUND)
+  }
+  if (!awaitsItsFile(session.uploadStatus)) {
+    request.logger.info(
+      {
+        uploadId: request.params.uploadId,
+        correlationId: session.correlationId,
+        uploadStatus: session.uploadStatus
+      },
+      'Upload posted to a session that has already taken a file'
+    )
+    return h.response().code(HTTP_STATUS_UNPROCESSABLE_CONTENT)
   }
   recordSubmittedUpload(request.params.uploadId, request.payload ?? {})
   if (session.form.file?.hasError) {

@@ -15,6 +15,7 @@ import {
   MAX_FILE_SIZE_LABEL,
   allowedFileTypesHint
 } from '../upload-config.js'
+import { REFERENCE_MAX_LENGTH } from '../../../../../../../services/document-uploads/claim-contract.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 import { leaves } from '../../../../../../../shared/copy-leaves.js'
@@ -148,6 +149,15 @@ describe('#copy', () => {
     )
     expect(copyCy.scanStatusHidden('GBHC1234567890')).toContain(
       'GBHC1234567890'
+    )
+  })
+
+  it('Should name the length the claim contract accepts in the reference refusal, in both locales', () => {
+    expect(copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)).toBe(
+      'Document reference must be 58 characters or fewer'
+    )
+    expect(copyCy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)).toBe(
+      'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai'
     )
   })
 

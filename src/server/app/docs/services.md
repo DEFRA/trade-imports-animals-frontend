@@ -43,7 +43,11 @@ questions.
 
 A return link naming a handle the notification never opened is an ordinary
 outcome — a stale or hand-edited link — so the session lookup answers nothing
-rather than failing. A rejected scan carries its reason: cdp-uploader declares
+rather than failing. So is a handle whose session has already taken its file:
+`cdp-uploader` closes a session to further files as soon as one arrives, and
+answers a second post with a message of its own rather than returning the
+browser, so a session is asked for its status before it is reused and a closed
+one is replaced by a new session. A rejected scan carries its reason: cdp-uploader declares
 six refusal codes in `file-errors.js` and sends the code beside its own prose,
 so the page maps each to a message true of it and names the reason on the row
 where it has wording for it.
