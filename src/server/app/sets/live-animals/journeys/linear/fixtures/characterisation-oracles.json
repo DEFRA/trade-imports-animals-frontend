@@ -883,9 +883,9 @@
           "totalNoOfPackages": 2,
           "species": [
             {
-              "value": "1148346",
+              "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Domestic cattle",
+              "commonName": "Cattle or Cow",
               "noOfAnimals": "2",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -911,9 +911,9 @@
               ]
             },
             {
-              "value": "716661",
+              "value": "Bison bison",
               "text": "Bison bison",
-              "commonName": "American bison",
+              "commonName": "Bisons Spp",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK000000000001",
@@ -1740,9 +1740,9 @@
           "totalNoOfPackages": 1,
           "species": [
             {
-              "value": "1148346",
+              "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Domestic cattle",
+              "commonName": "Cattle or Cow",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -2045,16 +2045,15 @@
       "purposeInInternalMarket": "breeding",
       "commodities": [
         {
-          "name": "Fish",
-          "commodityCode": "0301",
-          "description": "Live fish",
+          "name": "01063300",
+          "commodityCode": "01063300",
           "totalNoOfAnimals": 1,
           "totalNoOfPackages": 1,
           "species": [
             {
-              "value": "801204",
-              "text": "Salmo salar",
-              "commonName": "Atlantic salmon",
+              "value": "Struthio",
+              "text": "Struthio",
+              "commonName": "Ostriches",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",

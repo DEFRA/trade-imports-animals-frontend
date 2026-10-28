@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
+import { CATTLE_CODE } from '../../../../../sets/live-animals/services/commodities/rules.js'
 import { commoditiesFromLinesA } from './commodity.js'
+
+const BOS_TAURUS = 'Bos taurus'
 
 describe('commoditiesFromLinesA', () => {
   test('Should return undefined when there are no lines', () => {
@@ -7,12 +10,12 @@ describe('commoditiesFromLinesA', () => {
     expect(commoditiesFromLinesA([])).toBeUndefined()
   })
 
-  test('Should resolve commonName from the catalogue when only commodity code and species value are given', () => {
+  test('Should resolve commonName from the catalogue when commodity code and latin name are given', () => {
     expect(
       commoditiesFromLinesA([
         {
-          commodityCode: '0102',
-          speciesSelection: '1148346',
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
           commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
@@ -22,13 +25,13 @@ describe('commoditiesFromLinesA', () => {
     ).toEqual([
       expect.objectContaining({
         name: 'Cow',
-        commodityCode: '0102',
+        commodityCode: CATTLE_CODE,
         description: 'Live bovine animals',
         species: [
           expect.objectContaining({
-            value: '1148346',
-            text: 'Bos taurus',
-            commonName: 'Domestic cattle'
+            value: BOS_TAURUS,
+            text: BOS_TAURUS,
+            commonName: 'Cattle or Cow'
           })
         ]
       })
@@ -39,8 +42,8 @@ describe('commoditiesFromLinesA', () => {
     expect(
       commoditiesFromLinesA([
         {
-          commodityCode: '0102',
-          speciesLatinName: 'Bos taurus',
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
           commonName: 'Registered herd name',
           numberOfAnimalsQuantity: '1'
         }
