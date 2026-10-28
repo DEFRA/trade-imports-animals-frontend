@@ -25,13 +25,10 @@ const ZIP = 'application/zip'
 const CORRELATION_ID = 'correlation-1'
 const JOURNEY_ID = 'GBN-AG-26-000001'
 const RETURN_PATH = `/live-animals/notifications/${JOURNEY_ID}/accompanying-documents?upload=${CORRELATION_ID}`
-// A cap the test can exceed in a few bytes, rather than the real one in megabytes.
 const SESSION_CAP_BYTES = 1000
 const BOUNDARY = 'stubuploadboundary'
 const OVERSIZE_FILENAME = 'oversize.pdf'
 
-// The five fields and the handle-carrying return path that the one production
-// caller, handlers/add-form-session.js, hands the real adapter.
 const openSession = (maxFileSize = SESSION_CAP_BYTES) =>
   documentUploadSessions.open({
     journeyId: JOURNEY_ID,
@@ -56,10 +53,6 @@ const textFieldParts = (fields) =>
     )
     .join('')
 
-/**
- * A real multipart body, so the route's own `output: 'annotated'` parsing is what produces the
- * filename, content type and length the stub reads — rather than a test inventing that shape.
- */
 const multipartBody = ({ filename, contentType, bytes, fields }) => {
   const text = textFieldParts(fields)
   const fileHead =
@@ -194,10 +187,6 @@ describe('#stubUploadRoutes', () => {
       })
     })
 
-    /**
-     * The browser's own check refuses an oversize file before it is ever posted, so a test that
-     * wants the service's refusal instead asks for it by name. It is the only name the stub reads.
-     */
     it('Should mark a file named as oversize rejected, with the too-large code', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
@@ -260,12 +249,7 @@ describe('#stubUploadRoutes', () => {
       })
     })
 
-    /**
-     * Judged on the declared content type against the session's own list, the way cdp-uploader
-     * judges it. An extension rule here would take a file cdp-uploader refuses, and refuse one it
-     * takes — which is what a stub must never do.
-     */
-    it('Should reject a content type the session was not opened for', async () => {
+    it('Should reject a declared content type the session was not opened for', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
@@ -280,12 +264,7 @@ describe('#stubUploadRoutes', () => {
       })
     })
 
-    /**
-     * The case an extension rule gets wrong in the direction that matters: a GIF is on no
-     * plausible deny-list, so a stub judging names takes it, while cdp-uploader refuses it for
-     * not being on the session's list. The trader would then meet a refusal no stub run had shown.
-     */
-    it('Should reject a type that is off the list even when its extension looks harmless', async () => {
+    it('Should reject a declared type the session was not opened for, even when its extension looks harmless', async () => {
       const { server } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
@@ -332,8 +311,6 @@ describe('#stubUploadRoutes', () => {
       })
     })
 
-    // A refusal is a rejected file entry and a returned browser, not a failed request — which is
-    // what makes the page's own error reachable.
     it('Should return the browser even when the file is refused', async () => {
       const { server } = await buildServer()
       const { uploadPath } = await openSession()
