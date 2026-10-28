@@ -405,13 +405,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   upload service has taken on that this notification does not list — otherwise
   the trader would carry on with a claimed document missing from the
   notification. The exit to the overview waits for neither.
-- An upload session is opened once per page view, not per render: a render
-  reuses the session the page is already showing, carried in the refresh link
-  and a hidden field, so a scan being polled does not leave a run of
-  registrations behind. A page view carrying no handle opens its own, which is
-  what keeps two concurrent adds off one handle. The carried handle is looked
-  up on the notification, not trusted alone, so a handle another notification
-  opened reaches nothing.
+- A render reuses the session the page is already showing while that session
+  is still waiting for its file, carried in the refresh link and a hidden
+  field, so a scan being polled does not leave a run of registrations behind.
+  A render that carries no handle, and one whose session has already taken its
+  file, opens a session of its own, which is what keeps two concurrent adds
+  off one handle. The carried handle is looked up on the notification, not
+  trusted alone, so a handle another notification opened reaches nothing.
+- A form carrying a session that has already taken its file is answered by the
+  upload service and never by this one, because the save buttons post the file
+  straight there: the page is served with no store, and the feature's client
+  bundle opens it again by its own address when the browser hands back a copy
+  it kept.
 - The returned query key is the trader-facing word for what they return from.
   Its value is the correlation handle, because no upload id exists when the
   session opens. The return path is relative, because the upload service
@@ -424,6 +429,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The drop zone wording matches the design system's own defaults.
 - A document's file is opened with a link, not a submit, so it needs no crumb.
   A file is offered only once its scan has settled clean.
+- The file is served with no cache directive of its own: no-store is on the
+  page because a kept copy of it can post to a spent upload session, and a
+  file carries no session, so what a cache may keep of a trader's own document
+  is a question still to be settled.
 - The Status tag carries a visually hidden name for the document it belongs
   to, so a screen reader hears what was checked.
 
