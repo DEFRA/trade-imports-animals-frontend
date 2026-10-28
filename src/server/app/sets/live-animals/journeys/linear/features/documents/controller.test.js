@@ -19,7 +19,11 @@ import {
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
-import { REFUSAL_LOG_MESSAGE, SURFACES } from '../../../../../../shared/kit.js'
+import {
+  CYA_SLUG,
+  REFUSAL_LOG_MESSAGE,
+  SURFACES
+} from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   knownJourneysCookie,
@@ -37,6 +41,7 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   driveHandler,
   getHandlerOf,
+  expectBackLinkIsPage,
   expectOneLogged,
   postHandlerOf,
   registerTestRequestLogger,
@@ -48,11 +53,11 @@ import {
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
 import { recordSubmittedUpload } from '../../../../../../services/cdp-uploader/stub.js'
-import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
+import { driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../../../../../../services/document-uploads/claim-contract.js'
@@ -123,8 +128,6 @@ const FILE_EMPTY_MESSAGE = 'The selected file is empty'
 const CONTINUE_AT_CAPACITY_LINE =
   'Continue refused: the notification is at its document capacity'
 const UPLOAD_SESSION_OPENED_LINE = 'Upload session opened'
-const SETTLING_MESSAGE =
-  'You cannot continue until all documents have been scanned or removed'
 const DOCUMENT_NOT_SAVED_BANNER =
   'Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘Save and continue’ to try again.'
 const DOCUMENTS_UNCHECKED_BANNER =
@@ -132,6 +135,22 @@ const DOCUMENTS_UNCHECKED_BANNER =
 const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
+const WITHHELD_TYPE = 'HEALTH_CERTIFICATE'
+const OFFERED_DOCUMENT_TYPE_CODES = [
+  'ITAHC',
+  'VETERINARY_HEALTH_CERTIFICATE',
+  'AIR_WAYBILL',
+  'IMPORT_PERMIT',
+  'LETTER_OF_AUTHORITY',
+  'COMMERCIAL_INVOICE',
+  'SEA_WAYBILL',
+  'RAIL_WAYBILL',
+  'BILL_OF_LADING',
+  'CATCH_CERTIFICATE',
+  'LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN',
+  'JOURNEY_LOG',
+  'OTHER'
+]
 
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
@@ -252,7 +271,9 @@ const submittedDocument = (overrides = {}) => ({
 })
 
 const SAVE_AND_CONTINUE = { action: 'continue' }
+const SAVE_AND_CONTINUE_LABEL = 'Save and continue'
 const SAVE_AND_RETURN_TO_OVERVIEW = { action: 'continue', exit: 'hub' }
+const SAVE_AND_RETURN_TO_OVERVIEW_LABEL = 'Save and return to overview'
 const AMEND_SAVE_AND_RETURN = { amendSave: 'return' }
 
 let nextUploadSession = 0
@@ -301,17 +322,14 @@ const configureEngine = () => {
   buildDispatch(SET_ID, dispatchPages)
 }
 
-// The refusal render keeps the add form live, which opens a session and logs a
-// line of its own, so the refusal is asserted as present rather than as the
-// only line the page logged.
-const expectContinueRefusedLogged = (result, scansNotCleared) =>
+const expectContinueRefusedLogged = (result, rejectedScans) =>
   expect(result.logger.entries).toContainEqual({
     level: 'info',
     message: REFUSAL_LOG_MESSAGE,
     fields: expect.objectContaining({
       journeyId: result.journeyId,
       errorCodes: ['documents'],
-      scansNotCleared
+      rejectedScans
     })
   })
 
@@ -384,6 +402,17 @@ describe('documents — taking on an upload the browser returns with', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should refuse a document type the backend holds but the page withholds, and append nothing', async () => {
+    const result = await driveClaim(
+      submittedDocument({ accompanyingDocumentType: WITHHELD_TYPE })
+    )
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      TYPE_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should append the document with the chosen type and the attachment type derived from the filename, then redirect', async () => {
     const result = await driveClaim(
       submittedDocument({ file: submittedFile({ filename: 'itahc.pdf' }) })
@@ -413,49 +442,46 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   const completeDocument = (choice) =>
     submittedDocument({ action: null, ...choice })
-  const REVIEW = 'notification-view'
-
-  it('Should append a complete document returned with Save and return to overview once and redirect to the overview', async () => {
-    const result = await driveClaim(
-      completeDocument(SAVE_AND_RETURN_TO_OVERVIEW)
-    )
-
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.documents).toEqual([
-      expect.objectContaining({
-        uploadId: result.session.uploadId,
-        accompanyingDocumentReference:
-          validDocument.accompanyingDocumentReference
-      })
-    ])
-  })
-
-  it('Should append a complete document returned with Save and continue once and hold the trader on the page with the settling message', async () => {
-    const result = await driveClaim(completeDocument(SAVE_AND_CONTINUE))
-
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
-    expect(result.view.context.rows[0][3].html).toContain(TAG_SCANNING)
-    expect(result.after.documents).toEqual([
-      expect.objectContaining({ uploadId: result.session.uploadId })
-    ])
-  })
 
   it.each([
-    ['Save and return', AMEND_SAVE_AND_RETURN],
-    ['Save and continue', SAVE_AND_CONTINUE]
+    [
+      SAVE_AND_RETURN_TO_OVERVIEW_LABEL,
+      SAVE_AND_RETURN_TO_OVERVIEW,
+      {},
+      (journeyId) => hubPath(journeyId)
+    ],
+    [
+      SAVE_AND_CONTINUE_LABEL,
+      SAVE_AND_CONTINUE,
+      {},
+      (journeyId) => hubPath(journeyId)
+    ],
+    [
+      'the amend Save and return',
+      AMEND_SAVE_AND_RETURN,
+      { query: { change: '1' }, amend: true },
+      (journeyId) => pagePath(journeyId, CYA_SLUG)
+    ],
+    [
+      'the amend Save and continue',
+      SAVE_AND_CONTINUE,
+      { query: { change: '1' }, amend: true },
+      (journeyId) => hubPath(journeyId)
+    ]
   ])(
-    'Should append a complete document returned with the amend %s and hold the trader on the page with the settling message',
-    async (_button, choice) => {
-      const result = await driveClaim(completeDocument(choice), {
-        query: { change: '1' },
-        amend: true
-      })
+    'Should append the returned document once and redirect to where %s leads',
+    async (_choiceLabel, choice, requestOptions, expectedRedirect) => {
+      const result = await driveClaim(completeDocument(choice), requestOptions)
 
-      expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-      expect(summaryTexts(result)).toEqual([SETTLING_MESSAGE])
+      expect(result.response).toEqual({
+        redirect: expectedRedirect(result.journeyId)
+      })
       expect(result.after.documents).toEqual([
-        expect.objectContaining({ uploadId: result.session.uploadId })
+        expect.objectContaining({
+          uploadId: result.session.uploadId,
+          accompanyingDocumentReference:
+            validDocument.accompanyingDocumentReference
+        })
       ])
     }
   )
@@ -519,7 +545,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, REVIEW)
+      redirect: pagePath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -530,7 +556,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, REVIEW)
+      redirect: pagePath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -577,6 +603,39 @@ describe('documents — leaving the page by the save choice a returned upload ca
       expect(result.after).toEqual(result.before)
     }
   )
+})
+
+describe('documents — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back to the review when the page was opened by changing an answer from the review', async () => {
+    const result = await driveHandler(get, { query: { change: '1' } })
+
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
+
+  it('Should go Back to the review while the notification is being amended, with nothing in the address saying where the trader came from', async () => {
+    const result = await driveHandler(get, { amend: true })
+
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview on a draft', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should keep the review back link after the page refuses a part-filled document returned from the upload service', async () => {
+    const result = await driveReturnFromUpload({
+      submission: validDocument,
+      query: { change: '1' }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
+    expectBackLinkIsPage(result, CYA_SLUG)
+  })
 })
 
 describe('documents — refusing an upload the browser returns with', () => {
@@ -960,12 +1019,6 @@ describe('documents — saving a document the service has taken on', () => {
   it('Should carry Continue past the page when the notification lists the document the service has taken on', async () => {
     const journey = await store.create()
     const session = await takenOnUpload(journey.journeyId)
-    // Settles the scan, so it is this gate and not the settling one that answers the press.
-    await documentUploads.scanStatus({
-      uploadId: session.uploadId,
-      filename: PDF_FILENAME,
-      refresh: true
-    })
 
     const result = await driveHandler(post, {
       journeyId: journey.journeyId,
@@ -1038,6 +1091,21 @@ describe('documents — listing, scanning and removing', () => {
     expect(row[4].html).not.toContain('href')
   })
 
+  it('Should label a document recorded as Health certificate with that type while the select offers thirteen', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        documents: [
+          storedDocument({ accompanyingDocumentType: 'HEALTH_CERTIFICATE' })
+        ]
+      }
+    })
+
+    expect(result.view.context.rows[0][1].text).toBe('Health certificate')
+    expect(
+      result.view.context.documentTypeItems.slice(1).map(({ value }) => value)
+    ).toEqual(OFFERED_DOCUMENT_TYPE_CODES)
+  })
+
   it('Should precede the status tag with a hidden label naming the document', async () => {
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }
@@ -1088,25 +1156,23 @@ describe('documents — listing, scanning and removing', () => {
     expect(settled.response.redirect).toBeDefined()
   })
 
-  it('Should block Continue while a scan is PENDING, naming the reason and leaving the add form open', async () => {
-    const uploadId = await registeredUpload('itahc.pdf')
-    const result = await driveHandler(post, {
-      seed: {
-        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
-      },
-      payload: { action: 'continue' }
-    })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(result.response.redirect).toBeUndefined()
-    expect(summaryTexts(result)).toContain(
-      'You cannot continue until all documents have been scanned or removed'
-    )
-    expect(result.view.context.uploadFormUnavailable).toBe(false)
-    expect(result.view.context.uploadPath).toBeDefined()
-    expectContinueRefusedLogged(result, [
-      { uploadId, scanStatus: 'PENDING', tagKey: 'PENDING' }
-    ])
-  })
+  it.each([
+    [SAVE_AND_CONTINUE_LABEL, { action: 'continue' }],
+    [SAVE_AND_RETURN_TO_OVERVIEW_LABEL, { action: 'continue', exit: 'hub' }]
+  ])(
+    'Should let %s leave the page while a scan is PENDING',
+    async (_button, payload) => {
+      const uploadId = await registeredUpload('itahc.pdf')
+      const result = await driveHandler(post, {
+        seed: {
+          documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+        },
+        payload
+      })
+      expect(result.response.redirect).toBeDefined()
+      expect(result.view).toBeUndefined()
+    }
+  )
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
     const uploadId = await registeredUpload(VIRUS_NOTES_FILENAME)
@@ -1131,17 +1197,6 @@ describe('documents — listing, scanning and removing', () => {
     expectContinueRefusedLogged(result, [
       { uploadId, scanStatus: 'REJECTED', tagKey: 'REJECTED_FILE_VIRUS' }
     ])
-  })
-
-  it('Should let the hub exit leave the page while a scan is PENDING', async () => {
-    const uploadId = await registeredUpload('itahc.pdf')
-    const result = await driveHandler(post, {
-      seed: {
-        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
-      },
-      payload: { action: 'continue', exit: 'hub' }
-    })
-    expect(result.response.redirect).toBeDefined()
   })
 })
 
@@ -1627,12 +1682,12 @@ describe('documents — naming the reason a scan refused a document', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer all fourteen document types behind the select text, in the service order', async () => {
+  it('Should offer thirteen document types behind the select text, in the order the page offers them', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })
     expect(items.slice(1).map(({ value }) => value)).toEqual(
-      documentTypes.documentTypes()
+      OFFERED_DOCUMENT_TYPE_CODES
     )
     expect(items.slice(1).map(({ text }) => text)).toEqual([
       'Intra Trade Animal Health Certificate (ITAHC)',
@@ -1646,7 +1701,6 @@ describe('documents — naming the reason a scan refused a document', () => {
       'Bill of lading',
       'Catch certificate',
       'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-      'Health certificate',
       'Journey log',
       'Other'
     ])
@@ -2133,7 +2187,7 @@ describe('documents — where the save buttons post', () => {
     [
       ...renderedPageOf(result).querySelectorAll('.govuk-button-group button')
     ].filter((button) =>
-      ['Save and continue', 'Save and return to overview'].includes(
+      [SAVE_AND_CONTINUE_LABEL, SAVE_AND_RETURN_TO_OVERVIEW_LABEL].includes(
         trimmedTextOf(button)
       )
     )

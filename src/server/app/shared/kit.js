@@ -238,8 +238,32 @@ export const runTarget = async (request, stepId, scope) =>
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
-export const runBackLink = async (request, stepId, current) => {
+/**
+ * Where a run step's Back link goes.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string} stepId - the run step's id.
+ * @param {object} current - the page's current state.
+ * @param {object} current.journey - the journey.
+ * @param {object} current.scope - the journey's scope.
+ * @param {object} current.answers - the journey's stored answers.
+ * @param {object} [options]
+ * @param {boolean} [options.returnsToReview] - the page returns to the
+ * review rather than the overview. When true, a request carrying change
+ * context or a notification being amended is answered with the review;
+ * every other state is answered exactly as it is without the option.
+ * @returns {Promise<string>} the path to go to.
+ */
+export const runBackLink = async (
+  request,
+  stepId,
+  current,
+  { returnsToReview = false } = {}
+) => {
   const { journey, scope, answers } = current
+  if (returnsToReview && (changeContext(request) || journey.status === AMEND)) {
+    return pagePath(journey.journeyId, CYA_SLUG)
+  }
   const previousRunTarget = (await inOpeningRun(
     request,
     request.params.journeyId

@@ -168,6 +168,11 @@ describe('page maturity banner on a served page', () => {
       url: '/auth/stub-sign-in'
     })
     cookie = signIn.headers['set-cookie'][0].split(';')[0]
+    await server.inject({
+      method: 'GET',
+      url: SERVED_PAGE_URL,
+      headers: { cookie }
+    })
   })
 
   afterEach(() => {
