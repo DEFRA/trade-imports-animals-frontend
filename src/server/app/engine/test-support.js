@@ -53,7 +53,7 @@ const chainableResponse = (fields) => {
     },
     header: {
       value: (name, value) => {
-        headers[name] = value
+        headers[name.toLowerCase()] = value
         return response
       }
     }
