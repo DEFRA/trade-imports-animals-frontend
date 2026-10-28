@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from '../scan-poll.js'
 import {
@@ -22,17 +21,6 @@ const unsavedDocumentBody = (copy, saveAction, { unchecked }) =>
     ? copy.errors.documentsUnchecked(saveAction)
     : copy.errors.documentNotSaved(saveAction)
 
-/**
- * Whether the add form is open, and what to say when it is not. It is closed
- * either because no session could be opened or because the notification is
- * full — a full notification must not offer a control that uploads a file the
- * claim will then refuse.
- *
- * @param {object} copy - the page's copy deck
- * @param {Array} documents - the documents the notification holds
- * @param {boolean} uploadFormUnavailable - no session could be opened
- * @returns {object} the add form's state for the template
- */
 const addFormState = (copy, documents, uploadFormUnavailable) => {
   const atCapacity = documents.length >= MAX_DOCUMENTS
   return {
@@ -50,14 +38,6 @@ const saveButtonsUploadPath = (extra, addFormClosed) =>
     ? undefined
     : extra.uploadPath
 
-/**
- * The error summary, or none when nothing is wrong.
- *
- * @param {object} sharedCopy - the shared copy deck, for the summary's title
- * @param {Array} documents - the documents the notification holds
- * @param {object} state - what the page is refusing
- * @returns {object|null} the summary for the template
- */
 const errorSummaryFor = (
   sharedCopy,
   documents,
@@ -74,7 +54,6 @@ const errorSummaryFor = (
     : null
 }
 
-/** The limits the page states and the browser checks against. */
 const uploadLimits = (copy) => ({
   acceptAttribute: ACCEPT_ATTRIBUTE,
   allowedFileTypesHint: allowedFileTypesHint(copy),
@@ -84,13 +63,13 @@ const uploadLimits = (copy) => ({
   oversizeFileMessage: oversizeMessage(copy)
 })
 
-export const render = ({
+export const render = async ({
   view,
   copy,
   sharedCopy,
   request,
   h,
-  pageState: { journey, documents },
+  pageState: { journey, documents, scope, answers },
   values,
   options: { errors = {}, summaryErrors = [], extra = {} } = {}
 }) => {
@@ -103,14 +82,17 @@ export const render = ({
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(
+        request,
+        page.id,
+        { journey, scope, answers },
+        { returnsToReview: true }
+      ),
       journey,
       page,
       surface: 'display'
     }),
     ...extra,
-    // Written after the spread, so only a session that was opened can open the
-    // add form.
     uploadFormUnavailable,
     recoverableErrorBody:
       extra.unsavedDocument &&

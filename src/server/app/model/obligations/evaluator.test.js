@@ -807,10 +807,6 @@ describe('passport (gatedBy allowListed(commodityCode, passport list))', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// tattoo / earTag / horseName — same gatedBy shape, different whitelists
-// ---------------------------------------------------------------------------
-
 describe('tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
   it('is in scope for a 01061900 line (01061900 in the tattoo list)', () => {
     const result = evaluator.evaluate({

@@ -82,5 +82,11 @@ the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
 otherwise, or when no named earlier step applies. `previousRunTarget` receives the step id, the notification's scope and
 answers, and the journey id.
 
+A page can declare, through `kit.runBackLink()`'s `returnsToReview` option,
+that it returns to the review rather than the overview. For such a page, a
+request carrying change context or a notification being amended is answered
+with the review; every other state is answered exactly as it is without the
+option.
+
 For the current section order, task rows, authored review gate and opening run, see
 the [live-animals journey flow guide](../sets/live-animals/docs/journey-flow-and-gates.md).

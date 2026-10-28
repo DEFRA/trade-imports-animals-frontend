@@ -134,8 +134,6 @@ export const copy = {
     fileEmpty: 'Mae’r ffeil a ddewiswyd yn wag',
     fileVirus: 'Mae’r ffeil a ddewiswyd yn cynnwys firws',
     fileDownloadFailed: 'Nid oedd modd llwytho’r ffeil a ddewiswyd i lawr',
-    cannotContinue:
-      'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     documentNotSaved: (saveAction) =>
       `Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth. Cafodd eich dogfen ei huwchlwytho ond nid yw wedi’i chadw i’r hysbysiad hwn. Dewiswch ‘${saveAction}’ i roi cynnig arall arni.`,
     documentsUnchecked: (saveAction) =>

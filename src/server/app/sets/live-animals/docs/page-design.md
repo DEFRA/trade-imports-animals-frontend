@@ -357,6 +357,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   form is closed, or a taken-on document or a removal is waiting to be
   retried, the save buttons post to this service and send no file, so the
   retry runs before anything else on the page.
+- A file carrying no bytes is the right type and under the size limit, so it
+  reaches the page rather than being stopped before it; the page is where it
+  is refused, and nothing is added.
+- With JavaScript on, the upload control the page shows is not the original
+  file input, so the oversize summary error points at the control a trader
+  can focus rather than at the hidden input behind it.
+- The upload service decides for itself whether to take a file and may refuse
+  one as too large on receipt; the page renders that refusal in its own
+  wording.
 - The page uses the full-width surface so the added-documents table fits. The
   guidance and the fields keep a two-thirds reading width.
 - With no documents, the File upload card shows no table and no sentence.
@@ -381,18 +390,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   select can make: left on the select text, or carrying a value the page never
   offered.
 - The offered document types are service-backed and primed at boot, so the
-  type check is built for each add, not frozen at module load.
+  type check is built for each add, not frozen at module load. The page offers
+  fewer of them than the vocabulary this service may send to the backend: the
+  page's own list is what both the select's items and the add form's type check
+  read, and a document already recorded as a type the page withholds still reads
+  back on its saved row and is still sent with that type.
 - A document saved by "Save and add another" or "Save and return to overview"
   is followed by a redirect, so a reload cannot replay the save. One saved by
   "Save and continue" or an amend button is answered on the returned request
-  with the scan hold: the document is listed as "Scanning for virus" and the
-  trader stays on the page. A reload of that response saves nothing twice,
-  because a document already listed is not added again. Continue is pressed
-  again from the fresh page once scans settle.
-- A file still being checked holds Continue back, and so does a document the
+  by the save choice, exactly as any other save: a reload of that response
+  saves nothing twice, because a document already listed is not added again.
+  Nothing holds the trader for a scan still running.
+- A document the scan rejected holds Continue back, and so does a document the
   upload service has taken on that this notification does not list — otherwise
   the trader would carry on with a claimed document missing from the
-  notification. The exit to the overview does not wait for either.
+  notification. The exit to the overview waits for neither.
 - An upload session is opened once per page view, not per render: a render
   reuses the session the page is already showing, carried in the refresh link
   and a hidden field, so a scan being polled does not leave a run of
