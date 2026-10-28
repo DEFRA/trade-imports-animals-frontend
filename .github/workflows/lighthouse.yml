@@ -217,9 +217,26 @@ jobs:
           path: lighthouse-report/
         continue-on-error: true
 
+      - name: Work out the Lighthouse result
+        id: result
+        env:
+          AUDIT_RESULT: ${{ needs.lighthouse-test.result }}
+          MERGE_RESULT: ${{ needs.lighthouse-merge.result }}
+          PUBLISH_RESULT: ${{ needs.lighthouse-publish.result }}
+        run: |
+          if [[ "$AUDIT_RESULT" == skipped ]]; then
+            result=skipped
+          elif [[ "$AUDIT_RESULT $MERGE_RESULT $PUBLISH_RESULT" == "success success success" ]]; then
+            result=success
+          else
+            result=failure
+          fi
+          echo "Audit $AUDIT_RESULT, merge $MERGE_RESULT, publish $PUBLISH_RESULT: Lighthouse $result"
+          echo "lighthouse=$result" >> "$GITHUB_OUTPUT"
+
       - name: Report Lighthouse check run on PR
         uses: DEFRA/trade-imports-workspace/.github/actions/report-lighthouse-status@main
         with:
-          lighthouse-result: ${{ needs.lighthouse-test.result }}
+          lighthouse-result: ${{ steps.result.outputs.lighthouse }}
           report-url: ${{ needs.lighthouse-publish.outputs.report-url }}
           flagged-audits-path: lighthouse-report/flagged-audits.json
