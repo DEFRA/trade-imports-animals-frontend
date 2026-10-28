@@ -3,8 +3,6 @@ export const UPLOAD_SCANNING = 'pending'
 export const UPLOAD_READY = 'ready'
 
 /**
- * Whether a file posted to an upload session now would still be taken.
- *
  * @param {string} uploadStatus - the status the upload service reports for the session
  * @returns {boolean} whether the session is still waiting for its file
  */
