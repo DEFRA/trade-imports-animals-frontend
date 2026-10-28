@@ -2128,7 +2128,7 @@ describe('documents — what the page response lets the browser keep', () => {
   it('Should forbid the browser storing the page it serves', async () => {
     const result = await driveHandler(get)
 
-    expect(result.view.headers['cache-control']).toBe('no-store')
+    expect(result.response.headers['cache-control']).toBe('no-store')
   })
 
   it('Should forbid the browser storing the page it serves with a refusal on it', async () => {
@@ -2136,8 +2136,8 @@ describe('documents — what the page response lets the browser keep', () => {
       payload: { action: 'continue', ...validDocument }
     })
 
-    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(result.view.headers['cache-control']).toBe('no-store')
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.response.headers['cache-control']).toBe('no-store')
   })
 })
 
