@@ -16,9 +16,6 @@ import { scanCopyJson } from './fragments/status.js'
 import { getAttempt, refreshHref } from './refresh.js'
 import { documentRows } from './rows.js'
 
-const CACHE_CONTROL_HEADER = 'cache-control'
-const NOT_STORED = 'no-store'
-
 const unsavedDocumentBody = (copy, saveAction, { unchecked }) =>
   unchecked
     ? copy.errors.documentsUnchecked(saveAction)
@@ -137,5 +134,5 @@ export const render = async ({
         error: errors.accompanyingDocumentDateOfIssue
       })
     })
-    .header(CACHE_CONTROL_HEADER, NOT_STORED)
+    .header('cache-control', 'no-store')
 }
