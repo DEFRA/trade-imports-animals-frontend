@@ -909,7 +909,7 @@ test.describe('document upload page across the browser history', () => {
     await openDocuments(page)
   })
 
-  test('serves the page with no store, so the browser holds no copy to post a spent session from', async ({
+  test('answers a GET of the page with cache-control no-store', async ({
     page
   }) => {
     const response = await page.request.get(page.url())
@@ -918,7 +918,7 @@ test.describe('document upload page across the browser history', () => {
     expect(response.headers()['cache-control']).toBe('no-store')
   })
 
-  test('opens the page again with a session of its own when the browser hands back a copy it kept', async ({
+  test('renders a new upload session when a persisted pageshow fires', async ({
     page
   }) => {
     const addButton = page.getByRole('button', { name: copy.addAnother })
