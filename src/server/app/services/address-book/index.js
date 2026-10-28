@@ -45,9 +45,6 @@ const searchStub = (query, requested) => {
   )
 }
 
-/** One page of ours, cut out of one page of theirs. Their page holds
- * `API_PAGE_SIZE` records and ours holds `PAGE_SIZE`, so a page of ours falls
- * entirely inside a single page of theirs — no straddling, no second call. */
 const apiPageHolding = (offset, apiPageSize) =>
   Math.floor(offset / apiPageSize) + 1
 
