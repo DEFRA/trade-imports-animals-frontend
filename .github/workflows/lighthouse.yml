@@ -124,7 +124,7 @@ jobs:
           path: frontend/lighthouse-shards/
 
       - name: Merge the shard reports
-        run: exit 1
+        run: node scripts/lighthouse/merge-shard-reports.js lighthouse-shards lighthouse-report
         working-directory: frontend
 
       - name: Generate report index
