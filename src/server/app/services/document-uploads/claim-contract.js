@@ -10,13 +10,7 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const isBlank = (value) => !String(value ?? '').trim()
 
-/**
- * Why the claim endpoint would refuse this document, if it would.
- *
- * @param {object} claim - the fields the claim is made with
- * @returns {string|undefined} the field that fails its rule, or nothing when the claim is good
- */
-export const claimRefusal = ({
+export const refusedClaimField = ({
   documentType,
   documentReference,
   dateOfIssue
