@@ -31,7 +31,7 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { documentScanCardErrors } from './refusal.js'
+import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
 import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
@@ -131,9 +131,15 @@ const renderCya = async (
   })
 }
 
-const mergeCardErrorsByPrecedence = ({ invalid, scan, incomplete }) => ({
+const mergeCardErrorsByPrecedence = ({
+  invalid,
+  scan,
+  species,
+  incomplete
+}) => ({
   ...invalid,
   ...scan,
+  ...species,
   ...incomplete
 })
 
@@ -157,6 +163,9 @@ export const renderNotificationView = async (
     : await documentScanCardErrors(request, answers, {
         includePending: refused
       })
+  const speciesErrors = hidesAnswerErrors
+    ? {}
+    : await speciesCardErrors(journey, answers, { refused })
   return renderCya(h, journey, {
     answers,
     scope,
@@ -171,6 +180,7 @@ export const renderNotificationView = async (
       : mergeCardErrorsByPrecedence({
           invalid: invalidCardErrors,
           scan: scanDocErrors,
+          species: speciesErrors,
           incomplete: incompleteCardErrors(answers, scope, evaluation)
         }),
     disableAutoFocus: !refused

@@ -17,6 +17,11 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import {
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../commodities/search/test-support.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { dispatchPages } from '../index.js'
@@ -26,14 +31,16 @@ import * as additionalDetails from './controller.js'
 const get = getHandlerOf(additionalDetails)
 const post = postHandlerOf(additionalDetails)
 
-describe('POST additional-details — invalid payload', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+const UNWEANED_SEED = { commodityLines: [{ commodityCode: '0102' }] }
 
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
+})
+beforeEach(() => store.clear())
+
+describe('POST additional-details — invalid payload', () => {
   it('Should answer 400 and re-render an out-of-list certification, committing nothing', async () => {
     const result = await driveHandler(post, {
       payload: { animalsCertifiedFor: 'not-a-real-purpose' }
@@ -52,7 +59,7 @@ describe('POST additional-details — backend unavailable', () => {
     const failure = unavailableBackendError('save answers')
 
     const result = await driveHandler(post, {
-      seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+      seed: { commodityLines: [BOS_TAURUS_ROW] },
       payload: {
         animalsCertifiedFor: 'slaughter',
         containsUnweanedAnimals: 'no'
@@ -71,15 +78,6 @@ describe('POST additional-details — backend unavailable', () => {
 })
 
 describe('POST additional-details — Save and return to overview', () => {
-  const UNWEANED_SEED = { commodityLines: [{ commoditySelection: 'Cow' }] }
-
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
   it('Should go to the overview with every answer blank and commit the blank answers', async () => {
     const result = await driveHandler(post, {
       seed: UNWEANED_SEED,
@@ -104,8 +102,8 @@ describe('POST additional-details — Save and return to overview', () => {
 describe('additional-details — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const catLine = { commoditySelection: 'Cat', speciesSelection: '923501' }
-  const fishLine = { commoditySelection: 'Fish', speciesSelection: '801204' }
+  const catLine = FELIS_CATUS_ROW
+  const ostrichLine = STRUTHIO_ROW
 
   it('Should go Back to identification in the opening run when a chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
@@ -117,7 +115,7 @@ describe('additional-details — the Back link', () => {
 
   it('Should go Back to the consignment details in the opening run when no chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [fishLine] },
+      seed: { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
       openingRun: RUN_ACTIVE
     })
     expectBackLinkIsPage(result, 'consignment-details')

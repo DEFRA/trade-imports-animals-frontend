@@ -7,24 +7,22 @@ import {
   wrappingCell
 } from '../../../../../../../../common/constants/table-cells.js'
 import { escapeHtml } from '../../../../../../../shared/escape-html.js'
+import { speciesLabel } from '../species-label.js'
 import { buildCommodityGroups } from './commodity-groups.js'
 
-const latinNameOf = ({ entry }) =>
-  commodities.speciesLatinName(entry.speciesSelection)
+const latinNameOf = ({ entry }) => speciesLabel(entry)
 
-const commodityRow = ({ index, name, code, lines }) => ({
+const commodityRow = ({ index, code, lines }) => ({
   code,
-  name,
   latinNames: lines.map(latinNameOf),
   lines,
   groupIndex: index,
   perSpecies: false
 })
 
-const speciesRows = ({ index, name, code, lines }) =>
+const speciesRows = ({ index, code, lines }) =>
   lines.map((line) => ({
     code,
-    name: commodities.speciesCommonName(name, line.entry.speciesSelection),
     latinNames: [latinNameOf(line)],
     lines: [line],
     groupIndex: index,
@@ -33,28 +31,29 @@ const speciesRows = ({ index, name, code, lines }) =>
 
 export const buildSelectedCommodityRows = (lines) =>
   buildCommodityGroups(lines).flatMap((group) =>
-    commodities.speciesListedIndividually(group.name)
+    commodities.listsSpeciesIndividually(group.code)
       ? speciesRows(group)
       : [commodityRow(group)]
   )
 
 const speciesHtml = (latinNames) => latinNames.map(escapeHtml).join(',<br>')
 
-const selectedCommodityCells = ({ code, name, latinNames }) => [
+const selectedCommodityCells = ({ code, latinNames }) => [
   wrappingCell({ text: code }),
-  wrappingCell({ text: name }),
   wrappingCell({ html: speciesHtml(latinNames) })
 ]
 
 export const buildSelectedCommoditiesTable = (rows, headings) => ({
-  head: [headings.commodityCode, headings.commonName, headings.species].map(
-    (text) => wrappingCell({ text })
+  head: [headings.commodityCode, headings.species].map((text) =>
+    wrappingCell({ text })
   ),
   rows: rows.map(selectedCommodityCells)
 })
 
+const rowLabel = ({ code, latinNames }) => `${code} ${latinNames.join(', ')}`
+
 const changeLink = (row, copy, changeHref) => {
-  const hiddenName = visuallyHiddenText(` ${row.name}`)
+  const hiddenName = visuallyHiddenText(` ${rowLabel(row)}`)
   return `<a class="govuk-link" href="${escapeHtml(changeHref)}">${escapeHtml(copy.change)}${hiddenName}</a>`
 }
 
@@ -67,7 +66,7 @@ export const buildRemovableCommoditiesTable = (rows, headings, copy) => {
       removeActionCell({
         action: rows[position].removeAction,
         text: copy.remove,
-        hiddenText: rows[position].name
+        hiddenText: rowLabel(rows[position])
       })
     ])
   }

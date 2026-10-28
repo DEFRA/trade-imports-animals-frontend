@@ -11,6 +11,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { FELIS_CATUS_ROW } from '../../commodities/search/test-support.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -45,20 +46,11 @@ const SELECT_TEXT = 'Select a country'
 describe('POST transit-countries — adding a country', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const refusals = [
+  const ownInputRefusals = [
     {
       name: 'nothing chosen in the search box',
       payload: { action: 'add', transitedCountries: ['FR'] },
-      message: 'Enter a country to add',
-      reason: TRANSIT_REFUSAL.nothingChosen,
-      code: ''
-    },
-    {
-      name: 'a country that is not in the list',
-      payload: { action: 'add', transitedCountry: 'ZZ' },
-      message: NOT_ON_THE_LIST_MESSAGE,
-      reason: TRANSIT_REFUSAL.notOnList,
-      code: 'ZZ'
+      message: 'Enter a country to add'
     },
     {
       name: 'a country that has already been added',
@@ -67,9 +59,17 @@ describe('POST transit-countries — adding a country', () => {
         transitedCountry: 'FR',
         transitedCountries: ['FR']
       },
-      message: 'You have already added France',
-      reason: TRANSIT_REFUSAL.alreadyAdded,
-      code: 'FR'
+      message: 'You have already added France'
+    }
+  ]
+
+  const tamperedRefusals = [
+    {
+      name: 'a country that is not in the list',
+      payload: { action: 'add', transitedCountry: 'ZZ' },
+      message: NOT_ON_THE_LIST_MESSAGE,
+      reason: TRANSIT_REFUSAL.notOnList,
+      code: 'ZZ'
     },
     {
       name: 'a thirteenth country',
@@ -84,7 +84,7 @@ describe('POST transit-countries — adding a country', () => {
     }
   ]
 
-  it.each(refusals)(
+  it.each([...ownInputRefusals, ...tamperedRefusals])(
     'Should refuse $name, keep the search box on the page and commit nothing',
     async ({ payload, message }) => {
       const result = await driveHandler(post, { seed, payload })
@@ -95,7 +95,16 @@ describe('POST transit-countries — adding a country', () => {
     }
   )
 
-  it.each(refusals)(
+  it.each(ownInputRefusals)(
+    'Should refuse $name and log nothing',
+    async ({ payload }) => {
+      const result = await driveHandler(post, { seed, payload })
+
+      expect(result.logger.entries).toEqual([])
+    }
+  )
+
+  it.each(tamperedRefusals)(
     'Should log the refusal of $name once at info with the journey id, the reason and the chosen code',
     async ({ payload, reason, code }) => {
       const result = await driveHandler(post, { seed, payload })
@@ -469,7 +478,7 @@ describe('transit-countries — the Back link', () => {
   const catSeed = {
     ...seed,
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+    commodityLines: [FELIS_CATUS_ROW]
   }
 
   it('Should go Back to the arrival details while the opening run is on', async () => {

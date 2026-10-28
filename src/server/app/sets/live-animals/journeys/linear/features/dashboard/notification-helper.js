@@ -70,27 +70,7 @@ export const formatDisplayCalendarDate = (value) =>
 export const formatDisplayMoment = (value) =>
   displayDate(value, formatMomentAsDay)
 
-const commodityDisplayValue = (commodity) =>
-  commodity.name ??
-  commodity.displayName ??
-  commodity.text ??
-  commodity.commodityCode ??
-  commodity.code ??
-  commodity.value
-
-export const formatCommodity = (commodity, nameForCode = () => undefined) => {
-  if (!commodity) {
-    return ''
-  }
-
-  if (typeof commodity === 'string') {
-    return nameForCode(commodity) ?? commodity
-  }
-
-  const displayValue = commodityDisplayValue(commodity)
-
-  return displayValue ? (nameForCode(displayValue) ?? String(displayValue)) : ''
-}
+export const formatCommodity = (commodity) => commodity?.commodityCode ?? ''
 
 export const getArrivalDateIso = (notification) =>
   notification.transport?.arrivalDate ?? notification.arrivalDate ?? null

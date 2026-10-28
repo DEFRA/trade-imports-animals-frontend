@@ -5,6 +5,7 @@ import {
   signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
+import { allowedFileTypesHint, MAX_FILE_SIZE_LABEL } from '../upload-config.js'
 
 const guidance = copy.guidance
 const additional = guidance.additional
@@ -72,10 +73,10 @@ test.describe('document upload guidance', () => {
   }) => {
     const hintBullets = page.locator('#file-hint li')
     await expect(hintBullets.nth(0)).toHaveText(
-      'files that are smaller than 50MB'
+      copy.file.smallerThan(MAX_FILE_SIZE_LABEL)
     )
     await expect(hintBullets.nth(1)).toHaveText(
-      'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'
+      copy.file.allowedTypes(allowedFileTypesHint(copy))
     )
   })
 

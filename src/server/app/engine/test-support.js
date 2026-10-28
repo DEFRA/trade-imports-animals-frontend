@@ -1,11 +1,14 @@
+import { readFileSync } from 'node:fs'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { config } from '../../../config/config.js'
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
 import { pagePath } from '../shared/paths.js'
+import { records as recordsReal } from '../services/persistence/records/real/index.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
@@ -13,10 +16,14 @@ import {
   REFUSAL_LOG_MESSAGE,
   SAVE_FALLBACK_LOG_MESSAGE
 } from '../shared/kit.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { store } from './store.js'
-import { knownJourneysCookie } from './journey.js'
+import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
 import { configureSession, openingRunCookie } from './persistence/session.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -188,6 +195,12 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
+const flowOnlyState = (journeyId, flowOnly) =>
+  flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
+
+const openingRunState = (journeyId, openingRun) =>
+  openingRun ? { [openingRunCookie()]: { [journeyId]: openingRun } } : {}
+
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
   new BackendRequestError(operation, {
@@ -204,7 +217,8 @@ const recordsRejectingSaves = (failure) => ({
 
 /** Seeds a journey, runs one handler against it and reports the answers before
  * and after, alongside the cookies the handler set and the lines it logged.
- * `journeyId` drives an existing journey rather than creating one; `amend`
+ * `journeyId` drives an existing journey rather than creating one; `flowOnly`
+ * seeds the journey's session-only answers; `amend`
  * submits the journey and opens an amendment first; `openingRun`
  * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
  * the journey; `pathOf(journeyId)` gives the request the path it was made to;
@@ -215,6 +229,7 @@ export const driveHandler = async (
   {
     payload = {},
     seed = {},
+    flowOnly,
     params = {},
     query = {},
     state = {},
@@ -236,9 +251,8 @@ export const driveHandler = async (
     params,
     query,
     state: {
-      ...(openingRun
-        ? { [openingRunCookie()]: { [journey.journeyId]: openingRun } }
-        : {}),
+      ...flowOnlyState(journey.journeyId, flowOnly),
+      ...openingRunState(journey.journeyId, openingRun),
       ...state
     },
     ...requestLocation(pathOf, journey.journeyId, query)
@@ -265,6 +279,54 @@ export const driveHandler = async (
   }
 }
 
+const happyPathValues = JSON.parse(
+  readFileSync(
+    new URL(
+      '../sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    )
+  )
+).values
+
+/** A complete notification, a fresh copy of the happy-path fixture. */
+export const completeNotification = () => structuredClone(happyPathValues)
+
+/** A commodity line with commodityCode and speciesLatinName, plus any further fields. */
+export const commodityLine = ({
+  commodityCode = '0102',
+  speciesLatinName = 'Bos taurus',
+  ...fields
+} = {}) => ({ commodityCode, speciesLatinName, ...fields })
+
+/** A commodity line with every required field answered. */
+export const completeCommodityLine = (overrides = {}) => ({
+  ...completeNotification().commodityLines[0],
+  ...overrides
+})
+
+/** Configures the records and session stubs, creates a journey and returns what
+ * the purge tests drive it with: `seed` stores answers, `durable` reads them
+ * back, `wipeOf` names the keys the evaluator purges and `buildRequest` makes a
+ * request for the journey. */
+export const purgeTestJourney = async () => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  await records.clear()
+  configureReadyForCheckYourAnswers(SET_ID, () => false)
+  const { journeyId } = await records.create()
+  return {
+    buildRequest: () => journeyRequest(journeyId),
+    seed: (answers) =>
+      records.replaceFulfilment(journeyId, assembleFulfilments(answers)),
+    durable: async () =>
+      projectAnswers((await records.load({ journeyId })).fulfilment),
+    wipeOf: (answers) => {
+      const fulfilments = assembleFulfilments(answers)
+      return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+    }
+  }
+}
+
 export const getHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'GET').handler
 
@@ -284,7 +346,7 @@ export const getHandlerEndingWith = (featureModule, pathSuffix) =>
     (route) => route.method === 'GET' && route.path.endsWith(pathSuffix)
   ).handler
 
-const fetchMock = createFetchMock(vi)
+export const fetchMock = createFetchMock(vi)
 
 export const resetMocksAndConfigAfterTests = (...configKeys) => {
   const originals = ['stubMode', ...configKeys].map((key) => [
@@ -298,7 +360,7 @@ export const resetMocksAndConfigAfterTests = (...configKeys) => {
   })
 }
 
-export const referenceDataServing = () => {
+export const useReferenceDataServing = () => {
   resetMocksAndConfigAfterTests()
   return (rows) => {
     config.set('stubMode', false)
@@ -307,18 +369,17 @@ export const referenceDataServing = () => {
   }
 }
 
-const ADDRESS_BOOK_COUNTRY_LIST = JSON.stringify([
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'US', name: 'United States' }
-])
-
 /** Puts the address book on the network boundary: every request to its
  * `/addresses` paths gets `addressResponse` (or, for a function, what it
  * returns for the request) and the country list gets the United Kingdom,
  * Switzerland and the United States. Call it inside a test; pair it with
  * `resetMocksAndConfigAfterTests()` in the describe. */
 export const addressBookAnswering = (addressResponse) => {
+  const countryList = JSON.stringify([
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'CH', name: 'Switzerland' },
+    { code: 'US', name: 'United States' }
+  ])
   const answerAddresses = (request) =>
     typeof addressResponse === 'function'
       ? addressResponse(request)
@@ -328,12 +389,11 @@ export const addressBookAnswering = (addressResponse) => {
   fetchMock.mockResponse(async (request) =>
     request.url.includes('/addresses')
       ? answerAddresses(request)
-      : { body: ADDRESS_BOOK_COUNTRY_LIST }
+      : { body: countryList }
   )
 }
 
-/** Serves the address book country list and refuses every address request. */
-export const addressBookCountriesServing = () =>
+export const addressBookRefusingAddresses = () =>
   addressBookAnswering({ status: 500 })
 
 /** The urls of the address book requests made since `addressBookAnswering()`. */
@@ -352,8 +412,13 @@ export const expectNoRefusalLogged = (logger) =>
     logger.entries.filter(({ message }) => message === REFUSAL_LOG_MESSAGE)
   ).toEqual([])
 
-const refusalEntry = ({ journeyId, errorCodes, ...details }) => ({
-  level: 'info',
+const refusalEntry = ({
+  journeyId,
+  errorCodes,
+  level = 'info',
+  ...details
+}) => ({
+  level,
   message: REFUSAL_LOG_MESSAGE,
   fields: expect.objectContaining({ journeyId, errorCodes, ...details })
 })
@@ -374,11 +439,25 @@ export const expectOneSaveFallbackLogged = (logger, fallback) =>
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {
-    configureRecords(setId, recordsStub)
     configureSession(setId, sessionStub)
     buildDispatch(setId, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  beforeEach(async () => {
+    configureRecords(setId, recordsStub)
+    await store.clear()
+  })
+}
+
+export const useBackendRecords = (setId) => {
+  beforeAll(() => {
+    configureRecords(setId, recordsReal)
+    configureSession(setId, sessionStub)
+  })
+  beforeEach(() => {
+    fetchMock.enableMocks()
+    fetchMock.mockClear()
+  })
+  resetMocksAndConfigAfterTests()
 }
 
 export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>

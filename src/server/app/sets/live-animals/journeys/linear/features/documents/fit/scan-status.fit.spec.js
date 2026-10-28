@@ -1,19 +1,21 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  addDocument,
   documentRowFor,
   expectNoSeriousOrCriticalViolations,
+  expectOverview,
   openDocuments,
-  signIn
+  saveAndContinue,
+  signIn,
+  visitOverviewThenOpen
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { documentsPage } from '../page.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
 const errorSummaryLink = (page, name) =>
   page.locator('.govuk-error-summary').getByRole('link', { name })
-
-const fileInput = (page) => page.locator('input[type="file"]')
 
 const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
 
@@ -24,37 +26,18 @@ const documentNamed = (reference, filename) => ({
   filename
 })
 
-const uploadDocument = async (page, document) => {
-  const issued = document.accompanyingDocumentDateOfIssue
-  await page
-    .getByLabel(copy.reference.label)
-    .fill(document.accompanyingDocumentReference)
-  await page
-    .getByLabel(copy.documentType.label)
-    .selectOption(document.accompanyingDocumentType)
-  await page
-    .getByLabel(copy.dateOfIssue.label)
-    .fill(`${issued.day}/${issued.month}/${issued.year}`)
-  await fileInput(page).setInputFiles({
-    name: document.filename,
-    mimeType: 'application/pdf',
-    buffer: Buffer.from('%PDF-1.4 scan status test')
-  })
-  await page.getByRole('button', { name: copy.addAnother }).click()
-}
-
 test.describe('document scan-status rendering', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openDocuments(page)
   })
 
-  test('blocks continue while the scan runs, then renders Check completed and allows the journey to continue', async ({
+  test('a document still being scanned does not hold Save and continue, and settles when the trader comes back', async ({
     page
   }) => {
     test.slow()
     const document = documentNamed('SCAN-SAFE-0001', 'itahc-scan.pdf')
-    await uploadDocument(page, document)
+    await addDocument(page, document)
     const row = documentRowFor(page, document.accompanyingDocumentReference)
     const statusCell = row.locator('[data-upload-id]')
     await expect(statusCell).toHaveAttribute(
@@ -66,31 +49,28 @@ test.describe('document scan-status rendering', () => {
       copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
 
-    await page
-      .getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-      .click()
-    await expect(
-      errorSummaryLink(page, copy.errors.cannotContinue)
-    ).toBeVisible()
+    await saveAndContinue(page).click()
+    await expectOverview(page)
 
-    await expect(row).toContainText(copy.scanTags.complete)
-    await expect(statusCell).toHaveAttribute(
+    await visitOverviewThenOpen(page, documentsPage.slug)
+    const reopenedRow = documentRowFor(
+      page,
+      document.accompanyingDocumentReference
+    )
+    const reopenedStatusCell = reopenedRow.locator('[data-upload-id]')
+    await expect(reopenedRow).toContainText(copy.scanTags.complete)
+    await expect(reopenedStatusCell).toHaveAttribute(
       'data-scan-status',
       SCAN_STATUS.COMPLETE
     )
-    await expect(statusCell).toContainText(
+    await expect(reopenedStatusCell).toContainText(
       copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
-    await page
-      .getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
+    await expect(
+      reopenedRow.getByRole('link', {
+        name: `${copy.viewFile} ${copy.viewFileHidden(1)}`
       })
-      .click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    ).toBeVisible()
   })
 
   test('names the virus a rejected document was refused for, until it is removed', async ({
@@ -98,7 +78,7 @@ test.describe('document scan-status rendering', () => {
   }) => {
     test.slow()
     const document = documentNamed('SCAN-VIRUS-0001', 'virus-invoice.pdf')
-    await uploadDocument(page, document)
+    await addDocument(page, document)
     const row = documentRowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(row).toContainText(copy.scanTags.virusFound)
@@ -107,12 +87,7 @@ test.describe('document scan-status rendering', () => {
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
-    await page
-      .getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-      .click()
+    await saveAndContinue(page).click()
     await expect(
       errorSummaryLink(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
@@ -123,12 +98,7 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(row).toHaveCount(0)
-    await page
-      .getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-      .click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -137,7 +107,7 @@ test.describe('document scan-status rendering', () => {
   }) => {
     test.slow()
     const document = documentNamed('SCAN-AXE-0001', 'itahc-axe.pdf')
-    await uploadDocument(page, document)
+    await addDocument(page, document)
     await expect(
       documentRowFor(page, document.accompanyingDocumentReference)
     ).toContainText(copy.scanTags.complete)
@@ -158,8 +128,8 @@ test.describe('document scan-status polling', () => {
     test.slow()
     const settling = documentNamed('POLL-SETTLES-0001', 'itahc-poll.pdf')
     const stuck = documentNamed('POLL-STUCK-0002', 'never-scans-invoice.pdf')
-    await uploadDocument(page, settling)
-    await uploadDocument(page, stuck)
+    await addDocument(page, settling)
+    await addDocument(page, stuck)
 
     const settlingRow = documentRowFor(
       page,

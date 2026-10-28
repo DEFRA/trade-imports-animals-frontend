@@ -1,5 +1,4 @@
 import {
-  commodityCodeFor,
   commodityDescriptionFor,
   commodityNameFor
 } from '../commodity-reference.js'
@@ -15,19 +14,6 @@ const groupHasUniformType = (group) => {
   return types.size <= 1
 }
 
-const commodityCodeForLine = (line) =>
-  line.commodityCode ??
-  (line.commoditySelection
-    ? commodityCodeFor(line.commoditySelection)
-    : undefined)
-
-const commodityNameForLine = (line) => {
-  if (line.commoditySelection) {
-    return line.commoditySelection
-  }
-  return commodityNameFor(line.commodityCode) ?? line.commodityCode
-}
-
 const commodityEntryFromGroup = (group) => {
   const uniformType = groupHasUniformType(group)
   const species = speciesLines(group).map((line) =>
@@ -36,9 +22,9 @@ const commodityEntryFromGroup = (group) => {
     })
   )
   const head = group[0]
-  const code = commodityCodeForLine(head)
+  const code = head.commodityCode
   return compact({
-    name: commodityNameForLine(head),
+    name: commodityNameFor(code) ?? code,
     commodityCode: code,
     description: code ? commodityDescriptionFor(code) : undefined,
     typeOfCommodity: uniformType ? typeTextForLine(group[0]) : undefined,

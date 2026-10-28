@@ -1,153 +1,161 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  commodityCodeFor,
-  commodityDescriptionFor,
-  commodityLabel,
-  commodityNameFor,
-  cphCommodities,
   cphExemptCommodityCodes,
-  earTagCommodities,
-  horseNameCommodities,
-  identifiedCommodities,
-  needsIdentifying,
+  earTagCommodityCodes,
+  horseNameCommodityCodes,
+  identifiedCommodityCodes,
   identifiersFor,
-  list,
-  microchipCommodities,
-  passportCommodities,
-  permanentAddressCommodities,
-  speciesCommonName,
-  speciesLatinName,
-  speciesListedIndividually,
-  tattooCommodities
+  commodityDescriptionFor,
+  commodityNameFor,
+  microchipCommodityCodes,
+  packageCountCommodityCodes,
+  passportCommodityCodes,
+  permanentAddressCodeSpecies,
+  listsSpeciesIndividually,
+  needsIdentifying,
+  tattooCommodityCodes,
+  typeIdFor,
+  typeTextForId
 } from './index.js'
+import { CATTLE_CODE, HORSES_CODE, OTHER_LIVE_MAMMALS_CODE } from './rules.js'
+import { OSTRICHES_CODE } from '../../journeys/linear/features/commodities/search/test-support.js'
 
-const NOT_A_COMMODITY = 'not-a-commodity'
-const NOT_IN_THE_CATALOGUE = 'not-in-the-catalogue'
-
-describe('#speciesLatinName', () => {
-  it("Should give the species' Latin name", () => {
-    expect(speciesLatinName('1148346')).toBe('Bos taurus')
-    expect(speciesLatinName('716661')).toBe('Bison bison')
-  })
-
-  it('Should give back the stored value where the catalogue holds no species for it', () => {
-    expect(speciesLatinName(NOT_IN_THE_CATALOGUE)).toBe(NOT_IN_THE_CATALOGUE)
-  })
-})
-
-describe('#speciesCommonName', () => {
-  it("Should give the species' own common name", () => {
-    expect(speciesCommonName('Cow', '1148346')).toBe('Domestic cattle')
-    expect(speciesCommonName('Cow', '716661')).toBe('American bison')
-  })
-
-  it('Should fall back to the commodity name where the catalogue holds no common name for the species', () => {
-    expect(speciesCommonName('Cow', NOT_IN_THE_CATALOGUE)).toBe('Cow')
-    expect(speciesCommonName(NOT_A_COMMODITY, '1148346')).toBe(NOT_A_COMMODITY)
-  })
-})
-
-describe('#speciesListedIndividually', () => {
-  it('Should hold for the commodities on code 01061900 and for no others', () => {
-    expect(speciesListedIndividually('Cat')).toBe(true)
-    expect(speciesListedIndividually('Dog')).toBe(true)
-    expect(speciesListedIndividually('Cow')).toBe(false)
-    expect(speciesListedIndividually('Horse')).toBe(false)
-    expect(speciesListedIndividually('Fish')).toBe(false)
-    expect(speciesListedIndividually(NOT_A_COMMODITY)).toBe(false)
+describe('#listsSpeciesIndividually', () => {
+  it('Should hold for code 01061900 and for no other', () => {
+    expect(
+      packageCountCommodityCodes().filter(listsSpeciesIndividually)
+    ).toEqual([OTHER_LIVE_MAMMALS_CODE])
+    expect(listsSpeciesIndividually(OSTRICHES_CODE)).toBe(false)
   })
 })
 
 describe('#identifiersFor', () => {
-  it('Should give each commodity its identifiers in the order it asks for them', () => {
-    expect(identifiersFor('Cow')).toEqual([
+  it('Should give each code its identifiers in the order it asks for them', () => {
+    expect(identifiersFor(CATTLE_CODE)).toEqual([
       'animalIdentifierEarTag',
       'animalIdentifierPassport'
     ])
-    expect(identifiersFor('Horse')).toEqual([
+    expect(identifiersFor(HORSES_CODE)).toEqual([
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
       'horseName'
     ])
-    expect(identifiersFor('Cat')).toEqual([
+    expect(identifiersFor(OTHER_LIVE_MAMMALS_CODE)).toEqual([
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
       'animalIdentifierTattoo'
     ])
   })
 
-  it('Should give no identifiers for a commodity that carries none, or is not a commodity at all', () => {
-    expect(identifiersFor('Fish')).toEqual([])
-    expect(identifiersFor(NOT_A_COMMODITY)).toEqual([])
+  it('Should give no identifiers for a code that carries none', () => {
+    expect(identifiersFor(OSTRICHES_CODE)).toEqual([])
+    expect(identifiersFor('not-a-code')).toEqual([])
   })
 })
 
 describe('the identifier allowlists', () => {
   const derivations = [
-    ['microchip', microchipCommodities, 'animalIdentifierMicrochip'],
-    ['passport', passportCommodities, 'animalIdentifierPassport'],
-    ['tattoo', tattooCommodities, 'animalIdentifierTattoo'],
-    ['ear tag', earTagCommodities, 'animalIdentifierEarTag'],
-    ['horse name', horseNameCommodities, 'horseName']
+    [
+      'microchip',
+      microchipCommodityCodes,
+      'animalIdentifierMicrochip',
+      [HORSES_CODE, OTHER_LIVE_MAMMALS_CODE]
+    ],
+    [
+      'passport',
+      passportCommodityCodes,
+      'animalIdentifierPassport',
+      [HORSES_CODE, CATTLE_CODE, OTHER_LIVE_MAMMALS_CODE]
+    ],
+    [
+      'tattoo',
+      tattooCommodityCodes,
+      'animalIdentifierTattoo',
+      [OTHER_LIVE_MAMMALS_CODE]
+    ],
+    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag', [CATTLE_CODE]],
+    ['horse name', horseNameCommodityCodes, 'horseName', [HORSES_CODE]]
   ]
 
-  for (const [name, allowlist, identifier] of derivations) {
-    it(`Should hold exactly the commodities whose own list carries the ${name}`, () => {
-      for (const commodity of allowlist()) {
-        expect(identifiersFor(commodity)).toContain(identifier)
+  for (const [name, allowlist, identifier, expectedCodes] of derivations) {
+    it(`Should list only codes that carry the ${name}`, () => {
+      for (const code of allowlist()) {
+        expect(identifiersFor(code)).toContain(identifier)
       }
-      expect(identifiersFor('Fish')).not.toContain(identifier)
+      expect([...allowlist()].sort()).toEqual(expectedCodes)
     })
   }
 
-  it('Should hold exactly the commodities whose own list carries at least one identifier', () => {
-    for (const commodity of list()) {
-      expect(identifiedCommodities().includes(commodity)).toBe(
-        identifiersFor(commodity).length > 0
-      )
-    }
-    expect(identifiedCommodities()).not.toContain('Fish')
-    expect(identifiedCommodities()).toEqual(
-      expect.arrayContaining(['Cow', 'Horse', 'Cat', 'Dog'])
-    )
+  it('Should identify exactly the codes that carry at least one identifier', () => {
+    expect([...identifiedCommodityCodes()].sort()).toEqual([
+      HORSES_CODE,
+      CATTLE_CODE,
+      OTHER_LIVE_MAMMALS_CODE
+    ])
   })
 
-  it('Should need identifying for a line of a species that carries identifiers and not for one that does not', () => {
-    expect(needsIdentifying({ commoditySelection: 'Cow' })).toBe(true)
-    expect(needsIdentifying({ commoditySelection: 'Fish' })).toBe(false)
+  it('Should need identifying for a line whose code carries identifiers and not for one whose code does not', () => {
+    expect(needsIdentifying({ commodityCode: CATTLE_CODE })).toBe(true)
+    expect(needsIdentifying({ commodityCode: OSTRICHES_CODE })).toBe(false)
     expect(needsIdentifying(undefined)).toBe(false)
   })
 
-  it('Should hold every commodity that is asked for a permanent address', () => {
-    for (const commodity of permanentAddressCommodities()) {
-      expect(identifiedCommodities()).toContain(commodity)
+  it('Should key every permanent-address species to an identified code', () => {
+    for (const [code] of permanentAddressCodeSpecies()) {
+      expect(identifiedCommodityCodes()).toContain(code)
     }
+  })
+
+  it('Should key the permanent-address species to 01061900 alone', () => {
+    expect(permanentAddressCodeSpecies()).toEqual([
+      [OTHER_LIVE_MAMMALS_CODE, 'Felis catus'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Canis familiaris'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Canis lupus familiaris'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Mustela putorius furo']
+    ])
   })
 })
 
 describe('the CPH exemption', () => {
   it('Should exempt exactly the horse and cat/dog/ferret codes', () => {
-    expect([...cphExemptCommodityCodes()].sort()).toEqual(['0101', '01061900'])
+    expect([...cphExemptCommodityCodes()].sort()).toEqual([
+      HORSES_CODE,
+      OTHER_LIVE_MAMMALS_CODE
+    ])
+  })
+})
+
+describe('#typeIdFor', () => {
+  it('Should split cattle into Domestic and Game by species', () => {
+    expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
+    expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
+    expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
   })
 
-  it('Should ask every commodity whose code is not exempt', () => {
-    for (const commodity of list()) {
-      expect(cphCommodities().includes(commodity)).toBe(
-        !cphExemptCommodityCodes().includes(commodityCodeFor(commodity))
-      )
+  it('Should give every other code its one type', () => {
+    const otherCodes = packageCountCommodityCodes().filter(
+      (code) => code !== CATTLE_CODE
+    )
+    for (const code of otherCodes) {
+      expect(typeIdFor(code, 'Felis catus')).toBe('2')
+      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
     }
   })
 })
 
-describe('#commodityLabel', () => {
-  it('Should append the code in brackets to the name when there is one', () => {
-    expect(commodityLabel('Bovine', '0102')).toBe('Bovine (0102)')
+describe('#typeTextForId', () => {
+  it('Should name the cattle types Domestic and Game', () => {
+    expect(typeTextForId(CATTLE_CODE, '16')).toBe('Domestic')
+    expect(typeTextForId(CATTLE_CODE, '24')).toBe('Game')
   })
 
-  it('Should give the name alone when there is no code', () => {
-    expect(commodityLabel('Bovine', undefined)).toBe('Bovine')
-    expect(commodityLabel('Bovine', '')).toBe('Bovine')
+  it('Should give a single-type code blank text', () => {
+    expect(typeTextForId(OTHER_LIVE_MAMMALS_CODE, '2')).toBe('')
+  })
+
+  it('Should give no text for a type id the code does not have', () => {
+    expect(typeTextForId(CATTLE_CODE, '2')).toBeUndefined()
   })
 })
 

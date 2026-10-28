@@ -1,0 +1,64 @@
+import { describe, expect, it } from 'vitest'
+
+import {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW
+} from '../test-support.js'
+import { knownRowsByKey, lineRow, resultRows } from './rows.js'
+
+describe('#resultRows', () => {
+  it('Should give every species of every group its own row, carrying its group code', () => {
+    const speciesOf = (row) => ({
+      latinName: row.speciesLatinName,
+      commonName: row.speciesCommonName
+    })
+    expect(
+      resultRows({
+        groups: [
+          {
+            code: BOS_TAURUS_ROW.commodityCode,
+            species: [speciesOf(BOS_TAURUS_ROW), speciesOf(BISON_BISON_ROW)]
+          },
+          {
+            code: FELIS_CATUS_ROW.commodityCode,
+            species: [speciesOf(FELIS_CATUS_ROW)]
+          }
+        ]
+      })
+    ).toEqual([BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW])
+  })
+
+  it('Should give no rows before a search', () => {
+    expect(resultRows(null)).toEqual([])
+  })
+})
+
+describe('#knownRowsByKey', () => {
+  it('Should know the rows earlier searches showed and the lines already saved, by key', () => {
+    const known = knownRowsByKey({
+      answers: {
+        commodityLines: [{ ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '3' }]
+      },
+      flowOnlyAnswers: { commoditySearchRows: [FELIS_CATUS_ROW] }
+    })
+
+    expect([...known.keys()]).toEqual([
+      '01061900|Felis catus',
+      '0102|Bos taurus'
+    ])
+    expect(known.get('0102|Bos taurus')).toEqual(BOS_TAURUS_ROW)
+  })
+
+  it('Should know nothing on a fresh notification', () => {
+    expect(knownRowsByKey({ answers: {} }).size).toBe(0)
+  })
+})
+
+describe('#lineRow', () => {
+  it('Should read a stored line back as the row it was saved from', () => {
+    expect(
+      lineRow({ ...FELIS_CATUS_ROW, numberOfAnimalsQuantity: '2' })
+    ).toEqual(FELIS_CATUS_ROW)
+  })
+})

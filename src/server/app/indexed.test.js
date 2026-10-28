@@ -1,6 +1,10 @@
 import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
+import {
+  completeCommodityLine,
+  completeNotification
+} from './engine/test-support.js'
 import { evaluateAnswers } from './bridge/evaluation.js'
 import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status/index.js'
 import {
@@ -17,14 +21,25 @@ const commoditiesSection = sections.find(
 )
 const documentsSection = sections.find((section) => section.id === 'documents')
 
-const UNITED_KINGDOM = 'United Kingdom'
-
 const completeDocument = {
   accompanyingDocumentType: 'HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'upload',
   accompanyingDocumentReference: 'HC-2026-01',
   accompanyingDocumentDateOfIssue: { day: '1', month: '2', year: '2026' }
 }
+
+const notificationWithoutDocuments = () => {
+  const notification = completeNotification()
+  delete notification.documents
+  return notification
+}
+
+const isReady = (answers) =>
+  readyForCheckYourAnswers(
+    answers,
+    makeScope(answers).inScope,
+    evaluateAnswers(answers)
+  )
 
 describe('indexed obligations are first-class', () => {
   beforeAll(() => {
@@ -34,110 +49,35 @@ describe('indexed obligations are first-class', () => {
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('commodityLines')
-    expect(addresses).toContain('commodityLines.commoditySelection')
+    expect(addresses).toContain('commodityLines.commodityCode')
     expect(addresses).toContain('commodityLines.numberOfAnimalsQuantity')
+    expect(addresses).toContain(
+      'commodityLines.animalIdentifiers.animalIdentifierEarTag'
+    )
   })
 
   it('Should scope each stored commodity line instance path when the collection is in scope', () => {
     const { inScope } = makeScope({
       commodityLines: [
-        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' },
-        { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
+        { commodityCode: '0102', numberOfAnimalsQuantity: '25' },
+        { commodityCode: '010420', numberOfAnimalsQuantity: '9' }
       ]
     })
     expect(inScope.has('commodityLines')).toBe(true)
-    expect(inScope.has('commodityLines[0].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[0].commodityCode')).toBe(true)
     expect(inScope.has('commodityLines[0].numberOfAnimalsQuantity')).toBe(true)
-    expect(inScope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[1].commodityCode')).toBe(true)
     expect(inScope.has('commodityLines[1].numberOfAnimalsQuantity')).toBe(true)
   })
 
   it('Should treat a commodity line with a blank required sub-field as incomplete (per-item completeness)', () => {
-    const complete = {
-      countryOfOrigin: 'FR',
-      regionOfOriginCodeRequirement: 'no',
-      reasonForImport: 'internalMarket',
-      purposeInInternalMarket: 'breeding',
-      animalsCertifiedFor: 'slaughter',
-      containsUnweanedAnimals: 'no',
-      countyParishHoldingCph: '12/345/6789',
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          commodityType: '16',
-          speciesSelection: ['1148346'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-        }
-      ],
-      consignor: {
-        name: 'Astra Rosales',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          country: 'Switzerland'
-        }
-      },
-      placeOfDestination: {
-        name: 'Tech Imports Ltd',
-        address: { addressLine1: '643 Main Street', country: UNITED_KINGDOM }
-      },
-      placeOfOrigin: {
-        name: 'Origin Farm',
-        address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
-      },
-      consignee: {
-        name: 'British Livestock Ltd',
-        address: {
-          addressLine1: '10 Market Street',
-          country: UNITED_KINGDOM
-        }
-      },
-      importer: {
-        name: 'Import Co UK',
-        address: {
-          addressLine1: '20 Trade Road',
-          country: UNITED_KINGDOM
-        }
-      },
-      portOfEntry: 'GB ABD',
-      arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-      meansOfTransport: 'AIRPLANE',
-      transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      transporterType: 'Commercial',
-      commercialTransporter: {
-        name: 'García Livestock Transport SL',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          country: 'Switzerland'
-        },
-        approvalNumber: 'ES-T2-45001294'
-      },
-      contactAddress: {
-        name: 'Animal and Plant Health Agency',
-        address: { addressLine1: 'Woodham Lane', country: UNITED_KINGDOM }
-      },
-      declaration: 'confirmed'
-    }
+    const complete = notificationWithoutDocuments()
     const incomplete = {
       ...complete,
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
-    expect(
-      readyForCheckYourAnswers(
-        complete,
-        makeScope(complete).inScope,
-        evaluateAnswers(complete)
-      )
-    ).toBe(true)
-    expect(
-      readyForCheckYourAnswers(
-        incomplete,
-        makeScope(incomplete).inScope,
-        evaluateAnswers(incomplete)
-      )
-    ).toBe(false)
+    expect(isReady(complete)).toBe(true)
+    expect(isReady(incomplete)).toBe(false)
   })
 
   it('Should read an untouched optional section as OPTIONAL (not Completed, does not count)', () => {
@@ -150,6 +90,17 @@ describe('indexed obligations are first-class', () => {
         evaluateAnswers(answers)
       )
     ).toBe(OPTIONAL)
+
+    const withoutDocuments = notificationWithoutDocuments()
+    expect(
+      sectionStatus(
+        documentsSection,
+        withoutDocuments,
+        makeScope(withoutDocuments).inScope,
+        evaluateAnswers(withoutDocuments)
+      )
+    ).toBe(OPTIONAL)
+    expect(isReady(withoutDocuments)).toBe(true)
   })
 
   it('Should read an optional section with an incomplete entry as IN_PROGRESS', () => {
@@ -180,19 +131,10 @@ describe('indexed obligations are first-class', () => {
 
   it('Should roll per-item completeness into the commodities section status', () => {
     const withIncompleteLine = {
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: '0102' }]
     }
     const withCompleteLine = {
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          commodityType: '16',
-          speciesSelection: ['1148346'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-        }
-      ]
+      commodityLines: [completeCommodityLine()]
     }
     expect(
       sectionStatus(

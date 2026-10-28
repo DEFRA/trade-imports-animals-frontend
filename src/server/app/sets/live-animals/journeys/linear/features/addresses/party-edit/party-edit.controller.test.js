@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   addressBookAnswering,
-  addressBookCountriesServing,
+  addressBookRefusingAddresses,
   addressBookRequestUrls,
   driveHandler,
   expectOneSaveFallbackLogged,
@@ -224,7 +224,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should accept a country the address book allows outside the SPS origin block', async () => {
-    addressBookCountriesServing()
+    addressBookRefusingAddresses()
 
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
@@ -238,7 +238,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should offer the address-book country list on the form', async () => {
-    addressBookCountriesServing()
+    addressBookRefusingAddresses()
 
     const result = await driveHandler(get, { seed: { consignor: STORED } })
 

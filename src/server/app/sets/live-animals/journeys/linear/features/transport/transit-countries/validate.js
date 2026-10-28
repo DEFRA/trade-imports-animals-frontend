@@ -21,6 +21,10 @@ export const TRANSIT_REFUSAL = Object.freeze({
   maxCountries: 'max-countries'
 })
 
+export const isUsersOwnInputRefusal = (reason) =>
+  reason === TRANSIT_REFUSAL.nothingChosen ||
+  reason === TRANSIT_REFUSAL.alreadyAdded
+
 export const offeredCodes = async () =>
   new Set((await countries.originCountries()).map(({ value }) => value))
 

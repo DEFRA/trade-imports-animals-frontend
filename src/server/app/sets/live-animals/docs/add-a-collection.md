@@ -50,7 +50,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -71,7 +71,7 @@ Collection-level facts:
   import). A member with no `applyTo` is always in scope for every instance; a
   member with `applyTo` is scoped per instance (see step 2).
 - Member names are the keys inside each request-local instance object
-  (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
+  (`answers.commodityLines[0].commodityCode`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
   boot ([`src/server/app/flow/dispatch.js`](../../../flow/dispatch.js)).
 
@@ -101,7 +101,7 @@ const unit = {
 
 export const evaluationBindings = feature('commodities', [
   grouped({
-    field: 'commoditySelection',
+    field: 'commodityCode',
     obligation: commodityCode,
     groups: [line]
   }),
@@ -132,20 +132,20 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }
 ```
 
 `allowListed(gate, values, gatedParentGroup, reasons)` scopes the field to the
-instances whose gate value is on the whitelist. The **gated parent group**
+instances whose gate value is on the allow list. The **gated parent group**
 argument is what makes it work at depth:
 
 - **`null` gatedParentGroup** — the gate and the gated field sit at the same
   identity level. `numberOfPackages` and its gate `commodityCode` are both
   `within commodityLine`, so the field is in scope for exactly the lines
-  whose own commodity code is whitelisted.
+  whose own commodity code is allow-listed.
 - **a group** — the gated field is deeper than its gate. The per-unit
   identifier fields (`passport`, `earTag`, …) are `within unitRecord` but gate
   on `commodityCode`, which lives one level up on the line. They pass
@@ -265,8 +265,10 @@ While the add form is open, every save button sends the entry and its file to
 the upload session, as Add does, and each carries its own choice. A save then
 takes the entry on exactly as Add does, and goes on by the choice the returned
 form carries: back to the page for Add, to the overview for Save and return to
-overview, and held on the page with the scan message for Save and continue. An
-entry is started by any of its reference, type, date of issue or a chosen file:
+overview, and on by its own choice for Save and continue too — a document the
+scan is still checking does not hold any of them; only one the scan rejected
+holds the trader on the page. An entry is started by any of its reference,
+type, date of issue or a chosen file:
 `startsADocument` in
 [`form/payload.js`](../journeys/linear/features/documents/form/payload.js) owns
 that rule. A started entry is refused on every save button rather than dropped:
@@ -300,8 +302,10 @@ forms; each delegates to the `…At` form with a single-segment path
 
 The commodities collection uses two pages. The SEARCH page
 ([`journeys/linear/features/commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js))
-declares the group in `collects` and, on save, reconciles one line per selected
-species in a single write:
+declares the group in `collects` and, on save, hands the chosen search rows to
+[`actions/commit-selection.js`](../journeys/linear/features/commodities/search/actions/commit-selection.js),
+which reconciles one line per chosen search row (a commodity code plus a Latin
+name) in a single write, then clears the stored search rows:
 
 ```js
 await state.reconcileEntriesAt(
@@ -309,9 +313,12 @@ await state.reconcileEntriesAt(
   h,
   ['commodityLines'],
   lineKey,
-  selected.map(seedLine)
+  rows.map(seedLine)
 )
 ```
+
+Each row carries `commodityCode`, `speciesLatinName` and `speciesCommonName` from the
+search results the page showed.
 
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected
@@ -344,12 +351,17 @@ state.collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
 ### Thread the change context through the loop
 
 A collection reached from a Change link on check-your-answers carries a change
-context. Wrap every internal link and redirect — row actions, back links,
+context. Wrap every internal link and redirect — row actions,
 add/remove/save round-trips — in `kit.withChangeContext(request, href)` so the
 context survives the loop. Resolve the loop's exiting Continue with
 `kit.nextTarget(request, page, scope)`, and let a hub exit win first via
 `kit.hubExitTarget(request)`. Only the exit repoints to check-your-answers;
 mid-loop actions must never bounce there early.
+
+A collection page's Back link carries the context on like any other internal
+link, unless the page returns to the review itself: such a page declares that
+to `kit.runBackLink()` through its `returnsToReview` option and takes its back
+link from there instead of wrapping it in `kit.withChangeContext()`.
 
 ## 5. Cap the count where the model demands it
 
@@ -357,7 +369,7 @@ Some collections cap their instance count at a sibling field. The declaration
 is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
 
 ```js
-export const MAX_ENTRIES_FROM = {
+export const ENTRY_CAP_FIELD_BY_COLLECTION = {
   animalIdentifiers: 'numberOfAnimalsQuantity'
 }
 ```
@@ -414,13 +426,10 @@ what it declares. Add a case shaped like the matching layout:
 ## Test support
 
 Build test set-up from the shared helpers, and extend them rather than writing
-set-up in the test file:
+set-up in the test file.
 
-- controller tests:
-  [`engine/test-support.js`](../../../engine/test-support.js) — `driveHandler`
-  seeds a journey, runs one handler and returns the answers before and after;
-  `journeyRequest`, `stubH`, `recordingH`, `recordingLogger`, `postHandlerOf`
-  and `postHandlerEndingWith` build the request, toolkit, logger and handler
+The controller-test helpers are listed in [Test support](add-a-page.md#test-support), with `useStubbedJourney` as the set-up.
+
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `selectSpecies`,

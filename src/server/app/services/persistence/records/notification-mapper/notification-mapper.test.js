@@ -2,9 +2,18 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { commoditiesFromLinesA } from './mapper-a/commodity.js'
 import { fulfilmentToNotification } from './index.js'
+import {
+  BISON_BISON,
+  BOS_TAURUS,
+  FELIS_CATUS,
+  OSTRICHES_CODE,
+  STRUTHIO
+} from '../../../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import {
+  CATTLE_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../../../sets/live-animals/services/commodities/rules.js'
 
-/** A party answer in backend wire shape, as `answerForInlineParty` stores it
- * — see addresses/party-inline.js. */
 const address = (name, line1) => ({
   name,
   address: { addressLine1: line1, postcode: 'AB1 2CD' }
@@ -12,10 +21,8 @@ const address = (name, line1) => ({
 
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
-const BOS_TAURUS = 'Bos taurus'
 const LIVE_BOVINE_DESCRIPTION = 'Live bovine animals'
-const DOMESTIC_CATTLE = 'Domestic cattle'
-const SALMO_SALAR = 'Salmo salar'
+const DOMESTIC_CATTLE = 'Cattle or Cow'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
 const TRANSPORTER_NAME = 'Transporter Co'
@@ -25,10 +32,6 @@ const currentNotificationFrom = (answers) =>
     answers.referenceNumber ?? referenceNumber
   )
 
-// Answers carrying only the obligations Mapper A maps to the current backend
-// notification. One commodity line = one species, with one animal
-// identifier unit carrying earTag + passport — two of the identifiers that
-// have a home on the backend species entry.
 const mappedAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
   countryOfOrigin: 'FR',
@@ -53,8 +56,8 @@ const mappedAnswers = () => ({
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: CATTLE_CODE,
+      speciesLatinName: BOS_TAURUS,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -68,11 +71,6 @@ const mappedAnswers = () => ({
   ]
 })
 
-// mappedAnswers plus the obligations beyond it: those Mapper A still has no
-// home for (purpose, declaration, the documents collection), those it now maps
-// (region code, internal-market purpose, destination country, exit port and
-// date, the transport details), and a richer animal-identifier unit carrying
-// microchip, tattoo, horse name and a permanent address.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
@@ -97,8 +95,8 @@ const answersWithGaps = () => ({
   ],
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: CATTLE_CODE,
+      speciesLatinName: BOS_TAURUS,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -109,8 +107,6 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          // The identification page stores the ISO code so persistence carries
-          // it through without a reverse lookup.
           permanentAddress: {
             name: 'Owner',
             address: {
@@ -131,29 +127,26 @@ const answersWithGaps = () => ({
   ]
 })
 
-// Two species on the same commodity plus a second commodity — the grouping
-// case: one complement per commodity, per-species counts kept on the species
-// entries, totals summed per complement.
 const groupedLines = () => [
   {
-    commoditySelection: 'Cow',
-    speciesSelection: '1148346',
+    commodityCode: CATTLE_CODE,
+    speciesLatinName: BOS_TAURUS,
     commodityType: '16',
     numberOfPackages: '5',
     numberOfAnimalsQuantity: '25',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
   },
   {
-    commoditySelection: 'Cow',
-    speciesSelection: '716661',
+    commodityCode: CATTLE_CODE,
+    speciesLatinName: BISON_BISON,
     commodityType: '16',
     numberOfPackages: '2',
     numberOfAnimalsQuantity: '10',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
   },
   {
-    commoditySelection: 'Cat',
-    speciesSelection: '923501',
+    commodityCode: OTHER_LIVE_MAMMALS_CODE,
+    speciesLatinName: FELIS_CATUS,
     commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
@@ -166,7 +159,7 @@ const groupedLines = () => [
   }
 ]
 
-describe('Mapper A — current backend notification (as-is)', () => {
+describe('Mapper A — backend notification', () => {
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodities } = currentNotificationFrom(mappedAnswers())
     expect(commodities).toEqual([
@@ -179,7 +172,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
         totalNoOfPackages: 5,
         species: [
           {
-            value: '1148346',
+            value: BOS_TAURUS,
             text: BOS_TAURUS,
             commonName: DOMESTIC_CATTLE,
             noOfAnimals: '25',
@@ -199,16 +192,16 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const { commodities } = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
           commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
         },
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1388624',
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: 'Bos spp.',
           commodityType: '24',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
@@ -274,7 +267,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       type: 'Commercial'
     })
     expect(notification.commodities[0].species[0]).toEqual({
-      value: '1148346',
+      value: BOS_TAURUS,
       text: BOS_TAURUS,
       commonName: DOMESTIC_CATTLE,
       noOfAnimals: '25',
@@ -315,14 +308,34 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.origin.countrySubdivisionCode).toBe('ES-CN')
   })
 
-  test('Should omit the obligations with no home and map the newly homed ones', () => {
+  test('Should map region, internal-market purpose, destination, exit and transport details and leave out purpose, declaration and documents', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 
-    expect('purpose' in notification).toBe(false)
-    expect('declaration' in notification).toBe(false)
-    expect('documents' in notification).toBe(false)
-    expect('regionCode' in notification.origin).toBe(false)
-    expect(notification.origin.regionOfOriginCode).toBe('FR-75')
+    expect(Object.keys(notification).sort()).toEqual([
+      'additionalDetails',
+      'commodities',
+      'consignee',
+      'consignment',
+      'consignor',
+      'cphNumber',
+      'destination',
+      'destinationCountry',
+      'exitDate',
+      'importer',
+      'origin',
+      'placeOfOrigin',
+      'portOfExit',
+      'purposeInInternalMarket',
+      'reasonForImport',
+      'referenceNumber',
+      'transport'
+    ])
+    expect(notification.origin).toEqual({
+      countryCode: 'FR',
+      requiresRegionCode: 'Yes',
+      regionOfOriginCode: 'FR-75',
+      internalReference: 'Imports456GB'
+    })
     expect(notification.purposeInInternalMarket).toBe('Breeding')
     expect(notification.destinationCountry).toBe('DE')
     expect(notification.portOfExit).toBe('GB DVR')
@@ -356,16 +369,16 @@ describe('Mapper A — commodities array from lines', () => {
     expect(cow.totalNoOfAnimals).toBe(35)
     expect(cow.totalNoOfPackages).toBe(7)
     expect(cow.species.map((entry) => entry.value)).toEqual([
-      '1148346',
-      '716661'
+      BOS_TAURUS,
+      BISON_BISON
     ])
     expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
     expect(cat.totalNoOfAnimals).toBe(2)
     expect(cat.species).toEqual([
       {
-        value: '923501',
-        text: 'Felis catus',
-        commonName: 'Cat',
+        value: FELIS_CATUS,
+        text: FELIS_CATUS,
+        commonName: 'Domestic Cat',
         noOfAnimals: '2',
         noOfPackages: '1',
         passport: 'UK-CAT-1',
@@ -414,15 +427,13 @@ describe('Mapper A — commodities array from lines', () => {
   })
 })
 
-// Per-unit animal-identifier coverage — a separate describe from the block
-// above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — per-unit animal identifiers', () => {
   test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodities[0].species[0]
 
     expect(species).toEqual({
-      value: '1148346',
+      value: BOS_TAURUS,
       text: BOS_TAURUS,
       commonName: DOMESTIC_CATTLE,
       noOfAnimals: '25',
@@ -431,23 +442,23 @@ describe('Mapper A — per-unit animal identifiers', () => {
       passport: 'UK123456789',
       microchip: '900123456789012',
       animalIdentifiers: [
-        {
+        expect.objectContaining({
           earTag: 'UK123456789012',
           passport: 'UK123456789',
           microchip: '900123456789012',
           tattoo: 'AB1234',
           horseName: 'Dobbin',
-          permanentAddress: {
+          permanentAddress: expect.objectContaining({
             name: 'Owner',
             phone: '01234 567890',
             email: 'owner@example.com',
-            address: {
+            address: expect.objectContaining({
               addressLine1: ORIGIN_FARM_LINE1,
               postcode: 'AB1 2CD',
               countryCode: 'FR'
-            }
-          }
-        },
+            })
+          })
+        }),
         {
           earTag: 'UK000000000099',
           passport: 'UK000000099'
@@ -460,8 +471,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: 'Cat',
-          speciesSelection: '923501',
+          commodityCode: OTHER_LIVE_MAMMALS_CODE,
+          speciesLatinName: FELIS_CATUS,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierMicrochip: '900987654321098' }]
@@ -470,9 +481,9 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
 
     expect(notification.commodities[0].species[0]).toEqual({
-      value: '923501',
-      text: 'Felis catus',
-      commonName: 'Cat',
+      value: FELIS_CATUS,
+      text: FELIS_CATUS,
+      commonName: 'Domestic Cat',
       noOfAnimals: '2',
       noOfPackages: '1',
       microchip: '900987654321098',
@@ -486,8 +497,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
           animalIdentifiers: [
             {
               animalIdentifierEarTag: firstUnit.earTag,
@@ -508,18 +519,13 @@ describe('Mapper A — per-unit animal identifiers', () => {
   })
 })
 
-// A commodity on none of the identifier allowlists carries no identifier
-// obligation, so its line reaches the mapper with no animal-identifier unit at
-// all. The species entry must be built from the line alone rather than
-// throwing on a missing unit. Its own describe rather than the Mapper A block
-// above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — a commodity line with no animal-identifier unit', () => {
   test('Should map a commodity line that carries no animal-identifier unit', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
         {
-          commoditySelection: 'Fish',
-          speciesSelection: '801204',
+          commodityCode: OSTRICHES_CODE,
+          speciesLatinName: STRUTHIO,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '40'
         }
@@ -527,9 +533,9 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
     })
 
     expect(notification.commodities[0].species[0]).toEqual({
-      value: '801204',
-      text: SALMO_SALAR,
-      commonName: 'Atlantic salmon',
+      value: STRUTHIO,
+      text: STRUTHIO,
+      commonName: 'Ostriches',
       noOfAnimals: '40',
       noOfPackages: '1'
     })
@@ -565,8 +571,6 @@ test('Mapper A should use the envelope id as the reference number', () => {
   expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
 })
 
-// GBN-AG's TradeCountry carries an ISO 3166-1 alpha-2 code, so a territory the
-// destination and transit selects offer must leave as its country.
 describe('Mapper A — territories leave as their ISO country', () => {
   test('Should send a territory chosen as the destination country as its parent country', () => {
     const notification = currentNotificationFrom({

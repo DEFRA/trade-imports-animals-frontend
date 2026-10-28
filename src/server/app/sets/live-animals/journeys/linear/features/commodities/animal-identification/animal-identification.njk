@@ -29,7 +29,7 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    <button type="submit" name="action" value="finish" class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ copy.saveAndFinish }}</button>
+    <button type="submit" name="action" value="implicit-submit" class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ copy.saveAndFinish }}</button>
 
     {% for section in sections %}
       <h2 class="govuk-heading-l">{{ section.heading }}</h2>

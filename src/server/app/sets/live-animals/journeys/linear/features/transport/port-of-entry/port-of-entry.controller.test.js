@@ -5,7 +5,7 @@ import {
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
-  referenceDataServing,
+  useReferenceDataServing,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -72,6 +72,21 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
       payload: { meansOfTransport: 'RAILWAY' }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+  })
+
+  it('Should save the port and go to the overview on Save and return to overview with no means of transport', async () => {
+    const [firstPort] = await ports.list()
+
+    const result = await driveHandler(post, {
+      payload: {
+        portOfEntry: firstPort.code,
+        meansOfTransport: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.portOfEntry).toBe(firstPort.code)
   })
 })
 
@@ -295,7 +310,7 @@ describe('POST port-of-entry — empty port overwrites a stored answer', () => {
 })
 
 describe('POST port-of-entry — port membership follows the primed list', () => {
-  const serveReferenceData = referenceDataServing()
+  const serveReferenceData = useReferenceDataServing()
 
   useStubbedJourney(SET_ID, dispatchPages)
 

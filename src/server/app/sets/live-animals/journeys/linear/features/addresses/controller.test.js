@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { store } from '../../../../../../engine/store.js'
 import {
-  addressBookCountriesServing,
+  addressBookRefusingAddresses,
   driveHandler,
   journeyRequest,
   resetMocksAndConfigAfterTests,
@@ -12,6 +12,10 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW
+} from '../commodities/search/test-support.js'
 
 import * as addresses from './controller.js'
 import { PARTIES } from './parties.js'
@@ -36,7 +40,7 @@ const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const ASTRA_NAME = 'Astra Rosales'
 const CYA_SLUG = 'notification-view'
-const COW_LINES = [{ commoditySelection: 'Cow' }]
+const CPH_ASKED_LINES = [BOS_TAURUS_ROW]
 
 describe('GET addresses — sections for parties not yet chosen', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -75,7 +79,7 @@ describe('GET addresses — conditional CPH section', () => {
 
   it('Should list only the five party sections when no CPH-triggering commodity line exists', async () => {
     const result = await driveAddresses({
-      commodityLines: [{ commoditySelection: 'Cat' }]
+      commodityLines: [FELIS_CATUS_ROW]
     })
 
     expect(sectionsOf(result).map(({ title }) => title)).toEqual(
@@ -84,7 +88,7 @@ describe('GET addresses — conditional CPH section', () => {
   })
 
   it('Should end with an empty CPH section offering the add link into cph-number when a CPH-triggering commodity line exists', async () => {
-    const result = await driveAddresses({ commodityLines: COW_LINES })
+    const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES })
 
     expect(sectionsOf(result).at(-1)).toEqual({
       id: 'cph',
@@ -100,7 +104,7 @@ describe('GET addresses — conditional CPH section', () => {
 
   it('Should show the stored (slash-stripped) CPH value on one line with a Change link when answered', async () => {
     const result = await driveAddresses({
-      commodityLines: COW_LINES,
+      commodityLines: CPH_ASKED_LINES,
       countyParishHoldingCph: '123456789'
     })
 
@@ -175,7 +179,7 @@ describe('GET addresses — sections for parties copied onto the notification', 
   })
 
   it('Should show the held party in its section from the copy alone when the address book refuses every address request', async () => {
-    addressBookCountriesServing()
+    addressBookRefusingAddresses()
 
     const result = await driveAddresses({
       placeOfOrigin: {
@@ -246,7 +250,7 @@ describe('GET addresses — change context', () => {
 
   it('Should leave the CPH link alone, its slug already carrying a query string', async () => {
     const result = await driveAddresses(
-      { commodityLines: COW_LINES },
+      { commodityLines: CPH_ASKED_LINES },
       { change: '1' }
     )
 
@@ -299,9 +303,6 @@ describe('POST addresses — change context', () => {
   it('Should follow the ordinary flow when continuing without change context', async () => {
     const result = await driveHandler(postAddresses, {})
 
-    expect(result.response.redirect).not.toBe(
-      pagePath(result.journeyId, CYA_SLUG)
-    )
     expect(result.response.redirect).toBe(hubPath(result.journeyId))
   })
 })

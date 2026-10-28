@@ -20,7 +20,7 @@ describe('#simulateJourney', () => {
 
   const prereqs = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cow' }]
+    commodityLines: [{ commodityCode: '0102' }]
   }
 
   it('Should walk a plain persona (no transporter type) straight through', () => {

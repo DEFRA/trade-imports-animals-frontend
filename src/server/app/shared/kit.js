@@ -126,10 +126,15 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
  * @param {object} request - the request being answered.
  * @param {object} [options] - other keys (the named reason, ids) are logged as given.
  * @param {object} [options.fieldErrors] - map of field key to the message the
- * page shows (may be empty).
+ * page shows (may be empty). Only for a refusal that is not the user's own
+ * input (a state refusal, a tampered post, another service refusing), never
+ * for errors the user can correct on the form.
  */
-export const logRefusal = (request, { fieldErrors = {}, ...details } = {}) =>
-  request.logger.info(
+export const logRefusal = (
+  request,
+  { fieldErrors = {}, level = 'info', ...details } = {}
+) =>
+  request.logger[level](
     {
       ...details,
       journeyId: request.params.journeyId,
@@ -177,8 +182,31 @@ export const hubExitTarget = (
 
 export const changeContext = (request) => requestSaveChoice(request).change
 
+/** The href with `change=1` added to its query string. */
+export const appendChangeContext = (href) =>
+  `${href}${href.includes('?') ? '&' : '?'}change=1`
+
 export const withChangeContext = (request, href) =>
-  changeContext(request) ? `${href}?change=1` : href
+  changeContext(request) ? appendChangeContext(href) : href
+
+/**
+ * Reads the `return` marker a request carries.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string[]} allowedSlugs - the page slugs the marker may name.
+ * @returns {{ honouredSlug?: string, refusedMarker?: string }} `{}` without a
+ * marker, `{ honouredSlug }` when the marker is one of `allowedSlugs`, else
+ * `{ refusedMarker }` holding the value received.
+ */
+export const readReturnMarker = (request, allowedSlugs) => {
+  const marker = request.query?.return
+  if (marker === undefined) {
+    return {}
+  }
+  return allowedSlugs.includes(marker)
+    ? { honouredSlug: marker }
+    : { refusedMarker: marker }
+}
 
 /**
  * Where a valid save goes.
@@ -210,8 +238,32 @@ export const runTarget = async (request, stepId, scope) =>
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
-export const runBackLink = async (request, stepId, current) => {
+/**
+ * Where a run step's Back link goes.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string} stepId - the run step's id.
+ * @param {object} current - the page's current state.
+ * @param {object} current.journey - the journey.
+ * @param {object} current.scope - the journey's scope.
+ * @param {object} current.answers - the journey's stored answers.
+ * @param {object} [options]
+ * @param {boolean} [options.returnsToReview] - the page returns to the
+ * review rather than the overview. When true, a request carrying change
+ * context or a notification being amended is answered with the review;
+ * every other state is answered exactly as it is without the option.
+ * @returns {Promise<string>} the path to go to.
+ */
+export const runBackLink = async (
+  request,
+  stepId,
+  current,
+  { returnsToReview = false } = {}
+) => {
   const { journey, scope, answers } = current
+  if (returnsToReview && (changeContext(request) || journey.status === AMEND)) {
+    return pagePath(journey.journeyId, CYA_SLUG)
+  }
   const previousRunTarget = (await inOpeningRun(
     request,
     request.params.journeyId

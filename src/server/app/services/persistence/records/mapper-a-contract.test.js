@@ -14,10 +14,6 @@ const { values: completeJourneyAnswers } = JSON.parse(
   )
 )
 
-// The happy-path fixture also contains an ITAHC document. Mapper A's current
-// backend shape has no documents field, so its exact absence is part of this
-// payload contract; mapper-a-enum-contract.test.js separately pins all 14
-// accepted document types and all 16 certifiedFor values.
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
 
@@ -127,9 +123,9 @@ describe('Mapper A PUT /notifications contract', () => {
           totalNoOfPackages: 5,
           species: [
             {
-              value: '1148346',
+              value: 'Bos taurus',
               text: 'Bos taurus',
-              commonName: 'Domestic cattle',
+              commonName: 'Cattle or Cow',
               noOfAnimals: '1',
               noOfPackages: '5',
               earTag: 'UK123456789012',

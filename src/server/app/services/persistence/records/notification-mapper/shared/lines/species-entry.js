@@ -1,21 +1,17 @@
 import {
   commodityNameFor,
-  speciesCommonName,
-  speciesLatinName
+  speciesCommonName
 } from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
-// Journey-shape permanent address → backend ConsignmentParty wire shape. The
-// journey keeps phone and email inside the address block; the backend keeps
-// them on the party, and drops any field it does not know.
-const permanentAddressFrom = (pa) =>
-  pa &&
+const partyFromPermanentAddress = (permanentAddress) =>
+  permanentAddress &&
   compact({
-    name: pa.name,
-    phone: pa.address?.phone,
-    email: pa.address?.email,
-    address: toWireAddress(pa.address)
+    name: permanentAddress.name,
+    phone: permanentAddress.address?.phone,
+    email: permanentAddress.address?.email,
+    address: toWireAddress(permanentAddress.address)
   })
 
 const animalIdentifierFrom = (unit) =>
@@ -25,52 +21,37 @@ const animalIdentifierFrom = (unit) =>
     tattoo: unit.animalIdentifierTattoo,
     earTag: unit.animalIdentifierEarTag,
     horseName: unit.horseName,
-    permanentAddress: permanentAddressFrom(unit.permanentAddress)
+    permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
-
-const speciesValueFrom = (line) =>
-  line.speciesLatinName ?? line.speciesSelection
-
-const speciesTextFrom = (line) => {
-  if (line.speciesLatinName) {
-    return line.speciesLatinName
-  }
-  if (line.speciesSelection) {
-    return speciesLatinName(line.speciesSelection)
-  }
-  return undefined
-}
 
 const commonNameFrom = (line) => {
   if (line.commonName) {
     return line.commonName
   }
-  if (line.commoditySelection) {
-    return speciesCommonName(line.commoditySelection, speciesValueFrom(line))
+  const { commodityCode, speciesLatinName } = line
+  if (commodityCode && speciesLatinName) {
+    return speciesCommonName(commodityCode, speciesLatinName)
   }
-  const commodityName = commodityNameFor(line.commodityCode)
-  if (commodityName) {
-    return speciesCommonName(commodityName, speciesValueFrom(line))
-  }
-  return undefined
+  return commodityNameFor(commodityCode)
 }
 
-// The scalar identifier fields carry the line's first identifier unit;
-// `animalIdentifiers` carries every unit on the line.
 export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
-  const units = line.animalIdentifiers ?? []
-  const unit = units[0] ?? {}
+  const identifierUnits = line.animalIdentifiers ?? []
+  const firstUnit = identifierUnits[0] ?? {}
+  const latinName = line.speciesLatinName
   return compact({
-    value: speciesValueFrom(line),
-    text: speciesTextFrom(line),
+    value: latinName,
+    text: latinName,
     commonName: commonNameFrom(line),
     typeOfCommodity,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
-    earTag: unit.animalIdentifierEarTag,
-    passport: unit.animalIdentifierPassport,
-    microchip: unit.animalIdentifierMicrochip,
+    earTag: firstUnit.animalIdentifierEarTag,
+    passport: firstUnit.animalIdentifierPassport,
+    microchip: firstUnit.animalIdentifierMicrochip,
     animalIdentifiers:
-      units.length > 0 ? units.map(animalIdentifierFrom) : undefined
+      identifierUnits.length > 0
+        ? identifierUnits.map(animalIdentifierFrom)
+        : undefined
   })
 }

@@ -179,17 +179,23 @@ so the line carries the request's trace id. Log the ids support searches by:
 `journeyId` always, plus the reason and any token or code the decision turned
 on. Log a caught error as `{ err }`, never only its message.
 
-A user's own field errors, shown back on the form, are not logged. Every other
-refusal that shows the page again, such as a state refusal, a bare 400 or
-another service refusing what this one accepted, calls
-`kit.logRefusal(request, { fieldErrors, ...details })` once, before it renders,
-whatever status code it answers with. `fieldErrors` is the map of field key to
-the message the page shows (empty when it shows none). The line is info, carries
-`journeyId`, the route and the error codes (the field keys, never the
-messages), and takes any named reason or ids the branch decided on as further
-keys of the options. The
-[transit countries controller](../sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js)
-is the example of a refusal that passes its reason.
+A refusal of the user's own input logs nothing: one the user can correct on the
+form as rendered (a blank answer, a typed value that fails its rule, or a
+choice the form offers that the page then refuses, such as a country already
+added). Every other refusal that shows the page again (a state refusal, a
+tampered post or an id the page does not hold, a bare 400, another service
+refusing what this one accepted) calls `kit.logRefusal(request, { ...details })`
+once, before it renders, whatever status code it answers with. The line is
+info, carries `journeyId`, the route and the error codes, and takes any named
+reason or ids the branch decided on as further keys of the options.
+
+`fieldErrors` is an optional map of field key to the message the page shows; it
+fills `errorCodes` (the keys, never the messages). The
+[documents page](../sets/live-animals/journeys/linear/features/documents/controller.js)
+passes it when scans are not cleared, because the user cannot correct that on
+the page. The
+[consignment-details removal](../sets/live-animals/journeys/linear/features/commodities/consignment-details/remove/post-remove.js)
+of a line that is not there is the example of a refusal that passes its reason.
 
 `kit.recoverableSave()` takes the request and logs every save fallback once at
 warn, with `journeyId` and the caught error as `err`, plus any ids the page

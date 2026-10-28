@@ -1,8 +1,8 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import {
   animalIdentificationPage,
@@ -31,6 +31,10 @@ import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { nextRunTarget, previousRunTarget, RUN_STEPS } from './run.js'
 import { allFlowPages } from './flow.js'
+import {
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
 const JOURNEY_ID = 'journey-1'
 const next = (stepId, answers) =>
@@ -38,14 +42,10 @@ const next = (stepId, answers) =>
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+  commodityLines: [FELIS_CATUS_ROW]
 }
 
-// A whole notification, so the tail of the run can be walked with every later
-// question already answerable and the review page open.
-const { values: completeSeed } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const completeSeed = completeNotification()
 
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {
@@ -155,8 +155,6 @@ describe('#nextRunTarget — the run past the arrival details', () => {
   })
 
   it('Should return null for the transporter add spokes — they are not run steps', () => {
-    // The spokes are off the run, so they carry no step of their own — they
-    // continue from the list, which is the step they hang off.
     expect(next(transporterAddPage.id, completeSeed)).toBeNull()
     expect(next(transportersSelectPage.id, completeSeed)).toBeNull()
     expect(next(privateTransporterDetailsPage.id, completeSeed)).toBeNull()
@@ -206,9 +204,9 @@ describe('#previousRunTarget — where Back goes during the opening run', () => 
     buildDispatch(SET_ID, dispatchPages)
   })
 
-  const fishSeed = {
+  const ostrichSeed = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Fish', speciesSelection: '801204' }]
+    commodityLines: [STRUTHIO_ROW]
   }
   const previous = (stepId, answers) =>
     previousRunTarget(
@@ -242,7 +240,7 @@ describe('#previousRunTarget — where Back goes during the opening run', () => 
   })
 
   it('Should send the additional details page back to the consignment details page when no chosen species needs identifiers', () => {
-    expect(previous(additionalDetailsPage.id, fishSeed)).toBe(
+    expect(previous(additionalDetailsPage.id, ostrichSeed)).toBe(
       pagePath(JOURNEY_ID, consignmentDetailsPage.slug)
     )
   })
@@ -273,9 +271,6 @@ describe('#previousRunTarget — where Back goes during the opening run', () => 
 })
 
 describe('the run covers the journey', () => {
-  // Pages deliberately outside the run: the dashboard sits before a
-  // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run.
   const OUTSIDE_THE_RUN = [
     'dashboard',
     'cphNumber',

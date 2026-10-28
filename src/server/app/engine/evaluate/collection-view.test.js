@@ -1,20 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { collectionView } from './collection-view.js'
 import { evaluateAnswers } from '../../bridge/evaluation.js'
+import { completeCommodityLine } from '../test-support.js'
 
-const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
+const completeLine = completeCommodityLine()
 
-const completeLine = {
-  commoditySelection: 'Cow',
-  commodityType: '16',
-  speciesSelection: ['1148346'],
-  numberOfAnimalsQuantity: '1',
-  animalIdentifiers: [
-    { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
-  ]
-}
-
-const incompleteLine = { commoditySelection: 'Cow' }
+const incompleteLine = { commodityCode: '0102' }
 
 const viewOf = (answers, collectionPath) =>
   collectionView(answers, collectionPath, evaluateAnswers(answers))

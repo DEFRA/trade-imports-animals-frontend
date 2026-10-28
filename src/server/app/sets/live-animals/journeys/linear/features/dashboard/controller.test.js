@@ -23,6 +23,7 @@ import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import { routes } from './controller.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import { CATTLE_CODE } from '../../../../services/commodities/rules.js'
 
 const hubUrl = (journeyId) => `${SET_BASE}/notifications/${journeyId}`
 const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
@@ -141,7 +142,7 @@ describe('dashboard notifications list', () => {
     ])
   })
 
-  it('Should build rich display fields using cached country and commodity reference data', async () => {
+  it('Should show the origin country by name and the commodity as the first line CN code', async () => {
     const draft = await startDraft()
     await records.replaceFulfilment(
       draft.journeyId,
@@ -150,14 +151,14 @@ describe('dashboard notifications list', () => {
         arrivalDateAtPort: { day: '5', month: '3', year: '2026' },
         consignor: { name: 'Consignor Ltd' },
         consignee: { name: 'Consignee Ltd' },
-        commodityLines: [{ commoditySelection: 'Cow' }]
+        commodityLines: [{ commodityCode: CATTLE_CODE }]
       })
     )
 
     const context = await renderList({ knownJourneyIds: [draft.journeyId] })
 
     expect(context.notificationRows[0]).toMatchObject({
-      commodity: 'Cow',
+      commodity: CATTLE_CODE,
       origin: 'France',
       arrival: '5 Mar 2026',
       consignor: 'Consignor Ltd',

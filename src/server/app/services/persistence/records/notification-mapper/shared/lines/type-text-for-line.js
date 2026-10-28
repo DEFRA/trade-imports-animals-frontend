@@ -1,11 +1,6 @@
-import { commodityNameFor, typeTextForId } from '../../commodity-reference.js'
-
-const typeKeyForLine = (line) =>
-  line.commoditySelection ??
-  commodityNameFor(line.commodityCode) ??
-  line.commodityCode
+import { typeTextForId } from '../../commodity-reference.js'
 
 export const typeTextForLine = (line) => {
-  const text = typeTextForId(typeKeyForLine(line), line.commodityType)
+  const text = typeTextForId(line.commodityCode, line.commodityType)
   return text === '' ? undefined : text
 }

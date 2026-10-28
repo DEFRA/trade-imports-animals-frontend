@@ -44,8 +44,10 @@ separate checks: saving an optional blank is allowed, while submit readiness sti
 reflects every in-scope mandatory obligation and group invariant.
 
 "Save and return to overview" runs the same checks as "Save and continue", with no
-opt-in. A missing or invalid answer keeps the user on the page with an error for
-each and what they entered kept. The hub exit only changes where a valid save goes.
+opt-in. An answer the page requires that is missing, or an answer that breaks its
+rule, keeps the user on the page with an error for each and what they entered kept.
+An answer the page leaves optional may be left blank on either button. The hub exit
+only changes where a valid save goes.
 
 One page's validation is stated once with `pageValidation`, then read against a
 submitted form and against the answers already stored (the task list and the review

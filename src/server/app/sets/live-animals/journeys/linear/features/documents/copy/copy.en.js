@@ -129,8 +129,6 @@ export const copy = {
     fileEmpty: 'The selected file is empty',
     fileVirus: 'The selected file contains a virus',
     fileDownloadFailed: 'The selected file could not be downloaded',
-    cannotContinue:
-      'You cannot continue until all documents have been scanned or removed',
     documentNotSaved: (saveAction) =>
       `Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘${saveAction}’ to try again.`,
     documentsUnchecked: (saveAction) =>

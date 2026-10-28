@@ -1,5 +1,2 @@
 export const speciesLines = (group) =>
-  group.filter(
-    (line) =>
-      line.speciesSelection !== undefined || line.speciesLatinName !== undefined
-  )
+  group.filter((line) => line.speciesLatinName !== undefined)

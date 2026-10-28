@@ -1,10 +1,13 @@
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
+  lineOf
+} from '../../features/commodities/search/test-support.js'
+
 const UNITED_KINGDOM = 'United Kingdom'
 
-/**
- * A maximal happy-path answer set that puts (almost) every obligation in
- * scope, overlaid per state with the scope-flag cross-product above.
- * Answer-shaped, which is exactly what `makeScope` consumes.
- */
 export const submitReadySeed = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no',
@@ -14,13 +17,11 @@ export const submitReadySeed = {
   containsUnweanedAnimals: 'no',
   countyParishHoldingCph: '12/345/6789',
   commodityLines: [
-    {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+    lineOf(BOS_TAURUS_ROW, {
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-    }
+    })
   ],
   consignor: {
     name: 'Astra Rosales',
@@ -69,76 +70,46 @@ export const submitReadySeed = {
   declaration: 'confirmed'
 }
 
-/**
- * Seed variants — overlays on `submitReadySeed` whose commodity/documents
- * choices open the gates the base seed leaves shut. The base seed's single
- * Cow line never scopes the Horse-gated `horseName`, the Cat/Dog-gated
- * `permanentAddress` or the four per-document leaves (no
- * `documents` records). Values are the real canned commodity and
- * document-type reference data — the same vocabulary
- * the pages store. `fish-line` is the inverse case rather than a
- * gate-opener: Fish is on none of the identifier allowlists, so its line
- * carries no identifier obligation and no animal records, which makes it the
- * corpus's only design-release-1 consignment with no identification card at
- * all.
- *
- * Both provers run every variant × every scope state, so page reachability
- * is proven in the states these variants create, and `proveScopeCompleteness`
- * fails loudly when a manifest obligation is scoped by NO variant/state pair.
- *
- * @returns {Array<{ id: string, answers: object }>} named answer sets.
- */
 export const seedVariants = () => [
   { id: 'base', answers: submitReadySeed },
   {
-    // Horse: horseName (and passport) per unit record.
     id: 'horse-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commoditySelection: 'Horse',
-          speciesSelection: '822332',
+        lineOf(EQUUS_CABALUS_ROW, {
           numberOfPackages: '2',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0001' }]
-        }
+        })
       ]
     }
   },
   {
-    // Cat: permanentAddress (mandatory when in scope) per unit record.
     id: 'cat-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commoditySelection: 'Cat',
-          speciesSelection: '923501',
+        lineOf(FELIS_CATUS_ROW, {
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0002' }]
-        }
+        })
       ]
     }
   },
   {
-    // Fish is on none of the identifier allowlists, so no identifier
-    // obligation applies to its line and it carries no animal records.
-    id: 'fish-line',
+    id: 'unidentified-line',
     answers: {
       ...submitReadySeed,
       commodityLines: [
-        {
-          commoditySelection: 'Fish',
-          speciesSelection: '801204',
+        lineOf(STRUTHIO_ROW, {
           numberOfAnimalsQuantity: '40'
-        }
+        })
       ]
     }
   },
   {
-    // A document record scopes the four per-document mandatory fields.
     id: 'with-documents',
     answers: {
       ...submitReadySeed,

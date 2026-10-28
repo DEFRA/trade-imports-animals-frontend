@@ -44,10 +44,11 @@ export const scanned = (documents) =>
       tagKey: tagKeyFor(item)
     }))
 
-const isNotClearedByScan = (item) => item.scanStatus !== SCAN_STATUS.COMPLETE
+export const isRejectedByScan = (item) =>
+  item.scanStatus === SCAN_STATUS.REJECTED
 
-export const hasDocumentsNotClearedByScan = (documents) =>
-  documents.some(isNotClearedByScan)
+export const hasRejectedDocuments = (documents) =>
+  documents.some(isRejectedByScan)
 
-export const scansNotCleared = (documents) =>
-  scanned(documents.filter(isNotClearedByScan))
+export const rejectedScans = (documents) =>
+  scanned(documents.filter(isRejectedByScan))

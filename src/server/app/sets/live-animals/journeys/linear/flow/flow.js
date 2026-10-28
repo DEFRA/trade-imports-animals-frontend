@@ -19,8 +19,9 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
+import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
 
-export const FLOW_ONLY_KEYS = ['declaration']
+export const FLOW_ONLY_KEYS = ['declaration', STORED_SEARCH_ROWS]
 
 export const sections = [
   {
@@ -53,8 +54,6 @@ export const sections = [
   },
   {
     id: 'transport',
-    // One transporter step: the list. Adding a transporter that is not on it
-    // is a detour off that page, not a leg of the journey.
     pages: [portOfEntryPage, transitCountriesPage, transportersPage]
   },
   {

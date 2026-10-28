@@ -15,8 +15,12 @@ The `addresses` section holds the CPH number page and then Roles and addresses, 
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
 
-`FLOW_ONLY_KEYS` contains `declaration`. That value uses the session's flow-only
-store rather than canonical obligation fulfilment.
+`FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`. Both are kept in
+the session's flow-only store rather than canonical obligation fulfilment, and are
+never sent to the backend.
+
+The transport section lists one transporter step, the transporter list. The pages
+that add a transporter are detours off that list and belong to no section.
 
 ## Task rows
 
@@ -102,7 +106,11 @@ contact address and then the review page, so the primary button — "Save and
 continue" on every one of them but the review page, which ends with "Continue" —
 carries a new notification from the entry page to the review page in one pass.
 The CPH number page is not a step: it opens from the CPH section's add link on Roles and addresses
-and saves back to it. Roles and addresses ends the run on the hub when every
+and saves back to it.
+What are you importing? is likewise a detour, not a step, when Commodity details or Identification details opens it:
+it saves back to the page that opened it, carrying any change context, and its Back opens that page.
+Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the run's next step or the review's change target applies.
+Roles and addresses ends the run on the hub when every
 task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
@@ -120,21 +128,29 @@ overview, and following it does not end the run: a later Save and continue goes
 on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
 may open, nearest first, and `previousRunTarget` returns the first whose gate
 passes, so a skipped step is skipped going back too. `kit.runBackLink()` falls
-back to the overview when the run is over or no named earlier step applies.
+back to the overview when the run is over or no named earlier step applies. A
+page that has declared, through the helper's `returnsToReview` option, that it
+returns to the review is answered with the review instead when the request
+carries change context or the notification is being amended; every other page
+is unaffected.
 
 | Step                    | Back opens                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------- |
-| What are you importing? | Origin                                                                                |
+| What are you importing? | Origin, or Commodity details or Identification details when one of them opened it     |
 | Reason for import       | What are you importing?                                                               |
 | Commodity details       | What are you importing?, not the reason between them                                  |
 | Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |
 | Transit countries       | Arrival details                                                                       |
 
-Animal identification, arrival details, the transporter, the documents, roles
-and addresses and the contact address keep their Back link on the overview.
-Origin goes back to the dashboard until something is saved, then to the
-overview. The identification condition is `identifiesAnAnimal`, the rule that also decides
+Animal identification, arrival details, the transporter, roles and addresses
+and the contact address keep their Back link on the overview. Origin goes back
+to the dashboard until something is saved, then to the overview. The
+identification condition is `identifiesAnAnimal`, the rule that also decides
 whether the identification task row applies.
+
+The documents page's Back link opens the review while the notification is
+being amended, or when the page was opened by changing the uploaded documents
+from the review; it opens the overview otherwise.
 
 The review page's Back link follows the notification's status instead. A
 submitted notification, including the one shown after an amendment is cancelled,

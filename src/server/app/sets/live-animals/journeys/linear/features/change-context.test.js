@@ -21,35 +21,30 @@ import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
+import { lineKey } from './commodities/search/selection/line-key.js'
+import { STORED_SEARCH_ROWS } from './commodities/search/selection/rows.js'
+import { FELIS_CATUS_ROW, lineOf } from './commodities/search/test-support.js'
 import { driveReturnFromUpload } from './documents/test-support.js'
 
 const change = { change: '1' }
 const TEST_JOURNEY_ID = 'journey-1'
+const IMPLICIT_SUBMIT = 'implicit-submit'
 const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 
 const lineSeed = {
-  commodityLines: [
-    {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
-      numberOfAnimalsQuantity: '',
-      numberOfPackages: ''
-    }
-  ]
+  commodityLines: [lineOf(FELIS_CATUS_ROW)]
 }
 
-const payloadWithAnimalCount = { 'numberOfAnimalsQuantity-0': '1' }
+const savableLineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
 
-const configure = () => {
+beforeAll(() => {
   configureRecords(SET_ID, recordsStub)
   configureSession(SET_ID, sessionStub)
   buildDispatch(SET_ID, dispatchPages)
-}
+})
+beforeEach(() => store.clear())
 
 describe('change context — kit contracts', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-
   it('Should append the change flag to an href only when the request carries change context', () => {
     expect(
       withChangeContext(
@@ -80,37 +75,36 @@ describe('change context — kit contracts', () => {
 })
 
 describe('change context — context survives the internal loop navigation', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-
   it('Should carry the context from the search save into the consignment details page', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
-        payload: { species: ['Cat|923501'] },
+        flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
+        payload: { species: [lineKey(FELIS_CATUS_ROW)] },
         query: change
       }
     )
     expect(response).toEqual({
       redirect: `${pagePath(journeyId, 'consignment-details')}?change=1`
     })
-    expect(after.commodityLines).toHaveLength(1)
+    expect(after.commodityLines).toEqual([
+      expect.objectContaining(FELIS_CATUS_ROW)
+    ])
   })
 
-  it('Should carry the context on the details page Add-another affordance', async () => {
+  it('Should carry the context and the return marker on the details page Add-another affordance', async () => {
     const { journeyId, view } = await driveHandler(
       getHandlerOf(consignmentDetails),
       { seed: lineSeed, query: change }
     )
     const { addHref, groups } = view.context
-    expect(addHref).toBe(`${pagePath(journeyId, 'commodities')}?change=1`)
+    expect(addHref).toBe(
+      `${pagePath(journeyId, 'commodities')}?return=consignment-details&change=1`
+    )
     expect(groups[0].index).toBe(0)
   })
 
-  // The seed holds one line, so this removal empties the notification and the
-  // user goes back to the commodity question rather than to an empty details
-  // page. The context has to travel with that redirect too.
-  it('Should carry the context through a commodity remove round-trip', async () => {
+  it('Should carry the context to the commodity question when removing the last line', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
@@ -173,14 +167,11 @@ describe('change context — context survives the internal loop navigation', () 
 })
 
 describe('change context — only the collection exit repoints to check your answers', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-
   it('Should send the consignment details save back to check your answers under change context', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
-        payload: payloadWithAnimalCount,
+        payload: savableLineCountPayload,
         query: change,
         seed: lineSeed
       }
@@ -188,11 +179,11 @@ describe('change context — only the collection exit repoints to check your ans
     expect(response).toEqual({ redirect: cya(journeyId) })
   })
 
-  it('Should send the identification Save-and-finish back to check your answers under change context', async () => {
+  it('Should send the identification Enter post with nothing typed back to check your answers under change context', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { action: 'finish' },
+        payload: { action: IMPLICIT_SUBMIT },
         query: change,
         seed: lineSeed
       }
@@ -214,18 +205,18 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
-        payload: payloadWithAnimalCount,
+        payload: savableLineCountPayload,
         seed: { countryOfOrigin: 'FR', ...lineSeed }
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 
-  it('Should keep the identification Save-and-finish on the section flow (the hub) without change context', async () => {
+  it('Should keep the identification Enter post with nothing typed on the section flow (the hub) without change context', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { action: 'finish' },
+        payload: { action: IMPLICIT_SUBMIT },
         seed: lineSeed
       }
     )
@@ -234,7 +225,7 @@ describe('change context — only the collection exit repoints to check your ans
 
   it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
     const details = await driveHandler(postHandlerOf(consignmentDetails), {
-      payload: { ...payloadWithAnimalCount, exit: 'hub' },
+      payload: { ...savableLineCountPayload, exit: 'hub' },
       query: change,
       seed: lineSeed
     })
@@ -245,7 +236,7 @@ describe('change context — only the collection exit repoints to check your ans
     const identifiers = await driveHandler(
       postHandlerOf(animalIdentification),
       {
-        payload: { exit: 'hub', action: 'finish' },
+        payload: { exit: 'hub', action: IMPLICIT_SUBMIT },
         query: change,
         seed: lineSeed
       }

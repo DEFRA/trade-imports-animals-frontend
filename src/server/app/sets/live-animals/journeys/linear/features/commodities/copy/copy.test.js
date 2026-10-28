@@ -9,24 +9,30 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
-  list,
+  identifiedCommodityCodes,
   identifiersFor
 } from '../../../../../services/commodities/index.js'
-
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-
-const BOS_TAURUS = 'Bos taurus'
+import { BOS_TAURUS } from '../search/test-support.js'
 
 describe('#copy', () => {
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text = sampleText(value, ['sample', 2, 3, 4])
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
+  it.each([
+    ['English', copy],
+    ['Welsh', copyCy]
+  ])(
+    'Should have a non-empty string (or string-returning function) at every %s leaf',
+    (_language, block) => {
+      for (const { path, value } of leaves(block)) {
+        const text = sampleText(value, ['sample', 2, 3, 4])
+        expect(typeof text, `${path} must resolve to a string`).toBe('string')
+        expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(
+          0
+        )
+      }
     }
-  })
+  )
 
   it('Should point the commodity-code lookup at the Trade Tariff tool', () => {
     expect(copy.search.help.lookupHref).toBe('https://www.gov.uk/trade-tariff')
@@ -40,13 +46,13 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity asks for', () => {
+  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity code asks for', () => {
     const identifiers = new Set(
-      list().flatMap((commodity) => identifiersFor(commodity))
+      identifiedCommodityCodes().flatMap((code) => identifiersFor(code))
     )
     expect(
       identifiers.size,
-      'no commodity carries any identifier'
+      'no commodity code carries any identifier'
     ).toBeGreaterThan(0)
 
     for (const block of [copy, copyCy]) {
