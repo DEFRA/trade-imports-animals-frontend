@@ -336,7 +336,7 @@ test.describe('commodity search by code', () => {
         exact: true
       })
     ).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(15)
+    await expect(cattle.getByRole('checkbox')).toHaveCount(15)
   })
 
   test('lists no more than a hundred species for one search', async ({

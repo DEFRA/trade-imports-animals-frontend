@@ -36,7 +36,6 @@ describe('#buildRemovableCommoditiesTable', () => {
     )
 
     expect(table.rows[0][1].html).toBe('Felis &lt;catus&gt; &amp; friends')
-    expect(table.rows[0][1].html).not.toContain('<catus>')
   })
 
   it('Should end each row with a Remove button named for its code and species', () => {

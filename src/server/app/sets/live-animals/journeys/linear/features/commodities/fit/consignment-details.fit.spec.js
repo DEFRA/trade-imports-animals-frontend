@@ -344,11 +344,15 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(selectedCommoditiesTable(page)).toContainText(
       CANIS_FAMILIARIS.speciesLatinName
     )
-    await expect(animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue('25')
-    await expect(animalsQuantityInputUnder(page, CANIS_FAMILIARIS)).toHaveValue(
-      ''
+    await expect(await animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue(
+      '25'
     )
-    await expect(animalsQuantityInputUnder(page, FELIS_CATUS)).toHaveValue('2')
+    await expect(
+      await animalsQuantityInputUnder(page, CANIS_FAMILIARIS)
+    ).toHaveValue('')
+    await expect(
+      await animalsQuantityInputUnder(page, FELIS_CATUS)
+    ).toHaveValue('2')
   })
 
   test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({

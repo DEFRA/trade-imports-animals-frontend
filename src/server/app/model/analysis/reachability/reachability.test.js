@@ -343,7 +343,9 @@ describe('#synthesiseWitness — branchedGate and notInUnionOf', () => {
     expect(witness.gatedParentGroupId).toBe(groupObligation.id)
     expect(['a']).not.toContain(witness.value)
   })
+})
 
+describe('#synthesiseWitness — no gate, or a gate it cannot invert', () => {
   it('Should return trivial for an obligation without applyTo (structural group)', () => {
     const witness = synthesiseWitness({ id: 'commodityLine' })
     expect(witness).toEqual({ kind: WITNESS_KIND.TRIVIAL })

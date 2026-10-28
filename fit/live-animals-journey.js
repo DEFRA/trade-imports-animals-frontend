@@ -571,11 +571,18 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
-  page
-    .getByRole('heading', { level: 3, name: speciesLatinName })
-    .locator('+ .govuk-form-group')
-    .getByLabel('Number of animals')
+export const animalsQuantityInputUnder = async (page, { speciesLatinName }) => {
+  await page
+    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .waitFor()
+  const speciesHeadings = await page
+    .getByRole('heading', { level: 3 })
+    .allTextContents()
+  const position = speciesHeadings.indexOf(speciesLatinName)
+  return page
+    .getByRole('textbox', { name: 'Number of animals', exact: true })
+    .nth(position)
+}
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -605,8 +612,7 @@ export const expectSpeciesSelected = async (
 ) =>
   expect(
     page
-      .getByRole('heading', { name: /\d+ selected/ })
-      .locator('+ ul')
+      .locator('#commodity-selection')
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })
