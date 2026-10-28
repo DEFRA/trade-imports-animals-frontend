@@ -26,15 +26,15 @@ const chosenSpecies = (answers) =>
       latinName: line.speciesLatinName
     }))
 
-const draftUnlistedSpecies = async (journey, answers, { refused }) => {
-  if (!refused || journey.status !== state.DRAFT) {
+const draftUnlistedSpecies = async (journey, answers) => {
+  if (journey.status !== state.DRAFT) {
     return []
   }
   return linesWithUnlistedSpecies(chosenSpecies(answers))
 }
 
-export const speciesCardErrors = async (journey, answers, options) => {
-  const unlisted = await draftUnlistedSpecies(journey, answers, options)
+export const speciesCardErrors = async (journey, answers) => {
+  const unlisted = await draftUnlistedSpecies(journey, answers)
   if (unlisted.length === 0) {
     return {}
   }
@@ -106,9 +106,7 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(await documentScanCardErrors(request, answers)).length > 0) {
     return true
   }
-  const unlisted = await draftUnlistedSpecies(journey, answers, {
-    refused: true
-  })
+  const unlisted = await draftUnlistedSpecies(journey, answers)
   if (unlisted.length === 0) {
     return false
   }

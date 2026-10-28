@@ -74,8 +74,11 @@ const seedAnd = async (seed) => {
   return journey
 }
 
-const askRefused = async (journeyId, overrides = {}) => {
-  const request = journeyRequest(journeyId, overrides)
+const askRefused = async (journeyId) =>
+  isReviewRefused(journeyRequest(journeyId), stubH())
+
+const askRefusedAndReadLog = async (journeyId) => {
+  const request = journeyRequest(journeyId)
   return {
     refused: await isReviewRefused(request, stubH()),
     logger: request.logger
@@ -97,20 +100,20 @@ describe('#isReviewRefused', () => {
     const journey = await seedAnd({ portOfEntry: STALE_PORT })
     await store.submit(journey.journeyId)
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(false)
+    expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
   it('Should refuse an unfinished notification', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => false)
     const journey = await seedAnd({})
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should refuse a notification whose stored answer no longer passes its own rules', async () => {
     const journey = await seedAnd({ portOfEntry: STALE_PORT })
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should refuse a notification whose copied address breaks the address-book rules', async () => {
@@ -121,7 +124,7 @@ describe('#isReviewRefused', () => {
       })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should refuse a notification whose copied contact address breaks the rules', async () => {
@@ -131,13 +134,13 @@ describe('#isReviewRefused', () => {
       })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should not refuse a notification whose answers all pass', async () => {
     const journey = await seedAnd(fullyAnswered())
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(false)
+    expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
   it('Should refuse a notification whose stored document is still being scanned', async () => {
@@ -147,7 +150,7 @@ describe('#isReviewRefused', () => {
       })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should refuse a notification whose stored document was rejected by the scan', async () => {
@@ -157,7 +160,7 @@ describe('#isReviewRefused', () => {
       })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should not refuse a notification whose stored documents have all completed scanning', async () => {
@@ -167,7 +170,7 @@ describe('#isReviewRefused', () => {
       })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(false)
+    expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
   it('Should refuse a draft holding a species not listed under its code', async () => {
@@ -175,7 +178,7 @@ describe('#isReviewRefused', () => {
       fullyAnswered({ commodityLines: [UNLISTED_SPECIES_LINE] })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(true)
+    expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
   it('Should not refuse a draft whose species is still listed under its code', async () => {
@@ -183,23 +186,30 @@ describe('#isReviewRefused', () => {
       fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
     )
 
-    expect((await askRefused(journey.journeyId)).refused).toBe(false)
+    expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
   it('Should log the refusal once at warn with the journey id and each unlisted code and Latin name', async () => {
     const journey = await seedAnd(
       fullyAnswered({
-        commodityLines: [LISTED_SPECIES_LINE, UNLISTED_SPECIES_LINE]
+        commodityLines: [
+          LISTED_SPECIES_LINE,
+          UNLISTED_SPECIES_LINE,
+          SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
+        ]
       })
     )
-    const { refused, logger } = await askRefused(journey.journeyId)
+    const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
 
     expect(refused).toBe(true)
     expectOneLogged(logger, {
       level: 'warn',
       fields: {
         journeyId: journey.journeyId,
-        unlisted: [{ code: '0102', latinName: 'Bos spp.' }]
+        unlisted: [
+          { code: '0102', latinName: 'Bos spp.' },
+          { code: '0102', latinName: 'Felis catus' }
+        ]
       },
       message: 'Draft refused: reference data no longer lists a chosen species'
     })
@@ -209,7 +219,7 @@ describe('#isReviewRefused', () => {
     const journey = await seedAnd(
       fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
     )
-    const { refused, logger } = await askRefused(journey.journeyId)
+    const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
 
     expect(refused).toBe(false)
     expect(logger.entries).toEqual([])
@@ -227,8 +237,7 @@ describe('#speciesCardErrors', () => {
             UNLISTED_SPECIES_LINE,
             SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
           ]
-        },
-        { refused: true }
+        }
       )
     ).toEqual({
       species: reviewEn.errors.species.notListed(
@@ -241,18 +250,7 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: AMEND },
-        { commodityLines: [UNLISTED_SPECIES_LINE] },
-        { refused: true }
-      )
-    ).toEqual({})
-  })
-
-  it('Should return no species error for a draft that has not just been refused', async () => {
-    expect(
-      await speciesCardErrors(
-        { status: DRAFT },
-        { commodityLines: [UNLISTED_SPECIES_LINE] },
-        { refused: false }
+        { commodityLines: [UNLISTED_SPECIES_LINE] }
       )
     ).toEqual({})
   })
@@ -261,8 +259,7 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [{ commodityCode: '0102' }] },
-        { refused: true }
+        { commodityLines: [{ commodityCode: '0102' }] }
       )
     ).toEqual({})
   })
