@@ -3,10 +3,7 @@ import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
 import * as client from './client.js'
 import { STUB_BOOK } from './stub/index.js'
 
-/** Rows per page of the picker's results table (design 05-03..06). Owned here,
- * not by the pages — the address book owns its own search and pagination, and
- * the API's page size is server-owned (cv-025), so this service re-slices an
- * API page down to this size rather than asking for it. */
+/** Rows per page of the picker's results table. */
 export const PAGE_SIZE = 5
 
 /** Addresses have no type in the address book (D3) — the same record may be a
@@ -48,18 +45,19 @@ const searchStub = (query, requested) => {
   )
 }
 
-/** One page of ours, cut out of one page of theirs. Their page holds
- * `API_PAGE_SIZE` records and ours holds `PAGE_SIZE`, so a page of ours falls
- * entirely inside a single page of theirs — no straddling, no second call. */
+const apiPageHolding = (offset, apiPageSize) =>
+  Math.floor(offset / apiPageSize) + 1
+
+const servedAnotherPageSize = (found) =>
+  found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE
+
 const sliceAt = async (orgId, query, requested) => {
   const offset = (requested - 1) * PAGE_SIZE
-  let apiPage = Math.floor(offset / client.API_PAGE_SIZE) + 1
+  let apiPage = apiPageHolding(offset, client.API_PAGE_SIZE)
   let found = await client.listAddresses(orgId, { page: apiPage, query })
 
-  // The server owns its page size. If it is not what we assumed, the page we
-  // just asked for was the wrong one — redo the arithmetic with the real size.
-  if (found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE) {
-    apiPage = Math.floor(offset / found.pageSize) + 1
+  if (servedAnotherPageSize(found)) {
+    apiPage = apiPageHolding(offset, found.pageSize)
     found = await client.listAddresses(orgId, { page: apiPage, query })
   }
 
