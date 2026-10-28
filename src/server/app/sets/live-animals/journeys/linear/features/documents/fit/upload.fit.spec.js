@@ -922,7 +922,7 @@ test.describe('document upload page across the browser history', () => {
     page
   }) => {
     const addButton = page.getByRole('button', { name: copy.addAnother })
-    const spentUploadPath = await addButton.getAttribute('formaction')
+    const uploadPathBeforeRestore = await addButton.getAttribute('formaction')
 
     await page.evaluate(() => {
       const restored = new Event('pageshow')
@@ -930,7 +930,10 @@ test.describe('document upload page across the browser history', () => {
       globalThis.dispatchEvent(restored)
     })
 
-    await expect(addButton).not.toHaveAttribute('formaction', spentUploadPath)
+    await expect(addButton).not.toHaveAttribute(
+      'formaction',
+      uploadPathBeforeRestore
+    )
     await expect(addButton).toHaveAttribute('formaction', /upload-and-scan/)
   })
 })
