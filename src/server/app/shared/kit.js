@@ -120,11 +120,12 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
   'Save failed on a recoverable backend error, fallback response sent'
 
 /**
- * Logs a refusal once at info. The error codes are the field keys, never the
- * messages.
+ * Logs a refusal once, at info unless `level` says otherwise. The error codes
+ * are the field keys, never the messages.
  *
  * @param {object} request - the request being answered.
  * @param {object} [options] - other keys (the named reason, ids) are logged as given.
+ * @param {'info'|'warn'} [options.level='info'] - the pino level to log at.
  * @param {object} [options.fieldErrors] - map of field key to the message the
  * page shows (may be empty). Only for a refusal that is not the user's own
  * input (a state refusal, a tampered post, another service refusing), never
