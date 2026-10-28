@@ -75,6 +75,21 @@ describe('#mergeShardReports', () => {
     ).toEqual(['http://localhost:3003/home'])
   })
 
+  it('merges a lone shard whose reports sit directly in the shards directory', () => {
+    writeShard(root, 'shards', ['home', 'hub'])
+
+    mergeShardReports(shardsDir, reportDir)
+
+    const manifest = JSON.parse(
+      readFileSync(join(reportDir, 'manifest.json'), 'utf8')
+    )
+    expect(manifest.map(({ url }) => url)).toEqual([
+      'http://localhost:3003/home',
+      'http://localhost:3003/hub'
+    ])
+    expect(readFileSync(manifest[1].jsonPath, 'utf8')).toBe('{"page":"hub"}')
+  })
+
   it('writes no manifest when no shard produced one', () => {
     expect(mergeShardReports(shardsDir, reportDir)).toEqual([])
     expect(existsSync(join(reportDir, 'manifest.json'))).toBe(false)

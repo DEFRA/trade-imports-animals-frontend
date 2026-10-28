@@ -27,17 +27,25 @@ const shardEntries = (shardDir, reportDir) =>
     })
   )
 
-const shardDirsWithManifest = (shardsDir) =>
-  existsSync(shardsDir)
-    ? readdirSync(shardsDir)
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-        .map((name) => join(shardsDir, name))
-        .filter((dir) => existsSync(join(dir, MANIFEST_FILE)))
-    : []
+const hasManifest = (dir) => existsSync(join(dir, MANIFEST_FILE))
+
+const shardDirsWithManifest = (shardsDir) => {
+  if (!existsSync(shardsDir)) {
+    return []
+  }
+  if (hasManifest(shardsDir)) {
+    return [shardsDir]
+  }
+  return readdirSync(shardsDir)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((name) => join(shardsDir, name))
+    .filter(hasManifest)
+}
 
 /**
  * Copies every shard's Lighthouse reports into one report directory and writes
  * one manifest listing them all, shard by shard, pointing at the copies.
+ * A manifest directly in the shards directory is read as one shard's reports.
  * Writes nothing when no shard produced a manifest.
  *
  * @param {string} shardsDir - directory holding one subdirectory per shard
