@@ -11,6 +11,10 @@ import {
   UPLOAD_READY,
   UPLOAD_SCANNING
 } from './upload-statuses.js'
+import {
+  expectOneLogged,
+  registerSharedTestRequestLogger
+} from '../../engine/test-support.js'
 import { ALLOWED_MIME_TYPES } from '../../sets/live-animals/journeys/linear/features/documents/upload-config.js'
 
 const HTTP_STATUS_FOUND = 302
@@ -37,17 +41,11 @@ const openSession = (maxFileSize = SESSION_CAP_BYTES) =>
     mimeTypes: ALLOWED_MIME_TYPES
   })
 
-// The real server has request.logger from hapi-pino. Recording it here keeps the
-// same contract and lets a test read what the route reported.
 const buildServer = async () => {
   const server = Hapi.server()
-  const logged = []
-  server.decorate('request', 'logger', {
-    info: (data, message) => logged.push({ data, message }),
-    error: (data, message) => logged.push({ data, message })
-  })
+  const logger = registerSharedTestRequestLogger(server)
   await server.register(stubUploadRoutes)
-  return { server, logged }
+  return { server, logger }
 }
 
 const textFieldParts = (fields) =>
@@ -315,7 +313,7 @@ describe('#stubUploadRoutes', () => {
     })
 
     it('Should report a refusal in the log, naming the upload and the reason', async () => {
-      const { server, logged } = await buildServer()
+      const { server, logger } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
 
       await postFile(server, uploadPath, {
@@ -323,16 +321,15 @@ describe('#stubUploadRoutes', () => {
         contentType: PDF
       })
 
-      expect(logged).toEqual([
-        {
-          data: {
-            uploadId,
-            correlationId: CORRELATION_ID,
-            errorCode: 'FILE_TOO_LARGE'
-          },
-          message: 'Upload refused by the stand-in upload service'
-        }
-      ])
+      expectOneLogged(logger, {
+        level: 'info',
+        fields: {
+          uploadId,
+          correlationId: CORRELATION_ID,
+          errorCode: 'FILE_TOO_LARGE'
+        },
+        message: 'Upload refused by the stand-in upload service'
+      })
     })
 
     // A refusal is a rejected file entry and a returned browser, not a failed request — which is
@@ -386,7 +383,7 @@ describe('#stubUploadRoutes', () => {
     })
 
     it('Should report a second file to one session in the log, naming the session and its status', async () => {
-      const { server, logged } = await buildServer()
+      const { server, logger } = await buildServer()
       const { uploadId, uploadPath } = await openSession()
       await postFile(server, uploadPath, {
         filename: 'first.pdf',
@@ -398,16 +395,15 @@ describe('#stubUploadRoutes', () => {
         contentType: PDF
       })
 
-      expect(logged).toEqual([
-        {
-          data: {
-            uploadId,
-            correlationId: CORRELATION_ID,
-            uploadStatus: UPLOAD_SCANNING
-          },
-          message: 'Upload posted to a session that has already taken a file'
-        }
-      ])
+      expectOneLogged(logger, {
+        level: 'info',
+        fields: {
+          uploadId,
+          correlationId: CORRELATION_ID,
+          uploadStatus: UPLOAD_SCANNING
+        },
+        message: 'Upload posted to a session that has already taken a file'
+      })
     })
   })
 })

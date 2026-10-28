@@ -72,6 +72,14 @@ export const registerTestRequestLogger = (server) => {
   server.decorate('request', 'logger', () => recordingLogger(), { apply: true })
 }
 
+/** Decorates every request with one shared recording logger and returns it, so
+ * a test can read every line logged across several injects. */
+export const registerSharedTestRequestLogger = (server) => {
+  const logger = recordingLogger()
+  server.decorate('request', 'logger', logger)
+  return logger
+}
+
 export const registerTestSessionAuth = (server) => {
   server.auth.scheme('test-session', () => ({
     authenticate: (_request, h) =>
