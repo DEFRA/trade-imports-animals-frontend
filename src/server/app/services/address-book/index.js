@@ -48,15 +48,19 @@ const searchStub = (query, requested) => {
 /** One page of ours, cut out of one page of theirs. Their page holds
  * `API_PAGE_SIZE` records and ours holds `PAGE_SIZE`, so a page of ours falls
  * entirely inside a single page of theirs — no straddling, no second call. */
+const apiPageHolding = (offset, apiPageSize) =>
+  Math.floor(offset / apiPageSize) + 1
+
+const servedAnotherPageSize = (found) =>
+  found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE
+
 const sliceAt = async (orgId, query, requested) => {
   const offset = (requested - 1) * PAGE_SIZE
-  let apiPage = Math.floor(offset / client.API_PAGE_SIZE) + 1
+  let apiPage = apiPageHolding(offset, client.API_PAGE_SIZE)
   let found = await client.listAddresses(orgId, { page: apiPage, query })
 
-  // A page served at another size was the wrong page: redo the arithmetic with
-  // the size served.
-  if (found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE) {
-    apiPage = Math.floor(offset / found.pageSize) + 1
+  if (servedAnotherPageSize(found)) {
+    apiPage = apiPageHolding(offset, found.pageSize)
     found = await client.listAddresses(orgId, { page: apiPage, query })
   }
 
