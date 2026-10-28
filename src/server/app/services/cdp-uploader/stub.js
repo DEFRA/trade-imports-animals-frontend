@@ -136,7 +136,9 @@ const uploadStatusFor = (form) =>
 
 /**
  * Records against an opened session what the add-a-document form submitted to it, judging the
- * file by the limits the session was opened with.
+ * file by the limits the session was opened with. The session stops awaiting a file: it settles
+ * to scanning while an accepted file is still being scanned, and to ready when the submission
+ * carried no file or a rejected one.
  *
  * @param {string} uploadId - the session the form posted to
  * @param {object} payload - the submitted fields, `file` as hapi's annotated multipart entry
