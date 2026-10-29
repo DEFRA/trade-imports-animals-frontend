@@ -190,6 +190,12 @@ export const appendChangeContext = (href) =>
 export const withChangeContext = (request, href) =>
   changeContext(request) ? appendChangeContext(href) : href
 
+const RETURN_PARAMETER = 'return'
+
+/** The href with a `return` marker added to its query string. */
+export const withReturnMarker = (href, slug) =>
+  `${href}${href.includes('?') ? '&' : '?'}${RETURN_PARAMETER}=${encodeURIComponent(slug)}`
+
 /**
  * Reads the `return` marker a request carries.
  *
@@ -200,7 +206,7 @@ export const withChangeContext = (request, href) =>
  * `{ refusedMarker }` holding the value received.
  */
 export const readReturnMarker = (request, allowedSlugs) => {
-  const marker = request.query?.return
+  const marker = request.query?.[RETURN_PARAMETER]
   if (marker === undefined) {
     return {}
   }

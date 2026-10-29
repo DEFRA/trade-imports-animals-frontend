@@ -10,6 +10,7 @@ import {
   openCommoditySearch,
   searchCommodities,
   selectSpecies,
+  selectedSummary,
   signIn,
   startNotificationAtOrigin
 } from '../../../../../../../../../../fit/live-animals-journey.js'
@@ -33,8 +34,6 @@ const errorLink = (page, message) =>
   page.getByRole('alert').getByRole('link', { name: message })
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
-
-const selectedSummary = (page) => page.locator('#commodity-selection')
 
 const expectSelectedHeading = (page, count) =>
   expect(selectedSummary(page)).toContainText(

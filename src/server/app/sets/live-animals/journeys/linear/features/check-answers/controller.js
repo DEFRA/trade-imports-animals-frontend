@@ -163,10 +163,9 @@ export const renderNotificationView = async (
     : await documentScanCardErrors(request, answers, {
         includePending: refused
       })
-  const speciesErrors =
-    hidesAnswerErrors || !refused
-      ? {}
-      : await speciesCardErrors(journey, answers)
+  const speciesErrors = hidesAnswerErrors
+    ? {}
+    : await speciesCardErrors(journey, answers, { refused })
   return renderCya(h, journey, {
     answers,
     scope,

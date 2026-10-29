@@ -31,8 +31,6 @@ const view = `${TEMPLATES}/features/commodities/search/search`
 const copy = copyFor({ en, cy }).search
 
 export const SEARCH_FIELD = 'commoditySearch'
-const SEARCH_ACTION = 'search'
-const CLEAR_ACTION = 'clear'
 
 const searchFor = (query) =>
   isSearchable(query) ? search(query, { size: 100 }) : null
@@ -93,6 +91,8 @@ const searchStoreRowsAndRender = async (
 }
 
 const post = async (request, h) => {
+  const SEARCH_ACTION = 'search'
+  const CLEAR_ACTION = 'clear'
   const payload = request.payload ?? {}
   const query = normaliseQuery(payload[SEARCH_FIELD])
   const rowsByKey = knownRowsByKey(await state.get(request, h))

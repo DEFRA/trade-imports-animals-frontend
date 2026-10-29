@@ -83,6 +83,13 @@ const get = async (request, h) => {
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        reason: 'no-commodities-on-load'
+      },
+      'Redirected to the commodity question'
+    )
     return h.redirect(commodityQuestionPath(request))
   }
   return render({

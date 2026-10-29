@@ -571,7 +571,7 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const animalsQuantityInputUnder = async (page, { speciesLatinName }) => {
+export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
   await page
     .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
     .waitFor()
@@ -579,6 +579,11 @@ export const animalsQuantityInputUnder = async (page, { speciesLatinName }) => {
     .getByRole('heading', { level: 3 })
     .allTextContents()
   const position = speciesHeadings.indexOf(speciesLatinName)
+  if (position === -1) {
+    throw new Error(
+      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+    )
+  }
   return page
     .getByRole('textbox', { name: 'Number of animals', exact: true })
     .nth(position)
@@ -606,13 +611,14 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
+export const selectedSummary = (page) => page.locator('#commodity-selection')
+
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) =>
   expect(
-    page
-      .locator('#commodity-selection')
+    selectedSummary(page)
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })

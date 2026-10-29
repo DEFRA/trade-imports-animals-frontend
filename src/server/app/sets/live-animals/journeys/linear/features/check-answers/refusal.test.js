@@ -9,7 +9,7 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
-  expectOneLogged,
+  expectOneRefusalLogged,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -202,16 +202,15 @@ describe('#isReviewRefused', () => {
     const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
 
     expect(refused).toBe(true)
-    expectOneLogged(logger, {
+    expectOneRefusalLogged(logger, {
+      journeyId: journey.journeyId,
+      errorCodes: [],
       level: 'warn',
-      fields: {
-        journeyId: journey.journeyId,
-        unlisted: [
-          { code: '0102', latinName: 'Bos spp.' },
-          { code: '0102', latinName: 'Felis catus' }
-        ]
-      },
-      message: 'Draft refused: reference data no longer lists a chosen species'
+      reason: 'unlisted-species',
+      unlisted: [
+        { code: '0102', latinName: 'Bos spp.' },
+        { code: '0102', latinName: 'Felis catus' }
+      ]
     })
   })
 
@@ -227,17 +226,21 @@ describe('#isReviewRefused', () => {
 })
 
 describe('#speciesCardErrors', () => {
-  it('Should name every species of a draft that reference data no longer lists under its code, with its code', async () => {
+  const unlistedDraft = {
+    status: DRAFT,
+    commodityLines: [
+      LISTED_SPECIES_LINE,
+      UNLISTED_SPECIES_LINE,
+      SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
+    ]
+  }
+
+  it('Should name every species of a draft that reference data no longer lists under its code, with its code, when Continue was refused', async () => {
     expect(
       await speciesCardErrors(
-        { status: DRAFT },
-        {
-          commodityLines: [
-            LISTED_SPECIES_LINE,
-            UNLISTED_SPECIES_LINE,
-            SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
-          ]
-        }
+        { status: unlistedDraft.status },
+        { commodityLines: unlistedDraft.commodityLines },
+        { refused: true }
       )
     ).toEqual({
       species: reviewEn.errors.species.notListed(
@@ -246,11 +249,21 @@ describe('#speciesCardErrors', () => {
     })
   })
 
+  it('Should return no species error until Continue is refused', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: unlistedDraft.status },
+        { commodityLines: unlistedDraft.commodityLines }
+      )
+    ).toEqual({})
+  })
+
   it('Should return no species error for an amendment holding an unlisted species', async () => {
     expect(
       await speciesCardErrors(
         { status: AMEND },
-        { commodityLines: [UNLISTED_SPECIES_LINE] }
+        { commodityLines: [UNLISTED_SPECIES_LINE] },
+        { refused: true }
       )
     ).toEqual({})
   })
@@ -259,7 +272,8 @@ describe('#speciesCardErrors', () => {
     expect(
       await speciesCardErrors(
         { status: DRAFT },
-        { commodityLines: [{ commodityCode: '0102' }] }
+        { commodityLines: [{ commodityCode: '0102' }] },
+        { refused: true }
       )
     ).toEqual({})
   })

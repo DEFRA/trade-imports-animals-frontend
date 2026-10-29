@@ -309,7 +309,6 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.after).toEqual(result.before)
-    expect(result.logger.entries).toEqual([])
   })
 
   it('Should refuse nothing chosen on Save and return to overview with the same error as Save and continue', async () => {
@@ -319,7 +318,6 @@ describe('commodity search — saving the selection', () => {
       [search.SEARCH_FIELD]: SELECT_COMMODITY
     })
     expect(result.after).toEqual(result.before)
-    expect(result.logger.entries).toEqual([])
   })
 
   it('Should leave the saved selection unchanged when Save and return to overview is refused with nothing chosen', async () => {

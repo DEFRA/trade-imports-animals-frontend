@@ -5,7 +5,7 @@ import {
   CANIS_FAMILIARIS,
   FELIS_CATUS,
   saveAndContinue,
-  animalsQuantityInputUnder,
+  numberOfAnimalsFor,
   PHONE_VIEWPORT,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -344,15 +344,11 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(selectedCommoditiesTable(page)).toContainText(
       CANIS_FAMILIARIS.speciesLatinName
     )
-    await expect(await animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue(
-      '25'
+    await expect(await numberOfAnimalsFor(page, BOS_TAURUS)).toHaveValue('25')
+    await expect(await numberOfAnimalsFor(page, CANIS_FAMILIARIS)).toHaveValue(
+      ''
     )
-    await expect(
-      await animalsQuantityInputUnder(page, CANIS_FAMILIARIS)
-    ).toHaveValue('')
-    await expect(
-      await animalsQuantityInputUnder(page, FELIS_CATUS)
-    ).toHaveValue('2')
+    await expect(await numberOfAnimalsFor(page, FELIS_CATUS)).toHaveValue('2')
   })
 
   test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
@@ -361,9 +357,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectThreeSaveControls(page)
   })
 
-  test('save and return to overview stores the counts and marks the row Completed', async ({
-    page
-  }) => {
+  test('save and return to overview stores the counts', async ({ page }) => {
     await fillValidQuantities(page)
     await page
       .getByRole('button', { name: sharedCopy.saveActions.saveAndReturnToHub })
