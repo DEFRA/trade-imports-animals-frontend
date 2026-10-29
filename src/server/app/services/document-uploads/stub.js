@@ -4,7 +4,7 @@ import {
   FILE_UPLOAD_FAILED,
   FILE_VIRUS
 } from '../cdp-uploader/file-error-codes.js'
-import { claimRefusal } from './claim-contract.js'
+import { refusedClaimField } from './claim-contract.js'
 
 const NEVER_SCANS_FILENAME = /never-scans/i
 
@@ -74,13 +74,13 @@ export const documentUploads = {
   },
 
   claim: async (claim) => {
-    const field = claimRefusal(claim)
-    if (field) {
+    const refusedField = refusedClaimField(claim)
+    if (refusedField) {
       const error = new Error(
         `Failed to claim document upload: ${HTTP_STATUS_BAD_REQUEST} Bad Request`
       )
       error.status = HTTP_STATUS_BAD_REQUEST
-      error.field = field
+      error.field = refusedField
       throw error
     }
     const session = sessionsByUploadId.get(claim.uploadId)

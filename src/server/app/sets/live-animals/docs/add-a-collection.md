@@ -209,8 +209,9 @@ While the add form is open, none of this loop's save buttons post to this
 service. The entry carries a file, so every save button posts to a session on
 the upload service, resolved as the page is rendered by
 [`handlers/add-form-session.js`](../journeys/linear/features/documents/handlers/add-form-session.js):
-the session this page view already opened where the request carries its handle,
-and a newly opened one otherwise, registered against the notification. The
+the session this page view already opened where the request carries its handle
+and no file has reached that session yet, and a newly opened one otherwise,
+registered against the notification. The
 controller calls it through `addFormSessionFields`, which reports an unavailable form
 rather than failing the page when no session can be opened: the document list
 stays readable and the Add form alone is refused, with its own message.
@@ -224,6 +225,22 @@ under the one key `uploadSession`, and the session it names is looked up on the
 notification the page belongs to rather than trusted from the handle alone. A
 page view that carries no handle opens its own session, so two adds never share
 one handle.
+
+The session is then checked against the upload service before it is reused,
+because an upload session takes one file and is closed to further files the
+moment one arrives — whether it took that file or refused it. A handle whose
+session has already taken a file therefore opens a new session instead of
+reusing it, so no form this page renders can post to a session the upload
+service would answer itself. A handle reaches this page from the refresh link's
+query, from a hidden field on a form, and from any copy of either the browser
+has kept, so the check belongs on the server and not only in the browser.
+
+Two browser-side rules go with it, because a form carrying a dead session is
+submitted before this service sees anything: the page is served with
+`cache-control: no-store` so the browser keeps no copy of it, and the feature's
+client bundle opens the page again by its own address when the browser hands
+back a copy it kept anyway. A browser that keeps the page despite the header and
+has no JavaScript is the one combination neither rule covers.
 
 The upload service then returns the browser to this page on a GET carrying the
 correlation handle the session was opened under. That GET is where the entry
