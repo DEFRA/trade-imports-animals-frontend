@@ -1,7 +1,10 @@
 import { SET_ID } from '../../../../../set.js'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
+import {
+  addedAddressBannerCookie,
+  addressHandshakeTokensCookie
+} from '../../../../../../../engine/persistence/session.js'
 import {
   addressBookAnswering,
   driveHandler,
@@ -12,24 +15,34 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import { consignor } from '../../../../../obligations/index.js'
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { consignor, contactAddress } from '../../../../../obligations/index.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
+import { ADDRESS_LANDING } from '../ins-handshake.js'
 
 import * as addressReturn from './controller.js'
 
 const handler = addressReturn.routes[0].handler
 const newAddressId = 'new-address-id'
 const handshakeToken = 'handshake-token-value'
+const storedName = 'New Farm'
+const UNKNOWN_FULFILMENT_ID = 'not-a-real-obligation'
 
-/** Built from the same link builder the controller uses, so the assertion is
- * exact and a redirect that lost the set's mount prefix fails here. */
-const consignorPicker = (journeyId, query = '') =>
-  `${pagePath(journeyId, partyForFulfilmentId(consignor.id).slug)}${query}`
+const partyPageOf = (fulfilmentId) => (journeyId, query) =>
+  `${pagePath(journeyId, partyForFulfilmentId(fulfilmentId).slug)}${query ?? ''}`
+
+const consignorPicker = partyPageOf(consignor.id)
+const consignmentAddressesPage = (journeyId) => pagePath(journeyId, 'addresses')
 
 const handshakeQuery = (fulfilmentId = consignor.id) => ({
   'fulfilment-id': fulfilmentId,
   'handshake-token': handshakeToken
+})
+
+const returnedQuery = (landing, fulfilmentId = consignor.id) => ({
+  ...handshakeQuery(fulfilmentId),
+  addressId: newAddressId,
+  landing
 })
 
 const handshakeState = (fulfilmentId = consignor.id) => ({
@@ -41,7 +54,7 @@ const handshakeState = (fulfilmentId = consignor.id) => ({
 const newAddressBody = () =>
   JSON.stringify({
     id: newAddressId,
-    name: 'New Farm',
+    name: storedName,
     deleted: false,
     addressLine1: '1 Test Lane',
     townOrCity: 'Carlisle',
@@ -49,156 +62,374 @@ const newAddressBody = () =>
     countryCode: 'GB'
   })
 
+const landedLog = (journeyId, fields) => ({
+  level: 'info',
+  fields: { journeyId, ...fields },
+  message: 'Returned from the address book'
+})
+
+const heldAnswers = { consignor: { name: 'Held Farm' } }
+
+const refusalOf = async (query, state = handshakeState()) => {
+  let error
+  const driven = await driveHandler(
+    (request, h) =>
+      handler(request, h).catch((thrown) => {
+        error = thrown
+      }),
+    { seed: heldAnswers, query, state }
+  )
+  return {
+    error,
+    logger: driven.logger,
+    journeyId: driven.journeyId,
+    answersAfter: driven.after
+  }
+}
+
+const expectRefused = (
+  { error, logger, journeyId, answersAfter },
+  { fulfilmentId, reason }
+) => {
+  expect(error.output.statusCode).toBe(400)
+  expect(answersAfter).toEqual(heldAnswers)
+  expectOneLogged(logger, {
+    level: 'warn',
+    fields: { journeyId, fulfilmentId, reason },
+    message: 'Address return refused'
+  })
+}
+
 describe('GET /address-return', () => {
   useStubbedJourney(SET_ID, dispatchPages)
   resetMocksAndConfigAfterTests()
 
-  it('redirects to the party picker when no address id is supplied', async () => {
-    const result = await driveHandler(handler, {
-      query: { 'fulfilment-id': consignor.id }
+  describe('Back, with no address and no landing', () => {
+    it('Should redirect to the role picker and log the landing', async () => {
+      const result = await driveHandler(handler, {
+        query: { 'fulfilment-id': consignor.id }
+      })
+
+      expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
+      expectOneLogged(
+        result.logger,
+        landedLog(result.journeyId, { role: 'consignor', landing: 'back' })
+      )
     })
 
-    expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
-  })
+    it('Should redirect the contact to the contact page and commit nothing', async () => {
+      const result = await driveHandler(handler, {
+        query: { 'fulfilment-id': contactAddress.id }
+      })
 
-  it('commits a copy of the returned address and redirects to the picker', async () => {
-    addressBookAnswering({ body: newAddressBody() })
-
-    const result = await driveHandler(handler, {
-      query: {
-        ...handshakeQuery(),
-        addressId: newAddressId
-      },
-      state: handshakeState()
-    })
-
-    expect(result.response.redirect).toBe(
-      consignorPicker(result.journeyId, `?selected=${newAddressId}`)
-    )
-    expect(result.after.consignor).not.toHaveProperty('addressId')
-    expect(result.after.consignor.address).toMatchObject({
-      townOrCity: 'Carlisle',
-      postcode: 'CA1 1AA'
+      expect(result.response.redirect).toBe(
+        partyPageOf(contactAddress.id)(result.journeyId)
+      )
+      expect(result.after.contactAddress).toBeUndefined()
     })
   })
 
-  it('rejects a commit when the handshake token does not match', async () => {
-    await expect(
-      driveHandler(handler, {
-        query: {
-          ...handshakeQuery(),
-          addressId: newAddressId,
-          'handshake-token': 'wrong-token'
-        },
+  describe('select landing', () => {
+    it('Should commit a copy of the address, land on the Consignment addresses page and set the banner', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+
+      const result = await driveHandler(handler, {
+        query: returnedQuery(ADDRESS_LANDING.SELECT),
         state: handshakeState()
       })
-    ).rejects.toMatchObject({ output: { statusCode: 400 } })
-  })
 
-  it('rejects an unknown fulfilment id', async () => {
-    await expect(
-      driveHandler(handler, {
-        query: { 'fulfilment-id': 'not-a-real-obligation' }
+      expect(result.response.redirect).toBe(
+        consignmentAddressesPage(result.journeyId)
+      )
+      expect(result.after.consignor).not.toHaveProperty('addressId')
+      expect(result.after.consignor.address).toMatchObject({
+        townOrCity: 'Carlisle',
+        postcode: 'CA1 1AA'
       })
-    ).rejects.toMatchObject({ output: { statusCode: 400 } })
-  })
-
-  it('redirects to the picker when the returned address id is not in the book', async () => {
-    addressBookAnswering({ status: 404 })
-
-    const result = await driveHandler(handler, {
-      query: {
-        ...handshakeQuery(),
-        addressId: 'missing-address'
-      },
-      state: handshakeState()
+      expect(result.cookies).toEqual({
+        [addedAddressBannerCookie()]: { name: storedName }
+      })
+      expectOneLogged(
+        result.logger,
+        landedLog(result.journeyId, {
+          role: 'consignor',
+          landing: 'select',
+          addressId: newAddressId
+        })
+      )
     })
 
-    expect(result.response.redirect).toBe(
-      consignorPicker(result.journeyId, '?handshakeError=not-found')
-    )
-    expect(result.after.consignor).toBeUndefined()
-    expectOneLogged(result.logger, {
-      level: 'info',
-      fields: {
+    it('Should commit the contact answer and land on the contact page', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+
+      const result = await driveHandler(handler, {
+        query: returnedQuery(ADDRESS_LANDING.SELECT, contactAddress.id),
+        state: handshakeState(contactAddress.id)
+      })
+
+      expect(result.response.redirect).toBe(
+        partyPageOf(contactAddress.id)(result.journeyId)
+      )
+      expect(result.after.contactAddress.address).toMatchObject({
+        townOrCity: 'Carlisle'
+      })
+      expect(result.cookies).toEqual({
+        [addedAddressBannerCookie()]: { name: storedName }
+      })
+    })
+
+    it('Should treat a returned address with no landing as select', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+
+      const result = await driveHandler(handler, {
+        query: { ...handshakeQuery(), addressId: newAddressId },
+        state: handshakeState()
+      })
+
+      expect(result.response.redirect).toBe(
+        consignmentAddressesPage(result.journeyId)
+      )
+      expect(result.after.consignor.address).toMatchObject({
+        townOrCity: 'Carlisle'
+      })
+    })
+
+    it('Should redirect to the picker when saving the returned address fails', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+      const failure = unavailableBackendError('save answers')
+
+      const result = await driveHandler(handler, {
+        query: returnedQuery(ADDRESS_LANDING.SELECT),
+        state: handshakeState(),
+        saveFailure: failure
+      })
+
+      expect(result.response.redirect).toBe(
+        consignorPicker(result.journeyId, '?handshakeError=unavailable')
+      )
+      expect(result.response.statusCode).toBeUndefined()
+      expect(result.after.consignor).toBeUndefined()
+      expect(result.cookies).toEqual({})
+      expectOneSaveFallbackLogged(result.logger, {
         journeyId: result.journeyId,
-        role: 'consignor',
-        addressId: 'missing-address',
-        reason: 'address-not-found'
-      },
-      message: 'Returned address not found, picker shown again'
+        err: failure
+      })
     })
   })
 
-  it('redirects to the picker when the address id belongs to another organisation', async () => {
-    addressBookAnswering((request) =>
-      request.url.includes('/organisation/5900001/addresses/other-org-address')
-        ? { status: 404 }
-        : { status: 503, statusText: 'Service Unavailable' }
-    )
+  describe('return landing', () => {
+    it('Should land on the role picker with nothing selected, commit nothing and set the banner', async () => {
+      addressBookAnswering({ body: newAddressBody() })
 
-    const result = await driveHandler(handler, {
-      query: {
-        ...handshakeQuery(),
-        addressId: 'other-org-address'
-      },
-      state: handshakeState()
-    })
+      const result = await driveHandler(handler, {
+        query: returnedQuery(ADDRESS_LANDING.RETURN),
+        state: handshakeState()
+      })
 
-    expect(result.response.redirect).toBe(
-      consignorPicker(result.journeyId, '?handshakeError=not-found')
-    )
-    expect(result.after.consignor).toBeUndefined()
-  })
-
-  it('redirects to the picker when the address book is unavailable', async () => {
-    addressBookAnswering({ status: 503, statusText: 'Service Unavailable' })
-
-    const result = await driveHandler(handler, {
-      query: {
-        ...handshakeQuery(),
-        addressId: newAddressId
-      },
-      state: handshakeState()
-    })
-
-    expect(result.response.redirect).toBe(
-      consignorPicker(result.journeyId, '?handshakeError=unavailable')
-    )
-    expect(result.after.consignor).toBeUndefined()
-    expectOneLogged(result.logger, {
-      level: 'warn',
-      fields: {
-        journeyId: result.journeyId,
-        role: 'consignor',
-        addressId: newAddressId,
-        err: expect.objectContaining({ status: 503 })
-      },
-      message: 'Returned address could not be read, picker shown again'
+      expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
+      expect(result.after.consignor).toBeUndefined()
+      expect(result.cookies).toEqual({
+        [addedAddressBannerCookie()]: { name: storedName }
+      })
+      expectOneLogged(
+        result.logger,
+        landedLog(result.journeyId, {
+          role: 'consignor',
+          landing: 'return',
+          addressId: newAddressId
+        })
+      )
     })
   })
 
-  it('redirects to the picker when saving the returned address fails', async () => {
+  describe('cancel landing', () => {
+    it('Should land on the hub, commit nothing and set no banner', async () => {
+      const result = await driveHandler(handler, {
+        query: { ...handshakeQuery(), landing: ADDRESS_LANDING.CANCEL },
+        state: handshakeState()
+      })
+
+      expect(result.response.redirect).toBe(hubPath(result.journeyId))
+      expect(result.after.consignor).toBeUndefined()
+      expect(result.cookies).toEqual({})
+      expectOneLogged(
+        result.logger,
+        landedLog(result.journeyId, { role: 'consignor', landing: 'cancel' })
+      )
+    })
+  })
+})
+
+describe('GET /address-return — address not readable', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  describe.each([ADDRESS_LANDING.SELECT, ADDRESS_LANDING.RETURN])(
+    'address-bearing %s landing',
+    (landing) => {
+      it('Should redirect to the picker when the returned address id is not in the book', async () => {
+        addressBookAnswering({ status: 404 })
+
+        const result = await driveHandler(handler, {
+          query: { ...returnedQuery(landing), addressId: 'missing-address' },
+          state: handshakeState()
+        })
+
+        expect(result.response.redirect).toBe(
+          consignorPicker(result.journeyId, '?handshakeError=not-found')
+        )
+        expect(result.after.consignor).toBeUndefined()
+        expect(result.cookies).toEqual({})
+        expectOneLogged(result.logger, {
+          level: 'info',
+          fields: {
+            journeyId: result.journeyId,
+            role: 'consignor',
+            addressId: 'missing-address',
+            reason: 'address-not-found'
+          },
+          message: 'Returned address not found, picker shown again'
+        })
+      })
+
+      it('Should redirect to the picker when the address id belongs to another organisation', async () => {
+        addressBookAnswering((request) =>
+          request.url.includes(
+            '/organisation/5900001/addresses/other-org-address'
+          )
+            ? { status: 404 }
+            : { status: 503, statusText: 'Service Unavailable' }
+        )
+
+        const result = await driveHandler(handler, {
+          query: { ...returnedQuery(landing), addressId: 'other-org-address' },
+          state: handshakeState()
+        })
+
+        expect(result.response.redirect).toBe(
+          consignorPicker(result.journeyId, '?handshakeError=not-found')
+        )
+        expect(result.after.consignor).toBeUndefined()
+      })
+
+      it('Should redirect to the picker when the address book is unavailable', async () => {
+        addressBookAnswering({ status: 503, statusText: 'Service Unavailable' })
+
+        const result = await driveHandler(handler, {
+          query: returnedQuery(landing),
+          state: handshakeState()
+        })
+
+        expect(result.response.redirect).toBe(
+          consignorPicker(result.journeyId, '?handshakeError=unavailable')
+        )
+        expect(result.after.consignor).toBeUndefined()
+        expect(result.cookies).toEqual({})
+        expectOneLogged(result.logger, {
+          level: 'warn',
+          fields: {
+            journeyId: result.journeyId,
+            role: 'consignor',
+            addressId: newAddressId,
+            err: expect.objectContaining({ status: 503 })
+          },
+          message: 'Returned address could not be read, picker shown again'
+        })
+      })
+    }
+  )
+})
+
+describe('GET /address-return — refusals', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+  beforeEach(() => {
     addressBookAnswering({ body: newAddressBody() })
-    const failure = unavailableBackendError('save answers')
+  })
 
-    const result = await driveHandler(handler, {
-      query: {
-        ...handshakeQuery(),
-        addressId: newAddressId
-      },
-      state: handshakeState(),
-      saveFailure: failure
+  describe.each([
+    ADDRESS_LANDING.SELECT,
+    ADDRESS_LANDING.RETURN,
+    ADDRESS_LANDING.CANCEL
+  ])('on the %s landing', (landing) => {
+    it('Should refuse a stale handshake token', async () => {
+      const refused = await refusalOf({
+        ...returnedQuery(landing),
+        'handshake-token': 'wrong-token'
+      })
+
+      expectRefused(refused, {
+        fulfilmentId: consignor.id,
+        reason: 'invalid-handshake'
+      })
     })
 
-    expect(result.response.redirect).toBe(
-      consignorPicker(result.journeyId, '?handshakeError=unavailable')
+    it('Should refuse a missing handshake token', async () => {
+      const refused = await refusalOf({
+        ...returnedQuery(landing),
+        'handshake-token': ''
+      })
+
+      expectRefused(refused, {
+        fulfilmentId: consignor.id,
+        reason: 'invalid-handshake'
+      })
+    })
+
+    it('Should refuse an unknown fulfilment id', async () => {
+      const refused = await refusalOf({
+        ...returnedQuery(landing),
+        'fulfilment-id': UNKNOWN_FULFILMENT_ID
+      })
+
+      expectRefused(refused, {
+        fulfilmentId: UNKNOWN_FULFILMENT_ID,
+        reason: 'unknown-fulfilment'
+      })
+    })
+  })
+
+  describe('refusals before the token is read', () => {
+    it('Should refuse an unknown fulfilment id with no landing', async () => {
+      const refused = await refusalOf({
+        'fulfilment-id': UNKNOWN_FULFILMENT_ID
+      })
+
+      expectRefused(refused, {
+        fulfilmentId: UNKNOWN_FULFILMENT_ID,
+        reason: 'unknown-fulfilment'
+      })
+    })
+
+    it('Should refuse a landing the journey does not know', async () => {
+      const refused = await refusalOf(returnedQuery('elsewhere'))
+
+      expectRefused(refused, {
+        fulfilmentId: consignor.id,
+        reason: 'unknown-landing'
+      })
+    })
+
+    it('Should refuse the back landing when it carries an address id', async () => {
+      const refused = await refusalOf(returnedQuery(ADDRESS_LANDING.BACK))
+
+      expectRefused(refused, {
+        fulfilmentId: consignor.id,
+        reason: 'unknown-landing'
+      })
+      expect(refused.error.message).toBe('Unknown landing')
+    })
+
+    it.each([ADDRESS_LANDING.SELECT, ADDRESS_LANDING.RETURN])(
+      'Should refuse the %s landing when it carries no address id',
+      async (landing) => {
+        const refused = await refusalOf({ ...handshakeQuery(), landing })
+
+        expectRefused(refused, {
+          fulfilmentId: consignor.id,
+          reason: 'address-missing'
+        })
+      }
     )
-    expect(result.response.statusCode).toBeUndefined()
-    expect(result.after.consignor).toBeUndefined()
-    expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
-      err: failure
-    })
   })
 })

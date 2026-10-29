@@ -51,6 +51,7 @@ const cookieNamesFor = (setId) => ({
   openingRun: `${setId}-run`,
   flowOnlyAnswers: `${setId}-flow`,
   addressHandshakeTokens: `${setId}-tokens`,
+  addedAddressBanner: `${setId}-banner`,
   reviewedConcurrencyTokens: `${setId}-reviewed`
 })
 
@@ -184,6 +185,43 @@ describe('set completeness — journey cookies come after the session seam', () 
       mount(probeGateway(setId, { cookies: false }))
     ).rejects.toThrow(
       `Set "${setId}" mounted without its journey cookies: ${setId}-known`
+    )
+  })
+
+  it('Should register every journey cookie the set is configured with', async () => {
+    const setId = 'probe-six-cookies'
+    const server = Hapi.server()
+
+    await server.register(probeGateway(setId))
+
+    expect(Object.keys(server.states.cookies).toSorted()).toEqual(
+      Object.values(cookieNamesFor(setId)).toSorted()
+    )
+  })
+
+  it('Should refuse a set that registered every journey cookie but the added address banner', async () => {
+    const setId = 'probe-no-banner-cookie'
+    const names = cookieNamesFor(setId)
+    const gateway = {
+      plugin: {
+        name: setId,
+        register: async (server) => {
+          registerSetMount(setId, `/${setId}`)
+          await withSetContext(setId, async () => {
+            installSeams(setId)
+            for (const name of Object.values(names)) {
+              if (name !== names.addedAddressBanner) {
+                server.state(name, {})
+              }
+            }
+            assertSetConfigured(server, setId)
+          })
+        }
+      }
+    }
+
+    await expect(mount(gateway)).rejects.toThrow(
+      `Set "${setId}" mounted without its journey cookies: ${names.addedAddressBanner} —`
     )
   })
 

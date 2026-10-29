@@ -20,7 +20,8 @@ import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
   buildInsAddAddressUrl,
-  handshakeErrorMessage
+  handshakeErrorMessage,
+  takeAddedAddressBanner
 } from '../addresses/ins-handshake.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -74,7 +75,8 @@ const render = (
     errors = {},
     recoverableError = false,
     handshakeError,
-    currentContact = null
+    currentContact = null,
+    successBanner = null
   } = {}
 ) =>
   h.view(view, {
@@ -82,7 +84,8 @@ const render = (
       request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
-      recoverableError
+      recoverableError,
+      successBanner
     }),
     copy,
     errors,
@@ -129,7 +132,8 @@ const get = async (request, h) => {
         request,
         journey.journeyId,
         answers
-      )
+      ),
+      successBanner: takeAddedAddressBanner(request, h)
     }
   )
 }

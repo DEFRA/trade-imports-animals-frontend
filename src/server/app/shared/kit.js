@@ -312,6 +312,9 @@ export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
  * the content column. Defaults to `form`, the reading measure; an unknown
  * surface throws.
  * @param {boolean} [options.showJourneyStrip] - false leaves the status strip off the page.
+ * @param {{ titleText: string, text: string }|null} [options.successBanner] -
+ * the success notification banner the layout shows after the status strip.
+ * Defaults to none.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -324,6 +327,7 @@ export const base = (
     recoverableError = false,
     offerCancelAmend = true,
     showJourneyStrip = true,
+    successBanner = null,
     request,
     surface = 'form'
   } = {}
@@ -348,6 +352,7 @@ export const base = (
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
+    successBanner,
     contentColumnClass: surfaceClass(surface)
   }
 }
@@ -362,6 +367,7 @@ export const setlessBase = (title) => ({
   concurrencyToken: null,
   sharedCopy,
   recoverableError: false,
+  successBanner: null,
   contentColumnClass: SURFACES.form
 })
 

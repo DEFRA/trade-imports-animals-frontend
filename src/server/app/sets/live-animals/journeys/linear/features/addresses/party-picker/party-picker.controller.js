@@ -22,7 +22,8 @@ import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
   buildInsAddAddressUrl,
-  handshakeErrorMessage
+  handshakeErrorMessage,
+  takeAddedAddressBanner
 } from '../ins-handshake.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
@@ -36,7 +37,15 @@ const render = async (
   orgId,
   journey,
   party,
-  { query, page, selectedId, error, recoverableError = false, addAddressHref }
+  {
+    query,
+    page,
+    selectedId,
+    error,
+    recoverableError = false,
+    addAddressHref,
+    successBanner = null
+  }
 ) => {
   const found = await addressBook.search(orgId, { query, page })
   const selected = await chosenPartyFor(orgId, selectedId)
@@ -51,7 +60,8 @@ const render = async (
         pagePath(journey.journeyId, 'addresses')
       ),
       journey,
-      recoverableError
+      recoverableError,
+      successBanner
     }),
     heading: party.title,
     description: party.hint,
@@ -90,7 +100,8 @@ const get = (party) => async (request, h) => {
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
-    addAddressHref: addAddressLinkFor(request, h, journey, party)
+    addAddressHref: addAddressLinkFor(request, h, journey, party),
+    successBanner: takeAddedAddressBanner(request, h)
   })
 }
 

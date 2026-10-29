@@ -11,6 +11,7 @@ import {
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
@@ -131,6 +132,14 @@ describe('GET contact — select an address from the book', () => {
     })
 
     expect(result.after.contactAddress).toEqual(HELD_CONTACT)
+  })
+})
+
+describe('GET contact — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the added address banner once, then unstate it', async () => {
+    await expectAddedAddressBannerShownOnce(get)
   })
 })
 

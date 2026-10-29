@@ -93,6 +93,13 @@
           {% if journeyStrip.cancelAmend %}<a class="govuk-link govuk-!-font-size-19 govuk-!-margin-left-2" href="{{ journeyStrip.cancelAmend.href }}">{{ journeyStrip.cancelAmend.text }}</a>{% endif %}
         </div>
       {% endif %}
+      {% if successBanner %}
+        {{ govukNotificationBanner({
+          type: "success",
+          titleText: successBanner.titleText,
+          text: successBanner.text
+        }) }}
+      {% endif %}
       {% block journeyContent %}{% endblock %}
     </div>
   </div>

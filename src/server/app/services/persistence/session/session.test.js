@@ -1,9 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { session } from './stub.js'
 import {
+  addedAddressBannerCookie,
   addressHandshakeTokensCookie,
   configureSession,
   flowOnlyAnswersCookie,
+  journeyCookieNames,
   knownJourneysCookie,
   openingRunCookie,
   reviewedConcurrencyTokensCookie
@@ -37,9 +39,21 @@ describe('per-set cookie names', () => {
     expect(addressHandshakeTokensCookie()).toBe(
       'liveAnimalsAddressHandshakeTokens'
     )
+    expect(addedAddressBannerCookie()).toBe('liveAnimalsAddedAddressBanner')
     expect(reviewedConcurrencyTokensCookie()).toBe(
       'liveAnimalsReviewedConcurrencyTokens'
     )
+  })
+
+  it('Should list every cookie name the set is configured with', () => {
+    expect(withSetContext(SET_ID, journeyCookieNames)).toEqual([
+      'liveAnimalsKnownJourneys',
+      'liveAnimalsOpeningRun',
+      'liveAnimalsFlowOnlyAnswers',
+      'liveAnimalsAddressHandshakeTokens',
+      'liveAnimalsAddedAddressBanner',
+      'liveAnimalsReviewedConcurrencyTokens'
+    ])
   })
 })
 

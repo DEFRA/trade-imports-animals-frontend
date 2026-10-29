@@ -38,6 +38,7 @@ The live-animals journey supplies these names in its
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  addedAddressBanner: 'liveAnimalsAddedAddressBanner',
   reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }
 ```
@@ -47,7 +48,16 @@ Session state is keyed by journey id. It does not replace the canonical record.
 In stub mode each journey cookie is its own cookie, scoped to the set's mount,
 so one set's dashboard never sees another set's drafts. In real mode the same
 values are keys in the one server-wide session cookie, and each set's distinct
-cookie names keep them apart.
+cookie names keep them apart. The address handshake's token cookie and its
+added-address banner cookie are the exception: both are set with `h.state` in
+both modes, because they bypass the session port.
+
+The cookie names are read through per-set accessors rather than one module
+constant, because two sets in one process need two sets of names and a shared
+object would let the second registration rename the first set's cookies. The
+accessors return the default names until a set is configured, and the session
+port throws. `registerJourneyCookie` refuses to run before `configureSession`
+(`engine/journey.js`), so a set never registers cookies under the default names.
 
 ## Lifecycle and request memoisation
 

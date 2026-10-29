@@ -19,6 +19,7 @@ import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
+import { expectAddedAddressBannerShownOnce } from '../test-support.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
@@ -411,6 +412,45 @@ describe('GET /consignors/select — handshake return', () => {
 
     expect(result.view.context.picker.error).toContain('could not be reached')
     expect(result.view.context.recoverableError).toBe(true)
+  })
+})
+
+describe('GET /consignors/select — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  it('Should show the added address banner once, then unstate it', async () => {
+    await expectAddedAddressBannerShownOnce(getConsignor)
+  })
+})
+
+describe('GET /consignors/select — list order', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  it('Should list the addresses in the order the address book returns them', async () => {
+    const listed = (id, name) => ({
+      id,
+      name,
+      deleted: false,
+      addressLine1: '1 Test Lane'
+    })
+    addressBookAnswering({
+      body: JSON.stringify({
+        items: [
+          listed('newer-id', 'Newer Farm'),
+          listed('older-id', 'Older Farm')
+        ],
+        page: 1,
+        pageSize: 25,
+        totalItems: 2,
+        totalPages: 1
+      })
+    })
+
+    const result = await driveHandler(getConsignor)
+
+    expect(idsOf(pickerFrom(result))).toEqual(['newer-id', 'older-id'])
   })
 })
 

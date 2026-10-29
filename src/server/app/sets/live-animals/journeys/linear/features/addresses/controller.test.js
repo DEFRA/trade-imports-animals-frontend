@@ -19,6 +19,7 @@ import {
 
 import * as addresses from './controller.js'
 import { PARTIES } from './parties.js'
+import { expectAddedAddressBannerShownOnce } from './test-support.js'
 
 const getAddresses = addresses.routes.find(
   (route) => route.method === 'GET'
@@ -71,6 +72,14 @@ describe('GET addresses — sections for parties not yet chosen', () => {
         addLink: { href: pagePath(result.journeyId, slug), text }
       }))
     )
+  })
+})
+
+describe('GET addresses — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the added address banner once, then unstate it', async () => {
+    await expectAddedAddressBannerShownOnce(getAddresses)
   })
 })
 

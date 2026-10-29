@@ -76,6 +76,10 @@ export const copy = {
   },
   addressHandshake: {
     addNewAddress: 'Add a new address',
+    addedBanner: {
+      title: 'Success',
+      text: '{name} address added to your address book'
+    },
     errors: {
       notFound:
         'The address could not be found in your address book. Select another address or try adding it again.',

@@ -10,6 +10,7 @@ import { partyEditHref } from './party-edit/edit-href.js'
 import { insetAddressLines } from './party-picker/view-model/address-lines.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { takeAddedAddressBanner } from './ins-handshake.js'
 
 export const meta = {
   ...page,
@@ -86,7 +87,8 @@ const get = async (request, h) => {
       request,
       backLink: backLinkOf(request, journey),
       journey,
-      page
+      page,
+      successBanner: takeAddedAddressBanner(request, h)
     }),
     copy,
     sections: sections(request, journey.journeyId, answers, scope, parties)

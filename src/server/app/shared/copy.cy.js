@@ -75,6 +75,10 @@ export const copy = {
   },
   addressHandshake: {
     addNewAddress: 'Ychwanegu cyfeiriad newydd',
+    addedBanner: {
+      title: 'Llwyddiant',
+      text: "Mae cyfeiriad {name} wedi'i ychwanegu at eich llyfr cyfeiriadau"
+    },
     errors: {
       notFound:
         "Ni ellid dod o hyd i'r cyfeiriad yn eich llyfr cyfeiriadau. Dewiswch gyfeiriad arall neu ceisiwch ei ychwanegu eto.",

@@ -226,7 +226,9 @@ const recordsRejectingSaves = (failure) => ({
 /** Seeds a journey, runs one handler against it and reports the answers before
  * and after, alongside the cookies the handler set and the lines it logged.
  * `journeyId` drives an existing journey rather than creating one; `flowOnly`
- * seeds the journey's session-only answers; `amend`
+ * seeds the journey's session-only answers; `cookies` seeds the cookies the
+ * handler's response toolkit holds, so `cookies` afterwards shows what it
+ * unstated; `amend`
  * submits the journey and opens an amendment first; `openingRun`
  * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
  * the journey; `pathOf(journeyId)` gives the request the path it was made to;
@@ -241,6 +243,7 @@ export const driveHandler = async (
     params = {},
     query = {},
     state = {},
+    cookies = {},
     amend = false,
     journeyId,
     openingRun,
@@ -266,6 +269,7 @@ export const driveHandler = async (
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
+  Object.assign(h.cookies, cookies)
   if (saveFailure) {
     configureRecords(currentSetId(), recordsRejectingSaves(saveFailure))
   }

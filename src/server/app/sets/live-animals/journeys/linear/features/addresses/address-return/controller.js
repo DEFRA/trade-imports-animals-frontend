@@ -1,16 +1,26 @@
 import Boom from '@hapi/boom'
 
-import { pagePath, pageRoutePath } from '../../../../../../../shared/paths.js'
+import {
+  hubPath,
+  pagePath,
+  pageRoutePath
+} from '../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { routeOptions } from '../../../../../../../shared/kit.js'
 import { isRecoverableBackendError } from '../../../../../../../services/persistence/records/errors.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
-import { clearHandshakeToken, verifyHandshakeToken } from '../ins-handshake.js'
+import {
+  ADDRESS_LANDING,
+  ADDRESS_LANDING_PARAM,
+  clearHandshakeToken,
+  setAddedAddressBanner,
+  verifyHandshakeToken
+} from '../ins-handshake.js'
 import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 
-const pickerPath = (journeyId, party, query = {}) => {
+const partyPagePath = (journeyId, party, query = {}) => {
   const path = pagePath(journeyId, party.slug)
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query)) {
@@ -22,63 +32,99 @@ const pickerPath = (journeyId, party, query = {}) => {
   return search ? `${path}?${search}` : path
 }
 
-const redirectToPicker = (request, journeyId, party, query = {}) =>
-  kit.withChangeContext(request, pickerPath(journeyId, party, query))
+const redirectToPartyPage = (request, journeyId, party, query = {}) =>
+  kit.withChangeContext(request, partyPagePath(journeyId, party, query))
 
-const get = async (request, h) => {
-  const { journeyId } = request.params
-  const fulfilmentId = request.query['fulfilment-id'] ?? ''
-  const addressId = request.query.addressId ?? ''
-  const handshakeToken = request.query['handshake-token'] ?? ''
+const logAndRefuse = (
+  request,
+  { journeyId, fulfilmentId },
+  reason,
+  message
+) => {
+  request.logger.warn(
+    { journeyId, fulfilmentId, reason },
+    'Address return refused'
+  )
+  return Boom.badRequest(message)
+}
 
-  const party = partyForFulfilmentId(fulfilmentId)
-  if (!party) {
-    throw Boom.badRequest('Unknown fulfilment')
+const logLanding = (request, fields) => {
+  request.logger.info(fields, 'Returned from the address book')
+}
+
+const validLandingOf = (request, returned) => {
+  const { addressId, landing } = returned
+  if (!landing) {
+    return addressId ? ADDRESS_LANDING.SELECT : ADDRESS_LANDING.BACK
   }
-
-  if (!addressId) {
-    return h.redirect(redirectToPicker(request, journeyId, party))
+  const sentByInsPage = [
+    ADDRESS_LANDING.SELECT,
+    ADDRESS_LANDING.RETURN,
+    ADDRESS_LANDING.CANCEL
+  ]
+  if (!sentByInsPage.includes(landing)) {
+    throw logAndRefuse(request, returned, 'unknown-landing', 'Unknown landing')
   }
-
-  if (!verifyHandshakeToken(request, fulfilmentId, handshakeToken)) {
-    throw Boom.badRequest('Invalid handshake')
+  if (landing !== ADDRESS_LANDING.CANCEL && !addressId) {
+    throw logAndRefuse(request, returned, 'address-missing', 'Missing address')
   }
+  return landing
+}
 
-  clearHandshakeToken(request, h, fulfilmentId)
+const consumeHandshakeToken = (request, h, returned, handshakeToken) => {
+  if (!verifyHandshakeToken(request, returned.fulfilmentId, handshakeToken)) {
+    throw logAndRefuse(
+      request,
+      returned,
+      'invalid-handshake',
+      'Invalid handshake'
+    )
+  }
+  clearHandshakeToken(request, h, returned.fulfilmentId)
+}
 
-  const orgId = organisationIdOf(request)
-  let chosen
-
+const readReturnedAddress = async (
+  request,
+  h,
+  { journeyId, party, addressId }
+) => {
+  const logged = { journeyId, role: party.id, addressId }
   try {
-    chosen = await chosenPartyFor(orgId, addressId)
-  } catch (error) {
-    if (isRecoverableBackendError(error)) {
-      request.logger.warn(
-        { journeyId, role: party.id, addressId, err: error },
-        'Returned address could not be read, picker shown again'
+    const chosen = await chosenPartyFor(organisationIdOf(request), addressId)
+    if (chosen) {
+      return { chosen }
+    }
+    request.logger.info(
+      { ...logged, reason: 'address-not-found' },
+      'Returned address not found, picker shown again'
+    )
+    return {
+      failure: h.redirect(
+        redirectToPartyPage(request, journeyId, party, {
+          handshakeError: 'not-found'
+        })
       )
-      return h.redirect(
-        redirectToPicker(request, journeyId, party, {
+    }
+  } catch (error) {
+    if (!isRecoverableBackendError(error)) {
+      throw error
+    }
+    request.logger.warn(
+      { ...logged, err: error },
+      'Returned address could not be read, picker shown again'
+    )
+    return {
+      failure: h.redirect(
+        redirectToPartyPage(request, journeyId, party, {
           handshakeError: 'unavailable'
         })
       )
     }
-    throw error
   }
+}
 
-  if (!chosen) {
-    request.logger.info(
-      { journeyId, role: party.id, addressId, reason: 'address-not-found' },
-      'Returned address not found, picker shown again'
-    )
-    return h.redirect(
-      redirectToPicker(request, journeyId, party, {
-        handshakeError: 'not-found'
-      })
-    )
-  }
-
-  const { failure } = await kit.recoverableSave(
+const commitCopyOfAddress = (request, h, { journeyId, party, chosen }) =>
+  kit.recoverableSave(
     request,
     async () => {
       await state.commit(request, h, {
@@ -87,21 +133,82 @@ const get = async (request, h) => {
     },
     async () =>
       h.redirect(
-        redirectToPicker(request, journeyId, party, {
+        redirectToPartyPage(request, journeyId, party, {
           handshakeError: 'unavailable'
         })
       )
   )
 
-  if (failure) {
-    return failure
+const landOnAddress = async (request, h, returned) => {
+  const { journeyId, party, addressId, landing } = returned
+  const { chosen, failure: unreadable } = await readReturnedAddress(
+    request,
+    h,
+    returned
+  )
+  if (unreadable) {
+    return unreadable
   }
 
-  return h.redirect(
-    redirectToPicker(request, journeyId, party, {
-      selected: addressId
+  if (landing === ADDRESS_LANDING.SELECT) {
+    const { failure: unsaved } = await commitCopyOfAddress(request, h, {
+      journeyId,
+      party,
+      chosen
     })
+    if (unsaved) {
+      return unsaved
+    }
+  }
+
+  setAddedAddressBanner(h, chosen.name)
+  logLanding(request, { journeyId, role: party.id, landing, addressId })
+
+  return h.redirect(
+    landing === ADDRESS_LANDING.SELECT
+      ? kit.withChangeContext(request, pagePath(journeyId, party.returnSlug))
+      : redirectToPartyPage(request, journeyId, party)
   )
+}
+
+const get = async (request, h) => {
+  const returned = {
+    journeyId: request.params.journeyId,
+    fulfilmentId: request.query['fulfilment-id'] ?? '',
+    addressId: request.query.addressId ?? '',
+    landing: request.query[ADDRESS_LANDING_PARAM] ?? ''
+  }
+  const { journeyId } = returned
+
+  const party = partyForFulfilmentId(returned.fulfilmentId)
+  if (!party) {
+    throw logAndRefuse(
+      request,
+      returned,
+      'unknown-fulfilment',
+      'Unknown fulfilment'
+    )
+  }
+
+  const landing = validLandingOf(request, returned)
+  if (landing === ADDRESS_LANDING.BACK) {
+    logLanding(request, { journeyId, role: party.id, landing })
+    return h.redirect(redirectToPartyPage(request, journeyId, party))
+  }
+
+  consumeHandshakeToken(
+    request,
+    h,
+    returned,
+    request.query['handshake-token'] ?? ''
+  )
+
+  if (landing === ADDRESS_LANDING.CANCEL) {
+    logLanding(request, { journeyId, role: party.id, landing })
+    return h.redirect(hubPath(journeyId))
+  }
+
+  return landOnAddress(request, h, { ...returned, party, landing })
 }
 
 export const routes = [

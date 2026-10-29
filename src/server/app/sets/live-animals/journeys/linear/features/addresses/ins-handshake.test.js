@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
-import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
+import {
+  addedAddressBannerCookie,
+  addressHandshakeTokensCookie
+} from '../../../../../../engine/persistence/session.js'
 import {
   recordingH,
   journeyRequest
@@ -16,7 +19,12 @@ import {
 } from '../../../../obligations/index.js'
 import { CONTACT_PARTY, PARTIES } from './parties.js'
 import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
-import { buildInsAddAddressUrl } from './ins-handshake.js'
+import {
+  buildInsAddAddressUrl,
+  setAddedAddressBanner,
+  takeAddedAddressBanner
+} from './ins-handshake.js'
+import { addedAddressBannerState } from './test-support.js'
 
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const notificationId = 'notification-123'
@@ -68,6 +76,45 @@ describe('ins-handshake', () => {
     expect(h.cookies[addressHandshakeTokensCookie()][consignor.id]).toMatch(
       /^[0-9a-f]{32}$/
     )
+  })
+
+  it('stores the added address name in the banner cookie', () => {
+    const h = recordingH()
+
+    setAddedAddressBanner(h, 'New Farm')
+
+    expect(h.cookies).toEqual({
+      [addedAddressBannerCookie()]: { name: 'New Farm' }
+    })
+  })
+
+  it('takes the added address banner from the request and unstates its cookie', () => {
+    const h = recordingH()
+    const state = addedAddressBannerState('ABC Farms Ltd')
+    h.cookies[addedAddressBannerCookie()] = state[addedAddressBannerCookie()]
+    const request = journeyRequest(notificationId, { state })
+
+    expect(takeAddedAddressBanner(request, h)).toEqual({
+      titleText: 'Success',
+      text: 'ABC Farms Ltd address added to your address book'
+    })
+    expect(h.cookies).toEqual({})
+  })
+
+  it('names the address as it is stored, even when it holds a replacement pattern', () => {
+    const request = journeyRequest(notificationId, {
+      state: addedAddressBannerState('Fish $& Chips')
+    })
+
+    expect(takeAddedAddressBanner(request, recordingH()).text).toBe(
+      'Fish $& Chips address added to your address book'
+    )
+  })
+
+  it('takes no banner when the request holds no banner cookie', () => {
+    const request = journeyRequest(notificationId)
+
+    expect(takeAddedAddressBanner(request, recordingH())).toBeNull()
   })
 
   it('returns undefined when the party has no fulfilment mapping', () => {
