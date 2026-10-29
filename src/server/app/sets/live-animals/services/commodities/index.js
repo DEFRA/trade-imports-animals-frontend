@@ -1,4 +1,3 @@
-import { COMMODITY_GROUPS } from './stub.js'
 import {
   COMMODITY_IDENTIFIERS,
   CPH_EXEMPT_CODES,
@@ -46,19 +45,6 @@ export const identifiersFor = (code) => COMMODITY_IDENTIFIERS[code] ?? []
 export const commodityDescriptionFor = (code) => COMMODITY_DESCRIPTIONS[code]
 
 export const commodityNameFor = (code) => COMMODITY_NAMES_BY_CODE[code]
-
-export const speciesCommonName = (codeOrCommodityName, latinName) => {
-  const group = COMMODITY_GROUPS.find(
-    (entry) =>
-      entry.code === codeOrCommodityName ||
-      commodityNameFor(entry.code) === codeOrCommodityName
-  )
-  if (!group) {
-    return codeOrCommodityName
-  }
-  const species = group.species.find((entry) => entry.latinName === latinName)
-  return species?.commonName ?? commodityNameFor(group.code)
-}
 
 export const microchipCommodityCodes = () => MICROCHIP_CODES
 

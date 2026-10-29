@@ -10,32 +10,32 @@ describe('commoditiesFromLinesA', () => {
     expect(commoditiesFromLinesA([])).toBeUndefined()
   })
 
-  test('Should resolve commonName from the catalogue when commodity code and latin name are given', () => {
+  test('Should persist the common name the user was shown when the line has no commonName', () => {
     expect(
       commoditiesFromLinesA([
         {
           commodityCode: CATTLE_CODE,
           speciesLatinName: BOS_TAURUS,
+          speciesCommonName: 'Domestic Cattle',
           commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
         }
-      ])
-    ).toEqual([
-      expect.objectContaining({
-        name: 'Cow',
-        commodityCode: CATTLE_CODE,
-        description: 'Live bovine animals',
-        species: [
-          expect.objectContaining({
-            value: BOS_TAURUS,
-            text: BOS_TAURUS,
-            commonName: 'Cattle or Cow'
-          })
-        ]
-      })
-    ])
+      ])[0].species[0].commonName
+    ).toBe('Domestic Cattle')
+  })
+
+  test('Should omit commonName when the line was saved with none', () => {
+    expect(
+      commoditiesFromLinesA([
+        {
+          commodityCode: CATTLE_CODE,
+          speciesLatinName: BOS_TAURUS,
+          numberOfAnimalsQuantity: '1'
+        }
+      ])[0].species[0].commonName
+    ).toBeUndefined()
   })
 
   test('Should keep an explicit commonName on the line', () => {

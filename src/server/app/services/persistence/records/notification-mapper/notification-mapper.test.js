@@ -22,7 +22,8 @@ const address = (name, line1) => ({
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const LIVE_BOVINE_DESCRIPTION = 'Live bovine animals'
-const DOMESTIC_CATTLE = 'Cattle or Cow'
+const DOMESTIC_CATTLE = 'Domestic Cattle'
+const DOMESTIC_CAT = 'Domestic Cat'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
 const TRANSPORTER_NAME = 'Transporter Co'
@@ -58,6 +59,7 @@ const mappedAnswers = () => ({
     {
       commodityCode: CATTLE_CODE,
       speciesLatinName: BOS_TAURUS,
+      speciesCommonName: DOMESTIC_CATTLE,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -97,6 +99,7 @@ const answersWithGaps = () => ({
     {
       commodityCode: CATTLE_CODE,
       speciesLatinName: BOS_TAURUS,
+      speciesCommonName: DOMESTIC_CATTLE,
       commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
@@ -147,6 +150,7 @@ const groupedLines = () => [
   {
     commodityCode: OTHER_LIVE_MAMMALS_CODE,
     speciesLatinName: FELIS_CATUS,
+    speciesCommonName: DOMESTIC_CAT,
     commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
@@ -378,7 +382,7 @@ describe('Mapper A — commodities array from lines', () => {
       {
         value: FELIS_CATUS,
         text: FELIS_CATUS,
-        commonName: 'Domestic Cat',
+        commonName: DOMESTIC_CAT,
         noOfAnimals: '2',
         noOfPackages: '1',
         passport: 'UK-CAT-1',
@@ -396,7 +400,7 @@ describe('Mapper A — commodities array from lines', () => {
         {
           commodityCode: '0102',
           speciesLatinName: BOS_TAURUS,
-          commonName: DOMESTIC_CATTLE,
+          speciesCommonName: DOMESTIC_CATTLE,
           commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
@@ -473,6 +477,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
         {
           commodityCode: OTHER_LIVE_MAMMALS_CODE,
           speciesLatinName: FELIS_CATUS,
+          speciesCommonName: DOMESTIC_CAT,
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '2',
           animalIdentifiers: [{ animalIdentifierMicrochip: '900987654321098' }]
@@ -483,7 +488,7 @@ describe('Mapper A — per-unit animal identifiers', () => {
     expect(notification.commodities[0].species[0]).toEqual({
       value: FELIS_CATUS,
       text: FELIS_CATUS,
-      commonName: 'Domestic Cat',
+      commonName: DOMESTIC_CAT,
       noOfAnimals: '2',
       noOfPackages: '1',
       microchip: '900987654321098',
@@ -526,6 +531,7 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
         {
           commodityCode: OSTRICHES_CODE,
           speciesLatinName: STRUTHIO,
+          speciesCommonName: 'Ostriches',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '40'
         }

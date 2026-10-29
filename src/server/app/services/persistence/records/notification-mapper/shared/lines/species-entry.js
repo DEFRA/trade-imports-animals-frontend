@@ -1,7 +1,3 @@
-import {
-  commodityNameFor,
-  speciesCommonName
-} from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
@@ -24,16 +20,7 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 
-const commonNameFrom = (line) => {
-  if (line.commonName) {
-    return line.commonName
-  }
-  const { commodityCode, speciesLatinName } = line
-  if (commodityCode && speciesLatinName) {
-    return speciesCommonName(commodityCode, speciesLatinName)
-  }
-  return commodityNameFor(commodityCode)
-}
+const commonNameFrom = (line) => line.speciesCommonName || line.commonName
 
 export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
   const identifierUnits = line.animalIdentifiers ?? []

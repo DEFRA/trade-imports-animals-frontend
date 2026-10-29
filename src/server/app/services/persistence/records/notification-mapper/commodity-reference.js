@@ -15,6 +15,3 @@ export const commodityNameFor = (...args) =>
 
 export const commodityDescriptionFor = (...args) =>
   reference().commodityDescriptionFor(...args)
-
-export const speciesCommonName = (...args) =>
-  reference().speciesCommonName(...args)

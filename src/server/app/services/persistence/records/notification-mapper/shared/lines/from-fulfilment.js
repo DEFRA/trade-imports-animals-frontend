@@ -37,6 +37,7 @@ const lineFrom = ({
     commodityCode: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
     speciesLatinName: valueAt(obligations.speciesLatinName, lineIndex),
+    speciesCommonName: valueAt(obligations.speciesCommonName, lineIndex),
     numberOfAnimalsQuantity: animalCountText(
       valueAt(obligations.numberOfAnimals, lineIndex)
     ),
@@ -60,6 +61,7 @@ export const commodityLinesFromFulfilment = (reader) => {
     obligations.commodityCode,
     obligations.commodityType,
     obligations.speciesLatinName,
+    obligations.speciesCommonName,
     obligations.numberOfAnimals,
     obligations.numberOfPackages,
     ...identifierObligations
