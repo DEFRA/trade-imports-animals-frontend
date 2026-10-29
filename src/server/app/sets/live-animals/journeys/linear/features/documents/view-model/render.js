@@ -79,55 +79,60 @@ export const render = async ({
   )
   const uploadFormUnavailable = !extra.uploadPath
   const addForm = addFormState(copy, documents, uploadFormUnavailable)
-  return h.view(view, {
-    ...kit.base(copy.title, {
-      request,
-      backLink: await kit.runBackLink(
+  return h
+    .view(view, {
+      ...kit.base(copy.title, {
         request,
-        page.id,
-        { journey, scope, answers },
-        { returnsToReview: true }
+        backLink: await kit.runBackLink(
+          request,
+          page.id,
+          { journey, scope, answers },
+          { returnsToReview: true }
+        ),
+        journey,
+        page,
+        surface: 'display'
+      }),
+      ...extra,
+      uploadFormUnavailable,
+      recoverableErrorBody:
+        extra.unsavedDocument &&
+        unsavedDocumentBody(
+          copy,
+          sharedCopy.saveActions.saveAndContinue,
+          extra.unsavedDocument
+        ),
+      ...addForm,
+      saveButtonsUploadPath: saveButtonsUploadPath(
+        extra,
+        addForm.addFormClosed
       ),
-      journey,
-      page,
-      surface: 'display'
-    }),
-    ...extra,
-    uploadFormUnavailable,
-    recoverableErrorBody:
-      extra.unsavedDocument &&
-      unsavedDocumentBody(
-        copy,
-        sharedCopy.saveActions.saveAndContinue,
-        extra.unsavedDocument
-      ),
-    ...addForm,
-    saveButtonsUploadPath: saveButtonsUploadPath(extra, addForm.addFormClosed),
-    copy,
-    rows: documentRows(documents, journey.journeyId),
-    additionalDocumentRows: copy.guidance.additional.rows.map((row) => [
-      { text: row.consignment },
-      { text: row.documents }
-    ]),
-    hasDocuments: documents.length > 0,
-    values,
-    errors,
-    errorSummary: errorSummaryFor(sharedCopy, documents, {
+      copy,
+      rows: documentRows(documents, journey.journeyId),
+      additionalDocumentRows: copy.guidance.additional.rows.map((row) => [
+        { text: row.consignment },
+        { text: row.documents }
+      ]),
+      hasDocuments: documents.length > 0,
+      values,
       errors,
-      summaryErrors,
-      uploadFormUnavailable
-    }),
-    anyPending,
-    timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
-    refreshHref: refreshHref(request, attempt + 1, extra.uploadSession),
-    ...uploadLimits(copy),
-    scanCopyJson,
-    documentTypeItems: documentTypeItems(),
-    dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
-      label: copy.dateOfIssue.label,
-      hint: copy.dateOfIssue.hint,
-      value: values.accompanyingDocumentDateOfIssue ?? {},
-      error: errors.accompanyingDocumentDateOfIssue
+      errorSummary: errorSummaryFor(sharedCopy, documents, {
+        errors,
+        summaryErrors,
+        uploadFormUnavailable
+      }),
+      anyPending,
+      timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
+      refreshHref: refreshHref(request, attempt + 1, extra.uploadSession),
+      ...uploadLimits(copy),
+      scanCopyJson,
+      documentTypeItems: documentTypeItems(),
+      dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
+        label: copy.dateOfIssue.label,
+        hint: copy.dateOfIssue.hint,
+        value: values.accompanyingDocumentDateOfIssue ?? {},
+        error: errors.accompanyingDocumentDateOfIssue
+      })
     })
-  })
+    .header('Cache-Control', 'no-store')
 }

@@ -1,4 +1,4 @@
-export const REFERENCE_MAX_LENGTH = 100
+export const REFERENCE_MAX_LENGTH = 58
 
 // The characters a document reference may carry. Alphanumerics plus the
 // separators real references use: an air waybill is written 125-12345675, a
@@ -10,13 +10,7 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const isBlank = (value) => !String(value ?? '').trim()
 
-/**
- * Why the claim endpoint would refuse this document, if it would.
- *
- * @param {object} claim - the fields the claim is made with
- * @returns {string|undefined} the field that fails its rule, or nothing when the claim is good
- */
-export const claimRefusal = ({
+export const refusedClaimField = ({
   documentType,
   documentReference,
   dateOfIssue

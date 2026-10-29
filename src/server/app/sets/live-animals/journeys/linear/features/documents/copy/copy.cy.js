@@ -123,7 +123,8 @@ export const copy = {
   },
   errors: {
     hiddenPrefix: 'Gwall:',
-    referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 100 nod neu lai',
+    referenceMaxLength: (max) =>
+      `Rhaid i gyfeirnod y ddogfen fod yn ${max} nod neu lai`,
     referenceCharacters:
       'Rhaid i gyfeirnod y ddogfen gynnwys llythrennau, rhifau, bylchau, cysylltnodau, atalnodau llawn a blaenslaesau yn unig',
     dateInvalid: 'Rhowch ddyddiad go iawn',

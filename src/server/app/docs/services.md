@@ -43,10 +43,14 @@ questions.
 
 A return link naming a handle the notification never opened is an ordinary
 outcome — a stale or hand-edited link — so the session lookup answers nothing
-rather than failing. A rejected scan carries its reason: cdp-uploader declares
-six refusal codes in `file-errors.js` and sends the code beside its own prose,
-so the page maps each to a message true of it and names the reason on the row
-where it has wording for it.
+rather than failing. So is a handle whose session has already taken its file:
+`cdp-uploader` closes a session to further files as soon as one arrives, and
+answers a second post with a message of its own rather than returning the
+browser, so a session is asked for its status before it is reused and a closed
+one is replaced by a new session. A rejected scan carries its reason:
+cdp-uploader declares six refusal codes in `file-errors.js` and sends the code
+beside its own prose, so the page maps each to a message true of it and names
+the reason on the row where it has wording for it.
 
 A stub run holds the scan lifecycle and nothing else — no uploaded bytes — so
 downloading a document there serves the same placeholder PDF whichever document
@@ -58,8 +62,9 @@ re-exports the active set id so the model can read it without crossing the
 
 The `address-book` client keeps three facts out of its code:
 
-- The page size is the address book's own, not a request parameter. The
-  service re-slices to it and reads it back from each response.
+- The address book takes a page size from 1 to 100 and serves 25 when none is
+  given. The client sends none, so the service re-slices the default page to
+  its own size and reads the size served back from each response.
 - The organisation id in the path and in the organisation header always comes
   from the signed-in session, never from a payload or a stored field. A read
   without one is refused, not sent: the path would name an organisation

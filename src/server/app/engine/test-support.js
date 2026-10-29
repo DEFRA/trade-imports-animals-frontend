@@ -40,27 +40,44 @@ export const authenticatedActor = Object.freeze({
   organisationId: '5900001'
 })
 
-const stubResponse = (payload) => ({
-  payload,
-  code: (statusCode) => ({ payload, statusCode })
-})
+const chainableResponse = (fields) => {
+  const response = { ...fields }
+  const headers = {}
+  return Object.defineProperties(response, {
+    headers: { value: headers },
+    code: {
+      value: (statusCode) => {
+        response.statusCode = statusCode
+        return response
+      }
+    },
+    header: {
+      value: (name, value) => {
+        headers[name.toLowerCase()] = value
+        return response
+      }
+    }
+  })
+}
+
+const stubResponse = (payload) => chainableResponse({ payload })
 
 const stubView = (captured) => (view, context) => {
-  const rendered = {
-    view,
-    context,
-    statusCode: 200,
-    code(statusCode) {
-      this.statusCode = statusCode
-      return this
-    }
-  }
+  const rendered = chainableResponse({ view, context, statusCode: 200 })
   captured.view = rendered
   return rendered
 }
 
 export const registerTestRequestLogger = (server) => {
   server.decorate('request', 'logger', () => recordingLogger(), { apply: true })
+}
+
+/** Decorates every request with one shared recording logger and returns it, so
+ * a test can read every line logged across several injects. */
+export const registerSharedTestRequestLogger = (server) => {
+  const logger = recordingLogger()
+  server.decorate('request', 'logger', logger)
+  return logger
 }
 
 export const registerTestSessionAuth = (server) => {
@@ -109,16 +126,7 @@ export const stubH = (request) => {
     ...cookieRecorder(),
     request,
     view: stubView(captured),
-    redirect: (to) => {
-      const result = { redirect: to }
-      Object.defineProperty(result, 'code', {
-        value: (statusCode) => {
-          result.statusCode = statusCode
-          return result
-        }
-      })
-      return result
-    },
+    redirect: (to) => chainableResponse({ redirect: to }),
     response: stubResponse,
     captured
   }

@@ -135,7 +135,7 @@ describe('#documentUploads', () => {
       ['documentType', { documentType: '' }],
       ['documentReference', { documentReference: '' }],
       ['documentReference', { documentReference: 'AWB/2026#0001' }],
-      ['documentReference', { documentReference: 'R'.repeat(101) }],
+      ['documentReference', { documentReference: 'R'.repeat(59) }],
       ['dateOfIssue', { dateOfIssue: '' }],
       ['dateOfIssue', { dateOfIssue: '15/01/2026' }]
     ])(
@@ -146,6 +146,21 @@ describe('#documentUploads', () => {
         ).rejects.toMatchObject({ status: 400, field })
       }
     )
+
+    it('Should take on a reference of fifty-eight characters and refuse one of fifty-nine', async () => {
+      await expect(
+        documentUploads.claim({
+          ...goodClaim,
+          documentReference: 'R'.repeat(58)
+        })
+      ).resolves.toBeUndefined()
+      await expect(
+        documentUploads.claim({
+          ...goodClaim,
+          documentReference: 'R'.repeat(59)
+        })
+      ).rejects.toMatchObject({ status: 400, field: 'documentReference' })
+    })
 
     it('Should take on a reference carrying the separators real references use', async () => {
       await expect(
