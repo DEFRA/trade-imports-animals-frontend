@@ -183,7 +183,7 @@ describe('set completeness — a fully configured set mounts', () => {
   })
 })
 
-describe('set completeness — journey cookies come after the session seam', () => {
+describe('set completeness — every journey cookie must be registered', () => {
   it('Should refuse a set that never registered its journey cookies', async () => {
     const setId = 'probe-no-cookies'
 
@@ -226,7 +226,9 @@ describe('set completeness — journey cookies come after the session seam', () 
       `Set "${setId}" mounted without its journey cookies: ${names.addedAddressBanner} —`
     )
   })
+})
 
+describe('set completeness — journey cookies come after the session seam', () => {
   it('Should refuse a set that registered its journey cookies first', async () => {
     const setId = 'probe-cookies-first'
 
