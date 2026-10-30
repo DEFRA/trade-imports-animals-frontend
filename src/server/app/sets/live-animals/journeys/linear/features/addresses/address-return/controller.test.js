@@ -1,10 +1,7 @@
 import { SET_ID } from '../../../../../set.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  addedAddressBannerCookie,
-  addressHandshakeTokensCookie
-} from '../../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   addressBookAnswering,
   driveHandler,
@@ -19,6 +16,7 @@ import { consignor, contactAddress } from '../../../../../obligations/index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
 import { ADDRESS_LANDING } from '../ins-handshake.js'
+import { addedAddressBannerState } from '../test-support.js'
 
 import * as addressReturn from './controller.js'
 
@@ -147,9 +145,7 @@ describe('GET /address-return', () => {
         townOrCity: 'Carlisle',
         postcode: 'CA1 1AA'
       })
-      expect(result.cookies).toEqual({
-        [addedAddressBannerCookie()]: { name: storedName }
-      })
+      expect(result.cookies).toEqual(addedAddressBannerState(storedName))
       expectOneLogged(
         result.logger,
         landedLog(result.journeyId, {
@@ -174,9 +170,7 @@ describe('GET /address-return', () => {
       expect(result.after.contactAddress.address).toMatchObject({
         townOrCity: 'Carlisle'
       })
-      expect(result.cookies).toEqual({
-        [addedAddressBannerCookie()]: { name: storedName }
-      })
+      expect(result.cookies).toEqual(addedAddressBannerState(storedName))
     })
 
     it('Should treat a returned address with no landing as select', async () => {
@@ -229,9 +223,7 @@ describe('GET /address-return', () => {
 
       expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
       expect(result.after.consignor).toBeUndefined()
-      expect(result.cookies).toEqual({
-        [addedAddressBannerCookie()]: { name: storedName }
-      })
+      expect(result.cookies).toEqual(addedAddressBannerState(storedName))
       expectOneLogged(
         result.logger,
         landedLog(result.journeyId, {

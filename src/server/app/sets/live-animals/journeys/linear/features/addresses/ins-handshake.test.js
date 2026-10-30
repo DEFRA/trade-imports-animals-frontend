@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
-import {
-  addedAddressBannerCookie,
-  addressHandshakeTokensCookie
-} from '../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
 import {
   recordingH,
   journeyRequest
@@ -54,15 +51,13 @@ describe('ins-handshake', () => {
 
     setAddedAddressBanner(h, 'New Farm')
 
-    expect(h.cookies).toEqual({
-      [addedAddressBannerCookie()]: { name: 'New Farm' }
-    })
+    expect(h.cookies).toEqual(addedAddressBannerState('New Farm'))
   })
 
   it('takes the added address banner from the request and unstates its cookie', () => {
     const h = recordingH()
     const state = addedAddressBannerState('ABC Farms Ltd')
-    h.cookies[addedAddressBannerCookie()] = state[addedAddressBannerCookie()]
+    Object.assign(h.cookies, state)
     const request = journeyRequest(notificationId, { state })
 
     expect(takeAddedAddressBanner(request, h)).toEqual({
