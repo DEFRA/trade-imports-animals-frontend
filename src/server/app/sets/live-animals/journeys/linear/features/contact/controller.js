@@ -19,7 +19,7 @@ import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
-  buildInsAddAddressUrl,
+  issueInsAddAddressUrl,
   handshakeErrorMessage,
   takeAddedAddressBanner
 } from '../addresses/ins-handshake.js'
@@ -61,9 +61,9 @@ const currentContactOf = async (request, journeyId, answers) => {
     : null
 }
 
-const addAddressLinkFor = (request, h, journey) =>
+const issueAddAddressLink = (request, h, journey) =>
   !isStubMode() &&
-  buildInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
+  issueInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
 
 const render = (
   h,
@@ -123,7 +123,7 @@ const get = async (request, h) => {
         : ''
     },
     options,
-    addAddressLinkFor(request, h, journey),
+    issueAddAddressLink(request, h, journey),
     {
       errors,
       recoverableError,
@@ -152,7 +152,7 @@ const post = async (request, h) => {
       journey,
       {},
       options,
-      addAddressLinkFor(request, h, journey),
+      issueAddAddressLink(request, h, journey),
       {
         errors,
         currentContact: await currentContactOf(
@@ -184,7 +184,7 @@ const post = async (request, h) => {
         journey,
         { selectedId: chosen?.id },
         options,
-        addAddressLinkFor(request, h, journey),
+        issueAddAddressLink(request, h, journey),
         {
           recoverableError: true,
           currentContact: await currentContactOf(

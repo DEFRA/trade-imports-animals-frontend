@@ -12,7 +12,7 @@ import {
 import { consignor } from '../../../../obligations/index.js'
 import { PARTIES } from './parties.js'
 import {
-  buildInsAddAddressUrl,
+  issueInsAddAddressUrl,
   setAddedAddressBanner,
   takeAddedAddressBanner
 } from './ins-handshake.js'
@@ -28,13 +28,13 @@ describe('ins-handshake', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
   })
 
-  it('builds the INS add URL with handshake query params', () => {
+  it('issues a handshake token, stores it in the tokens cookie and returns the INS add URL carrying it', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002/')
     const party = PARTIES.find((each) => each.id === 'consignor')
     const h = recordingH()
     const request = journeyRequest(notificationId)
 
-    const url = buildInsAddAddressUrl(request, h, notificationId, party)
+    const url = issueInsAddAddressUrl(request, h, notificationId, party)
 
     expect(url).toMatch(
       new RegExp(
@@ -93,7 +93,7 @@ describe('ins-handshake', () => {
     const request = journeyRequest(notificationId)
 
     expect(
-      buildInsAddAddressUrl(request, h, notificationId, {
+      issueInsAddAddressUrl(request, h, notificationId, {
         id: 'unknown-party'
       })
     ).toBeUndefined()

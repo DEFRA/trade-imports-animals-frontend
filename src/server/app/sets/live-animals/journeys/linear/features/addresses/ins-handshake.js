@@ -77,7 +77,7 @@ export const takeAddedAddressBanner = (request, h) => {
   }
 }
 
-export const buildInsAddAddressUrl = (request, h, notificationId, party) => {
+export const issueInsAddAddressUrl = (request, h, notificationId, party) => {
   const fulfilmentId = fulfilmentIdForParty(party)
   if (!fulfilmentId) {
     return undefined

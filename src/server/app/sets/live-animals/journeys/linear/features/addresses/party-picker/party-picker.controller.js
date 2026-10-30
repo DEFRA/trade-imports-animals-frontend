@@ -21,7 +21,7 @@ import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
-  buildInsAddAddressUrl,
+  issueInsAddAddressUrl,
   handshakeErrorMessage,
   takeAddedAddressBanner
 } from '../ins-handshake.js'
@@ -84,8 +84,8 @@ const render = async (
   })
 }
 
-const addAddressLinkFor = (request, h, journey, party) =>
-  !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
+const issueAddAddressLink = (request, h, journey, party) =>
+  !isStubMode() && issueInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
@@ -100,7 +100,7 @@ const get = (party) => async (request, h) => {
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
-    addAddressHref: addAddressLinkFor(request, h, journey, party),
+    addAddressHref: issueAddAddressLink(request, h, journey, party),
     successBanner: takeAddedAddressBanner(request, h)
   })
 }
@@ -127,7 +127,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
           ...form,
           selectedId: chosen.id,
           recoverableError: true,
-          addAddressHref: addAddressLinkFor(request, h, journey, party)
+          addAddressHref: issueAddAddressLink(request, h, journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     },
@@ -152,7 +152,7 @@ const post = (party) => async (request, h) => {
       query,
       page: 1,
       selectedId,
-      addAddressHref: addAddressLinkFor(request, h, journey, party)
+      addAddressHref: issueAddAddressLink(request, h, journey, party)
     })
   }
 
@@ -178,7 +178,7 @@ const post = (party) => async (request, h) => {
         page: pageNumber(payload.page),
         selectedId: '',
         error: party.error,
-        addAddressHref: addAddressLinkFor(request, h, journey, party)
+        addAddressHref: issueAddAddressLink(request, h, journey, party)
       })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
