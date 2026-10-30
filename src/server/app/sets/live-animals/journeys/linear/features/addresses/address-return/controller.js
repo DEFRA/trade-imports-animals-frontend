@@ -82,7 +82,6 @@ const consumeHandshakeToken = (request, h, returned, handshakeToken) => {
 
 const readReturnedAddress = async (
   request,
-  h,
   { journeyId, party, addressId }
 ) => {
   const logged = { journeyId, role: party.id, addressId }
@@ -95,13 +94,7 @@ const readReturnedAddress = async (
       { ...logged, reason: 'address-not-found' },
       'Returned address not found, picker shown again'
     )
-    return {
-      failure: h.redirect(
-        partyPageHref(request, journeyId, party, {
-          handshakeError: 'not-found'
-        })
-      )
-    }
+    return { handshakeError: 'not-found' }
   } catch (error) {
     if (!isRecoverableBackendError(error)) {
       throw error
@@ -110,13 +103,7 @@ const readReturnedAddress = async (
       { ...logged, err: error },
       'Returned address could not be read, picker shown again'
     )
-    return {
-      failure: h.redirect(
-        partyPageHref(request, journeyId, party, {
-          handshakeError: 'unavailable'
-        })
-      )
-    }
+    return { handshakeError: 'unavailable' }
   }
 }
 
@@ -138,13 +125,14 @@ const commitCopyOfAddress = (request, h, { journeyId, party, chosen }) =>
 
 const landOnAddress = async (request, h, returned) => {
   const { journeyId, party, addressId, landing } = returned
-  const { chosen, failure: unreadable } = await readReturnedAddress(
+  const { chosen, handshakeError } = await readReturnedAddress(
     request,
-    h,
     returned
   )
-  if (unreadable) {
-    return unreadable
+  if (handshakeError) {
+    return h.redirect(
+      partyPageHref(request, journeyId, party, { handshakeError })
+    )
   }
 
   if (landing === ADDRESS_LANDING.SELECT) {
