@@ -20,6 +20,8 @@ import {
 } from '../ins-handshake.js'
 import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 
+const BACK_WITHOUT_LANDING = 'back'
+
 const partyPageHref = (request, journeyId, party, query = {}) => {
   const path = pagePath(journeyId, party.slug)
   const params = new URLSearchParams()
@@ -52,14 +54,9 @@ const logLanding = (request, fields) => {
 const validLandingOf = (request, returned) => {
   const { addressId, landing } = returned
   if (!landing) {
-    return addressId ? ADDRESS_LANDING.SELECT : ADDRESS_LANDING.BACK
+    return addressId ? ADDRESS_LANDING.SELECT : BACK_WITHOUT_LANDING
   }
-  const sentByInsPage = [
-    ADDRESS_LANDING.SELECT,
-    ADDRESS_LANDING.RETURN,
-    ADDRESS_LANDING.CANCEL
-  ]
-  if (!sentByInsPage.includes(landing)) {
+  if (!Object.values(ADDRESS_LANDING).includes(landing)) {
     throw logAndRefuse(request, returned, 'unknown-landing', 'Unknown landing')
   }
   if (landing !== ADDRESS_LANDING.CANCEL && !addressId) {
@@ -174,7 +171,7 @@ const get = async (request, h) => {
 
   const returnedForRole = { ...returned, role: party.id }
   const landing = validLandingOf(request, returnedForRole)
-  if (landing === ADDRESS_LANDING.BACK) {
+  if (landing === BACK_WITHOUT_LANDING) {
     logLanding(request, { journeyId, role: party.id, landing })
     return h.redirect(partyPageHref(request, journeyId, party))
   }

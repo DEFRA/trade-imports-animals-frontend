@@ -444,12 +444,12 @@ function refusalTests() {
 
     it('Should refuse an explicit back landing', async () => {
       const refused = await refusalOf(
-        withStaleToken({ ...handshakeQuery(), landing: ADDRESS_LANDING.BACK })
+        withStaleToken({ ...handshakeQuery(), landing: 'back' })
       )
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
-        landing: ADDRESS_LANDING.BACK,
+        landing: 'back',
         role: 'consignor',
         reason: 'unknown-landing'
       })

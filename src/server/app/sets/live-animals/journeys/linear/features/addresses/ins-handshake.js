@@ -17,8 +17,7 @@ export const ADDRESS_LANDING_PARAM = 'landing'
 export const ADDRESS_LANDING = Object.freeze({
   SELECT: 'select',
   RETURN: 'return',
-  CANCEL: 'cancel',
-  BACK: 'back'
+  CANCEL: 'cancel'
 })
 
 const HANDSHAKE_TOKEN_BYTES = 16
