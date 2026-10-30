@@ -438,8 +438,8 @@ describe('GET /consignors/select — list order', () => {
     addressBookAnswering({
       body: JSON.stringify({
         items: [
-          listed('newer-id', 'Newer Farm'),
-          listed('older-id', 'Older Farm')
+          listed('zeta-newer', 'Zebra Farm'),
+          listed('alpha-older', 'Aardvark Farm')
         ],
         page: 1,
         pageSize: 25,
@@ -450,7 +450,7 @@ describe('GET /consignors/select — list order', () => {
 
     const result = await driveHandler(getConsignor)
 
-    expect(idsOf(pickerFrom(result))).toEqual(['newer-id', 'older-id'])
+    expect(idsOf(pickerFrom(result))).toEqual(['zeta-newer', 'alpha-older'])
   })
 })
 
