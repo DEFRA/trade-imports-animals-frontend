@@ -8,8 +8,11 @@ import {
   placeOfDestination,
   placeOfOrigin
 } from '../../../../obligations/index.js'
-import { CONTACT_PARTY } from './parties.js'
-import { partyForFulfilmentId } from './party-for-fulfilment-id.js'
+import { CONTACT_PARTY, partyOf } from './parties.js'
+import {
+  fulfilmentIdForParty,
+  partyForFulfilmentId
+} from './party-for-fulfilment-id.js'
 
 describe('party-for-fulfilment-id', () => {
   it.each([
@@ -32,5 +35,16 @@ describe('party-for-fulfilment-id', () => {
     const party = partyForFulfilmentId(contactAddress.id)
     expect(party).toBeDefined()
     expect(party.id).toBe(CONTACT_PARTY.id)
+  })
+
+  it.each([
+    ['placeOfOrigin', placeOfOrigin.id],
+    ['consignor', consignor.id],
+    ['consignee', consignee.id],
+    ['importer', importer.id],
+    ['placeOfDestination', placeOfDestination.id],
+    ['contactAddress', contactAddress.id]
+  ])('maps %s to fulfilment id %s', (partyId, expectedFulfilmentId) => {
+    expect(fulfilmentIdForParty(partyOf(partyId))).toBe(expectedFulfilmentId)
   })
 })

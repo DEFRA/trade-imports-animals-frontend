@@ -1,24 +1,12 @@
 import Boom from '@hapi/boom'
 import {
-  addressHandshakeTokensCookie,
-  flowOnlyAnswersCookie,
-  knownJourneysCookie,
-  openingRunCookie,
-  reviewedConcurrencyTokensCookie,
+  journeyCookieNames,
   session,
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
-
-export {
-  addressHandshakeTokensCookie,
-  flowOnlyAnswersCookie,
-  knownJourneysCookie,
-  openingRunCookie,
-  reviewedConcurrencyTokensCookie
-} from './persistence/session.js'
 
 /**
  * Registers the active set's journey cookies on the server, scoped to the
@@ -47,13 +35,7 @@ export const registerJourneyCookie = (server) => {
     strictHeader: true
   })
 
-  for (const name of [
-    knownJourneysCookie(),
-    openingRunCookie(),
-    flowOnlyAnswersCookie(),
-    addressHandshakeTokensCookie(),
-    reviewedConcurrencyTokensCookie()
-  ]) {
+  for (const name of journeyCookieNames()) {
     server.state(name, cookieOptions)
   }
 }

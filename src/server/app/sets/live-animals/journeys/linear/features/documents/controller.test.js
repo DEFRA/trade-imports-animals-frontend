@@ -25,12 +25,12 @@ import {
   SURFACES
 } from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
-import {
-  knownJourneysCookie,
-  registerJourneyCookie
-} from '../../../../../../engine/journey.js'
+import { registerJourneyCookie } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
+import {
+  configureSession,
+  knownJourneysCookie
+} from '../../../../../../engine/persistence/session.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR

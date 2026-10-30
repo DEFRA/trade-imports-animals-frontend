@@ -6,5 +6,6 @@ export const SESSION_COOKIE_NAMES = {
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  addedAddressBanner: 'liveAnimalsAddedAddressBanner',
   reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }

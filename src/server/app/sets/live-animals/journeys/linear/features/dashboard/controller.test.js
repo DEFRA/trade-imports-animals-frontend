@@ -20,6 +20,7 @@ import { createRoutePath } from '../../../../../../shared/paths.js'
 import { SET_BASE } from '../../../../set.js'
 import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
+import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 
 import { routes } from './controller.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
@@ -388,16 +389,22 @@ describe('dashboard row actions', () => {
     const ordinary = await renderList()
     const deleted = await renderList({ query: { deleted: '1' } })
 
-    expect(ordinary.deletionSucceeded).toBe(false)
-    expect(deleted.deletionSucceeded).toBe(true)
+    expect(ordinary.successBanner).toBeNull()
+    expect(deleted.successBanner).toEqual({
+      titleText: sharedEn.notificationActions.delete.successTitle,
+      text: sharedEn.notificationActions.delete.successBody
+    })
   })
 
   it('Should expose the copy success banner only after a copy redirect', async () => {
     const ordinary = await renderList()
     const copied = await renderList({ query: { copied: '1' } })
 
-    expect(ordinary.copySucceeded).toBe(false)
-    expect(copied.copySucceeded).toBe(true)
+    expect(ordinary.successBanner).toBeNull()
+    expect(copied.successBanner).toEqual({
+      titleText: sharedEn.notificationActions.copy.successTitle,
+      text: sharedEn.notificationActions.copy.successBody
+    })
   })
 
   it('Should expose the amend-refused banner only after a refused-amend redirect', async () => {

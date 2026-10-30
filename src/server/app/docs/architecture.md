@@ -163,6 +163,11 @@ A controller passes the page's own title to `kit.base()`.
 error prefix when the page shows an error summary, then the page title, the
 service name and GOV.UK. A page never builds its own `<title>`.
 
+The closing word is `layout.govukSuffix` in the shared copy. It is the GOV.UK
+brand name, not translated text, so [`shared/copy.cy.js`](../shared/copy.cy.js)
+carries the same `GOV.UK` value as [`shared/copy.en.js`](../shared/copy.en.js),
+and [`copy-parity.test.js`](../copy-parity.test.js) allowlists it as identical.
+
 ### Backend HTTP clients
 
 Each backend or reference-data call lives in its own module under `services/`,

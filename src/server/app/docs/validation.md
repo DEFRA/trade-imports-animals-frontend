@@ -30,6 +30,19 @@ Normalising validators return cleaned values. Persist `value` from the validatio
 result, not the raw payload. The guarantee is pinned by
 [`src/server/app/lib/validate/persists-cleaned-value.test.js`](../lib/validate/persists-cleaned-value.test.js).
 
+## Default messages
+
+When a call site passes no message of its own, a rule in `lib/validate` falls
+back to `validatorDefaults` in [`shared/copy.en.js`](../shared/copy.en.js) and
+[`shared/copy.cy.js`](../shared/copy.cy.js). A default is a string, or a
+function of the rule's limits that returns one, such as `maxLength(max)`.
+
+`validatorDefaults` is its own export rather than a key of the shared `copy`
+object, so [`lib/validate/validators.js`](../lib/validate/validators.js) imports
+the fallback messages without the page copy. Each locale exports its own, and
+[`copy-parity.test.js`](../copy-parity.test.js) holds the English and Welsh
+defaults to the same shape.
+
 ## GDS error wiring
 
 Keep the field name, input id and error-map key identical.

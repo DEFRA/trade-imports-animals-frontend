@@ -22,6 +22,7 @@ import {
   recoverableSave,
   requestSaveChoice,
   returnedSaveChoice,
+  setlessBase,
   withReturnMarker
 } from './kit.js'
 import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
@@ -240,6 +241,22 @@ describe('#base — amending', () => {
       base('t', { journey: { status: DRAFT }, request: originRequest }).amend
     ).toBeNull()
     expect(base('t', { journey: { status: AMEND } }).amend).toBeNull()
+  })
+})
+
+describe('#base — success banner', () => {
+  it('Should carry the success banner it is given', () => {
+    const banner = { titleText: 'Success', text: 'Saved' }
+
+    expect(base('t', { successBanner: banner }).successBanner).toEqual(banner)
+  })
+
+  it('Should carry no success banner by default, with or without a journey', () => {
+    expect(
+      base('t', { journey: { journeyId: 'j', status: DRAFT } }).successBanner
+    ).toBeNull()
+    expect(base('t').successBanner).toBeNull()
+    expect(setlessBase('t').successBanner).toBeNull()
   })
 })
 

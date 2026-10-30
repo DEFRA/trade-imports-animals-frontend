@@ -190,6 +190,51 @@ describe('content column width by surface', () => {
   })
 })
 
+describe('success banner', () => {
+  const successBanner = {
+    titleText: 'Success',
+    text: 'New Farm address added to your address book'
+  }
+  const stripContext = {
+    journeyStrip: {
+      status: { text: 'Draft', classes: 'govuk-tag--blue' },
+      reference: 'GBN-AG-26-ABC123'
+    }
+  }
+
+  it('Should render a success notification banner with the given title and text', () => {
+    const document = documentOf(
+      renderLayout({ isAuthenticated: true }, { successBanner })
+    )
+    const banner = document.querySelector('.govuk-notification-banner--success')
+
+    expect(trimmedTextOf(banner.querySelector('h2'))).toBe('Success')
+    expect(
+      trimmedTextOf(banner.querySelector('.govuk-notification-banner__heading'))
+    ).toBe('New Farm address added to your address book')
+  })
+
+  it('Should render the banner after the journey strip', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { ...stripContext, successBanner }
+    )
+
+    expect(html.indexOf('app-journey-strip')).toBeGreaterThan(-1)
+    expect(html.indexOf('app-journey-strip')).toBeLessThan(
+      html.indexOf('govuk-notification-banner--success')
+    )
+  })
+
+  it('Should render no success banner when none is given', () => {
+    const document = documentOf(renderLayout({ isAuthenticated: true }))
+
+    expect(
+      document.querySelectorAll('.govuk-notification-banner--success')
+    ).toHaveLength(0)
+  })
+})
+
 describe('kit surfaces', () => {
   it('Should build answering-page chrome at the reading measure', () => {
     expect(base('Any page').contentColumnClass).toBe(SURFACES.form)

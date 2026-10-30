@@ -2,8 +2,6 @@ export const copy = {
   layout: {
     serviceName: 'Import notification service',
     errorTitlePrefix: 'Error: ',
-    // The GOV.UK brand word that closes every page title. A brand name, not
-    // translated copy, so the Welsh pair carries the same value.
     govukSuffix: 'GOV.UK',
     back: 'Back',
     phaseBanner: {
@@ -76,6 +74,10 @@ export const copy = {
   },
   addressHandshake: {
     addNewAddress: 'Add a new address',
+    addedBanner: {
+      title: 'Success',
+      text: (name) => `${name} address added to your address book`
+    },
     errors: {
       notFound:
         'The address could not be found in your address book. Select another address or try adding it again.',
@@ -86,11 +88,8 @@ export const copy = {
 }
 
 /**
- * Default validator messages — the fallbacks `lib/validate` composers use
- * when a call site passes no feature message. A separate export (not a
- * `copy` key) because parameterised defaults are function leaves and
- * `copy-leaves.js`'s `isCopyLeaf` pins string-only leaves. Locale-swappable
- * the same way: a `copy.cy.js` exports its own `validatorDefaults`.
+ * Default validator messages. Each is a string, or a function of the rule's
+ * limits that returns one.
  */
 export const validatorDefaults = {
   oneOf: 'Select a valid option',

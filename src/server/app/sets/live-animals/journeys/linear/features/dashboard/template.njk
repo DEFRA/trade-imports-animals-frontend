@@ -7,24 +7,6 @@
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
-  {% if deletionSucceeded %}
-    {{ govukNotificationBanner({
-      type: "success",
-      titleText: sharedCopy.notificationActions.delete.successTitle,
-      text: sharedCopy.notificationActions.delete.successBody,
-      role: "alert"
-    }) }}
-  {% endif %}
-
-  {% if copySucceeded %}
-    {{ govukNotificationBanner({
-      type: "success",
-      titleText: sharedCopy.notificationActions.copy.successTitle,
-      text: sharedCopy.notificationActions.copy.successBody,
-      role: "alert"
-    }) }}
-  {% endif %}
-
   {% if amendRefused %}
     {{ govukNotificationBanner({
       titleText: copy.amendRefused.title,

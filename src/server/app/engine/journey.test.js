@@ -8,14 +8,16 @@ import {
   amendJourney,
   listKnownJourneys,
   replaceJourneyFulfilment,
-  flowOnlyAnswersCookie,
-  knownJourneysCookie,
   softDeleteJourney,
   startJourney
 } from './journey.js'
 import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
-import { configureSession } from './persistence/session.js'
+import {
+  configureSession,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie
+} from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { records as recordsReal } from '../services/persistence/records/real/index.js'
