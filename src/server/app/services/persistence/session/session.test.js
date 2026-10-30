@@ -46,14 +46,16 @@ describe('per-set cookie names', () => {
   })
 
   it('Should list every cookie name the set is configured with', () => {
-    expect(withSetContext(SET_ID, journeyCookieNames)).toEqual([
-      'liveAnimalsKnownJourneys',
-      'liveAnimalsOpeningRun',
-      'liveAnimalsFlowOnlyAnswers',
-      'liveAnimalsAddressHandshakeTokens',
-      'liveAnimalsAddedAddressBanner',
-      'liveAnimalsReviewedConcurrencyTokens'
-    ])
+    expect(withSetContext(SET_ID, journeyCookieNames).toSorted()).toEqual(
+      [
+        'liveAnimalsKnownJourneys',
+        'liveAnimalsOpeningRun',
+        'liveAnimalsFlowOnlyAnswers',
+        'liveAnimalsAddressHandshakeTokens',
+        'liveAnimalsAddedAddressBanner',
+        'liveAnimalsReviewedConcurrencyTokens'
+      ].toSorted()
+    )
   })
 })
 
