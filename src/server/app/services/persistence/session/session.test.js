@@ -209,6 +209,7 @@ describe('per-set cookie names with two sets mounted', () => {
     openingRun: 'probeOpeningRun',
     flowOnlyAnswers: 'probeFlowOnlyAnswers',
     addressHandshakeTokens: 'probeAddressHandshakeTokens',
+    addedAddressBanner: 'probeAddedAddressBanner',
     reviewedConcurrencyTokens: 'probeReviewedConcurrencyTokens'
   })
 
@@ -234,11 +235,29 @@ describe('per-set cookie names with two sets mounted', () => {
     expect(withSetContext(OTHER_SET, flowOnlyAnswersCookie)).toBe(
       OTHER_NAMES.flowOnlyAnswers
     )
+    expect(withSetContext(SET_ID, addressHandshakeTokensCookie)).toBe(
+      SESSION_COOKIE_NAMES.addressHandshakeTokens
+    )
+    expect(withSetContext(OTHER_SET, addressHandshakeTokensCookie)).toBe(
+      OTHER_NAMES.addressHandshakeTokens
+    )
+    expect(withSetContext(SET_ID, addedAddressBannerCookie)).toBe(
+      SESSION_COOKIE_NAMES.addedAddressBanner
+    )
+    expect(withSetContext(OTHER_SET, addedAddressBannerCookie)).toBe(
+      OTHER_NAMES.addedAddressBanner
+    )
     expect(withSetContext(SET_ID, reviewedConcurrencyTokensCookie)).toBe(
       SESSION_COOKIE_NAMES.reviewedConcurrencyTokens
     )
     expect(withSetContext(OTHER_SET, reviewedConcurrencyTokensCookie)).toBe(
       OTHER_NAMES.reviewedConcurrencyTokens
+    )
+    expect(withSetContext(SET_ID, journeyCookieNames)).toEqual(
+      Object.values(SESSION_COOKIE_NAMES)
+    )
+    expect(withSetContext(OTHER_SET, journeyCookieNames)).toEqual(
+      Object.values(OTHER_NAMES)
     )
   })
 })
