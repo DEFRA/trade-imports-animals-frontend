@@ -76,7 +76,7 @@ export const copy = {
     addNewAddress: 'Add a new address',
     addedBanner: {
       title: 'Success',
-      text: '{name} address added to your address book'
+      text: (name) => `${name} address added to your address book`
     },
     errors: {
       notFound:

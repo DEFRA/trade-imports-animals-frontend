@@ -77,7 +77,8 @@ export const copy = {
     addNewAddress: 'Ychwanegu cyfeiriad newydd',
     addedBanner: {
       title: 'Llwyddiant',
-      text: "Mae cyfeiriad {name} wedi'i ychwanegu at eich llyfr cyfeiriadau"
+      text: (name) =>
+        `Mae cyfeiriad ${name} wedi'i ychwanegu at eich llyfr cyfeiriadau`
     },
     errors: {
       notFound:

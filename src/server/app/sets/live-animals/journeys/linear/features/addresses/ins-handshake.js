@@ -73,7 +73,7 @@ export const takeAddedAddressBanner = (request, h) => {
     .addressHandshake.addedBanner
   return {
     titleText: addedBannerCopy.title,
-    text: addedBannerCopy.text.replace('{name}', () => added.name)
+    text: addedBannerCopy.text(added.name)
   }
 }
 
