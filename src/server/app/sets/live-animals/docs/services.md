@@ -63,9 +63,10 @@ so generic notification-mapper code does not import the set.
   that MDM's live-animal data holds. Where the design named an entry by animal,
   the whole code is on the list.
 - The Domestic/Game split on `0102` comes from the IPAFFS commodity-categories
-  extract, which names `Bos spp.` as Game. MDM lists `Bos sp.`, so no `0102`
-  species MDM offers is Game today. Every other code has one type with blank
-  text, which the backend payload drops.
+  extract, which names `Bos spp.` as Game. MDM spells that species `Bos sp.`,
+  so `Bos sp.` is Game and every other `0102` species is Domestic. This is not
+  yet confirmed by the business. Every other code has one type with blank text,
+  which the backend payload drops.
 - MDM has no common name for some species, so a line's common name is
   optional.
 - A notification sends its first line's CN code (for example `0102`) as

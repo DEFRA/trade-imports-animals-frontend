@@ -8,6 +8,7 @@ import {
   crumbProtectedServerMounting,
   driveHandler,
   expectBackLinkIsPage,
+  expectOneLogged,
   expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
@@ -47,8 +48,6 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
-const EMPTY_DETAILS_REDIRECT_LOG =
-  'Consignment details has no commodities, commodity question shown'
 const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
@@ -128,6 +127,13 @@ const seedTwoSpeciesOfOneCommodity = () => ({
 const COMMODITY_REMOVAL_REFUSED = {
   reason: 'no-commodity-at-index'
 }
+
+const expectRedirectedToCommodityQuestionLogged = (result, fields) =>
+  expectOneLogged(result.logger, {
+    level: 'info',
+    fields: { journeyId: result.journeyId, ...fields },
+    message: 'Redirected to the commodity question'
+  })
 
 const SPECIES_REMOVAL_REFUSED = {
   reason: 'no-species-at-index'
@@ -283,13 +289,10 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
-    expect(result.logger.entries).toEqual([
-      {
-        level: 'info',
-        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
-        message: EMPTY_DETAILS_REDIRECT_LOG
-      }
-    ])
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'last-commodity-removed',
+      commodityCode: '01063300'
+    })
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
@@ -300,13 +303,9 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
     })
     expect(result.view).toBeUndefined()
-    expect(result.logger.entries).toEqual([
-      {
-        level: 'info',
-        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
-        message: EMPTY_DETAILS_REDIRECT_LOG
-      }
-    ])
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'no-commodities-on-load'
+    })
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
@@ -316,6 +315,9 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
     })
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
+    })
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'no-commodities-on-load'
     })
   })
 
@@ -443,13 +445,10 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
-    expect(result.logger.entries).toEqual([
-      {
-        level: 'info',
-        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
-        message: EMPTY_DETAILS_REDIRECT_LOG
-      }
-    ])
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'last-commodity-removed',
+      commodityCode: '01061900'
+    })
   })
 
   it('Should refuse a species remove aimed at a commodity the page lists as one row, and delete nothing', async () => {

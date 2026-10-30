@@ -114,6 +114,37 @@ const documentTop = (locator) =>
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
 
+const documentRight = (locator) =>
+  locator.evaluate((el) => el.getBoundingClientRect().right + window.scrollX)
+
+/**
+ * Fails unless the second element has wrapped onto a line below the first and the two end on the
+ * same right edge.
+ *
+ * @param {import('@playwright/test').Locator} above - the element on the upper line.
+ * @param {import('@playwright/test').Locator} below - the element expected to have wrapped under it.
+ * @param {string} subject - names the pair in the failure message.
+ */
+export const expectStackedOnSameRightEdge = async (above, below, subject) => {
+  const [aboveBottom, belowTop, aboveRight, belowRight] = [
+    await documentBottom(above),
+    await documentTop(below),
+    await documentRight(above),
+    await documentRight(below)
+  ]
+
+  expect(
+    belowTop,
+    `${subject} share a line, so there is no stacked alignment to check`
+  ).toBeGreaterThanOrEqual(aboveBottom)
+
+  const edgeTolerancePx = 1
+  expect(
+    Math.abs(belowRight - aboveRight),
+    `${subject} end on different right edges: ${aboveRight} and ${belowRight}`
+  ).toBeLessThanOrEqual(edgeTolerancePx)
+}
+
 /**
  * An anchored matcher for a URL under this set's mount.
  *
@@ -571,11 +602,23 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
-  page
-    .getByRole('heading', { level: 3, name: speciesLatinName })
-    .locator('+ .govuk-form-group')
-    .getByLabel('Number of animals')
+export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
+  await page
+    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .waitFor()
+  const speciesHeadings = await page
+    .getByRole('heading', { level: 3 })
+    .allTextContents()
+  const position = speciesHeadings.indexOf(speciesLatinName)
+  if (position === -1) {
+    throw new Error(
+      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+    )
+  }
+  return page
+    .getByRole('textbox', { name: 'Number of animals', exact: true })
+    .nth(position)
+}
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -599,14 +642,14 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
+export const selectedSummary = (page) => page.locator('#commodity-selection')
+
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) =>
   expect(
-    page
-      .getByRole('heading', { name: /\d+ selected/ })
-      .locator('+ ul')
+    selectedSummary(page)
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })

@@ -4,9 +4,11 @@ import {
   documentRowFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectStackedOnSameRightEdge,
   journeyUrl,
   openDatePicker,
   openDocuments,
+  PHONE_VIEWPORT,
   saveAndReturnToHub,
   setUploadFile,
   signIn,
@@ -220,16 +222,16 @@ test.describe('document upload page', () => {
       copy.documentType.selectText,
       copy.types.ITAHC,
       copy.types.VETERINARY_HEALTH_CERTIFICATE,
-      copy.types.AIR_WAYBILL,
+      copy.types.SELF_DECLARATION,
+      copy.types.JOURNEY_LOG,
       copy.types.IMPORT_PERMIT,
-      copy.types.LETTER_OF_AUTHORITY,
-      copy.types.COMMERCIAL_INVOICE,
+      copy.types.CITES_PERMIT_OR_CERTIFICATE,
+      copy.types.AIR_WAYBILL,
       copy.types.SEA_WAYBILL,
       copy.types.RAIL_WAYBILL,
       copy.types.BILL_OF_LADING,
-      copy.types.CATCH_CERTIFICATE,
-      copy.types.LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN,
-      copy.types.JOURNEY_LOG,
+      copy.types.COMMERCIAL_INVOICE,
+      copy.types.PACKING_OR_SPECIES_LIST,
       copy.types.OTHER
     ])
 
@@ -401,6 +403,27 @@ test.describe('document upload type validation', () => {
     await expect(row).toContainText(copy.types.COMMERCIAL_INVOICE)
     await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
   })
+
+  for (const [code, reference] of [
+    ['SELF_DECLARATION', 'SD-2026-0001'],
+    ['CITES_PERMIT_OR_CERTIFICATE', 'CITES-2026-0001'],
+    ['PACKING_OR_SPECIES_LIST', 'PL-2026-0001']
+  ]) {
+    test(`a document chosen as ${copy.types[code]} saves and its row reports that label`, async ({
+      page
+    }) => {
+      test.slow()
+      await uploadDocument(page, {
+        ...validDocument,
+        accompanyingDocumentReference: reference,
+        accompanyingDocumentType: code
+      })
+
+      await expect(documentRowFor(page, reference)).toContainText(
+        copy.types[code]
+      )
+    })
+  }
 })
 
 test.describe('document upload date validation', () => {
@@ -689,7 +712,7 @@ test.describe('document upload saved rows', () => {
     await expectLongReferenceFitsCard(page)
   })
 
-  test('lists the document under five headings with View file and Remove right-aligned at the end of the row', async ({
+  test('lists the document under five headings with View file and Remove right-aligned at the end of the row, lined up with each other once they wrap', async ({
     page
   }) => {
     test.slow()
@@ -715,6 +738,13 @@ test.describe('document upload saved rows', () => {
     await expect(
       addedDocumentsTable(page).getByRole('columnheader').last()
     ).toHaveCSS('text-align', 'right')
+
+    await page.setViewportSize(PHONE_VIEWPORT)
+    await expectStackedOnSameRightEdge(
+      actionsCell.getByRole('link', { name: copy.viewFile }),
+      actionsCell.getByRole('button', { name: copy.remove }),
+      'View file and Remove'
+    )
   })
 
   test('keeps stating the document limit once a document is saved', async ({

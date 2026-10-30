@@ -128,7 +128,7 @@ describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
     expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
     expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
-    expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
+    expect(typeIdFor(CATTLE_CODE, 'Bison bison')).toBe('16')
   })
 
   it('Should give every other code its one type', () => {
@@ -137,7 +137,7 @@ describe('#typeIdFor', () => {
     )
     for (const code of otherCodes) {
       expect(typeIdFor(code, 'Felis catus')).toBe('2')
-      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
+      expect(typeIdFor(code, 'Bos sp.')).toBe('2')
     }
   })
 })

@@ -5,7 +5,9 @@ import {
   documentRowFor,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
+  expectStackedOnSameRightEdge,
   openDocuments,
+  PHONE_VIEWPORT,
   saveAndContinue,
   signIn,
   visitOverviewThenOpen
@@ -122,7 +124,7 @@ test.describe('document scan-status polling', () => {
     await openDocuments(page)
   })
 
-  test('updates one settled row in place, announces it and leaves a still-pending row alone', async ({
+  test('updates one settled row in place, announces it, leaves a still-pending row alone and lines up the actions it rebuilds', async ({
     page
   }) => {
     test.slow()
@@ -146,6 +148,14 @@ test.describe('document scan-status polling', () => {
     ).toBeVisible()
     await expect(page.locator('#js-scan-status-announcer')).toHaveText(
       copy.announce.safe
+    )
+
+    await page.setViewportSize(PHONE_VIEWPORT)
+    const settledActions = settlingRow.getByRole('cell').last()
+    await expectStackedOnSameRightEdge(
+      settledActions.getByRole('link', { name: copy.viewFile }),
+      settledActions.getByRole('button', { name: copy.remove }),
+      'View file and Remove on a row the client rebuilt'
     )
   })
 })

@@ -77,21 +77,20 @@ export const copy = {
     actionsHidden: 'Cam gweithredu'
   },
   types: {
-    ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Tystysgrif iechyd milfeddygol',
+    ITAHC: 'ITAHC (Tystysgrif Iechyd Anifeiliaid Masnach Fewnol)',
+    VETERINARY_HEALTH_CERTIFICATE:
+      'Tystysgrif filfeddygol arall / datganiad milfeddygol',
+    SELF_DECLARATION: 'Hunanddatganiad',
+    JOURNEY_LOG: 'Log taith',
+    IMPORT_PERMIT: 'Trwydded fewnforio / awdurdodiad',
+    CITES_PERMIT_OR_CERTIFICATE: 'Trwydded/tystysgrif CITES',
     AIR_WAYBILL: 'Bil cludo awyr',
-    IMPORT_PERMIT: 'Trwydded fewnforio',
-    LETTER_OF_AUTHORITY: 'Llythyr awdurdod (Cyfarwyddeb 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Anfoneb fasnachol',
     SEA_WAYBILL: 'Bil cludo môr',
     RAIL_WAYBILL: 'Bil cludo rheilffordd',
     BILL_OF_LADING: 'Bil llwytho',
-    CATCH_CERTIFICATE: 'Tystysgrif dalfa',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Canlyniadau samplu labordy ar gyfer afflatocsin (Rheoliad 2019/1793)',
-    HEALTH_CERTIFICATE: 'Tystysgrif iechyd',
-    JOURNEY_LOG: 'Log taith',
-    OTHER: 'Arall'
+    COMMERCIAL_INVOICE: 'Anfoneb fasnachol',
+    PACKING_OR_SPECIES_LIST: 'Rhestr bacio / rhestr rhywogaethau',
+    OTHER: 'Dogfennau ategol eraill'
   },
   remove: 'Tynnu',
   removeHidden: (documentNumber) => `dogfen ${documentNumber}`,

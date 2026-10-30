@@ -390,11 +390,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   select can make: left on the select text, or carrying a value the page never
   offered.
 - The offered document types are service-backed and primed at boot, so the
-  type check is built for each add, not frozen at module load. The page offers
-  fewer of them than the vocabulary this service may send to the backend: the
-  page's own list is what both the select's items and the add form's type check
-  read, and a document already recorded as a type the page withholds still reads
-  back on its saved row and is still sent with that type.
+  type check is built for each add, not frozen at module load. The select's
+  items, the add form's type check and the vocabulary this service sends to the
+  backend are all one ordered list, so the order the page offers is the order
+  that list states.
 - A document saved by "Save and add another" or "Save and return to overview"
   is followed by a redirect, so a reload cannot replay the save. One saved by
   "Save and continue" or an amend button is answered on the returned request

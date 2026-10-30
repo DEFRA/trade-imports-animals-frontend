@@ -22,7 +22,8 @@ import {
   recoverableSave,
   requestSaveChoice,
   returnedSaveChoice,
-  setlessBase
+  setlessBase,
+  withReturnMarker
 } from './kit.js'
 import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
 
@@ -454,6 +455,19 @@ describe('#logRefusal', () => {
       reason: 'no-line'
     })
   })
+
+  it('Should log at warn when the caller sets the level', () => {
+    const request = journeyRequest('journey-1')
+
+    logRefusal(request, { level: 'warn', reason: 'unlisted-species' })
+
+    expectOneRefusalLogged(request.logger, {
+      journeyId: 'journey-1',
+      errorCodes: [],
+      level: 'warn',
+      reason: 'unlisted-species'
+    })
+  })
 })
 
 describe('#appendChangeContext — the change marker on an href', () => {
@@ -463,6 +477,24 @@ describe('#appendChangeContext — the change marker on an href', () => {
 
   it('Should join to the query string an href already has', () => {
     expect(appendChangeContext('/a?x=1')).toBe('/a?x=1&change=1')
+  })
+})
+
+describe('#withReturnMarker — the return marker on an href', () => {
+  it('Should start the query string on an href without one', () => {
+    expect(withReturnMarker('/a', 'addresses')).toBe('/a?return=addresses')
+  })
+
+  it('Should join to the query string an href already has', () => {
+    expect(withReturnMarker('/a?x=1', 'addresses')).toBe(
+      '/a?x=1&return=addresses'
+    )
+  })
+
+  it('Should encode a slug that contains a slash', () => {
+    expect(withReturnMarker('/a', 'commodities/identification')).toBe(
+      '/a?return=commodities%2Fidentification'
+    )
   })
 })
 

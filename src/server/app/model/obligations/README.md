@@ -163,14 +163,15 @@ The gate helpers live in `helpers/`. Each builds an `applyTo` and attaches
 metadata that names its gate obligation, so `obligationMetadata()` can derive
 `dependsOn` without a second declaration.
 
-- `equals`-shape gate: `equalsGate(gate, value, whenTrue, whenFalse)`. For a
-  status flip where both branches are in scope, give both branches
-  `inScope: true` and different `status` values.
+- `equals`-shape gate: `equalsGate(gate, value, whenTrue, whenFalse)` and
+  `matches`. For a status flip where both branches are in scope, give both
+  branches `inScope: true` and different `status` values.
 - `includes`-shape gate: `includesGate(gate, values, whenTrue, whenFalse)`.
 - `isFilled`-shape gate: `presentGate(gate, whenTrue, whenFalse)`.
 - Line gates on a list of codes: `allowListed`, `anyAllowListed`,
-  `notInUnionOf`, `anyNotInUnionOf`, `matches`.
-- Line gates on code+Latin-name pairs: `allowListedPairs`.
+  `notInUnionOf`, `anyNotInUnionOf`.
+- Line gates on a listed pair of two values read from the same entry:
+  `allowListedPairs`.
 
 Use `branchedGate` only for a predicate none of these can express: its closure
 is opaque, so it must declare `dependsOn` itself.
@@ -198,7 +199,7 @@ Top-level primitives (used everywhere else in the module):
 - `evaluator/implications/` — the five implication constructors and their dispatcher (`buildImplication` / `buildImplications`).
 - `evaluator/internal/` — `deriveGroupFulfilmentIndexes` (the shared engine for both enumeration passes), `fulfilmentsEqual` (structural equality for the fixpoint check).
 
-`helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
+`helpers/` — gate helper factories that build `applyTo` closures. All at one level; see [Choosing a gate helper](#choosing-a-gate-helper) for the pick-a-helper guidance. Subfolders:
 
 - `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `allowListedPairs` / `notInUnionOf`), `build-any-candidate-gate.js` (the factory used by `anyAllowListed` / `anyNotInUnionOf`, which reads the candidates through `readGate`), `stamp-gate-metadata.js` (stamps `gateType`, `obligationId` and the lazy `values` on both factories' gates), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `resolveUnion`).
 - `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.

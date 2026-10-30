@@ -136,20 +136,19 @@ const DOCUMENTS_UNCHECKED_BANNER =
 const TYPE_REQUIRED_MESSAGE = 'Select a document type'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
-const WITHHELD_TYPE = 'HEALTH_CERTIFICATE'
 const OFFERED_DOCUMENT_TYPE_CODES = [
   'ITAHC',
   'VETERINARY_HEALTH_CERTIFICATE',
-  'AIR_WAYBILL',
+  'SELF_DECLARATION',
+  'JOURNEY_LOG',
   'IMPORT_PERMIT',
-  'LETTER_OF_AUTHORITY',
-  'COMMERCIAL_INVOICE',
+  'CITES_PERMIT_OR_CERTIFICATE',
+  'AIR_WAYBILL',
   'SEA_WAYBILL',
   'RAIL_WAYBILL',
   'BILL_OF_LADING',
-  'CATCH_CERTIFICATE',
-  'LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN',
-  'JOURNEY_LOG',
+  'COMMERCIAL_INVOICE',
+  'PACKING_OR_SPECIES_LIST',
   'OTHER'
 ]
 
@@ -395,17 +394,6 @@ describe('documents — taking on an upload the browser returns with', () => {
   it('Should refuse a document type the page never offered and append nothing', async () => {
     const result = await driveClaim(
       submittedDocument({ accompanyingDocumentType: UNOFFERED_TYPE })
-    )
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.accompanyingDocumentType).toBe(
-      TYPE_REQUIRED_MESSAGE
-    )
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should refuse a document type the backend holds but the page withholds, and append nothing', async () => {
-    const result = await driveClaim(
-      submittedDocument({ accompanyingDocumentType: WITHHELD_TYPE })
     )
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
@@ -1084,27 +1072,14 @@ describe('documents — listing, scanning and removing', () => {
     })
     const [row] = result.view.context.rows
     expect(row[0].text).toBe('GBHC1234567890')
-    expect(row[1].text).toBe('Veterinary health certificate')
+    expect(row[1].text).toBe(
+      'Other veterinary certificate / veterinary declaration'
+    )
     expect(row[2].text).toBe(DATE_OF_ISSUE_TEXT)
     expect(row[3].html).toContain(TAG_COMPLETE)
     expect(row[4].html).toContain('<button type="submit"')
     expect(row[4].html).toContain('name="action" value="remove:0"')
     expect(row[4].html).not.toContain('href')
-  })
-
-  it('Should label a document recorded as Health certificate with that type while the select offers thirteen', async () => {
-    const result = await driveHandler(get, {
-      seed: {
-        documents: [
-          storedDocument({ accompanyingDocumentType: 'HEALTH_CERTIFICATE' })
-        ]
-      }
-    })
-
-    expect(result.view.context.rows[0][1].text).toBe('Health certificate')
-    expect(
-      result.view.context.documentTypeItems.slice(1).map(({ value }) => value)
-    ).toEqual(OFFERED_DOCUMENT_TYPE_CODES)
   })
 
   it('Should precede the status tag with a hidden label naming the document', async () => {
@@ -1691,19 +1666,19 @@ describe('documents — naming the reason a scan refused a document', () => {
       OFFERED_DOCUMENT_TYPE_CODES
     )
     expect(items.slice(1).map(({ text }) => text)).toEqual([
-      'Intra Trade Animal Health Certificate (ITAHC)',
-      'Veterinary health certificate',
+      'ITAHC (Intra Trade Animal Health Certificate)',
+      'Other veterinary certificate / veterinary declaration',
+      'Self-declaration',
+      'Journey log',
+      'Import permit / authorisation',
+      'CITES permit/certificate',
       'Air waybill',
-      'Import permit',
-      'Letter of authority (Directive 2008/61/EC)',
-      'Commercial invoice',
       'Sea waybill',
       'Rail waybill',
       'Bill of lading',
-      'Catch certificate',
-      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-      'Journey log',
-      'Other'
+      'Commercial invoice',
+      'Packing list / species list',
+      'Other supporting documents'
     ])
     expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
