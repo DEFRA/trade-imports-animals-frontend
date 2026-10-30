@@ -1,14 +1,16 @@
 import { SET_ID } from '../../../../../set.js'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../../config/config.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
   driveHandler,
   addressBookAnswering,
+  addressBookPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
+  listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
@@ -45,22 +47,13 @@ const answerWithDeletedConsignor = () =>
   addressBookAnswering((request) =>
     request.url.includes(`/addresses/${DELETED_CONSIGNOR_ID}`)
       ? {
-          body: JSON.stringify({
-            id: DELETED_CONSIGNOR_ID,
-            name: 'Gone Trader',
-            deleted: true,
-            addressLine1: '1 Nowhere'
-          })
+          body: JSON.stringify(
+            listedAddress(DELETED_CONSIGNOR_ID, 'Gone Trader', {
+              deleted: true
+            })
+          )
         }
-      : {
-          body: JSON.stringify({
-            items: [],
-            page: 1,
-            pageSize: 25,
-            totalItems: 0,
-            totalPages: 1
-          })
-        }
+      : addressBookPage()
   )
 
 const pickerFrom = (result) => result.view.context.picker
@@ -429,24 +422,12 @@ describe('GET /consignors/select — list order', () => {
   resetMocksAndConfigAfterTests()
 
   it('Should list the addresses in the order the address book returns them', async () => {
-    const listed = (id, name) => ({
-      id,
-      name,
-      deleted: false,
-      addressLine1: '1 Test Lane'
-    })
-    addressBookAnswering({
-      body: JSON.stringify({
-        items: [
-          listed('zeta-newer', 'Zebra Farm'),
-          listed('alpha-older', 'Aardvark Farm')
-        ],
-        page: 1,
-        pageSize: 25,
-        totalItems: 2,
-        totalPages: 1
-      })
-    })
+    addressBookAnswering(
+      addressBookPage([
+        listedAddress('zeta-newer', 'Zebra Farm'),
+        listedAddress('alpha-older', 'Aardvark Farm')
+      ])
+    )
 
     const result = await driveHandler(getConsignor)
 
@@ -461,21 +442,8 @@ describe('INS add-address link', () => {
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
     async (_title, slug) => {
-      config.set('stubMode', false)
       config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({
-          ok: true,
-          json: async () => ({
-            items: [],
-            page: 1,
-            pageSize: 25,
-            totalItems: 0,
-            totalPages: 1
-          })
-        }))
-      )
+      addressBookAnswering(addressBookPage())
 
       const result = await driveHandler(handlerFor('GET', slug))
 

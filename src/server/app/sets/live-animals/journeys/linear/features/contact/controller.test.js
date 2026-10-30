@@ -1,8 +1,10 @@
 import { SET_ID } from '../../../../set.js'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
 import {
+  addressBookAnswering,
+  addressBookPage,
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
@@ -200,21 +202,8 @@ describe('GET contact — INS add-address link', () => {
   resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set('stubMode', false)
     config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          items: [],
-          page: 1,
-          pageSize: 25,
-          totalItems: 0,
-          totalPages: 1
-        })
-      }))
-    )
+    addressBookAnswering(addressBookPage())
 
     const result = await driveHandler(get)
 

@@ -414,6 +414,28 @@ export const addressBookAnswering = (addressResponse) => {
   )
 }
 
+/** An address book row as its search and lookup return it, live unless
+ * `overrides` says otherwise. */
+export const listedAddress = (id, name, overrides = {}) => ({
+  id,
+  name,
+  deleted: false,
+  addressLine1: '1 Test Lane',
+  ...overrides
+})
+
+/** The address book's response to a search: one page holding every row
+ * in `items`. Pass it to `addressBookAnswering()`. */
+export const addressBookPage = (items = []) => ({
+  body: JSON.stringify({
+    items,
+    page: 1,
+    pageSize: 25,
+    totalItems: items.length,
+    totalPages: 1
+  })
+})
+
 export const addressBookRefusingAddresses = () =>
   addressBookAnswering({ status: 500 })
 
