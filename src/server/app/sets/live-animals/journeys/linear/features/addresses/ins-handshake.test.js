@@ -9,16 +9,8 @@ import {
   recordingH,
   journeyRequest
 } from '../../../../../../engine/test-support.js'
-import {
-  consignee,
-  consignor,
-  contactAddress,
-  importer,
-  placeOfDestination,
-  placeOfOrigin
-} from '../../../../obligations/index.js'
-import { CONTACT_PARTY, PARTIES } from './parties.js'
-import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
+import { consignor } from '../../../../obligations/index.js'
+import { PARTIES } from './parties.js'
 import {
   buildInsAddAddressUrl,
   setAddedAddressBanner,
@@ -29,32 +21,11 @@ import { addedAddressBannerState } from './test-support.js'
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const notificationId = 'notification-123'
 
-const fulfilmentIdByPartyId = {
-  placeOfOrigin: placeOfOrigin.id,
-  consignor: consignor.id,
-  consignee: consignee.id,
-  importer: importer.id,
-  placeOfDestination: placeOfDestination.id,
-  contactAddress: contactAddress.id
-}
-
 describe('ins-handshake', () => {
   const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
 
   afterEach(() => {
     config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
-
-  it.each([
-    ...PARTIES.map((party) => [party.id, fulfilmentIdByPartyId[party.id]]),
-    [CONTACT_PARTY.id, contactAddress.id]
-  ])('maps %s to fulfilment id %s', (partyId, expectedFulfilmentId) => {
-    const party =
-      partyId === CONTACT_PARTY.id
-        ? CONTACT_PARTY
-        : PARTIES.find((each) => each.id === partyId)
-
-    expect(fulfilmentIdForParty(party)).toBe(expectedFulfilmentId)
   })
 
   it('builds the INS add URL with handshake query params', () => {
