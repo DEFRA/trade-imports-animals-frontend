@@ -94,7 +94,13 @@ const installSeams = (setId, omitted) => {
 
 const probeGateway = (
   setId,
-  { omit, seams = true, cookies = true, cookiesFirst = false } = {}
+  {
+    omit,
+    seams = true,
+    cookies = true,
+    cookiesFirst = false,
+    registerCookies = registerJourneyCookie
+  } = {}
 ) => ({
   plugin: {
     name: setId,
@@ -102,13 +108,13 @@ const probeGateway = (
       registerSetMount(setId, `/${setId}`)
       await withSetContext(setId, async () => {
         if (cookies && cookiesFirst) {
-          registerJourneyCookie(server)
+          registerCookies(server)
         }
         if (seams) {
           installSeams(setId, omit)
         }
         if (cookies && !cookiesFirst) {
-          registerJourneyCookie(server)
+          registerCookies(server)
         }
         assertSetConfigured(server, setId)
       })
@@ -202,25 +208,21 @@ describe('set completeness — journey cookies come after the session seam', () 
   it('Should refuse a set that registered every journey cookie but the added address banner', async () => {
     const setId = 'probe-no-banner-cookie'
     const names = cookieNamesFor(setId)
-    const gateway = {
-      plugin: {
-        name: setId,
-        register: async (server) => {
-          registerSetMount(setId, `/${setId}`)
-          await withSetContext(setId, async () => {
-            installSeams(setId)
-            for (const name of Object.values(names)) {
-              if (name !== names.addedAddressBanner) {
-                server.state(name, {})
-              }
-            }
-            assertSetConfigured(server, setId)
-          })
+    const registerEveryCookieButTheBanner = (server) => {
+      for (const name of Object.values(names)) {
+        if (name !== names.addedAddressBanner) {
+          server.state(name, {})
         }
       }
     }
 
-    await expect(mount(gateway)).rejects.toThrow(
+    await expect(
+      mount(
+        probeGateway(setId, {
+          registerCookies: registerEveryCookieButTheBanner
+        })
+      )
+    ).rejects.toThrow(
       `Set "${setId}" mounted without its journey cookies: ${names.addedAddressBanner} —`
     )
   })
