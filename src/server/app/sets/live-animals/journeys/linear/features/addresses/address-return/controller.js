@@ -89,7 +89,7 @@ const readReturnedAddress = async (
     }
     request.logger.info(
       { ...logged, reason: 'address-not-found' },
-      'Returned address not found, picker shown again'
+      'Returned address not found, party page shown again'
     )
     return { handshakeError: 'not-found' }
   } catch (error) {
@@ -98,7 +98,7 @@ const readReturnedAddress = async (
     }
     request.logger.warn(
       { ...logged, err: error },
-      'Returned address could not be read, picker shown again'
+      'Returned address could not be read, party page shown again'
     )
     return { handshakeError: 'unavailable' }
   }
@@ -140,7 +140,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
   )
 }
 
-const landOnPickerWithBanner = (
+const landOnPartyPageWithBanner = (
   request,
   h,
   { journeyId, party, addressId, landing, chosen }
@@ -201,7 +201,7 @@ const get = async (request, h) => {
   const landed = { ...returned, party, landing, chosen }
   return landing === ADDRESS_LANDING.SELECT
     ? saveAddressAndLandOnReturnPageWithBanner(request, h, landed)
-    : landOnPickerWithBanner(request, h, landed)
+    : landOnPartyPageWithBanner(request, h, landed)
 }
 
 export const routes = [

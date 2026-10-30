@@ -104,7 +104,7 @@ describe('GET /address-return', () => {
   resetMocksAndConfigAfterTests()
 
   describe('Back, with no address and no landing', () => {
-    it('Should redirect to the role picker and log the landing', async () => {
+    it('Should redirect to the party page and log the landing', async () => {
       const result = await driveHandler(handler, {
         query: { 'fulfilment-id': consignor.id }
       })
@@ -189,7 +189,7 @@ describe('GET /address-return', () => {
       })
     })
 
-    it('Should redirect to the picker when saving the returned address fails', async () => {
+    it('Should redirect to the party page when saving the returned address fails', async () => {
       addressBookAnswering({ body: newAddressBody() })
       const failure = unavailableBackendError('save answers')
 
@@ -213,7 +213,7 @@ describe('GET /address-return', () => {
   })
 
   describe('return landing', () => {
-    it('Should land on the role picker with nothing selected, commit nothing and set the banner', async () => {
+    it('Should land on the party page with nothing selected, commit nothing and set the banner', async () => {
       addressBookAnswering({ body: newAddressBody() })
 
       const result = await driveHandler(handler, {
@@ -278,7 +278,7 @@ function addressNotReadableTests() {
   describe.each([ADDRESS_LANDING.SELECT, ADDRESS_LANDING.RETURN])(
     'address-bearing %s landing',
     (landing) => {
-      it('Should redirect to the picker when the returned address id is not in the book', async () => {
+      it('Should redirect to the party page when the returned address id is not in the book', async () => {
         addressBookAnswering({ status: 404 })
 
         const result = await driveHandler(handler, {
@@ -299,11 +299,11 @@ function addressNotReadableTests() {
             addressId: 'missing-address',
             reason: 'address-not-found'
           },
-          message: 'Returned address not found, picker shown again'
+          message: 'Returned address not found, party page shown again'
         })
       })
 
-      it('Should redirect to the picker when the address id belongs to another organisation', async () => {
+      it('Should redirect to the party page when the address id belongs to another organisation', async () => {
         addressBookAnswering((request) =>
           request.url.includes(
             '/organisation/5900001/addresses/other-org-address'
@@ -323,7 +323,7 @@ function addressNotReadableTests() {
         expect(result.after.consignor).toBeUndefined()
       })
 
-      it('Should redirect to the picker when the address book is unavailable', async () => {
+      it('Should redirect to the party page when the address book is unavailable', async () => {
         addressBookAnswering({ status: 503, statusText: 'Service Unavailable' })
 
         const result = await driveHandler(handler, {
@@ -344,7 +344,7 @@ function addressNotReadableTests() {
             addressId: newAddressId,
             err: expect.objectContaining({ status: 503 })
           },
-          message: 'Returned address could not be read, picker shown again'
+          message: 'Returned address could not be read, party page shown again'
         })
       })
     }
