@@ -197,7 +197,7 @@ describe('success banner', () => {
   }
   const stripContext = {
     journeyStrip: {
-      status: { text: 'Draft', classes: 'govuk-tag--grey' },
+      status: { text: 'Draft', classes: 'govuk-tag--blue' },
       reference: 'GBN-AG-26-ABC123'
     }
   }
