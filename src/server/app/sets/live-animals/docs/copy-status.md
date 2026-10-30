@@ -23,3 +23,9 @@ The declaration's Welsh responsibility bullets both complete the "nes iddo naill
 ai:" lead-in, so both take the soft-mutated form: glirio (clirio) and gyrraedd
 (cyrraedd). A translator must review them in
 `journeys/linear/features/declaration/copy/copy.cy.js`.
+
+The Welsh document-type labels are machine drafts. A translator must review all
+thirteen in `journeys/linear/features/documents/copy/copy.cy.js`, which the
+upload page and the review page both read. The ones carrying a slash need the
+most attention: each joins two document names the English list pairs, and Welsh
+mutation after the joiner has not been checked.

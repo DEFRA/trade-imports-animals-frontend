@@ -2,12 +2,15 @@ import * as state from '../../../../../../../../engine/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { copy as documentsEn } from '../../../documents/copy/copy.en.js'
+import { copy as documentsCy } from '../../../documents/copy/copy.cy.js'
 import { documentsPage } from '../../../documents/page.js'
 import { cardAction, editableActions } from '../rows/change-link.js'
 import { row } from '../rows/summary-row.js'
 import { dateText } from '../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
+const documentsCopy = copyFor({ en: documentsEn, cy: documentsCy })
 
 export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
   const documents = state
@@ -18,7 +21,7 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
         row(copy.rows.documentReference, entry.accompanyingDocumentReference),
         row(
           copy.rows.documentType,
-          copy.documentTypes[entry.accompanyingDocumentType]
+          documentsCopy.types[entry.accompanyingDocumentType]
         ),
         row(
           copy.rows.dateOfIssue,
