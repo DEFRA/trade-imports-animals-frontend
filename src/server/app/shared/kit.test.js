@@ -244,9 +244,9 @@ describe('#base — amending', () => {
 })
 
 describe('#base — success banner', () => {
-  const banner = { titleText: 'Success', text: 'Saved' }
-
   it('Should carry the success banner it is given', () => {
+    const banner = { titleText: 'Success', text: 'Saved' }
+
     expect(base('t', { successBanner: banner }).successBanner).toEqual(banner)
   })
 
