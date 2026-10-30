@@ -251,6 +251,9 @@ describe('#base — success banner', () => {
   })
 
   it('Should carry no success banner by default, with or without a journey', () => {
+    expect(
+      base('t', { journey: { journeyId: 'j', status: DRAFT } }).successBanner
+    ).toBeNull()
     expect(base('t').successBanner).toBeNull()
     expect(setlessBase('t').successBanner).toBeNull()
   })
