@@ -276,12 +276,13 @@ describe('GET /address-return', () => {
       expect(result.unstated).toEqual([addressHandshakeTokensCookie()])
     })
   })
+
+  describe('address not readable', addressNotReadableTests)
+
+  describe('refusals', refusalTests)
 })
 
-describe('GET /address-return — address not readable', () => {
-  useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests()
-
+function addressNotReadableTests() {
   describe.each([ADDRESS_LANDING.SELECT, ADDRESS_LANDING.RETURN])(
     'address-bearing %s landing',
     (landing) => {
@@ -356,11 +357,9 @@ describe('GET /address-return — address not readable', () => {
       })
     }
   )
-})
+}
 
-describe('GET /address-return — refusals', () => {
-  useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests()
+function refusalTests() {
   beforeEach(() => {
     addressBookAnswering({ body: newAddressBody() })
   })
@@ -473,4 +472,4 @@ describe('GET /address-return — refusals', () => {
       }
     )
   })
-})
+}
