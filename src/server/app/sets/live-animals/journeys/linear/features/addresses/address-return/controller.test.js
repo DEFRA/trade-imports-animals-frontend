@@ -89,13 +89,13 @@ const refusalOf = async (query, state = handshakeState()) => {
 
 const expectRefused = (
   { error, logger, journeyId, answersAfter },
-  { fulfilmentId, reason }
+  { fulfilmentId, landing, role, reason }
 ) => {
   expect(error.output.statusCode).toBe(400)
   expect(answersAfter).toEqual(heldAnswers)
   expectOneLogged(logger, {
     level: 'warn',
-    fields: { journeyId, fulfilmentId, reason },
+    fields: { journeyId, fulfilmentId, landing, role, reason },
     message: 'Address return refused'
   })
 }
@@ -360,6 +360,8 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
+        landing,
+        role: 'consignor',
         reason: 'invalid-handshake'
       })
     })
@@ -372,6 +374,8 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
+        landing,
+        role: 'consignor',
         reason: 'invalid-handshake'
       })
     })
@@ -384,6 +388,7 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: UNKNOWN_FULFILMENT_ID,
+        landing,
         reason: 'unknown-fulfilment'
       })
     })
@@ -397,6 +402,7 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: UNKNOWN_FULFILMENT_ID,
+        landing: '',
         reason: 'unknown-fulfilment'
       })
     })
@@ -406,6 +412,8 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
+        landing: 'elsewhere',
+        role: 'consignor',
         reason: 'unknown-landing'
       })
     })
@@ -415,6 +423,8 @@ describe('GET /address-return — refusals', () => {
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
+        landing: ADDRESS_LANDING.BACK,
+        role: 'consignor',
         reason: 'unknown-landing'
       })
       expect(refused.error.message).toBe('Unknown landing')
@@ -427,6 +437,8 @@ describe('GET /address-return — refusals', () => {
 
         expectRefused(refused, {
           fulfilmentId: consignor.id,
+          landing,
+          role: 'consignor',
           reason: 'address-missing'
         })
       }

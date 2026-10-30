@@ -34,12 +34,12 @@ const partyPageHref = (request, journeyId, party, query = {}) => {
 
 const logAndRefuse = (
   request,
-  { journeyId, fulfilmentId },
+  { journeyId, fulfilmentId, landing, role },
   reason,
   message
 ) => {
   request.logger.warn(
-    { journeyId, fulfilmentId, reason },
+    { journeyId, fulfilmentId, landing, role, reason },
     'Address return refused'
   )
   return Boom.badRequest(message)
@@ -172,7 +172,8 @@ const get = async (request, h) => {
     )
   }
 
-  const landing = validLandingOf(request, returned)
+  const returnedForRole = { ...returned, role: party.id }
+  const landing = validLandingOf(request, returnedForRole)
   if (landing === ADDRESS_LANDING.BACK) {
     logLanding(request, { journeyId, role: party.id, landing })
     return h.redirect(partyPageHref(request, journeyId, party))
@@ -181,7 +182,7 @@ const get = async (request, h) => {
   consumeHandshakeToken(
     request,
     h,
-    returned,
+    returnedForRole,
     request.query['handshake-token'] ?? ''
   )
 
