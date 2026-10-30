@@ -43,14 +43,17 @@ The live-animals journey supplies these names in its
 }
 ```
 
-Session state is keyed by journey id. It does not replace the canonical record.
+Session-port state (known journeys, opening run, flow-only answers and reviewed
+tokens) is keyed by journey id. It does not replace the canonical record.
+
+The address handshake's two cookies bypass the session port and are set with
+`h.state` in both modes. The token cookie holds a map keyed by fulfilment id.
+The added-address banner cookie holds only the added address's name.
 
 In stub mode each journey cookie is its own cookie, scoped to the set's mount,
 so one set's dashboard never sees another set's drafts. In real mode the same
 values are keys in the one server-wide session cookie, and each set's distinct
-cookie names keep them apart. The address handshake's token cookie and its
-added-address banner cookie are the exception: both are set with `h.state` in
-both modes, because they bypass the session port.
+cookie names keep them apart.
 
 The cookie names are read through per-set accessors rather than one module
 constant, because two sets in one process need two sets of names and a shared
