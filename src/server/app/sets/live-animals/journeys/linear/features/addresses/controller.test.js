@@ -35,7 +35,7 @@ const sectionTitled = (sections, title) =>
   sections.find((section) => section.title === title)
 const PLACE_OF_ORIGIN_TITLE = 'Place of origin'
 const SWITZERLAND = 'Switzerland'
-const CPH_SLUG = 'cph-number?return=addresses'
+const CPH_PATH_RETURNING_TO_ADDRESSES = 'cph-number?return=addresses'
 const CPH_TITLE = 'County parish holding (CPH) number'
 const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
@@ -105,7 +105,7 @@ describe('GET addresses — conditional CPH section', () => {
       hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.',
       hiddenSuffix: CPH_TITLE.toLowerCase(),
       addLink: {
-        href: pagePath(result.journeyId, CPH_SLUG),
+        href: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES),
         text: 'Add a CPH number'
       }
     })
@@ -119,7 +119,7 @@ describe('GET addresses — conditional CPH section', () => {
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).chosen).toEqual({
       lines: ['123456789'],
-      changeHref: pagePath(result.journeyId, CPH_SLUG)
+      changeHref: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
     })
   })
 })
@@ -264,7 +264,7 @@ describe('GET addresses — change context', () => {
     )
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).addLink.href).toBe(
-      pagePath(result.journeyId, CPH_SLUG)
+      pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
     )
   })
 

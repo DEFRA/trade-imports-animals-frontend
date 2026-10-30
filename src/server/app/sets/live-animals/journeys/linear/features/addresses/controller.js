@@ -28,7 +28,7 @@ const copy = copyFor({ en, cy }).hub
 
 const CPH_OBLIGATION = 'countyParishHoldingCph'
 
-const CPH_SLUG = 'cph-number?return=addresses'
+const CPH_PATH_RETURNING_TO_ADDRESSES = 'cph-number?return=addresses'
 
 const hubSection = ({ id, title, hint, add, chosen }) => ({
   id,
@@ -58,7 +58,7 @@ const partySectionBuilder = (request, journeyId, parties) => (party) => {
 }
 
 const cphSection = (journeyId, answers) => {
-  const href = pagePath(journeyId, CPH_SLUG)
+  const href = pagePath(journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
   const cphNumber = answers.countyParishHoldingCph
   return hubSection({
     id: 'cph',
