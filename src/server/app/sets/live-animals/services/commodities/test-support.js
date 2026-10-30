@@ -4,13 +4,20 @@ import createFetchMock from 'vitest-fetch-mock'
 export const fetchMocker = createFetchMock(vi)
 
 export const FERRET_RESULTS = {
-  total: 1,
+  total: 2,
   page: 0,
   size: 10,
   groups: [
     {
       code: '01061900',
-      species: [{ latinName: 'Mustela putorius furo', commonName: 'Ferret' }]
+      species: [
+        {
+          latinName: 'Mustela spp.',
+          commonName:
+            'Weasels (including ermines, polecats, ferrets, and related species)'
+        },
+        { latinName: 'Mustela putorius furo', commonName: 'Ferret' }
+      ]
     }
   ]
 }

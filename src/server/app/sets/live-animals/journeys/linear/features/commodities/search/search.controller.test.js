@@ -109,16 +109,16 @@ describe('commodity search', () => {
     expect(textsOf(result)).toContain('Bison bison')
   })
 
-  it('Should list no more than a hundred species for one search', async () => {
+  it('Should list every species under a code searched for', async () => {
     const result = await searchFor('01061900')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toHaveLength(100)
+    expect(textsOf(result)).toHaveLength(82)
   })
 
   it('Should reach a species by its common name', async () => {
     const result = await searchFor('ferret')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toEqual(['Mustela putorius furo'])
+    expect(textsOf(result)).toEqual(['Mustela spp.', 'Mustela putorius furo'])
   })
 
   it('Should say so when a long-enough query matches nothing', async () => {
@@ -187,6 +187,12 @@ describe('commodity search', () => {
     expect(storedSearchRowsOf(result)).toEqual([
       BOS_TAURUS_ROW,
       BISON_BISON_ROW,
+      {
+        commodityCode: '01061900',
+        speciesLatinName: 'Mustela spp.',
+        speciesCommonName:
+          'Weasels (including ermines, polecats, ferrets, and related species)'
+      },
       {
         commodityCode: '01061900',
         speciesLatinName: 'Mustela putorius furo',
