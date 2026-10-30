@@ -109,14 +109,17 @@ export const crumbProtectedServerMounting = async (routes, prefix) => {
 const cookieRecorder = () => {
   const cookies = {}
   const calls = []
+  const unstated = []
   return {
     cookies,
     calls,
+    unstated,
     state: (name, value) => {
       calls.push([name, value])
       cookies[name] = value
     },
     unstate: (name) => {
+      unstated.push(name)
       delete cookies[name]
     }
   }
@@ -228,7 +231,8 @@ const recordsRejectingSaves = (failure) => ({
 })
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after, alongside the cookies the handler set and the lines it logged.
+ * and after, alongside the cookies the handler set, the names of the cookies it
+ * unstated and the lines it logged.
  * `journeyId` drives an existing journey rather than creating one; `flowOnly`
  * seeds the journey's session-only answers; `cookies` seeds the cookies the
  * handler's response toolkit holds, so `cookies` afterwards shows what it
@@ -291,6 +295,7 @@ export const driveHandler = async (
     response,
     view: h.captured.view,
     cookies: h.cookies,
+    unstated: h.unstated,
     logger: request.logger
   }
 }

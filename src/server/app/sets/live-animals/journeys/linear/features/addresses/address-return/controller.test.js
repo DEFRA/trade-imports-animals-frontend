@@ -258,6 +258,23 @@ describe('GET /address-return', () => {
       )
     })
   })
+
+  describe.each([
+    ADDRESS_LANDING.SELECT,
+    ADDRESS_LANDING.RETURN,
+    ADDRESS_LANDING.CANCEL
+  ])('%s landing handshake', (landing) => {
+    it('Should clear the handshake token cookie so the return URL cannot be used again', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+
+      const result = await driveHandler(handler, {
+        query: returnedQuery(landing),
+        state: handshakeState()
+      })
+
+      expect(result.unstated).toEqual([addressHandshakeTokensCookie()])
+    })
+  })
 })
 
 describe('GET /address-return — address not readable', () => {
