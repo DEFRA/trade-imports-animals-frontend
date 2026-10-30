@@ -20,9 +20,13 @@ import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { store } from './store.js'
-import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
-import { configureSession, openingRunCookie } from './persistence/session.js'
+import {
+  configureSession,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie
+} from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 
 export const authenticatedCredentials = Object.freeze({
