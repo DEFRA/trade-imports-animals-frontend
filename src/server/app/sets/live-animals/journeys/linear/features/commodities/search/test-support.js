@@ -11,7 +11,7 @@ export const FELIS_CATUS = 'Felis catus'
 export const CANIS_FAMILIARIS = 'Canis familiaris'
 export const STRUTHIO = 'Struthio'
 export const OSTRICHES_CODE = '01063300'
-export const CATTLE_OR_COW = 'Cattle or Cow'
+export const DOMESTIC_CATTLE = 'Domestic Cattle'
 
 export const BISON_BISON_ROW = {
   commodityCode: CATTLE_CODE,
@@ -22,7 +22,7 @@ export const BISON_BISON_ROW = {
 export const BOS_TAURUS_ROW = {
   commodityCode: CATTLE_CODE,
   speciesLatinName: BOS_TAURUS,
-  speciesCommonName: CATTLE_OR_COW
+  speciesCommonName: DOMESTIC_CATTLE
 }
 
 export const EQUUS_CABALUS_ROW = {

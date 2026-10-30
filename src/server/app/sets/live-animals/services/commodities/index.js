@@ -27,7 +27,6 @@ const COMMODITY_DESCRIPTIONS = {
 const COMMODITY_NAMES_BY_CODE = {
   '0101': 'Horse',
   '0102': 'Cow',
-  '01061900': 'Cat',
   '0301': 'Fish'
 }
 

@@ -368,7 +368,7 @@ describe('Mapper A — commodities array from lines', () => {
     const [cow, cat] = commodities
     expect(cow.name).toBe('Cow')
     expect(cow.commodityCode).toBe('0102')
-    expect(cat.name).toBe('Cat')
+    expect(cat.name).toBe('01061900')
     expect(cat.commodityCode).toBe('01061900')
     expect(cow.totalNoOfAnimals).toBe(35)
     expect(cow.totalNoOfPackages).toBe(7)

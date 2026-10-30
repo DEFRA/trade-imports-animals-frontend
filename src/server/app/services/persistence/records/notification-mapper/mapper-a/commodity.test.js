@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { CATTLE_CODE } from '../../../../../sets/live-animals/services/commodities/rules.js'
+import {
+  CATTLE_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../../../../sets/live-animals/services/commodities/rules.js'
 import { commoditiesFromLinesA } from './commodity.js'
 
 const BOS_TAURUS = 'Bos taurus'
@@ -24,6 +27,20 @@ describe('commoditiesFromLinesA', () => {
         }
       ])[0].species[0].commonName
     ).toBe('Domestic Cattle')
+  })
+
+  test('Should save a dog under 01061900 with the code as its commodity name', () => {
+    const [commodity] = commoditiesFromLinesA([
+      {
+        commodityCode: OTHER_LIVE_MAMMALS_CODE,
+        speciesLatinName: 'Canis familiaris',
+        speciesCommonName: 'Dog',
+        numberOfAnimalsQuantity: '1'
+      }
+    ])
+
+    expect(commodity.name).toBe(OTHER_LIVE_MAMMALS_CODE)
+    expect(commodity.species[0].commonName).toBe('Dog')
   })
 
   test('Should omit commonName when the line was saved with none', () => {

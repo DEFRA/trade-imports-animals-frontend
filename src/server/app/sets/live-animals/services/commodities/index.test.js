@@ -173,10 +173,10 @@ describe('#commodityDescriptionFor', () => {
 describe('#commodityNameFor', () => {
   it('Should reverse-lookup the commodity name from a CN code', () => {
     expect(commodityNameFor('0102')).toBe('Cow')
-    expect(commodityNameFor('01061900')).toBe('Cat')
   })
 
-  it('Should give undefined for a code that is not in the catalogue', () => {
+  it('Should give undefined for a code with no maintained name', () => {
+    expect(commodityNameFor('01061900')).toBeUndefined()
     expect(commodityNameFor('9999')).toBeUndefined()
   })
 })

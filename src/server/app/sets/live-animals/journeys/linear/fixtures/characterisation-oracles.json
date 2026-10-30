@@ -119,7 +119,7 @@
         "line1": "Bison bison"
       },
       "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-        "line0": "Cattle or Cow",
+        "line0": "Domestic Cattle",
         "line1": "Bisons Spp"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
@@ -290,7 +290,7 @@
           "line1": "Bison bison"
         },
         "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-          "line0": "Cattle or Cow",
+          "line0": "Domestic Cattle",
           "line1": "Bisons Spp"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
@@ -716,7 +716,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
-          "speciesCommonName": "Cattle or Cow",
+          "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 2,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -885,7 +885,7 @@
             {
               "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Cattle or Cow",
+              "commonName": "Domestic Cattle",
               "noOfAnimals": "2",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -1427,7 +1427,7 @@
         "line0": "Bos taurus"
       },
       "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-        "line0": "Cattle or Cow"
+        "line0": "Domestic Cattle"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
@@ -1453,7 +1453,7 @@
           "line0": "Bos taurus"
         },
         "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-          "line0": "Cattle or Cow"
+          "line0": "Domestic Cattle"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -1716,7 +1716,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
-          "speciesCommonName": "Cattle or Cow",
+          "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1742,7 +1742,7 @@
             {
               "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Cattle or Cow",
+              "commonName": "Domestic Cattle",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
