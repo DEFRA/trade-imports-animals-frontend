@@ -34,6 +34,7 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
+import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -533,24 +534,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(document.heading).toBe('Document 1')
     expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Veterinary health certificate'
+      'Other veterinary certificate / veterinary declaration'
     )
     expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
     expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
-  })
-
-  it('Should name an ITAHC document with the same label the documents page uses', async () => {
-    const seed = {
-      ...fullSeed,
-      documents: [
-        { ...fullSeed.documents[0], accompanyingDocumentType: 'ITAHC' }
-      ]
-    }
-    const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
-    const [document] = card.documents
-    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Intra Trade Animal Health Certificate (ITAHC)'
-    )
   })
 
   it('Should format the arrival date as day/month/year', async () => {
@@ -655,6 +642,33 @@ describe(`${SUITE} — fully-populated notification`, () => {
       /\/accompanying-documents\?change=1$/
     )
   })
+})
+
+describe(`${SUITE} — document type labels`, () => {
+  setupCheckAnswersEngine()
+
+  it.each([
+    ['ITAHC', 'ITAHC (Intra Trade Animal Health Certificate)'],
+    ['SELF_DECLARATION', 'Self-declaration'],
+    ['CITES_PERMIT_OR_CERTIFICATE', 'CITES permit/certificate'],
+    ['PACKING_OR_SPECIES_LIST', 'Packing list / species list'],
+    ['OTHER', 'Other supporting documents']
+  ])(
+    'Should name a %s document with the label the documents page offers it under',
+    async (code, label) => {
+      const seed = {
+        ...fullSeed,
+        documents: [
+          { ...fullSeed.documents[0], accompanyingDocumentType: code }
+        ]
+      }
+      const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
+      const [document] = card.documents
+
+      expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(label)
+      expect(documentsCopy.types[code]).toBe(label)
+    }
+  )
 })
 
 describe(`${SUITE} — transit countries`, () => {
@@ -933,7 +947,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(htmlOf(document.rows, 'Date of issue')).toBe(MISSING_HTML)
     expect(htmlOf(document.rows, 'Attachment type')).toBe(MISSING_HTML)
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Veterinary health certificate'
+      'Other veterinary certificate / veterinary declaration'
     )
   })
 
