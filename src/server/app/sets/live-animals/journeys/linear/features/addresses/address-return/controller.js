@@ -123,37 +123,34 @@ const commitCopyOfAddress = (request, h, { journeyId, party, chosen }) =>
       )
   )
 
-const landOnAddress = async (request, h, returned) => {
-  const { journeyId, party, addressId, landing } = returned
-  const { chosen, handshakeError } = await readReturnedAddress(
-    request,
-    returned
-  )
-  if (handshakeError) {
-    return h.redirect(
-      partyPageHref(request, journeyId, party, { handshakeError })
-    )
+const saveAddressAndLandOnReturnPageWithBanner = async (
+  request,
+  h,
+  { journeyId, party, addressId, landing, chosen }
+) => {
+  const { failure: unsaved } = await commitCopyOfAddress(request, h, {
+    journeyId,
+    party,
+    chosen
+  })
+  if (unsaved) {
+    return unsaved
   }
-
-  if (landing === ADDRESS_LANDING.SELECT) {
-    const { failure: unsaved } = await commitCopyOfAddress(request, h, {
-      journeyId,
-      party,
-      chosen
-    })
-    if (unsaved) {
-      return unsaved
-    }
-  }
-
   setAddedAddressBanner(h, chosen.name)
   logLanding(request, { journeyId, role: party.id, landing, addressId })
-
   return h.redirect(
-    landing === ADDRESS_LANDING.SELECT
-      ? kit.withChangeContext(request, pagePath(journeyId, party.returnSlug))
-      : partyPageHref(request, journeyId, party)
+    kit.withChangeContext(request, pagePath(journeyId, party.returnSlug))
   )
+}
+
+const landOnPickerWithBanner = (
+  request,
+  h,
+  { journeyId, party, addressId, landing, chosen }
+) => {
+  setAddedAddressBanner(h, chosen.name)
+  logLanding(request, { journeyId, role: party.id, landing, addressId })
+  return h.redirect(partyPageHref(request, journeyId, party))
 }
 
 const get = async (request, h) => {
@@ -193,7 +190,20 @@ const get = async (request, h) => {
     return h.redirect(hubPath(journeyId))
   }
 
-  return landOnAddress(request, h, { ...returned, party, landing })
+  const { chosen, handshakeError } = await readReturnedAddress(request, {
+    ...returned,
+    party
+  })
+  if (handshakeError) {
+    return h.redirect(
+      partyPageHref(request, journeyId, party, { handshakeError })
+    )
+  }
+
+  const landed = { ...returned, party, landing, chosen }
+  return landing === ADDRESS_LANDING.SELECT
+    ? saveAddressAndLandOnReturnPageWithBanner(request, h, landed)
+    : landOnPickerWithBanner(request, h, landed)
 }
 
 export const routes = [
