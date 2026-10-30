@@ -83,7 +83,7 @@ const DOMESTIC = { id: '16', text: 'Domestic' }
 const GAME = { id: '24', text: 'Game' }
 const SINGLE_TYPE = { id: '2', text: '' }
 
-const GAME_SPECIES = new Set(['Bos sp.', 'Bos spp.'])
+const GAME_SPECIES = new Set(['Bos sp.'])
 
 const TYPES_BY_CODE = {
   [CATTLE_CODE]: {

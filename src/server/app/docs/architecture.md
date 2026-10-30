@@ -186,8 +186,9 @@ added). Every other refusal that shows the page again (a state refusal, a
 tampered post or an id the page does not hold, a bare 400, another service
 refusing what this one accepted) calls `kit.logRefusal(request, { ...details })`
 once, before it renders, whatever status code it answers with. The line is
-info, carries `journeyId`, the route and the error codes, and takes any named
-reason or ids the branch decided on as further keys of the options.
+info unless `level` is `warn` (another service refusing what this one
+accepted). It carries `journeyId`, the route and the error codes, and takes any
+named reason or ids the branch decided on as further keys of the options.
 
 `fieldErrors` is an optional map of field key to the message the page shows; it
 fills `errorCodes` (the keys, never the messages). The

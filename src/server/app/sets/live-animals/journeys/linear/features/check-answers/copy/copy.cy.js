@@ -141,7 +141,7 @@ export const copy = {
     },
     species: {
       notListed: (speciesWithCodes) =>
-        `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch y rhywogaeth eto`
+        `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch rywogaeth o'r rhestr.`
     },
     parties: {
       placeOfOrigin: 'Cywirwch fanylion y cyfeiriad ar gyfer y man tarddiad',

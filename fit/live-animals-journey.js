@@ -602,11 +602,23 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
-  page
-    .getByRole('heading', { level: 3, name: speciesLatinName })
-    .locator('+ .govuk-form-group')
-    .getByLabel('Number of animals')
+export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
+  await page
+    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .waitFor()
+  const speciesHeadings = await page
+    .getByRole('heading', { level: 3 })
+    .allTextContents()
+  const position = speciesHeadings.indexOf(speciesLatinName)
+  if (position === -1) {
+    throw new Error(
+      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+    )
+  }
+  return page
+    .getByRole('textbox', { name: 'Number of animals', exact: true })
+    .nth(position)
+}
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -630,14 +642,14 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
+export const selectedSummary = (page) => page.locator('#commodity-selection')
+
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) =>
   expect(
-    page
-      .getByRole('heading', { name: /\d+ selected/ })
-      .locator('+ ul')
+    selectedSummary(page)
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })
