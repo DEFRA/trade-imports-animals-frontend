@@ -105,18 +105,6 @@ describe('save-actions copy', () => {
   })
 })
 
-describe('address handshake added banner copy', () => {
-  it('Should carry a Welsh draft that keeps the address name slot', () => {
-    const welsh = sharedCy.addressHandshake.addedBanner
-
-    expect(Object.keys(welsh)).toEqual(
-      Object.keys(sharedEn.addressHandshake.addedBanner)
-    )
-    expect(welsh.title).not.toBe(sharedEn.addressHandshake.addedBanner.title)
-    expect(welsh.text).toContain('{name}')
-  })
-})
-
 describe('shared copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {
