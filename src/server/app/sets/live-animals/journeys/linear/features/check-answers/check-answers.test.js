@@ -329,8 +329,11 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     })
     const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
 
-    expect(submitted.context.amendmentCancelled).toBe(true)
-    expect(draft.context.amendmentCancelled).toBe(false)
+    expect(submitted.context.successBanner).toEqual({
+      titleText: copyEn.cancelAmend.successTitle,
+      text: copyEn.cancelAmend.successBody
+    })
+    expect(draft.context.successBanner).toBeNull()
   })
 
   it('Should go Back to the notification list from a submitted notification', async () => {
