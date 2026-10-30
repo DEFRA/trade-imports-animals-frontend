@@ -508,7 +508,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should render one species card per commodity line with the design rows', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(valueOf(card.rows, 'Commodity code')).toBe(CATTLE_CODE)
-    expect(valueOf(card.rows, 'Common name')).toBe('Cattle or Cow')
+    expect(valueOf(card.rows, 'Common name')).toBe('Domestic Cattle')
     expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
     expect(valueOf(card.rows, 'Number of animals')).toBe('25')
     expect(valueOf(card.rows, PACKAGES_KEY)).toBe('5')

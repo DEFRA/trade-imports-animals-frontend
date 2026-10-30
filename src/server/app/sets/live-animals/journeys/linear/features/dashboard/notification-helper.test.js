@@ -58,6 +58,7 @@ describe('promoted dashboard notification helpers', () => {
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
     expect(formatCommodity({ commodityCode: '0102' })).toBe('0102')
+    expect(formatCommodity({ name: 'Cow' })).toBe('Cow')
     expect(formatCommodity(null)).toBe('')
   })
 

@@ -20,12 +20,17 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 
-export const speciesEntryFromLine = (line) => {
+const commonNameFrom = (line) => line.speciesCommonName || line.commonName
+
+export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
   const identifierUnits = line.animalIdentifiers ?? []
   const firstUnit = identifierUnits[0] ?? {}
+  const latinName = line.speciesLatinName
   return compact({
-    value: line.speciesLatinName,
-    text: line.speciesLatinName,
+    value: latinName,
+    text: latinName,
+    commonName: commonNameFrom(line),
+    typeOfCommodity,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
     earTag: firstUnit.animalIdentifierEarTag,
