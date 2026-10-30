@@ -412,10 +412,15 @@ describe('GET /address-return — refusals', () => {
   })
 
   describe('refusals before the token is read', () => {
+    const withStaleToken = (query) => ({
+      ...query,
+      'handshake-token': 'wrong-token'
+    })
+
     it('Should refuse an unknown fulfilment id with no landing', async () => {
-      const refused = await refusalOf({
-        'fulfilment-id': UNKNOWN_FULFILMENT_ID
-      })
+      const refused = await refusalOf(
+        withStaleToken({ 'fulfilment-id': UNKNOWN_FULFILMENT_ID })
+      )
 
       expectRefused(refused, {
         fulfilmentId: UNKNOWN_FULFILMENT_ID,
@@ -425,7 +430,9 @@ describe('GET /address-return — refusals', () => {
     })
 
     it('Should refuse a landing the journey does not know', async () => {
-      const refused = await refusalOf(returnedQuery('elsewhere'))
+      const refused = await refusalOf(
+        withStaleToken(returnedQuery('elsewhere'))
+      )
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
@@ -435,8 +442,10 @@ describe('GET /address-return — refusals', () => {
       })
     })
 
-    it('Should refuse the back landing when it carries an address id', async () => {
-      const refused = await refusalOf(returnedQuery(ADDRESS_LANDING.BACK))
+    it('Should refuse an explicit back landing', async () => {
+      const refused = await refusalOf(
+        withStaleToken({ ...handshakeQuery(), landing: ADDRESS_LANDING.BACK })
+      )
 
       expectRefused(refused, {
         fulfilmentId: consignor.id,
@@ -450,7 +459,9 @@ describe('GET /address-return — refusals', () => {
     it.each([ADDRESS_LANDING.SELECT, ADDRESS_LANDING.RETURN])(
       'Should refuse the %s landing when it carries no address id',
       async (landing) => {
-        const refused = await refusalOf({ ...handshakeQuery(), landing })
+        const refused = await refusalOf(
+          withStaleToken({ ...handshakeQuery(), landing })
+        )
 
         expectRefused(refused, {
           fulfilmentId: consignor.id,
