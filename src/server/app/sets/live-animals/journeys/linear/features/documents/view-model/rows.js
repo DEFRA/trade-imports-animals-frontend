@@ -15,7 +15,7 @@ export const filePath = (journeyId, uploadId) =>
   pagePath(journeyId, `${page.slug}/${uploadId}/file`)
 
 export const viewFileLink = (entry, index, journeyId) =>
-  `<a class="govuk-link govuk-!-margin-right-3" href="${filePath(journeyId, entry.uploadId)}">` +
+  `<a class="govuk-link" href="${filePath(journeyId, entry.uploadId)}">` +
   `${copy.viewFile}<span class="govuk-visually-hidden"> ${copy.viewFileHidden(index + 1)}</span></a>`
 
 export const isViewable = (entry, scanStatus) =>
