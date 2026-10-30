@@ -24,7 +24,8 @@ const assertSeamsConfigured = (setId) => {
 }
 
 /**
- * Refuse to mount a set that has not configured every required seam.
+ * Refuse to mount a set that has not configured every required seam or
+ * registered every journey cookie.
  *
  * @param {object} server - the Hapi server the set is registering on.
  * @param {string} setId - the set being mounted.
