@@ -28,10 +28,11 @@ const handshakeToken = 'handshake-token-value'
 const storedName = 'New Farm'
 const UNKNOWN_FULFILMENT_ID = 'not-a-real-obligation'
 
-const partyPageOf = (fulfilmentId) => (journeyId, query) =>
+const partyPagePath = (fulfilmentId, journeyId, query) =>
   `${pagePath(journeyId, partyForFulfilmentId(fulfilmentId).slug)}${query ?? ''}`
 
-const consignorPicker = partyPageOf(consignor.id)
+const consignorPicker = (journeyId, query) =>
+  partyPagePath(consignor.id, journeyId, query)
 const consignmentAddressesPage = (journeyId) => pagePath(journeyId, 'addresses')
 
 const handshakeQuery = (fulfilmentId = consignor.id) => ({
@@ -123,7 +124,7 @@ describe('GET /address-return', () => {
       })
 
       expect(result.response.redirect).toBe(
-        partyPageOf(contactAddress.id)(result.journeyId)
+        partyPagePath(contactAddress.id, result.journeyId)
       )
       expect(result.after.contactAddress).toBeUndefined()
     })
@@ -168,7 +169,7 @@ describe('GET /address-return', () => {
       })
 
       expect(result.response.redirect).toBe(
-        partyPageOf(contactAddress.id)(result.journeyId)
+        partyPagePath(contactAddress.id, result.journeyId)
       )
       expect(result.after.contactAddress.address).toMatchObject({
         townOrCity: 'Carlisle'
