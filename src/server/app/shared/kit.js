@@ -313,8 +313,7 @@ export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
  * surface throws.
  * @param {boolean} [options.showJourneyStrip] - false leaves the status strip off the page.
  * @param {{ titleText: string, text: string }|null} [options.successBanner] -
- * the success notification banner the layout shows after the status strip.
- * Defaults to none.
+ * the success banner the view carries. Defaults to none.
  * @returns {object} the common view model.
  */
 export const base = (
