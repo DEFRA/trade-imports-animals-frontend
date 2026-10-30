@@ -78,7 +78,7 @@ describe('GET addresses — sections for parties not yet chosen', () => {
 describe('GET addresses — added address banner', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should show the added address banner once, then unstate it', async () => {
+  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
     await expectAddedAddressBannerShownOnce(getAddresses)
   })
 })

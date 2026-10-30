@@ -412,7 +412,7 @@ describe('GET /consignors/select — added address banner', () => {
   useStubbedJourney(SET_ID, dispatchPages)
   resetMocksAndConfigAfterTests()
 
-  it('Should show the added address banner once, then unstate it', async () => {
+  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
     await expectAddedAddressBannerShownOnce(getConsignor)
   })
 })
