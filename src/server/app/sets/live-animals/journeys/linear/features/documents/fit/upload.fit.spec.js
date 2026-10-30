@@ -4,9 +4,11 @@ import {
   documentRowFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectStackedOnSameRightEdge,
   journeyUrl,
   openDatePicker,
   openDocuments,
+  PHONE_VIEWPORT,
   saveAndReturnToHub,
   setUploadFile,
   signIn,
@@ -689,7 +691,7 @@ test.describe('document upload saved rows', () => {
     await expectLongReferenceFitsCard(page)
   })
 
-  test('lists the document under five headings with View file and Remove right-aligned at the end of the row', async ({
+  test('lists the document under five headings with View file and Remove right-aligned at the end of the row, lined up with each other once they wrap', async ({
     page
   }) => {
     test.slow()
@@ -715,6 +717,13 @@ test.describe('document upload saved rows', () => {
     await expect(
       addedDocumentsTable(page).getByRole('columnheader').last()
     ).toHaveCSS('text-align', 'right')
+
+    await page.setViewportSize(PHONE_VIEWPORT)
+    await expectStackedOnSameRightEdge(
+      actionsCell.getByRole('link', { name: copy.viewFile }),
+      actionsCell.getByRole('button', { name: copy.remove }),
+      'View file and Remove'
+    )
   })
 
   test('keeps stating the document limit once a document is saved', async ({
