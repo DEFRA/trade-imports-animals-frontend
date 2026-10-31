@@ -1,0 +1,228 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: animals/e2e/features/additional-details-scope.spec.ts >> Additional details scope >> the unweaned-animals question shows only when a triggering commodity line exists
+- Location: tests/animals/e2e/features/additional-details-scope.spec.ts:4:3
+
+# Error details
+
+```
+Test timeout of 90000ms exceeded.
+```
+
+```
+Error: locator.waitFor: Test timeout of 90000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Commodity details', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f7e1]:
+  - link "Skip to main content" [ref=f7e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f7e3]:
+    - link [ref=f7e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=f7e8]
+    - region "Service information" [ref=f7e21]:
+      - generic [ref=f7e23]:
+        - link "Import notification service" [ref=f7e25] [cursor=pointer]:
+          - /url: /live-animals
+        - navigation "Menu" [ref=f7e26]:
+          - list [ref=f7e27]:
+            - listitem [ref=f7e28]:
+              - link [ref=f7e29] [cursor=pointer]:
+                - /url: /live-animals
+                - strong [ref=f7e30]: Dashboard
+            - listitem [ref=f7e31]:
+              - link "Address book" [ref=f7e32] [cursor=pointer]:
+                - /url: http://localhost:3002/address-book
+            - listitem [ref=f7e33]:
+              - link "Manage account" [ref=f7e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f7e35]:
+              - link "Log out" [ref=f7e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=f7e37]:
+    - paragraph [ref=f7e39]:
+      - strong [ref=f7e40]: Alpha
+      - generic [ref=f7e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=f7e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - main [ref=f7e43]:
+      - generic [ref=f7e45]:
+        - generic [ref=f7e46]:
+          - strong [ref=f7e47]: Draft
+          - text: GBN-AG-26-PZ5Y79
+        - heading "Overview" [level=1] [ref=f7e48]
+        - heading "Your commodities" [level=2] [ref=f7e49]
+        - generic [ref=f7e50]:
+          - generic [ref=f7e52]:
+            - paragraph [ref=f7e53]: "0"
+            - heading "Animals" [level=3] [ref=f7e54]
+            - paragraph [ref=f7e55]: Total number of animals in this consignment
+          - generic [ref=f7e57]:
+            - paragraph [ref=f7e58]: "0"
+            - heading "Packages/boxes" [level=3] [ref=f7e59]
+            - paragraph [ref=f7e60]: Total number of packages in this consignment
+        - heading "Notification tasklist" [level=2] [ref=f7e61]
+        - heading "1. About the consignment" [level=3] [ref=f7e62]
+        - list [ref=f7e63]:
+          - listitem [ref=f7e64]:
+            - link "Where is this consignment coming from?" [ref=f7e66] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/origin
+            - strong [ref=f7e68]: Complete
+          - listitem [ref=f7e69]:
+            - link "What are you importing?" [ref=f7e71] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/commodities
+            - strong [ref=f7e73]: Complete
+          - listitem [ref=f7e74]:
+            - link "Main reason for import" [ref=f7e76] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/import-reason
+            - strong [ref=f7e78]: To do
+        - heading "2. Description of the goods" [level=3] [ref=f7e79]
+        - list [ref=f7e80]:
+          - listitem [ref=f7e81]:
+            - link "Commodity details" [ref=f7e83] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/consignment-details
+            - strong [ref=f7e85]: To do
+          - listitem [ref=f7e86]:
+            - link "Identification details" [ref=f7e88] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/commodities/identification
+            - strong [ref=f7e90]: Complete
+          - listitem [ref=f7e91]:
+            - link "Additional details" [ref=f7e93] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/additional-details
+            - strong [ref=f7e95]: To do
+        - heading "3. Transport and arrival" [level=3] [ref=f7e96]
+        - list [ref=f7e97]:
+          - listitem [ref=f7e98]:
+            - link "Arrival details" [ref=f7e100] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/port-of-entry
+            - strong [ref=f7e102]: To do
+          - listitem [ref=f7e103]:
+            - link "Transport details" [ref=f7e105] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/transporters
+            - strong [ref=f7e107]: To do
+        - heading "4. Documents" [level=3] [ref=f7e108]
+        - list [ref=f7e109]:
+          - listitem [ref=f7e110]:
+            - link "Upload documents" [ref=f7e112] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/accompanying-documents
+            - strong [ref=f7e114]: To do
+        - heading "5. Consignment parties" [level=3] [ref=f7e115]
+        - list [ref=f7e116]:
+          - listitem [ref=f7e117]:
+            - generic [ref=f7e118]:
+              - link "Roles and addresses" [ref=f7e119] [cursor=pointer]:
+                - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/addresses
+              - generic [ref=f7e120]: Consignor or Exporter, Consignee, Importer and Place of Destination
+            - strong [ref=f7e122]: To do
+        - heading "6. Contact address" [level=3] [ref=f7e123]
+        - list [ref=f7e124]:
+          - listitem [ref=f7e125]:
+            - link "Contact address for this consignment" [ref=f7e127] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-PZ5Y79/consignment/contact/select
+            - strong [ref=f7e129]: To do
+        - generic [ref=f7e130]:
+          - button "Review and submit" [ref=f7e131] [cursor=pointer]
+          - button "Return to dashboard" [ref=f7e132] [cursor=pointer]
+  - contentinfo [ref=f7e133]:
+    - generic [ref=f7e146]:
+      - generic [ref=f7e147]:
+        - heading "Support links" [level=2] [ref=f7e148]
+        - list [ref=f7e149]:
+          - listitem [ref=f7e150]:
+            - link "Privacy" [ref=f7e151] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=f7e152]:
+            - link "Cookies" [ref=f7e153] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=f7e154]:
+            - link "Accessibility statement" [ref=f7e155] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - generic [ref=f7e158]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=f7e159] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=f7e161] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Additional details scope', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test('the unweaned-animals question shows only when a triggering commodity line exists', async ({
+  5  |     animalsJourney,
+  6  |     pages,
+  7  |     animalsPages,
+  8  |   }) => {
+  9  |     // Proving scope needs three commodity shapes, and each one walks the hub,
+  10 |     // selection and consignment pages — roughly 25 loads against a CI runner
+  11 |     // hosting the whole stack, which does not fit the default budget.
+  12 |     test.slow();
+  13 | 
+  14 |     const journeyId = await animalsJourney.startNotification();
+  15 | 
+  16 |     const certifiedFor = pages.page.getByRole('group', { name: 'What are the animals certified for?' });
+  17 |     const unweaned = pages.page.getByRole('group', {
+  18 |       name: 'Does the consignment contain any unweaned animals?',
+  19 |     });
+  20 | 
+  21 |     // Each call ADDS a commodity line. The animal count is save-blocking on
+  22 |     // every line, so each box the consignment page is showing — the lines
+  23 |     // added on earlier passes included — is filled before it hands back to the
+  24 |     // hub.
+  25 |     const addCommodity = async (species: string): Promise<void> => {
+  26 |       await animalsPages.overview.open(journeyId);
+  27 |       await animalsPages.overview.task('What are you importing?').click();
+  28 |       await animalsPages.commoditySelection.selectSpecies([species]);
+  29 |       await animalsPages.commoditySelection.saveAndContinue.click();
+> 30 |       await animalsPages.consignmentDetails.heading.waitFor();
+     |                                                     ^ Error: locator.waitFor: Test timeout of 90000ms exceeded.
+  31 |       await animalsPages.consignmentDetails.fillEveryAnimalCount('1');
+  32 |       await animalsPages.consignmentDetails.saveAndContinue.click();
+  33 |       await animalsPages.overview.heading.waitFor();
+  34 |     };
+  35 | 
+  36 |     // A blank reason (enforcedAt=submit) walks straight to the tail page,
+  37 |     // skipping the internal-market purpose page.
+  38 |     const openAdditionalDetails = async (): Promise<void> => {
+  39 |       await animalsPages.overview.open(journeyId);
+  40 |       await animalsPages.overview.task('Main reason for import').click();
+  41 |       await animalsPages.importReason.heading.waitFor();
+  42 |       await animalsPages.importReason.saveAndContinue.click();
+  43 |       await animalsPages.additionalDetails.heading.waitFor();
+  44 |     };
+  45 | 
+  46 |     // A non-triggering commodity (cats): certified-for shows, but the
+  47 |     // notification-level unweaned-animals question is out of scope.
+  48 |     await addCommodity('Felis catus');
+  49 |     await openAdditionalDetails();
+  50 |     await expect(certifiedFor).toBeVisible();
+  51 |     await expect(unweaned).toBeHidden();
+  52 | 
+  53 |     // Adding a triggering commodity (cattle) brings the unweaned-animals question
+  54 |     // into scope across the commodity lines (frame:"anyItem").
+  55 |     await addCommodity('Bos taurus');
+  56 |     await openAdditionalDetails();
+  57 |     await expect(certifiedFor).toBeVisible();
+  58 |     await expect(unweaned).toBeVisible();
+  59 |   });
+  60 | });
+  61 | 
+```
