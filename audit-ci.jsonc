@@ -6,14 +6,14 @@
     {
       "GHSA-4528-x5fx-h6hg": {
         "active": true,
-        "notes": "joi prototype pollution via nested object keys; pulled in by @hapi/hapi (blankie, hapi-pulse). No patched joi release compatible with the current Hapi 21 stack on this branch.",
+        "notes": "joi prototype pollution via nested object keys; pulled in by @hapi/hapi (blankie, hapi-pulse). No patched joi release compatible with the current Hapi 21 stack on this branch. Owner: Sam Farrington",
         "expiry": "2027-02-01"
       }
     },
     {
       "GHSA-8494-f6mr-cjpv": {
         "active": true,
-        "notes": "@hapi/content HTML entity decode bypass; fixed upstream but @hapi/hapi 21 still resolves the vulnerable line. Track via Hapi/npm upgrade programme, not EUDPA-669.",
+        "notes": "@hapi/content HTML entity decode bypass; fixed upstream but @hapi/hapi 21 still resolves the vulnerable line. Track via Hapi/npm upgrade programme, not EUDPA-669. Owner: Sam Farrington",
         "expiry": "2027-02-01"
       }
     }
