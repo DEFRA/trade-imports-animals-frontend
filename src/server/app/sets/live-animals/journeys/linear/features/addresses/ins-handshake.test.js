@@ -6,29 +6,17 @@ import {
   recordingH,
   journeyRequest
 } from '../../../../../../engine/test-support.js'
+import { consignor } from '../../../../obligations/index.js'
+import { PARTIES } from './parties.js'
 import {
-  consignee,
-  consignor,
-  contactAddress,
-  importer,
-  placeOfDestination,
-  placeOfOrigin
-} from '../../../../obligations/index.js'
-import { CONTACT_PARTY, PARTIES } from './parties.js'
-import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
-import { buildInsAddAddressUrl } from './ins-handshake.js'
+  issueInsAddAddressUrl,
+  setAddedAddressBanner,
+  takeAddedAddressBanner
+} from './ins-handshake.js'
+import { addedAddressBannerState } from './test-support.js'
 
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const notificationId = 'notification-123'
-
-const fulfilmentIdByPartyId = {
-  placeOfOrigin: placeOfOrigin.id,
-  consignor: consignor.id,
-  consignee: consignee.id,
-  importer: importer.id,
-  placeOfDestination: placeOfDestination.id,
-  contactAddress: contactAddress.id
-}
 
 describe('ins-handshake', () => {
   const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
@@ -37,25 +25,13 @@ describe('ins-handshake', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
   })
 
-  it.each([
-    ...PARTIES.map((party) => [party.id, fulfilmentIdByPartyId[party.id]]),
-    [CONTACT_PARTY.id, contactAddress.id]
-  ])('maps %s to fulfilment id %s', (partyId, expectedFulfilmentId) => {
-    const party =
-      partyId === CONTACT_PARTY.id
-        ? CONTACT_PARTY
-        : PARTIES.find((each) => each.id === partyId)
-
-    expect(fulfilmentIdForParty(party)).toBe(expectedFulfilmentId)
-  })
-
-  it('builds the INS add URL with handshake query params', () => {
+  it('issues a handshake token, stores it in the tokens cookie and returns the INS add URL carrying it', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002/')
     const party = PARTIES.find((each) => each.id === 'consignor')
     const h = recordingH()
     const request = journeyRequest(notificationId)
 
-    const url = buildInsAddAddressUrl(request, h, notificationId, party)
+    const url = issueInsAddAddressUrl(request, h, notificationId, party)
 
     expect(url).toMatch(
       new RegExp(
@@ -70,12 +46,49 @@ describe('ins-handshake', () => {
     )
   })
 
+  it('stores the added address name in the banner cookie', () => {
+    const h = recordingH()
+
+    setAddedAddressBanner(h, 'New Farm')
+
+    expect(h.cookies).toEqual(addedAddressBannerState('New Farm'))
+  })
+
+  it('takes the added address banner from the request and unstates its cookie', () => {
+    const h = recordingH()
+    const state = addedAddressBannerState('ABC Farms Ltd')
+    Object.assign(h.cookies, state)
+    const request = journeyRequest(notificationId, { state })
+
+    expect(takeAddedAddressBanner(request, h)).toEqual({
+      titleText: 'Success',
+      text: 'ABC Farms Ltd address added to your address book'
+    })
+    expect(h.cookies).toEqual({})
+  })
+
+  it('names the address as it is stored, even when it holds a replacement pattern', () => {
+    const request = journeyRequest(notificationId, {
+      state: addedAddressBannerState('Fish $& Chips')
+    })
+
+    expect(takeAddedAddressBanner(request, recordingH()).text).toBe(
+      'Fish $& Chips address added to your address book'
+    )
+  })
+
+  it('takes no banner when the request holds no banner cookie', () => {
+    const request = journeyRequest(notificationId)
+
+    expect(takeAddedAddressBanner(request, recordingH())).toBeNull()
+  })
+
   it('returns undefined when the party has no fulfilment mapping', () => {
     const h = recordingH()
     const request = journeyRequest(notificationId)
 
     expect(
-      buildInsAddAddressUrl(request, h, notificationId, {
+      issueInsAddAddressUrl(request, h, notificationId, {
         id: 'unknown-party'
       })
     ).toBeUndefined()

@@ -3,23 +3,6 @@ export const copy = {
   notApplicable: 'Not applicable',
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
-  documentTypes: {
-    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
-    AIR_WAYBILL: 'Air waybill',
-    IMPORT_PERMIT: 'Import permit',
-    LETTER_OF_AUTHORITY: 'Letter of authority (Directive 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Commercial invoice',
-    SEA_WAYBILL: 'Sea waybill',
-    RAIL_WAYBILL: 'Rail waybill',
-    BILL_OF_LADING: 'Bill of lading',
-    CATCH_CERTIFICATE: 'Catch certificate',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-    HEALTH_CERTIFICATE: 'Health certificate',
-    JOURNEY_LOG: 'Journey log',
-    OTHER: 'Other'
-  },
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {

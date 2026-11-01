@@ -72,21 +72,20 @@ export const copy = {
     actionsHidden: 'Action'
   },
   types: {
-    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
+    ITAHC: 'ITAHC (Intra Trade Animal Health Certificate)',
+    VETERINARY_HEALTH_CERTIFICATE:
+      'Other veterinary certificate / veterinary declaration',
+    SELF_DECLARATION: 'Self-declaration',
+    JOURNEY_LOG: 'Journey log',
+    IMPORT_PERMIT: 'Import permit / authorisation',
+    CITES_PERMIT_OR_CERTIFICATE: 'CITES permit/certificate',
     AIR_WAYBILL: 'Air waybill',
-    IMPORT_PERMIT: 'Import permit',
-    LETTER_OF_AUTHORITY: 'Letter of authority (Directive 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Commercial invoice',
     SEA_WAYBILL: 'Sea waybill',
     RAIL_WAYBILL: 'Rail waybill',
     BILL_OF_LADING: 'Bill of lading',
-    CATCH_CERTIFICATE: 'Catch certificate',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-    HEALTH_CERTIFICATE: 'Health certificate',
-    JOURNEY_LOG: 'Journey log',
-    OTHER: 'Other'
+    COMMERCIAL_INVOICE: 'Commercial invoice',
+    PACKING_OR_SPECIES_LIST: 'Packing list / species list',
+    OTHER: 'Other supporting documents'
   },
   remove: 'Remove',
   removeHidden: (documentNumber) => `document ${documentNumber}`,

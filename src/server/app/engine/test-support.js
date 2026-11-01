@@ -20,9 +20,13 @@ import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { store } from './store.js'
-import { flowOnlyAnswersCookie, knownJourneysCookie } from './journey.js'
 import { configureRecords, records } from './persistence/records.js'
-import { configureSession, openingRunCookie } from './persistence/session.js'
+import {
+  configureSession,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie
+} from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 
 export const authenticatedCredentials = Object.freeze({
@@ -105,14 +109,17 @@ export const crumbProtectedServerMounting = async (routes, prefix) => {
 const cookieRecorder = () => {
   const cookies = {}
   const calls = []
+  const unstated = []
   return {
     cookies,
     calls,
+    unstated,
     state: (name, value) => {
       calls.push([name, value])
       cookies[name] = value
     },
     unstate: (name) => {
+      unstated.push(name)
       delete cookies[name]
     }
   }
@@ -224,10 +231,11 @@ const recordsRejectingSaves = (failure) => ({
 })
 
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after, alongside the cookies the handler set and the lines it logged.
+ * and after, alongside the cookies the handler set, the names of the cookies it
+ * unstated and the lines it logged.
  * `journeyId` drives an existing journey rather than creating one; `flowOnly`
- * seeds the journey's session-only answers; `amend`
- * submits the journey and opens an amendment first; `openingRun`
+ * seeds the journey's session-only answers; `amend` submits the journey and
+ * opens an amendment first; `openingRun`
  * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
  * the journey; `pathOf(journeyId)` gives the request the path it was made to;
  * `saveFailure` makes the records store refuse every save the handler makes
@@ -283,6 +291,7 @@ export const driveHandler = async (
     response,
     view: h.captured.view,
     cookies: h.cookies,
+    unstated: h.unstated,
     logger: request.logger
   }
 }
@@ -400,6 +409,28 @@ export const addressBookAnswering = (addressResponse) => {
       : { body: countryList }
   )
 }
+
+/** An address book row as its search and lookup return it, live unless
+ * `overrides` says otherwise. */
+export const listedAddress = (id, name, overrides = {}) => ({
+  id,
+  name,
+  deleted: false,
+  addressLine1: '1 Test Lane',
+  ...overrides
+})
+
+/** The address book's response to a search: one page holding every row
+ * in `items`. Pass it to `addressBookAnswering()`. */
+export const addressBookPage = (items = []) => ({
+  body: JSON.stringify({
+    items,
+    page: 1,
+    pageSize: 25,
+    totalItems: items.length,
+    totalPages: 1
+  })
+})
 
 export const addressBookRefusingAddresses = () =>
   addressBookAnswering({ status: 500 })

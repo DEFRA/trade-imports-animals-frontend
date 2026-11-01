@@ -72,7 +72,6 @@
   <div class="govuk-grid-row">
     <div class="{{ contentColumnClass | default("govuk-grid-column-two-thirds", true) }}">
       {% if recoverableError %}
-        {# A page that knows what failed says so; the shared wording stands for the rest. #}
         {{ govukNotificationBanner({
           titleText: sharedCopy.recoverableError.title,
           text: recoverableErrorBody | default(sharedCopy.recoverableError.body, true),
@@ -92,6 +91,13 @@
           <span class="govuk-body govuk-!-font-weight-bold">{{ journeyStrip.reference }}</span>
           {% if journeyStrip.cancelAmend %}<a class="govuk-link govuk-!-font-size-19 govuk-!-margin-left-2" href="{{ journeyStrip.cancelAmend.href }}">{{ journeyStrip.cancelAmend.text }}</a>{% endif %}
         </div>
+      {% endif %}
+      {% if successBanner %}
+        {{ govukNotificationBanner({
+          type: "success",
+          titleText: successBanner.titleText,
+          text: successBanner.text
+        }) }}
       {% endif %}
       {% block journeyContent %}{% endblock %}
     </div>

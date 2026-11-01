@@ -13,7 +13,7 @@ import {
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { offeredDocumentTypes } from '../contracts/document-type-options.js'
+import { documentTypes } from '../../../../../../../services/document-types/index.js'
 
 const copy = copyFor({ en, cy })
 
@@ -31,7 +31,7 @@ export const fields = () =>
     ),
     requiredOneOf(
       'accompanyingDocumentType',
-      offeredDocumentTypes(),
+      documentTypes(),
       copy.errors.typeRequired
     ),
     dateText('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
@@ -51,8 +51,8 @@ export const documentFromPayload = (payload) => ({
 const answered = (value) => Boolean(String(value ?? '').trim())
 
 /**
- * Whether a submitted form has started a document: it has a reference, a type
- * (offered or not), any date of issue text, or a chosen file.
+ * Whether a submitted form has started a document: it has a reference, any
+ * type text, any date of issue text, or a chosen file.
  *
  * @param {object} form - the submitted fields, with the file entry the upload
  *   service returned where the form went through it

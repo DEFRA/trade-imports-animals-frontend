@@ -1,8 +1,10 @@
 import { SET_ID } from '../../../../set.js'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
 import {
+  addressBookAnswering,
+  addressBookPage,
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
@@ -11,6 +13,7 @@ import {
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
@@ -134,6 +137,14 @@ describe('GET contact — select an address from the book', () => {
   })
 })
 
+describe('GET contact — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
+    await expectAddedAddressBannerShownOnce(get)
+  })
+})
+
 describe('POST contact — invalid payload', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -191,21 +202,8 @@ describe('GET contact — INS add-address link', () => {
   resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set('stubMode', false)
     config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          items: [],
-          page: 1,
-          pageSize: 25,
-          totalItems: 0,
-          totalPages: 1
-        })
-      }))
-    )
+    addressBookAnswering(addressBookPage())
 
     const result = await driveHandler(get)
 
