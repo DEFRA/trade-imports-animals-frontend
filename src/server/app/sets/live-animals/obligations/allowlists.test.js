@@ -236,10 +236,9 @@ const EXPECTED = {
   'ear-tag list': ['0102'],
   'horse-name list': ['0101'],
   'permanent-address list': [
-    ['01061900', 'Canis familiaris'],
-    ['01061900', 'Canis lupus familiaris'],
     ['01061900', 'Felis catus'],
-    ['01061900', 'Mustela putorius furo']
+    ['01061900', 'Mustela putorius furo'],
+    ['01061900', 'Nyctereutes procyonoides']
   ]
 }
 

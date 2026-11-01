@@ -1,16 +1,14 @@
 import { SET_ID } from '../../../../../set.js'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { config } from '../../../../../../../../../config/config.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
   driveHandler,
   addressBookAnswering,
-  addressBookPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
-  listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
@@ -21,7 +19,6 @@ import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
-import { expectAddedAddressBannerShownOnce } from '../test-support.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
@@ -47,13 +44,22 @@ const answerWithDeletedConsignor = () =>
   addressBookAnswering((request) =>
     request.url.includes(`/addresses/${DELETED_CONSIGNOR_ID}`)
       ? {
-          body: JSON.stringify(
-            listedAddress(DELETED_CONSIGNOR_ID, 'Gone Trader', {
-              deleted: true
-            })
-          )
+          body: JSON.stringify({
+            id: DELETED_CONSIGNOR_ID,
+            name: 'Gone Trader',
+            deleted: true,
+            addressLine1: '1 Nowhere'
+          })
         }
-      : addressBookPage()
+      : {
+          body: JSON.stringify({
+            items: [],
+            page: 1,
+            pageSize: 25,
+            totalItems: 0,
+            totalPages: 1
+          })
+        }
   )
 
 const pickerFrom = (result) => result.view.context.picker
@@ -408,33 +414,6 @@ describe('GET /consignors/select — handshake return', () => {
   })
 })
 
-describe('GET /consignors/select — added address banner', () => {
-  useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests()
-
-  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
-    await expectAddedAddressBannerShownOnce(getConsignor)
-  })
-})
-
-describe('GET /consignors/select — list order', () => {
-  useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests()
-
-  it('Should list the addresses in the order the address book returns them', async () => {
-    addressBookAnswering(
-      addressBookPage([
-        listedAddress('zeta-newer', 'Zebra Farm'),
-        listedAddress('alpha-older', 'Aardvark Farm')
-      ])
-    )
-
-    const result = await driveHandler(getConsignor)
-
-    expect(idsOf(pickerFrom(result))).toEqual(['zeta-newer', 'alpha-older'])
-  })
-})
-
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
   resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
@@ -442,8 +421,21 @@ describe('INS add-address link', () => {
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
     async (_title, slug) => {
+      config.set('stubMode', false)
       config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-      addressBookAnswering(addressBookPage())
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => ({
+          ok: true,
+          json: async () => ({
+            items: [],
+            page: 1,
+            pageSize: 25,
+            totalItems: 0,
+            totalPages: 1
+          })
+        }))
+      )
 
       const result = await driveHandler(handlerFor('GET', slug))
 

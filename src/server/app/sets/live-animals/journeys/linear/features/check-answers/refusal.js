@@ -8,7 +8,6 @@ import {
   withScanStatus
 } from '../documents/scan/status.js'
 import { SCAN_STATUS } from '../documents/scan-poll.js'
-import { logRefusal } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from '../documents/copy/copy.en.js'
 import { copy as cy } from '../documents/copy/copy.cy.js'
@@ -27,32 +26,15 @@ const chosenSpecies = (answers) =>
       latinName: line.speciesLatinName
     }))
 
-const draftUnlistedSpecies = async (journey, answers) => {
-  if (journey.status !== state.DRAFT) {
+const draftUnlistedSpecies = async (journey, answers, { refused }) => {
+  if (!refused || journey.status !== state.DRAFT) {
     return []
   }
   return linesWithUnlistedSpecies(chosenSpecies(answers))
 }
 
-/**
- * The card errors for species reference data no longer lists under their code.
- *
- * @param {object} journey - the journey being reviewed.
- * @param {object} answers - the journey's answers.
- * @param {object} [options]
- * @param {boolean} [options.refused=false] - whether Continue was refused
- * @returns {Promise<object>} the `species` error when Continue was refused and
- * a draft holds unlisted species, else none.
- */
-export const speciesCardErrors = async (
-  journey,
-  answers,
-  { refused = false } = {}
-) => {
-  if (!refused) {
-    return {}
-  }
-  const unlisted = await draftUnlistedSpecies(journey, answers)
+export const speciesCardErrors = async (journey, answers, options) => {
+  const unlisted = await draftUnlistedSpecies(journey, answers, options)
   if (unlisted.length === 0) {
     return {}
   }
@@ -124,14 +106,15 @@ export const isReviewRefused = async (request, h) => {
   if (Object.keys(await documentScanCardErrors(request, answers)).length > 0) {
     return true
   }
-  const unlisted = await draftUnlistedSpecies(journey, answers)
+  const unlisted = await draftUnlistedSpecies(journey, answers, {
+    refused: true
+  })
   if (unlisted.length === 0) {
     return false
   }
-  logRefusal(request, {
-    level: 'warn',
-    reason: 'unlisted-species',
-    unlisted
-  })
+  request.logger.warn(
+    { journeyId: journey.journeyId, unlisted },
+    'Draft refused: reference data no longer lists a chosen species'
+  )
   return true
 }

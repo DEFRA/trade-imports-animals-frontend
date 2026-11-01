@@ -5,10 +5,8 @@ import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { consignmentDetailsPage as page } from '../page.js'
-import {
-  commodityQuestionHref,
-  commodityQuestionPath
-} from '../commodity-question-detour.js'
+import { redirectEmptyLinesToCommodityQuestion } from './empty-lines-redirect.js'
+import { commodityQuestionHref } from '../commodity-question-detour.js'
 import { lineKey } from '../search/search.controller.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -83,14 +81,9 @@ const get = async (request, h) => {
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   if (lines.length === 0) {
-    request.logger.info(
-      {
-        journeyId: request.params.journeyId,
-        reason: 'no-commodities-on-load'
-      },
-      'Redirected to the commodity question'
-    )
-    return h.redirect(commodityQuestionPath(request))
+    return redirectEmptyLinesToCommodityQuestion(request, h, {
+      commodityCodeCount: 0
+    })
   }
   return render({
     request,

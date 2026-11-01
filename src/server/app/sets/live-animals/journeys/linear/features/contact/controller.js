@@ -19,9 +19,8 @@ import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
-  issueInsAddAddressUrl,
-  handshakeErrorMessage,
-  takeAddedAddressBanner
+  buildInsAddAddressUrl,
+  handshakeErrorMessage
 } from '../addresses/ins-handshake.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -61,9 +60,9 @@ const currentContactOf = async (request, journeyId, answers) => {
     : null
 }
 
-const issueAddAddressLink = (request, h, journey) =>
+const addAddressLinkFor = (request, h, journey) =>
   !isStubMode() &&
-  issueInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
+  buildInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
 
 const render = (
   h,
@@ -75,8 +74,7 @@ const render = (
     errors = {},
     recoverableError = false,
     handshakeError,
-    currentContact = null,
-    successBanner = null
+    currentContact = null
   } = {}
 ) =>
   h.view(view, {
@@ -84,8 +82,7 @@ const render = (
       request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
-      recoverableError,
-      successBanner
+      recoverableError
     }),
     copy,
     errors,
@@ -123,7 +120,7 @@ const get = async (request, h) => {
         : ''
     },
     options,
-    issueAddAddressLink(request, h, journey),
+    addAddressLinkFor(request, h, journey),
     {
       errors,
       recoverableError,
@@ -132,8 +129,7 @@ const get = async (request, h) => {
         request,
         journey.journeyId,
         answers
-      ),
-      successBanner: takeAddedAddressBanner(request, h)
+      )
     }
   )
 }
@@ -152,7 +148,7 @@ const post = async (request, h) => {
       journey,
       {},
       options,
-      issueAddAddressLink(request, h, journey),
+      addAddressLinkFor(request, h, journey),
       {
         errors,
         currentContact: await currentContactOf(
@@ -184,7 +180,7 @@ const post = async (request, h) => {
         journey,
         { selectedId: chosen?.id },
         options,
-        issueAddAddressLink(request, h, journey),
+        addAddressLinkFor(request, h, journey),
         {
           recoverableError: true,
           currentContact: await currentContactOf(

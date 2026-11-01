@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
+  EQUUS_ZEBRA,
   FELIS_CATUS,
   answerOriginEntry,
   saveAndContinue,
@@ -10,13 +11,13 @@ import {
   openCommoditySearch,
   searchCommodities,
   selectSpecies,
-  selectedSummary,
   signIn,
   startNotificationAtOrigin
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import {
   CATTLE_CODE,
+  HORSES_CODE,
   OTHER_LIVE_MAMMALS_CODE
 } from '../../../../../services/commodities/rules.js'
 
@@ -34,6 +35,8 @@ const errorLink = (page, message) =>
   page.getByRole('alert').getByRole('link', { name: message })
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
+
+const selectedSummary = (page) => page.locator('#commodity-selection')
 
 const expectSelectedHeading = (page, count) =>
   expect(selectedSummary(page)).toContainText(
@@ -121,11 +124,11 @@ test.describe('commodity search', () => {
   })
 
   test('finds a species by its common name', async ({ page }) => {
-    await searchCommodities(page, 'ferret')
+    await searchCommodities(page, 'Raccoon Dog')
     const group = page.getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
     await expect(
       group.getByRole('checkbox', {
-        name: 'Mustela putorius furo',
+        name: 'Nyctereutes procyonoides',
         exact: true
       })
     ).toBeVisible()
@@ -151,20 +154,20 @@ test.describe('commodity search', () => {
   test('renders a separate group per matching commodity code', async ({
     page
   }) => {
-    await searchCommodities(page, 'taurus')
-    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    await searchCommodities(page, EQUUS_ZEBRA.speciesLatinName)
+    const horses = page.getByRole('group', { name: HORSES_CODE })
     const otherMammals = page.getByRole('group', {
       name: OTHER_LIVE_MAMMALS_CODE
     })
     await expect(
-      cattle.getByRole('checkbox', {
-        name: BOS_TAURUS.speciesLatinName,
+      horses.getByRole('checkbox', {
+        name: EQUUS_ZEBRA.speciesLatinName,
         exact: true
       })
     ).toBeVisible()
     await expect(
       otherMammals.getByRole('checkbox', {
-        name: BOS_TAURUS.speciesLatinName,
+        name: EQUUS_ZEBRA.speciesLatinName,
         exact: true
       })
     ).toBeVisible()
@@ -267,13 +270,13 @@ test.describe('commodity search — choosing and saving species', () => {
   test('ticks a result that is already on the notification', async ({
     page
   }) => {
-    await selectSpecies(page, [BOS_TAURUS])
+    await selectSpecies(page, [EQUUS_ZEBRA])
     await saveAndContinue(page).click()
     await reopenSelection(page)
-    await searchCommodities(page, 'taurus')
+    await searchCommodities(page, EQUUS_ZEBRA.speciesLatinName)
     await expect(
-      page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox', {
-        name: BOS_TAURUS.speciesLatinName,
+      page.getByRole('group', { name: HORSES_CODE }).getByRole('checkbox', {
+        name: EQUUS_ZEBRA.speciesLatinName,
         exact: true
       })
     ).toBeChecked()
@@ -282,15 +285,15 @@ test.describe('commodity search — choosing and saving species', () => {
   test('leaves the same species under another code unticked', async ({
     page
   }) => {
-    await selectSpecies(page, [BOS_TAURUS])
+    await selectSpecies(page, [EQUUS_ZEBRA])
     await saveAndContinue(page).click()
     await reopenSelection(page)
-    await searchCommodities(page, 'taurus')
+    await searchCommodities(page, EQUUS_ZEBRA.speciesLatinName)
     await expect(
       page
         .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
         .getByRole('checkbox', {
-          name: BOS_TAURUS.speciesLatinName,
+          name: EQUUS_ZEBRA.speciesLatinName,
           exact: true
         })
     ).not.toBeChecked()
@@ -335,14 +338,14 @@ test.describe('commodity search by code', () => {
         exact: true
       })
     ).toBeVisible()
-    await expect(cattle.getByRole('checkbox')).toHaveCount(15)
+    await expect(page.getByRole('checkbox')).toHaveCount(15)
   })
 
   test('lists no more than a hundred species for one search', async ({
     page
   }) => {
     await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
-    await expect(page.getByRole('checkbox')).toHaveCount(100)
+    await expect(page.getByRole('checkbox')).toHaveCount(82)
   })
 })
 

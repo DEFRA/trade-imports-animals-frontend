@@ -7,8 +7,8 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
+  NYCTEREUTES_PROCYONOIDES,
+  RACCOON_DOG_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
   STRUTHIO,
@@ -65,7 +65,7 @@ describe('#buildSelectedRows', () => {
       buildSelectedRows(
         commodityLinesFixture(
           [BOS_TAURUS_ROW],
-          [CANIS_FAMILIARIS_ROW],
+          [RACCOON_DOG_ROW],
           [FELIS_CATUS_ROW]
         )
       )
@@ -77,7 +77,7 @@ describe('#buildSelectedRows', () => {
       },
       {
         code: '01061900',
-        latinNames: [CANIS_FAMILIARIS],
+        latinNames: [NYCTEREUTES_PROCYONOIDES],
         removeAction: 'remove-species:1'
       },
       {

@@ -21,9 +21,8 @@ import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
-  issueInsAddAddressUrl,
-  handshakeErrorMessage,
-  takeAddedAddressBanner
+  buildInsAddAddressUrl,
+  handshakeErrorMessage
 } from '../ins-handshake.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
@@ -37,15 +36,7 @@ const render = async (
   orgId,
   journey,
   party,
-  {
-    query,
-    page,
-    selectedId,
-    error,
-    recoverableError = false,
-    addAddressHref,
-    successBanner = null
-  }
+  { query, page, selectedId, error, recoverableError = false, addAddressHref }
 ) => {
   const found = await addressBook.search(orgId, { query, page })
   const selected = await chosenPartyFor(orgId, selectedId)
@@ -60,8 +51,7 @@ const render = async (
         pagePath(journey.journeyId, 'addresses')
       ),
       journey,
-      recoverableError,
-      successBanner
+      recoverableError
     }),
     heading: party.title,
     description: party.hint,
@@ -84,8 +74,8 @@ const render = async (
   })
 }
 
-const issueAddAddressLink = (request, h, journey, party) =>
-  !isStubMode() && issueInsAddAddressUrl(request, h, journey.journeyId, party)
+const addAddressLinkFor = (request, h, journey, party) =>
+  !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
@@ -100,8 +90,7 @@ const get = (party) => async (request, h) => {
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
-    addAddressHref: issueAddAddressLink(request, h, journey, party),
-    successBanner: takeAddedAddressBanner(request, h)
+    addAddressHref: addAddressLinkFor(request, h, journey, party)
   })
 }
 
@@ -127,7 +116,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
           ...form,
           selectedId: chosen.id,
           recoverableError: true,
-          addAddressHref: issueAddAddressLink(request, h, journey, party)
+          addAddressHref: addAddressLinkFor(request, h, journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     },
@@ -152,7 +141,7 @@ const post = (party) => async (request, h) => {
       query,
       page: 1,
       selectedId,
-      addAddressHref: issueAddAddressLink(request, h, journey, party)
+      addAddressHref: addAddressLinkFor(request, h, journey, party)
     })
   }
 
@@ -178,7 +167,7 @@ const post = (party) => async (request, h) => {
         page: pageNumber(payload.page),
         selectedId: '',
         error: party.error,
-        addAddressHref: issueAddAddressLink(request, h, journey, party)
+        addAddressHref: addAddressLinkFor(request, h, journey, party)
       })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }

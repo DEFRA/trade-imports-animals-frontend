@@ -10,7 +10,6 @@ import { partyEditHref } from './party-edit/edit-href.js'
 import { insetAddressLines } from './party-picker/view-model/address-lines.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { takeAddedAddressBanner } from './ins-handshake.js'
 
 export const meta = {
   ...page,
@@ -25,6 +24,10 @@ export const meta = {
 const view = `${TEMPLATES}/features/addresses/template`
 
 const copy = copyFor({ en, cy }).hub
+
+const CPH_OBLIGATION = 'countyParishHoldingCph'
+
+const CPH_SLUG = 'cph-number?return=addresses'
 
 const hubSection = ({ id, title, hint, add, chosen }) => ({
   id,
@@ -54,7 +57,7 @@ const partySectionBuilder = (request, journeyId, parties) => (party) => {
 }
 
 const cphSection = (journeyId, answers) => {
-  const href = pagePath(journeyId, 'cph-number?return=addresses')
+  const href = pagePath(journeyId, CPH_SLUG)
   const cphNumber = answers.countyParishHoldingCph
   return hubSection({
     id: 'cph',
@@ -67,9 +70,7 @@ const cphSection = (journeyId, answers) => {
 
 const sections = (request, journeyId, answers, scope, parties) => [
   ...PARTIES.map(partySectionBuilder(request, journeyId, parties)),
-  ...(scope.has('countyParishHoldingCph')
-    ? [cphSection(journeyId, answers)]
-    : [])
+  ...(scope.has(CPH_OBLIGATION) ? [cphSection(journeyId, answers)] : [])
 ]
 
 const backLinkOf = (request, journey) =>
@@ -85,8 +86,7 @@ const get = async (request, h) => {
       request,
       backLink: backLinkOf(request, journey),
       journey,
-      page,
-      successBanner: takeAddedAddressBanner(request, h)
+      page
     }),
     copy,
     sections: sections(request, journey.journeyId, answers, scope, parties)

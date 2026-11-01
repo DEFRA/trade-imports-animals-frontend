@@ -8,6 +8,7 @@ import { obligationSet } from '../model/obligations/manifest.js'
 
 const { earTag, obligations, purposeInInternalMarket } = obligationSet()
 import { fulfilmentToNotification } from '../services/persistence/records/notification-mapper/index.js'
+import { commodityNameFor } from '../services/persistence/records/notification-mapper/commodity-reference.js'
 
 const oracles = JSON.parse(
   readFileSync(
@@ -48,15 +49,17 @@ describe('increment 0 golden boundary characterisation', () => {
       ({ answers }) => answers.commodityLines?.length > 0
     )
   )(
-    'Should send the first commodity line CN code as the commodity name for $name',
+    'Should send the mapped commodity display name for the first line for $name',
     ({ answers }) => {
       const firstLineCode = answers.commodityLines[0].commodityCode
-      expect(
-        fulfilmentToNotification(
-          assembleFulfilments(answers),
-          answers.referenceNumber
-        ).commodity.name
-      ).toBe(firstLineCode)
+      const mapped = fulfilmentToNotification(
+        assembleFulfilments(answers),
+        answers.referenceNumber
+      )
+      expect(mapped.commodities[0].commodityCode).toBe(firstLineCode)
+      expect(mapped.commodities[0].name).toBe(
+        commodityNameFor(firstLineCode) ?? firstLineCode
+      )
     }
   )
 

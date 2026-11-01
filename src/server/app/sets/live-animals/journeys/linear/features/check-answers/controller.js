@@ -120,12 +120,7 @@ const renderCya = async (
     ),
     sections,
     readOnly,
-    successBanner: amendmentCancelled
-      ? {
-          titleText: copy.cancelAmend.successTitle,
-          text: copy.cancelAmend.successBody
-        }
-      : null,
+    amendmentCancelled,
     recoverableError,
     copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
     deleteHref:

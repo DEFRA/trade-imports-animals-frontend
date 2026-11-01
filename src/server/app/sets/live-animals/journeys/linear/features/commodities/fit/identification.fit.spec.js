@@ -2,13 +2,13 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
-  CANIS_FAMILIARIS,
+  RACCOON_DOG,
   EQUUS_CABALUS,
   FELIS_CATUS,
   PHONE_VIEWPORT,
   saveAndContinue,
   STRUTHIO,
-  numberOfAnimalsFor,
+  animalsQuantityInputUnder,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -46,7 +46,7 @@ const addLines = async (page, speciesWithCounts) => {
     speciesWithCounts.map(([chosen]) => chosen)
   )
   for (const [chosen, count = DEFAULT_ANIMALS_COUNT] of speciesWithCounts) {
-    await (await numberOfAnimalsFor(page, chosen)).fill(count)
+    await animalsQuantityInputUnder(page, chosen).fill(count)
   }
 }
 
@@ -61,7 +61,7 @@ const openIdentification = async (page, speciesWithCounts) => {
   ).toBeVisible()
 }
 
-const openFelisCatusIdentification = (page) =>
+const openCatIdentification = (page) =>
   openIdentification(page, [[FELIS_CATUS, '2']])
 
 const entryLabelsOf = (fields) =>
@@ -94,7 +94,7 @@ const fillAddress = async (page, address = validPermanentAddress) => {
   }
 }
 
-const fillFelisCatusRecord = async (page, address = validPermanentAddress) => {
+const fillCatRecord = async (page, address = validPermanentAddress) => {
   await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
   await page.locator(PASSPORT_FIELD).fill(PASSPORT_NUMBER)
   await fillAddress(page, address)
@@ -111,6 +111,8 @@ const submitSaveAndFinish = (page) =>
 const inCardSaveButton = (page, name) =>
   page.getByRole('button', { name, exact: true })
 
+const clickSaveAndContinue = (page) => saveAndContinue(page).click()
+
 const savedAnimalRow = (page, chosen, number) =>
   page.getByRole('row').filter({
     hasText: copy.identification.animalRowNamed(chosen.speciesLatinName, number)
@@ -121,7 +123,7 @@ const submitOverLongMicrochip = async (page) => {
   await page
     .locator(MICROCHIP_FIELD)
     .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
-  await saveAndContinue(page).click()
+  await clickSaveAndContinue(page)
 }
 
 const expectCompleteCard = async (page, chosen, savedRows) => {
@@ -170,9 +172,9 @@ const addBosTaurusRecord = async (page, earTag, { last = false } = {}) => {
   await (last ? submitSaveAndFinish(page) : submitAdd(page))
 }
 
-const addFelisCatusRecordRow = async (page) => {
-  await openFelisCatusIdentification(page)
-  await fillFelisCatusRecord(page)
+const addCatRecordRow = async (page) => {
+  await openCatIdentification(page)
+  await fillCatRecord(page)
   await submitAdd(page)
   return savedAnimalRow(page, FELIS_CATUS, 1)
 }
@@ -271,7 +273,7 @@ test.describe('animal identification', () => {
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
   })
 
-  test('asks a Bos taurus line for its ear tag before its passport, and an Equus cabalus line for its microchip first', async ({
+  test('asks a Bos taurus line for its ear tag before its passport, and a horse for its microchip first', async ({
     page
   }) => {
     await openIdentification(page, [[EQUUS_CABALUS], [BOS_TAURUS]])
@@ -306,7 +308,7 @@ test.describe('animal identification', () => {
   test('permanent address asks for eight fields and never for a country', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
 
     for (const field of Object.keys(validPermanentAddress)) {
       await expect(page.locator(`#${field}-0`)).toBeVisible()
@@ -318,7 +320,7 @@ test.describe('animal identification', () => {
   test('permanent address labels the postcode and phone fields and hints the country code', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
 
     await expect(
       page.getByLabel(copy.identification.address.postcode, {
@@ -335,7 +337,7 @@ test.describe('animal identification', () => {
   test('permanent address warns that a false address is fraud and says APHA can check it', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
 
     const guidance = copy.identification.permanentAddress
     await expect(page.getByText(guidance.warning)).toBeVisible()
@@ -353,7 +355,7 @@ test.describe('animal identification', () => {
   test('ends on the same Save and continue as every other journey page', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
 
     const saveActions = page.locator('.govuk-button-group')
     await expect(saveActions.locator(saveAndContinue(page))).toBeVisible()
@@ -363,7 +365,7 @@ test.describe('animal identification', () => {
   })
 
   test('back link returns to the overview', async ({ page }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
     await page.locator('.govuk-back-link').click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -398,8 +400,10 @@ test.describe('animal identification', () => {
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
-    await expect(await numberOfAnimalsFor(page, EQUUS_CABALUS)).toHaveValue('3')
-    await expect(await numberOfAnimalsFor(page, BOS_TAURUS)).toHaveValue('2')
+    await expect(animalsQuantityInputUnder(page, EQUUS_CABALUS)).toHaveValue(
+      '3'
+    )
+    await expect(animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue('2')
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -410,7 +414,7 @@ test.describe('animal identification', () => {
   test('has no serious or critical axe violations with the microchip field rendered', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
     await expect(page.locator(MICROCHIP_FIELD)).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -482,7 +486,7 @@ test.describe('animal identification in-card save button', () => {
     ).toHaveCount(0)
 
     await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
-    await saveAndContinue(page).click()
+    await clickSaveAndContinue(page)
 
     await page
       .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
@@ -590,7 +594,7 @@ test.describe('animal identification identifier validation', () => {
   test('validation: an empty record links to and focuses the first identifier', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
+    await openCatIdentification(page)
     await submitAdd(page)
 
     await expectErrorFocus(
@@ -608,7 +612,7 @@ test.describe('animal identification identifier validation', () => {
       await openIdentification(page, [[species]])
       const invalid = 'X'.repeat(MAX_IDENTIFIER_LENGTH + 1)
       await page.locator(`#${field}-0`).fill(invalid)
-      await saveAndContinue(page).click()
+      await clickSaveAndContinue(page)
 
       await expectErrorFocus(
         page,
@@ -646,8 +650,8 @@ test.describe('animal identification address validation', () => {
     test(`permanent address validation: empty ${name} links to and focuses the preserved field`, async ({
       page
     }) => {
-      await openFelisCatusIdentification(page)
-      await fillFelisCatusRecord(page)
+      await openCatIdentification(page)
+      await fillCatRecord(page)
       await page.locator(`#${field}-0`).fill('')
       await submitAdd(page)
 
@@ -665,11 +669,8 @@ test.describe('animal identification address validation', () => {
     test(`permanent address validation: ${name} links to and focuses the preserved value`, async ({
       page
     }) => {
-      await openFelisCatusIdentification(page)
-      await fillFelisCatusRecord(page, {
-        ...validPermanentAddress,
-        [field]: invalid
-      })
+      await openCatIdentification(page)
+      await fillCatRecord(page, { ...validPermanentAddress, [field]: invalid })
       await submitAdd(page)
 
       await expectErrorFocus(
@@ -691,7 +692,7 @@ test.describe('animal identification records', () => {
   test('adds a complete record and reads it back as a row of the saved-animals table', async ({
     page
   }) => {
-    const row = await addFelisCatusRecordRow(page)
+    const row = await addCatRecordRow(page)
 
     await expect(
       columnHeader(page, copy.identification.table.animalColumn)
@@ -758,10 +759,10 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
   })
 
-  test('saves a Canis familiaris identified only by its microchip and reads the number back', async ({
+  test('saves a dog identified only by its microchip and reads the number back', async ({
     page
   }) => {
-    await openIdentification(page, [[CANIS_FAMILIARIS, '2']])
+    await openIdentification(page, [[RACCOON_DOG, '2']])
     await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
     await fillAddress(page)
     await submitAdd(page)
@@ -774,7 +775,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
     await page.reload()
     await expect(
-      savedAnimalRow(page, CANIS_FAMILIARIS, 1).getByRole('cell', {
+      savedAnimalRow(page, RACCOON_DOG, 1).getByRole('cell', {
         name: MICROCHIP_NUMBER,
         exact: true
       })
@@ -782,7 +783,7 @@ test.describe('animal identification records', () => {
   })
 
   test('removes an added record', async ({ page }) => {
-    await addFelisCatusRecordRow(page)
+    await addCatRecordRow(page)
     const row = await removeAnimalRow(page, FELIS_CATUS, 1)
     await expect(row).toHaveCount(0)
   })
@@ -790,7 +791,7 @@ test.describe('animal identification records', () => {
   test('has no serious or critical axe violations once an animal is saved', async ({
     page
   }) => {
-    const row = await addFelisCatusRecordRow(page)
+    const row = await addCatRecordRow(page)
     await expect(row).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -829,7 +830,7 @@ test.describe('animal identification records', () => {
     await expectCompleteCard(page, BOS_TAURUS, 2)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
 
-    await saveAndContinue(page).click()
+    await clickSaveAndContinue(page)
     await page.getByRole('link', { name: 'What are you importing?' }).click()
     await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -997,11 +998,11 @@ test.describe('animal identification on a phone', () => {
     await signIn(page)
   })
 
-  test('keeps the summary and a Felis catus card with a saved animal inside the screen width', async ({
+  test('keeps the summary and a cat card with a saved animal inside the screen width', async ({
     page
   }) => {
-    await openFelisCatusIdentification(page)
-    await fillFelisCatusRecord(page)
+    await openCatIdentification(page)
+    await fillCatRecord(page)
     await submitAdd(page)
 
     await expectNoHorizontalOverflow(

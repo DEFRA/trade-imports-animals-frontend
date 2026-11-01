@@ -9,3 +9,9 @@ export const configureCommodityReference = (setId, commodityReference) => {
 }
 
 export const typeTextForId = (...args) => reference().typeTextForId(...args)
+
+export const commodityNameFor = (...args) =>
+  reference().commodityNameFor(...args)
+
+export const commodityDescriptionFor = (...args) =>
+  reference().commodityDescriptionFor(...args)

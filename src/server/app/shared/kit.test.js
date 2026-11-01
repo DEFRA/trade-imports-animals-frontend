@@ -21,9 +21,7 @@ import {
   readReturnMarker,
   recoverableSave,
   requestSaveChoice,
-  returnedSaveChoice,
-  setlessBase,
-  withReturnMarker
+  returnedSaveChoice
 } from './kit.js'
 import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
 
@@ -244,22 +242,6 @@ describe('#base — amending', () => {
   })
 })
 
-describe('#base — success banner', () => {
-  it('Should carry the success banner it is given', () => {
-    const banner = { titleText: 'Success', text: 'Saved' }
-
-    expect(base('t', { successBanner: banner }).successBanner).toEqual(banner)
-  })
-
-  it('Should carry no success banner by default, with or without a journey', () => {
-    expect(
-      base('t', { journey: { journeyId: 'j', status: DRAFT } }).successBanner
-    ).toBeNull()
-    expect(base('t').successBanner).toBeNull()
-    expect(setlessBase('t').successBanner).toBeNull()
-  })
-})
-
 describe('#amendReviewTarget — where a Change-link save of an amendment goes', () => {
   const params = { journeyId: 'journey-1' }
   const fromChangeLink = { params, query: { change: '1' } }
@@ -455,19 +437,6 @@ describe('#logRefusal', () => {
       reason: 'no-line'
     })
   })
-
-  it('Should log at warn when the caller sets the level', () => {
-    const request = journeyRequest('journey-1')
-
-    logRefusal(request, { level: 'warn', reason: 'unlisted-species' })
-
-    expectOneRefusalLogged(request.logger, {
-      journeyId: 'journey-1',
-      errorCodes: [],
-      level: 'warn',
-      reason: 'unlisted-species'
-    })
-  })
 })
 
 describe('#appendChangeContext — the change marker on an href', () => {
@@ -477,24 +446,6 @@ describe('#appendChangeContext — the change marker on an href', () => {
 
   it('Should join to the query string an href already has', () => {
     expect(appendChangeContext('/a?x=1')).toBe('/a?x=1&change=1')
-  })
-})
-
-describe('#withReturnMarker — the return marker on an href', () => {
-  it('Should start the query string on an href without one', () => {
-    expect(withReturnMarker('/a', 'addresses')).toBe('/a?return=addresses')
-  })
-
-  it('Should join to the query string an href already has', () => {
-    expect(withReturnMarker('/a?x=1', 'addresses')).toBe(
-      '/a?x=1&return=addresses'
-    )
-  })
-
-  it('Should encode a slug that contains a slash', () => {
-    expect(withReturnMarker('/a', 'commodities/identification')).toBe(
-      '/a?return=commodities%2Fidentification'
-    )
   })
 })
 

@@ -6,6 +6,8 @@ import {
   horseNameCommodityCodes,
   identifiedCommodityCodes,
   identifiersFor,
+  commodityDescriptionFor,
+  commodityNameFor,
   microchipCommodityCodes,
   packageCountCommodityCodes,
   passportCommodityCodes,
@@ -108,8 +110,7 @@ describe('the identifier allowlists', () => {
   it('Should key the permanent-address species to 01061900 alone', () => {
     expect(permanentAddressCodeSpecies()).toEqual([
       [OTHER_LIVE_MAMMALS_CODE, 'Felis catus'],
-      [OTHER_LIVE_MAMMALS_CODE, 'Canis familiaris'],
-      [OTHER_LIVE_MAMMALS_CODE, 'Canis lupus familiaris'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Nyctereutes procyonoides'],
       [OTHER_LIVE_MAMMALS_CODE, 'Mustela putorius furo']
     ])
   })
@@ -128,7 +129,7 @@ describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
     expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
     expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
-    expect(typeIdFor(CATTLE_CODE, 'Bison bison')).toBe('16')
+    expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
   })
 
   it('Should give every other code its one type', () => {
@@ -137,7 +138,7 @@ describe('#typeIdFor', () => {
     )
     for (const code of otherCodes) {
       expect(typeIdFor(code, 'Felis catus')).toBe('2')
-      expect(typeIdFor(code, 'Bos sp.')).toBe('2')
+      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
     }
   })
 })
@@ -154,5 +155,27 @@ describe('#typeTextForId', () => {
 
   it('Should give no text for a type id the code does not have', () => {
     expect(typeTextForId(CATTLE_CODE, '2')).toBeUndefined()
+  })
+})
+
+describe('#commodityDescriptionFor', () => {
+  it('Should give the stub MDM description for a known CN code', () => {
+    expect(commodityDescriptionFor('0102')).toBe('Live bovine animals')
+    expect(commodityDescriptionFor('01061900')).toBe('Other live animals')
+  })
+
+  it('Should give undefined for a code the stub does not hold', () => {
+    expect(commodityDescriptionFor('9999')).toBeUndefined()
+  })
+})
+
+describe('#commodityNameFor', () => {
+  it('Should reverse-lookup the commodity name from a CN code', () => {
+    expect(commodityNameFor('0102')).toBe('Cow')
+  })
+
+  it('Should give undefined for a code with no maintained name', () => {
+    expect(commodityNameFor('01061900')).toBeUndefined()
+    expect(commodityNameFor('9999')).toBeUndefined()
   })
 })

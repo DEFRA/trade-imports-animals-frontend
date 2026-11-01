@@ -7,8 +7,8 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
+  NYCTEREUTES_PROCYONOIDES,
+  RACCOON_DOG_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
   STRUTHIO,
@@ -62,10 +62,10 @@ describe('#buildSelectedCommodities', () => {
   it('Should give each species on code 01061900 its own row counted on its own', () => {
     expect(
       buildSelectedCommodities(
-        commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
+        commodityLinesFixture([RACCOON_DOG_ROW, 1], [FELIS_CATUS_ROW, 4])
       ).map(({ code, latinNames, animals }) => [code, latinNames, animals])
     ).toEqual([
-      ['01061900', [CANIS_FAMILIARIS], '1'],
+      ['01061900', [NYCTEREUTES_PROCYONOIDES], '1'],
       ['01061900', [FELIS_CATUS], '4']
     ])
   })

@@ -13,9 +13,10 @@ import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS_ROW,
   EQUUS_CABALUS_ROW,
+  EQUUS_ZEBRA_ROW,
   FELIS_CATUS_ROW,
+  RACCOON_DOG_ROW,
   STRUTHIO_ROW
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
@@ -32,8 +33,9 @@ export const BASE = SET_BASE
 
 export const BISON_BISON = BISON_BISON_ROW
 export const BOS_TAURUS = BOS_TAURUS_ROW
-export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
 export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
+export const EQUUS_ZEBRA = EQUUS_ZEBRA_ROW
+export const RACCOON_DOG = RACCOON_DOG_ROW
 export const FELIS_CATUS = FELIS_CATUS_ROW
 export const STRUTHIO = STRUTHIO_ROW
 
@@ -113,37 +115,6 @@ const documentTop = (locator) =>
 
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
-
-const documentRight = (locator) =>
-  locator.evaluate((el) => el.getBoundingClientRect().right + window.scrollX)
-
-/**
- * Fails unless the second element has wrapped onto a line below the first and the two end on the
- * same right edge.
- *
- * @param {import('@playwright/test').Locator} above - the element on the upper line.
- * @param {import('@playwright/test').Locator} below - the element expected to have wrapped under it.
- * @param {string} subject - names the pair in the failure message.
- */
-export const expectStackedOnSameRightEdge = async (above, below, subject) => {
-  const [aboveBottom, belowTop, aboveRight, belowRight] = [
-    await documentBottom(above),
-    await documentTop(below),
-    await documentRight(above),
-    await documentRight(below)
-  ]
-
-  expect(
-    belowTop,
-    `${subject} share a line, so there is no stacked alignment to check`
-  ).toBeGreaterThanOrEqual(aboveBottom)
-
-  const edgeTolerancePx = 1
-  expect(
-    Math.abs(belowRight - aboveRight),
-    `${subject} end on different right edges: ${aboveRight} and ${belowRight}`
-  ).toBeLessThanOrEqual(edgeTolerancePx)
-}
 
 /**
  * An anchored matcher for a URL under this set's mount.
@@ -602,23 +573,11 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
-  await page
-    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
-    .waitFor()
-  const speciesHeadings = await page
-    .getByRole('heading', { level: 3 })
-    .allTextContents()
-  const position = speciesHeadings.indexOf(speciesLatinName)
-  if (position === -1) {
-    throw new Error(
-      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
-    )
-  }
-  return page
-    .getByRole('textbox', { name: 'Number of animals', exact: true })
-    .nth(position)
-}
+export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
+  page
+    .getByRole('heading', { level: 3, name: speciesLatinName })
+    .locator('+ .govuk-form-group')
+    .getByLabel('Number of animals')
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -642,14 +601,14 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
-export const selectedSummary = (page) => page.locator('#commodity-selection')
-
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) =>
   expect(
-    selectedSummary(page)
+    page
+      .getByRole('heading', { name: /\d+ selected/ })
+      .locator('+ ul')
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })

@@ -17,7 +17,7 @@ const actionsCellOf = (statusCell) =>
 
 const viewFileLink = (actionsCell, uploadId) =>
   createEl('a', {
-    className: 'govuk-link',
+    className: 'govuk-link govuk-!-margin-right-3',
     text: actionsCell.dataset.viewFileText,
     attrs: { href: filePath(uploadId) },
     children: [

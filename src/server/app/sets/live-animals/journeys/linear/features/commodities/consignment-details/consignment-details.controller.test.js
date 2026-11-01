@@ -8,7 +8,6 @@ import {
   crumbProtectedServerMounting,
   driveHandler,
   expectBackLinkIsPage,
-  expectOneLogged,
   expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
@@ -23,7 +22,7 @@ import * as consignmentDetails from './consignment-details.controller.js'
 import {
   BISON_BISON,
   BOS_TAURUS,
-  CANIS_FAMILIARIS,
+  NYCTEREUTES_PROCYONOIDES,
   FELIS_CATUS
 } from '../search/test-support.js'
 
@@ -48,6 +47,8 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
+const EMPTY_DETAILS_REDIRECT_LOG =
+  'Consignment details has no commodities, commodity question shown'
 const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
@@ -88,7 +89,7 @@ const seedPerSpeciesLines = () => ({
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: CANIS_FAMILIARIS,
+      speciesLatinName: NYCTEREUTES_PROCYONOIDES,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
@@ -111,7 +112,7 @@ const seedTwoSpeciesOfOneCommodity = () => ({
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: CANIS_FAMILIARIS,
+      speciesLatinName: NYCTEREUTES_PROCYONOIDES,
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '7'
     },
@@ -127,13 +128,6 @@ const seedTwoSpeciesOfOneCommodity = () => ({
 const COMMODITY_REMOVAL_REFUSED = {
   reason: 'no-commodity-at-index'
 }
-
-const expectRedirectedToCommodityQuestionLogged = (result, fields) =>
-  expectOneLogged(result.logger, {
-    level: 'info',
-    fields: { journeyId: result.journeyId, ...fields },
-    message: 'Redirected to the commodity question'
-  })
 
 const SPECIES_REMOVAL_REFUSED = {
   reason: 'no-species-at-index'
@@ -289,10 +283,13 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
-    expectRedirectedToCommodityQuestionLogged(result, {
-      reason: 'last-commodity-removed',
-      commodityCode: '01063300'
-    })
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
@@ -303,9 +300,13 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
     })
     expect(result.view).toBeUndefined()
-    expectRedirectedToCommodityQuestionLogged(result, {
-      reason: 'no-commodities-on-load'
-    })
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
@@ -315,9 +316,6 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
     })
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
-    })
-    expectRedirectedToCommodityQuestionLogged(result, {
-      reason: 'no-commodities-on-load'
     })
   })
 
@@ -383,7 +381,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       ])
     ).toEqual([
       ['0102', [BOS_TAURUS, BISON_BISON], 'remove:0'],
-      ['01061900', [CANIS_FAMILIARIS], 'remove-species:2'],
+      ['01061900', [NYCTEREUTES_PROCYONOIDES], 'remove-species:2'],
       ['01061900', [FELIS_CATUS], 'remove-species:3']
     ])
   })
@@ -433,7 +431,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         commodityLines: [
           {
             commodityCode: '01061900',
-            speciesLatinName: CANIS_FAMILIARIS,
+            speciesLatinName: NYCTEREUTES_PROCYONOIDES,
             numberOfPackages: '3',
             numberOfAnimalsQuantity: '7'
           }
@@ -445,10 +443,13 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
-    expectRedirectedToCommodityQuestionLogged(result, {
-      reason: 'last-commodity-removed',
-      commodityCode: '01061900'
-    })
+    expect(result.logger.entries).toEqual([
+      {
+        level: 'info',
+        fields: { journeyId: result.journeyId, commodityCodeCount: 0 },
+        message: EMPTY_DETAILS_REDIRECT_LOG
+      }
+    ])
   })
 
   it('Should refuse a species remove aimed at a commodity the page lists as one row, and delete nothing', async () => {

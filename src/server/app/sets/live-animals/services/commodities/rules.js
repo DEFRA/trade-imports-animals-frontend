@@ -63,8 +63,7 @@ export const PACKAGE_COUNT_CODES = [
 const PERMANENT_ADDRESS_SPECIES = {
   [OTHER_LIVE_MAMMALS_CODE]: [
     'Felis catus',
-    'Canis familiaris',
-    'Canis lupus familiaris',
+    'Nyctereutes procyonoides',
     'Mustela putorius furo'
   ]
 }
@@ -83,7 +82,7 @@ const DOMESTIC = { id: '16', text: 'Domestic' }
 const GAME = { id: '24', text: 'Game' }
 const SINGLE_TYPE = { id: '2', text: '' }
 
-const GAME_SPECIES = new Set(['Bos sp.'])
+const GAME_SPECIES = new Set(['Bos sp.', 'Bos spp.'])
 
 const TYPES_BY_CODE = {
   [CATTLE_CODE]: {

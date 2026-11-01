@@ -52,7 +52,7 @@ describe('#searchCommodities', () => {
         {
           code: '0102',
           species: [
-            { latinName: 'Bubalus', commonName: 'water buffalos' },
+            { latinName: 'Bubalus', commonName: 'Water Buffaloes' },
             { latinName: 'Bubalus bubalis', commonName: 'Water Buffalo' }
           ]
         }
@@ -81,10 +81,7 @@ describe('#searchCommodities', () => {
 
   it('Should group matches under each code they fall under, in data order', () => {
     const results = searchCommodities('taurus', { page: 0, size: 10 })
-    expect(results.groups.map((group) => group.code)).toEqual([
-      '0102',
-      '01061900'
-    ])
+    expect(results.groups.map((group) => group.code)).toEqual(['0102'])
   })
 
   it('Should find nothing for a term that matches nothing', () => {

@@ -21,7 +21,6 @@ export const linesWithUnlistedSpecies = async (lines) => {
   }
   return fromStubOrReferenceData({
     stubCall: () => unlistedLinesInStub(lines),
-    realCall: async () => unlistedFrom(await checkSpecies(lines)),
-    dataset: 'species'
+    realCall: async () => unlistedFrom(await checkSpecies(lines))
   })
 }

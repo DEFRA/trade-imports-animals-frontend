@@ -13,6 +13,5 @@ import { searchCommodities } from './stub.js'
 export const search = (term, { page = 0, size }) =>
   fromStubOrReferenceData({
     stubCall: () => searchCommodities(term, { page, size }),
-    realCall: () => fetchCommodities(term, { page, size }),
-    dataset: 'commodities'
+    realCall: () => fetchCommodities(term, { page, size })
   })

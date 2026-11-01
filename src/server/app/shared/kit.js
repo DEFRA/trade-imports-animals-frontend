@@ -120,12 +120,11 @@ export const SAVE_FALLBACK_LOG_MESSAGE =
   'Save failed on a recoverable backend error, fallback response sent'
 
 /**
- * Logs a refusal once, at info unless `level` says otherwise. The error codes
- * are the field keys, never the messages.
+ * Logs a refusal once at info. The error codes are the field keys, never the
+ * messages.
  *
  * @param {object} request - the request being answered.
  * @param {object} [options] - other keys (the named reason, ids) are logged as given.
- * @param {'info'|'warn'} [options.level='info'] - the pino level to log at.
  * @param {object} [options.fieldErrors] - map of field key to the message the
  * page shows (may be empty). Only for a refusal that is not the user's own
  * input (a state refusal, a tampered post, another service refusing), never
@@ -190,12 +189,6 @@ export const appendChangeContext = (href) =>
 export const withChangeContext = (request, href) =>
   changeContext(request) ? appendChangeContext(href) : href
 
-const RETURN_PARAMETER = 'return'
-
-/** The href with a `return` marker added to its query string. */
-export const withReturnMarker = (href, slug) =>
-  `${href}${href.includes('?') ? '&' : '?'}${RETURN_PARAMETER}=${encodeURIComponent(slug)}`
-
 /**
  * Reads the `return` marker a request carries.
  *
@@ -206,7 +199,7 @@ export const withReturnMarker = (href, slug) =>
  * `{ refusedMarker }` holding the value received.
  */
 export const readReturnMarker = (request, allowedSlugs) => {
-  const marker = request.query?.[RETURN_PARAMETER]
+  const marker = request.query?.return
   if (marker === undefined) {
     return {}
   }
@@ -319,8 +312,6 @@ export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
  * the content column. Defaults to `form`, the reading measure; an unknown
  * surface throws.
  * @param {boolean} [options.showJourneyStrip] - false leaves the status strip off the page.
- * @param {{ titleText: string, text: string }|null} [options.successBanner] -
- * the success banner the view carries. Defaults to none.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -333,7 +324,6 @@ export const base = (
     recoverableError = false,
     offerCancelAmend = true,
     showJourneyStrip = true,
-    successBanner = null,
     request,
     surface = 'form'
   } = {}
@@ -358,7 +348,6 @@ export const base = (
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
-    successBanner,
     contentColumnClass: surfaceClass(surface)
   }
 }
@@ -373,7 +362,6 @@ export const setlessBase = (title) => ({
   concurrencyToken: null,
   sharedCopy,
   recoverableError: false,
-  successBanner: null,
   contentColumnClass: SURFACES.form
 })
 
