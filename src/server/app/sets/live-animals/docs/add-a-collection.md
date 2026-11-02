@@ -50,7 +50,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commoditySelection',
+  name: 'commodityCode',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -71,7 +71,7 @@ Collection-level facts:
   import). A member with no `applyTo` is always in scope for every instance; a
   member with `applyTo` is scoped per instance (see step 2).
 - Member names are the keys inside each request-local instance object
-  (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
+  (`answers.commodityLines[0].commodityCode`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
   boot ([`src/server/app/flow/dispatch.js`](../../../flow/dispatch.js)).
 
@@ -101,7 +101,7 @@ const unit = {
 
 export const evaluationBindings = feature('commodities', [
   grouped({
-    field: 'commoditySelection',
+    field: 'commodityCode',
     obligation: commodityCode,
     groups: [line]
   }),
@@ -132,20 +132,20 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodityCodes, null, [
     numberOfPackagesReason
   ])
 }
 ```
 
 `allowListed(gate, values, gatedParentGroup, reasons)` scopes the field to the
-instances whose gate value is on the whitelist. The **gated parent group**
+instances whose gate value is on the allow list. The **gated parent group**
 argument is what makes it work at depth:
 
 - **`null` gatedParentGroup** — the gate and the gated field sit at the same
   identity level. `numberOfPackages` and its gate `commodityCode` are both
   `within commodityLine`, so the field is in scope for exactly the lines
-  whose own commodity code is whitelisted.
+  whose own commodity code is allow-listed.
 - **a group** — the gated field is deeper than its gate. The per-unit
   identifier fields (`passport`, `earTag`, …) are `within unitRecord` but gate
   on `commodityCode`, which lives one level up on the line. They pass
@@ -199,35 +199,109 @@ controller builds its own rows over those facts.
 [`journeys/linear/features/documents/controller.js`](../journeys/linear/features/documents/controller.js) is
 the page the flow knows about. It declares the group it collects and renders
 both the entry form and the read-back table on one page, with a per-row Remove
-link:
+button:
 
 ```js
 export const meta = { ...page, collects: ['documents'] }
 ```
 
-Its POST branches on the submit button. `action === 'add'` validates the entry
-fields, appends, and redirects back to the page for the next one. Continue
-posts the same entry fields with it, so it appends too when the payload holds
-a started entry — `startsADocument` in
-[`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
-keys that on the trader having chosen a document type — and otherwise advances
-with no write. Both saving paths run through the same `postAdd`, which takes an
-`afterSave` callback, so every successful append ends in a redirect rather than
-a render: the POST mutated state and a reload must not replay it. The append
-creates the snapshot-local position — until that POST the draft lives only in
-the payload, never a half-created instance in the store:
+While the add form is open, none of this loop's save buttons post to this
+service. The entry carries a file, so every save button posts to a session on
+the upload service, resolved as the page is rendered by
+[`handlers/add-form-session.js`](../journeys/linear/features/documents/handlers/add-form-session.js):
+the session this page view already opened where the request carries its handle
+and no file has reached that session yet, and a newly opened one otherwise,
+registered against the notification. The
+controller calls it through `addFormSessionFields`, which reports an unavailable form
+rather than failing the page when no session can be opened: the document list
+stays readable and the Add form alone is refused, with its own message.
+
+A session is opened per page view rather than per render, because every render
+that opened one left a registration and an upload-service session behind that
+the browser never returned with — a run of them for one document, since the
+no-JS refresh link re-renders the page on every tick while a scan settles. The
+handle travels in the refresh link's query and in a hidden field on the form,
+under the one key `uploadSession`, and the session it names is looked up on the
+notification the page belongs to rather than trusted from the handle alone. A
+page view that carries no handle opens its own session, so two adds never share
+one handle.
+
+The session is then checked against the upload service before it is reused,
+because an upload session takes one file and is closed to further files the
+moment one arrives — whether it took that file or refused it. A handle whose
+session has already taken a file therefore opens a new session instead of
+reusing it, so no form this page renders can post to a session the upload
+service would answer itself. A handle reaches this page from the refresh link's
+query, from a hidden field on a form, and from any copy of either the browser
+has kept, so the check belongs on the server and not only in the browser.
+
+Two browser-side rules go with it, because a form carrying a dead session is
+submitted before this service sees anything: the page is served with
+`cache-control: no-store` so the browser keeps no copy of it, and the feature's
+client bundle opens the page again by its own address when the browser hands
+back a copy it kept anyway. A browser that keeps the page despite the header and
+has no JavaScript is the one combination neither rule covers.
+
+The upload service then returns the browser to this page on a GET carrying the
+correlation handle the session was opened under. That GET is where the entry
+is taken on: `claimReturnedUpload` reads back what was submitted, refuses it
+by the page's own rules — the field rules, the file, and the collection's cap
+— and otherwise appends it and routes on by `routeAfterClaim`. Save and add
+another is followed by a redirect back to the page's clean path. Save and
+continue, Save and return to overview and the amend buttons go through
+`leavePage` on the returned request. A reload adds nothing twice, because
+`isAlreadySaved` stops a second append.
 
 ```js
-await state.appendEntry(request, h, 'documents', entry)
+await state.appendEntry(request, h, 'documents', claimed.entry)
 ```
 
-A leaf-less entry has no canonical record from which to infer an instance and
-is therefore not persisted. Collection forms should commit an entry only after
+The append creates the snapshot-local position — until it runs the entry lives
+only in the upload session, never a half-created instance in the store. A
+leaf-less entry has no canonical record from which to infer an instance and is
+therefore not persisted. Collection forms should commit an entry only after
 validation has produced at least one bound leaf.
 
-Remove is a third branch of the same POST — a submit button named
+The claim and the append are two writes to two services, so they can part
+company: a claim that succeeds while the append fails leaves the upload service
+holding the document and the notification not listing it. The page recovers
+rather than reporting it. The failing render names the upload in
+`unsavedDocument`, which puts the handle in a hidden `retryAddCorrelationId`
+field, and a POST carrying that field runs the whole take-on again before any
+other action on the page — safe to repeat because the claim endpoint replaces a
+claimed document's details rather than adding a second document, and because
+`isAlreadySaved` stops a second append. Continue is held back until the
+notification lists every upload the service holds as claimed
+(`handlers/unsaved-claim.js`), so the two cannot disagree about what the
+notification contains while the trader carries on. Where the page cannot read
+what the service holds, it holds Continue back too: the gate exists to stop a
+document going missing, and trusting the collection alone is what let it go
+missing.
+
+While the add form is open, every save button sends the entry and its file to
+the upload session, as Add does, and each carries its own choice. A save then
+takes the entry on exactly as Add does, and goes on by the choice the returned
+form carries: back to the page for Add, to the overview for Save and return to
+overview, and on by its own choice for Save and continue too — a document the
+scan is still checking does not hold any of them; only one the scan rejected
+holds the trader on the page. An entry is started by any of its reference,
+type, date of issue or a chosen file:
+`startsADocument` in
+[`form/payload.js`](../journeys/linear/features/documents/form/payload.js) owns
+that rule. A started entry is refused on every save button rather than dropped:
+the refusal keeps every answer typed, says what is missing, and adds nothing. A
+form with no started entry is left unclaimed, and the browser goes on by its
+save choice with no write.
+
+When the add form is closed (no session could be opened, or the notification is
+full), or a taken-on entry or a removal is waiting to be retried, the save
+buttons post to the page. A payload there holding a started entry
+is refused the same way by `refuseUnaddedDocument`, with "Upload a document" on
+the file field where a session is open.
+
+Remove is a branch of the same POST — a submit button named
 `action` with a `remove:<index>` value, so the page form's crumb travels
-with it and no GET can trigger a delete. It splices the instance out and
+with it and no GET removes an entry. It splices the instance out and
 reconciles, so anything left dangling out of scope is pruned too:
 
 ```js
@@ -245,8 +319,10 @@ forms; each delegates to the `…At` form with a single-segment path
 
 The commodities collection uses two pages. The SEARCH page
 ([`journeys/linear/features/commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js))
-declares the group in `collects` and, on save, reconciles one line per selected
-species in a single write:
+declares the group in `collects` and, on save, hands the chosen search rows to
+[`actions/commit-selection.js`](../journeys/linear/features/commodities/search/actions/commit-selection.js),
+which reconciles one line per chosen search row (a commodity code plus a Latin
+name) in a single write, then clears the stored search rows:
 
 ```js
 await state.reconcileEntriesAt(
@@ -254,9 +330,12 @@ await state.reconcileEntriesAt(
   h,
   ['commodityLines'],
   lineKey,
-  selected.map(seedLine)
+  rows.map(seedLine)
 )
 ```
+
+Each row carries `commodityCode`, `speciesLatinName` and `speciesCommonName` from the
+search results the page showed.
 
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected
@@ -289,12 +368,17 @@ state.collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
 ### Thread the change context through the loop
 
 A collection reached from a Change link on check-your-answers carries a change
-context. Wrap every internal link and redirect — row actions, back links,
+context. Wrap every internal link and redirect — row actions,
 add/remove/save round-trips — in `kit.withChangeContext(request, href)` so the
 context survives the loop. Resolve the loop's exiting Continue with
 `kit.nextTarget(request, page, scope)`, and let a hub exit win first via
 `kit.hubExitTarget(request)`. Only the exit repoints to check-your-answers;
 mid-loop actions must never bounce there early.
+
+A collection page's Back link carries the context on like any other internal
+link, unless the page returns to the review itself: such a page declares that
+to `kit.runBackLink()` through its `returnsToReview` option and takes its back
+link from there instead of wrapping it in `kit.withChangeContext()`.
 
 ## 5. Cap the count where the model demands it
 
@@ -302,7 +386,7 @@ Some collections cap their instance count at a sibling field. The declaration
 is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
 
 ```js
-export const MAX_ENTRIES_FROM = {
+export const ENTRY_CAP_FIELD_BY_COLLECTION = {
   animalIdentifiers: 'numberOfAnimalsQuantity'
 }
 ```
@@ -347,14 +431,38 @@ what it declares. Add a case shaped like the matching layout:
 1. Assert the loop page's declaration — for the single-page loop,
    `documents.meta.collects` equals `['documents']`; for the batch split, the
    search page's meta collects `['commodityLines']`.
-2. Drive the committing handler with a valid payload — the `action === 'add'`
-   POST for a single-page loop, or the reconcile save for a batch split.
+2. Drive the committing handler with a valid payload — the add POST for a
+   single-page loop that collects its entry in this service, the GET the upload
+   service returns the browser to for the documents loop, or the reconcile save
+   for a batch split.
 3. If the collection is conditionally scoped, seed the gating answer so it stays
    in scope — otherwise reconcile wipes the fresh write. Always-in-scope groups
    need no seed.
 4. Assert the handler committed exactly the declared ids.
 
-## The one hard limit
+## Test support
+
+Build test set-up from the shared helpers, and extend them rather than writing
+set-up in the test file.
+
+The controller-test helpers are listed in [Test support](add-a-page.md#test-support), with `useStubbedJourney` as the set-up.
+
+- browser tests:
+  [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
+  — journey steps such as `startNotification`, `selectSpecies`,
+  `addDocument` and `addTransitCountry`. A step that adds one instance to the
+  collection belongs here once two specs need it
+- set-up shared only inside one feature: that feature's `test-support.js`
+
+When a second test needs the same set-up, move it into one of these helpers in
+the same change and delete every local copy. Importing a sibling feature's test
+helper is fine.
+
+## Logging
+
+What to log, and where, is under "Logging" in [`architecture.md`](../../../docs/architecture.md).
+
+## Hard limit
 
 A member's `applyTo` gate reads values at the same identity level, or fans
 a shallower gate down onto its own instances via the gatedParentGroup. It

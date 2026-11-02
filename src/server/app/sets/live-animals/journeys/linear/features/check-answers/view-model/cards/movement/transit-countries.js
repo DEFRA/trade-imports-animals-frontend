@@ -10,17 +10,12 @@ import { toArray } from '../../rows/value-text.js'
 const copy = copyFor({ en, cy })
 
 /**
- * The countries the consignment travels through, collected on their own page
- * and asked for only when the means of transport is overland. Design release 1
- * gives them their own card under their own heading, so the card stands only
- * while the answer is in scope — the section builder makes that call.
+ * The countries the consignment travels through.
  */
 export const transitCountriesCard = async (journeyId, answers, readOnly) => {
   const codes = toArray(answers.transitedCountries)
   const labels = await Promise.all(
-    codes.map(
-      async (code) => (await countries.countryDisplayLabel(code)) ?? code
-    )
+    codes.map(async (code) => (await countries.originLabel(code)) ?? code)
   )
   return {
     id: 'transitCountries',

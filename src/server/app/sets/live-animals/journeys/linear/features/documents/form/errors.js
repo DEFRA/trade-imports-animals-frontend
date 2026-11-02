@@ -1,23 +1,24 @@
 import { isBlank } from '../../../../../../../lib/answered.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import {
+  FILE_DOWNLOAD_FAILED,
+  FILE_EMPTY,
+  FILE_INVALID_TYPE,
+  FILE_TOO_LARGE,
+  FILE_UPLOAD_FAILED,
+  FILE_VIRUS
+} from '../../../../../../../services/cdp-uploader/file-error-codes.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { ADD_DOCUMENT_ANCHOR } from '../contracts/add-document-anchor.js'
 import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
-import {
-  FILE_TYPE_MESSAGE,
-  OVERSIZE_FILE_MESSAGE,
-  attachmentTypeFor,
-  exceedsMaxFileSize
-} from '../upload-config.js'
+import { fileTypeMessage, oversizeMessage } from '../upload-config.js'
 import { fields } from './payload.js'
 
 const copy = copyFor({ en, cy })
 
-// Every document field is mandatory per record and there is no edit
-// page — a record added with blanks could never be completed in place,
-// so presence is enforced at add time.
 export const presenceErrors = (entry) => ({
   ...(entry.accompanyingDocumentReference
     ? {}
@@ -27,22 +28,44 @@ export const presenceErrors = (entry) => ({
     : {})
 })
 
-export const fileErrors = (file) => {
-  if (!file?.payload?.length) {
-    return { file: copy.errors.fileRequired }
+export const MESSAGE_BY_FILE_ERROR_CODE = {
+  [FILE_VIRUS]: copy.errors.fileVirus,
+  [FILE_EMPTY]: copy.errors.fileEmpty,
+  [FILE_TOO_LARGE]: oversizeMessage(copy),
+  [FILE_INVALID_TYPE]: fileTypeMessage(copy),
+  [FILE_UPLOAD_FAILED]: copy.errors.uploadFailed,
+  [FILE_DOWNLOAD_FAILED]: copy.errors.fileDownloadFailed
+}
+
+/**
+ * No file was submitted.
+ *
+ * @returns {object} a file error to merge with the field rules
+ */
+export const fileRequiredFieldError = () => ({ file: copy.errors.fileRequired })
+
+/**
+ * What to tell the trader about the file they submitted.
+ *
+ * @param {object} [file] - the file entry the upload service returned
+ * @returns {object} a file error to render, empty when the file can be taken on
+ */
+export const submittedFileError = (file) => {
+  if (!file?.filename) {
+    return fileRequiredFieldError()
   }
-  if (exceedsMaxFileSize(file.payload.length)) {
-    return { file: OVERSIZE_FILE_MESSAGE }
+  if (file.hasError) {
+    return {
+      file:
+        MESSAGE_BY_FILE_ERROR_CODE[file.errorCode] ?? copy.errors.uploadFailed
+    }
   }
-  if (!attachmentTypeFor(file.filename ?? '')) {
-    return { file: FILE_TYPE_MESSAGE }
+  if (file.contentLength === 0) {
+    return { file: copy.errors.fileEmpty }
   }
   return {}
 }
 
-// The error summary lists the fields in the order it is handed them, and the
-// summary has to read down the page. Presence and format rules fire in their
-// own order, so the merged result is rebuilt in the page's order.
 const FIELD_ORDER = [
   'accompanyingDocumentReference',
   'accompanyingDocumentType',
@@ -58,13 +81,9 @@ const inFieldOrder = (errors) =>
     ])
   )
 
-export const documentAddErrors = (payload, bare, pendingDocumentSave) => {
+export const documentAddErrors = (payload, bare, fileError) => {
   const { errors } = validate(fields(), payload)
-  return inFieldOrder({
-    ...errors,
-    ...presenceErrors(bare),
-    ...(pendingDocumentSave ? {} : fileErrors(payload.file))
-  })
+  return inFieldOrder({ ...errors, ...presenceErrors(bare), ...fileError })
 }
 
 export const capacityExceededError = () => [
@@ -72,4 +91,15 @@ export const capacityExceededError = () => [
     text: copy.errors.maxDocuments(MAX_DOCUMENTS),
     href: DOCUMENTS_ADDED_ANCHOR
   }
+]
+
+/**
+ * The file's own name resolves to no attachment type the service accepts.
+ *
+ * @returns {object} a file error to merge with the field rules
+ */
+export const fileTypeFieldError = () => ({ file: fileTypeMessage(copy) })
+
+export const uploadUnavailableError = () => [
+  { text: copy.errors.uploadUnavailable, href: ADD_DOCUMENT_ANCHOR }
 ]

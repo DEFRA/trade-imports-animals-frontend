@@ -27,6 +27,7 @@ const copyPost = async (request, h) => {
       : undefined
   try {
     const { failure, value: copied } = await kit.recoverableSave(
+      request,
       () => copyJourney(request, h, request.params.journeyId, concurrencyToken),
       async () =>
         (await recoverCopy(request, h)).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -39,6 +40,13 @@ const copyPost = async (request, h) => {
       : h.redirect(dashboardPath())
   } catch (error) {
     if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+      request.logger.info(
+        {
+          journeyId: request.params.journeyId,
+          reason: 'stale-concurrency-token'
+        },
+        'Copy refused as stale'
+      )
       return h.redirect(`${originPath(request)}?staleAction=1`)
     }
     throw error

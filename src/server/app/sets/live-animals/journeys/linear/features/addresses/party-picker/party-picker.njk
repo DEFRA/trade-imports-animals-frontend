@@ -1,12 +1,26 @@
 {% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPicker %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
-  <span class="govuk-caption-l">{{ pickerCopy.caption }}</span>
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <span class="govuk-caption-l">{{ pickerCopy.caption }}</span>
+      <h1 class="govuk-heading-l">{{ heading }}</h1>
+    </div>
+    {% if addAddressHref %}
+      <div class="govuk-grid-column-one-third govuk-!-text-align-right">
+        {{ govukButton({
+          text: pickerCopy.addNewAddress,
+          href: addAddressHref,
+          classes: "govuk-button--secondary"
+        }) }}
+      </div>
+    {% endif %}
+  </div>
   <p class="govuk-body">{{ description }}</p>
 
-  {{ addressPicker(picker, crumb, pickerCopy, sharedCopy.saveActions, hubHref, addAddressHref, amend = amend) }}
+  {{ addressPicker(picker, crumb, pickerCopy, sharedCopy.saveActions, hubHref, amend = amend) }}
 {% endblock %}

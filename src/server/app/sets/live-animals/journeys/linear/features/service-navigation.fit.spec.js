@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
   BASE,
+  expectNoSeriousOrCriticalViolations,
   signIn,
   startNotification
 } from '../../../../../../../../fit/live-animals-journey.js'
@@ -77,7 +77,7 @@ test.describe('service navigation', () => {
     ).toHaveAttribute('href', '/auth/sign-out')
   })
 
-  test('shows the signed-in user nowhere, as Design release 1 does not', async ({
+  test('shows neither the signed-in user nor a Sign out link', async ({
     page
   }) => {
     await page.goto(BASE)
@@ -93,16 +93,6 @@ test.describe('service navigation', () => {
 
     await expect(navigation(page).getByRole('listitem')).toHaveText(ITEMS)
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Service navigation has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Service navigation')
   })
 })

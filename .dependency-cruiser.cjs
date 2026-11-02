@@ -1,4 +1,4 @@
-// Machine-enforced L1-L4 architecture for src/server/app.
+// Machine-enforced L1-L4 architecture for src/server/app, and the client/server boundary.
 //
 //   L1: app root                         composition and registry
 //   L2: engine/model/bridge/flow/...     generic, set-agnostic platform
@@ -9,6 +9,14 @@ const APP = 'src/server/app'
 
 module.exports = {
   forbidden: [
+    {
+      name: 'client-never-server',
+      comment:
+        'Browser code ships to the user and cannot depend on server modules; shared helpers live under src/client.',
+      severity: 'error',
+      from: { path: '^src/client/' },
+      to: { path: '^src/server/' }
+    },
     {
       name: 'no-l2-to-sets',
       comment:

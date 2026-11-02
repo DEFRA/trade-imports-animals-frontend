@@ -1,26 +1,13 @@
-import * as commodities from '../../../../../../services/commodities/index.js'
+import { codeAndLatinNameOf } from './line-key.js'
 
-export const splitKey = (key) => {
-  const separator = key.indexOf('|')
-  return [key.slice(0, separator), key.slice(separator + 1)]
+const byCodeThenName = (left, right) => {
+  const [leftCode, leftName] = codeAndLatinNameOf(left)
+  const [rightCode, rightName] = codeAndLatinNameOf(right)
+  return leftCode.localeCompare(rightCode) || leftName.localeCompare(rightName)
 }
 
-export const isValidKey = (key) => {
-  const [name, species] = splitKey(key)
-  return commodities.isCommoditySpecies(name, species)
-}
+export const inCanonicalOrder = (keys) =>
+  [...new Set(keys)].sort(byCodeThenName)
 
-// Canonical selection order: commodity list order, then that commodity's
-// species order — so the details page renders deterministic groups whatever
-// order the boxes were ticked in.
-export const canonicalKeys = () =>
-  commodities
-    .list()
-    .flatMap((name) =>
-      commodities.speciesFor(name).map((option) => `${name}|${option.value}`)
-    )
-
-export const normaliseKeys = (keys) => {
-  const wanted = new Set(keys.filter(isValidKey))
-  return canonicalKeys().filter((key) => wanted.has(key))
-}
+export const knownKeysInCanonicalOrder = (keys, knownRowsByKey) =>
+  inCanonicalOrder(keys.filter((key) => knownRowsByKey.has(key)))

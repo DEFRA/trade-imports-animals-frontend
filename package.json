@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "type": "module",
   "engines": {
-    "node": ">=24.21.0",
+    "node": ">=24.22.1",
     "npm": ">=11.6.2"
   },
   "packageManager": "npm@11.19.0",
@@ -25,13 +25,15 @@
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",
-    "git:pre-commit-hook": "npm run format:check && npm run lint && npm test",
+    "git:pre-push-checks": "npm run format:check && npm run lint",
+    "git:pre-push-hook": "npm run git:pre-push-checks && npm test",
     "postinstall": "npm run setup:husky",
-    "lint": "run-s lint:js lint:scss lint:arch",
+    "lint": "run-s lint:js lint:templates lint:scss lint:arch",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
+    "lint:templates": "node eslint-rules/template-comments.js",
     "lint:scss": "stylelint \"src/**/*.scss\" --cache --cache-location .cache/stylelint --cache-strategy content --color --ignore-path .gitignore",
-    "lint:arch": "depcruise src/server/app --config .dependency-cruiser.cjs --ignore-known --output-type err-long --cache",
+    "lint:arch": "depcruise src/server/app src/client --config .dependency-cruiser.cjs --ignore-known --output-type err-long --cache",
     "depcruise:baseline": "depcruise src/server/app --config .dependency-cruiser.cjs --output-type baseline > .dependency-cruiser-known-violations.json",
     "depcruise:graph": "depcruise src/server/app --config .dependency-cruiser.cjs --output-type archi | dot -T svg > live-animals-arch.svg",
     "pretest": "npm run build:frontend",
@@ -93,7 +95,7 @@
     "pino": "10.4.0",
     "pino-pretty": "13.2.0",
     "semver": "7.8.5",
-    "undici": "8.11.2"
+    "undici": "8.12.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
@@ -104,13 +106,14 @@
     "audit-ci": "7.1.0",
     "autoprefixer": "10.6.1",
     "babel-loader": "10.1.1",
-    "cheerio": "1.2.0",
     "clean-webpack-plugin": "4.0.0",
     "copy-webpack-plugin": "14.0.0",
     "dependency-cruiser": "18.5.0",
     "eslint": "10.12.0",
     "eslint-plugin-sonarjs": "4.2.2",
     "husky": "9.1.7",
+    "jsdom": "30.1.2",
+    "lint-staged": "17.6.0",
     "mongodb": "7.7.0",
     "neostandard": "0.14.0-next.1",
     "nodemon": "3.1.14",
@@ -118,7 +121,7 @@
     "postcss-load-config": "6.0.1",
     "postcss-loader": "8.2.1",
     "prettier": "3.9.9",
-    "puppeteer": "25.12.0",
+    "puppeteer": "25.13.0",
     "sass": "1.105.1",
     "sass-embedded": "1.105.1",
     "sass-loader": "17.0.1",
@@ -134,9 +137,26 @@
     "webpack-cli": "7.2.3"
   },
   "overrides": {
+    "@lhci/cli": {
+      "uuid": "11.1.1"
+    },
+    "blankie": {
+      "@hapi/joi": "npm:joi@17.13.8"
+    },
+    "get-uri": {
+      "basic-ftp": "6.2.3"
+    },
     "lighthouse": {
       ".": "13.4.1"
     },
     "tmp": "0.2.7"
+  },
+  "lint-staged": {
+    "*.{js,cjs,md,json}": [
+      "prettier --write"
+    ],
+    "*.js": [
+      "eslint --fix"
+    ]
   }
 }

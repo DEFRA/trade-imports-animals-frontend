@@ -2,7 +2,6 @@ import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { commodityCodeFor } from '../../../../services/commodities/index.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   AMEND,
@@ -21,6 +20,7 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
+import * as cancelAmend from '../cancel-amend/controller.js'
 import {
   continueRequest,
   declarationRoutesFromReview
@@ -29,7 +29,12 @@ import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persis
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as ports from '../../../../../../services/ports/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
+import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -39,6 +44,16 @@ import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
+import {
+  BOS_TAURUS_ROW,
+  OSTRICHES_CODE
+} from '../commodities/search/test-support.js'
+import {
+  CATTLE_CODE,
+  HORSES_CODE,
+  OTHER_LIVE_MAMMALS_CODE,
+  SWINE_CODE
+} from '../../../../services/commodities/rules.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 
@@ -49,12 +64,12 @@ const continueFromReview = async (seed, { submitted = false } = {}) => {
     await store.submit(journeyId)
   }
   const { concurrencyToken } = await store.get(journeyId)
-  const toolkit = stubH()
+  const h = stubH()
   const response = await postHandlerOf(declaration)(
     continueRequest(journeyRequest(journeyId), concurrencyToken),
-    toolkit
+    h
   )
-  return { journeyId, response, view: toolkit.captured.view }
+  return { journeyId, response, view: h.captured.view }
 }
 
 const reviewPath = (journeyId) => pagePath(journeyId, 'notification-view')
@@ -66,12 +81,9 @@ const refusedContinue = (journeyId) => ({
 const reviewAfterRefusal = async (seed) => {
   const { journeyId, response } = await continueFromReview(seed)
   expect(response).toEqual(refusedContinue(journeyId))
-  const toolkit = stubH()
-  await getHandler(
-    journeyRequest(journeyId, { query: { refused: '1' } }),
-    toolkit
-  )
-  return toolkit.captured.view
+  const h = stubH()
+  await getHandler(journeyRequest(journeyId, { query: { refused: '1' } }), h)
+  return h.captured.view
 }
 
 const dateMonthsAhead = (months) => {
@@ -90,7 +102,7 @@ const sectionsFor = async (seed) =>
 const summaryFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.errorSummary
 
-const viewForStatus = async (status, seed = fullSeed, query = {}) => {
+const journeyIdForStatus = async (status, seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (status === SUBMITTED || status === AMEND) {
@@ -99,9 +111,21 @@ const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   if (status === AMEND) {
     await records.amend(journey.journeyId)
   }
-  const toolkit = stubH()
-  await getHandler(journeyRequest(journey.journeyId, { query }), toolkit)
-  return toolkit.captured.view
+  return journey.journeyId
+}
+
+const viewOfJourney = async (journeyId, query = {}) => {
+  const h = stubH()
+  await getHandler(journeyRequest(journeyId, { query }), h)
+  return h.captured.view
+}
+
+const viewForStatus = async (status, seed = fullSeed, query = {}) =>
+  viewOfJourney(await journeyIdForStatus(status, seed), query)
+
+const viewAndJourneyIdForStatus = async (status) => {
+  const journeyId = await journeyIdForStatus(status, fullSeed)
+  return { view: await viewOfJourney(journeyId), journeyId }
 }
 
 const cardsOf = (sections) =>
@@ -132,14 +156,8 @@ const changeHrefsOf = (sections) =>
 const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
-// The two treatments an empty value gets. A card that is finished writes the
-// blank out; a card that still has answers outstanding gives it no text at all
-// and marks the cell instead, so the eye can separate the two.
 const NOT_APPLICABLE = 'Not applicable'
-const MISSING_HTML =
-  '<span class="app-summary-list__value--missing">' +
-  '<span class="govuk-visually-hidden">Missing</span>' +
-  '</span>'
+const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
@@ -161,10 +179,8 @@ const STUB_TELEPHONE = '01632 960000'
 const copyOf = (id) =>
   answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
 
-// A copy that breaks the address-book rules — no address line, town or
-// postcode — but still has a name to show.
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
-const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
+const CATTLE_CARD_TITLE = '0102 — Bos taurus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -196,8 +212,7 @@ const fullSeed = {
   internalReferenceNumber: 'Imports456GB',
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      ...BOS_TAURUS_ROW,
       commodityType: '16',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
@@ -287,8 +302,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   )
 
-  // A submitted journey has no Change links at all, so an empty documents card
-  // would otherwise stand with nothing inside it.
   it('Should keep the documents card readable on a submitted journey with nothing uploaded', async () => {
     const seed = { ...fullSeed }
     delete seed.documents
@@ -317,14 +330,46 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     })
     const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
 
-    expect(submitted.context.amendmentCancelled).toBe(true)
-    expect(draft.context.amendmentCancelled).toBe(false)
+    expect(submitted.context.successBanner).toEqual({
+      titleText: copyEn.cancelAmend.successTitle,
+      text: copyEn.cancelAmend.successBody
+    })
+    expect(draft.context.successBanner).toBeNull()
+  })
+
+  it('Should go Back to the notification list from a submitted notification', async () => {
+    const view = await viewForStatus(SUBMITTED)
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the notification list from the submitted view shown after an amendment is cancelled', async () => {
+    const journeyId = await journeyIdForStatus(AMEND, fullSeed)
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'AmendedRef'
+    })
+    const cancelRequest = journeyRequest(journeyId)
+    await postHandlerOf(cancelAmend)(cancelRequest, stubH(cancelRequest))
+
+    const view = await viewOfJourney(journeyId, { cancelled: '1' })
+
+    expect(view.context.backLink).toBe(dashboardPath())
+  })
+
+  it('Should go Back to the overview from the review of a draft notification', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
+  })
+
+  it('Should go Back to the overview from the review of a notification being amended', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(AMEND)
+
+    expect(view.context.backLink).toBe(hubPath(journeyId))
   })
 })
 
-// Design release 1 lays the review out as six numbered sections mirroring the
-// task list, with a subsection heading above every card. The numbers are part
-// of the heading copy, so the order here and the numbering there have to agree.
 describe(`${SUITE} — section and subsection headings`, () => {
   setupCheckAnswersEngine()
 
@@ -340,9 +385,6 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ])
   })
 
-  // No group reaches the template without a heading — a null one would silently
-  // drop its cards straight under the numbered heading, which is what design
-  // release 1 does not do.
   it('Should head every group with a subsection heading', async () => {
     const groups = (await sectionsFor(fullSeed)).flatMap(
       (section) => section.groups
@@ -354,7 +396,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     }
   })
 
-  it('Should name the subsection headings design release 1 gives each card', async () => {
+  it('Should name the subsection heading of each card', async () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(
@@ -363,7 +405,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
       )
     ).toEqual([
       'Where is this consignment coming from?',
-      'Main reason for import',
+      'Main import reason',
       'Commodity details',
       'Additional details',
       ARRIVAL_DETAILS_CARD,
@@ -375,8 +417,6 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ])
   })
 
-  // Which numbered section a subsection sits under is the whole substance of
-  // design release 1's grouping, and a flattened list cannot see it move.
   it('Should place each subsection under the numbered section that owns it', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -388,7 +428,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
     ).toEqual([
       [
         'about-the-consignment',
-        ['Where is this consignment coming from?', 'Main reason for import']
+        ['Where is this consignment coming from?', 'Main import reason']
       ],
       ['description-of-the-goods', ['Commodity details', 'Additional details']],
       [
@@ -419,11 +459,16 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(rows, UNWEANED_KEY)).toBe('No')
   })
 
-  it('Should map the means-of-transport enum to its display label', async () => {
-    const rows = rowsOf(await sectionsFor(fullSeed))
-    expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(
-      'Road'
+  it.each([
+    ['AIRPLANE', 'Air'],
+    ['RAILWAY', 'Rail'],
+    ['ROAD_VEHICLE', 'Road'],
+    ['VESSEL', 'Sea']
+  ])('Should read %s back as %s', async (code, label) => {
+    const rows = rowsOf(
+      await sectionsFor({ ...fullSeed, meansOfTransport: code })
     )
+    expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(label)
   })
 
   it('Should include the region-of-origin-code row when the requirement is yes', async () => {
@@ -461,16 +506,16 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should render one species card per commodity line with the design rows', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
-    expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
-    expect(valueOf(card.rows, 'Common name')).toBe('Cow')
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
+    expect(valueOf(card.rows, 'Commodity code')).toBe(CATTLE_CODE)
+    expect(valueOf(card.rows, 'Common name')).toBe('Cattle or Cow')
     expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
     expect(valueOf(card.rows, 'Number of animals')).toBe('25')
     expect(valueOf(card.rows, PACKAGES_KEY)).toBe('5')
   })
 
   it('Should render a read-only identifier table inside the species card', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Ear tag',
@@ -492,24 +537,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(document.heading).toBe('Document 1')
     expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Veterinary health certificate'
+      'Other veterinary certificate / veterinary declaration'
     )
     expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
     expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
-  })
-
-  it('Should name an ITAHC document with the same label the documents page uses', async () => {
-    const seed = {
-      ...fullSeed,
-      documents: [
-        { ...fullSeed.documents[0], accompanyingDocumentType: 'ITAHC' }
-      ]
-    }
-    const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
-    const [document] = card.documents
-    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Intra Trade Animal Health Certificate (ITAHC)'
-    )
   })
 
   it('Should format the arrival date as day/month/year', async () => {
@@ -541,10 +572,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
   })
 
-  // Design release 1 keys the contact address card's one row 'Contact address',
-  // not the generic 'Address' the Transport details card keeps — on a page
-  // listing seven addresses, the row has to say which one it is. The two labels
-  // are separate copy strings so naming this one cannot rename the other.
   it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -556,13 +583,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     ).toContain('Address')
   })
 
-  // Design release 1 puts the Change links in each card's heading and none on a
-  // row, so the page offers links per card rather than one per answer. Exactly
-  // one per card: a conditional second page gets its own headed card with its
-  // own link, rather than a second link on the card beside it.
-  // The one exception to "rows carry no action": a copied address can be
-  // edited on this notification, which the card's Change link (re-pick from
-  // the book) does not do.
   it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address', async () => {
     const sections = await sectionsFor(fullSeed)
 
@@ -605,11 +625,11 @@ describe(`${SUITE} — fully-populated notification`, () => {
 
     expect(hiddenTextOf(IMPORT_DETAILS_CARD)).toBe('import details')
     expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
-    expect(hiddenTextOf(COW_CARD_TITLE)).toBe('commodity 1')
+    expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
   })
 
   it('Should point the species-card Change action at the consignment-details page with a change flag', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
       /\/consignment-details\?change=1$/
@@ -627,10 +647,33 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 })
 
-// Design release 1 gives the countries a consignment travels through their own
-// headed card rather than a row inside arrival details. They are collected on
-// their own page and asked for only on an overland arrival, so the card stands
-// exactly while the answer is in scope and carries the link to that page.
+describe(`${SUITE} — document type labels`, () => {
+  setupCheckAnswersEngine()
+
+  it.each([
+    ['ITAHC', 'ITAHC (Intra Trade Animal Health Certificate)'],
+    ['SELF_DECLARATION', 'Self-declaration'],
+    ['CITES_PERMIT_OR_CERTIFICATE', 'CITES permit/certificate'],
+    ['PACKING_OR_SPECIES_LIST', 'Packing list / species list'],
+    ['OTHER', 'Other supporting documents']
+  ])(
+    'Should name a %s document with the label the documents page offers it under',
+    async (code, label) => {
+      const seed = {
+        ...fullSeed,
+        documents: [
+          { ...fullSeed.documents[0], accompanyingDocumentType: code }
+        ]
+      }
+      const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
+      const [document] = card.documents
+
+      expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(label)
+      expect(documentsCopy.types[code]).toBe(label)
+    }
+  )
+})
+
 describe(`${SUITE} — transit countries`, () => {
   setupCheckAnswersEngine()
 
@@ -651,20 +694,6 @@ describe(`${SUITE} — transit countries`, () => {
         TRANSITED_COUNTRIES_KEY
       )
     ).toBe('France, Belgium')
-  })
-
-  it('Should name a transited subdivision with its parent country on the transit-countries card', async () => {
-    const sections = await sectionsFor({
-      ...fullSeed,
-      transitedCountries: ['FR', 'ES-CN']
-    })
-
-    expect(
-      valueOf(
-        cardByTitle(sections, TRANSIT_COUNTRIES_CARD).rows,
-        TRANSITED_COUNTRIES_KEY
-      )
-    ).toBe('France, Canary Islands (Spain)')
   })
 
   it('Should give the transit-countries card its own Change link to the page that collects it', async () => {
@@ -705,10 +734,6 @@ describe(`${SUITE} — transit countries`, () => {
   })
 })
 
-// Design release 1 gives the reason for import a card of its own rather than
-// folding it in among the animal details, and every row on it comes from the
-// reason-for-import page — so unlike the card that used to hold them, this one
-// can offer a Change link that reaches them all.
 describe(`${SUITE} — reason-for-import card`, () => {
   setupCheckAnswersEngine()
 
@@ -742,7 +767,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   const gatedOffSeed = {
     regionOfOriginCodeRequirement: 'no',
     reasonForImport: 'transit',
-    commodityLines: [{ commoditySelection: 'Fish' }],
+    commodityLines: [{ commodityCode: OSTRICHES_CODE }],
     meansOfTransport: 'AIRPLANE',
     transporterType: 'Private',
     privateTransporter: { name: 'Jean Dupont' }
@@ -754,7 +779,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
+  it('Should show whatever region-of-origin code is stored on its row, even when the requirement is no', async () => {
     const rows = rowsOf(
       await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
     )
@@ -772,15 +797,12 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keys).not.toContain(UNWEANED_KEY)
   })
 
-  // CPH is the opposite shape: design release 1 asks every consignment for one
-  // and exempts named commodity codes, so the row goes away only on an exempt
-  // line — 0101 here. This block's own Fish line is asked for a CPH number.
   it('Should omit the CPH row for an exempt commodity', async () => {
     const keys = keysOf(
       rowsOf(
         await sectionsFor({
           ...gatedOffSeed,
-          commodityLines: [{ commoditySelection: 'Horse' }]
+          commodityLines: [{ commodityCode: HORSES_CODE }]
         })
       )
     )
@@ -788,7 +810,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 
   it('Should omit the packages row when the commodity is off the package-count list', async () => {
-    const card = cardByTitle(await sectionsFor(gatedOffSeed), 'Fish (0301)')
+    const card = cardByTitle(await sectionsFor(gatedOffSeed), OSTRICHES_CODE)
     expect(keysOf(card.rows)).not.toContain(PACKAGES_KEY)
   })
 
@@ -810,12 +832,9 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
 
   it('Should omit the identifier table when the commodity holds no entry', async () => {
     const sections = await sectionsFor(gatedOffSeed)
-    expect(cardByTitle(sections, 'Fish (0301)').identifierTable).toBeNull()
+    expect(cardByTitle(sections, OSTRICHES_CODE).identifierTable).toBeNull()
   })
 
-  // Documents are optional, so an empty collection is the ordinary case. The
-  // section and its card stand anyway, or the review never mentions documents
-  // and the trader has no route to the upload page from it.
   it('Should keep the documents section and its card when nothing has been uploaded', async () => {
     const sections = await sectionsFor(gatedOffSeed)
     expect(sections.map((section) => section.heading)).toContain('4. Documents')
@@ -834,21 +853,19 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  // Every card on this seed still has answers outstanding, so every blank row
-  // in it is marked missing rather than written out.
-  it('Should mark a blank plain answer missing', async () => {
+  it('Should leave a blank plain answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(await sectionsFor(gatedOffSeed))
     expect(htmlOf(rows, INTERNAL_REFERENCE_KEY)).toBe(MISSING_HTML)
     expect(htmlOf(rows, 'Port of entry')).toBe(MISSING_HTML)
   })
 
-  it('Should mark a coded answer with no matching label missing', async () => {
+  it('Should leave a coded answer with no matching label with only a visually hidden Missing', async () => {
     expect(
       htmlOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark a blank date missing', async () => {
+  it('Should leave a blank date with only a visually hidden Missing', async () => {
     expect(
       htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
@@ -857,7 +874,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBe(MISSING_HTML)
   })
 
-  it('Should mark an unset party missing', async () => {
+  it('Should leave an unset party with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
@@ -866,10 +883,6 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 })
 
-// Design release 1 writes an empty value out as "Not applicable" while the card
-// around it is finished, and gives it no text at all while the card still has
-// answers outstanding. The decision is per card, not per row: an optional blank
-// inside an unfinished card is marked missing along with the rest.
 describe(`${SUITE} — empty values on a finished and an unfinished card`, () => {
   setupCheckAnswersEngine()
 
@@ -891,7 +904,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 
-  it('Should give the same optional row no text at all on an unfinished card', async () => {
+  it('Should leave the same optional row with only a visually hidden Missing on an unfinished card', async () => {
     const sections = await sectionsFor(
       without(fullSeed, 'internalReferenceNumber', 'countryOfOrigin')
     )
@@ -911,9 +924,6 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe('Imports456GB')
   })
 
-  // The placeholder is a rendered string, not a signal. A trader who types it
-  // into a free-text answer has given an answer, and an unfinished card must
-  // not swallow it.
   it('Should keep a typed answer that reads Not applicable on an unfinished card', async () => {
     const sections = await sectionsFor({
       ...without(fullSeed, 'countryOfOrigin'),
@@ -927,11 +937,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(reference.value.html).toBeUndefined()
   })
 
-  // The uploaded-documents card is the only card whose rows are nested inside
-  // document groups, so it is the only card that exercises the nested half of
-  // the blanking pass. A part-filled document leaves the documents task row
-  // in progress, which is what marks the card.
-  it('Should mark the blank rows inside an unfinished documents card missing', async () => {
+  it('Should leave the blank rows inside an unfinished documents card with only a visually hidden Missing', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
@@ -944,7 +950,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(htmlOf(document.rows, 'Date of issue')).toBe(MISSING_HTML)
     expect(htmlOf(document.rows, 'Attachment type')).toBe(MISSING_HTML)
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
-      'Veterinary health certificate'
+      'Other veterinary certificate / veterinary declaration'
     )
   })
 
@@ -959,14 +965,11 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
   })
 })
 
-// The reason for import asks up to three further questions — the destination
-// country, the exit date and the port of exit. A trader who answered one has
-// to be able to read it back and change it from the review.
 describe(`${SUITE} — reason-for-import exit answers`, () => {
   setupCheckAnswersEngine()
 
   const reasonSeed = (answers) => ({
-    commodityLines: [{ commoditySelection: 'Fish' }],
+    commodityLines: [{ commodityCode: OSTRICHES_CODE }],
     ...answers
   })
 
@@ -1053,7 +1056,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keys).not.toContain(PORT_OF_EXIT_KEY)
   })
 
-  it('Should mark an in-scope exit answer left blank missing', async () => {
+  it('Should leave a blank in-scope exit answer with only a visually hidden Missing', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'temporaryAdmissionHorses' })
@@ -1064,10 +1067,6 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(htmlOf(rows, PORT_OF_EXIT_KEY)).toBe(MISSING_HTML)
   })
 
-  // The exit answers sit on the reason-for-import card, the card whose one
-  // Change link reaches the page that collects them. That pairing is what makes
-  // a card without row links changeable at all, so pin the rows and the link
-  // together rather than either on its own.
   it('Should show every exit row on the reason-for-import card, whose one Change link reaches them', async () => {
     const sections = await sectionsFor(
       reasonSeed({
@@ -1215,8 +1214,6 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     ])
   })
 
-  // A role never answered raises no role error — there is nothing broken to
-  // name. It leaves its card unfinished, which the card entry says instead.
   it('Should not raise a role error for a role that has never been answered', async () => {
     const summary = await summaryFor(withoutParty(fullSeed, 'importer'))
 
@@ -1232,7 +1229,7 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(texts).toContain(ADDRESSES_INCOMPLETE)
   })
 
-  it('Should mark a role that has never been answered missing', async () => {
+  it('Should leave a role that has never been answered with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
       ROLES_AND_ADDRESSES_CARD
@@ -1380,22 +1377,15 @@ describe(`${SUITE} — Continue on an amend review`, () => {
   })
 })
 
-// The CYA commodity gates (packages / unweaned / CPH) read the obligation
-// `.metadata.values` (CN codes), normalising the stored commodity name to a
-// code. This matrix pins the gate outcome per selectable species
-// (Cow/Horse/Cat/Dog/Fish).
-describe(`${SUITE} — commodity-gate render matrix — model metadata per selectable species`, () => {
+describe(`${SUITE} — commodity-gate render matrix — model metadata per code`, () => {
   setupCheckAnswersEngine()
 
-  const gatesFor = async (commodity) => {
+  const gatesFor = async (commodityCode) => {
     const sections = await sectionsFor({
-      commodityLines: [{ commoditySelection: commodity }]
+      commodityLines: [{ commodityCode }]
     })
     const allKeys = keysOf(rowsOf(sections))
-    const speciesCard = cardByTitle(
-      sections,
-      `${commodity} (${commodityCodeFor(commodity)})`
-    )
+    const speciesCard = cardByTitle(sections, commodityCode)
     return {
       packages: keysOf(speciesCard.rows).includes(PACKAGES_KEY),
       unweaned: allKeys.includes(UNWEANED_KEY),
@@ -1403,24 +1393,32 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
     }
   }
 
-  // CPH runs the other way round from the other two gates: design release 1
-  // asks every consignment for a CPH number and exempts named commodity codes,
-  // so the false rows below are the exemptions — 0101 for Horse and 01061900
-  // for Cat and Dog, which is asked for a permanent address instead.
   const MATRIX = [
-    { commodity: 'Cow', packages: true, unweaned: true, cph: true },
-    // Design release 1 asks the unweaned-animals question only of a commodity
-    // carrying unweaned options, and a horse carries none.
-    { commodity: 'Horse', packages: true, unweaned: false, cph: false },
-    { commodity: 'Cat', packages: true, unweaned: false, cph: false },
-    { commodity: 'Dog', packages: true, unweaned: false, cph: false },
-    { commodity: 'Fish', packages: false, unweaned: false, cph: true }
+    { commodityCode: CATTLE_CODE, packages: true, unweaned: true, cph: true },
+    { commodityCode: SWINE_CODE, packages: true, unweaned: false, cph: true },
+    { commodityCode: HORSES_CODE, packages: true, unweaned: false, cph: false },
+    {
+      commodityCode: OTHER_LIVE_MAMMALS_CODE,
+      packages: true,
+      unweaned: false,
+      cph: false
+    },
+    {
+      commodityCode: OSTRICHES_CODE,
+      packages: false,
+      unweaned: false,
+      cph: true
+    }
   ]
 
   it.each(MATRIX)(
-    'Should gate packages/unweaned/CPH for $commodity',
-    async ({ commodity, packages, unweaned, cph }) => {
-      expect(await gatesFor(commodity)).toEqual({ packages, unweaned, cph })
+    'Should gate packages/unweaned/CPH for $commodityCode',
+    async ({ commodityCode, packages, unweaned, cph }) => {
+      expect(await gatesFor(commodityCode)).toEqual({
+        packages,
+        unweaned,
+        cph
+      })
     }
   )
 })
@@ -1456,11 +1454,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     const { journeyId } = await store.create()
     await store.seedAnswers(journeyId, fullSeed)
     const { concurrencyToken } = await store.get(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(toolkit.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
       [journeyId]: concurrencyToken
     })
   })
@@ -1468,11 +1466,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   it('Should record nothing for a submitted notification, which cannot be declared again', async () => {
     const { journeyId } = await store.create()
     await store.submit(journeyId)
-    const toolkit = stubH()
+    const h = stubH()
 
-    await getHandler(journeyRequest(journeyId), toolkit)
+    await getHandler(journeyRequest(journeyId), h)
 
-    expect(reviewedConcurrencyTokensCookie() in toolkit.cookies).toBe(false)
+    expect(reviewedConcurrencyTokensCookie() in h.cookies).toBe(false)
   })
 
   it('Should refuse Continue while the notification is unfinished', async () => {
@@ -1494,6 +1492,38 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     })
 
     expect(response).toEqual(refusedContinue(journeyId))
+  })
+
+  const SPECIES_NOT_LISTED_UNDER_CODE = 'Bos spp.'
+  const withUnlistedSpecies = () => ({
+    ...fullSeed,
+    commodityLines: [
+      {
+        ...fullSeed.commodityLines[0],
+        speciesLatinName: SPECIES_NOT_LISTED_UNDER_CODE
+      }
+    ]
+  })
+
+  it('Should refuse Continue on a draft holding a species not listed under its code, naming it', async () => {
+    const view = await reviewAfterRefusal(withUnlistedSpecies())
+
+    expect(view.context.errorSummary.errorList).toEqual([
+      {
+        text: copyEn.errors.species.notListed(
+          `${SPECIES_NOT_LISTED_UNDER_CODE} (${CATTLE_CODE})`
+        ),
+        href: '#description-of-the-goods'
+      }
+    ])
+  })
+
+  it('Should not name a species not listed under its code until Continue is refused', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: withUnlistedSpecies()
+    })
+
+    expect(view.context.errorSummary).toBeNull()
   })
 
   it('Should refuse Continue on a brand-new draft, naming what is outstanding', async () => {
@@ -1538,11 +1568,6 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   })
 })
 
-// Design release 1 heads the review page of an unfinished notification with
-// "There is a problem", names each unfinished card, marks the card itself, and
-// refuses to go on. Before this, the page looked finished: no summary, no
-// marking, and a live Continue that carried the trader to the declaration only
-// to bounce them back here with nothing said.
 describe(`${SUITE} — the unfinished notification`, () => {
   setupCheckAnswersEngine()
 
@@ -1622,10 +1647,6 @@ describe(`${SUITE} — the unfinished notification`, () => {
     expect(cardById(context.sections, 'rolesAndAddresses').error).toBeNull()
   })
 
-  // The only summary anchor that is not copied onto the card it names: every
-  // other one rides along on the card via `decorateCard`, while this one is the
-  // section heading's own id. The two literals live in different modules, so
-  // they have to be checked against each other.
   it('Should resolve the species entry to a section anchor that exists on the page', async () => {
     const { view } = await driveHandler(getHandler, { seed: {} })
     const entry = view.context.errorSummary.errorList.find(
@@ -1640,16 +1661,11 @@ describe(`${SUITE} — the unfinished notification`, () => {
     ).toBe(true)
   })
 
-  // DOCUMENTED EXCEPTION, not an oversight: species cards carry no id, so
-  // `decorateCard` never marks them. The summary still names the outstanding
-  // work. See inc-150's open question on marking a short species card.
   it('Should name species in the summary while leaving the species cards unmarked', async () => {
-    // Two lines, the second barely started: species cards are built for both,
-    // and the species rows stay outstanding.
     const seed = {
       commodityLines: [
         fullSeed.commodityLines[0],
-        { commoditySelection: 'Cow' }
+        { commodityCode: CATTLE_CODE }
       ]
     }
 
@@ -1662,13 +1678,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     expect(speciesCard.error).toBeUndefined()
   })
 
-  // The card `id` literals are the only join between the built cards and
-  // REVIEW_CARDS, and `decorateCard` fails silently on a miss: the summary would
-  // still emit "Complete <card>" with an href pointing at nothing. `species` is
-  // the deliberate exception — it anchors to a section heading, not a card.
   it('Should build a card for every REVIEW_CARDS entry that anchors to one', async () => {
-    // A fully-populated seed rather than an empty draft: transit countries are
-    // the one card built conditionally, and they apply to an overland arrival.
     const sections = await sectionsFor(fullSeed)
     const builtIds = cardsOf(sections).map((card) => card.id)
     const anchoredIds = REVIEW_CARDS.filter(
@@ -1678,10 +1688,6 @@ describe(`${SUITE} — the unfinished notification`, () => {
     expect(builtIds).toEqual(expect.arrayContaining(anchoredIds))
   })
 
-  // The transit-countries card stands only while the answer is in scope, so a
-  // summary entry for it on a draft that never asked the question would point
-  // at an anchor the page does not carry. Its task row is NA out of scope,
-  // which is what keeps the two in step.
   it('Should anchor every summary entry to an id the page carries', async () => {
     const summary = await summaryFor({})
     const sections = await sectionsFor({})
@@ -1698,11 +1704,6 @@ describe(`${SUITE} — the unfinished notification`, () => {
   })
 })
 
-// The review page re-runs each page's own validation over what is stored, so
-// an answer the reference data has since retired is named here rather than
-// surviving unnoticed to submission — the same message the port-of-entry page
-// itself gives on GET (`port-of-entry.controller.test.js`). `GB ZZZ` is absent
-// from the captured ports fixture, so it doubles as a stale stored code.
 describe(`${SUITE} — stale stored answers`, () => {
   setupCheckAnswersEngine()
 
@@ -1725,9 +1726,6 @@ describe(`${SUITE} — stale stored answers`, () => {
     })
   })
 
-  // Incomplete wins over invalid on the same card: a card that is both
-  // unfinished and carrying a stale value says "complete this section", not
-  // the stale answer's own message.
   it('Should show the unfinished message, not the stale one, when the same card is also incomplete', async () => {
     const seed = { ...staleSeed }
     delete seed.meansOfTransport
@@ -1751,12 +1749,9 @@ describe(`${SUITE} — stale stored answers`, () => {
   })
 })
 
-// The refusal tests cover the scan helper; this block pins the controller's wiring of it.
 describe(`${SUITE} — document scan card errors`, () => {
   setupCheckAnswersEngine()
 
-  // Stub-driven scan verdicts: filename matches the stub's rules —
-  // `virus-*` → REJECTED, `*never-scans*` → PENDING, otherwise → COMPLETED.
   const REJECTED_FILENAME = 'virus-alert.pdf'
   const PENDING_FILENAME = 'notes-never-scans.pdf'
 
@@ -1808,7 +1803,6 @@ describe(`${SUITE} — document scan card errors`, () => {
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 
-  // Pending listed first, so the infected message wins on precedence, not order.
   it('Should name the rejected document ahead of one still scanning when Continue is refused with both', async () => {
     const view = await reviewAfterRefusal({
       ...fullSeed,
@@ -1822,8 +1816,6 @@ describe(`${SUITE} — document scan card errors`, () => {
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 
-  // A read-only submitted notification never carries a scan error — the
-  // errors are gated on the read path by the readOnly branch.
   it('Should not carry any scan card error on a submitted notification', async () => {
     const { context } = await viewForStatus(
       SUBMITTED,
@@ -1835,10 +1827,6 @@ describe(`${SUITE} — document scan card errors`, () => {
   })
 })
 
-// The POST refuses on `scope.readyForCheckYourAnswers`, and the summary is
-// built from REVIEW_CARDS. The two agree only while every task row is covered
-// exactly once — otherwise a refusal could arrive with nothing named, or a card
-// could be flagged for a row the hub does not count.
 describe('#REVIEW_CARDS — the cards cover the task rows exactly', () => {
   it('Should map every task row to exactly one card', () => {
     const covered = REVIEW_CARDS.flatMap((card) => card.rows)

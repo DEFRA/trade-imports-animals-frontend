@@ -1,8 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  JOURNEY_FORM_SELECTOR,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openReviewFromHub,
   signIn,
@@ -91,6 +92,33 @@ test.describe('declaration feature', () => {
     ).toBeVisible()
   })
 
+  test('puts the confirmation checkbox in a group named by the declaration legend', async ({
+    page
+  }) => {
+    const group = page.getByRole('group', { name: copy.declarationLegend })
+
+    await expect(
+      group.getByRole('checkbox', { name: copy.declarationLabel })
+    ).toBeVisible()
+  })
+
+  test('shows the date of declaration as the strong text of its line', async ({
+    page
+  }) => {
+    const date = page
+      .getByRole('paragraph')
+      .filter({ hasText: copy.dateOfDeclaration })
+      .getByRole('strong')
+
+    await expect(date).toHaveText(/^\d{1,2} [A-Z][a-z]+ \d{4}$/)
+  })
+
+  test('starts the page with the heading', async ({ page }) => {
+    await expect(
+      page.locator('main .govuk-grid-column-two-thirds > :first-child')
+    ).toHaveText(copy.title)
+  })
+
   test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
     page
   }) => {
@@ -125,17 +153,7 @@ test.describe('declaration feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Declaration has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Declaration')
   })
 
   test('submits a complete notification, redirects to confirmation and keeps the declaration', async ({
@@ -194,16 +212,19 @@ test.describe('declaration reached only from the review', () => {
     await page.goto(journeyUrl(page, 'origin'))
     const declarationPath = new URL(journeyUrl(page, 'declaration'), page.url())
       .pathname
-    await page.evaluate((action) => {
-      const form = document.querySelector('form[method="post"]')
-      form.action = action
-      const step = document.createElement('input')
-      step.type = 'hidden'
-      step.name = 'step'
-      step.value = 'review'
-      form.append(step)
-      form.submit()
-    }, declarationPath)
+    await page.evaluate(
+      ({ action, formSelector }) => {
+        const form = document.querySelector(formSelector)
+        form.action = action
+        const step = document.createElement('input')
+        step.type = 'hidden'
+        step.name = 'step'
+        step.value = 'review'
+        form.append(step)
+        form.submit()
+      },
+      { action: declarationPath, formSelector: JOURNEY_FORM_SELECTOR }
+    )
 
     await expect(page).toHaveURL(REVIEW_URL)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)

@@ -7,21 +7,10 @@
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
-  {% if deletionSucceeded %}
+  {% if amendRefused %}
     {{ govukNotificationBanner({
-      type: "success",
-      titleText: sharedCopy.notificationActions.delete.successTitle,
-      text: sharedCopy.notificationActions.delete.successBody,
-      role: "alert"
-    }) }}
-  {% endif %}
-
-  {% if copySucceeded %}
-    {{ govukNotificationBanner({
-      type: "success",
-      titleText: sharedCopy.notificationActions.copy.successTitle,
-      text: sharedCopy.notificationActions.copy.successBody,
-      role: "alert"
+      titleText: copy.amendRefused.title,
+      text: copy.amendRefused.body
     }) }}
   {% endif %}
 

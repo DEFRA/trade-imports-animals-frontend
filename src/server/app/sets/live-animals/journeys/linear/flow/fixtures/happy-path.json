@@ -7,8 +7,9 @@
     "internalReferenceNumber": "Imports456GB",
     "commodityLines": [
       {
-        "commoditySelection": "Cow",
-        "speciesSelection": "1148346",
+        "commodityCode": "0102",
+        "speciesLatinName": "Bos taurus",
+        "speciesCommonName": "Cattle or Cow",
         "commodityType": "16",
         "numberOfPackages": "5",
         "numberOfAnimalsQuantity": "1",
@@ -109,10 +110,10 @@
         "addressLine2": "",
         "townOrCity": "Amiens",
         "county": "",
-        "postalOrZipCode": "80000",
+        "postcode": "80000",
         "country": "France",
-        "telephoneNumber": "+33 3 22 55 01 44",
-        "emailAddress": "jean.dupont@example.fr"
+        "phone": "+33 3 22 55 01 44",
+        "email": "jean.dupont@example.fr"
       }
     },
     "contactAddress": {

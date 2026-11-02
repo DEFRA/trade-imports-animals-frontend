@@ -40,7 +40,6 @@ jobs:
     uses: DEFRA/trade-imports-workspace/.github/workflows/e2e-tests.yml@main
     with:
       branch: ${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}
-      suites: tests/animals/ tests/animals-admin/
     secrets: inherit
 
   report-status:

@@ -23,10 +23,6 @@ const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-// Design release 1 divides the notification into six numbered sections under a
-// "Notification tasklist" heading: the documents come fourth rather than after
-// the addresses, and the consignment parties and the contact address are
-// sections of their own rather than one shared "Addresses".
 const GROUPS = [
   {
     id: 'about-the-consignment',
@@ -34,12 +30,6 @@ const GROUPS = [
   },
   {
     id: 'description-of-the-goods',
-    // Design release 1 opens this section with the commodity details, so the
-    // consignment-details page leads the group rather than hanging off the
-    // "What are you importing?" row in the section above. Identification
-    // follows it and the additional details come last: the design points a
-    // trader at identifying the animals before asking what they are certified
-    // for, which is also the order the opening run visits the two pages in.
     rows: ['consignmentDetails', 'animalIdentification', 'additionalDetails']
   },
   {
@@ -58,33 +48,13 @@ const TO_DO_TAG = {
   tag: { text: copy.statuses.toDo, classes: 'govuk-tag--blue' }
 }
 
-// Design release 1 tells a trader one of two things about a task: it is
-// "Complete", or it is still "To do". It has no third state, so a task the
-// engine holds part-answered and one it holds optional both read "To do"
-// beside the untouched ones — the design never says on the hub that a task is
-// half-done, nor that it can be left out. The engine keeps those distinctions:
-// they still drive what the review page asks for and when the notification may
-// be submitted. Only the word on the hub stops drawing them. Finished is the
-// single thing the tag reads off the status, so this asks that one question
-// rather than tabulating the five answers the engine can give — except that a
-// row whose stored answer no longer passes its own page's rules (`invalid`)
-// is never read as Complete either, whatever the engine's status says.
 const statusTag = (status, invalid) =>
   status === FULFILLED && !invalid ? COMPLETE_TAG : TO_DO_TAG
 
-// Design release 1 ends the hub with a primary "Review and submit" button, not
-// a task row: the review page is offered whatever else has been answered, so a
-// trader can read back what the notification holds at any point. The page
-// renders an unfinished notification, naming what is still outstanding, and the
-// review section's own gate still stands between that page and submitting.
 const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
-// Design release 1 lets a trader start any task on the notification in any
-// order, so a row is a link and carries a real status whatever else has been
-// answered. A row that does not apply to this consignment leaves the list
-// (`isHiddenRow`) rather than sitting on it shut.
 const rowItem = (base, row, scope, status, journeyId, invalid) => ({
   ...base,
   href: rowEntry(row, scope, journeyId),
@@ -105,8 +75,6 @@ const buildRowItem = (
   if (isHiddenRow(row, status)) {
     return null
   }
-  // Design release 1 hints only the "Roles and addresses" row, so a row whose
-  // copy carries no hint gets no hint slot at all rather than an empty one.
   const base = {
     title: { text: title },
     ...(hint ? { hint: { text: hint } } : {})
@@ -133,8 +101,6 @@ const toCount = (value) => {
 const sumOverLines = (lines, field) =>
   lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
 
-// Design release 1 shows the summary on every visit to the hub, reading zero
-// before any commodity line exists, so the totals are never absent.
 const buildCommodityTotals = (answers, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   return {
@@ -149,17 +115,8 @@ const handler = async (request, h) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
 
-  // A row whose stored answer no longer passes its own page's rules is not
-  // complete, so it must read "To do" here — computed once per request and
-  // threaded through the group/row builders. `rowStatus` stays a pure,
-  // synchronous engine query that other callers (the review page's readiness
-  // roll-up, entry-guards) still read unchanged; this demotion is the hub's
-  // own presentation decision, not the engine's.
   const invalidRows = await invalidRowIds(answers, { request, storedAnswers })
 
-  // No back link: Design release 1 treats the overview as the top of the
-  // notification rather than a step within it, so the way off the page is the
-  // Dashboard item in the service navigation, which every page carries.
   return h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,

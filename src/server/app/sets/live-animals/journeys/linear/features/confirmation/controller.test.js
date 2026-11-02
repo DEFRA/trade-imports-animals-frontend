@@ -59,32 +59,32 @@ describe('GET /confirmation', () => {
     expect(h.captured.view.context.referenceNumber).toBe(journeyId)
   })
 
-  // The declaration date belongs to the declaration page. Design release 1
-  // takes the submitted page straight from the reference panel to what the
-  // trader still has to do, so the date is not repeated here.
   it('Should not supply a submission date to the submitted page', async () => {
     const view = await submittedView()
 
     expect(view.context).not.toHaveProperty('submissionDate')
   })
 
-  // Documents are optional at submission, so the trader can land here with the
-  // health certificate still to come — the submitted page is the last place the
-  // service can say so.
   it('Should list the outstanding documents when nothing has been uploaded', async () => {
     const view = await submittedView()
 
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
-  it('Should list nothing outstanding when a document has been uploaded', async () => {
+  it('Should list the outstanding documents when only a veterinary health certificate has been uploaded', async () => {
     const view = await submittedView({ documents: [DOCUMENT] })
+
+    expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
+  })
+
+  it('Should list nothing outstanding when an ITAHC has been uploaded', async () => {
+    const view = await submittedView({
+      documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
+    })
 
     expect(view.context.outstandingItems).toEqual([])
   })
 
-  // The page offers a second way on: start another notification without going
-  // back to the dashboard first.
   it('Should supply the create-a-notification action alongside the dashboard link', async () => {
     const view = await submittedView()
 

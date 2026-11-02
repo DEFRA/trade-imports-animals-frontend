@@ -11,52 +11,69 @@ const copy = copyFor({ en, cy }).transitCountries
 
 export const MAX_TRANSITED_COUNTRIES = 12
 
-// The trader adds and removes through the search box, so every error on this
-// page anchors to that control.
 export const COUNTRY_FIELD = 'transitedCountry'
 
-/**
- * Every country and subdivision reference data serves, each subdivision named
- * with its parent country, in one alphabetical list.
- * @returns {Promise<{ value: string, text: string }[]>}
- */
-export const offeredCountries = () => countries.destinationCountryOptions()
+export const TRANSIT_REFUSAL = Object.freeze({
+  nothingChosen: 'nothing-chosen',
+  notOnList: 'not-on-the-list',
+  noLongerAvailable: 'no-longer-available',
+  alreadyAdded: 'already-added',
+  maxCountries: 'max-countries'
+})
 
-// The offered list, not the label lookup: GB resolves for address forms but
-// is not a country this page offers.
+export const isUsersOwnInputRefusal = (reason) =>
+  reason === TRANSIT_REFUSAL.nothingChosen ||
+  reason === TRANSIT_REFUSAL.alreadyAdded
+
 export const offeredCodes = async () =>
-  new Set((await offeredCountries()).map(({ value }) => value))
+  new Set((await countries.originCountries()).map(({ value }) => value))
 
-/**
- * The name the page shows for an offered code.
- * @param {string} code
- * @returns {Promise<string | undefined>} `undefined` for a code the list does not hold
- */
-export const offeredLabel = async (code) =>
-  (await offeredCountries()).find(({ value }) => value === code)?.text
-
-// Empty is fine — the question is optional (design release 1). Too long or
-// holding a country the service no longer offers is not: on submit because
-// no rendering could have produced it, on stored because the list has moved.
-const listErrors = async (selected, stored) => {
+export const partitionByOffered = async (codes) => {
   const offered = await offeredCodes()
-  if (selected.some((code) => !offered.has(code))) {
-    return {
-      [COUNTRY_FIELD]: stored
-        ? copy.errors.someNoLongerAvailable
-        : copy.errors.fromList
-    }
+  return {
+    offered: codes.filter((code) => offered.has(code)),
+    notOffered: codes.filter((code) => !offered.has(code))
   }
-  if (selected.length > MAX_TRANSITED_COUNTRIES) {
-    return {
-      [COUNTRY_FIELD]: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
-    }
-  }
-  return {}
 }
 
-// The page carries its own working list in hidden inputs — nothing is saved
-// until Continue, so adding and removing costs no write.
+const listRefusal = async (codes, { stored = false } = {}) => {
+  const { notOffered } = await partitionByOffered(codes)
+  if (notOffered.length > 0) {
+    return {
+      reason: stored
+        ? TRANSIT_REFUSAL.noLongerAvailable
+        : TRANSIT_REFUSAL.notOnList,
+      codes: notOffered
+    }
+  }
+  if (codes.length > MAX_TRANSITED_COUNTRIES) {
+    return { reason: TRANSIT_REFUSAL.maxCountries, length: codes.length }
+  }
+  return null
+}
+
+const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
+  [TRANSIT_REFUSAL.nothingChosen]: copy.errors.chooseCountry,
+  [TRANSIT_REFUSAL.notOnList]: copy.errors.fromList,
+  [TRANSIT_REFUSAL.noLongerAvailable]: copy.errors.someNoLongerAvailable,
+  [TRANSIT_REFUSAL.maxCountries]: copy.errors.maxCountries(
+    MAX_TRANSITED_COUNTRIES
+  )
+})
+
+export const refusalMessage = async (reason, chosen) =>
+  reason === TRANSIT_REFUSAL.alreadyAdded
+    ? copy.errors.alreadyAdded(await countries.originLabel(chosen))
+    : MESSAGES_NEEDING_NO_COUNTRY_LABEL[reason]
+
+const errorsFromRefusal = async (refusal) =>
+  refusal
+    ? {
+        errors: { [COUNTRY_FIELD]: await refusalMessage(refusal.reason) },
+        refusal
+      }
+    : { errors: {} }
+
 const selectedFrom = (payload) => [
   ...new Set(
     [payload.transitedCountries ?? []].flat().filter((code) => code !== '')
@@ -64,13 +81,14 @@ const selectedFrom = (payload) => [
 ]
 
 export const validation = pageValidation({
-  // The answer is a list — measured whole by `checks` rather than field-by-field.
   fields: () => compose(),
-  checks: (values, { stored }) => listErrors(values.transitedCountries, stored),
+  checks: async (values, { stored }) =>
+    errorsFromRefusal(await listRefusal(values.transitedCountries, { stored })),
   fromPayload: (payload) => ({
     transitedCountries: selectedFrom(payload)
   }),
   fromAnswers: (answers) => ({
     transitedCountries: [answers.transitedCountries ?? []].flat()
-  })
+  }),
+  blanks: () => []
 })

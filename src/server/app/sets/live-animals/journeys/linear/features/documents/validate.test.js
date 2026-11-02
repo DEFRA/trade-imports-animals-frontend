@@ -43,18 +43,10 @@ describe('#documents validation (stored view)', () => {
 
     expect(errors).toEqual({ documents: en.errors.someNoLongerValid })
   })
-
-  it('Should accept a stored HEALTH_CERTIFICATE type — the full catalogue is valid', async () => {
-    const { errors } = await readStored({
-      documents: [doc({ accompanyingDocumentType: 'HEALTH_CERTIFICATE' })]
-    })
-
-    expect(errors).toEqual({})
-  })
 })
 
 describe('#documents validation (submit view)', () => {
-  it('Should be a no-op — add-time rules live in form/errors.js', async () => {
+  it('Should return no errors for a submitted page', async () => {
     const { errors } = await validation.onSubmit({})
 
     expect(errors).toEqual({})

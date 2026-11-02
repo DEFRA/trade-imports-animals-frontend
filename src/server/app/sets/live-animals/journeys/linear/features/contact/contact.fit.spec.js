@@ -1,9 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
   answerOriginEntry,
+  expectNoSeriousOrCriticalViolations,
+  startNotificationAtOrigin,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
@@ -14,12 +14,7 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
 const startAtContact = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+  await startNotificationAtOrigin(page)
 
   const contactUrl = page
     .url()
@@ -123,16 +118,6 @@ test.describe('contact feature — navigation and accessibility', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Contact has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Contact')
   })
 })

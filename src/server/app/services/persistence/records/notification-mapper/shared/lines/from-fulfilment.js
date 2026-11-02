@@ -10,7 +10,7 @@ const IDENTIFIER_KEYS = [
   'permanentAddress'
 ]
 
-const legacyAnimalCount = (value) =>
+const animalCountText = (value) =>
   typeof value === 'number' ? String(value) : value
 
 const identifiersFrom = (obligations) =>
@@ -34,16 +34,18 @@ const lineFrom = ({
   lineIndex
 }) =>
   compact({
-    commoditySelection: valueAt(obligations.commodityCode, lineIndex),
+    commodityCode: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
-    speciesSelection: valueAt(obligations.species, lineIndex),
-    numberOfAnimalsQuantity: legacyAnimalCount(
+    speciesLatinName: valueAt(obligations.speciesLatinName, lineIndex),
+    numberOfAnimalsQuantity: animalCountText(
       valueAt(obligations.numberOfAnimals, lineIndex)
     ),
     numberOfPackages: valueAt(obligations.numberOfPackages, lineIndex),
     animalIdentifiers:
       unitIndexes.length > 0
-        ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
+        ? unitIndexes.map((unitIndex) =>
+            unitFrom(valueAt, identifiers, unitIndex)
+          )
         : undefined
   })
 
@@ -57,7 +59,7 @@ export const commodityLinesFromFulfilment = (reader) => {
   const commodityObligations = [
     obligations.commodityCode,
     obligations.commodityType,
-    obligations.species,
+    obligations.speciesLatinName,
     obligations.numberOfAnimals,
     obligations.numberOfPackages,
     ...identifierObligations

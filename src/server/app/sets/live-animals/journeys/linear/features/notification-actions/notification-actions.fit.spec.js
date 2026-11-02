@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   BASE,
   completeAnswerSections,
+  expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   signIn,
   startNotification
@@ -11,10 +11,6 @@ import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 
-// Copy on the real backend emits a NotificationCreated event that resolves the
-// source parties, so the acting user's organisationId has to travel with the
-// call whenever the source carries address-book parties. The FIT stub mirrors
-// this check, so the source here picks parties end-to-end (EUDPA-389).
 const createAnsweredNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)
@@ -90,16 +86,6 @@ test.describe('notification-actions feature', () => {
     const sourceReference = await createAnsweredNotification(page)
     await copyNotification(page, sourceReference)
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Copied notification hub has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Copied notification hub')
   })
 })

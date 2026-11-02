@@ -30,6 +30,19 @@ Normalising validators return cleaned values. Persist `value` from the validatio
 result, not the raw payload. The guarantee is pinned by
 [`src/server/app/lib/validate/persists-cleaned-value.test.js`](../lib/validate/persists-cleaned-value.test.js).
 
+## Default messages
+
+When a call site passes no message of its own, a rule in `lib/validate` falls
+back to `validatorDefaults` in [`shared/copy.en.js`](../shared/copy.en.js) and
+[`shared/copy.cy.js`](../shared/copy.cy.js). A default is a string, or a
+function of the rule's limits that returns one, such as `maxLength(max)`.
+
+`validatorDefaults` is its own export rather than a key of the shared `copy`
+object, so [`lib/validate/validators.js`](../lib/validate/validators.js) imports
+the fallback messages without the page copy. Each locale exports its own, and
+[`copy-parity.test.js`](../copy-parity.test.js) holds the English and Welsh
+defaults to the same shape.
+
 ## GDS error wiring
 
 Keep the field name, input id and error-map key identical.
@@ -43,12 +56,19 @@ scope and `requires` rules decide whether the journey is complete. These are
 separate checks: saving an optional blank is allowed, while submit readiness still
 reflects every in-scope mandatory obligation and group invariant.
 
-"Save and return to overview" saves what was entered without refusing the page for a
-missing required answer. A controller opts in by passing
-`{ allowMissing: kit.isHubExit(request) }` to `validate` (or to `onSubmit` of a
-`pageValidation`), which drops the blank-or-absent errors and keeps every other
-one, so an answer that breaks its own rule is still refused. A page that must stay
-strict (commodity details) does not opt in.
+"Save and return to overview" runs the same checks as "Save and continue", with no
+opt-in. An answer the page requires that is missing, or an answer that breaks its
+rule, keeps the user on the page with an error for each and what they entered kept.
+An answer the page leaves optional may be left blank on either button. The hub exit
+only changes where a valid save goes.
+
+One page's validation is stated once with `pageValidation`, then read against a
+submitted form and against the answers already stored (the task list and the review
+page). The rules and the field set are the same for both, so what counts as a valid
+answer cannot drift. The reading that is running is passed to the rules as `stored`,
+so one broken rule can be worded for each: "Select a port from the list" suits a
+trader who has just mistyped, and not one whose stored port has since closed. Errors
+come back keyed by the page's own field names.
 
 [`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
 continue-time gate for configured fields that must be answered before later pages

@@ -1,16 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   stubH,
-  journeyRequest
+  journeyRequest,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { store } from '../../../../../../../engine/store.js'
 import { dispatchPages } from '../../index.js'
 import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 
@@ -32,12 +28,7 @@ describe('#copy', () => {
 })
 
 describe('GET check-answers — copy reaches the view', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
     const journey = await store.create()

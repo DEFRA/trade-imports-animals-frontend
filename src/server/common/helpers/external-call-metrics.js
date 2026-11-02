@@ -13,48 +13,42 @@ const COUNT = 'Count'
 const SUCCESS = 'success'
 const FAILURE = 'failure'
 
-/**
- * Emits one EMF document for a finished call to a system outside the INS boundary.
- *
- * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it
- * @param {{ durationMs: number, failed: boolean }} result - how long it took and whether it failed
- * @returns {Promise<void>}
- */
-export const recordExternalCall = async (
+const recordExternalCall = async (
   { dependency, operation, interfaceId },
   { durationMs, failed }
 ) => {
-  try {
-    const metricsLogger = new Metrics(logger).getMetricsLogger({
-      Dependency: dependency,
-      Operation: operation
-    })
-    metricsLogger.setNamespace(config.get('metrics.namespace'))
-    metricsLogger.putMetric(DURATION_METRIC, durationMs, MILLISECONDS)
-    metricsLogger.putMetric(FAILURE_METRIC, failed ? 1 : 0, COUNT)
-    metricsLogger.setProperty('Outcome', failed ? FAILURE : SUCCESS)
-    if (interfaceId !== undefined) {
-      metricsLogger.setProperty('Interface', interfaceId)
-    }
-    await metricsLogger.flush()
-  } catch (error) {
-    logger.warn(
-      { err: error, dependency, operation },
-      'Could not record external call'
-    )
+  const metricsLogger = new Metrics(logger).getMetricsLogger({
+    Dependency: dependency,
+    Operation: operation
+  })
+  metricsLogger.setNamespace(config.get('metrics.namespace'))
+  metricsLogger.putMetric(DURATION_METRIC, durationMs, MILLISECONDS)
+  metricsLogger.putMetric(FAILURE_METRIC, failed ? 1 : 0, COUNT)
+  metricsLogger.setProperty('Outcome', failed ? FAILURE : SUCCESS)
+  if (interfaceId !== undefined) {
+    metricsLogger.setProperty('Interface', interfaceId)
   }
+  await metricsLogger.flush()
 }
 
 /**
- * Emits the document for a finished call without making the caller wait for the flush.
- * Recording never rejects, so there is nothing for the caller to handle.
+ * Emits the document for a finished call without making the caller wait for the flush, and logs a warning when it cannot be written.
  *
  * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it
  * @param {{ durationMs: number, failed: boolean }} result - how long it took and whether it failed
  */
 export const recordExternalCallInBackground = (externalCall, result) => {
   countExternalCall(externalCall)
-  recordExternalCall(externalCall, result).catch(() => undefined)
+  recordExternalCall(externalCall, result).catch((error) => {
+    logger.warn(
+      {
+        err: error,
+        dependency: externalCall.dependency,
+        operation: externalCall.operation
+      },
+      'Could not record external call'
+    )
+  })
 }
 
 const recordSince = (externalCall, startedAt, failed) =>

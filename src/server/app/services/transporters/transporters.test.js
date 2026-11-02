@@ -73,11 +73,11 @@ describe('#parties', () => {
       for (const field of [
         'addressLine1',
         'townOrCity',
-        'postalOrZipCode',
+        'postcode',
         'country',
         'countryCode',
-        'telephoneNumber',
-        'emailAddress'
+        'phone',
+        'email'
       ]) {
         expect(record.address[field], `${record.id} ${field}`).toBeTruthy()
       }
@@ -148,10 +148,10 @@ describe('the transporters an organisation has added for itself', () => {
       addressLine2: '',
       townOrCity: 'Calais',
       county: 'Pas-de-Calais',
-      postalOrZipCode: '62100',
+      postcode: '62100',
       country: 'France',
-      telephoneNumber: '+33 3 21 00 00 00',
-      emailAddress: 'jean.dupont@example.fr'
+      phone: '+33 3 21 00 00 00',
+      email: 'jean.dupont@example.fr'
     },
     ...overrides
   })
@@ -185,7 +185,7 @@ describe('the transporters an organisation has added for itself', () => {
     ).toBe(HAULIER_NAME)
   })
 
-  test('Should keep the newest addition at the top, the way design release 1 shows it', () => {
+  test('Should list the newest addition first', () => {
     transporters.rememberTransporter(ORG, haulier())
     transporters.rememberTransporter(ORG, haulier({ name: 'Marie Leclerc' }))
 

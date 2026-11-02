@@ -64,35 +64,13 @@ export const formatDisplayCalendarDate = (value) =>
 
 /**
  * A moment that happened — created, submitted. Rendered as the day it
- * happened in the service's zone, not the container's ambient `TZ`, which
- * differs between production, CI and a laptop and can be dropped. Same class
- * of environment dependency EUDPA-282 removed from the backend.
+ * happened in the service's zone, not the container's ambient `TZ`.
  * @param {string|Date} value
  */
 export const formatDisplayMoment = (value) =>
   displayDate(value, formatMomentAsDay)
 
-const commodityDisplayValue = (commodity) =>
-  commodity.name ??
-  commodity.displayName ??
-  commodity.text ??
-  commodity.commodityCode ??
-  commodity.code ??
-  commodity.value
-
-export const formatCommodity = (commodity, nameForCode = () => undefined) => {
-  if (!commodity) {
-    return ''
-  }
-
-  if (typeof commodity === 'string') {
-    return nameForCode(commodity) ?? commodity
-  }
-
-  const displayValue = commodityDisplayValue(commodity)
-
-  return displayValue ? (nameForCode(displayValue) ?? String(displayValue)) : ''
-}
+export const formatCommodity = (commodity) => commodity?.commodityCode ?? ''
 
 export const getArrivalDateIso = (notification) =>
   notification.transport?.arrivalDate ?? notification.arrivalDate ?? null

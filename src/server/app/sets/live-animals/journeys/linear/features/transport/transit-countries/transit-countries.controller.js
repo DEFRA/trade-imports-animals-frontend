@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import {
@@ -8,17 +7,20 @@ import {
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { portOfEntryPage, transitCountriesPage as page } from '../page.js'
+import * as countries from '../../../../../../../services/countries/index.js'
+import { transitCountriesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { ADD_ACTION, isRemoveAction, removeCodeOf } from './remove-action.js'
-import { countryRows } from './rows.js'
+import { countriesTable, countryRows } from './rows.js'
 import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
+  TRANSIT_REFUSAL,
+  isUsersOwnInputRefusal,
   offeredCodes,
-  offeredCountries,
-  offeredLabel,
+  partitionByOffered,
+  refusalMessage,
   validation
 } from './validate.js'
 
@@ -33,41 +35,32 @@ export { COUNTRY_FIELD, MAX_TRANSITED_COUNTRIES }
 
 const copy = copyFor({ en, cy }).transitCountries
 
-const TRANSITED_COUNTRIES = 'transitedCountries'
-
-// Asked of rail and road consignments only. Out of scope, the page has
-// nothing to ask, so a load or a submit goes to the overview instead.
-const transitApplies = (scope) => scope.has(TRANSITED_COUNTRIES)
-
-// The list feeds a type-ahead that enhances this select, so it carries only the
-// placeholder, the real countries and their subdivisions. Places already added
-// stay in the list: the server refuses a repeat by name, which says more than a
-// place quietly missing from the search would.
 const countryItems = async () => [
-  { value: '', text: copy.country.placeholder },
-  ...(await offeredCountries())
+  { value: '', text: copy.country.selectText },
+  ...(await countries.originCountries())
 ]
 
 const render = async (
   request,
   h,
-  journey,
+  current,
   selected,
   { errors = {}, status = '', chosen = '', recoverableError = false } = {}
 ) => {
-  const offered = await offeredCodes()
-  // A code the list does not contain could only have arrived by tampering. It
-  // is refused by the guards above; it is not rendered back.
-  const known = selected.filter((code) => offered.has(code))
-  const knownLabels = await Promise.all(
-    known.map(async (code) => (await offeredLabel(code)) ?? code)
+  const { offered: offeredSelected } = await partitionByOffered(selected)
+  const offeredLabelled = await Promise.all(
+    offeredSelected.map(async (code) => ({
+      code,
+      label: (await countries.originLabel(code)) ?? code
+    }))
   )
-  const chosenLabel = (await offeredLabel(chosen)) ?? ''
+  const chosenLabel = (await countries.originLabel(chosen)) ?? ''
+  const rows = countryRows(offeredLabelled)
   return h.view(view, {
-    ...kit.base(copy.pageTitle, {
-      request: h.request,
-      backLink: await kit.runBackLink(request, portOfEntryPage.slug),
-      journey,
+    ...kit.base(copy.title, {
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
@@ -75,102 +68,109 @@ const render = async (
     errors,
     errorSummary: kit.errorSummary(errors),
     countryItems: await countryItems(),
-    selectedCountries: known,
-    countryRows: countryRows(known, (code) => {
-      const index = known.indexOf(code)
-      return knownLabels[index]
-    }),
-    hasCountries: known.length > 0,
-    // At the cap the search goes and the limit message takes its place, so a
-    // thirteenth country cannot be offered at all. An error state keeps the
-    // search on screen whatever the count, or the summary link would point at
-    // a control that is not there.
+    selectedCountries: offeredSelected,
+    countryRows: rows,
+    countriesTable: countriesTable(rows, copy),
+    hasCountries: offeredSelected.length > 0,
     showCountryField:
-      Object.keys(errors).length > 0 || known.length < MAX_TRANSITED_COUNTRIES,
-    atLimit: known.length >= MAX_TRANSITED_COUNTRIES,
+      Object.keys(errors).length > 0 ||
+      offeredSelected.length < MAX_TRANSITED_COUNTRIES,
+    atLimit: offeredSelected.length >= MAX_TRANSITED_COUNTRIES,
     limitMessage: copy.limitReached(MAX_TRANSITED_COUNTRIES),
-    // A refused country goes back into the search box the trader typed it
-    // into: the native select holds the code, the enhanced input the name.
     chosenValue: chosen,
     chosenLabel,
     status
   })
 }
 
-// Announced as it happens, on top of the row appearing (design release 1).
-// Reaching the cap is said in the same breath as the country that reached it.
-const statusFor = (message, selected) =>
+const withLimitNotice = (message, selected) =>
   selected.length >= MAX_TRANSITED_COUNTRIES
     ? `${message} ${copy.limitReached(MAX_TRANSITED_COUNTRIES)}`
     : message
 
-const addErrors = async (chosen, selected) => {
-  const offered = await offeredCodes()
+const addRefusalReason = (chosen, selected, offered) => {
   if (chosen === '') {
-    return { [COUNTRY_FIELD]: copy.errors.chooseCountry }
+    return TRANSIT_REFUSAL.nothingChosen
   }
   if (!offered.has(chosen)) {
-    return { [COUNTRY_FIELD]: copy.errors.fromList }
+    return TRANSIT_REFUSAL.notOnList
   }
   if (selected.includes(chosen)) {
-    const chosenLabel = await offeredLabel(chosen)
-    return { [COUNTRY_FIELD]: copy.errors.alreadyAdded(chosenLabel) }
+    return TRANSIT_REFUSAL.alreadyAdded
   }
   if (selected.length >= MAX_TRANSITED_COUNTRIES) {
-    return {
-      [COUNTRY_FIELD]: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
-    }
+    return TRANSIT_REFUSAL.maxCountries
   }
-  return {}
+  return null
+}
+
+const addRefusal = async (chosen, selected) => {
+  const reason = addRefusalReason(chosen, selected, await offeredCodes())
+  return reason && { reason, message: await refusalMessage(reason, chosen) }
+}
+
+const logRefusalUnlessUsersOwnInput = (
+  request,
+  refusal,
+  { errors, chosen }
+) => {
+  if (!isUsersOwnInputRefusal(refusal.reason)) {
+    kit.logRefusal(request, {
+      fieldErrors: errors,
+      reason: refusal.reason,
+      code: chosen
+    })
+  }
 }
 
 const postAdd = async (request, h, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
-  const { journey } = await state.get(request, h)
-  const errors = await addErrors(chosen, selected)
-  if (Object.keys(errors).length > 0) {
+  const current = await state.get(request, h)
+  const refusal = await addRefusal(chosen, selected)
+  if (refusal) {
+    const errors = { [COUNTRY_FIELD]: refusal.message }
+    logRefusalUnlessUsersOwnInput(request, refusal, { errors, chosen })
     return (
-      await render(request, h, journey, selected, { errors, chosen })
+      await render(request, h, current, selected, { errors, chosen })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
-  const chosenLabel = await offeredLabel(chosen)
-  return render(request, h, journey, added, {
-    status: statusFor(copy.added(chosenLabel), added)
+  const chosenLabel = await countries.originLabel(chosen)
+  return render(request, h, current, added, {
+    status: withLimitNotice(copy.added(chosenLabel), added)
   })
 }
 
 const postRemove = async (request, h, selected, code) => {
-  const { journey } = await state.get(request, h)
+  const current = await state.get(request, h)
   const remaining = selected.filter((entry) => entry !== code)
-  const codeLabel = (await offeredLabel(code)) ?? code
-  return render(request, h, journey, remaining, {
+  const codeLabel = (await countries.originLabel(code)) ?? code
+  return render(request, h, current, remaining, {
     status: copy.removed(codeLabel)
   })
 }
 
+const renderSaveUnavailable = async (request, h, selected) => {
+  const current = await state.get(request, h)
+  return (
+    await render(request, h, current, selected, { recoverableError: true })
+  ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+}
+
 const postContinue = async (request, h, payload, selected) => {
-  const { answers, errors } = await validation.onSubmit(payload, {
-    allowMissing: kit.isHubExit(request)
-  })
+  const { answers, errors, refusal } = await validation.onSubmit(payload)
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
-    return (await render(request, h, journey, selected, { errors })).code(
+    const current = await state.get(request, h)
+    kit.logRefusal(request, { fieldErrors: errors, ...refusal })
+    return (await render(request, h, current, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  let committed
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      committed = await state.commit(request, h, answers)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return (
-        await render(request, h, journey, selected, { recoverableError: true })
-      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+  const { value: committed, failure } = await kit.recoverableSave(
+    request,
+    () => state.commit(request, h, answers),
+    () => renderSaveUnavailable(request, h, selected)
   )
   if (failure) {
     return failure
@@ -179,23 +179,19 @@ const postContinue = async (request, h, payload, selected) => {
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
-// The stored list goes back through the page's own rules. The render already
-// filters stale codes out of the chip list; the banner tells the trader before
-// the next Continue silently commits the filtered list.
 const get = async (request, h) => {
-  const { journey, answers, scope } = await state.get(request, h)
-  if (!transitApplies(scope)) {
-    return h.redirect(hubPath(request.params.journeyId))
+  const current = await state.get(request, h)
+  const { values, errors, refusal } = await validation.onStored(current.answers)
+  if (hasErrors(errors)) {
+    request.logger.info(
+      { journeyId: current.journey.journeyId, ...refusal },
+      'Stored transit countries refused: banner shown'
+    )
   }
-  const { values, errors } = await validation.onStored(answers)
-  return render(request, h, journey, values.transitedCountries, { errors })
+  return render(request, h, current, values.transitedCountries, { errors })
 }
 
 const post = async (request, h) => {
-  const { scope } = await state.get(request, h)
-  if (!transitApplies(scope)) {
-    return h.redirect(hubPath(request.params.journeyId))
-  }
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
   const { transitedCountries: selected } = validation.fromPayload(payload)

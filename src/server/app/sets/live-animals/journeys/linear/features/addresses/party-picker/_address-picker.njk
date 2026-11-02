@@ -1,78 +1,60 @@
-{% from "govuk/components/input/macro.njk" import govukInput %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "submitted-search/macro.njk" import appSubmittedSearch %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
 
-{# Search + paginated results table with a radio per row (design 05-03..06).
-   The whole picker is one form: the search button and Save and continue are
-   both submits, told apart by their `action` value. Paging is a link, so the
-   selection travels in the link's query string and in a hidden field — no
-   client JS anywhere. #}
+{% macro pickerError(picker, copy) %}
+  <p id="party-error" class="govuk-error-message">
+    <span class="govuk-visually-hidden">{{ copy.errorPrefix }}</span> {{ picker.error }}
+  </p>
+{% endmacro %}
+
 {% macro addressPickerResults(picker, copy) %}
-  {% set rows = [] %}
-  {% for row in picker.rows %}
-    {% set selectCell %}
-      {{ govukRadios({
-        idPrefix: row.idPrefix,
-        name: "party",
-        classes: "govuk-radios--small",
-        items: [{
-          value: row.id,
-          html: '<span class="govuk-visually-hidden">' + copy.selectRowPrefix + " " + row.name + '</span>',
-          checked: row.checked
-        }]
+  <h2 class="govuk-heading-m">{{ copy.resultsHeading }}</h2>
+
+  {% if picker.rows.length %}
+    <p class="govuk-body">{{ picker.resultsCount }}</p>
+
+    {% set fieldsetContent %}
+      {% if picker.error %}
+        {{ pickerError(picker, copy) }}
+      {% endif %}
+      {{ govukTable({
+        head: [
+          { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+          { text: copy.table.name },
+          { text: copy.table.address },
+          { text: copy.table.country },
+          { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
+        ],
+        rows: picker.tableRows
       }) }}
     {% endset %}
-    {% set detailsCell %}
-      <details class="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ copy.viewDetailsFor }} {{ row.name }}</span></span>
-        </summary>
-        <div class="govuk-details__text">
-          <ul class="govuk-list">
-            {% for line in row.detailLines %}
-              <li>{{ line }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-      </details>
-    {% endset %}
-    {% set ignored = rows.push([
-      { html: selectCell },
-      { text: row.name },
-      { text: row.addressText },
-      { text: row.country },
-      { html: detailsCell }
-    ]) %}
-  {% endfor %}
 
-  {{ govukTable({
-    caption: picker.resultsCaption,
-    captionClasses: "govuk-table__caption--s",
-    head: [
-      { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
-      { text: copy.table.name },
-      { text: copy.table.address },
-      { text: copy.table.country },
-      { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
-    ],
-    rows: rows
-  }) }}
+    <div class="govuk-form-group{{ ' govuk-form-group--error' if picker.error }}">
+      {{ govukFieldset({
+        legend: { text: copy.resultsHeading, classes: "govuk-visually-hidden" },
+        describedBy: "party-error" if picker.error,
+        html: fieldsetContent
+      }) }}
+    </div>
 
-  {% if picker.pagination %}
-    {{ govukPagination(picker.pagination) }}
+    {% if picker.pagination %}
+      {{ govukPagination(picker.pagination) }}
+    {% endif %}
+  {% else %}
+    <p class="govuk-body">{{ copy.noMatches }}</p>
+    {% if picker.error %}
+      <div class="govuk-form-group govuk-form-group--error">
+        {{ pickerError(picker, copy) }}
+      </div>
+    {% endif %}
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, addAddressHref, amend = none) %}
-  {% if addAddressHref %}
-    <p class="govuk-body">
-      <a class="govuk-link" href="{{ addAddressHref }}">{{ copy.addNewAddress }}</a>
-    </p>
-  {% endif %}
+{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, amend = none) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -81,48 +63,28 @@
       <input type="hidden" name="selected" value="{{ picker.selected.id }}" />
     {% endif %}
 
-    {{ govukInput({
+    {{ appSubmittedSearch({
       id: "q",
       name: "q",
-      classes: "govuk-!-width-two-thirds",
-      label: { text: copy.search.label, classes: "govuk-label--s" },
+      value: picker.query,
+      label: { text: copy.search.label },
       hint: { text: copy.search.hint },
-      value: picker.query
-    }) }}
-
-    {{ govukButton({
-      text: copy.search.button,
-      classes: "govuk-button--secondary",
-      name: "action",
-      value: "search"
+      button: { text: copy.search.button },
+      wrapperClasses: "govuk-!-width-one-half"
     }) }}
 
     {% if picker.selected %}
       {{ govukInsetText({ text: copy.selectedAddressPrefix + " " + picker.selected.name }) }}
     {% endif %}
 
-    {% if picker.error %}
-      <p id="party-error" class="govuk-error-message">
-        <span class="govuk-visually-hidden">{{ copy.errorPrefix }}</span> {{ picker.error }}
-      </p>
-    {% endif %}
+    {{ addressPickerResults(picker, copy) }}
 
-    {% if picker.rows.length %}
-      {{ addressPickerResults(picker, copy) }}
-    {% else %}
-      <p class="govuk-body">{{ copy.noMatches }}</p>
-    {% endif %}
-
-    {# A picker is reached from the consignment addresses page, not from the
-       hub, so it ends with the primary alone — but the ending comes out of the
-       shared macro like every other page's. The primary keeps its own `action`
-       value so the form can tell it from the search submit above. #}
-    {{ saveActions(
-      hubHref,
-      { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
-      saveActionsCopy,
-      false,
-      amend = amend
-    ) }}
+    {{ saveActions({
+      hubHref: hubHref,
+      primary: { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
+      copy: saveActionsCopy,
+      showReturnControls: false,
+      amend: amend
+    }) }}
   </form>
 {% endmacro %}

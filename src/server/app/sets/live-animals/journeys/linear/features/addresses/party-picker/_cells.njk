@@ -1,0 +1,32 @@
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+
+{% macro pickerSelectCell(row, copy) %}
+  {% set selectLabel %}
+    <span class="govuk-visually-hidden">{{ copy.selectRowPrefix }} {{ row.name }}</span>
+  {% endset %}
+  {{ govukRadios({
+    idPrefix: row.idPrefix,
+    name: "party",
+    classes: "govuk-radios--small",
+    items: [{
+      value: row.id,
+      html: selectLabel,
+      checked: row.checked
+    }]
+  }) }}
+{% endmacro %}
+
+{% macro pickerDetailsCell(row, copy) %}
+  <details class="govuk-details">
+    <summary class="govuk-details__summary">
+      <span class="govuk-details__summary-text">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ copy.viewDetailsFor }} {{ row.name }}</span></span>
+    </summary>
+    <div class="govuk-details__text">
+      <ul class="govuk-list">
+        {% for line in row.detailLines %}
+          <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </details>
+{% endmacro %}

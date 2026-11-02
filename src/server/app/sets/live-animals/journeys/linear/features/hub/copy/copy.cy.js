@@ -31,7 +31,7 @@ export const copy = {
       title: 'Beth ydych chi’n ei fewnforio?'
     },
     importReason: {
-      title: 'Prif reswm dros fewnforio'
+      title: 'Prif reswm mewnforio'
     },
     consignmentDetails: {
       title: 'Manylion y nwyddau'

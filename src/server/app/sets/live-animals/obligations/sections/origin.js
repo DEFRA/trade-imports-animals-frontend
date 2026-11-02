@@ -27,9 +27,6 @@ export const regionCodeRequirement = {
   status: 'mandatory'
 }
 
-// Retain-value pattern: always in scope; mandatory when the
-// requirement is 'yes', optional otherwise. Stored values are kept
-// across gate flips (V4 spec: the field itself is not purged on 'no').
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
   name: 'regionOfOriginCode',

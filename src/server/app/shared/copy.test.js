@@ -1,15 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { copyFor } from './copy.js'
+import { leaves, isCopyLeaf } from './copy-leaves.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
-
-const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
-    ? Object.entries(node).flatMap(([key, value]) =>
-        leaves(value, [...path, key])
-      )
-    : [{ path: path.join('.'), value: node }]
 
 describe('#copyFor', () => {
   it('Should resolve the requested locale', () => {
@@ -49,7 +43,7 @@ describe('journey strip copy', () => {
 })
 
 describe('phase-banner copy', () => {
-  it('Should carry the Design release 1 banner wording', () => {
+  it('Should carry the alpha banner wording', () => {
     expect(sharedEn.layout.phaseBanner).toEqual({
       tag: 'Alpha',
       bodyPrefix: 'This is a new service. Help us improve it and',
@@ -65,7 +59,7 @@ describe('phase-banner copy', () => {
 })
 
 describe('service-navigation copy', () => {
-  it('Should carry the Design release 1 item labels', () => {
+  it('Should carry the service navigation item labels', () => {
     expect(sharedEn.layout.serviceNavigation).toEqual({
       menuButton: 'Menu',
       dashboard: 'Dashboard',
@@ -95,7 +89,7 @@ describe('error-page copy', () => {
 })
 
 describe('save-actions copy', () => {
-  it('Should carry the Design release 1 control labels', () => {
+  it('Should carry the save control labels', () => {
     expect(sharedEn.saveActions).toEqual({
       saveAndReturn: 'Save and return',
       saveAndContinue: 'Save and continue',
@@ -112,12 +106,9 @@ describe('save-actions copy', () => {
 })
 
 describe('shared copy module', () => {
-  it('Should have a non-empty string at every leaf', () => {
+  it('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {
-      expect(typeof value, `${path} must be a string`).toBe('string')
-      expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
-        0
-      )
+      expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
     }
   })
 })

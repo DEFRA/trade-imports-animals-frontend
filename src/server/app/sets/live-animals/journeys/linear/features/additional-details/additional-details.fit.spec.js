@@ -1,7 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  BOS_TAURUS,
+  EQUUS_CABALUS,
   answerCountryOfOrigin,
+  expectNoSeriousOrCriticalViolations,
   journeyUrl,
   urlUnderBase,
   selectSpecies,
@@ -14,14 +16,11 @@ import { copy } from './copy/copy.en.js'
 
 const SAVE_AND_CONTINUE = 'Save and continue'
 
-// The species drives which questions the page asks, so it is the one thing
-// the set-up varies: cattle are asked the unweaned-animals question and
-// horses are not.
-const startAtAdditionalDetails = async (page, species = 'Bos taurus') => {
+const startAtAdditionalDetails = async (page, chosenSpecies = BOS_TAURUS) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [species])
+  await selectSpecies(page, [chosenSpecies])
   await page
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
@@ -69,10 +68,6 @@ test.describe('additional-details feature — rendering', () => {
     ).toBeVisible()
   })
 
-  // The page asks two questions under one h1, and the eighteen radios beneath
-  // them only read as two groups if the legends outweigh the option labels —
-  // the size class is the whole of the behaviour, so it is asserted directly
-  // rather than through a rendered role.
   test('sets both question legends at the medium size', async ({ page }) => {
     await expect(
       page.getByRole('group', { name: copy.certified.legend }).locator('legend')
@@ -91,13 +86,10 @@ test.describe('additional-details feature — rendering', () => {
   })
 })
 
-// Design release 1 asks the unweaned-animals question only of a commodity
-// that carries unweaned options — cattle, not horses — so a horses-only
-// consignment is asked what the animals are certified for and nothing else.
 test.describe('additional-details feature — the unweaned commodity gate', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startAtAdditionalDetails(page, 'Equus caballus')
+    await startAtAdditionalDetails(page, EQUUS_CABALUS)
   })
 
   test('does not ask a horses-only consignment about unweaned animals', async ({
@@ -230,16 +222,6 @@ test.describe('additional-details feature — persistence and accessibility', ()
     await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
     await page.getByRole('radio', { name: copy.unweaned.no }).check()
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Additional details has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Additional details')
   })
 })

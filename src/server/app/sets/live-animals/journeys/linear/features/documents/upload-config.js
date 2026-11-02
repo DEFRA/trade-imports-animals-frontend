@@ -1,5 +1,3 @@
-import { copy as en } from './copy/copy.en.js'
-
 export const ALLOWED_TYPES = [
   { ext: 'pdf', mime: 'application/pdf' },
   { ext: 'doc', mime: 'application/msword' },
@@ -25,29 +23,27 @@ export const ACCEPT_ATTRIBUTE = ALLOWED_TYPES.map(
   (type) => `.${type.ext}`
 ).join(',')
 
-// Label every accepted extension, not the de-duplicated MIME types: .jpeg and
-// .jpg share image/jpeg, so collapsing on MIME dropped JPG from the sentence
-// while the input still accepted it. See EUDPA-523.
 const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.ext.toUpperCase())
 
-export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
-  type: 'disjunction'
-}).format(allowedTypeLabels)
+/**
+ * The accepted file types as a list in the language of the given documents
+ * copy: commas between them and the copy's word for "or" before the last.
+ *
+ * @param {object} documentsCopy - a locale of the documents copy.
+ * @returns {string} the list, such as `PDF, DOC or XLSX`.
+ */
+export const allowedFileTypesHint = (documentsCopy) =>
+  `${allowedTypeLabels.slice(0, -1).join(', ')} ${documentsCopy.file.or} ${allowedTypeLabels.at(-1)}`
 
-export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
+export const fileTypeMessage = (documentsCopy) =>
+  documentsCopy.errors.fileType(allowedFileTypesHint(documentsCopy))
 
-// Held at 10 so MAX_PAYLOAD_BYTES stays inside the ingress request-body cap in
-// front of this service, which on CDP is nginx's 10 MiB default. EUDPA-518
-// raised this to 50 for Design release 1; a 50MB upload never reaches the
-// service, so the limit goes back until the ingress cap is raised with it.
-const MAX_FILE_SIZE_MB = 10
+const MAX_FILE_SIZE_MB = 50
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
 export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
-export const OVERSIZE_FILE_MESSAGE = en.errors.oversize(MAX_FILE_SIZE_LABEL)
-
-const MULTIPART_OVERHEAD_BYTES = 1024
-export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
+export const oversizeMessage = (documentsCopy) =>
+  documentsCopy.errors.oversize(MAX_FILE_SIZE_LABEL)
 
 export const exceedsMaxFileSize = (byteCount, limit = MAX_FILE_SIZE_BYTES) =>
   Number.isFinite(byteCount) && Number.isFinite(limit) && byteCount > limit

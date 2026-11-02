@@ -1,0 +1,10 @@
+@use '../../../../client/stylesheets/helpers';
+
+.app-submitted-search__button {
+  @extend %blue-square-icon-button;
+  margin-left: 0;
+}
+
+.app-submitted-search__button::before {
+  @extend %app-search-icon;
+}

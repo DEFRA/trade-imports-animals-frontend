@@ -5,6 +5,7 @@ const DEFAULT_COOKIE_NAMES = Object.freeze({
   openingRun: 'openingRun',
   flowOnlyAnswers: 'flowOnlyAnswers',
   addressHandshakeTokens: 'addressHandshakeTokens',
+  addedAddressBanner: 'addedAddressBanner',
   reviewedConcurrencyTokens: 'reviewedConcurrencyTokens'
 })
 
@@ -28,16 +29,10 @@ const UNCONFIGURED = Object.freeze({
 
 const store = setKeyed('session', { configuredBy: 'configureSession' })
 
-// Reading before configuration is the un-booted case, which must report itself
-// through `unconfigured` rather than through setKeyed's "no such set" error.
-// Cookie names still answer, because a set may register its cookies before it
-// configures its store.
 const current = () =>
   store.has(currentSetId()) ? store.current() : UNCONFIGURED
 
-/** Whether this set has been through `configureSession`. Callers that must run
- * after it — `registerJourneyCookie` reads the configured cookie names — ask
- * rather than silently taking the default names. */
+/** Whether `configureSession` has run for this set. */
 export const sessionConfiguredFor = (setId) => store.has(setId)
 
 export const configureSession = (setId, impl, cookieNames) => {
@@ -47,16 +42,22 @@ export const configureSession = (setId, impl, cookieNames) => {
   })
 }
 
-// Per-set accessors rather than one module constant: two sets in one process
-// need two sets of cookie names, and a shared object would let the second
-// registration rename the first set's cookies out from under it.
 export const knownJourneysCookie = () => current().cookieNames.knownJourneys
 export const openingRunCookie = () => current().cookieNames.openingRun
 export const flowOnlyAnswersCookie = () => current().cookieNames.flowOnlyAnswers
 export const addressHandshakeTokensCookie = () =>
   current().cookieNames.addressHandshakeTokens
+export const addedAddressBannerCookie = () =>
+  current().cookieNames.addedAddressBanner
 export const reviewedConcurrencyTokensCookie = () =>
   current().cookieNames.reviewedConcurrencyTokens
+
+/**
+ * The names of the active set's journey cookies.
+ *
+ * @returns {string[]} every journey cookie name the set is configured with.
+ */
+export const journeyCookieNames = () => Object.values(current().cookieNames)
 
 export const session = {
   knownJourneyIds: async (...args) => current().impl.knownJourneyIds(...args),

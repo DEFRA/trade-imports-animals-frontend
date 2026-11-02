@@ -4,29 +4,6 @@ export const copy = {
   notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
-  means: {
-    AIRPLANE: 'Awyr',
-    RAILWAY: 'Rheilffordd',
-    ROAD_VEHICLE: 'Ffordd',
-    VESSEL: 'Môr'
-  },
-  documentTypes: {
-    ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Tystysgrif iechyd milfeddygol',
-    AIR_WAYBILL: 'Bil cludo awyr',
-    IMPORT_PERMIT: 'Trwydded fewnforio',
-    LETTER_OF_AUTHORITY: 'Llythyr awdurdod (Cyfarwyddeb 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Anfoneb fasnachol',
-    SEA_WAYBILL: 'Bil cludo môr',
-    RAIL_WAYBILL: 'Bil cludo rheilffordd',
-    BILL_OF_LADING: 'Bil llwytho',
-    CATCH_CERTIFICATE: 'Tystysgrif dalfa',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Canlyniadau samplu labordy ar gyfer afflatocsin (Rheoliad 2019/1793)',
-    HEALTH_CERTIFICATE: 'Tystysgrif iechyd',
-    JOURNEY_LOG: 'Log taith',
-    OTHER: 'Arall'
-  },
   change: 'Newid',
   editDetails: 'Golygu manylion',
   cancelAmend: {
@@ -44,7 +21,7 @@ export const copy = {
   },
   groups: {
     whereFrom: 'O ble mae’r llwyth hwn yn dod?',
-    mainReasonForImport: 'Prif reswm dros fewnforio',
+    mainImportReason: 'Prif reswm mewnforio',
     commodityDetails: 'Manylion y nwyddau',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
@@ -78,7 +55,7 @@ export const copy = {
     exitDate: 'Dyddiad ymadael',
     portOfExit: 'Porthladd ymadael',
     commodityCode: 'Cod nwyddau',
-    commonName: 'Enw cyffredin',
+    speciesCommonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
     numberOfPackages: 'Nifer y pecynnau',
@@ -144,6 +121,10 @@ export const copy = {
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
+    },
+    species: {
+      notListed: (speciesWithCodes) =>
+        `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch rywogaeth o'r rhestr.`
     },
     parties: {
       placeOfOrigin: 'Cywirwch fanylion y cyfeiriad ar gyfer y man tarddiad',

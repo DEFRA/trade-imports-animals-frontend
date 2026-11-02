@@ -22,8 +22,6 @@ export const transporterFromFulfilment = (reader) => {
 // cannot read as a means-of-transport enum.
 const unlessBlank = (value) => (value === '' ? undefined : value)
 
-// GBN-AG's transit countries are ISO 3166-1 alpha-2 codes, one per country, so
-// a territory travels as its country and a country is named once.
 const asCountryCodes = (codes) =>
   Array.isArray(codes) ? [...new Set(codes.map(parentCountryCode))] : codes
 

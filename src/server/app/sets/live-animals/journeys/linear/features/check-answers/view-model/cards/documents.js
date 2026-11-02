@@ -2,18 +2,16 @@ import * as state from '../../../../../../../../engine/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { copy as documentsEn } from '../../../documents/copy/copy.en.js'
+import { copy as documentsCy } from '../../../documents/copy/copy.cy.js'
 import { documentsPage } from '../../../documents/page.js'
 import { cardAction, editableActions } from '../rows/change-link.js'
 import { row } from '../rows/summary-row.js'
 import { dateText } from '../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
+const documentsCopy = copyFor({ en: documentsEn, cy: documentsCy })
 
-// Documents are optional, so nothing uploaded is the ordinary case rather than
-// an edge one. The card stands either way (design release 1): the review page
-// has to say that documents are part of the notification and offer the route to
-// add them. An empty card would read as broken, so with no entries it carries a
-// line saying none have been added.
 export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
   const documents = state
     .collectionView(answers, ['documents'], evaluation)
@@ -23,7 +21,7 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
         row(copy.rows.documentReference, entry.accompanyingDocumentReference),
         row(
           copy.rows.documentType,
-          copy.documentTypes[entry.accompanyingDocumentType]
+          documentsCopy.types[entry.accompanyingDocumentType]
         ),
         row(
           copy.rows.dateOfIssue,

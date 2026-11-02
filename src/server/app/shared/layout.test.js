@@ -1,7 +1,10 @@
-import { load } from 'cheerio'
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
+import {
+  documentOf,
+  trimmedTextOf
+} from '../../common/test-helpers/document-of.js'
 import { base, SURFACES, surfaceClass } from './kit.js'
 import { copy as sharedCopy } from './copy.en.js'
 import { SET_BASE } from '../sets/live-animals/set.js'
@@ -12,8 +15,6 @@ const PHASE_BANNER = 'govuk-phase-banner'
 const BREADCRUMBS = 'govuk-breadcrumbs'
 const ADDRESS_BOOK_URL = 'http://ins.test/address-book'
 
-// `homeUrl` comes from the view model, the way kit.base() supplies it, so the
-// rendered chrome carries the set's own prefix rather than a bare `/`.
 const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
@@ -36,19 +37,21 @@ describe('service navigation', () => {
     email: 'sam@example.test'
   }
 
-  it('Should offer the four Design release 1 items on a signed-in page', () => {
-    const $ = load(renderLayout(signedIn))
-    const items = $('.govuk-service-navigation__item')
-    const links = items.find('a')
+  it('Should offer the dashboard, address book, account and log out items on a signed-in page', () => {
+    const document = documentOf(renderLayout(signedIn))
+    const items = document.querySelectorAll('.govuk-service-navigation__item')
+    const links = [
+      ...document.querySelectorAll('.govuk-service-navigation__item a')
+    ]
 
     expect(items).toHaveLength(4)
-    expect(links.map((_, a) => $(a).text().trim()).get()).toEqual([
+    expect(links.map(trimmedTextOf)).toEqual([
       serviceNavigation.dashboard,
       serviceNavigation.addressBook,
       serviceNavigation.manageAccount,
       serviceNavigation.logOut
     ])
-    expect(links.map((_, a) => $(a).attr('href')).get()).toEqual([
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
       SET_BASE,
       ADDRESS_BOOK_URL,
       '#',
@@ -57,26 +60,33 @@ describe('service navigation', () => {
   })
 
   it('Should point the dashboard link and the service name at the set’s own base', () => {
-    const $ = load(renderLayout(signedIn))
+    const document = documentOf(renderLayout(signedIn))
 
     expect(
-      $(`.govuk-service-navigation__item a[href="${SET_BASE}"]`)
+      document.querySelectorAll(
+        `.govuk-service-navigation__item a[href="${SET_BASE}"]`
+      )
     ).toHaveLength(1)
-    expect($(`.govuk-service-navigation__service-name a`).attr('href')).toBe(
-      SET_BASE
-    )
+    expect(
+      document
+        .querySelector('.govuk-service-navigation__service-name a')
+        .getAttribute('href')
+    ).toBe(SET_BASE)
   })
 
   it('Should mark the dashboard item active inside the notifications section', () => {
-    const $ = load(
+    const document = documentOf(
       renderLayout(signedIn, { activeNavigationItem: 'dashboard' })
     )
 
-    expect($('.govuk-service-navigation__item--active')).toHaveLength(1)
-    expect($('[aria-current="true"]')).toHaveLength(1)
-    expect($('.govuk-service-navigation__active-fallback').text()).toBe(
-      serviceNavigation.dashboard
-    )
+    expect(
+      document.querySelectorAll('.govuk-service-navigation__item--active')
+    ).toHaveLength(1)
+    expect(document.querySelectorAll('[aria-current="true"]')).toHaveLength(1)
+    expect(
+      document.querySelector('.govuk-service-navigation__active-fallback')
+        .textContent
+    ).toBe(serviceNavigation.dashboard)
   })
 
   it('Should mark nothing active outside any navigation section', () => {
@@ -87,7 +97,7 @@ describe('service navigation', () => {
     expect(html).not.toContain('aria-current')
   })
 
-  it('Should not show the signed-in user anywhere, as Design release 1 does not', () => {
+  it('Should not show the signed-in user anywhere', () => {
     const html = renderLayout(signedIn)
 
     expect(html).not.toContain('Sam Example')
@@ -141,7 +151,7 @@ describe('alpha phase banner', () => {
 })
 
 describe('breadcrumbs', () => {
-  it('Should render no breadcrumb trail, as Design release 1 has none', () => {
+  it('Should render no breadcrumb trail', () => {
     const html = renderLayout(
       { isAuthenticated: true },
       { backLink: '/notifications' }
@@ -180,9 +190,66 @@ describe('content column width by surface', () => {
   })
 })
 
+describe('success banner', () => {
+  const successBanner = {
+    titleText: 'Success',
+    text: 'New Farm address added to your address book'
+  }
+  const stripContext = {
+    journeyStrip: {
+      status: { text: 'Draft', classes: 'govuk-tag--blue' },
+      reference: 'GBN-AG-26-ABC123'
+    }
+  }
+
+  it('Should render a success notification banner with the given title and text', () => {
+    const document = documentOf(
+      renderLayout({ isAuthenticated: true }, { successBanner })
+    )
+    const banner = document.querySelector('.govuk-notification-banner--success')
+
+    expect(trimmedTextOf(banner.querySelector('h2'))).toBe('Success')
+    expect(
+      trimmedTextOf(banner.querySelector('.govuk-notification-banner__heading'))
+    ).toBe('New Farm address added to your address book')
+  })
+
+  it('Should render the banner after the journey strip', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { ...stripContext, successBanner }
+    )
+
+    expect(html.indexOf('app-journey-strip')).toBeGreaterThan(-1)
+    expect(html.indexOf('app-journey-strip')).toBeLessThan(
+      html.indexOf('govuk-notification-banner--success')
+    )
+  })
+
+  it('Should render no success banner when none is given', () => {
+    const document = documentOf(renderLayout({ isAuthenticated: true }))
+
+    expect(
+      document.querySelectorAll('.govuk-notification-banner--success')
+    ).toHaveLength(0)
+  })
+})
+
 describe('kit surfaces', () => {
   it('Should build answering-page chrome at the reading measure', () => {
     expect(base('Any page').contentColumnClass).toBe(SURFACES.form)
+  })
+
+  it('Should build answering-page chrome at the full container when asked for the display surface', () => {
+    expect(base('Any page', { surface: 'display' }).contentColumnClass).toBe(
+      SURFACES.display
+    )
+  })
+
+  it('Should reject an unknown surface passed to the chrome', () => {
+    expect(() => base('Any page', { surface: 'widescreen' })).toThrow(
+      /Unknown surface 'widescreen'/
+    )
   })
 
   it('Should give display pages the full container', () => {
@@ -203,9 +270,8 @@ describe('kit surfaces', () => {
 })
 
 describe('page title', () => {
-  // The header's crown logo is an SVG carrying a title element of its own, so
-  // scope the read to the document title in the head.
-  const titleOf = (html) => load(html)('head title').text()
+  const titleOf = (html) =>
+    documentOf(html).querySelector('head title').textContent
   const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
   it('Should join the page name, the service name and GOV.UK with hyphens', () => {

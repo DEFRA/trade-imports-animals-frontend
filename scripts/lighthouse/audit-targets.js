@@ -135,6 +135,23 @@ export const auditPaths = (journeyIds, routes = allRoutes) => {
 export const auditUrls = (origin, journeyIds, routes = allRoutes) =>
   auditPaths(journeyIds, routes).map((path) => new URL(path, origin).toString())
 
+/** The URLs runner `index` of `total` audits. The shards are contiguous,
+ * near-equal slices that together hold every URL once, in order. */
+export const urlsInShard = (urls, { index, total }) => {
+  if (
+    !Number.isInteger(total) ||
+    !Number.isInteger(index) ||
+    index < 1 ||
+    index > total
+  ) {
+    throw new Error(
+      `Lighthouse shard ${index} of ${total} is not a runner between 1 and the total`
+    )
+  }
+  const size = Math.ceil(urls.length / total)
+  return urls.slice((index - 1) * size, index * size)
+}
+
 /** A URL's path with the set's mount taken back off, so a report is named after
  * the page's own route rather than the prefix every page shares. */
 const withoutMount = (pathname) => {

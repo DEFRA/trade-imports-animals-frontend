@@ -1,72 +1,87 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { buildSelectedCommodities } from './selected-commodities.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
-
-const BOS_TAURUS = '1148346'
-const BISON_BISON = '716661'
-
-const linesOf = (...triples) =>
-  triples.map(
-    (
-      [commoditySelection, speciesSelection, numberOfAnimalsQuantity],
-      index
-    ) => ({
-      index,
-      entry: { commoditySelection, speciesSelection, numberOfAnimalsQuantity }
-    })
-  )
-
-afterEach(() => vi.restoreAllMocks())
+import { commodityLinesFixture } from '../../test-support.js'
+import {
+  BISON_BISON,
+  BISON_BISON_ROW,
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS,
+  CANIS_FAMILIARIS_ROW,
+  FELIS_CATUS,
+  FELIS_CATUS_ROW,
+  STRUTHIO,
+  STRUTHIO_ROW
+} from '../../search/test-support.js'
 
 describe('#buildSelectedCommodities', () => {
-  it('Should give every commodity line its own summary row so the table pairs with the cards', () => {
+  it('Should give a code one row listing every species under it and the total of their animals', () => {
     expect(
       buildSelectedCommodities(
-        linesOf(
-          ['Cow', BOS_TAURUS, 2],
-          ['Cow', BISON_BISON, 5],
-          ['Fish', '801204', 1]
+        commodityLinesFixture(
+          [BOS_TAURUS_ROW, 2],
+          [BISON_BISON_ROW, 5],
+          [STRUTHIO_ROW, 1]
         )
       )
     ).toEqual([
-      { code: '0102', name: 'Domestic cattle', animals: '2' },
-      { code: '0102', name: 'American bison', animals: '5' },
-      { code: '0301', name: 'Atlantic salmon', animals: '1' }
+      {
+        code: '0102',
+        latinNames: [BOS_TAURUS, BISON_BISON],
+        animals: '7'
+      },
+      {
+        code: '01063300',
+        latinNames: [STRUTHIO],
+        animals: '1'
+      }
     ])
   })
 
   it('Should read the declared count as text whether it was stored as a number or re-rendered as an entered string', () => {
     expect(
       buildSelectedCommodities(
-        linesOf(['Cow', BOS_TAURUS, 25], ['Fish', '801204', '7'])
+        commodityLinesFixture([BOS_TAURUS_ROW, 25], [STRUTHIO_ROW, '7'])
       ).map(({ animals }) => animals)
     ).toEqual(['25', '7'])
   })
 
-  it('Should show nothing rather than a placeholder for a line with no count yet', () => {
+  it('Should give an empty animals count for a code whose lines have no count yet', () => {
     expect(
-      buildSelectedCommodities(linesOf(['Cow', BOS_TAURUS, undefined]))
-    ).toEqual([{ code: '0102', name: 'Domestic cattle', animals: '' }])
-  })
-
-  it('Should name each row from the species own common name, not from its commodity', () => {
-    const commonName = vi
-      .spyOn(commodities, 'speciesCommonName')
-      .mockReturnValue('Domestic dog')
-
-    expect(buildSelectedCommodities(linesOf(['Dog', '923502', 1]))).toEqual([
-      { code: '01061900', name: 'Domestic dog', animals: '1' }
+      buildSelectedCommodities(commodityLinesFixture([BOS_TAURUS_ROW]))
+    ).toEqual([
+      {
+        code: '0102',
+        latinNames: [BOS_TAURUS],
+        animals: ''
+      }
     ])
-    expect(commonName).toHaveBeenCalledWith('Dog', '923502')
   })
 
-  it('Should leave the code blank for a commodity the catalogue holds no code for', () => {
+  it('Should give each species on code 01061900 its own row counted on its own', () => {
     expect(
-      buildSelectedCommodities(linesOf(['Unlisted', '999999', 1])).map(
-        ({ code }) => code
+      buildSelectedCommodities(
+        commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
+      ).map(({ code, latinNames, animals }) => [code, latinNames, animals])
+    ).toEqual([
+      ['01061900', [CANIS_FAMILIARIS], '1'],
+      ['01061900', [FELIS_CATUS], '4']
+    ])
+  })
+
+  it('Should total only the counted lines of a code', () => {
+    expect(
+      buildSelectedCommodities(
+        commodityLinesFixture([BOS_TAURUS_ROW, '2'], [BISON_BISON_ROW, ''])
       )
-    ).toEqual([''])
+    ).toEqual([
+      {
+        code: '0102',
+        latinNames: [BOS_TAURUS, BISON_BISON],
+        animals: '2'
+      }
+    ])
   })
 
   it('Should build no rows for an empty selection', () => {

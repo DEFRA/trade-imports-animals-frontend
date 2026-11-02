@@ -17,7 +17,10 @@ import {
   taskRows
 } from './sets/live-animals/journeys/linear/flow/task-rows.js'
 import { sectionCaptionOf } from './sets/live-animals/journeys/linear/flow/section-captions/index.js'
-import { nextRunTarget } from './sets/live-animals/journeys/linear/flow/run.js'
+import {
+  nextRunTarget,
+  previousRunTarget
+} from './sets/live-animals/journeys/linear/flow/run.js'
 import { entryGuardTarget } from './sets/live-animals/journeys/linear/flow/entry-guard.js'
 import {
   LAYOUT,
@@ -55,10 +58,6 @@ export const liveAnimals = {
     register: async (server) => {
       registerSetMount(SET_ID, SET_BASE)
       await withSetContext(SET_ID, async () => {
-        // Every extension below is sandboxed to this plugin's realm. Without
-        // `{ sandbox: 'plugin' }` Hapi registers it server-wide, so a second
-        // set's routes would run this set's guards and the last registration
-        // would win. Pinned by co-residency.test.js.
         server.ext(
           'onPreAuth',
           (_request, h) => {
@@ -70,15 +69,13 @@ export const liveAnimals = {
         configureObligationSet(SET_ID, liveAnimalsObligationSet)
         configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
         configureCommodityReference(SET_ID, commodities)
-        // The readiness seam is fail-closed until L1 injects the roll-up, so
-        // this hands `bridge/scope.js` the real task-row roll-up rather than
-        // letting bridge import it from flow.
         configureReadyForCheckYourAnswers(SET_ID, readyForCheckYourAnswers)
         configureJourneyFlow(SET_ID, {
           sections,
           taskRows,
           rowStatus,
           nextRunTarget,
+          previousRunTarget,
           flowOnlyKeys: FLOW_ONLY_KEYS,
           entryGuardTarget,
           layout: LAYOUT,
@@ -94,10 +91,6 @@ export const liveAnimals = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            // Wrapped, not left to the onPreAuth above: authentication crosses
-            // an async boundary in between, and `enterWith` does not always
-            // survive it. Bare, this resolves only by the sole-set fallback and
-            // throws the moment a second set mounts.
             const target = await withSetContext(SET_ID, () =>
               journeyEntryGuardTarget(request, h)
             )
@@ -108,9 +101,6 @@ export const liveAnimals = {
         server.route(
           allRoutes.map((route) => routeWithSetContext(SET_ID, route))
         )
-        // Last act of the registration: a seam this set never configured would
-        // otherwise answer with its fallback at request time, and two of those
-        // fallbacks are silent. Refusing here stops the server instead.
         assertSetConfigured(server, SET_ID)
       })
     }

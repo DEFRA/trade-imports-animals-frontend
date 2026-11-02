@@ -10,17 +10,13 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {# A load with no lines redirects to the commodity question and a removal
-     that empties the notification does the same, so the only renders left
-     are loads and validation re-renders of lines that exist — the table
-     always has rows. #}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {{ selectedCommoditiesTable(selectedRows, copy.table) }}
+    {{ selectedCommoditiesTable(selectedTable, selectedCommoditiesCopy) }}
   </form>
 
-  <p class="govuk-body">
+  <p class="govuk-body govuk-!-margin-bottom-7">
     <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnother }}</a>
   </p>
 
@@ -29,9 +25,12 @@
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
     {% for group in groups %}
+      {% if not loop.first %}
+        <hr class="govuk-section-break govuk-section-break--visible govuk-!-margin-top-7 govuk-!-margin-bottom-7" />
+      {% endif %}
       {{ speciesQuantityGroup(group, copy) }}
     {% endfor %}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
   </form>
 {% endblock %}

@@ -9,48 +9,39 @@ import {
 } from '../../../model/obligations/helpers/index.js'
 import { emptyCollectionSatisfiesFloor } from './invariants.js'
 
-// Synthetic manifest — a commodity line holding a unit-record group whose
-// floor is an `anyOfIds` rule, so the floor can be exercised without pulling
-// in the live-animals set.
-
 const line = { id: 'line-group', name: 'commodityLines' }
 
-const commoditySelection = {
-  id: 'commodity-selection',
-  name: 'commoditySelection',
+const commodityCode = {
+  id: 'commodity-code',
+  name: 'commodityCode',
   within: line,
   status: 'mandatory'
 }
 
-// The shape the identifier leaves really carry: an allowlist read of the
-// line's commodity, fanned onto the unit-record group.
 const allowListedLeaf = {
   id: 'allow-listed-leaf',
   name: 'allowListedLeaf',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'unit-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'unit-group' })
 }
 
-// A shape `gateAdmits` cannot read: no `values`, no gated parent group.
-const equalsGateLeaf = {
-  id: 'equals-gate-leaf',
-  name: 'equalsGateLeaf',
+const unreadableGateLeaf = {
+  id: 'unreadable-gate-leaf',
+  name: 'unreadableGateLeaf',
   status: 'optional',
   applyTo: equalsGate(
-    commoditySelection,
-    'Cow',
+    commodityCode,
+    '0102',
     { inScope: true },
     { inScope: false }
   )
 }
 
-// An allowlist gate fanned onto some other group: read against this group's
-// parent index it would be answering a different question.
-const fannedElsewhereLeaf = {
-  id: 'elsewhere-leaf',
-  name: 'elsewhereLeaf',
+const leafGatedOnOtherGroup = {
+  id: 'other-group-leaf',
+  name: 'leafGatedOnOtherGroup',
   status: 'optional',
-  applyTo: allowListed(commoditySelection, ['Cow'], { id: 'other-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: 'other-group' })
 }
 
 const unitGroupWith = (anyOfIds) => ({
@@ -65,90 +56,77 @@ const collection = { requiredAtLeastOne: true }
 const LINE_1 = 'line1'
 
 const stateWithCommodity = (value) => ({
-  fulfilments: { [commoditySelection.id]: { [LINE_1]: value } }
+  fulfilments: { [commodityCode.id]: { [LINE_1]: value } }
 })
 
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
     configureObligationSet(SET_ID, {
       obligations: [
-        commoditySelection,
+        commodityCode,
         allowListedLeaf,
-        equalsGateLeaf,
-        fannedElsewhereLeaf
+        unreadableGateLeaf,
+        leafGatedOnOtherGroup
       ],
       groups: [line]
     })
   })
 
-  // No teardown: vitest isolates module state per test file, and configuring
-  // the set back to `undefined` would leave it "configured" to undefined —
-  // turning manifest.js's named "not configured" error into a TypeError.
-
-  it('Should hold the floor open where the collection asks for no entry at all', () => {
+  it('Should report an empty collection satisfied when the collection does not require an entry', () => {
     expect(
       emptyCollectionSatisfiesFloor(
         { requiredAtLeastOne: false },
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(true)
   })
 
-  it('Should bite where a readable gate admits the parent — the line is asked for a record', () => {
+  it("Should report an empty collection unsatisfied when an allow-list gate admits the line's commodity code", () => {
     expect(
       emptyCollectionSatisfiesFloor(
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Cow')
+        stateWithCommodity('0102')
       )
     ).toBe(false)
   })
 
-  it('Should go vacuous where a readable gate admits nothing on this parent', () => {
+  it("Should report an empty collection satisfied when an allow-list gate does not admit the line's commodity code", () => {
     expect(
       emptyCollectionSatisfiesFloor(
         collection,
         unitGroupWith([allowListedLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(true)
   })
 
-  // `gateAdmits` reads `metadata.values`, which only the allowlist shapes
-  // define. Judged by that alone an equals/present/includes/branched gate
-  // looks like a leaf that can never apply, and the mandatory floor would
-  // silently go vacuous — an empty collection reported satisfied and the
-  // notification submittable. A shape this helper cannot read must keep the
-  // floor biting instead.
-  it('Should keep the floor biting for a leaf gated by a shape it cannot read', () => {
+  it('Should report an empty collection unsatisfied when the leaf is gated by an equals gate', () => {
     expect(
       emptyCollectionSatisfiesFloor(
         collection,
-        unitGroupWith([equalsGateLeaf.id]),
+        unitGroupWith([unreadableGateLeaf.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
 
-  // The same guard covers a gate fanned onto some other group.
-  it('Should keep the floor biting for a gate fanned onto a different group', () => {
+  it("Should report an empty collection unsatisfied when the leaf's gate is fanned onto a different group", () => {
     expect(
       emptyCollectionSatisfiesFloor(
         collection,
-        unitGroupWith([fannedElsewhereLeaf.id]),
+        unitGroupWith([leafGatedOnOtherGroup.id]),
         LINE_1,
-        stateWithCommodity('Fish')
+        stateWithCommodity('01063300')
       )
     ).toBe(false)
   })
 
-  // `requires.floorAppliesToParent` — the group says which parents it asks
-  // for a record at all. Everything else about the floor is unchanged.
   describe('the floorAppliesToParent gate', () => {
     const gatedGroup = (gate) => ({
       ...unitGroupWith([allowListedLeaf.id]),
@@ -161,40 +139,33 @@ describe('#emptyCollectionSatisfiesFloor', () => {
 
     const twoLines = {
       fulfilments: {
-        [commoditySelection.id]: { line1: 'Cow', line2: 'Cow' }
+        [commodityCode.id]: { line1: '0102', line2: '0102' }
       }
     }
 
-    it('Should stand the floor down where the gate admits only one entry', () => {
+    it('Should report an empty collection satisfied when moreThanOne sees only one matching line', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })
 
-    // The gate is in scope and names the two Horse lines, not this one,
-    // while `allowListedLeaf` could still apply on a Cow line — so only
-    // the gate's own index list can stand the floor down here.
-    it('Should stand the floor down for a parent the in-scope gate does not name', () => {
+    it('Should report an empty collection satisfied for a parent the in-scope gate does not name', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Horse'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0101'], null))),
           LINE_1,
           {
             fulfilments: {
-              [commoditySelection.id]: {
-                line1: 'Cow',
-                line2: 'Horse',
-                line3: 'Horse'
+              [commodityCode.id]: {
+                line1: '0102',
+                line2: '0101',
+                line3: '0101'
               }
             }
           }
@@ -202,28 +173,24 @@ describe('#emptyCollectionSatisfiesFloor', () => {
       ).toBe(true)
     })
 
-    it('Should bite on a parent the gate does name', () => {
+    it('Should report an empty collection unsatisfied for a parent the gate names', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(
-            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
-          ),
+          gatedGroup(moreThanOne(allowListed(commodityCode, ['0102'], null))),
           LINE_1,
           twoLines
         )
       ).toBe(false)
     })
 
-    // The leaf could apply on this parent, so only the gate's own verdict
-    // can stand the floor down here.
-    it('Should stand the floor down where the gate is out of scope altogether', () => {
+    it('Should report an empty collection satisfied when the gate is out of scope altogether', () => {
       expect(
         emptyCollectionSatisfiesFloor(
           collection,
-          gatedGroup(allowListed(commoditySelection, ['Horse'], null)),
+          gatedGroup(allowListed(commodityCode, ['0101'], null)),
           LINE_1,
-          stateWithCommodity('Cow')
+          stateWithCommodity('0102')
         )
       ).toBe(true)
     })

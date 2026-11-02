@@ -43,21 +43,21 @@ export const session = {
     return knownFrom(request)
   },
 
-  async addKnownJourney(request, toolkit, journeyId) {
+  async addKnownJourney(request, h, journeyId) {
     const known = knownFrom(request)
     if (known.includes(journeyId)) {
       return
     }
-    toolkit.request.yar.set(knownJourneysCookie(), [...known, journeyId])
+    h.request.yar.set(knownJourneysCookie(), [...known, journeyId])
   },
 
   async openingRun(request, journeyId) {
     return openingRunByJourneyFrom(request)[journeyId]
   },
 
-  async setOpeningRun(toolkit, journeyId, phase) {
-    const byJourney = openingRunByJourneyFrom(toolkit.request)
-    toolkit.request.yar.set(openingRunCookie(), {
+  async setOpeningRun(h, journeyId, phase) {
+    const byJourney = openingRunByJourneyFrom(h.request)
+    h.request.yar.set(openingRunCookie(), {
       ...byJourney,
       [journeyId]: phase
     })
@@ -68,13 +68,13 @@ export const session = {
     return isObject(values) ? structuredClone(values) : {}
   },
 
-  async setFlowOnlyAnswers(toolkit, journeyId, values) {
-    const byJourney = flowOnlyByJourneyFrom(toolkit.request)
+  async setFlowOnlyAnswers(h, journeyId, values) {
+    const byJourney = flowOnlyByJourneyFrom(h.request)
     const next = {
       ...byJourney,
       [journeyId]: structuredClone(values ?? {})
     }
-    toolkit.request.yar.set(flowOnlyAnswersCookie(), next)
+    h.request.yar.set(flowOnlyAnswersCookie(), next)
     return structuredClone(next[journeyId])
   },
 
@@ -82,9 +82,9 @@ export const session = {
     return reviewedConcurrencyTokensFrom(request)[journeyId]
   },
 
-  async setReviewedConcurrencyToken(toolkit, journeyId, token) {
-    toolkit.request.yar.set(reviewedConcurrencyTokensCookie(), {
-      ...reviewedConcurrencyTokensFrom(toolkit.request),
+  async setReviewedConcurrencyToken(h, journeyId, token) {
+    h.request.yar.set(reviewedConcurrencyTokensCookie(), {
+      ...reviewedConcurrencyTokensFrom(h.request),
       [journeyId]: token
     })
   }

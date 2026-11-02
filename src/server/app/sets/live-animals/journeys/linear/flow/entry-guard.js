@@ -1,10 +1,14 @@
-import { createPath, pagePath, setBase } from '../../../../../shared/paths.js'
+import {
+  createPath,
+  dashboardPath,
+  hubPath,
+  pagePath,
+  setBase
+} from '../../../../../shared/paths.js'
 import { isAnswered } from '../../../../../lib/answered.js'
 import { get } from '../../../../../engine/read.js'
-import {
-  obligationByName,
-  SYSTEM_POPULATED
-} from '../../../../../bridge/obligation-source.js'
+import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
+import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import { openingRunStarted } from '../../../../../flow/run-state.js'
 
@@ -41,6 +45,11 @@ export const hasCommittedNotificationAnswers = (answers) =>
   Object.entries(answers ?? {}).some(
     ([key, value]) => userEntered(key) && isAnswered(value)
   )
+
+export const entryBackLink = (journey, answers) =>
+  hasCommittedNotificationAnswers(answers)
+    ? hubPath(journey.journeyId)
+    : dashboardPath()
 
 /** Deep-link guard: a journey with neither a run record in this session nor
  * committed user answers is sent to the entry page (see

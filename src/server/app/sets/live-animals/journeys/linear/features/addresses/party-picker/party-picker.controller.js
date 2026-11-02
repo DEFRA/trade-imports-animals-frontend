@@ -21,8 +21,9 @@ import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
-  buildInsAddAddressUrl,
-  handshakeErrorMessage
+  issueInsAddAddressUrl,
+  handshakeErrorMessage,
+  takeAddedAddressBanner
 } from '../ins-handshake.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
@@ -36,17 +37,19 @@ const render = async (
   orgId,
   journey,
   party,
-  { query, page, selectedId, error, recoverableError = false, addAddressHref }
+  {
+    query,
+    page,
+    selectedId,
+    error,
+    recoverableError = false,
+    addAddressHref,
+    successBanner = null
+  }
 ) => {
-  // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
   const selected = await chosenPartyFor(orgId, selectedId)
-  // A deleted/missing record must not travel as "Selected: …" or in
-  // pagination links — treat it as no selection.
   const effectiveSelectedId = selected ? selected.id : ''
-  // Reached from a Change link, every way back out of the picker — Back,
-  // paging, the save — has to keep the context, or the trader is dropped into
-  // the section flow instead of the summary they came from.
   const changing = kit.changeContext(request)
 
   return h.view(view, {
@@ -57,7 +60,8 @@ const render = async (
         pagePath(journey.journeyId, 'addresses')
       ),
       journey,
-      recoverableError
+      recoverableError,
+      successBanner
     }),
     heading: party.title,
     description: party.hint,
@@ -80,8 +84,8 @@ const render = async (
   })
 }
 
-const addAddressLinkFor = (request, h, journey, party) =>
-  !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
+const issueAddAddressLink = (request, h, journey, party) =>
+  !isStubMode() && issueInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
@@ -96,11 +100,11 @@ const get = (party) => async (request, h) => {
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
-    addAddressHref: addAddressLinkFor(request, h, journey, party)
+    addAddressHref: issueAddAddressLink(request, h, journey, party),
+    successBanner: takeAddedAddressBanner(request, h)
   })
 }
 
-/** Where a saved picker goes: the review when an amendment saved from a Change link, else the addresses page. */
 const savedTarget = async (request, h) =>
   kit.amendReviewTarget(request, (await state.get(request, h)).journey) ??
   kit.withChangeContext(
@@ -110,6 +114,7 @@ const savedTarget = async (request, h) =>
 
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, {
         [party.id]: answerFor(party, chosen)
@@ -122,10 +127,11 @@ const commitSelection = async (request, h, party, chosen, form) => {
           ...form,
           selectedId: chosen.id,
           recoverableError: true,
-          addAddressHref: addAddressLinkFor(request, h, journey, party)
+          addAddressHref: issueAddAddressLink(request, h, journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    },
+    { role: party.id, addressId: chosen.id }
   )
   if (failure) {
     return failure
@@ -146,28 +152,33 @@ const post = (party) => async (request, h) => {
       query,
       page: 1,
       selectedId,
-      addAddressHref: addAddressLinkFor(request, h, journey, party)
+      addAddressHref: issueAddAddressLink(request, h, journey, party)
     })
   }
 
-  // Saving without choosing keeps the address already on the notification.
   if (!selectedId) {
-    const { answers } = await state.get(request, h)
-    if (answers[party.id]) {
-      return h.redirect(await savedTarget(request, h))
-    }
+    request.logger.info(
+      { journeyId: request.params.journeyId, role: party.id },
+      'Address picker saved with no address chosen, nothing committed'
+    )
+    return h.redirect(await savedTarget(request, h))
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
     const { journey } = await state.get(request, h)
+    kit.logRefusal(request, {
+      fieldErrors: { party: party.error },
+      role: party.id,
+      addressId: selectedId
+    })
     return (
       await render(request, h, orgId, journey, party, {
         query,
         page: pageNumber(payload.page),
         selectedId: '',
         error: party.error,
-        addAddressHref: addAddressLinkFor(request, h, journey, party)
+        addAddressHref: issueAddAddressLink(request, h, journey, party)
       })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }

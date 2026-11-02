@@ -1,17 +1,7 @@
-import { addDays, addMonths, format, isValid, parse } from 'date-fns'
+import { format, isValid, parse } from 'date-fns'
 
 import { SERVICE_TIME_ZONE } from './service-time-zone.js'
 
-// Every Date here is midnight UTC, whatever the process timezone: the app runs
-// UTC, vitest forces TZ=UTC, but the Playwright drivers run on the developer's
-// clock, and a helper that quietly meant something different there would be
-// worse than useless. date-fns `addDays`/`addMonths` preserve wall-clock time,
-// so they hold that invariant and bring month-end clamping with them.
-// `startOfDay` and `format` do NOT — both normalise to local — so day starts
-// and formatting are done through the UTC accessors instead. The one exception
-// is the private `formatUtcComponents`, which uses `format` deliberately and
-// says why. Converting an instant to a civil day in another zone is a separate
-// step, done through `startOfDayInZone` — see `formatMomentAsDay`.
 const DATE_TEXT_FORMAT = 'd/M/yyyy'
 const DATE_TEXT_SHAPE = /^\d{1,2}\/\d{1,2}\/\d{4}$/
 const MONTHS_IN_YEAR = 12
@@ -81,17 +71,34 @@ export const startOfDayInZone = (date, timeZone) => {
  * @param {number} days - May be negative.
  * @returns {Date} Midnight UTC, `days` whole days away.
  */
-export const addUtcDays = (date, days) => addDays(startOfUtcDay(date), days)
+export const addUtcDays = (date, days) =>
+  new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + days
+    )
+  )
+
+const daysInUtcMonth = (year, monthIndex) =>
+  new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
 
 /**
- * `addMonths` clamps to the last day of the target month, so 31 August plus six
- * months is 28 February rather than the 3 March plain rollover would give.
+ * Clamps to the last day of the target month, so 31 August plus six months is
+ * 28 February.
  * @param {Date} date
  * @param {number} months - May be negative.
  * @returns {Date} Midnight UTC in the target month.
  */
-export const addUtcMonths = (date, months) =>
-  addMonths(startOfUtcDay(date), months)
+export const addUtcMonths = (date, months) => {
+  const firstOfTarget = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1)
+  )
+  const year = firstOfTarget.getUTCFullYear()
+  const monthIndex = firstOfTarget.getUTCMonth()
+  const day = Math.min(date.getUTCDate(), daysInUtcMonth(year, monthIndex))
+  return new Date(Date.UTC(year, monthIndex, day))
+}
 
 /**
  * @param {string} raw - A `d/m/yyyy` or `dd/mm/yyyy` value, four-digit year.

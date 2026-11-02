@@ -1,3 +1,7 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
+const addAnother = 'Save and add another'
+
 export const copy = {
   title: 'Upload documents',
   guidance: {
@@ -16,7 +20,7 @@ export const copy = {
       rows: [
         {
           consignment: 'Animals that do not need a health certificate',
-          documents: "An exporter's declaration that they are fit to travel"
+          documents: "Exporter's declaration that they are fit to travel"
         },
         {
           consignment: 'Livestock transiting bluetongue restricted territories',
@@ -24,7 +28,7 @@ export const copy = {
         },
         {
           consignment: 'Rodents imported for research purposes',
-          documents: 'An RM39 licence and supplementary health certificate'
+          documents: 'RM39 licence and supplementary health certificate'
         }
       ],
       linkText: 'Check the documents you need on GOV.UK (opens in a new tab)',
@@ -34,61 +38,54 @@ export const copy = {
   },
   fileUploadHeading: 'File upload',
   reference: {
-    label: 'Document reference',
-    hint: 'For example, GBHC1234567890.'
+    label: 'Document reference'
   },
   documentType: {
     label: 'Document type',
-    placeholder: 'Select one'
+    selectText: 'Select one'
   },
   dateOfIssue: {
     label: 'Date of issue',
-    hint: 'For example, 12/12/2025'
+    hint: sharedCopy.dateExample
   },
   file: {
     label: 'Attachment',
     mustBe: 'Your file must be:',
-    smallerThan: 'smaller than',
-    a: 'a',
-    // The limit is stated here before the trader picks a file, and again by
-    // errors.maxDocuments once they reach it (design release 1). Both take the
-    // number as an argument so the hint and the error cannot disagree.
+    smallerThan: (size) => `files that are smaller than ${size}`,
+    or: 'or',
+    allowedTypes: (hint) => hint,
     upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',
-    // Wording for the JavaScript-enhanced drop zone. These match the design
-    // system's own defaults so the control reads the way traders meet it
-    // elsewhere on GOV.UK.
     chooseButton: 'Choose file',
     dropInstruction: 'or drop file',
     noFileChosen: 'No file chosen',
     enteredDropZone: 'Entered drop zone',
     leftDropZone: 'Left drop zone'
   },
-  addAnother: 'Save and add another',
+  addAnother,
   table: {
     caption: 'Documents you have added',
     reference: 'Document reference',
     type: 'Document type',
     dateOfIssue: 'Date of issue',
     status: 'Status',
-    actionsHidden: 'Actions'
+    actionsHidden: 'Action'
   },
   types: {
-    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
+    ITAHC: 'ITAHC (Intra Trade Animal Health Certificate)',
+    VETERINARY_HEALTH_CERTIFICATE:
+      'Other veterinary certificate / veterinary declaration',
+    SELF_DECLARATION: 'Self-declaration',
+    JOURNEY_LOG: 'Journey log',
+    IMPORT_PERMIT: 'Import permit / authorisation',
+    CITES_PERMIT_OR_CERTIFICATE: 'CITES permit/certificate',
     AIR_WAYBILL: 'Air waybill',
-    IMPORT_PERMIT: 'Import permit',
-    LETTER_OF_AUTHORITY: 'Letter of authority (Directive 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Commercial invoice',
     SEA_WAYBILL: 'Sea waybill',
     RAIL_WAYBILL: 'Rail waybill',
     BILL_OF_LADING: 'Bill of lading',
-    CATCH_CERTIFICATE: 'Catch certificate',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-    HEALTH_CERTIFICATE: 'Health certificate',
-    JOURNEY_LOG: 'Journey log',
-    OTHER: 'Other'
+    COMMERCIAL_INVOICE: 'Commercial invoice',
+    PACKING_OR_SPECIES_LIST: 'Packing list / species list',
+    OTHER: 'Other supporting documents'
   },
   remove: 'Remove',
   removeHidden: (documentNumber) => `document ${documentNumber}`,
@@ -96,42 +93,53 @@ export const copy = {
   viewFileHidden: (documentNumber) => `for document ${documentNumber}`,
   refreshStatus: 'Refresh virus scan status',
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
-  empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
-  // The Status column reports the virus check, not a verdict on the file
-  // (design release 1): "Scanning for virus" while it runs, "Check completed"
-  // once it has. Virus found and Unknown have no design release 1 counterpart
-  // and keep the wording this service already uses.
   scanTags: {
     complete: 'Check completed',
+    rejected: 'Rejected',
     virusFound: 'Virus found',
+    uploadFailed: 'Upload failed',
+    downloadFailed: 'Download failed',
     scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
-  // Read out ahead of the tag so the status names the document it belongs to.
-  // The tag carries no other text, so without this a screen reader hears
-  // "Check completed" with nothing saying what was checked.
   scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',
+    rejected:
+      'Document check failed: the file cannot be used. Remove it and try again.',
     virusFound:
-      'Document scan failed: a virus was found. Remove the file and try again.'
+      'Document check failed: the file contains a virus. Remove it and try again.',
+    uploadFailed:
+      'Document check failed: the file could not be uploaded. Remove it and try again.',
+    downloadFailed:
+      'Document check failed: the file could not be downloaded. Remove it and try again.'
   },
   errors: {
     hiddenPrefix: 'Error:',
-    referenceMaxLength: 'Document reference must be 58 characters or fewer',
+    referenceMaxLength: (max) =>
+      `Document reference must be ${max} characters or fewer`,
+    referenceCharacters:
+      'Document reference must only include letters, numbers, spaces, hyphens, full stops and forward slashes',
     dateInvalid: 'Enter a real date',
     referenceRequired: 'Enter a document reference',
     typeRequired: 'Select a document type',
     dateRequired: 'Enter a date of issue',
     fileRequired: 'Upload a document',
-    cannotContinue:
-      'You cannot continue until all documents have been scanned or removed',
-    uploadFailed: 'The file could not be uploaded. Try again.',
+    fileEmpty: 'The selected file is empty',
+    fileVirus: 'The selected file contains a virus',
+    fileDownloadFailed: 'The selected file could not be downloaded',
+    documentNotSaved: (saveAction) =>
+      `Sorry, there is a problem with the service. Your document was uploaded but has not been saved to this notification. Select ‘${saveAction}’ to try again.`,
+    documentsUnchecked: (saveAction) =>
+      `Sorry, there is a problem with the service. We could not check that every document you uploaded is saved to this notification. Select ‘${saveAction}’ to try again.`,
+    uploadFailed: 'The selected file could not be uploaded. Try again.',
+    uploadUnavailable:
+      'Documents cannot be uploaded at the moment. Reload the page or come back later.',
     maxDocuments: (max) => `You can upload a maximum of ${max} files`,
     fileFallbackName: 'The file',
-    virusFound: (filename) =>
-      `${filename} contains a virus. Remove it and try again with a different file.`,
+    rejected: (filename) =>
+      `${filename} cannot be used. Remove it and try again with a different file.`,
     fileType: (allowedTypesHint) =>
       `The selected file must be a ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>

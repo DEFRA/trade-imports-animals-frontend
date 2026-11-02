@@ -1,8 +1,8 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { makeScopeFromEvaluation } from '../../../../../bridge/scope.js'
 import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
@@ -20,18 +20,15 @@ import {
   FULFILLED,
   OPTIONAL
 } from '../../../../../bridge/status/index.js'
+import {
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
-// The presentation rollup (statusOf), pinned against the manifest. The expected
-// statuses below are stated as literals so a regression fails loudly. The
-// concrete single-row walk (Not started → In progress → Completed) lives in
-// flow/task-rows.test.js; this file pins the whole row / section / readiness
-// rollup across representative journey states.
+const happyPath = completeNotification()
 
-const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
-
-// Row order is taskRows order; section order is answerSections order.
 const cases = {
   'a blank journey': {
     answers: {},
@@ -91,13 +88,10 @@ const cases = {
     ],
     ready: false
   },
-  // The identification row reads Completed from the first line onwards: a
-  // consignment of one identified species is asked for no identifier at all,
-  // so the row owes nothing even before anything is entered on it.
-  'a partial single-line journey': {
+  'a partial single-line journey with identifiers fulfilled with no records': {
     answers: {
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: 'Cow' }]
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
     },
     rows: [
       IN_PROGRESS,
@@ -131,8 +125,7 @@ const cases = {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          ...BOS_TAURUS_ROW,
           commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
@@ -283,15 +276,10 @@ describe('statusOf — the commodities/identification facet split', () => {
     only: ['animalIdentifiers']
   }
 
-  // [answers, exceptIdentifiers status, onlyIdentifiers status]
-  // A consignment of ONE identified commodity line owes no identifier at all,
-  // so the identifiers facet reads Completed from the first line onwards. A
-  // second identified commodity line is what turns it back into outstanding
-  // work.
   const facetCases = [
     [{}, NOT_STARTED, NOT_STARTED],
     [
-      { commodityLines: [{ commoditySelection: 'Cow' }] },
+      { commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }] },
       IN_PROGRESS,
       FULFILLED
     ],
@@ -299,8 +287,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
+            ...BOS_TAURUS_ROW,
             commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
@@ -312,8 +299,8 @@ describe('statusOf — the commodities/identification facet split', () => {
     [
       {
         commodityLines: [
-          { commoditySelection: 'Cow' },
-          { commoditySelection: 'Horse' }
+          { commodityCode: BOS_TAURUS_ROW.commodityCode },
+          { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
         ]
       },
       IN_PROGRESS,
@@ -323,7 +310,7 @@ describe('statusOf — the commodities/identification facet split', () => {
       {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
+            commodityCode: BOS_TAURUS_ROW.commodityCode,
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           }
         ]
@@ -331,14 +318,11 @@ describe('statusOf — the commodities/identification facet split', () => {
       IN_PROGRESS,
       FULFILLED
     ],
-    // A unit that EXISTS (permanentAddress stored, Cat-scoped) but violates
-    // the at-least-one-identifier invariant — the per-record verdict the
-    // model's groupInvariantErrors supplies.
     [
       {
         commodityLines: [
           {
-            commoditySelection: 'Cat',
+            ...FELIS_CATUS_ROW,
             animalIdentifiers: [
               {
                 permanentAddress: {
@@ -360,7 +344,7 @@ describe('statusOf — the commodities/identification facet split', () => {
     ]
   ]
 
-  it('Should classify each facet as B derives it', () => {
+  it('Should give the commodity facet and the identifiers facet the expected status for each answer set', () => {
     for (const [answers, exceptStatus, onlyStatus] of facetCases) {
       const evaluation = evaluateAnswers(answers)
       expect(statusOf([exceptIdentifiers], answers, inScope, evaluation)).toBe(
@@ -381,8 +365,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   }
 
   const cowLine = (quantity, identifiers) => ({
-    commoditySelection: 'Cow',
-    speciesSelection: '1148346',
+    ...BOS_TAURUS_ROW,
     numberOfAnimalsQuantity: quantity,
     animalIdentifiers: identifiers
   })
@@ -393,8 +376,6 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
     statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
 
   it('Should fulfil the identifiers facet on one species however many animals it declares', () => {
-    // Two hundred salmon, or two hundred cattle, need not be entered one
-    // record at a time — the declared quantity is progress, not a gate.
     expect(facetStatus({ commodityLines: [cowLine('200', [earTag])] })).toBe(
       FULFILLED
     )
@@ -409,7 +390,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
       facetStatus({
         commodityLines: [
           cowLine('5', [earTag]),
-          { commoditySelection: 'Horse' }
+          { commodityCode: EQUUS_CABALUS_ROW.commodityCode }
         ]
       })
     ).toBe(IN_PROGRESS)
@@ -421,7 +402,7 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
         commodityLines: [
           cowLine('5', [earTag]),
           {
-            commoditySelection: 'Horse',
+            ...EQUUS_CABALUS_ROW,
             numberOfAnimalsQuantity: '4',
             animalIdentifiers: [{ horseName: 'Shergar' }]
           }
@@ -431,11 +412,12 @@ describe('statusOf — the multi-species identifier floor in isolation', () => {
   })
 
   it('Should ask no record of a second species that carries no identifier of its own', () => {
-    // Fish is on none of the identifier allowlists, so a Cow-and-Fish
-    // consignment is a one-identified-species consignment.
     expect(
       facetStatus({
-        commodityLines: [cowLine('5', []), { commoditySelection: 'Fish' }]
+        commodityLines: [
+          cowLine('5', []),
+          { commodityCode: STRUTHIO_ROW.commodityCode }
+        ]
       })
     ).toBe(FULFILLED)
   })

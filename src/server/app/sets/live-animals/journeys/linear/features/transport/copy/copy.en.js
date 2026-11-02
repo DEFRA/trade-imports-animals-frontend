@@ -1,24 +1,24 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
+const SELECT_A_COUNTRY = 'Select a country'
+
 export const copy = {
   portOfEntry: {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      // The second sentence is a worked example of the date format, not a
-      // statement of the accepted window (design release 1): the picker's own
-      // bounds and errors.arrivalDateOutOfRange already police the window, so
-      // the hint is free to show the user what a date should look like.
-      hint: (example) =>
-        `The expected date of arrival at the port of entry. For example, ${example}`
+      hint: `The expected date of arrival at the port of entry. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Port of entry',
       hint: 'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select a port',
+      selectText: 'Select a port',
+      searchPlaceholder: 'Select a port',
       noResults: 'No ports found'
     },
     means: {
       label: 'Means of transport to the port of entry',
-      placeholder: 'Select one',
+      selectText: 'Select one',
       options: {
         AIRPLANE: 'Air',
         RAILWAY: 'Rail',
@@ -28,9 +28,6 @@ export const copy = {
     },
     identification: {
       label: 'Transport identification',
-      // The four alternatives are a list, not a sentence: a lead-in plus one
-      // bullet each, so the number of choices is visible without reading
-      // (design release 1).
       hint: {
         lead: 'Enter one of the following:',
         items: [
@@ -49,8 +46,6 @@ export const copy = {
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
-      meansOfTransportRequired:
-        'Select a means of transport to the port of entry',
       portNoLongerAvailable:
         'The saved port of entry is no longer available. Select a port from the list.',
       arrivalDateNoLongerInWindow:
@@ -63,14 +58,14 @@ export const copy = {
   },
   transitCountries: {
     title: 'Which countries will the consignment travel through?',
-    pageTitle: 'Transit countries',
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',
     excludesUk: 'This does not include the United Kingdom.',
     country: {
       label: 'Enter a country',
       hint: 'Enter each country that the consignment will travel through',
-      placeholder: 'Search for a country',
+      selectText: SELECT_A_COUNTRY,
+      searchPlaceholder: 'Search for a country',
       noResults: 'No countries found'
     },
     add: 'Add country',
@@ -83,8 +78,6 @@ export const copy = {
     removeHidden: (country) => country,
     added: (country) => `${country} added.`,
     removed: (country) => `${country} removed.`,
-    // The cap is not stated before the trader meets it (design release 1): the
-    // search goes when the last country is added and this says why.
     limitReached: (max) =>
       `Maximum of ${max} countries reached. Remove a country to add another.`,
     errors: {
@@ -111,30 +104,20 @@ export const copy = {
       ],
       linkText:
         'Find out how to transport animals in connection with an economic activity (opens in a new tab)',
-      // Design release 1 links the anchored section of the animal-welfare-in-
-      // transport guidance, not the top of the general transporting-animals
-      // page: the trader lands on the economic-activity rules themselves.
       linkHref:
         'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity',
       daeraValid: 'Documents issued by DAERA are valid for use in GB.',
       euNotValid:
         'Documents issued in any EU member state are not valid for use in GB.'
     },
-    // The list carries both kinds of transporter, so each row says which it
-    // is. A private transporter has no approval number to show.
     types: {
       Commercial: 'Commercial',
       Private: 'Private'
     },
-    // Whether the transporter has been approved yet. Design release 1 shows
-    // this as a tag so a trader can tell approved from newly added at a
-    // glance; the tag colour is presentation and lives with the view model.
     statuses: {
       Approved: 'Approved',
       New: 'New'
     },
-    // Design release 1 aligns the transporters into headed columns rather than
-    // running each one's facts together in a hint.
     table: {
       selectHidden: 'Select',
       name: 'Name',
@@ -144,15 +127,14 @@ export const copy = {
       status: 'Status'
     },
     selectRowPrefix: 'Select',
-    // Design release 1 searches the list over the three facts a trader would
-    // recognise a transporter by. The hint names them so the trader knows what
-    // the box will match before they type into it.
     search: {
       label: 'Search',
       hint: 'Name, address or approval number',
       button: 'Search'
     },
     noMatches: 'No transporters match your search.',
+    shownCount: (count) =>
+      `${count} ${count === 1 ? 'transporter' : 'transporters'} shown`,
     add: 'Add a transporter',
     errors: {
       transporterRequired: 'Select a transporter from the list',
@@ -162,18 +144,10 @@ export const copy = {
   },
   transporterAdd: {
     title: 'Choose a transporter type',
-    // The page is headed with the choice it asks for, so the question stays as
-    // the group's legend for a screen reader without competing with the
-    // heading — as Design release 1 does.
     legend: 'What type of transporter will move the animals?',
-    // Design release 1 warns here rather than describing the next page: adding
-    // a transporter is the last resort, after searching the list for one.
     warning:
       'Before you add this transporter, please ensure you have already searched for it first.',
     options: {
-      // Private first, as Design release 1 orders them, and unhinted: an
-      // individual moving their own animals needs no explaining. Only the
-      // commercial arm carries a condition.
       Private: {
         text: 'Private transporter'
       },
@@ -194,10 +168,6 @@ export const copy = {
   },
   commercialTransporterDetails: {
     title: 'Add commercial transporter',
-    // Design release 1 opens the form with the authorisation rules the list
-    // already carries, so a trader typing a transporter in by hand meets the
-    // same conditions before they give its authorisation number. The sentences
-    // are the list's own — one statement of the rules, shown twice.
     guidanceTitle: 'Help with transporter authorisation',
     contactHeading: 'Enter contact details',
     fields: {
@@ -207,21 +177,19 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or zip code',
+      postcode: 'Postcode or zip code',
       country: 'Country',
-      emailAddress: 'Email address',
-      telephoneNumber: 'Phone number'
+      email: 'Email address',
+      phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
-    // A commercial transporter a trader adds by hand can only be a Northern
-    // Irish one (design release 1), so the country is shown rather than asked.
     country: 'Northern Ireland',
     errors: {
       approvalNumberRequired: 'Enter the transporter authorisation number',
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postcode or zip code',
+      postcodeRequired: 'Enter a postcode or zip code',
       emailRequired: 'Enter an email address',
       telephoneRequired: 'Enter a phone number',
       approvalNumberMaxLength:
@@ -231,8 +199,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postalOrZipCodeMaxLength:
-        'Postcode or zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or zip code must be 12 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       countryFixed:
@@ -243,9 +210,6 @@ export const copy = {
     title: 'Add private transporter',
     intro:
       'Enter the name and address of the private transporter moving the animals.',
-    // Design release 1 closes the address at the country and heads the last two
-    // questions as the contact details they are — the same split, and the same
-    // heading, as the commercial form above.
     contactHeading: 'Enter contact details',
     fields: {
       nameOrOrganisationName: 'Name or organisation name',
@@ -253,22 +217,19 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or Zip code',
+      postcode: 'Postcode or Zip code',
       country: 'Country',
-      emailAddress: 'Email address',
-      telephoneNumber: 'Phone number'
+      email: 'Email address',
+      phone: 'Phone number'
     },
-    // A private transporter can be based in any of the countries the form
-    // offers, so design release 1 hints the dialling code here exactly as it
-    // does on the commercial form — one rule, stated the same way on both.
     telephoneHint: 'For international numbers include the country code',
-    countryPlaceholder: 'Select a country',
+    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postcode or Zip code',
-      countryRequired: 'Select a country',
+      postcodeRequired: 'Enter a postcode or Zip code',
+      countryRequired: SELECT_A_COUNTRY,
       telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
       nameMaxLength: 'Name or organisation name must be 255 characters or less',
@@ -276,8 +237,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postalOrZipCodeMaxLength:
-        'Postcode or Zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
       countryNoLongerAvailable:
         'The saved country is no longer available. Select a country from the list.',

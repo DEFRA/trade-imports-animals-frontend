@@ -21,7 +21,7 @@ const deletable = (journey) =>
   journey.status === state.SUBMITTED ||
   journey.status === state.AMEND
 
-const render = (h, journey, recoverableError = false) =>
+const render = (h, journey, { recoverableError = false } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: dashboardPath(),
@@ -46,8 +46,12 @@ const post = async (request, h) => {
   }
 
   const { failure, value: deleted } = await kit.recoverableSave(
+    request,
     () => softDeleteJourney(request, h, request.params.journeyId),
-    () => render(h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    () =>
+      render(h, journey, { recoverableError: true }).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
   )
   if (failure) {
     return failure

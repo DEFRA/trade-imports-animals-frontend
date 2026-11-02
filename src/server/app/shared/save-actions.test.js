@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
+import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
 import { copy as sharedEn } from './copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
@@ -11,11 +12,13 @@ const renderActions = (args) =>
     { hubHref: '/notifications/journey-1/hub', copy: sharedEn.saveActions }
   )
 
-const withReturnControls = 'hubHref, copy = copy'
-const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
+const withReturnControls = '{ hubHref: hubHref, copy: copy }'
+const withoutReturnControls =
+  '{ hubHref: hubHref, copy: copy, showReturnControls: false }'
 
-// The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
+const HUB_VALUE_ATTRIBUTE = 'value="hub"'
+const ACTION_NAME_ATTRIBUTE = 'name="action"'
 const SECONDARY_BUTTON = 'govuk-button--secondary'
 const BUTTON_GROUP = 'class="govuk-button-group"'
 
@@ -50,7 +53,7 @@ describe('#saveActions', () => {
       )
 
     expect(secondary).toContain(EXIT_NAME_ATTRIBUTE)
-    expect(secondary).toContain('value="hub"')
+    expect(secondary).toContain(HUB_VALUE_ATTRIBUTE)
   })
 
   it('Should end a page reached from another page with the primary alone', () => {
@@ -68,7 +71,7 @@ describe('#saveActions', () => {
 
   it('Should let a page reached from another page name its own primary and show it alone', () => {
     const html = renderActions(
-      'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy, false'
+      '{ hubHref: hubHref, primary: { text: "Save and finish", name: "action", value: "finish" }, copy: copy, showReturnControls: false }'
     )
 
     expect(html).toContain('Save and finish')
@@ -79,7 +82,7 @@ describe('#saveActions', () => {
 
   it('Should keep the return controls when a hub-linked page names its own primary', () => {
     const html = renderActions(
-      'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy'
+      '{ hubHref: hubHref, primary: { text: "Save and finish", name: "action", value: "finish" }, copy: copy }'
     )
 
     expect(html).toContain('Save and finish')
@@ -93,7 +96,8 @@ describe('#saveActions while amending', () => {
   const RETURN_ACTION = '/n/j-1/origin?change=1'
   const CONTINUE_ACTION = '/n/j-1/origin'
   const amend = `{ returnAction: "${RETURN_ACTION}", continueAction: "${CONTINUE_ACTION}" }`
-  const amending = `hubHref, copy = copy, amend = ${amend}`
+  const amendWithReturnChoice = `{ returnAction: "${RETURN_ACTION}", continueAction: "${CONTINUE_ACTION}", returnChoice: { name: "${AMEND_RETURN_CHOICE.name}", value: "${AMEND_RETURN_CHOICE.value}" } }`
+  const amending = `{ hubHref: hubHref, copy: copy, amend: ${amend} }`
   const namedPrimary =
     '{ text: "Save and finish", name: "action", value: "save" }'
 
@@ -108,7 +112,7 @@ describe('#saveActions while amending', () => {
     expect(third).toContain(SECONDARY_BUTTON)
     expect(third).toContain('data-module="govuk-button"')
     expect(third).toContain(EXIT_NAME_ATTRIBUTE)
-    expect(third).toContain('value="hub"')
+    expect(third).toContain(HUB_VALUE_ATTRIBUTE)
     expect(third).not.toContain('formaction')
   })
 
@@ -139,32 +143,108 @@ describe('#saveActions while amending', () => {
     expect(html).not.toContain('href=')
   })
 
-  it("Should carry the page's own primary name and value on both save buttons", () => {
-    const html = renderActions(`hubHref, ${namedPrimary}, copy, true, ${amend}`)
-    const [first, second] = buttons(html)
+  it("Should carry the amend choice on Save and return and the page's own primary choice on Save and continue", () => {
+    const [first, second] = buttons(
+      renderActions(
+        `{ hubHref: hubHref, primary: ${namedPrimary}, copy: copy, amend: ${amendWithReturnChoice} }`
+      )
+    )
 
-    for (const button of [first, second]) {
-      expect(button).toContain('name="action"')
-      expect(button).toContain('value="save"')
-    }
-    expect(html.match(/name="action"/g)).toHaveLength(2)
+    expect(first).toContain(`name="${AMEND_RETURN_CHOICE.name}"`)
+    expect(first).toContain(`value="${AMEND_RETURN_CHOICE.value}"`)
+    expect(second).toContain(ACTION_NAME_ATTRIBUTE)
+    expect(second).toContain('value="save"')
   })
 
   it("Should send no action field when the page's primary names none", () => {
-    expect(renderActions(amending)).not.toContain('name="action"')
+    expect(renderActions(amending)).not.toContain(ACTION_NAME_ATTRIBUTE)
   })
 
   it('Should end a page reached from another page with Save and return and Save and continue only', () => {
-    const html = renderActions(`${amending}, showReturnControls = false`)
+    const html = renderActions(
+      `{ hubHref: hubHref, copy: copy, amend: ${amend}, showReturnControls: false }`
+    )
 
     expect(buttons(html)).toHaveLength(2)
     expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
   })
 
   it('Should drop the overview exit on a picker while amending', () => {
-    const html = renderActions(`${amending}, hubExitWhileAmending = false`)
+    const html = renderActions(
+      `{ hubHref: hubHref, copy: copy, amend: ${amend}, hubExitWhileAmending: false }`
+    )
 
     expect(buttons(html)).toHaveLength(2)
     expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+  })
+})
+
+describe('#saveActions posting the form to another service', () => {
+  const UPLOAD_PATH = '/upload-and-scan/upload-1'
+  const MULTIPART = 'multipart/form-data'
+  const primary =
+    '{ text: "Save and continue", name: "action", value: "continue" }'
+  const amend = `{ returnAction: "/n/j-1/p?change=1", continueAction: "/n/j-1/p", returnChoice: { name: "${AMEND_RETURN_CHOICE.name}", value: "${AMEND_RETURN_CHOICE.value}" } }`
+  const uploading = `{ hubHref: hubHref, primary: ${primary}, copy: copy, uploadPath: "${UPLOAD_PATH}" }`
+  const amendingWhileUploading = `{ hubHref: hubHref, primary: ${primary}, copy: copy, amend: ${amend}, uploadPath: "${UPLOAD_PATH}" }`
+
+  const buttons = (html) => html.split('<button').slice(1)
+
+  it('Should post every save button to the path as multipart', () => {
+    const all = buttons(renderActions(uploading))
+
+    expect(all).toHaveLength(2)
+    for (const button of all) {
+      expect(button).toContain(`formaction="${UPLOAD_PATH}"`)
+      expect(button).toContain(`formenctype="${MULTIPART}"`)
+    }
+  })
+
+  it('Should carry the primary choice on Save and continue and the hub exit on Save and return to overview', () => {
+    const [primaryButton, hubExit] = buttons(renderActions(uploading))
+
+    expect(primaryButton).toContain(ACTION_NAME_ATTRIBUTE)
+    expect(primaryButton).toContain('value="continue"')
+    expect(hubExit).toContain(EXIT_NAME_ATTRIBUTE)
+    expect(hubExit).toContain(HUB_VALUE_ATTRIBUTE)
+  })
+
+  it('Should carry the amend choice on the amend Save and return and the primary choice on the amend Save and continue', () => {
+    const [saveAndReturn, saveAndContinue, hubExit] = buttons(
+      renderActions(amendingWhileUploading)
+    )
+
+    expect(saveAndReturn).toMatch(/>\s*Save and return\s*</)
+    expect(saveAndReturn).toContain('name="amendSave"')
+    expect(saveAndReturn).toContain('value="return"')
+    expect(saveAndContinue).toMatch(/>\s*Save and continue\s*</)
+    expect(saveAndContinue).toContain(ACTION_NAME_ATTRIBUTE)
+    expect(saveAndContinue).toContain('value="continue"')
+    for (const button of [saveAndReturn, saveAndContinue, hubExit]) {
+      expect(button).toContain(`formaction="${UPLOAD_PATH}"`)
+      expect(button).toContain(`formenctype="${MULTIPART}"`)
+    }
+    expect(hubExit).toContain(EXIT_NAME_ATTRIBUTE)
+    expect(hubExit).toContain(HUB_VALUE_ATTRIBUTE)
+  })
+
+  it("Should keep the page's own primary classes and attributes beside the upload attributes", () => {
+    const [primaryButton] = buttons(
+      renderActions(
+        `{ hubHref: hubHref, copy: copy, uploadPath: "${UPLOAD_PATH}", primary: { text: "Save and continue", classes: "govuk-button--warning", attributes: { "data-qa": "primary" } } }`
+      )
+    )
+
+    expect(primaryButton).toContain('govuk-button--warning')
+    expect(primaryButton).toContain('data-qa="primary"')
+    expect(primaryButton).toContain(`formaction="${UPLOAD_PATH}"`)
+    expect(primaryButton).toContain(`formenctype="${MULTIPART}"`)
+  })
+
+  it('Should leave the form action off every button when no path is given', () => {
+    const html = renderActions(withReturnControls)
+
+    expect(html).not.toContain('formaction')
+    expect(html).not.toContain('formenctype')
   })
 })

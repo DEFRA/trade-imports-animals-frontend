@@ -6,7 +6,8 @@ import { transportersPage } from '../../../../transport/page.js'
 import { addressLines } from '../../rows/party-row.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
-import { escapeHtml, notApplicableCell } from '../../rows/value-text.js'
+import { escapeHtml } from '../../../../../../../../../shared/escape-html.js'
+import { notApplicableCell } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 

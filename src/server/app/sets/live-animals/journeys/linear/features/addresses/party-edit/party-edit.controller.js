@@ -25,21 +25,20 @@ const copy = copyFor({ en, cy })
 
 const EDITABLE_PARTIES = [...PARTIES, CONTACT_PARTY]
 
-/** A closed list, not a free path: `return` arrives in the query string. */
-const RETURN_SLUGS = ['addresses', kit.CYA_SLUG, CONTACT_PARTY.slug]
-
 const returnHref = (request, party) => {
-  const slug = RETURN_SLUGS.includes(request.query.return)
-    ? request.query.return
-    : party.returnSlug
+  const { honouredSlug } = kit.readReturnMarker(request, [
+    'addresses',
+    kit.CYA_SLUG,
+    CONTACT_PARTY.slug
+  ])
   return kit.withChangeContext(
     request,
-    pagePath(request.params.journeyId, slug)
+    pagePath(request.params.journeyId, honouredSlug ?? party.returnSlug)
   )
 }
 
 const countryItemsOf = (countries) => [
-  { value: '', text: copy.countryPlaceholder },
+  { value: '', text: copy.countrySelectText },
   ...countries.map(({ code, name }) => ({ value: code, text: name }))
 ]
 
@@ -69,7 +68,6 @@ const valuesFrom = (payload = {}) =>
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  // Nothing to edit until an address has been picked.
   if (!answers[party.id]) {
     return h.redirect(
       kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
@@ -87,7 +85,6 @@ const post = (party) => async (request, h) => {
   }
 
   const { journey, answers } = await state.get(request, h)
-  // Same guard as get: an edit can only change a copy the picker made.
   if (!answers[party.id]) {
     return h.redirect(
       kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
@@ -107,6 +104,7 @@ const post = (party) => async (request, h) => {
   }
 
   const { failure } = await kit.recoverableSave(
+    request,
     async () => {
       await state.commit(request, h, { [party.id]: partyFrom(value) })
     },

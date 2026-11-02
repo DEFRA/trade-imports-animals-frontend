@@ -32,6 +32,50 @@ describe('#validation for cph-number — onSubmit', () => {
     expect(errors).toEqual({})
     expect(answers).toEqual({ countyParishHoldingCph: '123456789' })
   })
+
+  it.each(['123456789', '12/345/6789', '12 345 6789'])(
+    'Should split the whole number %s typed into the county box into its three parts',
+    async (wholeNumber) => {
+      const { answers, errors, values } = await validation.onSubmit({
+        cphCounty: wholeNumber,
+        cphParish: '',
+        cphHolding: ''
+      })
+      expect(errors).toEqual({})
+      expect(answers).toEqual({ countyParishHoldingCph: '123456789' })
+      expect(values).toEqual({
+        cphCounty: '12',
+        cphParish: '345',
+        cphHolding: '6789'
+      })
+    }
+  )
+
+  it('Should name each part when the county box holds fewer than nine digits and the others are empty', async () => {
+    const { errors, values } = await validation.onSubmit({
+      cphCounty: '1234',
+      cphParish: '',
+      cphHolding: ''
+    })
+    expect(errors).toEqual({
+      cphCounty: 'County must be 2 digits',
+      cphParish: 'Enter the parish',
+      cphHolding: 'Enter the holding number'
+    })
+    expect(values).toEqual({ cphCounty: '1234', cphParish: '', cphHolding: '' })
+  })
+
+  it('Should hold the county box to its own length when the parish box is filled', async () => {
+    const { errors } = await validation.onSubmit({
+      cphCounty: '123456789',
+      cphParish: '345',
+      cphHolding: ''
+    })
+    expect(errors).toEqual({
+      cphCounty: 'County must be 2 digits',
+      cphHolding: 'Enter the holding number'
+    })
+  })
 })
 
 describe('#validation for cph-number — onStored', () => {
@@ -47,7 +91,7 @@ describe('#validation for cph-number — onStored', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should tolerate legacy slashes in the stored value', async () => {
+  it('Should accept a stored value written with slashes as its nine digits', async () => {
     const { errors } = await validation.onStored({
       countyParishHoldingCph: '12/345/6789'
     })

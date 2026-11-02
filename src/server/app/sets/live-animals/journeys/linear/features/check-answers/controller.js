@@ -1,4 +1,8 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -27,7 +31,7 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { documentScanCardErrors } from './refusal.js'
+import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
 import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
@@ -36,19 +40,6 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-/** One summary over both kinds of refusal: first the roles whose copied address
- * breaks the address-book rules, then the cards with answers still
- * outstanding. A role in error is a more particular statement than "complete
- * this card", so it leads; the cards follow in page order. An unfinished card
- * is somewhere on this page, so its entry is an anchor; a party's entry links
- * to the page that edits its address, returning here.
- *
- * Party errors are keyed `party:<id>` here because `contactAddress` is both a
- * party id and a card id: unprefixed, the card's message would overwrite the
- * party's and the party entry would link to the card anchor.
- *
- * Focus is only moved to the summary when the user has just been refused, so a
- * plain visit does not yank the caret out of the page heading. */
 const PARTY_KEY_PREFIX = 'party:'
 
 const reviewErrorSummary = (
@@ -80,8 +71,13 @@ const reviewErrorSummary = (
     }
   )
 
+const backLinkFor = (journey) =>
+  journey.status === state.SUBMITTED
+    ? dashboardPath()
+    : hubPath(journey.journeyId)
+
 const renderCya = async (
-  toolkit,
+  h,
   journey,
   {
     answers,
@@ -108,7 +104,7 @@ const renderCya = async (
     ),
     cardErrors
   )
-  return toolkit.view(view, {
+  return h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
@@ -124,43 +120,58 @@ const renderCya = async (
     ),
     sections,
     readOnly,
-    amendmentCancelled,
+    successBanner: amendmentCancelled
+      ? {
+          titleText: copy.cancelAmend.successTitle,
+          text: copy.cancelAmend.successBody
+        }
+      : null,
     recoverableError,
     copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
     deleteHref:
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    backLink: hubPath(journey.journeyId)
+    backLink: backLinkFor(journey)
   })
 }
 
+const mergeCardErrorsByPrecedence = ({
+  invalid,
+  scan,
+  species,
+  incomplete
+}) => ({
+  ...invalid,
+  ...scan,
+  ...species,
+  ...incomplete
+})
+
 export const renderNotificationView = async (
   request,
-  toolkit,
+  h,
   { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
-    await state.get(request, toolkit)
+    await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
   const refused = request.query.refused === '1'
-  // c-201: an amendment opens with no errors; Continue refused shows them.
-  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
+  const hidesAnswerErrors =
+    readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
-  // A submitted notification is a record of what was sent, so nothing on it
-  // is outstanding, and no stored answer of its is named as stale either —
-  // both read as empty on a read-only notification.
-  //
-  // Each card's page reads `answers` here, and is handed the raw
-  // `storedAnswers` via context, so its own rules decide for themselves which
-  // of the two they need.
-  const invalidCardErrors = holdsSilently
+  const invalidCardErrors = hidesAnswerErrors
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  const scanDocErrors = holdsSilently
+  const scanDocErrors = hidesAnswerErrors
     ? {}
-    : await documentScanCardErrors(answers, { includePending: refused })
-  return renderCya(toolkit, journey, {
+    : await documentScanCardErrors(request, answers, {
+        includePending: refused
+      })
+  const speciesErrors = hidesAnswerErrors
+    ? {}
+    : await speciesCardErrors(journey, answers, { refused })
+  return renderCya(h, journey, {
     answers,
     scope,
     evaluation,
@@ -168,28 +179,25 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: holdsSilently ? {} : await invalidPartyErrors(answers),
-    // Incomplete wins over invalid on the same card: spread the invalid map
-    // first and the incomplete map second, so a card that is both unfinished
-    // and carrying a stale value says "complete this section" rather than
-    // naming the stale answer.
-    cardErrors: holdsSilently
+    partyErrors: hidesAnswerErrors ? {} : await invalidPartyErrors(answers),
+    cardErrors: hidesAnswerErrors
       ? {}
-      : {
-          ...invalidCardErrors,
-          ...scanDocErrors,
-          ...incompleteCardErrors(answers, scope, evaluation)
-        },
+      : mergeCardErrorsByPrecedence({
+          invalid: invalidCardErrors,
+          scan: scanDocErrors,
+          species: speciesErrors,
+          incomplete: incompleteCardErrors(answers, scope, evaluation)
+        }),
     disableAutoFocus: !refused
   })
 }
 
-const get = async (request, toolkit) => {
-  await completeOpeningRun(request, toolkit, request.params.journeyId)
-  const response = await renderNotificationView(request, toolkit)
-  const { journey } = await state.get(request, toolkit)
+const get = async (request, h) => {
+  await completeOpeningRun(request, h, request.params.journeyId)
+  const response = await renderNotificationView(request, h)
+  const { journey } = await state.get(request, h)
   if (journey.status !== state.SUBMITTED) {
-    await recordReviewed(request, toolkit, journey)
+    await recordReviewed(request, h, journey)
   }
   return response
 }

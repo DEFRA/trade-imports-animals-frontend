@@ -1,18 +1,11 @@
-const referenceDataUrl =
-  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
+import {
+  referenceDataUrl,
+  requestReferenceData
+} from '../reference-data/request.js'
 
-export const fetchPortsOfEntry = async () => {
-  const response = await fetch(`${referenceDataUrl}/ports-of-entry`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
-  })
-
-  if (!response.ok) {
-    const error = new Error('Failed to get ports of entry')
-    error.status = response.status
-    error.statusText = response.statusText
-    throw error
-  }
-
-  return response.json()
-}
+export const fetchPortsOfEntry = () =>
+  requestReferenceData(
+    referenceDataUrl('/ports-of-entry'),
+    { method: 'GET' },
+    'Failed to get ports of entry'
+  )

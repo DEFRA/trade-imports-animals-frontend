@@ -4,6 +4,8 @@ import { getOrCreateSummary } from './error-summary.js'
 import { renderFieldError } from './field-error.js'
 import { ARIA_DESCRIBEDBY, CLIENT_ERROR_MARKER } from './markers.js'
 
+const MULTIPART_ENCODING = 'multipart/form-data'
+
 const clientErrorSelector = (suffix) =>
   `[data-client-error="${CLIENT_ERROR_MARKER}-${suffix}"]`
 
@@ -45,7 +47,13 @@ const focusSummaryTitle = (summary) => {
   }
 }
 
+const sendsTheFile = (submitter) =>
+  submitter?.getAttribute('formenctype') === MULTIPART_ENCODING
+
 const onUploadSubmit = (form, container, maxFileSize) => (event) => {
+  if (!sendsTheFile(event.submitter)) {
+    return
+  }
   clearPreviousClientErrors(form)
   const fileInput = form.querySelector('input[type="file"]')
   const file = fileInput?.files?.[0]

@@ -15,6 +15,6 @@ export const speciesCards = (journeyId, answers, evaluation, readOnly) =>
       rows: speciesCardRows(entry),
       identifierTable: identifierTable(
         unitsForCommodityLine(answers, evaluation, index),
-        entry.commoditySelection
+        entry.commodityCode
       )
     }))

@@ -1,5 +1,5 @@
 import { obligations } from '../../../model/obligations/manifest.js'
-import { gateAdmits } from '../../applicability.js'
+import { admitsValue } from '../../../model/obligations/helper-internals.js'
 
 // Collection cap (MAX_ENTRIES) — group-level, no fulfilmentIndex.
 export const collectionCapExceeded = (invariantErrors) =>
@@ -42,7 +42,7 @@ const anyOfLeafCouldApply = (group, parentFulfilmentIndex, state) =>
     ) {
       return true
     }
-    return gateAdmits(
+    return admitsValue(
       metadata,
       state.fulfilments?.[metadata.obligationId]?.[parentFulfilmentIndex]
     )

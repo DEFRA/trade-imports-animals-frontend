@@ -16,16 +16,14 @@ export const continueRequest = (request, token, payload = {}) => ({
   }
 })
 
-// A stand-in GET for tests that render pages by their GET handler: it posts the
-// review's Continue instead.
 export const declarationRoutesFromReview = [
   {
     method: 'GET',
-    handler: async (request, toolkit) => {
+    handler: async (request, h) => {
       const { concurrencyToken } = await store.get(request.params.journeyId)
       return postHandlerOf(declaration)(
         continueRequest(request, concurrencyToken),
-        toolkit
+        h
       )
     }
   }

@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -19,16 +19,16 @@ const approvalNumberInput = '#approvalNumber'
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
+const linkButtonNamed = (page, name) => page.getByRole('button', { name })
+
 const openCommercialForm = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await page.locator('select#meansOfTransport').selectOption('AIRPLANE')
   await submit(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page.getByRole('link', { name: 'Transport details' }).click()
-  // The govuk button macro renders an href as a link with role="button".
-  await page.getByRole('button', { name: copy.transporters.add }).click()
+  await linkButtonNamed(page, copy.transporters.add).click()
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
@@ -47,9 +47,9 @@ const validTransporter = {
   addressLine2: 'Unit 3',
   townOrCity: 'Belfast',
   county: 'County Antrim',
-  postalOrZipCode: 'BT1 3LG',
-  emailAddress: 'movements@lough-neagh.example.com',
-  telephoneNumber: '+44 28 9000 0111'
+  postcode: 'BT1 3LG',
+  email: 'movements@lough-neagh.example.com',
+  phone: '+44 28 9000 0111'
 }
 
 const fillTransporter = async (page, transporter = validTransporter) => {
@@ -67,9 +67,9 @@ const requiredValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postcode or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
-  ['email address', 'emailAddress', 'emailRequired'],
-  ['phone number', 'telephoneNumber', 'telephoneRequired']
+  ['postcode or zip code', 'postcode', 'postcodeRequired'],
+  ['email address', 'email', 'emailRequired'],
+  ['phone number', 'phone', 'telephoneRequired']
 ]
 
 const MAX_APPROVAL_NUMBER_LENGTH = 50
@@ -119,19 +119,19 @@ const formatValidations = [
   ],
   [
     'postcode or zip code over 12 characters',
-    'postalOrZipCode',
+    'postcode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
-    'postalOrZipCodeMaxLength'
+    'postcodeMaxLength'
   ],
   [
     'email address over 254 characters',
-    'emailAddress',
+    'email',
     `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - exampleEmailDomain.length)}${exampleEmailDomain}`,
     'emailMaxLength'
   ],
   [
     'phone number over 20 characters',
-    'telephoneNumber',
+    'phone',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
   ]
@@ -189,7 +189,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
       page.getByRole('heading', { name: form.contactHeading })
     ).toBeVisible()
     await expect(
-      page.getByLabel(form.fields.telephoneNumber)
+      page.getByLabel(form.fields.phone)
     ).toHaveAccessibleDescription(form.telephoneHint)
   })
 

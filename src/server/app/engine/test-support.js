@@ -1,9 +1,34 @@
+import { readFileSync } from 'node:fs'
+import Crumb from '@hapi/crumb'
+import Hapi from '@hapi/hapi'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
+import { config } from '../../../config/config.js'
+import { SET_ID } from '../../../../test/fixtures/index.js'
+import { buildDispatch } from '../flow/dispatch.js'
+import { currentSetId } from '../shared/set-context.js'
+import { pagePath } from '../shared/paths.js'
+import { records as recordsReal } from '../services/persistence/records/real/index.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../services/persistence/session/stub.js'
+import { BackendRequestError } from '../services/persistence/records/errors.js'
+import {
+  REFUSAL_LOG_MESSAGE,
+  SAVE_FALLBACK_LOG_MESSAGE
+} from '../shared/kit.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { store } from './store.js'
-import { knownJourneysCookie } from './journey.js'
-import { records } from './persistence/records.js'
+import { configureRecords, records } from './persistence/records.js'
+import {
+  configureSession,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie
+} from './persistence/session.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 
-// Mirrors what plugins/auth.js puts on credentials after sign-in: the raw
-// `currentRelationshipId` claim, plus the `organisationId` it is mapped to.
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
   name: 'Andrew Farmer',
@@ -19,23 +44,44 @@ export const authenticatedActor = Object.freeze({
   organisationId: '5900001'
 })
 
-const stubResponse = (payload) => ({
-  payload,
-  code: (statusCode) => ({ payload, statusCode })
-})
+const chainableResponse = (fields) => {
+  const response = { ...fields }
+  const headers = {}
+  return Object.defineProperties(response, {
+    headers: { value: headers },
+    code: {
+      value: (statusCode) => {
+        response.statusCode = statusCode
+        return response
+      }
+    },
+    header: {
+      value: (name, value) => {
+        headers[name.toLowerCase()] = value
+        return response
+      }
+    }
+  })
+}
+
+const stubResponse = (payload) => chainableResponse({ payload })
 
 const stubView = (captured) => (view, context) => {
-  const rendered = {
-    view,
-    context,
-    statusCode: 200,
-    code(statusCode) {
-      this.statusCode = statusCode
-      return this
-    }
-  }
+  const rendered = chainableResponse({ view, context, statusCode: 200 })
   captured.view = rendered
   return rendered
+}
+
+export const registerTestRequestLogger = (server) => {
+  server.decorate('request', 'logger', () => recordingLogger(), { apply: true })
+}
+
+/** Decorates every request with one shared recording logger and returns it, so
+ * a test can read every line logged across several injects. */
+export const registerSharedTestRequestLogger = (server) => {
+  const logger = recordingLogger()
+  server.decorate('request', 'logger', logger)
+  return logger
 }
 
 export const registerTestSessionAuth = (server) => {
@@ -46,42 +92,76 @@ export const registerTestSessionAuth = (server) => {
   server.auth.strategy('session', 'test-session')
 }
 
-/** A response toolkit that records what the handler rendered. Pass the request
- * to expose it as `h.request`, as hapi's toolkit does. */
-export const stubH = (request) => {
-  const captured = {}
-  const cookies = {}
-  return {
-    request,
-    view: stubView(captured),
-    redirect: (to) => {
-      const result = { redirect: to }
-      // Non-enumerable so tests that assert toEqual({ redirect: to }) still
-      // match after chaining .code(...).
-      Object.defineProperty(result, 'code', {
-        value: (statusCode) => {
-          result.statusCode = statusCode
-          return result
-        }
-      })
-      return result
+export const crumbProtectedServerMounting = async (routes, prefix) => {
+  const server = Hapi.server()
+  await server.register(Crumb)
+  registerTestSessionAuth(server)
+  await server.register(
+    {
+      name: 'routes-under-test',
+      register: (inner) => inner.route(routes)
     },
-    response: stubResponse,
+    { routes: { prefix } }
+  )
+  return server
+}
+
+const cookieRecorder = () => {
+  const cookies = {}
+  const calls = []
+  const unstated = []
+  return {
+    cookies,
+    calls,
+    unstated,
     state: (name, value) => {
+      calls.push([name, value])
       cookies[name] = value
     },
     unstate: (name) => {
+      unstated.push(name)
       delete cookies[name]
-    },
-    cookies,
+    }
+  }
+}
+
+/** A response toolkit that records what the handler rendered. Pass the request
+ * to expose it as `h.request`. */
+export const stubH = (request) => {
+  const captured = {}
+  return {
+    ...cookieRecorder(),
+    request,
+    view: stubView(captured),
+    redirect: (to) => chainableResponse({ redirect: to }),
+    response: stubResponse,
     captured
   }
 }
 
-export const journeyRequest = (journeyId, overrides = {}) => ({
+/** A request logger that keeps every line it is given in `entries`. */
+export const recordingLogger = () => {
+  const entries = []
+  const recordAt = (level) => (fields, message) =>
+    entries.push({ level, fields, message })
+  return {
+    entries,
+    debug: recordAt('debug'),
+    info: recordAt('info'),
+    warn: recordAt('warn'),
+    error: recordAt('error')
+  }
+}
+
+export const journeyRequest = (
+  journeyId,
+  { knownJourneyIds, ...overrides } = {}
+) => ({
+  app: {},
   payload: {},
   query: {},
   headers: {},
+  logger: recordingLogger(),
   auth: {
     isAuthenticated: true,
     credentials: authenticatedCredentials
@@ -89,28 +169,35 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [knownJourneysCookie()]: [journeyId],
+    [knownJourneysCookie()]: knownJourneyIds ?? (journeyId ? [journeyId] : []),
     ...overrides.state
   }
 })
 
-export const recordingH = () => {
-  const cookies = {}
-  const calls = []
-  return {
-    state: (name, value) => {
-      calls.push([name, value])
-      cookies[name] = value
-    },
-    unstate: (name) => {
-      delete cookies[name]
-    },
-    cookies,
-    calls
-  }
-}
+/** The text a copy leaf gives: the string itself, or what the copy function
+ * returns for the sample arguments. */
+export const sampleText = (value, sampleArguments) =>
+  typeof value === 'function' ? value(...sampleArguments) : value
 
-/** The path and URL a request for `pathOf(journeyId)` carries, query included. */
+export const recordingH = () => cookieRecorder()
+
+export const backendJourneyId = 'GBN-AG-26-ABC123'
+
+export const backendNotification = ({
+  status = 'DRAFT',
+  fulfilments = [],
+  concurrencyToken = 0,
+  submittedAt = null
+} = {}) =>
+  JSON.stringify({
+    referenceNumber: backendJourneyId,
+    fulfilments,
+    status,
+    created: '2026-07-23T09:00:00Z',
+    submittedAt,
+    concurrencyToken
+  })
+
 const requestLocation = (pathOf, journeyId, query) => {
   if (!pathOf) {
     return {}
@@ -123,22 +210,53 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
+const flowOnlyState = (journeyId, flowOnly) =>
+  flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
+
+const openingRunState = (journeyId, openingRun) =>
+  openingRun ? { [openingRunCookie()]: { [journeyId]: openingRun } } : {}
+
+/** The recoverable records error for a backend that answered 503 to `operation`. */
+export const unavailableBackendError = (operation) =>
+  new BackendRequestError(operation, {
+    status: 503,
+    statusText: 'Service Unavailable'
+  })
+
+const recordsRejectingSaves = (failure) => ({
+  ...recordsStub,
+  replaceFulfilment: async () => {
+    throw failure
+  }
+})
+
 /** Seeds a journey, runs one handler against it and reports the answers before
- * and after. `amend` submits the journey and opens an amendment first;
- * `pathOf(journeyId)` gives the request the path it was made to. */
+ * and after, alongside the cookies the handler set, the names of the cookies it
+ * unstated and the lines it logged.
+ * `journeyId` drives an existing journey rather than creating one; `flowOnly`
+ * seeds the journey's session-only answers; `amend` submits the journey and
+ * opens an amendment first; `openingRun`
+ * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
+ * the journey; `pathOf(journeyId)` gives the request the path it was made to;
+ * `saveFailure` makes the records store refuse every save the handler makes
+ * with that error. */
 export const driveHandler = async (
   handler,
   {
     payload = {},
     seed = {},
+    flowOnly,
     params = {},
     query = {},
     state = {},
     amend = false,
+    journeyId,
+    openingRun,
+    saveFailure,
     pathOf
   } = {}
 ) => {
-  const journey = await store.create()
+  const journey = journeyId ? { journeyId } : await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   if (amend) {
     await store.submit(journey.journeyId)
@@ -148,20 +266,89 @@ export const driveHandler = async (
     payload,
     params,
     query,
-    state,
+    state: {
+      ...flowOnlyState(journey.journeyId, flowOnly),
+      ...openingRunState(journey.journeyId, openingRun),
+      ...state
+    },
     ...requestLocation(pathOf, journey.journeyId, query)
   })
   const h = stubH(request)
-  const response = await handler(request, h)
+  if (saveFailure) {
+    configureRecords(currentSetId(), recordsRejectingSaves(saveFailure))
+  }
+  let response
+  try {
+    response = await handler(request, h)
+  } finally {
+    configureRecords(currentSetId(), recordsStub)
+  }
   const after = (await store.get(journey.journeyId)).answers
   return {
     journeyId: journey.journeyId,
     before: seed,
     after,
     response,
-    view: h.captured.view
+    view: h.captured.view,
+    cookies: h.cookies,
+    unstated: h.unstated,
+    logger: request.logger
   }
 }
+
+const happyPathValues = JSON.parse(
+  readFileSync(
+    new URL(
+      '../sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    )
+  )
+).values
+
+/** A complete notification, a fresh copy of the happy-path fixture. */
+export const completeNotification = () => structuredClone(happyPathValues)
+
+/** A commodity line with commodityCode and speciesLatinName, plus any further fields. */
+export const commodityLine = ({
+  commodityCode = '0102',
+  speciesLatinName = 'Bos taurus',
+  ...fields
+} = {}) => ({ commodityCode, speciesLatinName, ...fields })
+
+/** A commodity line with every required field answered. */
+export const completeCommodityLine = (overrides = {}) => ({
+  ...completeNotification().commodityLines[0],
+  ...overrides
+})
+
+/** Configures the records and session stubs, creates a journey and returns what
+ * the purge tests drive it with: `seed` stores answers, `durable` reads them
+ * back, `wipeOf` names the keys the evaluator purges and `buildRequest` makes a
+ * request for the journey. */
+export const purgeTestJourney = async () => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  await records.clear()
+  configureReadyForCheckYourAnswers(SET_ID, () => false)
+  const { journeyId } = await records.create()
+  return {
+    buildRequest: () => journeyRequest(journeyId),
+    seed: (answers) =>
+      records.replaceFulfilment(journeyId, assembleFulfilments(answers)),
+    durable: async () =>
+      projectAnswers((await records.load({ journeyId })).fulfilment),
+    wipeOf: (answers) => {
+      const fulfilments = assembleFulfilments(answers)
+      return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+    }
+  }
+}
+
+export const getHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'GET').handler
+
+export const expectBackLinkIsPage = (result, slug) =>
+  expect(result.view.context.backLink).toBe(pagePath(result.journeyId, slug))
 
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler
@@ -170,3 +357,147 @@ export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler
+
+export const getHandlerEndingWith = (featureModule, pathSuffix) =>
+  featureModule.routes.find(
+    (route) => route.method === 'GET' && route.path.endsWith(pathSuffix)
+  ).handler
+
+export const fetchMock = createFetchMock(vi)
+
+export const resetMocksAndConfigAfterTests = (...configKeys) => {
+  const originals = ['stubMode', ...configKeys].map((key) => [
+    key,
+    config.get(key)
+  ])
+  afterEach(() => {
+    fetchMock.resetMocks()
+    vi.unstubAllGlobals()
+    originals.forEach(([key, value]) => config.set(key, value))
+  })
+}
+
+export const useReferenceDataServing = () => {
+  resetMocksAndConfigAfterTests()
+  return (rows) => {
+    config.set('stubMode', false)
+    fetchMock.enableMocks()
+    fetchMock.mockResponse(async () => ({ body: JSON.stringify(rows) }))
+  }
+}
+
+/** Puts the address book on the network boundary: every request to its
+ * `/addresses` paths gets `addressResponse` (or, for a function, what it
+ * returns for the request) and the country list gets the United Kingdom,
+ * Switzerland and the United States. Call it inside a test; pair it with
+ * `resetMocksAndConfigAfterTests()` in the describe. */
+export const addressBookAnswering = (addressResponse) => {
+  const countryList = JSON.stringify([
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'CH', name: 'Switzerland' },
+    { code: 'US', name: 'United States' }
+  ])
+  const answerAddresses = (request) =>
+    typeof addressResponse === 'function'
+      ? addressResponse(request)
+      : addressResponse
+  fetchMock.enableMocks()
+  config.set('stubMode', false)
+  fetchMock.mockResponse(async (request) =>
+    request.url.includes('/addresses')
+      ? answerAddresses(request)
+      : { body: countryList }
+  )
+}
+
+/** An address book row as its search and lookup return it, live unless
+ * `overrides` says otherwise. */
+export const listedAddress = (id, name, overrides = {}) => ({
+  id,
+  name,
+  deleted: false,
+  addressLine1: '1 Test Lane',
+  ...overrides
+})
+
+/** The address book's response to a search: one page holding every row
+ * in `items`. Pass it to `addressBookAnswering()`. */
+export const addressBookPage = (items = []) => ({
+  body: JSON.stringify({
+    items,
+    page: 1,
+    pageSize: 25,
+    totalItems: items.length,
+    totalPages: 1
+  })
+})
+
+export const addressBookRefusingAddresses = () =>
+  addressBookAnswering({ status: 500 })
+
+/** The urls of the address book requests made since `addressBookAnswering()`. */
+export const addressBookRequestUrls = () =>
+  fetchMock
+    .requests()
+    .map((request) => request.url)
+    .filter((url) => url.includes('/addresses'))
+
+/** Asserts the logger holds exactly one line. */
+export const expectOneLogged = (logger, { level, fields, message }) =>
+  expect(logger.entries).toEqual([{ level, fields, message }])
+
+export const expectNoRefusalLogged = (logger) =>
+  expect(
+    logger.entries.filter(({ message }) => message === REFUSAL_LOG_MESSAGE)
+  ).toEqual([])
+
+const refusalEntry = ({
+  journeyId,
+  errorCodes,
+  level = 'info',
+  ...details
+}) => ({
+  level,
+  message: REFUSAL_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, errorCodes, ...details })
+})
+
+export const expectOneRefusalLogged = (logger, refusal) =>
+  expectOneLogged(logger, refusalEntry(refusal))
+
+/** The log entry for a save fallback: the journey id, the caught error and
+ * any ids the page passed. */
+export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
+  level: 'warn',
+  message: SAVE_FALLBACK_LOG_MESSAGE,
+  fields: expect.objectContaining({ journeyId, ...ids, err })
+})
+
+export const expectOneSaveFallbackLogged = (logger, fallback) =>
+  expectOneLogged(logger, saveFallbackEntry(fallback))
+
+export const useStubbedJourney = (setId, dispatchPages) => {
+  beforeAll(() => {
+    configureSession(setId, sessionStub)
+    buildDispatch(setId, dispatchPages)
+  })
+  beforeEach(async () => {
+    configureRecords(setId, recordsStub)
+    await store.clear()
+  })
+}
+
+export const useBackendRecords = (setId) => {
+  beforeAll(() => {
+    configureRecords(setId, recordsReal)
+    configureSession(setId, sessionStub)
+  })
+  beforeEach(() => {
+    fetchMock.enableMocks()
+    fetchMock.mockClear()
+  })
+  resetMocksAndConfigAfterTests()
+}
+
+export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>
+  expectOneRefusalLogged(logger, { journeyId, errorCodes: [], ...details })

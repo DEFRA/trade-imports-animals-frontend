@@ -22,3 +22,6 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+
+# sonar-scanner working directory (analysis report + architecture graphs)
+.scannerwork/

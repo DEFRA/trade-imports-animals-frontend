@@ -8,10 +8,33 @@ import { configureSession } from '../../../../../../engine/persistence/session.j
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  expectOneRefusalLogged,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { AMEND, DRAFT } from '../../../../../../engine/index.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
-import { documentScanCardErrors, isReviewRefused } from './refusal.js'
+import { copy as reviewEn } from './copy/copy.en.js'
+import {
+  documentScanCardErrors,
+  isReviewRefused,
+  speciesCardErrors
+} from './refusal.js'
+
+const LISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos taurus'
+}
+const UNLISTED_SPECIES_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Bos spp.'
+}
+const SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE = {
+  commodityCode: '0102',
+  speciesLatinName: 'Felis catus'
+}
 
 const PENDING_FILENAME = 'notes-never-scans.pdf'
 const REJECTED_FILENAME = 'virus-alert.pdf'
@@ -53,6 +76,14 @@ const seedAnd = async (seed) => {
 
 const askRefused = async (journeyId) =>
   isReviewRefused(journeyRequest(journeyId), stubH())
+
+const askRefusedAndReadLog = async (journeyId) => {
+  const request = journeyRequest(journeyId)
+  return {
+    refused: await isReviewRefused(request, stubH()),
+    logger: request.logger
+  }
+}
 
 describe('#isReviewRefused', () => {
   beforeAll(() => {
@@ -113,8 +144,6 @@ describe('#isReviewRefused', () => {
   })
 
   it('Should refuse a notification whose stored document is still being scanned', async () => {
-    // Stub scanStatus maps filename → status when the uploadId has not been
-    // seen by upload(); "never-scans" stays PENDING on non-refresh reads.
     const journey = await seedAnd(
       fullyAnswered({
         documents: [doc({ filename: PENDING_FILENAME })]
@@ -143,16 +172,123 @@ describe('#isReviewRefused', () => {
 
     expect(await askRefused(journey.journeyId)).toBe(false)
   })
+
+  it('Should refuse a draft holding a species not listed under its code', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [UNLISTED_SPECIES_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(true)
+  })
+
+  it('Should not refuse a draft whose species is still listed under its code', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+
+  it('Should log the refusal once at warn with the journey id and each unlisted code and Latin name', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({
+        commodityLines: [
+          LISTED_SPECIES_LINE,
+          UNLISTED_SPECIES_LINE,
+          SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
+        ]
+      })
+    )
+    const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
+
+    expect(refused).toBe(true)
+    expectOneRefusalLogged(logger, {
+      journeyId: journey.journeyId,
+      errorCodes: [],
+      level: 'warn',
+      reason: 'unlisted-species',
+      unlisted: [
+        { code: '0102', latinName: 'Bos spp.' },
+        { code: '0102', latinName: 'Felis catus' }
+      ]
+    })
+  })
+
+  it('Should log nothing when every species is still listed', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
+    )
+    const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
+
+    expect(refused).toBe(false)
+    expect(logger.entries).toEqual([])
+  })
+})
+
+describe('#speciesCardErrors', () => {
+  const unlistedDraft = {
+    status: DRAFT,
+    commodityLines: [
+      LISTED_SPECIES_LINE,
+      UNLISTED_SPECIES_LINE,
+      SPECIES_LISTED_UNDER_ANOTHER_CODE_LINE
+    ]
+  }
+
+  it('Should name every species of a draft that reference data no longer lists under its code, with its code, when Continue was refused', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: unlistedDraft.status },
+        { commodityLines: unlistedDraft.commodityLines },
+        { refused: true }
+      )
+    ).toEqual({
+      species: reviewEn.errors.species.notListed(
+        'Bos spp. (0102), Felis catus (0102)'
+      )
+    })
+  })
+
+  it('Should return no species error until Continue is refused', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: unlistedDraft.status },
+        { commodityLines: unlistedDraft.commodityLines }
+      )
+    ).toEqual({})
+  })
+
+  it('Should return no species error for an amendment holding an unlisted species', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: AMEND },
+        { commodityLines: [UNLISTED_SPECIES_LINE] },
+        { refused: true }
+      )
+    ).toEqual({})
+  })
+
+  it('Should return no species error for a line with no species', async () => {
+    expect(
+      await speciesCardErrors(
+        { status: DRAFT },
+        { commodityLines: [{ commodityCode: '0102' }] },
+        { refused: true }
+      )
+    ).toEqual({})
+  })
 })
 
 describe('#documentScanCardErrors', () => {
+  const request = journeyRequest('journey-1')
+
   it('Should return no errors when no documents are stored', async () => {
-    expect(await documentScanCardErrors({})).toEqual({})
+    expect(await documentScanCardErrors(request, {})).toEqual({})
   })
 
   it('Should return no errors when every stored document has completed scanning', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: 'clean.pdf' })]
       })
     ).toEqual({})
@@ -160,7 +296,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a document still being scanned', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [doc({ filename: PENDING_FILENAME })]
       })
     ).toEqual({ documents: documentsEn.errors.someStillScanning })
@@ -169,6 +305,7 @@ describe('#documentScanCardErrors', () => {
   it('Should not name a document still being scanned when pending is excluded', async () => {
     expect(
       await documentScanCardErrors(
+        request,
         { documents: [doc({ filename: PENDING_FILENAME })] },
         { includePending: false }
       )
@@ -177,7 +314,7 @@ describe('#documentScanCardErrors', () => {
 
   it('Should name a REJECTED scan ahead of one still scanning', async () => {
     expect(
-      await documentScanCardErrors({
+      await documentScanCardErrors(request, {
         documents: [
           doc({ filename: PENDING_FILENAME }),
           doc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })

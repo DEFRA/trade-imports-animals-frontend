@@ -4,35 +4,35 @@ import {
   requiredIntegerInRange
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import * as commodities from '../../../../../services/commodities/index.js'
+import { packagesApply } from '../../check-answers/view-model/applicability.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).consignmentDetails
 
-export const packagesApply = (commoditySelection) =>
-  commodities.packageCountCommodities().includes(commoditySelection)
-
 export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`
 
-export const fieldsFor = (lines) =>
-  compose(
-    ...lines.flatMap(({ index, entry }) => [
-      requiredIntegerInRange(animalsField(index), {
-        min: 1,
-        messages: {
-          required: copy.errors.animalsRequired,
-          invalid: copy.errors.animalsWholeNumber
-        }
-      }),
-      ...(packagesApply(entry.commoditySelection)
-        ? [
-            integerInRange(packagesField(index), {
-              min: 1,
-              message: copy.errors.packagesWholeNumber
-            })
-          ]
-        : [])
-    ])
+const animalsValidatorsFor = (lines) =>
+  lines.map(({ index }) =>
+    requiredIntegerInRange(animalsField(index), {
+      min: 1,
+      messages: {
+        required: copy.errors.animalsRequired,
+        invalid: copy.errors.animalsWholeNumber
+      }
+    })
   )
+
+const packagesValidatorsFor = (lines) =>
+  lines
+    .filter(({ entry }) => packagesApply(entry.commodityCode))
+    .map(({ index }) =>
+      integerInRange(packagesField(index), {
+        min: 1,
+        message: copy.errors.packagesWholeNumber
+      })
+    )
+
+export const fieldsFor = (lines) =>
+  compose(...animalsValidatorsFor(lines), ...packagesValidatorsFor(lines))

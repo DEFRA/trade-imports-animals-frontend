@@ -1,21 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
-  signIn,
-  startNotification,
-  unlockSections
+  expectNoSeriousOrCriticalViolations,
+  openDocuments,
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import { allowedFileTypesHint, MAX_FILE_SIZE_LABEL } from '../upload-config.js'
 
 const guidance = copy.guidance
 const additional = guidance.additional
-
-const openDocuments = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Upload documents' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-}
 
 const openExpander = async (page) => {
   await page.getByText(additional.summary).click()
@@ -39,7 +32,7 @@ test.describe('document upload guidance', () => {
     // The guidance introduces the form, so it must sit outside it.
     await expect(page.locator('form').getByText(guidance.intro)).toHaveCount(0)
     // ...and before it: the trader reads what to attach without scrolling past
-    // the upload panel (design release 1).
+    // the upload panel.
     await expect(
       page
         .locator('p.govuk-body', { hasText: guidance.intro })
@@ -73,6 +66,18 @@ test.describe('document upload guidance', () => {
         table.getByRole('row').filter({ hasText: row.consignment })
       ).toContainText(row.documents)
     }
+  })
+
+  test('states the file size and the allowed file types as the first two bullets of the file hint', async ({
+    page
+  }) => {
+    const hintBullets = page.locator('#file-hint li')
+    await expect(hintBullets.nth(0)).toHaveText(
+      copy.file.smallerThan(MAX_FILE_SIZE_LABEL)
+    )
+    await expect(hintBullets.nth(1)).toHaveText(
+      copy.file.allowedTypes(allowedFileTypesHint(copy))
+    )
   })
 
   test('links out to the GOV.UK guidance in a new tab', async ({ page }) => {

@@ -1,36 +1,8 @@
 export const copy = {
   title: 'Review your notification',
-  // An empty value inside a card that is finished. Nothing more is owed on
-  // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
-  // An empty value inside a card that still has answers outstanding gets no
-  // text at all — the row is drawn in the missing style, and this is what a
-  // screen reader is told in its place.
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
-  means: {
-    AIRPLANE: 'Air',
-    RAILWAY: 'Rail',
-    ROAD_VEHICLE: 'Road',
-    VESSEL: 'Sea'
-  },
-  documentTypes: {
-    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
-    VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
-    AIR_WAYBILL: 'Air waybill',
-    IMPORT_PERMIT: 'Import permit',
-    LETTER_OF_AUTHORITY: 'Letter of authority (Directive 2008/61/EC)',
-    COMMERCIAL_INVOICE: 'Commercial invoice',
-    SEA_WAYBILL: 'Sea waybill',
-    RAIL_WAYBILL: 'Rail waybill',
-    BILL_OF_LADING: 'Bill of lading',
-    CATCH_CERTIFICATE: 'Catch certificate',
-    LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN:
-      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-    HEALTH_CERTIFICATE: 'Health certificate',
-    JOURNEY_LOG: 'Journey log',
-    OTHER: 'Other'
-  },
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
@@ -38,8 +10,6 @@ export const copy = {
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
   },
-  // The six numbered sections of design release 1, in its order. The number is
-  // part of the heading, so renumbering means editing these strings.
   sections: {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
@@ -48,10 +18,9 @@ export const copy = {
     consignmentParties: '5. Consignment parties',
     contactAddress: '6. Contact address'
   },
-  // The subsection heading that stands above each card. Every card has one.
   groups: {
     whereFrom: 'Where is this consignment coming from?',
-    mainReasonForImport: 'Main reason for import',
+    mainImportReason: 'Main import reason',
     commodityDetails: 'Commodity details',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
@@ -85,7 +54,7 @@ export const copy = {
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
     commodityCode: 'Commodity code',
-    commonName: 'Common name',
+    speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     numberOfPackages: 'Number of packages',
@@ -119,12 +88,7 @@ export const copy = {
     heading: 'Animal details'
   },
   documentN: (n) => `Document ${n}`,
-  // Shown inside the uploaded-documents card when nothing has been uploaded.
-  // The card itself always stands, so it needs a line rather than an empty box.
   documentsEmpty: 'You have not added any documents yet.',
-  // What each Change link names once a screen reader reaches it. Cards carry
-  // the only Change links on the page, so a card's entry here reads as the rest
-  // of "Change ..." — lower case, and the card's own title in words.
   hidden: {
     cards: {
       importDetails: 'import details',
@@ -139,16 +103,11 @@ export const copy = {
     },
     commodity: (n) => `commodity ${n}`
   },
-  // The review ends with the button and nothing else. Its label carries the
-  // whole instruction, so no heading and no sentence stand above it.
   submit: {
     button: 'Continue'
   },
   errors: {
     prefix: 'Error:',
-    // One line per review card that still has answers outstanding. The same
-    // line carries the error summary entry and the message inside the card, so
-    // a trader reading either sees the same words.
     cards: {
       importDetails: 'Complete import details',
       reasonForImport: 'Complete reason for import',
@@ -160,6 +119,10 @@ export const copy = {
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
+    },
+    species: {
+      notListed: (speciesWithCodes) =>
+        `${speciesWithCodes} can no longer be selected. Select a species from the list.`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',

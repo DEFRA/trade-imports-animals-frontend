@@ -1,7 +1,12 @@
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net'
+
 import { createServer } from '../../server.js'
 import { config } from '../../../config/config.js'
 
 async function startServer() {
+  const connectAttemptPerAddressMs = 1000
+  setDefaultAutoSelectFamilyAttemptTimeout(connectAttemptPerAddressMs)
+
   const server = await createServer()
   await server.start()
 

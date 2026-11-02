@@ -47,6 +47,23 @@ const parseReferenceNumber = (value) => {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
+const succeededAction = (query) => {
+  if (query?.deleted === '1') {
+    return sharedCopy.notificationActions.delete
+  }
+  if (query?.copied === '1') {
+    return sharedCopy.notificationActions.copy
+  }
+  return null
+}
+
+const successBannerFor = (query) => {
+  const action = succeededAction(query)
+  return action
+    ? { titleText: action.successTitle, text: action.successBody }
+    : null
+}
+
 export const renderDashboard = async (
   request,
   h,
@@ -103,18 +120,18 @@ export const renderDashboard = async (
       referenceNumber
     }),
     recoverableError,
-    deletionSucceeded: request.query?.deleted === '1',
-    copySucceeded: request.query?.copied === '1'
+    successBanner: successBannerFor(request.query),
+    amendRefused: request.query?.amendRefused === '1'
   })
 }
 
 const listGet = async (request, h) => renderDashboard(request, h)
 
-const backToDashboard = (h) => h.redirect(dashboardPath())
-
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
+  return h.redirect(
+    journey ? hubPath(journey.journeyId) : `${dashboardPath()}?amendRefused=1`
+  )
 }
 
 const createPost = async (request, h) => {

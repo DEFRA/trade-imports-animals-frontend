@@ -2,11 +2,6 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { unrecognisedAnswerKeys } from '../bridge/obligation-source.js'
 
-// The recognition surface: manifest obligation names in their declared
-// positions, flow-only keys and system keys. Anything else is inert to the
-// evaluator yet ships raw at finalise — these tests pin that such keys are
-// reported, with their path.
-
 const happyPath = JSON.parse(
   readFileSync(
     new URL(
@@ -31,7 +26,7 @@ describe('#unrecognisedAnswerKeys', () => {
     const answers = {
       commodityLines: [
         {
-          commoditySelection: 'Horse',
+          commodityCode: '0101',
           animalIdentifiers: [{ animalIdentifierHorseName: 'Dobbin' }]
         }
       ]
@@ -70,8 +65,6 @@ describe('#unrecognisedAnswerKeys', () => {
   })
 
   it('Should treat values below a leaf key as opaque', () => {
-    // consignor is a leaf obligation whose value is a composite; its
-    // sub-shape belongs to the feature/domain, not the recognition surface.
     expect(
       unrecognisedAnswerKeys({ consignor: { anything: { at: 'all' } } })
     ).toEqual([])

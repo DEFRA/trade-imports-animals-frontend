@@ -12,7 +12,7 @@ describe('commodities evaluation bindings', () => {
     let lineWalks = 0
     let unitWalks = 0
     const line = {
-      commoditySelection: 'Cow',
+      commodityCode: '0102',
       numberOfAnimalsQuantity: '1',
       get animalIdentifiers() {
         unitWalks += 1
@@ -31,7 +31,7 @@ describe('commodities evaluation bindings', () => {
     expect(lineWalks).toBe(1)
     expect(unitWalks).toBe(1)
     expect(contribution).toMatchObject({
-      [commodityCode.id]: { line0: 'Cow' },
+      [commodityCode.id]: { line0: '0102' },
       [numberOfAnimals.id]: { line0: 1 },
       [earTag.id]: { 'line0.unit0': 'UK123456789012' }
     })

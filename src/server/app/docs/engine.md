@@ -54,6 +54,23 @@ purge, answer-key recognition or persistence.
 answer keys and `scope.readyForCheckYourAnswers` before calling `records.finalise`.
 Submit changes lifecycle state; it does not perform a separate fulfilment save.
 
+## Answer-key recognition
+
+[`bridge/obligation-source.js`](../bridge/obligation-source.js) is the one place
+that says which keys may appear in a stored answers tree: manifest obligation
+names in their declared position, flow-only keys and the system keys. The
+evaluator never scopes or wipes a key outside that surface, yet the key would
+ship raw at finalise, so the engine's write paths and `submitJourney` reject it
+loudly instead. `referenceNumber` is accepted by answer validation but is left
+out of canonical assembly, because runtime notification projections take the
+reference from the journey envelope.
+
+A collection's entry count is capped at the value of a sibling count field. The
+declaration is `ENTRY_CAP_FIELD_BY_COLLECTION` in that file; enforcement is
+`collectionCapAt` in
+[`engine/evaluate/cardinality.js`](../engine/evaluate/cardinality.js), and
+`appendEntryAt` rejects an append at the cap.
+
 ## Abstract ports
 
 The engine owns the interfaces in

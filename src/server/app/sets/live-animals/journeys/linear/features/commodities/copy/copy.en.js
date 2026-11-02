@@ -4,10 +4,10 @@ export const copy = {
   search: {
     title: 'What are you importing?',
     inset:
-      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.',
+      'You must submit a separate notification for every single ITAHC. You must also submit a notification for goods that do not need an ITAHC.',
     searchLabel: 'Search for a commodity',
     searchHint:
-      'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
+      'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).',
     searchButton: 'Search',
     noResults: 'No results found',
     selected: {
@@ -21,21 +21,25 @@ export const copy = {
       describes:
         'A commodity code describes a specific product when importing or exporting goods.',
       lookupPrefix: 'You can look up commodity codes using the',
-      lookupLink: 'Trade Tariff tool (opens in a new tab)',
+      lookupLink: 'Trade Tariff tool',
+      lookupNewTab: '(opens in a new tab)',
       lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Select a commodity'
     }
   },
+  selectedCommodities: {
+    caption: 'Selected commodities',
+    commodityCode: 'Commodity code',
+    species: 'Species',
+    numberOfAnimals: 'Number of animals',
+    actionsHidden: 'Actions'
+  },
   consignmentDetails: {
     title: 'Commodity details',
     addAnother: 'Add another commodity',
     table: {
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      commonName: 'Common name',
-      actionsHidden: 'Actions',
       remove: 'Remove'
     },
     animals: {
@@ -60,11 +64,6 @@ export const copy = {
     addAnotherCommodity: 'Add another commodity',
     changeAnimalCount: 'Change number of animals',
     summary: {
-      caption: 'Selected commodities',
-      commodityCode: 'Commodity code',
-      commonName: 'Common name',
-      numberOfAnimals: 'Number of animals',
-      actionsHidden: 'Actions',
       change: 'Change'
     },
     identifierLabels: {
@@ -79,32 +78,10 @@ export const copy = {
       permanentAddressColumn: 'Permanent address',
       actionsHidden: 'Actions'
     },
-    typeFields: {
-      animalIdentifierMicrochip: {
-        label: 'Microchip number',
-        hint: 'For example, 900123456789012'
-      },
-      animalIdentifierPassport: {
-        label: 'Passport',
-        hint: 'For example, UK123456789'
-      },
-      animalIdentifierTattoo: {
-        label: 'Tattoo',
-        hint: 'For example, AB1234'
-      },
-      animalIdentifierEarTag: {
-        label: 'Ear tag',
-        hint: 'For example, UK123456789012'
-      },
-      horseName: { label: 'Horse name' }
-    },
-    counterNoCap: (species) => `Enter details for ${species}`,
     counter: (species, next, cap) =>
       `Enter details for ${species} ${next} of ${cap}`,
     overCount: (cap, species, entered, overBy) =>
       `This commodity line lists ${cap} ${species} animals but you have entered details for ${entered}. Remove ${overBy} to continue.`,
-    allEntered: (cap, species) =>
-      `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`,
     animalRow: (number) => `Animal ${number}`,
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Remove',
@@ -126,31 +103,28 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postcode or Zip code',
-      telephoneNumber: 'Phone number',
-      emailAddress: 'Email address'
+      postcode: 'Postcode or Zip code',
+      phone: 'Phone number',
+      email: 'Email address'
     },
-    // A trader giving an address outside the UK has no way of knowing the
-    // number will be dialled from here unless the field says so, so the phone
-    // field is the one address field that carries a hint.
     addressHints: {
-      telephoneNumber: 'For international numbers include the country code'
+      phone: 'For international numbers include the country code'
     },
     errors: {
       identifierMax: {
-        animalIdentifierMicrochip: 'Microchip must be 58 characters or fewer',
-        animalIdentifierPassport: 'Passport must be 58 characters or fewer',
-        animalIdentifierTattoo: 'Tattoo must be 58 characters or fewer',
-        animalIdentifierEarTag: 'Ear tag must be 58 characters or fewer',
-        horseName: 'Horse name must be 58 characters or fewer'
+        animalIdentifierMicrochip: 'Microchip must be 58 characters or less',
+        animalIdentifierPassport: 'Passport must be 58 characters or less',
+        animalIdentifierTattoo: 'Tattoo must be 58 characters or less',
+        animalIdentifierEarTag: 'Ear tag must be 58 characters or less',
+        horseName: 'Horse name must be 58 characters or less'
       },
       addressMandatory: {
         nameOrOrganisationName: 'Enter a name or organisation name',
         addressLine1: 'Enter address line 1',
         townOrCity: 'Enter a town or city',
-        postalOrZipCode: 'Enter a postcode or Zip code',
-        telephoneNumber: 'Enter a phone number',
-        emailAddress: 'Enter an email address'
+        postcode: 'Enter a postcode or Zip code',
+        phone: 'Enter a phone number',
+        email: 'Enter an email address'
       },
       addressFormat: {
         nameOrOrganisationName:
@@ -159,9 +133,9 @@ export const copy = {
         addressLine2: 'Address line 2 must be 255 characters or less',
         townOrCity: 'Town or city must be 100 characters or less',
         county: 'County must be 100 characters or less',
-        postalOrZipCode: 'Postcode or Zip code must be 12 characters or less',
-        telephoneNumber: 'Phone number must be 20 characters or less',
-        emailAddress: 'Email address must be 254 characters or less'
+        postcode: 'Postcode or Zip code must be 12 characters or less',
+        phone: 'Phone number must be 20 characters or less',
+        email: 'Email address must be 254 characters or less'
       },
       atLeastOneIdentifier: 'Enter at least one identifier for this animal',
       capReached: (cap) =>

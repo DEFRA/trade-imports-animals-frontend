@@ -1,1 +1,8 @@
-npm run git:pre-commit-hook
+# Deliberately cheap: lint-staged fixes formatting and auto-fixable lint
+# problems on the STAGED files only, so they land in the commit that caused
+# them. No build, no test suite — the full gate runs on pre-push.
+#
+# Auto-fixing has to happen here rather than on pre-push: by push time the
+# code is already committed, so a fixer would write changes the commit does
+# not contain, leaving you pushing unformatted code with a dirty tree.
+npx lint-staged

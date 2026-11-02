@@ -27,6 +27,27 @@ implications into path keys used by controllers. The returned object contains:
 Journey flow-only keys are added from `configureJourneyFlow()` because they are not
 manifest obligations.
 
+Path keys come in three kinds. A top-level obligation is its bare name
+(`countryOfOrigin`). A group's obligation node is keyed once per parent instance
+(`commodityLines`, `commodityLines[0].animalIdentifiers`); a bare group instance
+such as `commodityLines[0]` is never a key. A leaf inside a group is its
+positional path (`commodityLines[0].animalIdentifiers[1].animalIdentifierPassport`).
+A nested group's node is derived from the parent's instances rather than its own
+fulfilment indexes, so a parent instance whose nested group is empty still
+contributes its node key.
+
+The flow-only keys are the obligations the notification model does not carry,
+such as the submit-time declaration step. The evaluator omits them, so without
+this layer their pages would be unreachable. They are unconditional top-level
+obligations. `rawInScope` stays the evaluator scope alone, and
+`readyForCheckYourAnswers` is unaffected because no task row covers them. The
+same list drives answer-key recognition in
+[`bridge/obligation-source.js`](../bridge/obligation-source.js).
+
+`answered(name)` is consulted only for the prerequisites enforced at Continue
+(`countryOfOrigin` and `commodityCode`), which the manifest carries, so the
+check is exact.
+
 ## Durable purge authority
 
 [`src/server/app/bridge/purge.js`](../bridge/purge.js) exposes the evaluator's

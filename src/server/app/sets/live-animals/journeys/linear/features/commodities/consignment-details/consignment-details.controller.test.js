@@ -1,112 +1,145 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
-import Crumb from '@hapi/crumb'
-import Hapi from '@hapi/hapi'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { pagePath } from '../../../../../../../shared/paths.js'
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
+  crumbProtectedServerMounting,
   driveHandler,
+  expectBackLinkIsPage,
+  expectOneLogged,
+  expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
-  registerTestSessionAuth,
-  stubH
+  stubH,
+  useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
+import { consignmentDetailsPage } from '../page.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
+import {
+  BISON_BISON,
+  BOS_TAURUS,
+  CANIS_FAMILIARIS,
+  FELIS_CATUS
+} from '../search/test-support.js'
 
 const post = postHandlerOf(consignmentDetails)
 
+const cattleLineHoldingThreeIdentifiers = () => ({
+  commodityLines: [
+    {
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
+      numberOfPackages: '',
+      numberOfAnimalsQuantity: '3',
+      animalIdentifiers: [
+        { animalIdentifierEarTag: 'UK1' },
+        { animalIdentifierEarTag: 'UK2' },
+        { animalIdentifierEarTag: 'UK3' }
+      ]
+    }
+  ]
+})
+
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
-const PAGE_SLUG = 'consignment-details'
+const PACKAGES_WHOLE_NUMBER_MESSAGE =
+  'Number of packages must be a whole number, like 5'
 const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '716661',
+      commodityCode: '0102',
+      speciesLatinName: BISON_BISON,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Fish',
-      speciesSelection: '801204',
+      commodityCode: '01063300',
+      speciesLatinName: 'Struthio',
       numberOfAnimalsQuantity: ''
     }
   ]
 })
 
-// Cow (0102) holds two species, Dog and Cat share commodity code 01061900 —
-// the code the design lists species by species.
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '716661',
+      commodityCode: '0102',
+      speciesLatinName: BISON_BISON,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Dog',
-      speciesSelection: '923502',
+      commodityCode: '01061900',
+      speciesLatinName: CANIS_FAMILIARIS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
+      commodityCode: '01061900',
+      speciesLatinName: FELIS_CATUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     }
   ]
 })
 
-// Two species under ONE commodity on code 01061900 — the case the design turns
-// into two rows. Today's stub carries one species per 01061900 commodity, so it
-// is seeded straight into the store (see inc-091's open question).
 const seedTwoSpeciesOfOneCommodity = () => ({
   commodityLines: [
     {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: '0102',
+      speciesLatinName: BOS_TAURUS,
       numberOfPackages: '',
       numberOfAnimalsQuantity: ''
     },
     {
-      commoditySelection: 'Dog',
-      speciesSelection: '923502',
+      commodityCode: '01061900',
+      speciesLatinName: CANIS_FAMILIARIS,
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '7'
     },
     {
-      commoditySelection: 'Dog',
-      speciesSelection: '900001',
+      commodityCode: '01061900',
+      speciesLatinName: FELIS_CATUS,
       numberOfPackages: '4',
       numberOfAnimalsQuantity: '9'
     }
   ]
 })
 
-const getHandlerOf = (featureModule) =>
+const COMMODITY_REMOVAL_REFUSED = {
+  reason: 'no-commodity-at-index'
+}
+
+const expectRedirectedToCommodityQuestionLogged = (result, fields) =>
+  expectOneLogged(result.logger, {
+    level: 'info',
+    fields: { journeyId: result.journeyId, ...fields },
+    message: 'Redirected to the commodity question'
+  })
+
+const SPECIES_REMOVAL_REFUSED = {
+  reason: 'no-species-at-index'
+}
+
+const pageGetHandlerOf = (featureModule) =>
   featureModule.routes.find(
     (route) => route.method === 'GET' && !route.path.includes('remove')
   ).handler
@@ -115,19 +148,17 @@ const contextOf = async (seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
-  await getHandlerOf(consignmentDetails)(journeyRequest(journey.journeyId), h)
+  await pageGetHandlerOf(consignmentDetails)(
+    journeyRequest(journey.journeyId),
+    h
+  )
   return h.captured.view.context
 }
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it("Should save each line's own quantities, packages only where the commodity applies", async () => {
+  it("Should save each line's own quantities, keeping a package count only where the commodity takes one", async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -136,7 +167,6 @@ describe('#consignmentDetailsController — per-species quantities over every li
         'numberOfAnimalsQuantity-1': '10',
         'numberOfPackages-1': '2',
         'numberOfAnimalsQuantity-2': '40',
-        // Fish takes no package count — a smuggled value must not persist.
         'numberOfPackages-2': '9'
       }
     })
@@ -149,7 +179,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect('numberOfPackages' in lines[2]).toBe(false)
   })
 
-  it('Should re-render a non-numeric quantity against its own line and save nothing', async () => {
+  it('Should re-render a non-numeric quantity against its own line and save nothing, and log nothing', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -161,25 +191,13 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.view.context.errors['numberOfAnimalsQuantity-1']).toBe(
       'Enter a whole number greater than 0'
     )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after).toEqual(result.before)
+    expect(result.logger.entries).toEqual([])
   })
 
-  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming', async () => {
-    const seed = {
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
-          numberOfPackages: '',
-          numberOfAnimalsQuantity: '3',
-          animalIdentifiers: [
-            { animalIdentifierEarTag: 'UK1' },
-            { animalIdentifierEarTag: 'UK2' },
-            { animalIdentifierEarTag: 'UK3' }
-          ]
-        }
-      ]
-    }
+  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming, and log nothing', async () => {
+    const seed = cattleLineHoldingThreeIdentifiers()
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '' }
@@ -193,6 +211,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'commodities/identification'
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.logger.entries).toEqual([])
     expect(result.after).toEqual({
       commodityLines: [
         {
@@ -203,13 +223,13 @@ describe('#consignmentDetailsController — per-species quantities over every li
     })
   })
 
-  it('Should save a count equal to or above the identifier-record count', async () => {
+  it('Should save a count equal to the identifier-record count', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
+            commodityCode: '0102',
+            speciesLatinName: BOS_TAURUS,
             numberOfPackages: '',
             numberOfAnimalsQuantity: '',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -223,29 +243,33 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should group the view by commodity with one quantity block per species line', async () => {
+  it('Should group the view by code with one quantity block per species line', async () => {
     const { groups } = await contextOf(seedLines())
-    expect(groups.map((group) => [group.name, group.code])).toEqual([
-      ['Cow', '0102'],
-      ['Fish', '0301']
+    expect(groups.map((group) => [group.heading, group.code])).toEqual([
+      ['0102', '0102'],
+      ['01063300', '01063300']
     ])
-    expect(groups[0].lines.map((line) => line.speciesText)).toEqual([
-      'Bos taurus',
-      'Bison bison'
+    expect(groups[0].lines.map((line) => line.latinName)).toEqual([
+      BOS_TAURUS,
+      BISON_BISON
     ])
     expect(groups[0].showPackages).toBe(true)
     expect(groups[1].showPackages).toBe(false)
   })
+})
+
+describe('#consignmentDetailsController — remove and empty-selection redirects', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should remove every line of a commodity on the remove POST, leaving other commodities intact', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: { action: 'remove:0' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     expect(
-      result.after.commodityLines.map((line) => line.commoditySelection)
-    ).toEqual(['Fish'])
+      result.after.commodityLines.map((line) => line.commodityCode)
+    ).toEqual(['01063300'])
   })
 
   it('Should send the user back to the commodity question when the removed group was the only one, leaving no commodity behind', async () => {
@@ -253,8 +277,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Fish',
-            speciesSelection: '801204',
+            commodityCode: '01063300',
+            speciesLatinName: 'Struthio',
             numberOfAnimalsQuantity: '4'
           }
         ]
@@ -265,25 +289,35 @@ describe('#consignmentDetailsController — per-species quantities over every li
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'last-commodity-removed',
+      commodityCode: '01063300'
+    })
   })
 
   it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] }
     })
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
     })
     expect(result.view).toBeUndefined()
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'no-commodities-on-load'
+    })
   })
 
   it('Should carry the change context on the redirect away from an empty details page', async () => {
-    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
       query: { change: '1' }
     })
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
+    })
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'no-commodities-on-load'
     })
   })
 
@@ -293,7 +327,11 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:7' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: 7
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -303,59 +341,50 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed,
       payload: { action: 'remove:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...COMMODITY_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
-    const server = Hapi.server()
-    await server.register(Crumb)
-    registerTestSessionAuth(server)
-    // Mounted under the set prefix, as the router does, so the injected
-    // `pagePath()` URL below reaches the route rather than 404ing.
-    await server.register(
-      {
-        name: 'consignment-details-under-test',
-        register: (inner) => inner.route(consignmentDetails.routes)
-      },
-      { routes: { prefix: SET_BASE } }
+    const server = await crumbProtectedServerMounting(
+      consignmentDetails.routes,
+      SET_BASE
     )
 
     const forged = await server.inject({
       method: 'POST',
-      url: pagePath('journey-1', PAGE_SLUG),
+      url: pagePath('journey-1', consignmentDetailsPage.slug),
       payload: { action: 'remove:0' }
     })
     expect(forged.statusCode).toBe(403)
 
     const prefetched = await server.inject({
       method: 'GET',
-      url: pagePath('journey-1', 'consignment-details/Cow/remove')
+      url: pagePath('journey-1', 'consignment-details/0102/remove')
     })
     expect(prefetched.statusCode).toBe(404)
   })
 })
 
 describe('#consignmentDetailsController — commodities on code 01061900 are listed species by species', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should list each chosen species of a 01061900 commodity as its own row, and every other commodity as one row', async () => {
+  it('Should list each chosen species on code 01061900 as its own row, and every other code as one row', async () => {
     const { selectedRows } = await contextOf(seedPerSpeciesLines())
     expect(
-      selectedRows.map(({ code, name, removeAction }) => [
+      selectedRows.map(({ code, latinNames, removeAction }) => [
         code,
-        name,
+        latinNames,
         removeAction
       ])
     ).toEqual([
-      ['0102', 'Cow', 'remove:0'],
-      ['01061900', 'Dog', 'remove-species:2'],
-      ['01061900', 'Cat', 'remove-species:3']
+      ['0102', [BOS_TAURUS, BISON_BISON], 'remove:0'],
+      ['01061900', [CANIS_FAMILIARIS], 'remove-species:2'],
+      ['01061900', [FELIS_CATUS], 'remove-species:3']
     ])
   })
 
@@ -365,18 +394,16 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:2' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     expect(
-      result.after.commodityLines.map(
-        ({ commoditySelection, speciesSelection }) => [
-          commoditySelection,
-          speciesSelection
-        ]
-      )
+      result.after.commodityLines.map(({ commodityCode, speciesLatinName }) => [
+        commodityCode,
+        speciesLatinName
+      ])
     ).toEqual([
-      ['Cow', '1148346'],
-      ['Cow', '716661'],
-      ['Cat', '923501']
+      ['0102', BOS_TAURUS],
+      ['0102', BISON_BISON],
+      ['01061900', FELIS_CATUS]
     ])
   })
 
@@ -385,19 +412,17 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed: seedTwoSpeciesOfOneCommodity(),
       payload: { action: 'remove-species:1' }
     })
-    expect(result.response.redirect).toContain(PAGE_SLUG)
+    expect(result.response.redirect).toContain(consignmentDetailsPage.slug)
     const lines = result.after.commodityLines
     expect(
-      lines.map(({ commoditySelection, speciesSelection }) => [
-        commoditySelection,
-        speciesSelection
+      lines.map(({ commodityCode, speciesLatinName }) => [
+        commodityCode,
+        speciesLatinName
       ])
     ).toEqual([
-      ['Cow', '1148346'],
-      ['Dog', '900001']
+      ['0102', BOS_TAURUS],
+      ['01061900', FELIS_CATUS]
     ])
-    // reconcileEntriesAt keys by commodity|species, so the surviving Dog line
-    // keeps its own quantities rather than inheriting the removed line's.
     expect(lines[1].numberOfAnimalsQuantity).toBe(9)
     expect(lines[1].numberOfPackages).toBe('4')
   })
@@ -407,8 +432,8 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed: {
         commodityLines: [
           {
-            commoditySelection: 'Dog',
-            speciesSelection: '923502',
+            commodityCode: '01061900',
+            speciesLatinName: CANIS_FAMILIARIS,
             numberOfPackages: '3',
             numberOfAnimalsQuantity: '7'
           }
@@ -420,6 +445,10 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       pagePath(result.journeyId, COMMODITIES_SLUG)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
+    expectRedirectedToCommodityQuestionLogged(result, {
+      reason: 'last-commodity-removed',
+      commodityCode: '01061900'
+    })
   })
 
   it('Should refuse a species remove aimed at a commodity the page lists as one row, and delete nothing', async () => {
@@ -428,7 +457,12 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 0,
+      commodityCode: '0102'
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -438,7 +472,11 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:9' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: 9
+    })
     expect(result.after).toEqual(seed)
   })
 
@@ -448,25 +486,24 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:../0' }
     })
-    expect(result.response.statusCode).toBe(400)
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      ...SPECIES_REMOVAL_REFUSED,
+      index: NaN
+    })
     expect(result.after).toEqual(seed)
   })
 })
 
 describe('#consignmentDetailsController — the animal count must be answered before the page saves', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should hold the page on a blank count rather than saving the blank, leaving the stored count and its identifier records alone', async () => {
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           numberOfPackages: '',
           numberOfAnimalsQuantity: '3',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -494,8 +531,8 @@ describe('#consignmentDetailsController — the animal count must be answered be
     const seed = {
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: '0102',
+          speciesLatinName: BOS_TAURUS,
           numberOfPackages: '',
           numberOfAnimalsQuantity: '3'
         }
@@ -534,5 +571,86 @@ describe('#consignmentDetailsController — the animal count must be answered be
       '#numberOfAnimalsQuantity-2'
     ])
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should list every number of animals error before any number of packages error', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          { commodityCode: '0102', speciesLatinName: BOS_TAURUS },
+          { commodityCode: '0102', speciesLatinName: BISON_BISON }
+        ]
+      },
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfAnimalsQuantity-1': '',
+        'numberOfPackages-0': 'abc',
+        'numberOfPackages-1': 'abc'
+      }
+    })
+    const { errorList } = result.view.context.errorSummary
+    expect(errorList).toEqual([
+      { href: '#numberOfAnimalsQuantity-0', text: ANIMALS_REQUIRED_MESSAGE },
+      { href: '#numberOfAnimalsQuantity-1', text: ANIMALS_REQUIRED_MESSAGE },
+      { href: '#numberOfPackages-0', text: PACKAGES_WHOLE_NUMBER_MESSAGE },
+      { href: '#numberOfPackages-1', text: PACKAGES_WHOLE_NUMBER_MESSAGE }
+    ])
+    expect(result.after.commodityLines).toHaveLength(2)
+  })
+})
+
+describe('#consignmentDetailsController — Add another commodity', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should offer the commodity question marked to return to commodity details', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed: seedLines()
+    })
+    expect(result.view.context.addHref).toBe(
+      `${pagePath(result.journeyId, COMMODITIES_SLUG)}?return=${consignmentDetailsPage.slug}`
+    )
+  })
+})
+
+describe('#consignmentDetailsController — the Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [
+      {
+        commodityCode: '0102',
+        speciesLatinName: BOS_TAURUS,
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ]
+  }
+
+  it('Should go Back to What are you importing? while the opening run is on', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed,
+      openingRun: RUN_ACTIVE
+    })
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
+      openingRun: RUN_ACTIVE
+    })
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+  })
+
+  it('Should go Back to the overview when the page is opened from the overview', async () => {
+    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
+      seed
+    })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

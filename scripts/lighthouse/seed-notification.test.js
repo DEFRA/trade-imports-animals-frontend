@@ -1,6 +1,6 @@
-import { load } from 'cheerio'
 import { describe, expect, it } from 'vitest'
 
+import { documentOf } from '../../src/server/common/test-helpers/document-of.js'
 import { SET_BASE } from '../../src/server/app/sets/live-animals/set.js'
 import {
   journeyIdIn,
@@ -37,6 +37,22 @@ describe('#journeyIdIn', () => {
   })
 })
 
+describe('#seedSteps commodities', () => {
+  const commoditySteps = () =>
+    seedSteps(SEED_SHAPES.draft).filter((step) => step.slug === 'commodities')
+
+  it('Should search for Bos taurus then choose 0102|Bos taurus', () => {
+    expect(commoditySteps()).toEqual([
+      {
+        slug: 'commodities',
+        fields: { commoditySearch: 'Bos taurus', action: 'search' },
+        expectedStatus: 200
+      },
+      { slug: 'commodities', fields: { species: ['0102|Bos taurus'] } }
+    ])
+  })
+})
+
 describe('#seedSteps cph-number', () => {
   it('Should post the three parts the page asks for, split two, three and four', () => {
     expect(stepFor('cph-number').fields).toEqual({
@@ -64,7 +80,9 @@ describe('#submitNotification', () => {
     location: null,
     crumb: 'test-crumb',
     heading: '',
-    $: load(`<input type="hidden" name="concurrencyToken" value="${token}">`)
+    dom: documentOf(
+      `<input type="hidden" name="concurrencyToken" value="${token}">`
+    )
   })
 
   const fakeClient = () => {
@@ -81,7 +99,7 @@ describe('#submitNotification', () => {
               location: notificationPath('confirmation'),
               crumb: '',
               heading: '',
-              $: load('')
+              dom: documentOf('')
             }
       }
     }

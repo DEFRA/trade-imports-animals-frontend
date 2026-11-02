@@ -2,10 +2,8 @@ import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import {
-  walkObligations,
-  obligationByName
-} from './bridge/obligation-source.js'
+import { walkObligations } from './bridge/obligation-source.js'
+import { obligationByName } from './model/obligations/manifest.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -16,15 +14,21 @@ import {
   postHandlerOf,
   postHandlerEndingWith
 } from './engine/test-support.js'
+import {
+  typedInCommercialTransporterPayload,
+  typedInPrivateTransporterPayload
+} from './sets/live-animals/journeys/linear/features/transport/test-support.js'
 import { isAnswered } from './lib/answered.js'
 import { addUtcDays, formatDateText } from './lib/validate/calendar.js'
 import {
   arrivalWindow,
   DAYS_BEFORE
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
+import { seedWithCommodityLineOfAnimals } from './sets/live-animals/test-support.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
+import { driveReturnFromUpload } from './sets/live-animals/journeys/linear/features/documents/test-support.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
@@ -45,6 +49,13 @@ import * as commercialTransporterDetails from './sets/live-animals/journeys/line
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
+import {
+  BOS_TAURUS,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW,
+  lineOf
+} from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import { lineKey } from './sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
 
 const drive = driveHandler
 
@@ -87,14 +98,18 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
+    seed: {
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    },
     payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
   },
   {
@@ -222,26 +237,17 @@ describe('controller <-> model commit contract', () => {
   it('Should commit commodity lines via the search (batch create) handler it declares', async () => {
     expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
     const result = await drive(postHandlerOf(commoditiesSearch), {
-      payload: { species: ['Cow|1148346', 'Cat|923501'] }
+      flowOnly: {
+        commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
+      },
+      payload: { species: [BOS_TAURUS_ROW, FELIS_CATUS_ROW].map(lineKey) }
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(commoditiesSearch.meta.collects))
     )
     expect(result.after.commodityLines).toEqual([
-      {
-        commoditySelection: 'Cow',
-        speciesSelection: '1148346',
-        commodityType: '16',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      },
-      {
-        commoditySelection: 'Cat',
-        speciesSelection: '923501',
-        commodityType: '2',
-        numberOfPackages: '',
-        numberOfAnimalsQuantity: ''
-      }
+      lineOf(BOS_TAURUS_ROW, { commodityType: '16' }),
+      lineOf(FELIS_CATUS_ROW, { commodityType: '2' })
     ])
   })
 
@@ -250,48 +256,41 @@ describe('controller <-> model commit contract', () => {
     const result = await drive(postHandlerOf(consignmentDetails), {
       seed: {
         commodityLines: [
-          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+          {
+            commodityCode: BOS_TAURUS_ROW.commodityCode,
+            speciesLatinName: BOS_TAURUS
+          }
         ]
       },
       payload: { 'numberOfAnimalsQuantity-0': '25', 'numberOfPackages-0': '5' }
     })
     expect(committedIds(result)).toEqual([])
     expect(result.after.commodityLines[0]).toEqual({
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
+      commodityCode: BOS_TAURUS_ROW.commodityCode,
+      speciesLatinName: BOS_TAURUS,
       numberOfAnimalsQuantity: 25,
       numberOfPackages: '5'
     })
   })
 
-  it('Should commit documents via its own add action on the single-page loop', async () => {
+  it('Should commit documents when the browser returns from the upload service', async () => {
     expect(documents.meta.collects).toEqual(['documents'])
-    const result = await drive(postHandlerOf(documents), {
-      payload: {
-        action: 'add',
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentDateOfIssue: '12/12/2025',
-        file: {
-          filename: 'itahc-certificate.pdf',
-          headers: { 'content-type': 'application/pdf' },
-          payload: Buffer.from('pdf-bytes')
-        }
-      }
-    })
+
+    const result = await driveReturnFromUpload()
+
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documents.meta.collects))
     )
   })
 
-  it('Should append an animal identifier unit at depth-2 via the identification surface, writing only the commodity-gated fields', async () => {
+  it('Should append an animal identifier unit at depth-2 via the identification surface for a two-animal line, writing only the commodity-gated fields', async () => {
     expect(animalIdentification.meta.collects).toEqual([])
     const post = postHandlerEndingWith(
       animalIdentification,
       'commodities/identification'
     )
     const result = await drive(post, {
-      seed: { commodityLines: [{ commoditySelection: 'Cat' }] },
+      seed: seedWithCommodityLineOfAnimals(2),
       payload: {
         action: 'add:0',
         'animalIdentifierMicrochip-0': '900123456789012',
@@ -300,9 +299,9 @@ describe('controller <-> model commit contract', () => {
         'nameOrOrganisationName-0': 'Pet Owner',
         'addressLine1-0': '1 Farm Lane',
         'townOrCity-0': 'Skipton',
-        'postalOrZipCode-0': 'BD23 1UD',
-        'telephoneNumber-0': '+44 1756 555 0192',
-        'emailAddress-0': 'owner@example.co.uk'
+        'postcode-0': 'BD23 1UD',
+        'phone-0': '+44 1756 555 0192',
+        'email-0': 'owner@example.co.uk'
       }
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]
@@ -428,25 +427,11 @@ describe('transporter commit contract — the list and its add spokes', () => {
     })
     expect(committedIds(register)).toEqual(['commercialTransporter'])
 
-    // The commercial arm of the add route types a transporter that is on no
-    // register, so it carries its own approval number and the Northern Ireland
-    // country the page fixes.
     const typedInCommercial = await drive(
       postHandlerOf(commercialTransporterDetails),
       {
         seed: { transporterType: 'Commercial' },
-        payload: {
-          approvalNumber: 'UK/BELF/T2/00104115',
-          nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
-          addressLine1: '4 Quay Road',
-          addressLine2: '',
-          townOrCity: 'Belfast',
-          county: 'County Antrim',
-          postalOrZipCode: 'BT1 3LG',
-          country: 'Northern Ireland',
-          emailAddress: 'movements@lough-neagh.example.com',
-          telephoneNumber: '+44 28 9000 0111'
-        }
+        payload: typedInCommercialTransporterPayload
       }
     )
     expect(committedIds(typedInCommercial)).toEqual(['commercialTransporter'])
@@ -459,17 +444,7 @@ describe('transporter commit contract — the list and its add spokes', () => {
 
     const typedIn = await drive(postHandlerOf(privateTransporterDetails), {
       seed: { transporterType: 'Private' },
-      payload: {
-        nameOrOrganisationName: 'Jean Dupont',
-        addressLine1: '12 Rue des Fermes',
-        addressLine2: '',
-        townOrCity: 'Amiens',
-        county: '',
-        postalOrZipCode: '80000',
-        country: 'France',
-        telephoneNumber: '+33 3 22 55 01 44',
-        emailAddress: 'jean.dupont@example.fr'
-      }
+      payload: typedInPrivateTransporterPayload
     })
     expect(committedIds(typedIn)).toEqual(['privateTransporter'])
   })

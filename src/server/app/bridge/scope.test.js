@@ -5,11 +5,6 @@ import { rawInScope } from './scope.js'
 import { configureReadyForCheckYourAnswers, makeScope } from '../engine/read.js'
 import { evaluateAnswers } from './evaluation.js'
 
-// The scope projection, pinned against the manifest: each gate scopes its
-// obligation in/out as the manifest declares, positional keys project under
-// multi-line/multi-unit answers, and makeScope returns the scope object the
-// controllers consume.
-
 const happyPath = JSON.parse(
   readFileSync(
     new URL(
@@ -28,11 +23,11 @@ const resolveRegion = (answers) => ({
   ...answers
 })
 
-const FIRST_LINE_COMMODITY_SELECTION = 'commodityLines[0].commoditySelection'
+const FIRST_LINE_COMMODITY_CODE = 'commodityLines[0].commodityCode'
 
-const line = (commodity, units) => ({
-  commoditySelection: commodity,
-  speciesSelection: '1148346',
+const line = (commodityCode, speciesLatinName, units) => ({
+  commodityCode,
+  speciesLatinName,
   numberOfAnimalsQuantity: String(units.length),
   animalIdentifiers: units
 })
@@ -51,7 +46,6 @@ describe('scope bridge — per-gate scoping', () => {
         regionOfOriginCode: 'FR-75'
       }).has('regionOfOriginCode')
     ).toBe(true)
-    // Unanswered requirement — still in scope, optional.
     expect(makeScope({ countryOfOrigin: 'FR' }).has('regionOfOriginCode')).toBe(
       true
     )
@@ -100,30 +94,24 @@ describe('scope bridge — per-gate scoping', () => {
     const scope = makeScope(
       resolveRegion({
         commodityLines: [
-          line('Cow', [
+          line('0102', 'Bos taurus', [
             { animalIdentifierEarTag: 'UK111' },
             { animalIdentifierEarTag: 'UK222' }
           ]),
-          line('Horse', [{ horseName: 'Dobbin' }])
+          line('0101', 'Equus cabalus', [{ horseName: 'Dobbin' }])
         ]
       })
     )
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
-    expect(scope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
+    expect(scope.has('commodityLines[1].commodityCode')).toBe(true)
   })
 
   it('Should keep the group node in scope for an empty required collection', () => {
     const scope = makeScope(resolveRegion({ commodityLines: [] }))
     expect(scope.has('commodityLines')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(false)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(false)
   })
 })
-
-// ---------------------------------------------------------------------------
-// The flow shim — the obligations the evaluator does not model, layered onto
-// the FULL scope so their owning pages stay reachable; the RAW projection
-// excludes them.
-// ---------------------------------------------------------------------------
 
 describe('scope bridge — flow-only obligations layered on the full scope', () => {
   it('Should add declaration to the full scope, not the raw projection', () => {
@@ -146,12 +134,8 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
   })
 })
 
-// ---------------------------------------------------------------------------
-// Shape parity — makeScope returns the scope object the controllers consume.
-// ---------------------------------------------------------------------------
-
-describe('scope bridge — makeScope shape parity', () => {
-  it('Should expose the same members with the same types', () => {
+describe('scope bridge — makeScope result', () => {
+  it('Should return inScope as a Set, has and answered as functions and readyForCheckYourAnswers as a boolean', () => {
     const scope = makeScope(happyPath)
     expect(scope.inScope).toBeInstanceOf(Set)
     expect(typeof scope.has).toBe('function')
@@ -162,14 +146,14 @@ describe('scope bridge — makeScope shape parity', () => {
   it('Should read the projected inScope set via has(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.has('countryOfOrigin')).toBe(true)
-    expect(scope.has(FIRST_LINE_COMMODITY_SELECTION)).toBe(true)
+    expect(scope.has(FIRST_LINE_COMMODITY_CODE)).toBe(true)
     expect(scope.has('nonExistent')).toBe(false)
   })
 
   it('Should read whether an obligation instance is answered via answered(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.answered('countryOfOrigin')).toBe(true)
-    expect(scope.answered('commoditySelection')).toBe(true)
+    expect(scope.answered('commodityCode')).toBe(true)
     expect(scope.answered('portOfEntry')).toBe(true)
   })
 })

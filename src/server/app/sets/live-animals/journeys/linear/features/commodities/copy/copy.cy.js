@@ -1,21 +1,17 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 
-// Welsh pluralisation differs from English; this machine draft uses the
-// simple numeric style ('N cofnod dynodwr') rather than risking wrong
-// mutations. A translator should review every function leaf.
 const plural = (count, noun) => `${count} ${noun}`
 
-// The visually-hidden head of every table's action column.
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
     inset:
-      'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd. Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.',
+      'Rhaid i chi gyflwyno hysbysiad ar wahân ar gyfer pob ITAHC unigol. Rhaid i chi hefyd gyflwyno hysbysiad ar gyfer nwyddau nad oes angen ITAHC arnynt.',
     searchLabel: 'Chwilio am nwydd',
     searchHint:
-      'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
+      'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
     selected: {
@@ -29,21 +25,25 @@ export const copy = {
       describes:
         'Mae cod nwyddau yn disgrifio cynnyrch penodol wrth fewnforio neu allforio nwyddau.',
       lookupPrefix: 'Gallwch chwilio am godau nwyddau gan ddefnyddio’r',
-      lookupLink: 'teclyn Tariff Masnach (yn agor mewn tab newydd)',
+      lookupLink: 'teclyn Tariff Masnach',
+      lookupNewTab: '(yn agor mewn tab newydd)',
       lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Dewiswch nwydd'
     }
   },
+  selectedCommodities: {
+    caption: 'Nwyddau a ddewiswyd',
+    commodityCode: 'Cod nwyddau',
+    species: 'Rhywogaeth',
+    numberOfAnimals: 'Nifer yr anifeiliaid',
+    actionsHidden: ACTIONS_HIDDEN
+  },
   consignmentDetails: {
     title: 'Manylion y nwyddau',
     addAnother: 'Ychwanegu nwydd arall',
     table: {
-      caption: 'Nwyddau a ddewiswyd',
-      commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
-      actionsHidden: ACTIONS_HIDDEN,
       remove: 'Tynnu'
     },
     animals: {
@@ -68,11 +68,6 @@ export const copy = {
     addAnotherCommodity: 'Ychwanegu nwydd arall',
     changeAnimalCount: 'Newid nifer yr anifeiliaid',
     summary: {
-      caption: 'Nwyddau a ddewiswyd',
-      commodityCode: 'Cod nwyddau',
-      commonName: 'Enw cyffredin',
-      numberOfAnimals: 'Nifer yr anifeiliaid',
-      actionsHidden: ACTIONS_HIDDEN,
       change: 'Newid'
     },
     identifierLabels: {
@@ -87,32 +82,10 @@ export const copy = {
       permanentAddressColumn: 'Cyfeiriad parhaol',
       actionsHidden: ACTIONS_HIDDEN
     },
-    typeFields: {
-      animalIdentifierMicrochip: {
-        label: 'Rhif microsglodyn',
-        hint: 'Er enghraifft, 900123456789012'
-      },
-      animalIdentifierPassport: {
-        label: 'Pasbort',
-        hint: 'Er enghraifft, UK123456789'
-      },
-      animalIdentifierTattoo: {
-        label: 'Tatŵ',
-        hint: 'Er enghraifft, AB1234'
-      },
-      animalIdentifierEarTag: {
-        label: 'Tag clust',
-        hint: 'Er enghraifft, UK123456789012'
-      },
-      horseName: { label: 'Enw’r ceffyl' }
-    },
-    counterNoCap: (species) => `Rhowch fanylion ar gyfer ${species}`,
     counter: (species, next, cap) =>
       `Rhowch fanylion ar gyfer ${species} ${next} o ${cap}`,
     overCount: (cap, species, entered, overBy) =>
       `Mae’r llinell nwyddau hon yn rhestru ${cap} anifail ${species} ond rydych wedi nodi manylion ar gyfer ${entered}. Tynnwch ${overBy} i barhau.`,
-    allEntered: (cap, species) =>
-      `Rydych wedi nodi manylion ar gyfer pob un o’r ${cap} anifail ${species}. Tynnwch gofnod os oes angen i chi ei ddisodli.`,
     animalRow: (number) => `Anifail ${number}`,
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Tynnu',
@@ -134,12 +107,12 @@ export const copy = {
       addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
       townOrCity: 'Tref neu ddinas',
       county: 'Sir (dewisol)',
-      postalOrZipCode: 'Cod post neu god zip',
-      telephoneNumber: 'Rhif ffôn',
-      emailAddress: 'Cyfeiriad e-bost'
+      postcode: 'Cod post neu god zip',
+      phone: 'Rhif ffôn',
+      email: 'Cyfeiriad e-bost'
     },
     addressHints: {
-      telephoneNumber: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
+      phone: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
     },
     errors: {
       identifierMax: {
@@ -154,9 +127,9 @@ export const copy = {
         nameOrOrganisationName: 'Rhowch enw neu enw sefydliad',
         addressLine1: 'Rhowch linell gyfeiriad 1',
         townOrCity: 'Rhowch dref neu ddinas',
-        postalOrZipCode: 'Rhowch god post neu god zip',
-        telephoneNumber: 'Rhowch rif ffôn',
-        emailAddress: 'Rhowch gyfeiriad e-bost'
+        postcode: 'Rhowch god post neu god zip',
+        phone: 'Rhowch rif ffôn',
+        email: 'Rhowch gyfeiriad e-bost'
       },
       addressFormat: {
         nameOrOrganisationName:
@@ -165,10 +138,9 @@ export const copy = {
         addressLine2: 'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
         townOrCity: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
         county: 'Rhaid i’r sir fod yn 100 nod neu lai',
-        postalOrZipCode:
-          'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
-        telephoneNumber: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
-        emailAddress: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
+        postcode: 'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
+        phone: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
+        email: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
       },
       atLeastOneIdentifier: 'Rhowch o leiaf un dynodwr ar gyfer yr anifail hwn',
       capReached: (cap) =>

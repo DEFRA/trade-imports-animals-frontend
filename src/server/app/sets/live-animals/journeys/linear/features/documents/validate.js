@@ -9,7 +9,6 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// Full catalogue — every type the service lists is valid (all are offered since EUDPA-310).
 const isStaleType = (validTypes, doc) =>
   !validTypes.has(doc.accompanyingDocumentType)
 

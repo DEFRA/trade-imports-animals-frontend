@@ -1,48 +1,44 @@
 import { expect, test } from '@playwright/test'
 import {
-  answerCountryOfOrigin,
+  BISON_BISON,
+  BOS_TAURUS,
+  FELIS_CATUS,
+  answerOriginEntry,
+  saveAndContinue,
+  expectNoSeriousOrCriticalViolations,
+  expectThreeSaveControls,
+  openCommoditySearch,
   searchCommodities,
   selectSpecies,
+  selectedSummary,
   signIn,
-  startNotification
+  startNotificationAtOrigin
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import {
+  CATTLE_CODE,
+  OTHER_LIVE_MAMMALS_CODE
+} from '../../../../../services/commodities/rules.js'
 
-const BISON_BISON = 'Bison bison'
-const BOS_TAURUS = 'Bos taurus'
-const FELIS_CATUS = 'Felis catus'
-// Every option is offered as its common name with the scientific name in
-// brackets, so the trader who does not read Latin can tell the tick boxes apart.
-const BISON_BISON_LABEL = 'American bison (Bison bison)'
-const BOS_SPP_LABEL = 'Cattle (Bos spp.)'
-const BOS_TAURUS_LABEL = 'Domestic cattle (Bos taurus)'
-const FELIS_CATUS_LABEL = 'Cat (Felis catus)'
-const CANIS_LUPUS_LABEL = 'Dog (Canis lupus familiaris)'
-const COW_LEGEND = 'Cow (0102)'
-const SAVE_AND_CONTINUE = 'Save and continue'
-const BACK_LINK = '.govuk-back-link'
+const SEARCH_BOX_DESCRIPTION_WITH_ERROR = `${copy.search.searchHint} Error: ${copy.search.errors.selectCommodity}`
 
-const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
-const canonicalSelectionLabels = [
-  BISON_BISON_LABEL,
-  BOS_TAURUS_LABEL,
-  FELIS_CATUS_LABEL
+const canonicalSelectionOrder = [
+  BISON_BISON.speciesLatinName,
+  BOS_TAURUS.speciesLatinName,
+  FELIS_CATUS.speciesLatinName
 ]
 
-const openSelection = async (page) => {
-  await startNotification(page)
-  await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await expect(
-    page.getByRole('heading', { name: copy.search.title })
-  ).toBeVisible()
-}
+const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
 
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.getByRole('alert').getByRole('link', { name: message })
 
-const selectionPanel = (page) => page.locator('#commodity-selection')
+const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
+
+const expectSelectedHeading = (page, count) =>
+  expect(selectedSummary(page)).toContainText(
+    copy.search.selected.heading(count)
+  )
 
 const reopenSelection = async (page) => {
   await page.getByRole('link', { name: 'What are you importing?' }).click()
@@ -51,11 +47,13 @@ const reopenSelection = async (page) => {
   ).toBeVisible()
 }
 
+const signInAndOpenSelection = async ({ page }) => {
+  await signIn(page)
+  await openCommoditySearch(page)
+}
+
 test.describe('commodity search', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await openSelection(page)
-  })
+  test.beforeEach(signInAndOpenSelection)
 
   test('offers a search box and lists nothing until it is used', async ({
     page
@@ -64,7 +62,7 @@ test.describe('commodity search', () => {
     await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
     await expect(page.getByText(copy.search.searchHint)).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(selectedSummary(page)).toHaveCount(0)
     await expect(
       page.getByText(copy.search.help.summary, { exact: true })
     ).toBeVisible()
@@ -78,9 +76,11 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.help.describes)).toBeVisible()
     await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
     const tradeTariff = page.getByRole('link', {
-      name: copy.search.help.lookupLink
+      name: `${copy.search.help.lookupLink} ${copy.search.help.lookupNewTab}`,
+      exact: true
     })
     await expect(tradeTariff).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupNewTab)).toBeVisible()
     await expect(tradeTariff).toHaveAttribute(
       'href',
       copy.search.help.lookupHref
@@ -97,52 +97,76 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.noResults)).toHaveCount(0)
   })
 
-  test('groups the matching species under their commodity heading', async ({
+  test('groups the matching species under their commodity code', async ({
     page
   }) => {
-    await searchCommodities(page, 'Bos')
-    const group = page.getByRole('group', { name: COW_LEGEND })
+    await searchCommodities(page, 'buffalo')
+    const group = page.getByRole('group', { name: CATTLE_CODE })
     await expect(group).toBeVisible()
-    await expect(group.getByRole('checkbox')).toHaveCount(2)
+    await expect(group.getByRole('checkbox')).toHaveCount(3)
     await expect(
-      group.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
+      group.getByRole('checkbox', { name: 'Bubalus bubalis', exact: true })
     ).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(2)
+    await expect(page.getByRole('checkbox')).toHaveCount(3)
   })
 
-  test('offers each species as its common name with the scientific name after it', async ({
-    page
-  }) => {
-    await searchCommodities(page, 'Bos')
-    await expect(page.locator('.govuk-checkboxes__label')).toHaveText([
-      BOS_SPP_LABEL,
-      BOS_TAURUS_LABEL
-    ])
+  test('offers each species by its scientific name', async ({ page }) => {
+    await searchCommodities(page, 'buffalo')
+    const scientificNames = ['Bubalus', 'Bubalus bubalis', 'Syncerus']
+    const checkboxes = page.getByRole('checkbox')
+    await expect(checkboxes).toHaveCount(scientificNames.length)
+    for (const [index, name] of scientificNames.entries()) {
+      await expect(checkboxes.nth(index)).toHaveAccessibleName(name)
+    }
   })
 
   test('finds a species by its common name', async ({ page }) => {
-    await searchCommodities(page, 'cattle')
-    const group = page.getByRole('group', { name: COW_LEGEND })
+    await searchCommodities(page, 'ferret')
+    const group = page.getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
     await expect(
-      group.getByRole('checkbox', { name: BOS_SPP_LABEL, exact: true })
+      group.getByRole('checkbox', {
+        name: 'Mustela putorius furo',
+        exact: true
+      })
     ).toBeVisible()
-    await expect(
-      group.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
-    ).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(2)
+    await expect(page.getByRole('checkbox')).toHaveCount(1)
   })
 
-  test('renders a separate group per matching commodity', async ({ page }) => {
-    await searchCommodities(page, '0106')
-    const cats = page.getByRole('group', { name: 'Cat (01061900)' })
-    const dogs = page.getByRole('group', { name: 'Dog (01061900)' })
-    await expect(cats).toBeVisible()
-    await expect(dogs).toBeVisible()
+  test('finds cattle by their common name', async ({ page }) => {
+    await searchCommodities(page, 'cattle')
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    for (const name of [
+      'Bos',
+      BOS_TAURUS.speciesLatinName,
+      'Bibos spp.',
+      'Novibos spp.'
+    ]) {
+      await expect(
+        cattle.getByRole('checkbox', { name, exact: true })
+      ).toBeVisible()
+    }
+    await expect(cattle.getByRole('checkbox')).toHaveCount(5)
+  })
+
+  test('renders a separate group per matching commodity code', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'taurus')
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    const otherMammals = page.getByRole('group', {
+      name: OTHER_LIVE_MAMMALS_CODE
+    })
     await expect(
-      cats.getByRole('checkbox', { name: FELIS_CATUS_LABEL, exact: true })
+      cattle.getByRole('checkbox', {
+        name: BOS_TAURUS.speciesLatinName,
+        exact: true
+      })
     ).toBeVisible()
     await expect(
-      dogs.getByRole('checkbox', { name: CANIS_LUPUS_LABEL, exact: true })
+      otherMammals.getByRole('checkbox', {
+        name: BOS_TAURUS.speciesLatinName,
+        exact: true
+      })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
@@ -152,46 +176,72 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.noResults)).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
   })
+})
+
+test.describe('commodity search — choosing and saving species', () => {
+  test.beforeEach(signInAndOpenSelection)
 
   test('counts and lists what has been chosen, and clears it on request', async ({
     page
   }) => {
     await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
-    await searchCommodities(page, 'Salmo')
-    const panel = selectionPanel(page)
+    await searchCommodities(page, 'Struthio')
 
-    await expect(panel).toContainText(copy.search.selected.heading(2))
-    await expect(panel).toContainText(BOS_TAURUS_LABEL)
-    await expect(panel).toContainText(FELIS_CATUS_LABEL)
+    await expectSelectedHeading(page, 2)
+    await expect(selectedSummary(page)).toContainText(
+      `${CATTLE_CODE}: ${BOS_TAURUS.speciesLatinName}`
+    )
+    await expect(selectedSummary(page)).toContainText(
+      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.speciesLatinName}`
+    )
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
       .click()
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(selectedSummary(page)).toHaveCount(0)
   })
 
   test('back link returns to the overview', async ({ page }) => {
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('validation: no commodity links to and focuses the search box', async ({
     page
   }) => {
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
 
     const link = errorLink(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
+    await expect(searchBox(page)).toHaveAccessibleDescription(
+      SEARCH_BOX_DESCRIPTION_WITH_ERROR
+    )
     await link.click()
-    await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
-    await expect(selectionPanel(page)).toHaveCount(0)
+    await expect(searchBox(page)).toBeFocused()
+    await expect(selectedSummary(page)).toHaveCount(0)
+  })
+
+  test('validation: with results listed, the error stays on the search box', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    await saveAndContinue(page).click()
+
+    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+      copy.search.errors.selectCommodity
+    ])
+    await expect(searchBox(page)).toHaveAccessibleDescription(
+      SEARCH_BOX_DESCRIPTION_WITH_ERROR
+    )
+    await errorLink(page, copy.search.errors.selectCommodity).click()
+    await expect(searchBox(page)).toBeFocused()
   })
 
   test('saves pairs found under different queries, in canonical order', async ({
     page
   }) => {
     await selectSpecies(page, [FELIS_CATUS, BOS_TAURUS, BISON_BISON])
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page
@@ -205,33 +255,110 @@ test.describe('commodity search', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await reopenSelection(page)
-    const panel = selectionPanel(page)
-    await expect(panel).toContainText(copy.search.selected.heading(3))
-    for (const label of canonicalSelectionLabels) {
-      await expect(panel).toContainText(label)
-    }
-    await expect(panel).not.toContainText('Canis lupus familiaris')
+    await expectSelectedHeading(page, 3)
+    await expect(selectedSummary(page).getByRole('listitem')).toHaveText([
+      `${CATTLE_CODE}: ${BISON_BISON.speciesLatinName}, ${BOS_TAURUS.speciesLatinName}`,
+      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.speciesLatinName}`
+    ])
   })
 
   test('ticks a result that is already on the notification', async ({
     page
   }) => {
     await selectSpecies(page, [BOS_TAURUS])
-    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await saveAndContinue(page).click()
     await reopenSelection(page)
-    await searchCommodities(page, 'Bos')
+    await searchCommodities(page, 'taurus')
     await expect(
-      page.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
+      page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox', {
+        name: BOS_TAURUS.speciesLatinName,
+        exact: true
+      })
     ).toBeChecked()
   })
 
+  test('leaves the same species under another code unticked', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS])
+    await saveAndContinue(page).click()
+    await reopenSelection(page)
+    await searchCommodities(page, 'taurus')
+    await expect(
+      page
+        .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
+        .getByRole('checkbox', {
+          name: BOS_TAURUS.speciesLatinName,
+          exact: true
+        })
+    ).not.toBeChecked()
+  })
+
   test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+
     await selectSpecies(page, [BOS_TAURUS])
     await searchCommodities(page, '0106')
-    // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
-    await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with results'
+    )
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await saveAndContinue(page).click()
+    await expect(
+      errorLink(page, copy.search.errors.selectCommodity)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with error'
+    )
+  })
+})
+
+test.describe('commodity search by code', () => {
+  test.beforeEach(signInAndOpenSelection)
+
+  test('shows Bison bison among 15 species under a searched 0102 code', async ({
+    page
+  }) => {
+    await searchCommodities(page, CATTLE_CODE)
+    const cattle = page.getByRole('group', { name: CATTLE_CODE })
+    await expect(
+      cattle.getByRole('checkbox', {
+        name: BISON_BISON.speciesLatinName,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(cattle.getByRole('checkbox')).toHaveCount(15)
+  })
+
+  test('lists no more than a hundred species for one search', async ({
+    page
+  }) => {
+    await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
+    await expect(page.getByRole('checkbox')).toHaveCount(100)
+  })
+})
+
+test.describe('commodity search reached through the opening sequence', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+    await answerOriginEntry(page)
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  test('offers Save and continue, then Save and return to overview, then Cancel and return to overview', async ({
+    page
+  }) => {
+    await expectThreeSaveControls(page)
   })
 })

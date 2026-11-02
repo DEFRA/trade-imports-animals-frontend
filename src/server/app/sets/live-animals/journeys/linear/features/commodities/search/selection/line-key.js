@@ -1,4 +1,9 @@
-/** One commodity line = one commodity plus ONE species. The pair is
- * the line's identity for batch reconcile. */
+const SEPARATOR = '|'
+
 export const lineKey = (line) =>
-  `${line.commoditySelection}|${line.speciesSelection}`
+  `${line.commodityCode}${SEPARATOR}${line.speciesLatinName}`
+
+export const codeAndLatinNameOf = (key) => {
+  const separator = key.indexOf(SEPARATOR)
+  return [key.slice(0, separator), key.slice(separator + 1)]
+}

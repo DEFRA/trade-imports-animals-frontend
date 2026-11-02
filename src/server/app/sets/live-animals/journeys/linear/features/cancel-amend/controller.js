@@ -25,7 +25,7 @@ const nonAmendTarget = (journey) =>
     ? cyaPath(journey.journeyId)
     : dashboardPath()
 
-const render = (h, journey, recoverableError = false) =>
+const render = (h, journey, { recoverableError = false } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: cyaPath(journey.journeyId),
@@ -53,8 +53,12 @@ const post = async (request, h) => {
   }
 
   const { failure, value: restored } = await kit.recoverableSave(
+    request,
     () => cancelAmendJourney(request, h, request.params.journeyId),
-    () => render(h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    () =>
+      render(h, journey, { recoverableError: true }).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
   )
   if (failure) {
     return failure

@@ -27,6 +27,6 @@
 
     {# The commercial arm of the add route — reached from the type chooser,
        not from the hub, so it ends with the primary alone. #}
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
   </form>
 {% endblock %}

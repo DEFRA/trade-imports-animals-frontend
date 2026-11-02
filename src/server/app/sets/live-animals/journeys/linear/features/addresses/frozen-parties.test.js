@@ -1,5 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  resetModulesAndRunModeEachTest,
+  switchToRealMode
+} from '../../../../../../../common/test-helpers/run-mode.js'
 import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { partiesFromStoredAnswers, toDisplayParty } from './frozen-parties.js'
 
@@ -39,9 +43,9 @@ describe('partiesFromStoredAnswers', () => {
     expect(placeOfOrigin.address).toMatchObject({
       addressLine1: '1 Farm Lane',
       townOrCity: 'Ennis',
-      postalOrZipCode: 'V95 ABC',
-      telephoneNumber: '01228 555 0001',
-      emailAddress: 'origin@example.co.uk'
+      postcode: 'V95 ABC',
+      phone: '01228 555 0001',
+      email: 'origin@example.co.uk'
     })
     expect(placeOfOrigin.address.country).toBe(
       await addressBookCountryName('IE')
@@ -68,23 +72,14 @@ describe('toDisplayParty', () => {
 })
 
 describe('toDisplayParty — real reference data', () => {
-  const originalMode = process.env.STUB_MODE
-
-  beforeEach(() => {
-    vi.resetModules()
-  })
+  resetModulesAndRunModeEachTest()
 
   afterEach(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) {
-      delete process.env.STUB_MODE
-    } else {
-      process.env.STUB_MODE = originalMode
-    }
   })
 
   it('Should name a copy in a country outside the SPS origin block', async () => {
-    process.env.STUB_MODE = 'false'
+    switchToRealMode()
     const okResponse = (body) => ({ ok: true, json: async () => body })
     vi.stubGlobal(
       'fetch',

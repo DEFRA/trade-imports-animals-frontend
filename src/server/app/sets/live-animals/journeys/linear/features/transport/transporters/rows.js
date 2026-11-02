@@ -4,68 +4,39 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { addressSummary } from './transporter-record.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import { containsTerm } from '../../../../../../../../../client/common/helpers/search-fold.js'
+import { renderMacro } from '../../../../../../../shared/render-macro.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).transporters
 
-/** The tag colour each approval status wears.
- *
- * Colour is presentation, not copy, so it lives beside the view model the way
- * the hub's task tags and the document rows' scan tags do. Design release 1
- * tags an approved transporter green and a newly added one pink, which
- * govuk-frontend 6 spells `govuk-tag--magenta`; the older `govuk-tag--pink`
- * renders the same colours but is deprecated for it. */
 const STATUS_CLASSES = {
   [APPROVED]: 'govuk-tag--green',
   [NEW]: 'govuk-tag--magenta'
 }
 
-/** The fold both sides of a search go through.
- *
- * Lower case and stripped of accents, so a trader types "Garcia" for "García"
- * and an approval number in whichever case they happen to have it. The
- * haystack and the term must fold identically or nothing matches, which is why
- * it is one function rather than two copies. */
-const foldForSearch = (text) =>
-  text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
+const searchTextOf = (record) =>
+  [
+    record.name,
+    addressSummary(record.address),
+    record.approvalNumber,
+    copy.types[record.type],
+    copy.statuses[record.status]
+  ]
+    .filter(Boolean)
+    .join(' ')
 
-/** The one string a search term is matched against.
- *
- * Design release 1 searches over the three facts its list shows — the name,
- * the address and the approval number — joined so a term spanning two of them
- * still finds its row. A private transporter has no approval number, so that
- * part of its haystack is empty. */
-const searchableText = (record) =>
-  foldForSearch(
-    [
-      record.name,
-      addressSummary(record.address),
-      record.approvalNumber ?? ''
-    ].join(' ')
-  )
+export const shownCountMessages = (rowCount) =>
+  Array.from({ length: rowCount }, (_, index) => copy.shownCount(index + 1))
 
 /** The transporters a search term leaves on the list.
  *
- * An empty term is not a search: the whole list stands, which is what a trader
- * arriving at the page sees. */
-export const matchingTransporters = (records, query = '') => {
-  const term = foldForSearch(query.trim())
-  return term
-    ? records.filter((record) => searchableText(record).includes(term))
-    : records
-}
+ * An empty term leaves the whole list. */
+export const matchingTransporters = (records, query = '') =>
+  records.filter((record) => containsTerm(searchTextOf(record), query))
 
-/** One table row per transporter — the facts Design release 1 aligns into
- * columns, plus the radio that picks the row.
- *
- * `idPrefix` gives the FIRST radio the field's own id, so the error summary
- * link lands on it; the rest are numbered from two, as the address picker's
- * results table does it. A private transporter has no approval number, so that
- * column is blank on its row rather than carrying a placeholder. */
+/** One table row per transporter, with the radio that picks it. */
 export const transporterRows = (records, { selectedId }) =>
   records.map((record, index) => ({
     id: record.id,
@@ -78,5 +49,23 @@ export const transporterRows = (records, { selectedId }) =>
       text: copy.statuses[record.status],
       classes: STATUS_CLASSES[record.status]
     },
+    searchText: searchTextOf(record),
     checked: record.id === selectedId
   }))
+
+const CELLS_TEMPLATE =
+  'live-animals/journeys/linear/features/transport/transporters/_cells.njk'
+
+/** One table row of cells per transporter row, searchable by its search text. */
+export const transporterTableRows = (rows) =>
+  rows.map((row) => [
+    {
+      html: renderMacro(CELLS_TEMPLATE, 'transporterSelectCell', row, copy),
+      attributes: { 'data-search-text': row.searchText }
+    },
+    { text: row.name },
+    { text: row.addressText },
+    { text: row.approvalNumber },
+    { text: row.type },
+    { html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row) }
+  ])

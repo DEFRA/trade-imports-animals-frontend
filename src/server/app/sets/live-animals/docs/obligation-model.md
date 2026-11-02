@@ -24,6 +24,14 @@ The declarations use helper functions from the platform model. They contain stab
 identity, scope, mandate and cardinality rules, but no display copy or journey
 knowledge.
 
+## Commodity rules in the manifest
+
+The CPH question is asked unless every commodity line's code is exempt; a line
+with no code yet is ignored rather than counted as outside the exemptions
+(`anyNotInUnionOf`). The animal identifiers floor asks for a record per commodity
+line only on a consignment carrying more than one identified commodity line
+(`moreThanOne` over the identified-commodity allowlist).
+
 ## Registration
 
 This set's gateway,
@@ -41,7 +49,13 @@ owned once and that grouped binding paths match each `within` chain.
 
 [`src/server/app/sets/live-animals/obligations/coverage.test.js`](../obligations/coverage.test.js)
 checks manifest identity, dependency and group invariants.
-[`src/server/app/sets/live-animals/obligations/whitelists.test.js`](../obligations/whitelists.test.js)
-checks commodity allow-lists against the set-owned reference service.
+[`src/server/app/sets/live-animals/obligations/allowlists.test.js`](../obligations/allowlists.test.js)
+checks commodity allow-lists against the set-owned reference service. The test
+iterates every allow-list and gated obligation pair, checks that a control value on
+no list leaves the obligation out of scope, and pins each allow-list to an expected
+list, so a single-file edit to a service list fails the drift check. To change an
+allow-list on purpose, edit it in
+[`rules.js`](../services/commodities/rules.js) and update the matching expected list
+in the test in the same change.
 
 The generic model contract is in the [platform obligation-model guide](../../../docs/obligation-model.md).

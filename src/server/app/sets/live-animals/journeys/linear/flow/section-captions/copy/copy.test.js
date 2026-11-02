@@ -14,11 +14,12 @@ describe('section-caption copy modules', () => {
     }
   })
 
-  it('Should name the sections Design release 1 names', () => {
+  it('Should name every journey section', () => {
     expect(en.sections).toEqual({
       dashboard: 'Dashboard',
       aboutTheConsignment: 'About the consignment',
-      commodityDetails: 'Commodity details',
+      descriptionOfTheGoods: 'Description of the goods',
+      additionalDetails: 'Commodity details',
       consignmentParties: 'Consignment parties',
       movement: 'Movement',
       transportAndArrival: 'Transport and arrival',

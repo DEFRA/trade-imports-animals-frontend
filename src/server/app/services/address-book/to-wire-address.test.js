@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { toWireAddress } from './to-wire-address.js'
 
 describe('#toWireAddress', () => {
-  it('Should translate the journey address names onto the wire names', () => {
+  it('Should carry the journey address onto the backend wire shape', () => {
     expect(
       toWireAddress({
         addressLine1: '1 Farm Lane',
         addressLine2: 'Upper Field',
         townOrCity: 'Rouen',
         county: 'Normandy',
-        postalOrZipCode: '76000',
+        postcode: '76000',
         countryCode: 'FR'
       })
     ).toEqual({

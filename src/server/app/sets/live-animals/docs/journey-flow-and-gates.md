@@ -15,8 +15,12 @@ The `addresses` section holds the CPH number page and then Roles and addresses, 
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
 
-`FLOW_ONLY_KEYS` contains `declaration`. That value uses the session's flow-only
-store rather than canonical obligation fulfilment.
+`FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`. Both are kept in
+the session's flow-only store rather than canonical obligation fulfilment, and are
+never sent to the backend.
+
+The transport section lists one transporter step, the transporter list. The pages
+that add a transporter are detours off that list and belong to no section.
 
 ## Task rows
 
@@ -60,7 +64,7 @@ renders an unfinished notification and names what is outstanding. The review
 section's authored gate on `readyForCheckYourAnswers` still stands between that
 page and submitting: the declaration refuses on the same verdict.
 
-The declaration is reachable only from the review (EUDPA-676). The review's
+The declaration is reachable only from the review. The review's
 Continue posts to `/declaration` with `step=review` - the review registers no
 `POST` of its own, and `GET /declaration` redirects to the review. This is to
 ensure that the user has seen the review in its latest state before submitting
@@ -91,7 +95,7 @@ redirects to the commodity question when the notification holds no line.
 ## Opening run and entry guard
 
 [`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports
-`nextRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
+`nextRunTarget` and `previousRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
 journey's redirect policy before handlers run.
 
 The run is the whole notification, not its first leg. `RUN_STEPS` runs origin,
@@ -101,11 +105,57 @@ countries, the transporter, the uploaded documents, roles and addresses, the
 contact address and then the review page, so the primary button — "Save and
 continue" on every one of them but the review page, which ends with "Continue" —
 carries a new notification from the entry page to the review page in one pass.
-The CPH number page is not a step: it opens from its row on Roles and addresses
-and saves back to it. Roles and addresses ends the run on the hub when every
+The CPH number page is not a step: it opens from the CPH section's add link on Roles and addresses
+and saves back to it.
+What are you importing? is likewise a detour, not a step, when Commodity details or Identification details opens it:
+it saves back to the page that opened it, carrying any change context, and its Back opens that page.
+Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the run's next step or the review's change target applies.
+Roles and addresses ends the run on the hub when every
 task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
+
+Three pieces of the sequence carry reasons that are easy to lose. Fish is on none
+of the identifier allowlists, so animal identification has nothing to ask of a
+consignment of fish; the identification page's no-identifiers guard sends that
+request on to the additional details rather than to the hub, so the run carries
+on. The transporter leg is one step, the list: the add spokes behind it are not
+steps, and each hands the run back at the list's step when it saves. A spoke that
+continued from itself would find no step and drop the trader on the hub.
+
+During the run, a step's Back link opens the previous step rather than the
+overview, and following it does not end the run: a later Save and continue goes
+on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
+may open, nearest first, and `previousRunTarget` returns the first whose gate
+passes, so a skipped step is skipped going back too. `kit.runBackLink()` falls
+back to the overview when the run is over or no named earlier step applies. A
+page that has declared, through the helper's `returnsToReview` option, that it
+returns to the review is answered with the review instead when the request
+carries change context or the notification is being amended; every other page
+is unaffected.
+
+| Step                    | Back opens                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| What are you importing? | Origin, or Commodity details or Identification details when one of them opened it     |
+| Reason for import       | What are you importing?                                                               |
+| Commodity details       | What are you importing?, not the reason between them                                  |
+| Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |
+| Transit countries       | Arrival details                                                                       |
+
+Animal identification, arrival details, the transporter, roles and addresses
+and the contact address keep their Back link on the overview. Origin goes back
+to the dashboard until something is saved, then to the overview. The
+identification condition is `identifiesAnAnimal`, the rule that also decides
+whether the identification task row applies.
+
+The documents page's Back link opens the review while the notification is
+being amended, or when the page was opened by changing the uploaded documents
+from the review; it opens the overview otherwise.
+
+The review page's Back link follows the notification's status instead. A
+submitted notification, including the one shown after an amendment is cancelled,
+goes back to the notification list; a draft's review and an amendment in
+progress go back to the overview.
 
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from
@@ -119,17 +169,6 @@ After that, saving a page returns to the hub: the save fallback
 this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
-
-A page's Back link can follow the same state.
-[`kit.runBackLink(request, previousSlug)`](../../../shared/kit.js) points Back at
-the page the run came from while the run is active, and at the hub once it is
-not. The transit countries page uses it: in the run it is reached only from the
-arrival details, and outside the run only from its task on the hub. The same
-page sends a load or a submit to the hub when the means of transport leaves
-`transitedCountries` out of scope. The
-[consignment-details page](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js)
-applies the same load-time rule when it has no line, but sends the trader to the
-commodity question.
 
 The opening run begins when the notification is created — the dashboard's
 create POST in
@@ -156,7 +195,7 @@ from there. Only a notification created in this session sequences through
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), imports `sections`,
-`taskRows`, `rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS` and
+`taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`, `FLOW_ONLY_KEYS` and
 `entryGuardTarget`, then passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from
@@ -187,5 +226,21 @@ animal identification with the other consignment questions and separates arrival
 transit and adding a transporter, where the hub does not. A page left out of the
 map renders no caption; its unit test lists those pages so a new page cannot be
 added without a decision either way.
+
+The caption names where a page sits in the notification, not the page's own
+copy, so one string serves every page in a section. The map has one entry per
+section, listing its pages, and never a string per page.
+
+The commodity details page (the Selected commodities table and quantities) is
+filed under its own section, "Description of the goods"; the section captioned
+"Commodity details" (id additionalDetails) holds the additional details page.
+
+Some pages carry no caption on purpose:
+
+- The overview, check your answers, contact address, declaration and
+  confirmation pages open straight into their heading.
+- Delete notification and cancel amend are interruptions, not steps in a
+  section.
+- The address pickers get their caption from the addresses feature.
 
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).

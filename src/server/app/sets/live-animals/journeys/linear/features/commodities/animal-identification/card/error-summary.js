@@ -4,6 +4,9 @@ import { copy as sharedCy } from '../../../../../../../../shared/copy.cy.js'
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+export const identificationCardAnchor = (index) =>
+  `identification-card-${index}`
+
 export const summaryOf = (errors, cardErrors) => {
   const errorList = [
     ...Object.entries(errors).map(([field, text]) => ({
@@ -12,7 +15,7 @@ export const summaryOf = (errors, cardErrors) => {
     })),
     ...cardErrors.map(({ index, text }) => ({
       text,
-      href: `#identification-card-${index}`
+      href: `#${identificationCardAnchor(index)}`
     }))
   ]
   return errorList.length

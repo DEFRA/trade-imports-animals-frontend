@@ -1,14 +1,15 @@
 import { SET_ID } from '../../../set.js'
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { completeNotification } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import {
   animalIdentificationPage,
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
+import { originPage } from '../features/origin/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import {
@@ -28,8 +29,12 @@ import { declarationPage } from '../features/declaration/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
-import { nextRunTarget, RUN_STEPS } from './run.js'
+import { nextRunTarget, previousRunTarget, RUN_STEPS } from './run.js'
 import { allFlowPages } from './flow.js'
+import {
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW
+} from '../features/commodities/search/test-support.js'
 
 const JOURNEY_ID = 'journey-1'
 const next = (stepId, answers) =>
@@ -37,14 +42,10 @@ const next = (stepId, answers) =>
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
+  commodityLines: [FELIS_CATUS_ROW]
 }
 
-// A whole notification, so the tail of the run can be walked with every later
-// question already answerable and the review page open.
-const { values: completeSeed } = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
-)
+const completeSeed = completeNotification()
 
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {
@@ -154,8 +155,6 @@ describe('#nextRunTarget — the run past the arrival details', () => {
   })
 
   it('Should return null for the transporter add spokes — they are not run steps', () => {
-    // The spokes are off the run, so they carry no step of their own — they
-    // continue from the list, which is the step they hang off.
     expect(next(transporterAddPage.id, completeSeed)).toBeNull()
     expect(next(transportersSelectPage.id, completeSeed)).toBeNull()
     expect(next(privateTransporterDetailsPage.id, completeSeed)).toBeNull()
@@ -200,11 +199,78 @@ describe('#nextRunTarget — the run past the arrival details', () => {
   })
 })
 
+describe('#previousRunTarget — where Back goes during the opening run', () => {
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  const ostrichSeed = {
+    countryOfOrigin: 'FR',
+    commodityLines: [STRUTHIO_ROW]
+  }
+  const previous = (stepId, answers) =>
+    previousRunTarget(
+      stepId,
+      { scope: makeScope(answers), answers },
+      JOURNEY_ID
+    )
+
+  it('Should send the commodities page back to the origin page', () => {
+    expect(previous(commoditiesPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, originPage.slug)
+    )
+  })
+
+  it('Should send the import reason page back to the commodities page', () => {
+    expect(previous(importReasonPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, commoditiesPage.slug)
+    )
+  })
+
+  it('Should send the consignment details page back to the commodities page, not to the import reason page', () => {
+    expect(previous(consignmentDetailsPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, commoditiesPage.slug)
+    )
+  })
+
+  it('Should send the additional details page back to the animal identification page when a chosen species needs identifiers', () => {
+    expect(previous(additionalDetailsPage.id, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, animalIdentificationPage.slug)
+    )
+  })
+
+  it('Should send the additional details page back to the consignment details page when no chosen species needs identifiers', () => {
+    expect(previous(additionalDetailsPage.id, ostrichSeed)).toBe(
+      pagePath(JOURNEY_ID, consignmentDetailsPage.slug)
+    )
+  })
+
+  it('Should send the transit countries back to the port of entry page', () => {
+    expect(previous(transitCountriesPage.id, completeSeed)).toBe(
+      pagePath(JOURNEY_ID, portOfEntryPage.slug)
+    )
+  })
+
+  it('Should give no run Back to the steps whose Back link stays on the overview', () => {
+    for (const step of [
+      originPage,
+      animalIdentificationPage,
+      portOfEntryPage,
+      transportersPage,
+      documentsPage,
+      addressesPage,
+      consignmentContactSelectPage
+    ]) {
+      expect(previous(step.id, completeSeed)).toBeNull()
+    }
+  })
+
+  it('Should give no run Back to a page outside the run', () => {
+    expect(previous(dashboardPage.id, lineSeed)).toBeNull()
+  })
+})
+
 describe('the run covers the journey', () => {
-  // Pages deliberately outside the run: the dashboard sits before a
-  // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run. The CPH number page is reached only
-  // from its row on the roles and addresses page.
   const OUTSIDE_THE_RUN = [
     'dashboard',
     'cphNumber',

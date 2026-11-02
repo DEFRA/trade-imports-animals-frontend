@@ -2,7 +2,8 @@ import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { escapeHtml, notApplicableCell } from './value-text.js'
+import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
+import { notApplicableCell } from './value-text.js'
 
 const copy = copyFor({ en, cy })
 
@@ -13,7 +14,7 @@ export const addressLines = (address = {}) =>
     address.addressLine3,
     address.townOrCity,
     address.county,
-    address.postalOrZipCode
+    address.postcode
   ].filter((part) => !isBlank(part))
 
 export const partyLines = (party) => {
@@ -25,8 +26,8 @@ export const partyLines = (party) => {
     ...[
       ...addressLines(party.address),
       party.address?.country,
-      party.address?.telephoneNumber,
-      party.address?.emailAddress
+      party.address?.phone,
+      party.address?.email
     ]
       .filter((part) => !isBlank(part))
       .map(escapeHtml)

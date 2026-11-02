@@ -1,30 +1,21 @@
 import { SET_ID } from '../../../../set.js'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
+  addressBookAnswering,
+  addressBookPage,
   driveHandler,
-  postHandlerOf
+  expectNoRefusalLogged,
+  postHandlerOf,
+  resetMocksAndConfigAfterTests,
+  useStubbedJourney,
+  unavailableBackendError
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { pagePath } from '../../../../../../shared/paths.js'
-import * as state from '../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
-import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 
 import * as contact from './controller.js'
@@ -41,12 +32,7 @@ const editHrefOf = (journeyId) =>
   `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
 
 describe('GET contact — select an address from the book', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should offer no INS add link in stub mode', async () => {
     const result = await driveHandler(get)
@@ -151,13 +137,16 @@ describe('GET contact — select an address from the book', () => {
   })
 })
 
-describe('POST contact — invalid payload', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
+describe('GET contact — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
+    await expectAddedAddressBannerShownOnce(get)
   })
-  beforeEach(() => store.clear())
+})
+
+describe('POST contact — invalid payload', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should answer 400 and re-render an out-of-list contact, committing nothing', async () => {
     const result = await driveHandler(post, {
@@ -166,6 +155,7 @@ describe('POST contact — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should keep the current contact card on a 400 re-render', async () => {
@@ -208,44 +198,12 @@ describe('POST contact — invalid payload', () => {
 })
 
 describe('GET contact — INS add-address link', () => {
-  const originalMode = config.get('stubMode')
-  const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
-
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
-
-  afterAll(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set('stubMode', false)
     config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          items: [],
-          page: 1,
-          pageSize: 25,
-          totalItems: 0,
-          totalPages: 1
-        })
-      }))
-    )
+    addressBookAnswering(addressBookPage())
 
     const result = await driveHandler(get)
 
@@ -261,24 +219,12 @@ describe('GET contact — INS add-address link', () => {
 })
 
 describe('POST contact — recoverable save failure', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
-  afterEach(() => vi.restoreAllMocks())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the page when saving the selection fails', async () => {
-    vi.spyOn(state, 'commit').mockRejectedValue(
-      new BackendRequestError('save answers', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
-
     const result = await driveHandler(post, {
-      payload: { contactAddress: CONTACT.id }
+      payload: { contactAddress: CONTACT.id },
+      saveFailure: unavailableBackendError('save answers')
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -287,16 +233,10 @@ describe('POST contact — recoverable save failure', () => {
   })
 
   it('Should keep the current contact card when saving the selection fails', async () => {
-    vi.spyOn(state, 'commit').mockRejectedValue(
-      new BackendRequestError('save answers', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
-
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
-      payload: { contactAddress: CONTACT.id }
+      payload: { contactAddress: CONTACT.id },
+      saveFailure: unavailableBackendError('save answers')
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)

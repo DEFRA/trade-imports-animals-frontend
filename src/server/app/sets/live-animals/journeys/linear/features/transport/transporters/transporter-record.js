@@ -12,7 +12,7 @@ const ADDRESS_ORDER = [
   'addressLine3',
   'townOrCity',
   'county',
-  'postalOrZipCode',
+  'postcode',
   'country'
 ]
 

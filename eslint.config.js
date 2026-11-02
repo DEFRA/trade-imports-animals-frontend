@@ -1,7 +1,25 @@
+import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { includeIgnoreFile } from 'eslint/config'
 import { neostandard } from 'neostandard'
 import sonarjs from 'eslint-plugin-sonarjs'
+import { codeQuality } from './eslint-rules/code-quality.js'
+
+const SETS_DIR = join(import.meta.dirname, 'src/server/app/sets')
+const SET_NAMES = readdirSync(SETS_DIR, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+const SET_CODES = ['GBN-AG']
+const PLATFORM_LAYER = [
+  'analysis',
+  'bridge',
+  'engine',
+  'flow',
+  'lib',
+  'model',
+  'services',
+  'shared'
+].map((dir) => `src/server/app/${dir}/**/*.js`)
 
 export default [
   // neostandard 0.14 scopes its ignores to its own layers, so gitignored
@@ -49,6 +67,25 @@ export default [
       'sonarjs/single-character-alternation': 'error',
       'sonarjs/super-linear-regex': 'error',
       'sonarjs/too-many-break-or-continue-in-loop': 'error'
+    }
+  },
+  {
+    files: ['**/*.{js,cjs,mjs}'],
+    plugins: { 'code-quality': codeQuality },
+    rules: {
+      'code-quality/no-tracking-references': 'error',
+      'code-quality/no-silent-catch': 'error',
+      'code-quality/no-message-only-error-log': 'error'
+    }
+  },
+  {
+    files: PLATFORM_LAYER,
+    ignores: ['**/*.test.js', '**/test-support.js', '**/fixtures/**'],
+    rules: {
+      'code-quality/no-set-vocabulary': [
+        'error',
+        { terms: [...SET_NAMES, ...SET_CODES] }
+      ]
     }
   },
   {

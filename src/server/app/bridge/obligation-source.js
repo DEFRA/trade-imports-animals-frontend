@@ -1,7 +1,4 @@
-import {
-  obligationByName as configuredObligationByName,
-  obligations
-} from '../model/obligations/manifest.js'
+import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { isGroup } from '../model/obligations/manifest-graph.js'
 import { flowOnlyKeys } from './flow-only-keys.js'
 
@@ -16,17 +13,11 @@ export function* walkObligations() {
   }
 }
 
-export const obligationByName = configuredObligationByName
-
-// Resolve an obligation by its dotted name-path — the `within` chain of names,
-// root to leaf, joined by `.` (`commodityLines`,
-// `commodityLines.animalIdentifiers`).
-export const obligationByPath = (templatePath) =>
+export const obligationByPath = (dottedNamePath) =>
   obligations().find(
-    (obligation) => templatePathOf(obligation) === templatePath
+    (obligation) => templatePathOf(obligation) === dottedNamePath
   )
 
-// Resolve system ownership from the configured manifest, never a set-specific list.
 class SystemPopulated extends Set {
   has(name) {
     return super.has(name) || obligationByName(name)?.system === true
@@ -37,41 +28,22 @@ export const SYSTEM_POPULATED = new SystemPopulated()
 
 export const ENFORCED_AT_CONTINUE = new Set([
   'countryOfOrigin',
-  'commoditySelection'
+  'commodityCode'
 ])
 
-// Collection admission-control cap: a collection's entry count is
-// capped at the value of a sibling count field in the frame that holds it.
-// Enforcement lives on the write path (engine/evaluate/cardinality.js
-// `collectionCapAt`, appendEntryAt rejects at the cap); only
-// the declaration lives here. Keyed by collection name → sibling count field.
-export const MAX_ENTRIES_FROM = {
+export const ENTRY_CAP_FIELD_BY_COLLECTION = {
   animalIdentifiers: 'numberOfAnimalsQuantity'
 }
 
-// ---------------------------------------------------------------------------
-// Answer-key recognition — the single source of truth for which keys may
-// appear in a stored answers tree. A key outside this surface is inert to
-// the evaluator (never in scope, never wiped) yet ships raw at finalise, so
-// the engine's write paths and submitJourney reject it loudly instead.
-// ---------------------------------------------------------------------------
-
-// Flow-owned obligations the notification model does not carry, such as the
-// submit-time declaration step.
-export const flowOnlyObligations = () => flowOnlyKeys()
-
 export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(
-    flowOnlyObligations()
+    flowOnlyKeys()
       .filter(
         (key) => Object.hasOwn(answers ?? {}, key) && answers[key] !== undefined
       )
       .map((key) => [key, answers[key]])
   )
 
-// Compatibility key accepted by answer validation but excluded from canonical
-// assembly. Runtime notification projections take the reference from the
-// journey envelope instead.
 const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
 
 const topLevelKeys = () =>
@@ -79,7 +51,7 @@ const topLevelKeys = () =>
     ...obligations()
       .filter((obligation) => !obligation.within)
       .map((obligation) => obligation.name),
-    ...flowOnlyObligations(),
+    ...flowOnlyKeys(),
     ...SYSTEM_ANSWER_KEYS
   ])
 
@@ -164,7 +136,7 @@ export const assertRecognisedAnswerKeys = (answers, context) => {
     .join(', ')
   throw new Error(
     `Unrecognised answer key(s) ${detail} (${context}). Every stored key ` +
-      'must be a manifest obligation name, a flow-only key, a system key ' +
-      'or a declared auxiliary entry key — see bridge/obligation-source.js.'
+      'must be a manifest obligation name, a flow-only key or a system key — ' +
+      'see bridge/obligation-source.js.'
   )
 }

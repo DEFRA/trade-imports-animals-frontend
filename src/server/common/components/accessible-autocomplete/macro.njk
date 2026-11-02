@@ -1,12 +1,6 @@
 {#
   appAccessibleAutocomplete — a govukSelect enhanced into a type-ahead.
 
-  Renders a native govukSelect (the no-JS fallback that still submits the
-  option value) and marks it for progressive enhancement by the
-  accessible-autocomplete client component. Enhancement config is passed
-  through as data-* attributes, so this macro is field-agnostic and reusable
-  for any long option list on any page.
-
   Params: the usual govukSelect params (id, name, label, hint, errorMessage,
   value, items, classes, formGroup), plus an optional `autocomplete` object:
     autocomplete.minLength     (int)     characters before matches show

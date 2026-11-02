@@ -11,7 +11,7 @@ const privateAddress = {
   addressLine2: '',
   townOrCity: 'Aberdeen',
   county: 'Aberdeenshire',
-  postalOrZipCode: 'AB11 5DQ',
+  postcode: 'AB11 5DQ',
   country: 'United Kingdom'
 }
 

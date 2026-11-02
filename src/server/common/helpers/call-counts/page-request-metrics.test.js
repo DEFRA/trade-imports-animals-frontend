@@ -68,23 +68,24 @@ describe('page request metrics', () => {
     expect(document.SessionResolutions).toBe(1)
   })
 
-  test('resolves and logs a warning when the flush rejects', async () => {
+  test('recording in the background logs a warning with the error when the flush rejects', async () => {
+    const flushError = new Error('agent unavailable')
     const metricsLogger = {
       setNamespace: vi.fn(() => metricsLogger),
       putMetric: vi.fn(() => metricsLogger),
-      flush: vi.fn().mockRejectedValue(new Error('agent unavailable'))
+      flush: vi.fn().mockRejectedValue(flushError)
     }
     vi.spyOn(Metrics.prototype, 'getMetricsLogger').mockReturnValue(
       metricsLogger
     )
 
-    await expect(
-      recordPageRequest({ backendCalls: 1, sessionResolutions: 1 })
-    ).resolves.toBeUndefined()
+    recordPageRequestInBackground({ backendCalls: 1, sessionResolutions: 1 })
 
-    expect(loggerWarnMock).toHaveBeenCalledWith(
-      expect.objectContaining({ err: expect.any(Error) }),
-      'Could not record page request counts'
+    await vi.waitFor(() =>
+      expect(loggerWarnMock).toHaveBeenCalledWith(
+        { err: flushError },
+        'Could not record page request counts'
+      )
     )
   })
 })

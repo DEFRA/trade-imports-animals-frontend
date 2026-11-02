@@ -1,15 +1,3 @@
-/*
- * Reads the LHCI manifest + per-page JSON reports written by `npm run
- * lighthouse` and emits `lighthouse-report/flagged-audits.json`:
- * a per-page list of audits with score < 1 in the performance,
- * accessibility, and best-practices categories. SEO is excluded per
- * EUDPA-194 (lighthouserc.cjs asserts only the other three).
- *
- * Consumed by .github/workflows/lighthouse.yml and rendered into the
- * <!-- lighthouse-status --> PR comment by the workspace's
- * report-lighthouse-status composite action.
- */
-
 const fs = require('fs')
 
 const MANIFEST_PATH = 'lighthouse-report/manifest.json'

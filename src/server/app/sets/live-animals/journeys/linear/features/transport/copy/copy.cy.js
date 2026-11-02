@@ -1,21 +1,25 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
+const SELECT_A_COUNTRY = 'Dewiswch wlad'
+
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   portOfEntry: {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: (example) =>
-        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, ${example}`
+      hint: `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. ${sharedCopy.dateExample}`
     },
     port: {
       label: 'Porthladd mynediad',
       hint: 'Dewiswch ble bydd y cludwr yn dod i mewn gyda’r llwyth. Dechreuwch deipio i chwilio yn ôl enw neu god y porthladd neu’r maes awyr.',
-      placeholder: 'Dewiswch borthladd',
+      selectText: 'Dewiswch borthladd',
+      searchPlaceholder: 'Dewiswch borthladd',
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
       label: 'Cyfrwng cludo i’r porthladd mynediad',
-      placeholder: 'Dewiswch un',
+      selectText: 'Dewiswch un',
       options: {
         AIRPLANE: 'Awyr',
         RAILWAY: 'Rheilffordd',
@@ -43,7 +47,6 @@ export const copy = {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
-      meansOfTransportRequired: 'Dewiswch gyfrwng cludo i’r porthladd mynediad',
       portNoLongerAvailable:
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       arrivalDateNoLongerInWindow:
@@ -56,14 +59,14 @@ export const copy = {
   },
   transitCountries: {
     title: 'Drwy ba wledydd y bydd y llwyth yn teithio?',
-    pageTitle: 'Gwledydd tramwy',
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
     excludesUk: 'Nid yw hyn yn cynnwys y Deyrnas Unedig.',
     country: {
       label: 'Rhowch wlad',
       hint: 'Rhowch bob gwlad y bydd y llwyth yn teithio drwyddi',
-      placeholder: 'Chwiliwch am wlad',
+      selectText: SELECT_A_COUNTRY,
+      searchPlaceholder: 'Chwiliwch am wlad',
       noResults: 'Dim gwledydd wedi’u darganfod'
     },
     add: 'Ychwanegu gwlad',
@@ -131,6 +134,8 @@ export const copy = {
       button: 'Chwilio'
     },
     noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
+    shownCount: (count) =>
+      `${count} cludwr ${count === 1 ? 'wedi’i ddangos' : 'wedi’u dangos'}`,
     add: 'Ychwanegu cludwr',
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr',
@@ -173,10 +178,10 @@ export const copy = {
       addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
       townOrCity: 'Tref neu ddinas',
       county: 'Sir (dewisol)',
-      postalOrZipCode: 'Cod post neu god zip',
+      postcode: 'Cod post neu god zip',
       country: 'Gwlad',
-      emailAddress: 'Cyfeiriad e-bost',
-      telephoneNumber: 'Rhif ffôn'
+      email: 'Cyfeiriad e-bost',
+      phone: 'Rhif ffôn'
     },
     telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
     country: 'Gogledd Iwerddon',
@@ -185,7 +190,7 @@ export const copy = {
       nameRequired: 'Rhowch enw neu enw sefydliad',
       addressLine1Required: 'Rhowch linell gyfeiriad 1',
       townOrCityRequired: 'Rhowch dref neu ddinas',
-      postalOrZipCodeRequired: 'Rhowch god post neu god zip',
+      postcodeRequired: 'Rhowch god post neu god zip',
       emailRequired: 'Rhowch gyfeiriad e-bost',
       telephoneRequired: 'Rhowch rif ffôn',
       approvalNumberMaxLength:
@@ -197,7 +202,7 @@ export const copy = {
         'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
       townOrCityMaxLength: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
       countyMaxLength: 'Rhaid i’r sir fod yn 100 nod neu lai',
-      postalOrZipCodeMaxLength:
+      postcodeMaxLength:
         'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
       emailMaxLength: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai',
       telephoneMaxLength: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
@@ -216,19 +221,19 @@ export const copy = {
       addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
       townOrCity: 'Tref neu ddinas',
       county: 'Sir (dewisol)',
-      postalOrZipCode: 'Cod post neu god zip',
+      postcode: 'Cod post neu god zip',
       country: 'Gwlad',
-      emailAddress: 'Cyfeiriad e-bost',
-      telephoneNumber: 'Rhif ffôn'
+      email: 'Cyfeiriad e-bost',
+      phone: 'Rhif ffôn'
     },
     telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
-    countryPlaceholder: 'Dewiswch wlad',
+    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',
       addressLine1Required: 'Rhowch linell gyfeiriad 1',
       townOrCityRequired: 'Rhowch dref neu ddinas',
-      postalOrZipCodeRequired: 'Rhowch god post neu god zip',
-      countryRequired: 'Dewiswch wlad',
+      postcodeRequired: 'Rhowch god post neu god zip',
+      countryRequired: SELECT_A_COUNTRY,
       telephoneRequired: 'Rhowch rif ffôn',
       emailRequired: 'Rhowch gyfeiriad e-bost',
       nameMaxLength: 'Rhaid i’r enw neu enw’r sefydliad fod yn 255 nod neu lai',
@@ -238,7 +243,7 @@ export const copy = {
         'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
       townOrCityMaxLength: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
       countyMaxLength: 'Rhaid i’r sir fod yn 100 nod neu lai',
-      postalOrZipCodeMaxLength:
+      postcodeMaxLength:
         'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
       countryFromList: 'Dewiswch wlad o’r rhestr',
       countryNoLongerAvailable:

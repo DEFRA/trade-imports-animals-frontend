@@ -8,8 +8,6 @@ import {
 } from '../../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { obligationSet } from '../../../../model/obligations/manifest.js'
-
-const { countryOfOrigin, numberOfAnimals } = obligationSet()
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -126,6 +124,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
   })
 
   it('Should load and decode the canonical persisted fulfilment directly', async () => {
+    const { countryOfOrigin, numberOfAnimals } = obligationSet()
     const encoded = [
       { obligationId: countryOfOrigin.id, value: 'FR' },
       {
@@ -143,8 +142,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
     expect(request.method).toBe('GET')
     expect(loaded.fulfilment).toEqual(decodePersistedFulfilment(encoded))
-    // Load path fires exactly one request — the fulfilments GET — and no other
-    // notifications endpoints (writes, list, transitions, etc.).
     expect(fetchMocker.requests()).toHaveLength(1)
   })
 
@@ -170,8 +167,8 @@ describe('real records adapter — fulfilment writes', () => {
       countryOfOrigin: 'FR',
       commodityLines: [
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
+          commodityCode: '0102',
+          speciesLatinName: 'Bos taurus',
           numberOfAnimalsQuantity: '5',
           numberOfPackages: '2'
         }
@@ -422,8 +419,6 @@ describe('real records adapter — lifecycle and list', () => {
   })
 
   it("Should not send the reader's organisation to the backend", async () => {
-    // The backend stores parties as they are and hands them back the same way.
-    // The organisation is the address book's business, not the backend's.
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,

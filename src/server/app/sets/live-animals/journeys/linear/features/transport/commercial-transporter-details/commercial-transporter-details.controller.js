@@ -23,29 +23,14 @@ import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
-/** The commercial arm of the add route.
- *
- * A spoke off the type chooser rather than a step in the journey: the
- * `commercialTransporter` it writes is declared by the transporter list, which
- * is where a trader normally answers it by picking a row. This is the way out
- * for a trader whose commercial transporter is not on that list — they give
- * its authorisation number, name, address and contact details by hand
- * (design release 1). */
 const view = `${TEMPLATES}/features/transport/commercial-transporter-details/commercial-transporter-details`
 
 const bundle = copyFor({ en, cy })
 
 const copy = bundle.commercialTransporterDetails
 
-/** The authorisation rules the transporter list states, repeated at the top of
- * this form as design release 1 repeats them: one set of sentences shown in
- * two places rather than two copies of the same rules to keep in step. */
 const guidance = bundle.transporters.guidance
 
-/** The country of a hand-added commercial transporter, which design release 1
- * fixes rather than asks: the restriction the type chooser states on the
- * Commercial option. Stored in English whatever the page is read in, because
- * it is an answer on the notification and not display text. */
 const NORTHERN_IRELAND = 'Northern Ireland'
 
 const MANDATORY_MESSAGES = {
@@ -53,13 +38,11 @@ const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,
   addressLine1: copy.errors.addressLine1Required,
   townOrCity: copy.errors.townOrCityRequired,
-  postalOrZipCode: copy.errors.postalOrZipCodeRequired,
-  emailAddress: copy.errors.emailRequired,
-  telephoneNumber: copy.errors.telephoneRequired
+  postcode: copy.errors.postcodeRequired,
+  email: copy.errors.emailRequired,
+  phone: copy.errors.telephoneRequired
 }
 
-/** The fields the page shows, in the order it asks for them — the order the
- * error summary lists them in too. */
 const FIELD_ORDER = [
   'approvalNumber',
   'nameOrOrganisationName',
@@ -67,15 +50,12 @@ const FIELD_ORDER = [
   'addressLine2',
   'townOrCity',
   'county',
-  'postalOrZipCode',
+  'postcode',
   'country',
-  'emailAddress',
-  'telephoneNumber'
+  'email',
+  'phone'
 ]
 
-/** The country is fixed rather than typed, so it is the one field of the order
- * that is neither trimmed off the payload nor counted as the trader having
- * begun a record. */
 const FIXED_FIELDS = ['country']
 
 const ENTERED_FIELDS = FIELD_ORDER.filter(
@@ -100,17 +80,13 @@ const fields = compose(
   maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
   maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
   maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-  maxText(
-    'postalOrZipCode',
-    MAX_POSTCODE_LENGTH,
-    copy.errors.postalOrZipCodeMaxLength
-  ),
+  maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
   // The form posts the fixed country back in a hidden field, so a value that
   // is not Northern Ireland has been tampered with: refuse it rather than
   // quietly correcting it.
   oneOf('country', [NORTHERN_IRELAND], copy.errors.countryFixed),
-  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+  maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
+  maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
 )
 
 const recordProvided = (values) =>
@@ -160,9 +136,9 @@ const get = async (request, h) => {
     addressLine2: saved?.address?.addressLine2 ?? '',
     townOrCity: saved?.address?.townOrCity ?? '',
     county: saved?.address?.county ?? '',
-    postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
-    emailAddress: saved?.address?.emailAddress ?? '',
-    telephoneNumber: saved?.address?.telephoneNumber ?? ''
+    postcode: saved?.address?.postcode ?? '',
+    email: saved?.address?.email ?? '',
+    phone: saved?.address?.phone ?? ''
   })
 }
 
@@ -190,10 +166,10 @@ const commercialTransporterParty = (values) => ({
     addressLine2: values.addressLine2,
     townOrCity: values.townOrCity,
     county: values.county,
-    postalOrZipCode: values.postalOrZipCode,
+    postcode: values.postcode,
     country: NORTHERN_IRELAND,
-    telephoneNumber: values.telephoneNumber,
-    emailAddress: values.emailAddress
+    phone: values.phone,
+    email: values.email
   }
 })
 
@@ -201,13 +177,6 @@ const commercialTransporterRecord = (values) => ({
   commercialTransporter: commercialTransporterParty(values)
 })
 
-/** Keep the transporter for the organisation as well as for the notification.
- *
- * A transporter that lives only on the notification it was typed into is typed
- * again on the next one, so the same record joins the organisation's own list
- * and the transporter list offers it from then on (design release 1). It goes
- * on as a commercial transporter that has not been approved yet, which is what
- * the organisation knows about it: nothing here has approved anything. */
 const remember = (request, values) =>
   rememberTransporter(organisationIdOf(request), {
     ...commercialTransporterParty(values),

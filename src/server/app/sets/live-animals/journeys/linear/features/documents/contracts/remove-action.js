@@ -6,10 +6,9 @@ const copy = copyFor({ en, cy })
 
 export const REMOVE_ACTION_PREFIX = 'remove:'
 
-// A removal deletes the backend upload, so it submits the page form — the
-// crumb travels with it and no GET can trigger it.
+// Submitting the page form carries the crumb, so no GET can trigger a removal.
 export const removeButton = (index) =>
-  `<button type="submit" class="govuk-link app-link-button" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
+  `<button type="submit" class="govuk-link app-link-button govuk-!-margin-left-3" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
   `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></button>`
 
 export const isRemoveAction = (action) =>

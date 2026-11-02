@@ -2,35 +2,36 @@ import {
   compose,
   dateText,
   maxText,
+  pattern,
   requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
+import {
+  REFERENCE_MAX_LENGTH,
+  REFERENCE_PATTERN
+} from '../../../../../../../services/document-uploads/claim-contract.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { offeredDocumentTypes } from '../contracts/document-type-options.js'
-import { UPLOAD_ID_PATTERN } from '../contracts/upload-id.js'
-import { attachmentTypeFor } from '../upload-config.js'
+import { documentTypes } from '../../../../../../../services/document-types/index.js'
 
 const copy = copyFor({ en, cy })
 
-export const REFERENCE_MAX_LENGTH = 58
-
-// Built per add, not frozen at module load: the offered types are
-// service-backed and the list is primed at boot. The order is the order the
-// fields appear on the page, so the error summary reads down the form.
 export const fields = () =>
   compose(
     maxText(
       'accompanyingDocumentReference',
       REFERENCE_MAX_LENGTH,
-      copy.errors.referenceMaxLength
+      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
     ),
-    // One message covers both mistakes a select can make: left on the
-    // placeholder, or carrying a value the page never offered.
+    pattern(
+      'accompanyingDocumentReference',
+      REFERENCE_PATTERN,
+      copy.errors.referenceCharacters
+    ),
     requiredOneOf(
       'accompanyingDocumentType',
-      offeredDocumentTypes(),
+      documentTypes(),
       copy.errors.typeRequired
     ),
     dateText('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
@@ -47,25 +48,26 @@ export const documentFromPayload = (payload) => ({
   )
 })
 
-// The one field a trader cannot fill in by accident, so it is the one that
-// says a document is on its way (design release 1). A form carrying a chosen
-// type is a part-filled document to be finished, not an empty form being
-// skipped past; a form without one is left alone, uploading being optional.
-export const startsADocument = (payload) =>
-  offeredDocumentTypes().includes(
-    (payload.accompanyingDocumentType ?? '').trim()
-  )
+const answered = (value) => Boolean(String(value ?? '').trim())
+
+/**
+ * Whether a submitted form has started a document: it has a reference, any
+ * type text, any date of issue text, or a chosen file.
+ *
+ * @param {object} form - the submitted fields, with the file entry the upload
+ *   service returned where the form went through it
+ * @returns {boolean} whether any part of a document was given
+ */
+export const startsADocument = (form) =>
+  answered(form.accompanyingDocumentReference) ||
+  answered(form.accompanyingDocumentType) ||
+  answered(form.accompanyingDocumentDateOfIssue) ||
+  Boolean(form.file?.filename)
+
+export const addsAnotherDocument = (form) => form.action === 'add'
 
 export const EMPTY_FORM = {
   accompanyingDocumentReference: '',
   accompanyingDocumentType: '',
   accompanyingDocumentDateOfIssue: {}
-}
-
-export const pendingDocumentSaveFrom = (payload) => {
-  const uploadId = payload.retryUploadId ?? ''
-  const filename = payload.retryFilename ?? ''
-  return UPLOAD_ID_PATTERN.test(uploadId) && attachmentTypeFor(filename)
-    ? { uploadId, filename }
-    : null
 }

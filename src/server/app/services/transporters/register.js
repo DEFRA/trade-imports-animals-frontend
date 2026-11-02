@@ -1,30 +1,5 @@
 import { randomUUID } from 'node:crypto'
 
-/** The transporters an organisation has added for itself.
- *
- * Somewhere for a transporter to live other than the notification it was typed
- * into. Without this the nine fields the private-transporter form asks for are
- * retyped on every notification, because nothing else in the service reads
- * them — design release 1 puts a transporter a trader has just added straight
- * onto the transporter list, beside the ones the service ships, and offers it
- * again next time.
- *
- * Held here rather than in a service because there is no transporter register
- * behind one: the address book cannot represent a transporter (see the note in
- * records.js) and is read-only from this frontend, so the added records sit
- * beside the shipped ones, which are a local fixture themselves. When the
- * register moves behind a service this module is what it replaces — the pages
- * only ever ask for `partiesFor` and `rememberTransporter`.
- *
- * Process-local, so a record does not outlive a restart and is not shared
- * between instances. That is the cost of having no register service yet, stated
- * rather than hidden: durable storage is the backend work this change is
- * waiting on, and nothing here has to change when it arrives.
- *
- * Scoped on the organisation and never on the user or the session: a
- * transporter an organisation has used belongs to the organisation, the way its
- * address book does.
- */
 const addedByOrganisation = new Map()
 
 /** Two records are the same transporter when they carry the same name, however

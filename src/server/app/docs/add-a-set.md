@@ -69,6 +69,38 @@ inside `withSetContext(setId, …)` and pass every route through
 route-owned lifecycle extension. Server-wide routes stay outside every set
 context.
 
+What the co-residency suite relies on, and why:
+
+- The suite registers the same two server-wide extensions as `server.js`: the
+  set context resolved from the path before routing, and the shared error
+  page. Without them it could not show what an unrouted path does with two sets
+  mounted, which is the case that returns 500.
+- A set registered without its prefix collides with the root redirect. That is
+  the namespace split working: no set may sit at the root.
+- The entry guard is an `onPreHandler` registered on the server, so
+  `routeWithSetContext` does not wrap it. Authentication crosses an async
+  boundary after the `onPreAuth` that entered the context, so the gateway
+  re-enters the context around the guard itself. Without that the guard
+  resolves only by the sole-set fallback, and every journey page returns 500 as
+  soon as a second set mounts.
+- The error page renders the shared chrome. Resolving it through the sole-set
+  fallback throws with two sets mounted, which turns the 404 the user should
+  see into a 500.
+- Interleaved requests only prove isolation when both injections start before
+  either is awaited, so their `AsyncLocalStorage` contexts overlap.
+- A `server.ext` registered without `{ sandbox: 'plugin' }` is server-wide.
+- A cookie scoped to one set's path never travels to another set's path in a
+  browser, so a draft started in one set cannot reach the other. The test shows
+  the jar holding the set's own cookie first, because a set that issued no
+  cookie would satisfy the negative check without proving anything.
+- The shipped stub store (`services/persistence/records`, `stub/store/state.js`)
+  must key its drafts by set. A single module-level `Map` would be a set
+  singleton, and both sets would list each other's notifications.
+- The unit suite runs in stub mode, so the test server never registers the real
+  OIDC plugin. The suite asks that plugin which routes it declares, so a prefix
+  creeping into routes only production registers is still caught. The sign-in
+  routes are registered by `server.js` alongside the router, not inside it.
+
 ## The mount prefix is not a choice
 
 **It is `'/' + setId`.** Every set mounts under its own prefix, and no set is
@@ -145,7 +177,7 @@ name the set without importing the whole composition root.
 
 Create `sets/<set-id>/` with its obligations manifest, its journey config, its
 flow modules and its features, following the `live-animals` tree. Its cookie
-names must be its own — all five of them. The prefix is the camelCase form of
+names must be its own — all six of them. The prefix is the camelCase form of
 the kebab-case `<set-id>` from step 1, so `live-animals` gives
 `liveAnimalsKnownJourneys`. The shipped values are in
 [`../sets/live-animals/journeys/linear/config.js`](../sets/live-animals/journeys/linear/config.js):
@@ -156,6 +188,7 @@ export const SESSION_COOKIE_NAMES = {
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  addedAddressBanner: 'liveAnimalsAddedAddressBanner',
   reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }
 ```
@@ -175,8 +208,17 @@ Then re-export it from [`../routes.js`](../routes.js), which is only a barrel.
 `registerJourneyCookie(server)` takes neither a base nor cookie names: it reads
 the path back from the registered mount and the names back from the configured
 session seam, so the cookies Hapi registers and the ones the set actually uses
-cannot drift apart. Call it inside the set context, after `registerSetMount`
-and `configureSession` — it throws if the session seam is not configured yet.
+cannot drift apart. Registration and the boot check read the one list of
+configured names, `journeyCookieNames()` in
+[`../engine/persistence/session.js`](../engine/persistence/session.js), so a
+cookie is registered and checked together. Call it inside the set context,
+after `registerSetMount` and `configureSession` — it throws if the session seam
+is not configured yet.
+`assertSetConfigured` is the gateway's last call. It stops the server on any
+unconfigured seam, the session cookie names included, because a seam's fallback
+otherwise answers at request time and some fallbacks answer silently. For the
+cookie names it compares the registered names with the configured ones, which
+catches a gateway that skipped the `registerJourneyCookie` call.
 
 ## 5. Mount it
 

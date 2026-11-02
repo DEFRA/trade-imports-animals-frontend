@@ -1,6 +1,6 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
+import * as kit from '../../../../../../../shared/kit.js'
 
-/** `change` carries the check-your-answers context through, as the hub's links do. */
 export const partyEditHref = (
   journeyId,
   party,
@@ -8,8 +8,6 @@ export const partyEditHref = (
   { change = false } = {}
 ) => {
   const query = new URLSearchParams({ return: returnSlug })
-  if (change) {
-    query.set('change', '1')
-  }
-  return `${pagePath(journeyId, party.editSlug)}?${query}`
+  const href = `${pagePath(journeyId, party.editSlug)}?${query}`
+  return change ? kit.appendChangeContext(href) : href
 }

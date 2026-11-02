@@ -9,10 +9,6 @@ import { registerSetMount } from '../../src/server/app/shared/set-context.js'
 import { SET_BASE, SET_ID } from '../../src/server/app/sets/live-animals/set.js'
 import { lineKey } from '../../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
 
-// This script drives a running server from the outside, so it never enters a
-// request's set context. Registering the mount makes it the sole mounted set,
-// which is what lets the path builders below resolve the prefix the server
-// actually serves on.
 registerSetMount(SET_ID, SET_BASE)
 
 const HTTP_FOUND = 302
@@ -39,17 +35,11 @@ const { privateTransporter } = values
 
 const ukDate = ({ day, month, year }) => `${day}/${month}/${year}`
 
-// The origin page fills the country in as a fixed prefix and asks only for the
-// part after it, so the fixture's whole code is split the same way here.
 const REGION_CODE_SEPARATOR = '-'
 const regionCodeSuffix = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
-// The CPH page asks for the number in three boxes — two digits of county, three
-// of parish and four of holding — so the fixture's whole number is split the
-// same way here. The fixture carries the slashed form, so the split reads
-// digits only.
 const CPH_PARTS = [
   ['cphCounty', 2],
   ['cphParish', 3],
@@ -70,22 +60,20 @@ const splitCph = (whole) => {
 
 const cphFields = splitCph(values.countyParishHoldingCph)
 
-/** The address-book id of the first option the page itself offers. Picking from
- * the rendered form keeps the seed off hard-coded reference data. */
 const firstOption = (name) => (page) => {
-  const value = page.$(`input[name="${name}"]`).first().attr('value')
+  const value = page.dom
+    .querySelector(`input[name="${name}"]`)
+    ?.getAttribute('value')
   if (!value) {
     throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
   }
   return { [name]: value }
 }
 
-/** The same idea for a dropdown, skipping the placeholder row. */
 const firstListedOption = (name) => (page) => {
-  const value = page
-    .$(`select[name="${name}"] option[value]:not([value=""])`)
-    .first()
-    .attr('value')
+  const value = page.dom
+    .querySelector(`select[name="${name}"] option[value]:not([value=""])`)
+    ?.getAttribute('value')
   if (!value) {
     throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
   }
@@ -102,6 +90,11 @@ const BEFORE_REASON = [
       internalReferenceNumber: values.internalReferenceNumber
     }
   },
+  ...values.commodityLines.map((line) => ({
+    slug: 'commodities',
+    fields: { commoditySearch: line.speciesLatinName, action: 'search' },
+    expectedStatus: HTTP_OK
+  })),
   {
     slug: 'commodities',
     fields: { species: values.commodityLines.map(lineKey) }
@@ -161,9 +154,6 @@ const CONTACT_STEP = {
   fields: firstOption('contactAddress')
 }
 
-/** The follow-up answers each reason for import reveals on the reason page
- * itself, keyed by the branch's own input name. A reason whose reveal is not
- * opened submits nothing extra. */
 const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
@@ -199,18 +189,17 @@ const TRANSPORTER_STEPS = new Map([
           addressLine2: privateTransporter.address.addressLine2,
           townOrCity: privateTransporter.address.townOrCity,
           county: privateTransporter.address.county,
-          postalOrZipCode: privateTransporter.address.postalOrZipCode,
+          postcode: privateTransporter.address.postcode,
           country: privateTransporter.address.country,
-          telephoneNumber: privateTransporter.address.telephoneNumber,
-          emailAddress: privateTransporter.address.emailAddress
+          phone: privateTransporter.address.phone,
+          email: privateTransporter.address.email
         }
       }
     ]
   ]
 ])
 
-/** The notification shapes the audit needs, keyed by the name the URL list
- * refers to them by. Every conditional page is answered on one of them. */
+/** The notification shapes the audit seeds, keyed by the name the URL list uses. */
 export const SEED_SHAPES = {
   draft: {
     reasonForImport: values.reasonForImport,
@@ -256,9 +245,7 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
 const fieldsFor = (step, page) =>
   typeof step.fields === 'function' ? step.fields(page) : step.fields
 
-/** The journey id out of the Location the create POST answers with. Read off
- * the create path rather than a fixed segment index, which the set's mount
- * prefix would otherwise shift. */
+/** The journey id in the Location the create POST answers with. */
 export const journeyIdIn = (location) => {
   const prefix = `${createPath()}/`
   if (!location?.startsWith(prefix)) {
@@ -287,7 +274,7 @@ export const fillNotification = async (client, journeyId, shape) => {
       throw new Error(`Seed step ${step.slug} did not render (${page.status})`)
     }
     const posted = await client.submit(path, fieldsFor(step, page), page.crumb)
-    if (posted.status !== HTTP_FOUND) {
+    if (posted.status !== (step.expectedStatus ?? HTTP_FOUND)) {
       throw new Error(
         `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
           'fields have moved on from what this seed sends'
@@ -297,7 +284,9 @@ export const fillNotification = async (client, journeyId, shape) => {
 }
 
 const concurrencyTokenOn = (page) => {
-  const token = page.$('input[name="concurrencyToken"]').last().attr('value')
+  const token = [...page.dom.querySelectorAll('input[name="concurrencyToken"]')]
+    .at(-1)
+    ?.getAttribute('value')
   if (!token) {
     throw new Error(`No concurrency token on ${page.heading || 'the page'}`)
   }

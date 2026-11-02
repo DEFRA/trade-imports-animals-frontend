@@ -62,5 +62,8 @@ export {
   STRUCTURED_HELPER_TYPES,
   OPAQUE_HELPER_TYPES
 } from './witness/kinds.js'
-export { synthesiseWitness } from './witness/synthesise.js'
+export {
+  SYNTHESISED_GATE_TYPES,
+  synthesiseWitness
+} from './witness/synthesise.js'
 export { proveWithWitnesses } from './fidelity/prove.js'

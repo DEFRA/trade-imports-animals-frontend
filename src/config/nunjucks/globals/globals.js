@@ -1,3 +1,13 @@
-// Placeholder for Nunjucks global functions and variables.
-// Add exports here to make them available in all templates via nunjucksConfig.
-export {}
+export const withReveals = (options, reveals) =>
+  options.map(({ value, text, hint, checked }) => ({
+    value,
+    text,
+    hint,
+    checked,
+    conditional: { html: reveals[value] }
+  }))
+
+export const withAttributes = (button, attributes) => ({
+  ...button,
+  attributes: { ...button.attributes, ...attributes }
+})

@@ -10,7 +10,8 @@ import {
   QUERY,
   reportName,
   reportNames,
-  SKIPPED
+  SKIPPED,
+  urlsInShard
 } from './audit-targets.js'
 
 const journeyIds = {
@@ -181,6 +182,32 @@ describe('#reportNames', () => {
 
     expect(() => reportNames(urls, journeyIds)).toThrow(
       /would write both .* to notifications_origin\.report\.html/
+    )
+  })
+})
+
+describe('#urlsInShard', () => {
+  const urls = ['a', 'b', 'c', 'd', 'e']
+
+  it('Should split the URLs into contiguous shards that together hold each once, in order', () => {
+    expect([
+      ...urlsInShard(urls, { index: 1, total: 2 }),
+      ...urlsInShard(urls, { index: 2, total: 2 })
+    ]).toEqual(urls)
+    expect(urlsInShard(urls, { index: 1, total: 2 })).toEqual(['a', 'b', 'c'])
+  })
+
+  it('Should give a single runner every URL', () => {
+    expect(urlsInShard(urls, { index: 1, total: 1 })).toEqual(urls)
+  })
+
+  it('Should give a runner beyond the URLs an empty shard', () => {
+    expect(urlsInShard(['a'], { index: 2, total: 2 })).toEqual([])
+  })
+
+  it('Should refuse a runner outside the total', () => {
+    expect(() => urlsInShard(urls, { index: 3, total: 2 })).toThrow(
+      'Lighthouse shard 3 of 2 is not a runner between 1 and the total'
     )
   })
 })

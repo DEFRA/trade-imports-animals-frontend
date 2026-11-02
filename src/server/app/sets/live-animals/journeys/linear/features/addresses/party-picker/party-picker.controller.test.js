@@ -1,31 +1,27 @@
 import { SET_ID } from '../../../../../set.js'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../../config/config.js'
-import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  addressBookAnswering,
+  addressBookPage,
+  expectOneLogged,
+  expectOneRefusalLogged,
+  expectOneSaveFallbackLogged,
+  listedAddress,
+  resetMocksAndConfigAfterTests,
+  unavailableBackendError,
+  useStubbedJourney
+} from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
-import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
-import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
-import * as addressBook from '../../../../../../../services/address-book/index.js'
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
+import { expectAddedAddressBannerShownOnce } from '../test-support.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
@@ -33,6 +29,7 @@ const ALPINE_DAIRY_ID = 'alpine-dairy'
 const ALPINE_DAIRY_NAME = 'Alpine Dairy GmbH'
 const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
+const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
@@ -44,24 +41,33 @@ const handlerFor = (method, slug) =>
 const getConsignor = handlerFor('GET', CONSIGNOR_SELECT_SLUG)
 const postConsignor = handlerFor('POST', CONSIGNOR_SELECT_SLUG)
 
+const DELETED_CONSIGNOR_ID = 'deleted-consignor'
+
+const answerWithDeletedConsignor = () =>
+  addressBookAnswering((request) =>
+    request.url.includes(`/addresses/${DELETED_CONSIGNOR_ID}`)
+      ? {
+          body: JSON.stringify(
+            listedAddress(DELETED_CONSIGNOR_ID, 'Gone Trader', {
+              deleted: true
+            })
+          )
+        }
+      : addressBookPage()
+  )
+
 const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
-const configure = () => {
-  configureRecords(SET_ID, recordsStub)
-  configureSession(SET_ID, sessionStub)
-  buildDispatch(SET_ID, dispatchPages)
-}
-
 describe('GET /consignors/select', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  resetMocksAndConfigAfterTests()
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should render the first page of the book with a radio per row and pagination over the rest', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
     expect(picker.page).toBe(1)
-    expect(picker.resultsCaption).toBe('Showing 5 of 13 addresses')
+    expect(picker.resultsCount).toBe('Showing 5 out of 13 results')
     expect(idsOf(picker)).toEqual([
       'astra-rosales',
       'tech-imports-ltd',
@@ -117,7 +123,7 @@ describe('GET /consignors/select', () => {
       await driveHandler(getConsignor, { query: { q: 'denmark' } })
     )
 
-    expect(picker.resultsCaption).toBe('Showing 2 of 2 addresses')
+    expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, 'jutland-swine-aps'])
     expect(picker.pagination).toBeNull()
   })
@@ -150,41 +156,22 @@ describe('GET /consignors/select', () => {
   })
 
   it('Should treat a soft-deleted selected reference as no selection', async () => {
-    // The book's own functions are stubbed below, so the run mode is not part
-    // of what this exercises.
-    const deletedId = 'deleted-consignor'
-    vi.spyOn(addressBook, 'search').mockResolvedValue({
-      results: [],
-      total: 0,
-      page: 1,
-      totalPages: 1,
-      pageSize: 5
-    })
-    vi.spyOn(addressBook, 'party').mockResolvedValue({
-      id: deletedId,
-      name: 'Gone Trader',
-      deleted: true,
-      address: { addressLine1: '1 Nowhere' }
-    })
+    answerWithDeletedConsignor()
 
-    try {
-      const picker = pickerFrom(
-        await driveHandler(getConsignor, {
-          query: { selected: deletedId }
-        })
-      )
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, {
+        query: { selected: DELETED_CONSIGNOR_ID }
+      })
+    )
 
-      expect(picker.selected).toBeUndefined()
-      expect(picker.rows.every((row) => row.checked === false)).toBe(true)
-    } finally {
-      vi.restoreAllMocks()
-    }
+    expect(picker.selected).toBeUndefined()
+    expect(picker.rows.every((row) => row.checked === false)).toBe(true)
   })
 })
 
 describe('POST /consignors/select', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  resetMocksAndConfigAfterTests()
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the matches from page one on a search, saving nothing', async () => {
     const result = await driveHandler(postConsignor, {
@@ -272,9 +259,36 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
   })
 
-  it('Should reject a save with nothing selected, anchoring the error on the first row', async () => {
+  it('Should return to the addresses page with the consignor still empty when saved with nothing selected', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', page: '2' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor).toBeUndefined()
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: { journeyId: result.journeyId, role: 'consignor' },
+      message: 'Address picker saved with no address chosen, nothing committed'
+    })
+  })
+
+  it('Should return to the addresses page when saved with nothing selected after a search that matched nothing', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', q: 'no such trader' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor).toBeUndefined()
+  })
+
+  it('Should refuse an id that is not in the organisation book, logging the refused id', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: NOT_IN_THE_BOOK }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -282,63 +296,43 @@ describe('POST /consignors/select', () => {
     expect(result.view.context.errorSummary.errorList).toEqual([
       { text: SELECT_A_CONSIGNOR_ERROR, href: '#party' }
     ])
-    expect(result.view.context.picker.page).toBe(2)
     expect(result.after.consignor).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['party'],
+      role: 'consignor',
+      addressId: NOT_IN_THE_BOOK
+    })
   })
 
-  it('Should anchor the error on the search box when the search matched nothing to select', async () => {
+  it('Should anchor the refusal on the search box when the search matched nothing to select', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', q: 'no such trader' }
+      payload: {
+        action: 'save',
+        q: 'no such trader',
+        party: NOT_IN_THE_BOOK
+      }
     })
 
     expect(result.view.context.errorSummary.errorList[0].href).toBe('#q')
     expect(result.view.context.picker.rows).toEqual([])
   })
 
-  it('Should refuse an id that is not in the organisation book', async () => {
+  it('Should refuse a soft-deleted address id on save', async () => {
+    answerWithDeletedConsignor()
+
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: 'not-in-this-book' }
+      payload: { action: 'save', party: DELETED_CONSIGNOR_ID }
     })
 
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
     expect(result.after.consignor).toBeUndefined()
-  })
-
-  it('Should refuse a soft-deleted address id on save', async () => {
-    // The book's own functions are stubbed below, so the run mode is not part
-    // of what this exercises.
-    const deletedId = 'deleted-consignor'
-    vi.spyOn(addressBook, 'search').mockResolvedValue({
-      results: [],
-      total: 0,
-      page: 1,
-      totalPages: 1,
-      pageSize: 5
-    })
-    vi.spyOn(addressBook, 'party').mockResolvedValue({
-      id: deletedId,
-      name: 'Gone Trader',
-      deleted: true,
-      address: { addressLine1: '1 Nowhere' }
-    })
-
-    try {
-      const result = await driveHandler(postConsignor, {
-        payload: { action: 'save', party: deletedId }
-      })
-
-      expect(result.response.statusCode).toBe(400)
-      expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
-      expect(result.after.consignor).toBeUndefined()
-    } finally {
-      vi.restoreAllMocks()
-    }
   })
 })
 
 describe('The five spokes share the one picker', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should serve every party from the one untyped book, committing to its own obligation', async () => {
     for (const party of PARTIES) {
@@ -356,7 +350,21 @@ describe('The five spokes share the one picker', () => {
     }
   })
 
-  it('Should offer the same records whichever spoke is being filled (D3)', async () => {
+  it('Should return every spoke to the addresses page, committing nothing, when saved with nothing selected', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('POST', party.slug), {
+        payload: { action: 'save' }
+      })
+
+      expect(result.after[party.id]).toBeUndefined()
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'addresses')
+      })
+    }
+  })
+
+  it('Should offer the same records whichever spoke is being filled', async () => {
     const seen = []
     for (const party of PARTIES) {
       const result = await driveHandler(handlerFor('GET', party.slug))
@@ -379,8 +387,7 @@ describe('The five spokes share the one picker', () => {
 })
 
 describe('GET /consignors/select — handshake return', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should surface a not-found handshake error', async () => {
     const result = await driveHandler(getConsignor, {
@@ -401,43 +408,42 @@ describe('GET /consignors/select — handshake return', () => {
   })
 })
 
+describe('GET /consignors/select — added address banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  it('Should show the added address banner with the address name, then clear its cookie so it shows only once', async () => {
+    await expectAddedAddressBannerShownOnce(getConsignor)
+  })
+})
+
+describe('GET /consignors/select — list order', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  it('Should list the addresses in the order the address book returns them', async () => {
+    addressBookAnswering(
+      addressBookPage([
+        listedAddress('zeta-newer', 'Zebra Farm'),
+        listedAddress('alpha-older', 'Aardvark Farm')
+      ])
+    )
+
+    const result = await driveHandler(getConsignor)
+
+    expect(idsOf(pickerFrom(result))).toEqual(['zeta-newer', 'alpha-older'])
+  })
+})
+
 describe('INS add-address link', () => {
-  const originalMode = config.get('stubMode')
-  const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
-
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
-
-  afterAll(() => {
-    vi.unstubAllGlobals()
-    config.set('stubMode', originalMode)
-    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
     async (_title, slug) => {
-      config.set('stubMode', false)
       config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({
-          ok: true,
-          json: async () => ({
-            items: [],
-            page: 1,
-            pageSize: 25,
-            totalItems: 0,
-            totalPages: 1
-          })
-        }))
-      )
+      addressBookAnswering(addressBookPage())
 
       const result = await driveHandler(handlerFor('GET', slug))
 
@@ -456,34 +462,29 @@ describe('INS add-address link', () => {
 })
 
 describe('POST /consignors/select — recoverable save failure', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
-  afterEach(() => vi.restoreAllMocks())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render the picker when saving the selection fails', async () => {
-    vi.spyOn(state, 'commit').mockRejectedValue(
-      new BackendRequestError('save answers', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      })
-    )
-
+    const failure = unavailableBackendError('save answers')
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: ALPINE_DAIRY_ID }
+      payload: { action: 'save', party: ALPINE_DAIRY_ID },
+      saveFailure: failure
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toBeUndefined()
+    expectOneSaveFallbackLogged(result.logger, {
+      journeyId: result.journeyId,
+      err: failure,
+      role: 'consignor',
+      addressId: ALPINE_DAIRY_ID
+    })
   })
 })
 
-// A trader sent here from check your answers to replace an address it cannot
-// show has to end up back there. Every way out of the picker keeps the context,
-// so the hub it returns to can make that exit.
 describe('/consignors/select — change context', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should hand the save back to the hub still changing', async () => {
     const result = await driveHandler(postConsignor, {
@@ -529,11 +530,8 @@ describe('/consignors/select — change context', () => {
   })
 })
 
-// Save and return on an amendment's picker goes back to the amend review, the
-// page the Change link came from; a draft keeps going to the addresses hub.
 describe('/consignors/select — save and return while amending', () => {
-  beforeAll(configure)
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   const HELD_CONSIGNOR = {
     name: 'Held Consignor',
