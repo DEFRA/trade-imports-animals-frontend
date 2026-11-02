@@ -901,7 +901,7 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: 'Nyctereutes procyonoides',
+      speciesLatinName: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     },

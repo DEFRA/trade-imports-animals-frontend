@@ -110,7 +110,7 @@ describe('the identifier allowlists', () => {
   it('Should key the permanent-address species to 01061900 alone', () => {
     expect(permanentAddressCodeSpecies()).toEqual([
       [OTHER_LIVE_MAMMALS_CODE, 'Felis catus'],
-      [OTHER_LIVE_MAMMALS_CODE, 'Nyctereutes procyonoides'],
+      [OTHER_LIVE_MAMMALS_CODE, 'Canis familiaris'],
       [OTHER_LIVE_MAMMALS_CODE, 'Mustela putorius furo']
     ])
   })

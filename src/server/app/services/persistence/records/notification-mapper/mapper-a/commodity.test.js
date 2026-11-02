@@ -33,7 +33,7 @@ describe('commoditiesFromLinesA', () => {
     const [commodity] = commoditiesFromLinesA([
       {
         commodityCode: OTHER_LIVE_MAMMALS_CODE,
-        speciesLatinName: 'Nyctereutes procyonoides',
+        speciesLatinName: 'Canis familiaris',
         speciesCommonName: 'Dog',
         numberOfAnimalsQuantity: '1'
       }

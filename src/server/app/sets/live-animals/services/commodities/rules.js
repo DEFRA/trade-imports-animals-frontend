@@ -63,7 +63,7 @@ export const PACKAGE_COUNT_CODES = [
 const PERMANENT_ADDRESS_SPECIES = {
   [OTHER_LIVE_MAMMALS_CODE]: [
     'Felis catus',
-    'Nyctereutes procyonoides',
+    'Canis familiaris',
     'Mustela putorius furo'
   ]
 }

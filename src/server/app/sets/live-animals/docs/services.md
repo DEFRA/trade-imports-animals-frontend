@@ -57,8 +57,8 @@ so generic notification-mapper code does not import the set.
   above. `01061900` holds the domestic cats, dogs and ferrets that need one
   alongside many mammals that do not, and MDM lists one species under several
   codes, so neither the code nor the species alone is enough. The genus Felis
-  (MDM's "Cat") is not listed. `Nyctereutes procyonoides` (MDM's raccoon dog)
-  is listed for the permanent-address gate.
+  (MDM's "Cat") is not listed. `Canis familiaris` (MDM's dog) is listed for the
+  permanent-address gate.
 - The package-count list holds the codes of the design's package-count list
   that MDM's live-animal data holds. Where the design named an entry by animal,
   the whole code is on the list.
