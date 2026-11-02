@@ -51,14 +51,16 @@ describe('golden boundary characterisation of fulfilments, obligations and notif
   )(
     'Should send the first line CN code and catalogue commodity name on the first commodity for $name',
     ({ answers }) => {
-      const firstLineCode = answers.commodityLines[0].commodityCode
+      const firstLine = answers.commodityLines[0]
       const mapped = fulfilmentToNotification(
         assembleFulfilments(answers),
         answers.referenceNumber
       )
-      expect(mapped.commodities[0].commodityCode).toBe(firstLineCode)
+      expect(mapped.commodities[0].commodityCode).toBe(firstLine.commodityCode)
       expect(mapped.commodities[0].name).toBe(
-        commodityNameFor(firstLineCode) ?? firstLineCode
+        commodityNameFor(firstLine.commodityCode) ??
+          firstLine.speciesCommonName ??
+          firstLine.commodityCode
       )
     }
   )

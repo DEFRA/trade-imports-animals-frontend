@@ -29,7 +29,7 @@ describe('commoditiesFromLines', () => {
     ).toBe('Domestic Cattle')
   })
 
-  test('Should save a dog under 01061900 with the code as its commodity name', () => {
+  test('Should save a dog under 01061900 with the species common name as its commodity name', () => {
     const [commodity] = commoditiesFromLines([
       {
         commodityCode: OTHER_LIVE_MAMMALS_CODE,
@@ -39,8 +39,21 @@ describe('commoditiesFromLines', () => {
       }
     ])
 
-    expect(commodity.name).toBe(OTHER_LIVE_MAMMALS_CODE)
+    expect(commodity.name).toBe('Dog')
     expect(commodity.species[0].commonName).toBe('Dog')
+  })
+
+  test('Should save a cat under 01061900 with the species common name as its commodity name', () => {
+    const [commodity] = commoditiesFromLines([
+      {
+        commodityCode: OTHER_LIVE_MAMMALS_CODE,
+        speciesLatinName: 'Felis catus',
+        speciesCommonName: 'Domestic Cat',
+        numberOfAnimalsQuantity: '1'
+      }
+    ])
+
+    expect(commodity.name).toBe('Domestic Cat')
   })
 
   test('Should omit commonName when the line was saved with none', () => {

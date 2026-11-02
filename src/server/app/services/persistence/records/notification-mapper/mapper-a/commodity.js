@@ -16,6 +16,20 @@ const groupHasUniformType = (group) => {
   return types.size <= 1
 }
 
+const commodityNameForGroup = (group) => {
+  const firstLine = group[0]
+  const code = firstLine.commodityCode
+  const fromCatalogue = commodityNameFor(code)
+  if (fromCatalogue) {
+    return fromCatalogue
+  }
+  const speciesCommonName = speciesLines(group)[0]?.speciesCommonName
+  if (speciesCommonName) {
+    return speciesCommonName
+  }
+  return code
+}
+
 const commodityEntryFromGroup = (group) => {
   const uniformType = groupHasUniformType(group)
   const species = speciesLines(group).map((line) =>
@@ -26,7 +40,7 @@ const commodityEntryFromGroup = (group) => {
   const firstLine = group[0]
   const code = firstLine.commodityCode
   return compact({
-    name: commodityNameFor(code) ?? code,
+    name: commodityNameForGroup(group),
     commodityCode: code,
     description: commodityDescriptionFor(code),
     typeOfCommodity: uniformType ? typeTextForLine(firstLine) : undefined,
