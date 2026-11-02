@@ -58,7 +58,7 @@ describe('#linesWithUnlistedSpecies', () => {
 
       expect(error.isBoom).toBe(true)
       expect(error.output.statusCode).toBe(503)
-      expect(error.data.dataset).toBe('commodities')
+      expect(error.data.dataset).toBe('species')
     })
 
     it('Should ask reference-data which lines are not listed', async () => {
@@ -89,7 +89,7 @@ describe('#linesWithUnlistedSpecies', () => {
 
         expect(error.isBoom).toBe(true)
         expect(error.output.statusCode).toBe(503)
-        expect(error.data.dataset).toBe('commodities')
+        expect(error.data.dataset).toBe('species')
       }
     )
   })

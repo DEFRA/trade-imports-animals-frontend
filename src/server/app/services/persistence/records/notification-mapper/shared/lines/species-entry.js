@@ -20,7 +20,7 @@ const animalIdentifierFrom = (unit) =>
     permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 
-const commonNameFrom = (line) => line.speciesCommonName || line.commonName
+const commonNameFrom = (line) => line.speciesCommonName
 
 export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
   const identifierUnits = line.animalIdentifiers ?? []

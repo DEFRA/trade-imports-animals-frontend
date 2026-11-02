@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
-  RACCOON_DOG,
+  CANIS_FAMILIARIS,
   FELIS_CATUS,
   saveAndContinue,
-  animalsQuantityInputUnder,
+  numberOfAnimalsFor,
   PHONE_VIEWPORT,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -336,17 +336,19 @@ test.describe('commodity consignment details — persistence and accessibility',
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
     await expectSpeciesSelected(page, BOS_TAURUS)
-    await selectSpecies(page, [RACCOON_DOG])
+    await selectSpecies(page, [CANIS_FAMILIARIS])
     await saveAndContinue(page).click()
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
     await expect(selectedCommoditiesTable(page)).toContainText(
-      RACCOON_DOG.speciesLatinName
+      CANIS_FAMILIARIS.speciesLatinName
     )
-    await expect(animalsQuantityInputUnder(page, BOS_TAURUS)).toHaveValue('25')
-    await expect(animalsQuantityInputUnder(page, RACCOON_DOG)).toHaveValue('')
-    await expect(animalsQuantityInputUnder(page, FELIS_CATUS)).toHaveValue('2')
+    await expect(await numberOfAnimalsFor(page, BOS_TAURUS)).toHaveValue('25')
+    await expect(await numberOfAnimalsFor(page, CANIS_FAMILIARIS)).toHaveValue(
+      ''
+    )
+    await expect(await numberOfAnimalsFor(page, FELIS_CATUS)).toHaveValue('2')
   })
 
   test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({
@@ -355,9 +357,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectThreeSaveControls(page)
   })
 
-  test('save and return to overview stores the counts and marks the row Completed', async ({
-    page
-  }) => {
+  test('save and return to overview stores the counts', async ({ page }) => {
     await fillValidQuantities(page)
     await page
       .getByRole('button', { name: sharedCopy.saveActions.saveAndReturnToHub })

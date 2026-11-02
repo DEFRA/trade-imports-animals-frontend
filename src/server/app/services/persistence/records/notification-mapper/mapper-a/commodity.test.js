@@ -3,19 +3,19 @@ import {
   CATTLE_CODE,
   OTHER_LIVE_MAMMALS_CODE
 } from '../../../../../sets/live-animals/services/commodities/rules.js'
-import { commoditiesFromLinesA } from './commodity.js'
+import { commoditiesFromLines } from './commodity.js'
 
 const BOS_TAURUS = 'Bos taurus'
 
-describe('commoditiesFromLinesA', () => {
+describe('commoditiesFromLines', () => {
   test('Should return undefined when there are no lines', () => {
-    expect(commoditiesFromLinesA(undefined)).toBeUndefined()
-    expect(commoditiesFromLinesA([])).toBeUndefined()
+    expect(commoditiesFromLines(undefined)).toBeUndefined()
+    expect(commoditiesFromLines([])).toBeUndefined()
   })
 
   test('Should persist the common name the user was shown when the line has no commonName', () => {
     expect(
-      commoditiesFromLinesA([
+      commoditiesFromLines([
         {
           commodityCode: CATTLE_CODE,
           speciesLatinName: BOS_TAURUS,
@@ -30,7 +30,7 @@ describe('commoditiesFromLinesA', () => {
   })
 
   test('Should save a dog under 01061900 with the code as its commodity name', () => {
-    const [commodity] = commoditiesFromLinesA([
+    const [commodity] = commoditiesFromLines([
       {
         commodityCode: OTHER_LIVE_MAMMALS_CODE,
         speciesLatinName: 'Canis familiaris',
@@ -45,7 +45,7 @@ describe('commoditiesFromLinesA', () => {
 
   test('Should omit commonName when the line was saved with none', () => {
     expect(
-      commoditiesFromLinesA([
+      commoditiesFromLines([
         {
           commodityCode: CATTLE_CODE,
           speciesLatinName: BOS_TAURUS,
@@ -55,13 +55,13 @@ describe('commoditiesFromLinesA', () => {
     ).toBeUndefined()
   })
 
-  test('Should keep an explicit commonName on the line', () => {
+  test('Should keep speciesCommonName on the line', () => {
     expect(
-      commoditiesFromLinesA([
+      commoditiesFromLines([
         {
           commodityCode: CATTLE_CODE,
           speciesLatinName: BOS_TAURUS,
-          commonName: 'Registered herd name',
+          speciesCommonName: 'Registered herd name',
           numberOfAnimalsQuantity: '1'
         }
       ])[0].species[0].commonName

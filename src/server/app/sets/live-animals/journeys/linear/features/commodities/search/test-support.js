@@ -8,11 +8,10 @@ export const BISON_BISON = 'Bison bison'
 export const BOS_TAURUS = 'Bos taurus'
 export const EQUUS_CABALUS = 'Equus cabalus'
 export const FELIS_CATUS = 'Felis catus'
-export const NYCTEREUTES_PROCYONOIDES = 'Nyctereutes procyonoides'
-export const EQUUS_ZEBRA = 'Equus zebra'
+export const CANIS_FAMILIARIS = 'Canis familiaris'
 export const STRUTHIO = 'Struthio'
 export const OSTRICHES_CODE = '01063300'
-export const DOMESTIC_CATTLE = 'Domestic Cattle'
+export const CATTLE_OR_COW = 'Cattle or Cow'
 
 export const BISON_BISON_ROW = {
   commodityCode: CATTLE_CODE,
@@ -23,7 +22,7 @@ export const BISON_BISON_ROW = {
 export const BOS_TAURUS_ROW = {
   commodityCode: CATTLE_CODE,
   speciesLatinName: BOS_TAURUS,
-  speciesCommonName: DOMESTIC_CATTLE
+  speciesCommonName: CATTLE_OR_COW
 }
 
 export const EQUUS_CABALUS_ROW = {
@@ -38,16 +37,10 @@ export const FELIS_CATUS_ROW = {
   speciesCommonName: 'Domestic Cat'
 }
 
-export const RACCOON_DOG_ROW = {
+export const CANIS_FAMILIARIS_ROW = {
   commodityCode: OTHER_LIVE_MAMMALS_CODE,
-  speciesLatinName: NYCTEREUTES_PROCYONOIDES,
-  speciesCommonName: 'Raccoon Dog'
-}
-
-export const EQUUS_ZEBRA_ROW = {
-  commodityCode: HORSES_CODE,
-  speciesLatinName: EQUUS_ZEBRA,
-  speciesCommonName: 'Mountain Zebra'
+  speciesLatinName: CANIS_FAMILIARIS,
+  speciesCommonName: 'Dog'
 }
 
 export const STRUTHIO_ROW = {

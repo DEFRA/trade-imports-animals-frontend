@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
-import { commoditiesFromLinesA } from './mapper-a/commodity.js'
+import { commoditiesFromLines } from './mapper-a/commodity.js'
 import { fulfilmentToNotification } from './index.js'
 import {
   BISON_BISON,
@@ -396,7 +396,7 @@ describe('Mapper A — commodities array from lines', () => {
 
   test('Should map MDM commodity search lines with code, latin name and common name', () => {
     expect(
-      commoditiesFromLinesA([
+      commoditiesFromLines([
         {
           commodityCode: '0102',
           speciesLatinName: BOS_TAURUS,

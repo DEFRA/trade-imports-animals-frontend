@@ -129,7 +129,7 @@ describe('#typeIdFor', () => {
   it('Should split cattle into Domestic and Game by species', () => {
     expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
     expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
-    expect(typeIdFor(CATTLE_CODE, 'Bos spp.')).toBe('24')
+    expect(typeIdFor(CATTLE_CODE, 'Bison bison')).toBe('16')
   })
 
   it('Should give every other code its one type', () => {
@@ -160,8 +160,10 @@ describe('#typeTextForId', () => {
 
 describe('#commodityDescriptionFor', () => {
   it('Should give the stub MDM description for a known CN code', () => {
-    expect(commodityDescriptionFor('0102')).toBe('Live bovine animals')
-    expect(commodityDescriptionFor('01061900')).toBe('Other live animals')
+    expect(commodityDescriptionFor(CATTLE_CODE)).toBe('Live bovine animals')
+    expect(commodityDescriptionFor(OTHER_LIVE_MAMMALS_CODE)).toBe(
+      'Other live animals'
+    )
   })
 
   it('Should give undefined for a code the stub does not hold', () => {
@@ -171,11 +173,11 @@ describe('#commodityDescriptionFor', () => {
 
 describe('#commodityNameFor', () => {
   it('Should reverse-lookup the commodity name from a CN code', () => {
-    expect(commodityNameFor('0102')).toBe('Cow')
+    expect(commodityNameFor(CATTLE_CODE)).toBe('Cow')
   })
 
   it('Should give undefined for a code with no maintained name', () => {
-    expect(commodityNameFor('01061900')).toBeUndefined()
+    expect(commodityNameFor(OTHER_LIVE_MAMMALS_CODE)).toBeUndefined()
     expect(commodityNameFor('9999')).toBeUndefined()
   })
 })

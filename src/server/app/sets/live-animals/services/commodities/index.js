@@ -1,5 +1,7 @@
 import {
+  COMMODITY_DESCRIPTIONS,
   COMMODITY_IDENTIFIERS,
+  COMMODITY_NAMES_BY_CODE,
   CPH_EXEMPT_CODES,
   EAR_TAG_CODES,
   HORSE_NAME_CODES,
@@ -14,21 +16,6 @@ import {
   typeFor,
   typesFor
 } from './rules.js'
-
-/** MDM commodity descriptions (reference-data /commodities?codes=); stubbed until live lookup. */
-const COMMODITY_DESCRIPTIONS = {
-  '0101': 'Live horses, asses, mules and hinnies',
-  '0102': 'Live bovine animals',
-  '01061900': 'Other live animals',
-  '0301': 'Live fish'
-}
-
-/** Persistence display names keyed by CN code. */
-const COMMODITY_NAMES_BY_CODE = {
-  '0101': 'Horse',
-  '0102': 'Cow',
-  '0301': 'Fish'
-}
 
 export const typeIdFor = (code, latinName) => typeFor(code, latinName).id
 

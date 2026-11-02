@@ -163,6 +163,11 @@ A controller passes the page's own title to `kit.base()`.
 error prefix when the page shows an error summary, then the page title, the
 service name and GOV.UK. A page never builds its own `<title>`.
 
+The closing word is `layout.govukSuffix` in the shared copy. It is the GOV.UK
+brand name, not translated text, so [`shared/copy.cy.js`](../shared/copy.cy.js)
+carries the same `GOV.UK` value as [`shared/copy.en.js`](../shared/copy.en.js),
+and [`copy-parity.test.js`](../copy-parity.test.js) allowlists it as identical.
+
 ### Backend HTTP clients
 
 Each backend or reference-data call lives in its own module under `services/`,
@@ -186,8 +191,9 @@ added). Every other refusal that shows the page again (a state refusal, a
 tampered post or an id the page does not hold, a bare 400, another service
 refusing what this one accepted) calls `kit.logRefusal(request, { ...details })`
 once, before it renders, whatever status code it answers with. The line is
-info, carries `journeyId`, the route and the error codes, and takes any named
-reason or ids the branch decided on as further keys of the options.
+info unless `level` is `warn` (another service refusing what this one
+accepted). It carries `journeyId`, the route and the error codes, and takes any
+named reason or ids the branch decided on as further keys of the options.
 
 `fieldErrors` is an optional map of field key to the message the page shows; it
 fills `errorCodes` (the keys, never the messages). The

@@ -6,14 +6,17 @@ import {
   consignmentDetailsPage
 } from './page.js'
 
-export const commodityQuestionHref = (request, opener) => {
-  const RETURN_PARAMETER = 'return'
-  const query = new URLSearchParams({ [RETURN_PARAMETER]: opener.slug })
-  return kit.withChangeContext(
+const commoditiesPagePath = (request) =>
+  pagePath(request.params.journeyId, commoditiesPage.slug)
+
+export const commodityQuestionPath = (request) =>
+  kit.withChangeContext(request, commoditiesPagePath(request))
+
+export const commodityQuestionHref = (request, opener) =>
+  kit.withChangeContext(
     request,
-    `${pagePath(request.params.journeyId, commoditiesPage.slug)}?${query}`
+    kit.withReturnMarker(commoditiesPagePath(request), opener.slug)
   )
-}
 
 export const commodityQuestionReturn = (request) => {
   const openerSlugs = [

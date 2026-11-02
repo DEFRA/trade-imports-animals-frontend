@@ -177,7 +177,7 @@ name the set without importing the whole composition root.
 
 Create `sets/<set-id>/` with its obligations manifest, its journey config, its
 flow modules and its features, following the `live-animals` tree. Its cookie
-names must be its own — all five of them. The prefix is the camelCase form of
+names must be its own — all six of them. The prefix is the camelCase form of
 the kebab-case `<set-id>` from step 1, so `live-animals` gives
 `liveAnimalsKnownJourneys`. The shipped values are in
 [`../sets/live-animals/journeys/linear/config.js`](../sets/live-animals/journeys/linear/config.js):
@@ -188,6 +188,7 @@ export const SESSION_COOKIE_NAMES = {
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  addedAddressBanner: 'liveAnimalsAddedAddressBanner',
   reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }
 ```
@@ -207,8 +208,12 @@ Then re-export it from [`../routes.js`](../routes.js), which is only a barrel.
 `registerJourneyCookie(server)` takes neither a base nor cookie names: it reads
 the path back from the registered mount and the names back from the configured
 session seam, so the cookies Hapi registers and the ones the set actually uses
-cannot drift apart. Call it inside the set context, after `registerSetMount`
-and `configureSession` — it throws if the session seam is not configured yet.
+cannot drift apart. Registration and the boot check read the one list of
+configured names, `journeyCookieNames()` in
+[`../engine/persistence/session.js`](../engine/persistence/session.js), so a
+cookie is registered and checked together. Call it inside the set context,
+after `registerSetMount` and `configureSession` — it throws if the session seam
+is not configured yet.
 `assertSetConfigured` is the gateway's last call. It stops the server on any
 unconfigured seam, the session cookie names included, because a seam's fallback
 otherwise answers at request time and some fallbacks answer silently. For the

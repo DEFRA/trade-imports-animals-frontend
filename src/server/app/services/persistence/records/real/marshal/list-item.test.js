@@ -2,16 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { marshalListItem } from './list-item.js'
 
 describe('marshalListItem — commodity label', () => {
-  test('Should use a single commodities[] entry without joining', () => {
-    const row = marshalListItem({
-      referenceNumber: 'GBN-AG-26-ONE',
-      status: 'SUBMITTED',
-      commodities: [{ name: 'Cow' }]
-    })
-    expect(row.commodity).toEqual({ name: 'Cow' })
-  })
-
-  test('Should use commodities from the list API row when present', () => {
+  test('Should join the commodities[] names into one commodity label', () => {
     const row = marshalListItem({
       referenceNumber: 'GBN-AG-26-ABC',
       status: 'SUBMITTED',
@@ -20,7 +11,7 @@ describe('marshalListItem — commodity label', () => {
     expect(row.commodity).toEqual({ name: 'Cow, Cat' })
   })
 
-  test('Should fall back to legacy commodity on the list API row', () => {
+  test('Should use the single commodity field when commodities[] is absent', () => {
     const row = marshalListItem({
       referenceNumber: 'GBN-AG-26-LEG',
       status: 'SUBMITTED',

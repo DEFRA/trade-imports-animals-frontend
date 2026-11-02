@@ -13,10 +13,9 @@ import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
+  CANIS_FAMILIARIS_ROW,
   EQUUS_CABALUS_ROW,
-  EQUUS_ZEBRA_ROW,
   FELIS_CATUS_ROW,
-  RACCOON_DOG_ROW,
   STRUTHIO_ROW
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
@@ -33,9 +32,8 @@ export const BASE = SET_BASE
 
 export const BISON_BISON = BISON_BISON_ROW
 export const BOS_TAURUS = BOS_TAURUS_ROW
+export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
 export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
-export const EQUUS_ZEBRA = EQUUS_ZEBRA_ROW
-export const RACCOON_DOG = RACCOON_DOG_ROW
 export const FELIS_CATUS = FELIS_CATUS_ROW
 export const STRUTHIO = STRUTHIO_ROW
 
@@ -604,11 +602,23 @@ export const selectSpecies = async (page, speciesToSelect) => {
   }
 }
 
-export const animalsQuantityInputUnder = (page, { speciesLatinName }) =>
-  page
-    .getByRole('heading', { level: 3, name: speciesLatinName })
-    .locator('+ .govuk-form-group')
-    .getByLabel('Number of animals')
+export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
+  await page
+    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .waitFor()
+  const speciesHeadings = await page
+    .getByRole('heading', { level: 3 })
+    .allTextContents()
+  const position = speciesHeadings.indexOf(speciesLatinName)
+  if (position === -1) {
+    throw new Error(
+      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+    )
+  }
+  return page
+    .getByRole('textbox', { name: 'Number of animals', exact: true })
+    .nth(position)
+}
 
 export const openCommoditySearch = async (page) => {
   await startNotification(page)
@@ -632,14 +642,14 @@ export const openCommodityDetails = async (page, speciesToSelect) => {
   ).toBeVisible()
 }
 
+export const selectedSummary = (page) => page.locator('#commodity-selection')
+
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) =>
   expect(
-    page
-      .getByRole('heading', { name: /\d+ selected/ })
-      .locator('+ ul')
+    selectedSummary(page)
       .getByRole('listitem')
       .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })

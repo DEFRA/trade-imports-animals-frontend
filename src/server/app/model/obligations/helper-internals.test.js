@@ -24,7 +24,7 @@ describe('#admitsValue', () => {
       values: [['01061900', 'Felis catus']]
     }
     expect(admitsValue(gate, ['01061900', 'Felis catus'])).toBe(true)
-    expect(admitsValue(gate, ['01061900', 'Bos taurus'])).toBe(false)
+    expect(admitsValue(gate, ['01061900', 'Canis familiaris'])).toBe(false)
   })
 
   it('Should invert for a notInUnionOf complement gate', () => {

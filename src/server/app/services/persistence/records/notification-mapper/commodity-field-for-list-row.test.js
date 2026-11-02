@@ -10,6 +10,14 @@ describe('commodityFieldForListRow', () => {
     ).toEqual({ name: 'Cow' })
   })
 
+  test('Should return null when the sole commodities[] entry name is blank', () => {
+    expect(
+      commodityFieldForListRow({
+        commodities: [{ name: '' }]
+      })
+    ).toBeNull()
+  })
+
   test('Should join multiple commodities[] entry names', () => {
     expect(
       commodityFieldForListRow({
@@ -18,7 +26,7 @@ describe('commodityFieldForListRow', () => {
     ).toEqual({ name: 'Cow, Cat' })
   })
 
-  test('Should return null when commodities[] names are all blank', () => {
+  test('Should return null when several commodities[] names are all blank', () => {
     expect(
       commodityFieldForListRow({
         commodities: [{ name: '' }, { name: null }]
@@ -26,7 +34,7 @@ describe('commodityFieldForListRow', () => {
     ).toBeNull()
   })
 
-  test('Should fall back to legacy commodity when commodities[] is absent or empty', () => {
+  test('Should use the single commodity field when commodities[] is absent or empty', () => {
     expect(
       commodityFieldForListRow({
         commodity: { name: 'Horse' }

@@ -21,7 +21,7 @@ const oracles = JSON.parse(
 
 const evaluator = createObligationEvaluator({ obligations })
 
-describe('increment 0 golden boundary characterisation', () => {
+describe('golden boundary characterisation of fulfilments, obligations and notification mapping', () => {
   test.each(characterisationCorpus)(
     'Should preserve the current outputs for $name',
     ({ name, answers }) => {
@@ -49,7 +49,7 @@ describe('increment 0 golden boundary characterisation', () => {
       ({ answers }) => answers.commodityLines?.length > 0
     )
   )(
-    'Should send the mapped commodity display name for the first line for $name',
+    'Should send the first line CN code and catalogue commodity name on the first commodity for $name',
     ({ answers }) => {
       const firstLineCode = answers.commodityLines[0].commodityCode
       const mapped = fulfilmentToNotification(

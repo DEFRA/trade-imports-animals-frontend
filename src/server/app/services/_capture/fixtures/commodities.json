@@ -1,239 +1,5 @@
 [
   {
-    "code": "01061490",
-    "species": [
-      {
-        "latinName": "Oryctolagus cuniculus",
-        "commonName": "Domestic Rabbit"
-      },
-      {
-        "latinName": "Otra Lagomorpha",
-        "commonName": "Other Lagomorphs (Rabbits, Hares and Pikas)"
-      },
-      {
-        "latinName": "Lagomorpha",
-        "commonName": "Rabbits, Hares & Pikas"
-      }
-    ]
-  },
-  {
-    "code": "01063980",
-    "species": [
-      {
-        "latinName": "Apodiformes",
-        "commonName": "Hummingbirds"
-      },
-      {
-        "latinName": "Catreus",
-        "commonName": null
-      },
-      {
-        "latinName": "Margaroperdix",
-        "commonName": null
-      },
-      {
-        "latinName": "Charadriformes",
-        "commonName": null
-      },
-      {
-        "latinName": "Caprimulgiformes",
-        "commonName": "Swifts, Hummingbirds"
-      },
-      {
-        "latinName": "Threskiornis aethiopicus",
-        "commonName": "African Sacred Ibis"
-      },
-      {
-        "latinName": "Lophura",
-        "commonName": null
-      },
-      {
-        "latinName": "Ciconiiformes",
-        "commonName": "Storks"
-      },
-      {
-        "latinName": "Perdix",
-        "commonName": null
-      },
-      {
-        "latinName": "Melanoperdix",
-        "commonName": "Black Partridge"
-      },
-      {
-        "latinName": "Phasianus",
-        "commonName": "Pheasants"
-      },
-      {
-        "latinName": "Pass\u00e9riformes",
-        "commonName": null
-      },
-      {
-        "latinName": "Sphenisciformes",
-        "commonName": "Penguins"
-      },
-      {
-        "latinName": "Colombiformes",
-        "commonName": "Pigeons and Doves"
-      },
-      {
-        "latinName": "Coturnis spp.",
-        "commonName": null
-      },
-      {
-        "latinName": "Lagopus",
-        "commonName": null
-      },
-      {
-        "latinName": "Alopochen aegyptiacus",
-        "commonName": "Egyptian Goose"
-      },
-      {
-        "latinName": "Coliiformes",
-        "commonName": "mousebirds"
-      },
-      {
-        "latinName": "Struthio",
-        "commonName": "Ostriches"
-      },
-      {
-        "latinName": "Oxyura jamaicensis",
-        "commonName": "Ruddy Duck"
-      },
-      {
-        "latinName": "Bucerotiformes",
-        "commonName": "Hoopoes"
-      },
-      {
-        "latinName": "Galliformes",
-        "commonName": "Fowls"
-      },
-      {
-        "latinName": "Chrysolohus spp.",
-        "commonName": null
-      },
-      {
-        "latinName": "Apterygiformes",
-        "commonName": "Kiwis"
-      },
-      {
-        "latinName": "Tinamiformes",
-        "commonName": "Tinamous"
-      },
-      {
-        "latinName": "Procellariiformes",
-        "commonName": "Albatrosses, Petrels"
-      },
-      {
-        "latinName": "Corvus splendens",
-        "commonName": "House Crow"
-      },
-      {
-        "latinName": "Rhizothera",
-        "commonName": "Long-billed Partridges"
-      },
-      {
-        "latinName": "Ans\u00e9riformes",
-        "commonName": "Waterfowl"
-      },
-      {
-        "latinName": "Colombiformes, Galliformes",
-        "commonName": null
-      },
-      {
-        "latinName": "Syrmaticus",
-        "commonName": "Long-tailed Pheasants"
-      },
-      {
-        "latinName": "Pel\u00e9caniformes",
-        "commonName": "Pelicans"
-      },
-      {
-        "latinName": "Trogoniformes",
-        "commonName": "Trogons"
-      },
-      {
-        "latinName": "Alectoris spp.",
-        "commonName": "Rock Partridges"
-      },
-      {
-        "latinName": "Gaviiformes",
-        "commonName": "Loons"
-      },
-      {
-        "latinName": "Cuculiformes",
-        "commonName": "Cuckoos"
-      },
-      {
-        "latinName": "Coraciiformes",
-        "commonName": "Kingfishers"
-      },
-      {
-        "latinName": "Piciformes",
-        "commonName": "Woodpeckers"
-      },
-      {
-        "latinName": "Podicipediformes",
-        "commonName": "Grebes"
-      },
-      {
-        "latinName": "Otra aves",
-        "commonName": null
-      },
-      {
-        "latinName": "Geotrygon",
-        "commonName": "Quail-Doves"
-      },
-      {
-        "latinName": "Rhea",
-        "commonName": "The Rhea"
-      },
-      {
-        "latinName": "Amnoperdix spp.",
-        "commonName": null
-      },
-      {
-        "latinName": "Columba",
-        "commonName": "Pigeon or Dove"
-      },
-      {
-        "latinName": "Casuariiformes, Rheiformes, Struthioniformes",
-        "commonName": null
-      },
-      {
-        "latinName": "Casuarius",
-        "commonName": "Cassowaries"
-      },
-      {
-        "latinName": "Anurophasis",
-        "commonName": "Blue and Brown Quails"
-      },
-      {
-        "latinName": "Acridotheres tristis",
-        "commonName": "Common Myna"
-      },
-      {
-        "latinName": "Alectoris",
-        "commonName": null
-      },
-      {
-        "latinName": "Gruiformes",
-        "commonName": "Cranes"
-      },
-      {
-        "latinName": "Dendrortyx",
-        "commonName": "Wood Partridges"
-      },
-      {
-        "latinName": "Dromaius",
-        "commonName": "Emus"
-      },
-      {
-        "latinName": "Phoenicopteriformes",
-        "commonName": "Flamingos"
-      }
-    ]
-  },
-  {
     "code": "0101",
     "species": [
       {
@@ -254,7 +20,7 @@
       },
       {
         "latinName": "Equus zebra",
-        "commonName": "Mountain Zebra"
+        "commonName": "Zebra"
       }
     ]
   },
@@ -267,7 +33,7 @@
       },
       {
         "latinName": "Bubalus",
-        "commonName": "Water Buffaloes"
+        "commonName": "water buffalos"
       },
       {
         "latinName": "Poephagus spp.",
@@ -279,7 +45,7 @@
       },
       {
         "latinName": "Bos taurus",
-        "commonName": "Domestic Cattle"
+        "commonName": "Cattle or Cow"
       },
       {
         "latinName": "Bibos spp.",
@@ -311,7 +77,7 @@
       },
       {
         "latinName": "Bison bison",
-        "commonName": "American Bison"
+        "commonName": "Bisons Spp"
       },
       {
         "latinName": "Ovibos",
@@ -332,15 +98,15 @@
       },
       {
         "latinName": "Potamochoerus",
-        "commonName": "Bushpigs"
+        "commonName": "African bushpigs"
       },
       {
         "latinName": "Babyrousa",
-        "commonName": "Babirusas"
+        "commonName": "Pig-deer?"
       },
       {
         "latinName": "Dicotyles spp.",
-        "commonName": "Peccaries"
+        "commonName": "Javelina, musk hog, or skunk pig?"
       },
       {
         "latinName": "Phacochoerus",
@@ -373,11 +139,11 @@
       },
       {
         "latinName": "Ovis sp.",
-        "commonName": "Sheep"
+        "commonName": "sheep"
       },
       {
         "latinName": "Ovis aries",
-        "commonName": "Domestic sheep"
+        "commonName": "Domestic Sheep?"
       }
     ]
   },
@@ -417,19 +183,11 @@
     "species": [
       {
         "latinName": "Aix",
-        "commonName": "Perching Ducks"
-      },
-      {
-        "latinName": "Anas spp.",
-        "commonName": "Dabbling Ducks"
+        "commonName": "Wood Ducks"
       },
       {
         "latinName": "Anas",
-        "commonName": "Dabbling Ducks"
-      },
-      {
-        "latinName": "Aix spp.",
-        "commonName": "Perching Ducks"
+        "commonName": "Ducks"
       }
     ]
   },
@@ -438,10 +196,6 @@
     "species": [
       {
         "latinName": "Anser",
-        "commonName": "Geese"
-      },
-      {
-        "latinName": "Anser spp.",
         "commonName": "Geese"
       }
     ]
@@ -469,11 +223,11 @@
     "species": [
       {
         "latinName": "Anas",
-        "commonName": "Dabbling Ducks"
+        "commonName": "Ducks"
       },
       {
         "latinName": "Aix",
-        "commonName": "Perching Ducks"
+        "commonName": "Wood Ducks"
       }
     ]
   },
@@ -509,11 +263,28 @@
     "species": [
       {
         "latinName": "Oryctolagus cuniculus",
-        "commonName": "Domestic Rabbit"
+        "commonName": "European Rabbit"
       },
       {
         "latinName": "Otra Lagomorpha",
-        "commonName": "Other Lagomorphs (Rabbits, Hares and Pikas)"
+        "commonName": "Other - Rabbits, hares and pikas"
+      },
+      {
+        "latinName": "Lagomorpha",
+        "commonName": "Rabbits, Hares & Pikas"
+      }
+    ]
+  },
+  {
+    "code": "01061490",
+    "species": [
+      {
+        "latinName": "Oryctolagus cuniculus",
+        "commonName": "European Rabbit"
+      },
+      {
+        "latinName": "Otra Lagomorpha",
+        "commonName": "Other - Rabbits, hares and pikas"
       },
       {
         "latinName": "Lagomorpha",
@@ -525,336 +296,484 @@
     "code": "01061900",
     "species": [
       {
-        "latinName": "Equus burchelli",
-        "commonName": "Burchell's Zebra"
-      },
-      {
-        "latinName": "Pseudoryx",
-        "commonName": "Saola"
-      },
-      {
-        "latinName": "Monotremata",
-        "commonName": "Monotremes"
-      },
-      {
-        "latinName": "Hippopotamus spp.",
-        "commonName": "Hippopotamuses"
-      },
-      {
-        "latinName": "Axis-Hyelaphus spp.",
-        "commonName": "Chital and Hog deer"
-      },
-      {
-        "latinName": "Antilope",
-        "commonName": "Blackbuck"
-      },
-      {
-        "latinName": "Naemorhedus",
-        "commonName": "Gorals and serows"
-      },
-      {
-        "latinName": "Boselaphus spp.",
-        "commonName": "Nilgais"
-      },
-      {
-        "latinName": "Otra Rodentia",
-        "commonName": "Other Rodents"
-      },
-      {
-        "latinName": "Herpestes javanicus",
-        "commonName": "Small Asian mongooses"
-      },
-      {
-        "latinName": "Tragelaphus spp. (including Boocerus)",
-        "commonName": "Spiral-horned antelopes"
-      },
-      {
-        "latinName": "Blastocerus spp.",
-        "commonName": "Marsh deer"
-      },
-      {
-        "latinName": "Aepyceros spp.",
-        "commonName": "Impalas"
-      },
-      {
-        "latinName": "Equus quagga",
-        "commonName": "Plains Zebra"
-      },
-      {
-        "latinName": "Neotragus spp.",
-        "commonName": "Dwarf antelopes"
-      },
-      {
-        "latinName": "Elaphurus spp.",
-        "commonName": "Pere David's Deer"
-      },
-      {
-        "latinName": "Litocranius spp.",
-        "commonName": "Gerenuks or Long-necked Antelopes"
-      },
-      {
-        "latinName": "Pudu spp.",
-        "commonName": "Pudus"
+        "latinName": "Acinonyx sp.",
+        "commonName": "Cheetah"
       },
       {
         "latinName": "Addax",
-        "commonName": "Addax Antelopes"
+        "commonName": "Addax"
       },
       {
-        "latinName": "Equus grevyi",
-        "commonName": "Grevy's Zebra"
+        "latinName": "Aepyceros",
+        "commonName": "Impala"
       },
       {
-        "latinName": "Cephalophus spp.",
-        "commonName": "Duikers"
+        "latinName": "Aepyceros melampus",
+        "commonName": "Impala"
       },
       {
-        "latinName": "Damaliscus",
-        "commonName": "Sassabies"
+        "latinName": "Alcelaphus",
+        "commonName": "Hartebeest"
       },
       {
-        "latinName": "Nasua nasua",
-        "commonName": "South American Coati"
+        "latinName": "Alces",
+        "commonName": "moose"
       },
       {
-        "latinName": "Saiga spp.",
-        "commonName": "Saiga antelopes"
+        "latinName": "Ammodorcas",
+        "commonName": "Erect-tailed Antelopes"
       },
       {
-        "latinName": "Hydropotes spp.",
-        "commonName": "Water Deer"
-      },
-      {
-        "latinName": "Elephas spp.",
-        "commonName": "Elephants"
-      },
-      {
-        "latinName": "Catagonus spp.",
-        "commonName": "Chacoan peccaries"
-      },
-      {
-        "latinName": "Oreotragus spp.",
-        "commonName": "Klipspringers"
-      },
-      {
-        "latinName": "Antilocapra spp.",
-        "commonName": "Pronghorns"
-      },
-      {
-        "latinName": "Acinonyx sp.",
-        "commonName": "Cheetahs"
-      },
-      {
-        "latinName": "Ondatra zibethicus",
-        "commonName": "Muskrat"
-      },
-      {
-        "latinName": "Rupicapra spp.",
-        "commonName": "Chamois"
-      },
-      {
-        "latinName": "Sylvicapra spp.",
-        "commonName": "duikers"
-      },
-      {
-        "latinName": "Giraffa spp.",
-        "commonName": "Giraffes"
-      },
-      {
-        "latinName": "Ammodorcas spp.",
-        "commonName": "Dibatags"
-      },
-      {
-        "latinName": "Ozotoceros spp.",
-        "commonName": "Pampas deer"
-      },
-      {
-        "latinName": "Ceratotherium spp.",
-        "commonName": "White Rhinoceroses"
-      },
-      {
-        "latinName": "Tapirus spp.",
-        "commonName": "Tapirs"
-      },
-      {
-        "latinName": "Loxodonta spp.",
-        "commonName": "African Elephants"
-      },
-      {
-        "latinName": "Oryx spp.",
-        "commonName": "Oryxes"
-      },
-      {
-        "latinName": "Xenarthra",
-        "commonName": "Xenarthrans (armadillos, sloths, anteaters)"
-      },
-      {
-        "latinName": "Chiroptera",
-        "commonName": "Bats"
-      },
-      {
-        "latinName": "Peramelemorphia",
-        "commonName": "Bandicoots and bilbies"
-      },
-      {
-        "latinName": "Tetracerus spp.",
-        "commonName": "Four-horned antelope"
-      },
-      {
-        "latinName": "Canis familiaris",
-        "commonName": "Dog"
-      },
-      {
-        "latinName": "Felis catus",
-        "commonName": "Domestic Cat"
-      },
-      {
-        "latinName": "Rhinoceros spp.",
-        "commonName": "Rhinoceroses"
-      },
-      {
-        "latinName": "Dama spp.",
-        "commonName": "Fallow deer"
-      },
-      {
-        "latinName": "Dorcatragus spp.",
-        "commonName": "Beira antelopes"
-      },
-      {
-        "latinName": "Mazama spp.",
-        "commonName": "Brocket Deer"
-      },
-      {
-        "latinName": "Equus zebra",
-        "commonName": "Mountain Zebra"
-      },
-      {
-        "latinName": "Procapra spp.",
-        "commonName": "Central Asian gazelles"
-      },
-      {
-        "latinName": "Taurotragus spp.",
-        "commonName": "Elands"
-      },
-      {
-        "latinName": "Connochaetes spp.",
-        "commonName": "Wildebeests"
-      },
-      {
-        "latinName": "Nyctereutes procyonoides",
-        "commonName": "Raccoon Dog"
-      },
-      {
-        "latinName": "Mustela spp.",
-        "commonName": "Weasels (including ermines, polecats, ferrets, and related species)"
-      },
-      {
-        "latinName": "Alcelaphus spp.",
-        "commonName": "Hartebeests"
-      },
-      {
-        "latinName": "Diceros spp.",
-        "commonName": "Black Rhinoceroses"
-      },
-      {
-        "latinName": "Hippotragus spp.",
-        "commonName": "Sable and Roan Antelopes"
-      },
-      {
-        "latinName": "Hyemoschus spp.",
-        "commonName": "Water chevrotains"
-      },
-      {
-        "latinName": "Moschus spp.",
-        "commonName": "Musk Deer"
-      },
-      {
-        "latinName": "Gazella spp.",
-        "commonName": "Gazelles"
-      },
-      {
-        "latinName": "Capreolus spp.",
-        "commonName": "Roe Deer"
-      },
-      {
-        "latinName": "Raphicerus spp.",
-        "commonName": "Grysboks and steenboks"
-      },
-      {
-        "latinName": "Dicerorhinus spp.",
-        "commonName": "Sumatran rhinoceroses"
-      },
-      {
-        "latinName": "Myocastor coypus",
-        "commonName": "Coypus (nutria)"
-      },
-      {
-        "latinName": "Diprotodontia",
-        "commonName": "Diprotodont marsupials"
-      },
-      {
-        "latinName": "Dasyuromorphia",
-        "commonName": "Carnivorous marsupials"
-      },
-      {
-        "latinName": "Redunca spp.",
-        "commonName": "Reedbucks"
-      },
-      {
-        "latinName": "Alces spp.",
-        "commonName": "Moose"
-      },
-      {
-        "latinName": "Tayassuidae",
-        "commonName": "Tayassu pecari"
-      },
-      {
-        "latinName": "Procyon lotor",
-        "commonName": "Raccoon"
-      },
-      {
-        "latinName": "Antidorcas spp.",
+        "latinName": "Antidorcas",
         "commonName": "Springboks"
       },
       {
-        "latinName": "Mustela putorius furo",
-        "commonName": "Ferret"
+        "latinName": "Antilocapra",
+        "commonName": "American Antelopes"
       },
       {
-        "latinName": "Pholidota",
-        "commonName": "Pangolins"
+        "latinName": "Antilocapridae",
+        "commonName": "pronghorns"
       },
       {
-        "latinName": "Otra Carnivora",
-        "commonName": "Other Carnivores"
+        "latinName": "Antilope",
+        "commonName": "blackbucks"
+      },
+      {
+        "latinName": "Artiodactyla",
+        "commonName": "even-toed ungulates"
+      },
+      {
+        "latinName": "Axis-Hyelaphus spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Blastocerus",
+        "commonName": "marsh deer"
+      },
+      {
+        "latinName": "Bos taurus",
+        "commonName": "Cattle or Cow"
+      },
+      {
+        "latinName": "Boselaphus",
+        "commonName": "nilgai"
+      },
+      {
+        "latinName": "Bovidae",
+        "commonName": "Bovine"
       },
       {
         "latinName": "Callosciurus erythraeus",
         "commonName": "Pallas's Squirrel"
       },
       {
-        "latinName": "Rangifer spp.",
-        "commonName": "Reindeer (caribou)"
+        "latinName": "Canis familiaris",
+        "commonName": "Dog"
       },
       {
-        "latinName": "Odocoileus spp.",
-        "commonName": "White-tailed and mule deer"
+        "latinName": "Capreolus",
+        "commonName": null
       },
       {
-        "latinName": "Hippocamelus spp.",
-        "commonName": "Huemuls and Tarucas (Andean Deer)"
+        "latinName": "Carnivora",
+        "commonName": "carnivores"
       },
       {
-        "latinName": "Kobus spp.",
-        "commonName": "Waterbucks and kobs"
+        "latinName": "Carnivora excluding Canis familiaris, Felis catus, Mustela putorius furio",
+        "commonName": null
       },
       {
-        "latinName": "Muntiacus spp.",
-        "commonName": "Munjacs"
+        "latinName": "Catagonus",
+        "commonName": null
       },
       {
-        "latinName": "Okapia spp.",
-        "commonName": "Okapis"
+        "latinName": "Cephalophus",
+        "commonName": "forest duikers"
+      },
+      {
+        "latinName": "Ceratotherium",
+        "commonName": "White Rhinoceros"
+      },
+      {
+        "latinName": "Cervidae",
+        "commonName": "deer"
+      },
+      {
+        "latinName": "Cervus-Rucervus spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Chiroptera",
+        "commonName": "Bats"
+      },
+      {
+        "latinName": "Connochaetes",
+        "commonName": "wildebeests"
+      },
+      {
+        "latinName": "Dama",
+        "commonName": "fallow deer"
+      },
+      {
+        "latinName": "Damaliscus",
+        "commonName": "sassabies"
+      },
+      {
+        "latinName": "Dasyuromorphia",
+        "commonName": "carnivorous marsupials"
+      },
+      {
+        "latinName": "Dermopterae",
+        "commonName": null
+      },
+      {
+        "latinName": "Dicerorhinus",
+        "commonName": "Hairy Rhinoceroses"
+      },
+      {
+        "latinName": "Diceros",
+        "commonName": null
+      },
+      {
+        "latinName": "Diprotodontia",
+        "commonName": "diprotodont marsupial"
+      },
+      {
+        "latinName": "Dorcatragus",
+        "commonName": "Beira"
+      },
+      {
+        "latinName": "Elaphurus",
+        "commonName": "Elaphurus"
+      },
+      {
+        "latinName": "Elephantidae",
+        "commonName": "Elephant"
+      },
+      {
+        "latinName": "Elephas",
+        "commonName": null
+      },
+      {
+        "latinName": "Equidae",
+        "commonName": "Horses"
+      },
+      {
+        "latinName": "Equus",
+        "commonName": "Horses"
+      },
+      {
+        "latinName": "Equus burchelli",
+        "commonName": "Burchell's Zebra"
+      },
+      {
+        "latinName": "Equus grevyi",
+        "commonName": "Grevy's Zebra"
+      },
+      {
+        "latinName": "Equus quagga",
+        "commonName": "Plains Zebra"
+      },
+      {
+        "latinName": "Equus zebra",
+        "commonName": "Zebra"
+      },
+      {
+        "latinName": "Felis",
+        "commonName": "Cat"
+      },
+      {
+        "latinName": "Felis catus",
+        "commonName": "Domestic Cat"
+      },
+      {
+        "latinName": "Gazella",
+        "commonName": null
+      },
+      {
+        "latinName": "Giraffa",
+        "commonName": "Girafa"
+      },
+      {
+        "latinName": "Giraffidae",
+        "commonName": "giraffes"
+      },
+      {
+        "latinName": "Hemitragus",
+        "commonName": "Himalayan Tahrs"
+      },
+      {
+        "latinName": "Herpestes javanicus",
+        "commonName": "Small Asian Mongoose"
+      },
+      {
+        "latinName": "Hippocamelus",
+        "commonName": "huemuls"
+      },
+      {
+        "latinName": "Hippotragus",
+        "commonName": "roan antelopes"
+      },
+      {
+        "latinName": "Hydropotes",
+        "commonName": "Chinese water deer"
+      },
+      {
+        "latinName": "Hyemoschus",
+        "commonName": "African Chevrotains"
+      },
+      {
+        "latinName": "Hyracoïdae",
+        "commonName": null
+      },
+      {
+        "latinName": "Insectivorae",
+        "commonName": null
+      },
+      {
+        "latinName": "Kobus",
+        "commonName": null
+      },
+      {
+        "latinName": "Lagomorpha",
+        "commonName": "Rabbits, Hares & Pikas"
+      },
+      {
+        "latinName": "Litocranius",
+        "commonName": "Long-necked Antelopes"
+      },
+      {
+        "latinName": "Loxodonta",
+        "commonName": "African Elephants"
+      },
+      {
+        "latinName": "Macroscelidaes",
+        "commonName": null
+      },
+      {
+        "latinName": "Madogua spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Mazama",
+        "commonName": "Common Red Brocket"
+      },
+      {
+        "latinName": "Megamuntiacus spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Monotremata",
+        "commonName": "monotreme"
+      },
+      {
+        "latinName": "Moschidae",
+        "commonName": "musk deer"
+      },
+      {
+        "latinName": "Moschus",
+        "commonName": "Musk Deer"
+      },
+      {
+        "latinName": "Muntiacus",
+        "commonName": "muntjaks"
+      },
+      {
+        "latinName": "Muntiacus reevesi",
+        "commonName": "Reeves' Muntjac"
+      },
+      {
+        "latinName": "Mustela putorius furo",
+        "commonName": "Ferret"
+      },
+      {
+        "latinName": "Myocastor coypus",
+        "commonName": "Coypu"
+      },
+      {
+        "latinName": "Naemorhedus",
+        "commonName": null
+      },
+      {
+        "latinName": "Nasua nasua",
+        "commonName": "South American Coati"
+      },
+      {
+        "latinName": "Neotragus",
+        "commonName": "dwarf antelopes"
+      },
+      {
+        "latinName": "Nyctereutes procyonoides",
+        "commonName": "Raccoon Dog"
+      },
+      {
+        "latinName": "Odocoileus",
+        "commonName": "Mule Deer"
+      },
+      {
+        "latinName": "Okapia",
+        "commonName": "okapi"
+      },
+      {
+        "latinName": "Ondatra zibethicus",
+        "commonName": "Muskrat"
+      },
+      {
+        "latinName": "Oreamuos spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Oreotragus",
+        "commonName": "Klipspringer"
+      },
+      {
+        "latinName": "Oryx",
+        "commonName": "Animals"
+      },
+      {
+        "latinName": "Otra Carnivora",
+        "commonName": null
+      },
+      {
+        "latinName": "Otra Lagomorpha",
+        "commonName": "Other - Rabbits, hares and pikas"
+      },
+      {
+        "latinName": "Otra Rodentia",
+        "commonName": null
+      },
+      {
+        "latinName": "Ourebia",
+        "commonName": "Oribis"
+      },
+      {
+        "latinName": "Ozotoceros",
+        "commonName": "Patagonian Deers"
+      },
+      {
+        "latinName": "Patholops spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Pecari-Tayassu spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Pelea",
+        "commonName": null
+      },
+      {
+        "latinName": "Peramelemorphia",
+        "commonName": "bandicoots, bilbies"
+      },
+      {
+        "latinName": "Perissodactyla",
+        "commonName": "Odd-toed Ungulates"
+      },
+      {
+        "latinName": "Pholidota",
+        "commonName": null
+      },
+      {
+        "latinName": "Pinnipedae",
+        "commonName": null
+      },
+      {
+        "latinName": "Proboscida",
+        "commonName": null
+      },
+      {
+        "latinName": "Procapra",
+        "commonName": "Central Asian gazelles"
+      },
+      {
+        "latinName": "Procyon lotor",
+        "commonName": "Raccoon"
+      },
+      {
+        "latinName": "Pseudois",
+        "commonName": "Blue Sheep"
+      },
+      {
+        "latinName": "Pseudoryx",
+        "commonName": "Saolas"
+      },
+      {
+        "latinName": "Pudu",
+        "commonName": "pudus"
+      },
+      {
+        "latinName": "Rangifer",
+        "commonName": null
+      },
+      {
+        "latinName": "Raphicerus",
+        "commonName": "grysboks"
+      },
+      {
+        "latinName": "Redunca",
+        "commonName": "reedbucks"
+      },
+      {
+        "latinName": "Rhinoceros",
+        "commonName": "Asian Rhinoceroses"
+      },
+      {
+        "latinName": "Rhinocerotidae",
+        "commonName": "Rhinoceroses"
+      },
+      {
+        "latinName": "Rodentia",
+        "commonName": "rodents"
+      },
+      {
+        "latinName": "Rupicapra",
+        "commonName": "chamois"
+      },
+      {
+        "latinName": "Scandentia",
+        "commonName": null
+      },
+      {
+        "latinName": "Sciurus carolinensis",
+        "commonName": "Eastern Gray Squirrel"
+      },
+      {
+        "latinName": "Sciurus niger",
+        "commonName": "Eastern Fox Squirrel"
+      },
+      {
+        "latinName": "Tamias sibiricus",
+        "commonName": "Siberian Chipmunk"
+      },
+      {
+        "latinName": "Tapiridae",
+        "commonName": "Tapirs"
+      },
+      {
+        "latinName": "Tapirus",
+        "commonName": "tapir"
+      },
+      {
+        "latinName": "Tayassuidae",
+        "commonName": "peccaries"
+      },
+      {
+        "latinName": "Tragulidae",
+        "commonName": "chevrotains"
+      },
+      {
+        "latinName": "Tragulus-Moschiola spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Tubilidentae",
+        "commonName": null
+      },
+      {
+        "latinName": "Xenarthra",
+        "commonName": "edentate"
       }
     ]
   },
@@ -863,19 +782,19 @@
     "species": [
       {
         "latinName": "Testudinata",
-        "commonName": "Turtles"
+        "commonName": null
       },
       {
         "latinName": "Crocodylia",
-        "commonName": "Crocodilians"
+        "commonName": "crocodilian"
       },
       {
         "latinName": "Serpentes",
-        "commonName": "Snakes"
+        "commonName": "snake"
       },
       {
         "latinName": "Sauria",
-        "commonName": "Lizards"
+        "commonName": null
       },
       {
         "latinName": "Trachemys scripta",
@@ -887,7 +806,7 @@
       },
       {
         "latinName": "Rhyncocephalia",
-        "commonName": "Beak-headed reptiles"
+        "commonName": null
       }
     ]
   },
@@ -900,7 +819,7 @@
       },
       {
         "latinName": "Accipitriformes",
-        "commonName": "Diurnal birds of prey"
+        "commonName": "Hawks"
       },
       {
         "latinName": "Falconiformes",
@@ -1065,7 +984,7 @@
       },
       {
         "latinName": "Psittaciformes",
-        "commonName": "Parrots (Including parakeets, macaws and cockatoos)"
+        "commonName": "Parrots"
       },
       {
         "latinName": "Eolophus",
@@ -1261,20 +1180,8 @@
         "commonName": "The Rhea"
       },
       {
-        "latinName": "Struthio spp.",
-        "commonName": "Ostriches"
-      },
-      {
-        "latinName": "Dromaius novaehollandiae",
-        "commonName": "Common Emu"
-      },
-      {
         "latinName": "Casuarius",
         "commonName": "Cassowaries"
-      },
-      {
-        "latinName": "Rhea spp.",
-        "commonName": "Rheas"
       },
       {
         "latinName": "Casuariiformes, Rheiformes, Struthioniformes",
@@ -1282,11 +1189,7 @@
       },
       {
         "latinName": "Dromaius",
-        "commonName": "Emus"
-      },
-      {
-        "latinName": "Casuarius spp.",
-        "commonName": "Cassowaries"
+        "commonName": "Emu"
       }
     ]
   },
@@ -1310,26 +1213,227 @@
         "commonName": "Pigeon or Dove"
       },
       {
-        "latinName": "Geotrygon spp.",
-        "commonName": "Turtledoves"
+        "latinName": "Colombiformes",
+        "commonName": "pigeons & doves"
+      }
+    ]
+  },
+  {
+    "code": "01063980",
+    "species": [
+      {
+        "latinName": "Apodiformes",
+        "commonName": "Hummingbirds"
       },
       {
-        "latinName": "Columba spp.",
-        "commonName": "Pigeons"
+        "latinName": "Catreus",
+        "commonName": null
+      },
+      {
+        "latinName": "Margaroperdix",
+        "commonName": null
+      },
+      {
+        "latinName": "Charadriformes",
+        "commonName": null
+      },
+      {
+        "latinName": "Caprimulgiformes",
+        "commonName": "Swifts, Hummingbirds"
+      },
+      {
+        "latinName": "Threskiornis aethiopicus",
+        "commonName": "African Sacred Ibis"
+      },
+      {
+        "latinName": "Lophura",
+        "commonName": null
+      },
+      {
+        "latinName": "Ciconiiformes",
+        "commonName": "Storks"
+      },
+      {
+        "latinName": "Perdix",
+        "commonName": null
+      },
+      {
+        "latinName": "Melanoperdix",
+        "commonName": "Black Partridge"
+      },
+      {
+        "latinName": "Phasianus",
+        "commonName": "Pheasants"
+      },
+      {
+        "latinName": "Passériformes",
+        "commonName": null
+      },
+      {
+        "latinName": "Sphenisciformes",
+        "commonName": "Penguins"
       },
       {
         "latinName": "Colombiformes",
-        "commonName": "Pigeons and Doves"
+        "commonName": "pigeons & doves"
+      },
+      {
+        "latinName": "Coturnis spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Lagopus",
+        "commonName": null
+      },
+      {
+        "latinName": "Alopochen aegyptiacus",
+        "commonName": "Egyptian Goose"
+      },
+      {
+        "latinName": "Coliiformes",
+        "commonName": "mousebirds"
+      },
+      {
+        "latinName": "Struthio",
+        "commonName": "Ostriches"
+      },
+      {
+        "latinName": "Oxyura jamaicensis",
+        "commonName": "Ruddy Duck"
+      },
+      {
+        "latinName": "Bucerotiformes",
+        "commonName": "Hoopoes"
+      },
+      {
+        "latinName": "Galliformes",
+        "commonName": "Fowls"
+      },
+      {
+        "latinName": "Chrysolohus spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Apterygiformes",
+        "commonName": "Kiwis"
+      },
+      {
+        "latinName": "Tinamiformes",
+        "commonName": "Tinamous"
+      },
+      {
+        "latinName": "Procellariiformes",
+        "commonName": "Albatrosses, Petrels"
+      },
+      {
+        "latinName": "Corvus splendens",
+        "commonName": "House Crow"
+      },
+      {
+        "latinName": "Rhizothera",
+        "commonName": "Long-billed Partridges"
+      },
+      {
+        "latinName": "Ansériformes",
+        "commonName": "Waterfowl"
+      },
+      {
+        "latinName": "Colombiformes, Galliformes",
+        "commonName": null
+      },
+      {
+        "latinName": "Syrmaticus",
+        "commonName": "Long-tailed Pheasants"
+      },
+      {
+        "latinName": "Pelécaniformes",
+        "commonName": "Pelicans"
+      },
+      {
+        "latinName": "Trogoniformes",
+        "commonName": "Trogons"
+      },
+      {
+        "latinName": "Gaviiformes",
+        "commonName": "Loons"
+      },
+      {
+        "latinName": "Cuculiformes",
+        "commonName": "Cuckoos"
+      },
+      {
+        "latinName": "Coraciiformes",
+        "commonName": "Kingfishers"
+      },
+      {
+        "latinName": "Piciformes",
+        "commonName": "Woodpeckers"
+      },
+      {
+        "latinName": "Podicipediformes",
+        "commonName": "Grebes"
+      },
+      {
+        "latinName": "Otra aves",
+        "commonName": null
+      },
+      {
+        "latinName": "Geotrygon",
+        "commonName": "Quail-Doves"
+      },
+      {
+        "latinName": "Rhea",
+        "commonName": "The Rhea"
+      },
+      {
+        "latinName": "Amnoperdix spp.",
+        "commonName": null
+      },
+      {
+        "latinName": "Columba",
+        "commonName": "Pigeon or Dove"
+      },
+      {
+        "latinName": "Casuariiformes, Rheiformes, Struthioniformes",
+        "commonName": null
+      },
+      {
+        "latinName": "Casuarius",
+        "commonName": "Cassowaries"
+      },
+      {
+        "latinName": "Anurophasis",
+        "commonName": "Blue and Brown Quails"
+      },
+      {
+        "latinName": "Acridotheres tristis",
+        "commonName": "Common Myna"
+      },
+      {
+        "latinName": "Alectoris",
+        "commonName": null
+      },
+      {
+        "latinName": "Gruiformes",
+        "commonName": "Cranes"
+      },
+      {
+        "latinName": "Dendrortyx",
+        "commonName": "Wood Partridges"
+      },
+      {
+        "latinName": "Dromaius",
+        "commonName": "Emu"
+      },
+      {
+        "latinName": "Phoenicopteriformes",
+        "commonName": "Flamingos"
       }
     ]
   },
   {
     "code": "01064100",
     "species": [
-      {
-        "latinName": "Apis spp.",
-        "commonName": "Bees"
-      },
       {
         "latinName": "Bombus canariensis",
         "commonName": "Canary Islands Bumble Bee"
@@ -1344,7 +1448,7 @@
       },
       {
         "latinName": "Bombus",
-        "commonName": "Bumblebee"
+        "commonName": "Bumblebees"
       }
     ]
   },

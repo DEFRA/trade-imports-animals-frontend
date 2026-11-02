@@ -5,16 +5,22 @@ import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { consignmentDetailsPage as page } from '../../page.js'
 import { commodityCodesOf, entriesNotOfCode, linesOf } from '../../lines.js'
-import { redirectEmptyLinesToCommodityQuestion } from '../empty-lines-redirect.js'
+import { commodityQuestionPath } from '../../commodity-question-detour.js'
 
 export const groupCodes = (answers, evaluation) =>
   commodityCodesOf(linesOf(answers, evaluation))
 
-const afterRemoval = (request, h, kept) => {
+const afterRemoval = (request, h, kept, commodityCode) => {
   if (kept.length === 0) {
-    return redirectEmptyLinesToCommodityQuestion(request, h, {
-      commodityCodeCount: 0
-    })
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        reason: 'last-commodity-removed',
+        commodityCode
+      },
+      'Redirected to the commodity question'
+    )
+    return h.redirect(commodityQuestionPath(request))
   }
   return h.redirect(
     kit.withChangeContext(
@@ -34,7 +40,7 @@ export const postRemove = async (request, h, index, lineKey) => {
 
   const kept = entriesNotOfCode(answers.commodityLines ?? [], code)
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return afterRemoval(request, h, kept)
+  return afterRemoval(request, h, kept, code)
 }
 
 export const postRemoveSpecies = async (request, h, index, lineKey) => {
@@ -55,5 +61,5 @@ export const postRemoveSpecies = async (request, h, index, lineKey) => {
 
   const kept = stored.toSpliced(index, 1)
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return afterRemoval(request, h, kept)
+  return afterRemoval(request, h, kept, line.commodityCode)
 }

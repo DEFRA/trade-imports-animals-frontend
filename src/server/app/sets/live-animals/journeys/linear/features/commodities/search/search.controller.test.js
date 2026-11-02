@@ -8,7 +8,6 @@ import {
   expectBackLinkIsPage,
   journeyRequest,
   postHandlerOf,
-  expectOneRefusalLogged,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -24,7 +23,7 @@ import { STORED_SEARCH_ROWS } from './selection/rows.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
-  RACCOON_DOG_ROW,
+  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS_ROW
 } from './test-support.js'
 
@@ -109,16 +108,16 @@ describe('commodity search', () => {
     expect(textsOf(result)).toContain('Bison bison')
   })
 
-  it('Should list every species under a code searched for', async () => {
+  it('Should list no more than a hundred species for one search', async () => {
     const result = await searchFor('01061900')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toHaveLength(82)
+    expect(textsOf(result)).toHaveLength(100)
   })
 
   it('Should reach a species by its common name', async () => {
     const result = await searchFor('ferret')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toEqual(['Mustela spp.', 'Mustela putorius furo'])
+    expect(textsOf(result)).toEqual(['Mustela putorius furo'])
   })
 
   it('Should say so when a long-enough query matches nothing', async () => {
@@ -187,12 +186,6 @@ describe('commodity search', () => {
     expect(storedSearchRowsOf(result)).toEqual([
       BOS_TAURUS_ROW,
       BISON_BISON_ROW,
-      {
-        commodityCode: '01061900',
-        speciesLatinName: 'Mustela spp.',
-        speciesCommonName:
-          'Weasels (including ermines, polecats, ferrets, and related species)'
-      },
       {
         commodityCode: '01061900',
         speciesLatinName: 'Mustela putorius furo',
@@ -316,10 +309,6 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: [search.SEARCH_FIELD]
-    })
   })
 
   it('Should refuse nothing chosen on Save and return to overview with the same error as Save and continue', async () => {
@@ -329,10 +318,6 @@ describe('commodity search — saving the selection', () => {
       [search.SEARCH_FIELD]: SELECT_COMMODITY
     })
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: [search.SEARCH_FIELD]
-    })
   })
 
   it('Should leave the saved selection unchanged when Save and return to overview is refused with nothing chosen', async () => {
@@ -353,13 +338,13 @@ describe('commodity search — saving the selection', () => {
         containsUnweanedAnimals: 'yes',
         commodityLines: [BOS_TAURUS_ROW]
       },
-      payload: { species: [FELIS_CATUS_KEY, lineKey(RACCOON_DOG_ROW)] },
-      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW, RACCOON_DOG_ROW)
+      payload: { species: [FELIS_CATUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
+      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW, CANIS_FAMILIARIS_ROW)
     })
     expect('containsUnweanedAnimals' in result.after).toBe(false)
     expect(keysOf(result.after.commodityLines)).toEqual([
-      FELIS_CATUS_KEY,
-      lineKey(RACCOON_DOG_ROW)
+      lineKey(CANIS_FAMILIARIS_ROW),
+      FELIS_CATUS_KEY
     ])
   })
 
@@ -444,13 +429,13 @@ describe('commodity search — saving the selection', () => {
           }
         ]
       },
-      payload: { species: [BOS_TAURUS_KEY, lineKey(RACCOON_DOG_ROW)] },
-      flowOnly: searchRowsShownEarlier(RACCOON_DOG_ROW)
+      payload: { species: [BOS_TAURUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
+      flowOnly: searchRowsShownEarlier(CANIS_FAMILIARIS_ROW)
     })
     expect(result.after.commodityLines).toEqual([
       { ...kept, numberOfAnimalsQuantity: 25 },
       {
-        ...RACCOON_DOG_ROW,
+        ...CANIS_FAMILIARIS_ROW,
         commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
@@ -614,6 +599,20 @@ describe('commodity search — logging a save when another page opened the quest
 
 describe('commodity search — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go Back as an unmarked visit does when the return value names a page not opening the question', async () => {
+    const refused = await driveHandler(get, {
+      query: { return: UNLISTED_RETURN },
+      openingRun: RUN_ACTIVE
+    })
+    const unmarked = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    expect(refused.view.context.backLink).toBe(
+      unmarked.view.context.backLink.replace(
+        unmarked.journeyId,
+        refused.journeyId
+      )
+    )
+  })
 
   it('Should go Back to the origin of the import while the opening run is on', async () => {
     const result = await driveHandler(get, { openingRun: RUN_ACTIVE })

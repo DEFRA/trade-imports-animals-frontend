@@ -22,9 +22,9 @@ const commoditiesSection = sections.find(
 const documentsSection = sections.find((section) => section.id === 'documents')
 
 const completeDocument = {
-  accompanyingDocumentType: 'HEALTH_CERTIFICATE',
+  accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'upload',
-  accompanyingDocumentReference: 'HC-2026-01',
+  accompanyingDocumentReference: 'VC-2026-01',
   accompanyingDocumentDateOfIssue: { day: '1', month: '2', year: '2026' }
 }
 
@@ -105,7 +105,7 @@ describe('indexed obligations are first-class', () => {
 
   it('Should read an optional section with an incomplete entry as IN_PROGRESS', () => {
     const answers = {
-      documents: [{ accompanyingDocumentType: 'HEALTH_CERTIFICATE' }]
+      documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
     }
     expect(
       sectionStatus(

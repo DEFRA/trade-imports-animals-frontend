@@ -142,6 +142,25 @@ describe('copy parity — cy mirrors en structurally', () => {
       }
     }
   })
+
+  it('Should keep every {placeholder} of an en string leaf in its cy leaf', async () => {
+    const placeholdersIn = (text) => (text.match(/\{\w+\}/g) ?? []).sort()
+
+    for (const { name, en, cy } of await modulePairs()) {
+      const cyLeaves = new Map(
+        leaves(cy).map((leaf) => [leaf.path, leaf.value])
+      )
+      for (const { path: leafPath, value: enValue } of leaves(en)) {
+        if (typeof enValue !== 'string') {
+          continue
+        }
+        expect(
+          placeholdersIn(cyLeaves.get(leafPath)),
+          `${name}: ${leafPath} placeholders must match en`
+        ).toEqual(placeholdersIn(enValue))
+      }
+    }
+  })
 })
 
 describe('copy parity — the locale seam resolves cy', () => {

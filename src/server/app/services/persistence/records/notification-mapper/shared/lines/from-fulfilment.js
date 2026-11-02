@@ -50,9 +50,6 @@ const lineFrom = ({
         : undefined
   })
 
-// One logical line/unit join over the independent canonical record maps.
-// Line and unit identity comes only from exact fulfilment indexes; a leaf
-// is joined only when its record map contains that exact fulfilment index.
 export const commodityLinesFromFulfilment = (reader) => {
   const obligations = obligationSet()
   const identifiers = identifiersFrom(obligations)

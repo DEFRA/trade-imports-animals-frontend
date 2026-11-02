@@ -82,7 +82,7 @@ const DOMESTIC = { id: '16', text: 'Domestic' }
 const GAME = { id: '24', text: 'Game' }
 const SINGLE_TYPE = { id: '2', text: '' }
 
-const GAME_SPECIES = new Set(['Bos sp.', 'Bos spp.'])
+const GAME_SPECIES = new Set(['Bos sp.'])
 
 const TYPES_BY_CODE = {
   [CATTLE_CODE]: {
@@ -103,3 +103,16 @@ export const typeFor = (code, latinName) => codeTypes(code).typeOf(latinName)
 export const typesFor = (code) => codeTypes(code).types
 
 export const PER_SPECIES_CODE = OTHER_LIVE_MAMMALS_CODE
+
+export const COMMODITY_DESCRIPTIONS = {
+  [HORSES_CODE]: 'Live horses, asses, mules and hinnies',
+  [CATTLE_CODE]: 'Live bovine animals',
+  [OTHER_LIVE_MAMMALS_CODE]: 'Other live animals',
+  '0301': 'Live fish'
+}
+
+export const COMMODITY_NAMES_BY_CODE = {
+  [HORSES_CODE]: 'Horse',
+  [CATTLE_CODE]: 'Cow',
+  '0301': 'Fish'
+}
