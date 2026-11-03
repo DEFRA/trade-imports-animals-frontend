@@ -146,7 +146,7 @@ Extend `shared/layout.njk`, which resolves from the `src/server/app` Nunjucks ro
 Include the shared error summary and save actions. Import the section caption with
 `{% from "shared/section-caption.njk" import sectionCaption %}` and call
 `{{ sectionCaption(caption) }}` immediately above the page heading, passing the
-caption size that matches the heading. `journeys/linear/features/origin/template.njk`
+caption size that matches the heading. `journeys/linear/features/additional-details/template.njk`
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
@@ -160,11 +160,11 @@ On a page whose save buttons post to another service, the Upload documents page,
 neither has a URL of its own, so the amend Save and return also posts the
 submitted value `amendFormActions` returns. While amending, a task-row page shows Save and return, Save and
 continue and Save and return to overview. A page that also passes
-`showReturnControls: false` (the CPH number page, the role address pickers) or
-`hubExitWhileAmending: false` (the contact address page) shows only the first two.
+`showReturnControls: false` or `hubExitWhileAmending: false` shows only the first two.
 Do not pass `amend` on an add-another sub-page that returns to its own list page:
-the transporter add, select and details pages pass `showReturnControls: false`
-alone, and the list page carries the amend ending.
+it passes `showReturnControls: false` alone, and the list page carries the amend
+ending. Which pages end each way is set in
+[How a page ends](page-design.md#how-a-page-ends).
 [`amend-endings.test.js`](../journeys/linear/features/amend-endings.test.js) renders
 every task-row page while amending and fails if one loses the ending.
 
@@ -412,7 +412,8 @@ Cover:
 - preservation of entered values on error
 - every error-summary link moving focus to its control
 - back, Save and return to overview, Cancel and Change navigation as applicable
-- while amending, the amend controls (three on a task-row page; two on pickers, the CPH number page and the contact address page; none on add-another sub-pages) and where each one goes
+- while amending, the amend controls the page ends with
+  ([How a page ends](page-design.md#how-a-page-ends)) and where each one goes
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

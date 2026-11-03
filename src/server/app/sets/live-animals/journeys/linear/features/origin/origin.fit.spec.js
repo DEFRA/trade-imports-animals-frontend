@@ -4,6 +4,7 @@ import {
   chooseCountryOfOrigin,
   chooseOutOfListCountry,
   expectNoSeriousOrCriticalViolations,
+  expectPageEndsWithPrimaryAlone,
   openNotificationView,
   startNotificationAtOrigin,
   urlUnderBase
@@ -225,16 +226,8 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('cancel and return to overview reaches the hub on a notification with no answers', async ({
-    page
-  }) => {
-    const hubUrl = hubUrlOf(page.url())
-
-    await page
-      .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
-      .click()
-
-    await expect(page).toHaveURL(hubUrl)
+  test('ends with Save and continue alone', async ({ page }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
