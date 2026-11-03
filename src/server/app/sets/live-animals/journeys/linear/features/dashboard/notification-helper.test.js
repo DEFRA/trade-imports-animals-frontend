@@ -4,7 +4,7 @@ import {
   buildHomeListQueryString,
   buildPageResultsRangeLabel,
   buildPaginationLinks,
-  formatCommodity,
+  listRowCommodityLabel,
   formatDisplayCalendarDate,
   formatDisplayMoment,
   normalizePageNumber,
@@ -21,8 +21,8 @@ const ARRIVAL_DATE = '2026-07-21'
 
 const ARRIVAL_DAY = '21 Jul 2026'
 
-describe('promoted dashboard notification helpers', () => {
-  it('Should validate the deployed sort vocabulary and default invalid values', () => {
+describe('dashboard notification helpers', () => {
+  it('Should accept the four listed sort options and default anything else to arrivalDate,desc', () => {
     expect(parseNotificationSort(CREATED_AT_ASCENDING_SORT)).toBe(
       CREATED_AT_ASCENDING_SORT
     )
@@ -51,14 +51,18 @@ describe('promoted dashboard notification helpers', () => {
     ).toBe('?page=2&sort=createdAt%2Casc&referenceNumber=GBN-AG-26-ABC123')
   })
 
-  it('Should format dashboard dates and commodity objects', () => {
+  it('Should format dashboard dates and commodity labels', () => {
     expect(formatDisplayCalendarDate('2026-03-05')).toBe('5 Mar 2026')
     expect(formatDisplayCalendarDate('not-a-date')).toBe('')
     expect(formatDisplayCalendarDate(null)).toBe('')
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
-    expect(formatCommodity({ commodityCode: '0102' })).toBe('0102')
-    expect(formatCommodity(null)).toBe('')
+    expect(listRowCommodityLabel({ commodityCode: '0102' })).toBe('0102')
+    expect(listRowCommodityLabel({ name: 'Cow' })).toBe('Cow')
+    expect(listRowCommodityLabel({ name: 'Cow', commodityCode: '0102' })).toBe(
+      'Cow'
+    )
+    expect(listRowCommodityLabel(null)).toBe('')
   })
 
   it('Should render an arrival date as the day the user chose', () => {
@@ -85,7 +89,7 @@ describe('promoted dashboard notification helpers', () => {
     })
   })
 
-  it('Should build deployed-style result ranges and govuk pagination links', () => {
+  it('Should build the results range label and GOV.UK pagination links', () => {
     const page = {
       page: 2,
       size: 20,

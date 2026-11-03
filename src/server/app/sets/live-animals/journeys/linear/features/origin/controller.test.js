@@ -10,6 +10,8 @@ import {
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../../flow/run-state.js'
+import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import * as countries from '../../../../../../services/countries/index.js'
 
 import * as origin from './controller.js'
@@ -247,6 +249,17 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should hold the user on the page, with "Yes" still chosen, when the box is submitted empty', async () => {
+    const result = await postSuffix('')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.values.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should hold the user on the page when the typed part is only the prefix', async () => {
     const result = await postSuffix('fr-')
 
@@ -349,50 +362,6 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
   })
 })
 
-describe('POST /origin — Save and return to overview', () => {
-  const postRegion = (regionOfOriginCodeSuffix, extra = {}) =>
-    driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'FR',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix,
-        internalReferenceNumber: '',
-        ...extra
-      }
-    })
-
-  it('Should refuse "Yes" with the region code left blank, keep "Yes" chosen and save nothing', async () => {
-    const result = await postRegion('', { exit: 'hub' })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_REQUIRED_MESSAGE
-    )
-    expect(result.view.context.values.regionOfOriginCodeRequirement).toBe('yes')
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should refuse a region code over 5 characters and save nothing', async () => {
-    const result = await postRegion('ABCDEF', { exit: 'hub' })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_MAX_LENGTH_MESSAGE
-    )
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should keep refusing a blank region code on Save and continue', async () => {
-    const result = await postRegion('')
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_REQUIRED_MESSAGE
-    )
-    expect(result.after).toEqual(result.before)
-  })
-})
-
 describe('GET /origin — region of origin code splits back into its two parts', () => {
   it('Should render the country as the prefix and only the rest in the box', async () => {
     const result = await driveHandler(get, {
@@ -412,6 +381,44 @@ describe('GET /origin — region of origin code splits back into its two parts',
 
     expect(result.view.context.regionCodePrefix).toBe('')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
+  })
+})
+
+describe('GET /origin — where Back goes', () => {
+  const answer = { countryOfOrigin: 'FR' }
+  const seeds = [
+    { name: 'no answer', seed: {} },
+    { name: 'a committed answer', seed: answer }
+  ]
+
+  it.each(seeds)(
+    'Should send Back to the dashboard while the opening run is active with $name',
+    async ({ seed }) => {
+      const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
+
+      expect(result.view.context.backLink).toBe(dashboardPath())
+    }
+  )
+
+  it.each(seeds)(
+    'Should send Back to the overview once the opening run is complete with $name',
+    async ({ seed }) => {
+      const result = await driveHandler(get, { seed, openingRun: RUN_COMPLETE })
+
+      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+    }
+  )
+
+  it('Should send Back to the overview for a notification with a committed answer and no opening run', async () => {
+    const result = await driveHandler(get, { seed: answer })
+
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should send Back to the dashboard for a notification with no answer and no opening run', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.backLink).toBe(dashboardPath())
   })
 })
 
@@ -557,14 +564,9 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
   })
 })
 
-describe('POST /origin — a stored region code cascades to a length error under a stale country', () => {
-  it('Should reject the payload with a max-length error on the region code', async () => {
+describe('POST /origin — a region code typed with no country chosen', () => {
+  it('Should refuse a code over 5 characters with the length error and no country error', async () => {
     const result = await driveHandler(post, {
-      seed: {
-        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCode: 'AT-123'
-      },
       payload: {
         countryOfOrigin: '',
         regionOfOriginCodeRequirement: 'yes',

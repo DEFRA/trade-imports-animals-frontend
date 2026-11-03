@@ -4,9 +4,12 @@ import {
   chooseCountryOfOrigin,
   chooseOutOfListCountry,
   expectNoSeriousOrCriticalViolations,
+  expectOverview,
+  expectPageEndsWithPrimaryAlone,
   openNotificationView,
   startNotificationAtOrigin,
-  urlUnderBase
+  urlUnderBase,
+  visitOverviewThenOpen
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 import {
@@ -201,7 +204,7 @@ test.describe('origin feature', () => {
     )
   })
 
-  test('back link returns to the dashboard while the journey is unanswered', async ({
+  test('back link returns to the dashboard when the page was opened from the dashboard', async ({
     page
   }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
@@ -209,32 +212,48 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(BASE)
   })
 
-  test('back link returns to the notification hub once the journey has answers', async ({
-    page
-  }) => {
-    const originUrl = page.url()
-    const hubUrl = hubUrlOf(originUrl)
-
-    await chooseCountryOfOrigin(page, france.name)
-    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await page.goto(originUrl)
-
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
-
-    await expect(page).toHaveURL(hubUrl)
-  })
-
-  test('cancel and return to overview reaches the hub on a notification with no answers', async ({
+  test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({
     page
   }) => {
     const hubUrl = hubUrlOf(page.url())
 
-    await page
-      .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
-      .click()
+    await visitOverviewThenOpen(page, 'origin')
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(hubUrl)
+    await expectOverview(page)
+  })
+
+  test('back link returns to the overview when the page was opened from the overview after an answer is saved', async ({
+    page
+  }) => {
+    const hubUrl = hubUrlOf(page.url())
+
+    await chooseCountryOfOrigin(page, france.name)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await visitOverviewThenOpen(page, 'origin')
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+    await expectOverview(page)
+  })
+
+  test('back link returns to the dashboard when origin is reached by going back along the opening run', async ({
+    page
+  }) => {
+    await chooseCountryOfOrigin(page, france.name)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(BASE)
+  })
+
+  test('ends with Save and continue alone', async ({ page }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

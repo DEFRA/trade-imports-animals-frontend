@@ -90,15 +90,37 @@ const postBreedingInternalMarketReason = (openingRun) =>
     openingRun
   })
 
-const startPostHandler = () =>
-  dashboard.routes.find(
-    (route) => route.method === 'POST' && route.path === createRoutePath()
-  ).handler
+const commoditySelectionPayload = { species: [lineKey(FELIS_CATUS_ROW)] }
+
+const postCommoditySelection = ({
+  payload = commoditySelectionPayload,
+  openingRun
+} = {}) =>
+  driveHandler(postHandlerOf(commoditiesSearch), {
+    payload,
+    seed: { countryOfOrigin: 'FR' },
+    flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
+    openingRun
+  })
 
 const originPayload = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no'
 }
+
+const postOrigin = ({ journeyId, state, query, openingRun } = {}) =>
+  driveHandler(postHandlerOf(origin), {
+    payload: originPayload,
+    journeyId,
+    state,
+    query,
+    openingRun
+  })
+
+const startPostHandler = () =>
+  dashboard.routes.find(
+    (route) => route.method === 'POST' && route.path === createRoutePath()
+  ).handler
 
 const createNotification = async (state = {}) => {
   const request = journeyRequest(undefined, { state })
@@ -121,54 +143,33 @@ const creatingANotificationOpensTheRun = () => {
 
   it('Should sequence a created notification on from origin to the commodities page rather than the hub', async () => {
     const { journeyId, record } = await createNotification()
-    const request = journeyRequest(journeyId, {
-      payload: originPayload,
+    const { response } = await postOrigin({
+      journeyId,
       state: { [openingRunCookie()]: record }
     })
-    const response = await postHandlerOf(origin)(request, stubH(request))
     expect(response.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
   it('Should send a journey with no run record to the hub after origin, not into the opening run', async () => {
-    const { journeyId, response, cookies } = await driveHandler(
-      postHandlerOf(origin),
-      { payload: originPayload }
-    )
+    const { journeyId, response, cookies } = await postOrigin()
     expect(response.redirect).toBe(hubPath(journeyId))
     expect(openingRunCookie() in cookies).toBe(false)
   })
 }
 
 const saveAndContinueFollowsTheRunSequence = () => {
-  const originPost = postHandlerOf(origin)
-
   it('Should send origin to the commodity search mid-run', async () => {
-    const { journeyId, response } = await driveHandler(originPost, {
-      payload: originPayload,
-      openingRun: RUN_ACTIVE
-    })
+    const { journeyId, response } = await postOrigin({ openingRun: RUN_ACTIVE })
     expect(response.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
   it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
-    const payload = { species: [lineKey(FELIS_CATUS_ROW)] }
-    const seed = { countryOfOrigin: 'FR' }
-    const flowOnly = { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
-    const inRun = await driveHandler(postHandlerOf(commoditiesSearch), {
-      payload,
-      seed,
-      flowOnly,
-      openingRun: RUN_ACTIVE
-    })
+    const inRun = await postCommoditySelection({ openingRun: RUN_ACTIVE })
     expect(inRun.response.redirect).toBe(
       pagePath(inRun.journeyId, 'import-reason')
     )
 
-    const outside = await driveHandler(postHandlerOf(commoditiesSearch), {
-      payload,
-      seed,
-      flowOnly
-    })
+    const outside = await postCommoditySelection()
     expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
@@ -415,19 +416,16 @@ describe('the opening run', () => {
   )
 
   describe('explicit exits beat the run', () => {
-    const originPost = postHandlerOf(origin)
-
-    it('Should honour Save and return to overview mid-run', async () => {
-      const { journeyId, response } = await driveHandler(originPost, {
-        payload: { ...originPayload, exit: 'hub' },
+    it('Should honour Save and return to overview on What are you importing? mid-run', async () => {
+      const { journeyId, response } = await postCommoditySelection({
+        payload: { ...commoditySelectionPayload, exit: 'hub' },
         openingRun: RUN_ACTIVE
       })
       expect(response.redirect).toBe(hubPath(journeyId))
     })
 
     it('Should honour the change context over the run target', async () => {
-      const { journeyId, response } = await driveHandler(originPost, {
-        payload: originPayload,
+      const { journeyId, response } = await postOrigin({
         query: { change: '1' },
         openingRun: RUN_ACTIVE
       })
@@ -457,23 +455,18 @@ describe('the opening run', () => {
     })
 
     it('Should send origin to the overview and write no run record once the run is complete', async () => {
-      const { journeyId, response, cookies } = await driveHandler(
-        postHandlerOf(origin),
-        { payload: originPayload, openingRun: RUN_COMPLETE }
-      )
+      const { journeyId, response, cookies } = await postOrigin({
+        openingRun: RUN_COMPLETE
+      })
       expect(response.redirect).toBe(hubPath(journeyId))
       expect(openingRunCookie() in cookies).toBe(false)
     })
 
     it('Should send a change=1 origin save to check your answers once the run is complete', async () => {
-      const { journeyId, response, cookies } = await driveHandler(
-        postHandlerOf(origin),
-        {
-          payload: originPayload,
-          query: { change: '1' },
-          openingRun: RUN_COMPLETE
-        }
-      )
+      const { journeyId, response, cookies } = await postOrigin({
+        query: { change: '1' },
+        openingRun: RUN_COMPLETE
+      })
       expect(response.redirect).toBe(
         pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
       )

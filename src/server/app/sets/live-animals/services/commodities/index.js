@@ -1,5 +1,7 @@
 import {
+  COMMODITY_DESCRIPTIONS,
   COMMODITY_IDENTIFIERS,
+  COMMODITY_NAMES_BY_CODE,
   CPH_EXEMPT_CODES,
   EAR_TAG_CODES,
   HORSE_NAME_CODES,
@@ -25,6 +27,10 @@ export const listsSpeciesIndividually = (code) => code === PER_SPECIES_CODE
 export const packageCountCommodityCodes = () => PACKAGE_COUNT_CODES
 
 export const identifiersFor = (code) => COMMODITY_IDENTIFIERS[code] ?? []
+
+export const commodityDescriptionFor = (code) => COMMODITY_DESCRIPTIONS[code]
+
+export const commodityNameFor = (code) => COMMODITY_NAMES_BY_CODE[code]
 
 export const microchipCommodityCodes = () => MICROCHIP_CODES
 

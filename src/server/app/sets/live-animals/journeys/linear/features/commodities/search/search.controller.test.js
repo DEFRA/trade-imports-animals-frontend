@@ -151,7 +151,7 @@ describe('commodity search', () => {
     ])
   })
 
-  it('Should bold the matched text in a group heading and in a species label', async () => {
+  it('Should bold the matched text in the commodity heading and in a species label', async () => {
     const headingResult = await searchFor('0102')
     expect(groupsOf(headingResult)[0].legendHtml).toBe(
       '<strong class="govuk-!-font-weight-bold">0102</strong>'

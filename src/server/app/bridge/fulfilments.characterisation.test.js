@@ -8,6 +8,7 @@ import { obligationSet } from '../model/obligations/manifest.js'
 
 const { earTag, obligations, purposeInInternalMarket } = obligationSet()
 import { fulfilmentToNotification } from '../services/persistence/records/notification-mapper/index.js'
+import { commodityNameFor } from '../services/persistence/records/notification-mapper/commodity-reference.js'
 
 const oracles = JSON.parse(
   readFileSync(
@@ -20,7 +21,7 @@ const oracles = JSON.parse(
 
 const evaluator = createObligationEvaluator({ obligations })
 
-describe('increment 0 golden boundary characterisation', () => {
+describe('golden boundary characterisation of fulfilments, obligations and notification mapping', () => {
   test.each(characterisationCorpus)(
     'Should preserve the current outputs for $name',
     ({ name, answers }) => {
@@ -48,15 +49,19 @@ describe('increment 0 golden boundary characterisation', () => {
       ({ answers }) => answers.commodityLines?.length > 0
     )
   )(
-    'Should send the first commodity line CN code as the commodity name for $name',
+    'Should send the first line CN code and catalogue commodity name on the first commodity for $name',
     ({ answers }) => {
-      const firstLineCode = answers.commodityLines[0].commodityCode
-      expect(
-        fulfilmentToNotification(
-          assembleFulfilments(answers),
-          answers.referenceNumber
-        ).commodity.name
-      ).toBe(firstLineCode)
+      const firstLine = answers.commodityLines[0]
+      const mapped = fulfilmentToNotification(
+        assembleFulfilments(answers),
+        answers.referenceNumber
+      )
+      expect(mapped.commodities[0].commodityCode).toBe(firstLine.commodityCode)
+      expect(mapped.commodities[0].name).toBe(
+        commodityNameFor(firstLine.commodityCode) ??
+          firstLine.speciesCommonName ??
+          firstLine.commodityCode
+      )
     }
   )
 

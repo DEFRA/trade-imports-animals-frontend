@@ -44,10 +44,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   primary and "Save and return to overview" side by side, then "Cancel and
   return to overview" on its own line below them, so a trader can stop and
   leave from where the overview sent them.
+- Origin of the import is the one overview-linked page without the return
+  controls, because the design gives it "Save and continue" as its only way to
+  save and move on. While amending it ends with "Save and return" and "Save and
+  continue" only.
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in.
+  leaves the way they came in: the CPH number page, the role address pickers
+  and the transporter add, select and details pages.
 - While a notification is being amended, a page ends with "Save and return"
   (back to the review) and "Save and continue" (on, never back to the review)
   side by side, then a secondary "Save and return to overview" button on its
@@ -56,7 +61,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   a page whose save buttons post to another service (Upload documents while its
   add form is open): there the amend "Save and return" also posts the submitted
   value `amendFormActions` returns. A page reached from another page or a
-  picker ends with the first two only.
+  picker ends with the first two only, and so does the contact address page.
+  An add-another sub-page that returns to its own list page (the transporter
+  add, select and details pages) keeps the primary alone, and its list page
+  carries the amend ending.
 
 ## Check your answers (review)
 
@@ -155,10 +163,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   depends on the country.
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
-- The back link goes to the dashboard until something is saved, then to the
-  overview. A fresh draft loaded from the backend carries only the reference
-  number the backend minted, which is not a saved answer, so its back link
-  stays on the dashboard while the status strip still shows.
+- The back link returns to where the page was opened from: the overview or the
+  dashboard. The rule is in
+  [Opening run and entry guard](journey-flow-and-gates.md#opening-run-and-entry-guard).
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,
   so a country the reference data no longer offers is named on the page.
