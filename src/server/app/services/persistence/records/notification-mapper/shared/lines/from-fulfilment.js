@@ -37,6 +37,7 @@ const lineFrom = ({
     commodityCode: valueAt(obligations.commodityCode, lineIndex),
     commodityType: valueAt(obligations.commodityType, lineIndex),
     speciesLatinName: valueAt(obligations.speciesLatinName, lineIndex),
+    speciesCommonName: valueAt(obligations.speciesCommonName, lineIndex),
     numberOfAnimalsQuantity: animalCountText(
       valueAt(obligations.numberOfAnimals, lineIndex)
     ),
@@ -49,9 +50,6 @@ const lineFrom = ({
         : undefined
   })
 
-// One logical line/unit join over the independent canonical record maps.
-// Line and unit identity comes only from exact fulfilment indexes; a leaf
-// is joined only when its record map contains that exact fulfilment index.
 export const commodityLinesFromFulfilment = (reader) => {
   const obligations = obligationSet()
   const identifiers = identifiersFrom(obligations)
@@ -60,6 +58,7 @@ export const commodityLinesFromFulfilment = (reader) => {
     obligations.commodityCode,
     obligations.commodityType,
     obligations.speciesLatinName,
+    obligations.speciesCommonName,
     obligations.numberOfAnimals,
     obligations.numberOfPackages,
     ...identifierObligations
