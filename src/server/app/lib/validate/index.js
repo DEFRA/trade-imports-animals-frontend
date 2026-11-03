@@ -13,6 +13,7 @@ export {
   vehicleReg,
   ukPhone,
   oneOf,
+  oneOfKnown,
   requiredOneOf,
   integerInRange,
   requiredIntegerInRange,

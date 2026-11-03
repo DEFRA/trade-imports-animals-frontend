@@ -2,8 +2,10 @@ import {
   compose,
   maxText,
   oneOf,
+  oneOfKnown,
   pageValidation,
-  requiredMaxText
+  requiredMaxText,
+  requiredOneOf
 } from '../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import {
@@ -77,8 +79,30 @@ const regionCodeFrom = ({
   return `${prefix}${REGION_CODE_SEPARATOR}${rest}`
 }
 
-const countryMessage = (stored) =>
-  stored ? copy.errors.countryNoLongerAvailable : copy.errors.countryFromList
+const countryRule = async (stored, values) => {
+  const countryValues = (
+    await countryAndSubdivisionOptionsNamedWithCountry()
+  ).map(({ value }) => value)
+  if (stored) {
+    return oneOf(
+      'countryOfOrigin',
+      countryValues,
+      copy.errors.countryNoLongerAvailable
+    )
+  }
+  if (!(values.countryOfOrigin ?? '').trim()) {
+    return requiredOneOf(
+      'countryOfOrigin',
+      countryValues,
+      copy.errors.countryRequired
+    )
+  }
+  return oneOfKnown(
+    'countryOfOrigin',
+    countryValues,
+    copy.errors.countryFromList
+  )
+}
 
 const regionCodeSuffixRule = (requirement) =>
   requirement === REGION_CODE_REQUIRED_ANSWER
@@ -92,12 +116,9 @@ const regionCodeSuffixRule = (requirement) =>
         copy.errors.regionCodeMaxLength
       )
 
-const fields = async (values, { stored } = {}) => {
-  const countryValues = (
-    await countryAndSubdivisionOptionsNamedWithCountry()
-  ).map(({ value }) => value)
-  return compose(
-    oneOf('countryOfOrigin', countryValues, countryMessage(stored)),
+const fields = async (values, { stored } = {}) =>
+  compose(
+    await countryRule(stored, values),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(values.regionOfOriginCodeRequirement),
     maxText(
@@ -106,7 +127,6 @@ const fields = async (values, { stored } = {}) => {
       copy.errors.internalReferenceMaxLength
     )
   )
-}
 
 const normalise = (values) => ({
   ...values,

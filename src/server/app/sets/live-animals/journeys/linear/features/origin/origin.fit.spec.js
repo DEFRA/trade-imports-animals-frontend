@@ -20,7 +20,6 @@ import {
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
-import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
@@ -618,7 +617,7 @@ test.describe('origin country and region validation', () => {
     await startNotificationAtOrigin(page)
   })
 
-  test('country: an unanswered country saves the rest of the page and moves on', async ({
+  test('refuses save and continue when no country is chosen', async ({
     page
   }) => {
     const originUrl = page.url()
@@ -627,29 +626,17 @@ test.describe('origin country and region validation', () => {
     await page.getByLabel(copy.internalReference.label).fill(INTERNAL_REFERENCE)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(hubUrlOf(originUrl))
-
-    await page.goto(originUrl)
-    await expect(page.locator(countryHidden)).toHaveValue('')
+    await expect(page).toHaveURL(originUrl)
     await expect(
-      page.getByRole('radio', { name: copy.regionRequirement.no })
-    ).toBeChecked()
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: copy.errors.countryRequired })
+    ).toBeVisible()
+    await expect(page.locator(countryHidden)).toHaveValue('')
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       INTERNAL_REFERENCE
     )
-  })
-
-  test('country: an unanswered country leaves the origin task unfinished', async ({
-    page
-  }) => {
-    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-
-    const originRow = page.getByRole('listitem').filter({
-      has: page.getByText(hubCopy.rows.origin.title, { exact: true })
-    })
-    await expect(originRow).toContainText(hubCopy.statuses.toDo)
-    await expect(originRow).not.toContainText(hubCopy.statuses.complete)
   })
 
   test('country validation: an out-of-list country links to and focuses the cleared field', async ({

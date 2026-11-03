@@ -175,6 +175,17 @@ export const oneOf = (name, values, message = defaults.oneOf) =>
       .messages({ 'any.only': message })
   )
 
+/** Non-empty value must be one of `values` (empty is not allowed). */
+export const oneOfKnown = (name, values, message) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .valid(...values)
+      .messages({ 'any.only': message })
+  )
+
 const wholeNumberInRange = (min, max) => (raw, helpers) => {
   if (!/^-?\d+$/.test(raw)) {
     return helpers.error(NUMBER_ERROR_CODE)

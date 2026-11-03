@@ -21,6 +21,7 @@ export const copy = {
     hint: 'Enter any internal reference you want to use to identify this consignment, or leave blank.'
   },
   errors: {
+    countryRequired: 'Select a country of origin',
     countryFromList: 'Select a country from the list',
     countryNoLongerAvailable:
       'The saved country is no longer available. Select a country from the list.',

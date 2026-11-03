@@ -8,6 +8,7 @@ import {
   integerInRange,
   maxText,
   oneOf,
+  oneOfKnown,
   postcode,
   requiredDateText,
   requiredDateTextInRange,
@@ -218,6 +219,34 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     )
     expect(validate(noDomain, { itemSelector: '' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
+    })
+  })
+})
+
+describe('#oneOfKnown — non-empty value domain', () => {
+  const OUT_OF_LIST_MESSAGE = 'Select a country from the list'
+  const schema = oneOfKnown(
+    'itemSelector',
+    [SELECTOR_ALPHA, SELECTOR_BRAVO],
+    OUT_OF_LIST_MESSAGE
+  )
+
+  it('Should accept a listed value', () => {
+    expect(validate(schema, { itemSelector: SELECTOR_ALPHA }).errors).toBeNull()
+  })
+
+  it('Should block blank and missing values', () => {
+    expect(validate(schema, { itemSelector: '' }).errors).toEqual({
+      itemSelector: OUT_OF_LIST_MESSAGE
+    })
+    expect(validate(schema, {}).errors).toEqual({
+      itemSelector: OUT_OF_LIST_MESSAGE
+    })
+  })
+
+  it('Should reject a value outside the domain without treating it as blank', () => {
+    expect(validate(schema, { itemSelector: 'gold-plated' }).errors).toEqual({
+      itemSelector: OUT_OF_LIST_MESSAGE
     })
   })
 })
