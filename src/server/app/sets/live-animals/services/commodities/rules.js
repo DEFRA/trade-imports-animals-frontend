@@ -64,7 +64,6 @@ const PERMANENT_ADDRESS_SPECIES = {
   [OTHER_LIVE_MAMMALS_CODE]: [
     'Felis catus',
     'Canis familiaris',
-    'Canis lupus familiaris',
     'Mustela putorius furo'
   ]
 }
@@ -104,3 +103,16 @@ export const typeFor = (code, latinName) => codeTypes(code).typeOf(latinName)
 export const typesFor = (code) => codeTypes(code).types
 
 export const PER_SPECIES_CODE = OTHER_LIVE_MAMMALS_CODE
+
+export const COMMODITY_DESCRIPTIONS = {
+  [HORSES_CODE]: 'Live horses, asses, mules and hinnies',
+  [CATTLE_CODE]: 'Live bovine animals',
+  [OTHER_LIVE_MAMMALS_CODE]: 'Other live animals',
+  '0301': 'Live fish'
+}
+
+export const COMMODITY_NAMES_BY_CODE = {
+  [HORSES_CODE]: 'Horse',
+  [CATTLE_CODE]: 'Cow',
+  '0301': 'Fish'
+}

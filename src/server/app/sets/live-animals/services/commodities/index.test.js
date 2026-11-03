@@ -6,6 +6,8 @@ import {
   horseNameCommodityCodes,
   identifiedCommodityCodes,
   identifiersFor,
+  commodityDescriptionFor,
+  commodityNameFor,
   microchipCommodityCodes,
   packageCountCommodityCodes,
   passportCommodityCodes,
@@ -109,7 +111,6 @@ describe('the identifier allowlists', () => {
     expect(permanentAddressCodeSpecies()).toEqual([
       [OTHER_LIVE_MAMMALS_CODE, 'Felis catus'],
       [OTHER_LIVE_MAMMALS_CODE, 'Canis familiaris'],
-      [OTHER_LIVE_MAMMALS_CODE, 'Canis lupus familiaris'],
       [OTHER_LIVE_MAMMALS_CODE, 'Mustela putorius furo']
     ])
   })
@@ -137,7 +138,7 @@ describe('#typeIdFor', () => {
     )
     for (const code of otherCodes) {
       expect(typeIdFor(code, 'Felis catus')).toBe('2')
-      expect(typeIdFor(code, 'Bos sp.')).toBe('2')
+      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
     }
   })
 })
@@ -154,5 +155,29 @@ describe('#typeTextForId', () => {
 
   it('Should give no text for a type id the code does not have', () => {
     expect(typeTextForId(CATTLE_CODE, '2')).toBeUndefined()
+  })
+})
+
+describe('#commodityDescriptionFor', () => {
+  it('Should give the stub MDM description for a known CN code', () => {
+    expect(commodityDescriptionFor(CATTLE_CODE)).toBe('Live bovine animals')
+    expect(commodityDescriptionFor(OTHER_LIVE_MAMMALS_CODE)).toBe(
+      'Other live animals'
+    )
+  })
+
+  it('Should give undefined for a code the stub does not hold', () => {
+    expect(commodityDescriptionFor('9999')).toBeUndefined()
+  })
+})
+
+describe('#commodityNameFor', () => {
+  it('Should reverse-lookup the commodity name from a CN code', () => {
+    expect(commodityNameFor(CATTLE_CODE)).toBe('Cow')
+  })
+
+  it('Should give undefined for a code with no maintained name', () => {
+    expect(commodityNameFor(OTHER_LIVE_MAMMALS_CODE)).toBeUndefined()
+    expect(commodityNameFor('9999')).toBeUndefined()
   })
 })

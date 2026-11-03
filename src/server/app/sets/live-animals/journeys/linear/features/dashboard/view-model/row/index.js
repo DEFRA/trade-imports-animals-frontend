@@ -1,7 +1,7 @@
 import { journeyStrip } from '../../../../../../../../shared/kit.js'
 import * as countries from '../../../../../../../../services/countries/index.js'
 import {
-  formatCommodity,
+  listRowCommodityLabel,
   formatDisplayCalendarDate,
   formatDisplayMoment
 } from '../../notification-helper.js'
@@ -10,7 +10,7 @@ import { rowActions } from './actions.js'
 export const toRow = async (journey) => ({
   reference: journey.reference ?? journey.journeyId,
   status: journeyStrip(journey).status,
-  commodity: formatCommodity(journey.commodity),
+  commodity: listRowCommodityLabel(journey.commodity),
   origin: journey.originCountryCode
     ? await countries.countryDisplayLabel(journey.originCountryCode)
     : '',

@@ -1,3 +1,4 @@
+import { commodityFieldForListRow } from '../../notification-mapper/commodity-field-for-list-row.js'
 import { mapStatus } from '../status.js'
 
 export const marshalListItem = (notification) => ({
@@ -7,9 +8,7 @@ export const marshalListItem = (notification) => ({
   submittedAt: null,
   concurrencyToken: notification.concurrencyToken ?? null,
   reference: notification.referenceNumber,
-  commodity: notification.commodity?.name
-    ? { commodityCode: notification.commodity.name }
-    : null,
+  commodity: commodityFieldForListRow(notification),
   originCountryCode:
     notification.origin?.countrySubdivisionCode ??
     notification.origin?.countryCode ??

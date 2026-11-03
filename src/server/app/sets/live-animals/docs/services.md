@@ -57,23 +57,24 @@ so generic notification-mapper code does not import the set.
   above. `01061900` holds the domestic cats, dogs and ferrets that need one
   alongside many mammals that do not, and MDM lists one species under several
   codes, so neither the code nor the species alone is enough. The genus Felis
-  (MDM's "Cat") is not listed. `Canis lupus familiaris` is listed beside MDM's
-  `Canis familiaris` in case MDM renames it.
+  (MDM's "Cat") is not listed. `Canis familiaris` (MDM's dog) is listed for the
+  permanent-address gate. `Canis lupus familiaris` is not listed — MDM does not
+  hold that spelling.
 - The package-count list holds the codes of the design's package-count list
   that MDM's live-animal data holds. Where the design named an entry by animal,
   the whole code is on the list.
 - The Domestic/Game split on `0102` comes from the IPAFFS commodity-categories
-  extract, which names `Bos spp.` as Game. MDM spells that species `Bos sp.`,
-  so `Bos sp.` is Game and every other `0102` species is Domestic. This is not
-  yet confirmed by the business. Every other code has one type with blank text,
-  which the backend payload drops.
+  extract, which names `Bos spp.` as Game. MDM lists `Bos sp.`, so no `0102`
+  species MDM offers is Game today. Every other code has one type with blank
+  text, which the backend payload drops.
 - MDM has no common name for some species, so a line's common name is
   optional.
-- A notification sends its first line's CN code (for example `0102`) as
-  `commodity.name`, until reference-data supplies commodity names. The backend
-  passes it to PIMS as each trade line's description and common name, and
-  both dashboards show it as the commodity. Each line stores MDM's common
-  name; the real names land when the notification payload carries them.
+- Save sends a `commodities[]` entry per grouped commodity line with `name`,
+  `commodityCode`, MDM `description` where the stub holds one, and each species
+  carries MDM's `commonName`. GBN-AG reads `description` on the entry and
+  `commonName` on each species. The dashboard list label joins entry names from
+  `commodities[]`, or falls back to the single legacy `commodity` field until
+  reference-data supplies names for every CN code (EUDPA-617).
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
   `commoditySearchRows`. They are never sent to the backend. The chosen species

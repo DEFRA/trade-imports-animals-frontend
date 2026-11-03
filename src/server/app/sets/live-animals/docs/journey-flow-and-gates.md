@@ -162,9 +162,10 @@ goes back to the notification list; a draft's review and an amendment in
 progress go back to the overview.
 
 The hub is somewhere the user chooses to go — through the secondary "Save and
-return to overview" button on every page, or by opening the notification from
-the dashboard — not somewhere the run puts them between sections. Rendering the
-hub, or the review page, completes the run
+return to overview" button on the pages that offer it
+([How a page ends](page-design.md#how-a-page-ends)), or by opening the
+notification from the dashboard — not somewhere the run puts them between
+sections. Rendering the hub, or the review page, completes the run
 ([`completeOpeningRun`](../../../flow/run-state.js), called from
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
 [`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
