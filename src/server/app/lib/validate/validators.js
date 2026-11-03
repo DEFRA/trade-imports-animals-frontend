@@ -183,7 +183,11 @@ export const oneOfKnown = (name, values, message) =>
       .trim()
       .required()
       .valid(...values)
-      .messages({ 'any.only': message })
+      .messages({
+        'string.empty': message,
+        'any.required': message,
+        'any.only': message
+      })
   )
 
 const wholeNumberInRange = (min, max) => (raw, helpers) => {
