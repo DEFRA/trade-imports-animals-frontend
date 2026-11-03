@@ -8,7 +8,6 @@ import {
   integerInRange,
   maxText,
   oneOf,
-  oneOfKnown,
   postcode,
   requiredDateText,
   requiredDateTextInRange,
@@ -190,7 +189,7 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     expect(validate(schema, { itemSelector: SELECTOR_ALPHA }).errors).toBeNull()
   })
 
-  it('Should block blank and missing values — unlike composing requiredText with oneOf', () => {
+  it('Should block blank and missing values on a requiredOneOf field', () => {
     expect(validate(schema, { itemSelector: '' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
     })
@@ -199,9 +198,27 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     })
   })
 
-  it('Should reject a value outside the domain', () => {
+  it('Should reject a value outside the domain with the same message when only one is given', () => {
     expect(validate(schema, { itemSelector: 'gold-plated' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
+    })
+  })
+
+  it('Should use separate required and only messages when both are given', () => {
+    const dual = requiredOneOf(
+      'itemSelector',
+      [SELECTOR_ALPHA, SELECTOR_BRAVO],
+      {
+        required: 'Pick one',
+        only: 'Not in list'
+      }
+    )
+
+    expect(validate(dual, { itemSelector: '' }).errors).toEqual({
+      itemSelector: 'Pick one'
+    })
+    expect(validate(dual, { itemSelector: 'gold-plated' }).errors).toEqual({
+      itemSelector: 'Not in list'
     })
   })
 
@@ -219,34 +236,6 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     )
     expect(validate(noDomain, { itemSelector: '' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
-    })
-  })
-})
-
-describe('#oneOfKnown — non-empty value domain', () => {
-  const OUT_OF_LIST_MESSAGE = 'Select a country from the list'
-  const schema = oneOfKnown(
-    'itemSelector',
-    [SELECTOR_ALPHA, SELECTOR_BRAVO],
-    OUT_OF_LIST_MESSAGE
-  )
-
-  it('Should accept a listed value', () => {
-    expect(validate(schema, { itemSelector: SELECTOR_ALPHA }).errors).toBeNull()
-  })
-
-  it('Should block blank and missing values', () => {
-    expect(validate(schema, { itemSelector: '' }).errors).toEqual({
-      itemSelector: OUT_OF_LIST_MESSAGE
-    })
-    expect(validate(schema, {}).errors).toEqual({
-      itemSelector: OUT_OF_LIST_MESSAGE
-    })
-  })
-
-  it('Should reject a value outside the domain without treating it as blank', () => {
-    expect(validate(schema, { itemSelector: 'gold-plated' }).errors).toEqual({
-      itemSelector: OUT_OF_LIST_MESSAGE
     })
   })
 })

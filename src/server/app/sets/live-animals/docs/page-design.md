@@ -134,8 +134,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Origin of the import
 
-- The country is checked only against the list, not required, so a trader can
-  save what they know and return.
+- The country is required on save and continue. An empty answer is refused with
+  **Select a country of origin**; a typed value not in the list is refused with
+  **Select a country from the list**. A saved country the reference data no
+  longer offers is refused on submit with its own message.
 - The list names a territory with its country, "Canary Islands (Spain)", and
   is sorted by the name shown.
 - With JavaScript the region code box shows the country's code as a fixed

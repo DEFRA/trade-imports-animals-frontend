@@ -101,6 +101,28 @@ describe('POST /origin — save and continue without a country', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should report both the country and region code length errors when no country is chosen', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '123456',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      COUNTRY_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_MAX_LENGTH_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST /origin — preserved field values when save is refused', () => {
   it('Should keep the typed region code on the page when the save is refused for another answer', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -366,6 +388,7 @@ describe('GET /origin — region of origin code splits back into its two parts',
   it('Should give an empty prefix value and an empty box before a country has been chosen', async () => {
     const result = await driveHandler(get)
 
+    expect(result.view.context.errors).toEqual({})
     expect(result.view.context.regionCodePrefix).toBe('')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
   })
@@ -512,25 +535,6 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
     expect(result.before.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
     expect(result.after.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
     expect(result.after.regionOfOriginCode).toBe('AT-123')
-  })
-})
-
-describe('POST /origin — region code over the length limit', () => {
-  it('Should reject the payload with a max-length error on the region code', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'AT',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix: '123456',
-        internalReferenceNumber: ''
-      }
-    })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_MAX_LENGTH_MESSAGE
-    )
-    expect(result.view.context.errors.countryOfOrigin).toBeUndefined()
   })
 })
 

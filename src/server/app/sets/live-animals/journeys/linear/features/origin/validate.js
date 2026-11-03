@@ -2,7 +2,6 @@ import {
   compose,
   maxText,
   oneOf,
-  oneOfKnown,
   pageValidation,
   requiredMaxText,
   requiredOneOf
@@ -79,7 +78,7 @@ const regionCodeFrom = ({
   return `${prefix}${REGION_CODE_SEPARATOR}${rest}`
 }
 
-const countryRule = async (stored, values) => {
+const countryRule = async ({ stored } = {}) => {
   const countryValues = (
     await countryAndSubdivisionOptionsNamedWithCountry()
   ).map(({ value }) => value)
@@ -90,18 +89,10 @@ const countryRule = async (stored, values) => {
       copy.errors.countryNoLongerAvailable
     )
   }
-  if (!(values.countryOfOrigin ?? '').trim()) {
-    return requiredOneOf(
-      'countryOfOrigin',
-      countryValues,
-      copy.errors.countryRequired
-    )
-  }
-  return oneOfKnown(
-    'countryOfOrigin',
-    countryValues,
-    copy.errors.countryFromList
-  )
+  return requiredOneOf('countryOfOrigin', countryValues, {
+    required: copy.errors.countryRequired,
+    only: copy.errors.countryFromList
+  })
 }
 
 const regionCodeSuffixRule = (requirement) =>
@@ -118,7 +109,7 @@ const regionCodeSuffixRule = (requirement) =>
 
 const fields = async (values, { stored } = {}) =>
   compose(
-    await countryRule(stored, values),
+    await countryRule({ stored }),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(values.regionOfOriginCodeRequirement),
     maxText(

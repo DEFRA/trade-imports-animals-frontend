@@ -276,19 +276,6 @@ test.describe('origin region of origin code and internal reference', () => {
     await expect(regionCodeField(page)).toHaveValue('')
   })
 
-  test('a region code with no country is kept on the page', async ({
-    page
-  }) => {
-    await chooseYesForRegionCode(page)
-    await regionCodeField(page).fill('75')
-    await page
-      .getByLabel(copy.internalReference.label)
-      .fill('A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1))
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page.getByRole('alert')).toBeVisible()
-    await expect(regionCodeField(page)).toHaveValue('75')
-  })
-
   test('a region code is saved once a country gives it its prefix', async ({
     page
   }) => {
@@ -637,6 +624,9 @@ test.describe('origin country and region validation', () => {
     await expect(
       page.getByRole('link', { name: copy.errors.countryRequired })
     ).toBeVisible()
+    await expect(page.locator('#countryOfOrigin-error')).toContainText(
+      copy.errors.countryRequired
+    )
     await expect(page.locator(countryHidden)).toHaveValue('')
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       INTERNAL_REFERENCE
