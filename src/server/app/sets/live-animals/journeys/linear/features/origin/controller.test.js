@@ -524,14 +524,9 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
   })
 })
 
-describe('POST /origin — a stored region code cascades to a length error under a stale country', () => {
-  it('Should reject the payload with a max-length error on the region code', async () => {
+describe('POST /origin — a region code typed with no country chosen', () => {
+  it('Should refuse a code over 5 characters with the length error and no country error', async () => {
     const result = await driveHandler(post, {
-      seed: {
-        countryOfOrigin: COUNTRY_CODE_OUTSIDE_THE_LIST,
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCode: 'AT-123'
-      },
       payload: {
         countryOfOrigin: '',
         regionOfOriginCodeRequirement: 'yes',
