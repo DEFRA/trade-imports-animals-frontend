@@ -307,7 +307,7 @@ test.describe('origin region of origin code and internal reference', () => {
     await chooseCountryOfOrigin(page, france.name)
     await expect(regionCodePrefix(page)).toHaveText(france.code)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page).toHaveURL(hubUrlOf(originUrl))
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
 
     await openNotificationView(page)
     await expect(regionCodeOnReview(page)).toContainText('FR-75')
