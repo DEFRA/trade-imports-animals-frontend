@@ -10,6 +10,7 @@ import {
 import { dispatchPages } from '../../index.js'
 
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
+import * as transitCountries from '../transit-countries/transit-countries.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
@@ -415,6 +416,21 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.arrivalDate.hint.text).toBe(
       copy.portOfEntry.arrivalDate.hint
     )
+  })
+})
+
+describe('GET /transit-countries', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  test('Should supply the short task name as the browser title and keep the question as the heading', async () => {
+    const get = transitCountries.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get, {
+      seed: { meansOfTransport: 'ROAD_VEHICLE' }
+    })
+    expect(result.view.context.pageTitle).toBe('Transit countries')
+    expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
   })
 })
 

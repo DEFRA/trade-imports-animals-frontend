@@ -21,6 +21,7 @@ import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
+import { copy } from '../copy/copy.en.js'
 import * as transitCountries from './transit-countries.controller.js'
 import {
   COUNTRY_FIELD,
@@ -40,6 +41,7 @@ const codes = (await countries.originCountries()).map(
 const atCapacity = codes.slice(0, MAX_TRANSITED_COUNTRIES)
 const tooManyCodes = codes.slice(0, MAX_TRANSITED_COUNTRIES + 1)
 const seed = { meansOfTransport: 'ROAD_VEHICLE' }
+const SAVE_ANSWERS = 'save answers'
 const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
 const SELECT_TEXT = 'Select a country'
 
@@ -330,7 +332,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      saveFailure: unavailableBackendError('save answers')
+      saveFailure: unavailableBackendError(SAVE_ANSWERS)
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -338,7 +340,7 @@ describe('POST transit-countries — continuing', () => {
   })
 
   it('Should log the unavailable backend once at warn with the journey id and the error', async () => {
-    const failure = unavailableBackendError('save answers')
+    const failure = unavailableBackendError(SAVE_ANSWERS)
 
     const result = await driveHandler(post, {
       seed,
@@ -501,5 +503,98 @@ describe('transit-countries — the Back link', () => {
   it('Should go Back to the overview when the page is opened from the overview', async () => {
     const result = await driveHandler(get, { seed: catSeed })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+})
+
+describe('transit-countries — when the means of transport leaves transit countries out', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const outOfScopeSeeds = [
+    { name: 'Air', seed: { meansOfTransport: 'AIRPLANE' }, logged: 'AIRPLANE' },
+    { name: 'Sea', seed: { meansOfTransport: 'VESSEL' }, logged: 'VESSEL' },
+    { name: 'no means saved', seed: {}, logged: 'none' }
+  ]
+  const airSeed = { meansOfTransport: 'AIRPLANE' }
+
+  it.each(outOfScopeSeeds)(
+    'Should go to the overview, rendering nothing, when the page is opened with $name',
+    async ({ seed: outOfScopeSeed }) => {
+      const result = await driveHandler(get, { seed: outOfScopeSeed })
+
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    }
+  )
+
+  it('Should render the transit countries page, not go to the overview, when the saved means is rail', async () => {
+    const result = await driveHandler(get, {
+      seed: { meansOfTransport: 'RAILWAY' }
+    })
+
+    expect(result.response).not.toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
+  })
+
+  it.each([
+    {
+      name: 'Add country',
+      payload: { action: 'add', transitedCountry: 'FR' }
+    },
+    {
+      name: 'Remove',
+      payload: {
+        action: `${REMOVE_ACTION_PREFIX}FR`,
+        transitedCountries: ['FR']
+      }
+    },
+    { name: 'Save and continue', payload: { transitedCountries: ['FR'] } },
+    {
+      name: 'Save and return to overview',
+      payload: { transitedCountries: ['FR'], exit: 'hub' }
+    }
+  ])(
+    'Should go to the overview without attempting a save when $name is submitted and saves are refused',
+    async ({ payload }) => {
+      const result = await driveHandler(post, {
+        seed: airSeed,
+        payload,
+        saveFailure: unavailableBackendError(SAVE_ANSWERS)
+      })
+
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    }
+  )
+
+  it.each(outOfScopeSeeds)(
+    'Should log the redirect once at info with the journey id, the reason and the saved means when the page is opened with $name',
+    async ({ seed: outOfScopeSeed, logged }) => {
+      const result = await driveHandler(get, { seed: outOfScopeSeed })
+
+      expectOneLogged(result.logger, {
+        level: 'info',
+        fields: {
+          journeyId: result.journeyId,
+          reason: 'transit-countries-out-of-scope',
+          meansOfTransport: logged
+        },
+        message: 'Redirected to the overview: transit countries do not apply'
+      })
+    }
+  )
+
+  it('Should log the redirect once at info when the form is submitted', async () => {
+    const result = await driveHandler(post, {
+      seed: airSeed,
+      payload: { transitedCountries: ['FR'] }
+    })
+
+    expectOneLogged(result.logger, {
+      level: 'info',
+      fields: {
+        journeyId: result.journeyId,
+        reason: 'transit-countries-out-of-scope',
+        meansOfTransport: 'AIRPLANE'
+      },
+      message: 'Redirected to the overview: transit countries do not apply'
+    })
   })
 })

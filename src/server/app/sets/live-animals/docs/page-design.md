@@ -464,6 +464,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   check your answers returns there and not into the journey.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
+- The transit page's browser title is the short task name, "Transit countries",
+  not its question heading, as the design sets it.
 - The transit search's select text, "Select a country", and its empty-box
   text, "Search for a country", differ because the select asks for a choice
   and the box asks for a search.

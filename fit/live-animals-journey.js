@@ -899,6 +899,23 @@ export const openArrival = async (page) => {
  */
 export const saveArrivalWithMeans = async (page, meansOfTransport) => {
   await openArrival(page)
+  await saveMeansOfTransportAt(page, page.url(), meansOfTransport)
+}
+
+/**
+ * Opens the arrival details page at the given address, chooses the means of
+ * transport, saves and lands on the overview.
+ *
+ * @param {import('@playwright/test').Page} page - the page to drive; it need not be the one that opened the notification.
+ * @param {string} arrivalUrl - the address of the arrival details page.
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveMeansOfTransportAt = async (
+  page,
+  arrivalUrl,
+  meansOfTransport
+) => {
+  await page.goto(arrivalUrl)
   await page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
   await save(page)
   await expectOverview(page)

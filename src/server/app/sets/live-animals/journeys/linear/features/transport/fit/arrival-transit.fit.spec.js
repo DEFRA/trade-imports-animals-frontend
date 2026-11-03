@@ -13,7 +13,10 @@ import {
   openTransit,
   saveAndContinue,
   saveAndReturnToHub,
+  saveMeansOfTransportAt,
   signIn,
+  startNotification,
+  unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import {
@@ -46,6 +49,7 @@ const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
+const TRANSIT_PAGE = 'transit-countries'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -636,6 +640,65 @@ test.describe('transit countries rendering and validation', () => {
     await expectOverview(page)
   })
 
+  test('transit page titles the browser tab with the task name, and prefixes Error when it shows an error', async ({
+    page
+  }) => {
+    const transitTitle = `${copy.transitCountries.pageTitle} - Import notification service - GOV.UK`
+    await openTransit(page)
+
+    await expect(page).toHaveTitle(transitTitle)
+    await expect(
+      page.getByRole('heading', { name: copy.transitCountries.title })
+    ).toBeVisible()
+
+    await page
+      .getByRole('button', { name: copy.transitCountries.add, exact: true })
+      .click()
+
+    await expect(page).toHaveTitle(`Error: ${transitTitle}`)
+  })
+
+  test('opening the transit page by its address goes to the overview with no means saved, then with air saved', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expectOverview(page)
+
+    await saveMeansOfTransportAt(
+      page,
+      journeyUrl(page, PORT_OF_ENTRY_PAGE),
+      'AIRPLANE'
+    )
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+
+    await expectOverview(page)
+  })
+
+  test('adding a country from a transit page left open after the means changed to air goes to the overview', async ({
+    page
+  }) => {
+    await openTransit(page)
+    const staleTab = page
+    const otherTab = await page.context().newPage()
+    await saveMeansOfTransportAt(
+      otherTab,
+      journeyUrl(staleTab, PORT_OF_ENTRY_PAGE),
+      'AIRPLANE'
+    )
+
+    await staleTab
+      .getByLabel(copy.transitCountries.country.label, { exact: true })
+      .fill('France')
+    await staleTab.getByRole('option', { name: 'France', exact: true }).click()
+    await staleTab
+      .getByRole('button', { name: copy.transitCountries.add, exact: true })
+      .click()
+
+    await expectOverview(staleTab)
+  })
+
   test('transit page asks for one country at a time and shows no added-countries table while none is added', async ({
     page
   }) => {
@@ -694,7 +757,7 @@ test.describe('transit countries rendering and validation', () => {
     await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
-    await page.goto(journeyUrl(page, 'transit-countries'))
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
     await expectEmptyTransitPage(page)
     expect(await addedCountries(page)).toEqual([])
   })
@@ -867,7 +930,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await saveAndContinue(page).click()
     await expectOverview(page)
 
-    await page.goto(journeyUrl(page, 'transit-countries'))
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
     await expect(listedCountryNames(page)).toHaveText(['France', 'Belgium'])
     await expect(page.locator(transitStatus)).toHaveText('')
   })

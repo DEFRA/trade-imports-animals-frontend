@@ -6,6 +6,7 @@ import {
 } from '../../../../../../../lib/http-status.js'
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import { transitCountriesPage as page } from '../page.js'
@@ -57,7 +58,7 @@ const render = async (
   const chosenLabel = (await countries.originLabel(chosen)) ?? ''
   const rows = countryRows(offeredLabelled)
   return h.view(view, {
-    ...kit.base(copy.title, {
+    ...kit.base(copy.pageTitle, {
       request,
       backLink: await kit.runBackLink(request, page.id, current),
       journey: current.journey,
@@ -123,9 +124,24 @@ const logRefusalUnlessUsersOwnInput = (
   }
 }
 
-const postAdd = async (request, h, selected) => {
+const redirectToOverviewUnlessApplicable = (request, h, current) => {
+  if (meta.collects.every((name) => current.scope.has(name))) {
+    return null
+  }
+  const { journeyId } = current.journey
+  request.logger.info(
+    {
+      journeyId,
+      reason: 'transit-countries-out-of-scope',
+      meansOfTransport: current.answers.meansOfTransport ?? 'none'
+    },
+    'Redirected to the overview: transit countries do not apply'
+  )
+  return h.redirect(hubPath(journeyId))
+}
+
+const postAdd = async (request, h, current, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
-  const current = await state.get(request, h)
   const refusal = await addRefusal(chosen, selected)
   if (refusal) {
     const errors = { [COUNTRY_FIELD]: refusal.message }
@@ -141,8 +157,7 @@ const postAdd = async (request, h, selected) => {
   })
 }
 
-const postRemove = async (request, h, selected, code) => {
-  const current = await state.get(request, h)
+const postRemove = async (request, h, current, selected, code) => {
   const remaining = selected.filter((entry) => entry !== code)
   const codeLabel = (await countries.originLabel(code)) ?? code
   return render(request, h, current, remaining, {
@@ -150,17 +165,15 @@ const postRemove = async (request, h, selected, code) => {
   })
 }
 
-const renderSaveUnavailable = async (request, h, selected) => {
-  const current = await state.get(request, h)
+const renderSaveUnavailable = async (request, h, current, selected) => {
   return (
     await render(request, h, current, selected, { recoverableError: true })
   ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
 }
 
-const postContinue = async (request, h, payload, selected) => {
+const postContinue = async (request, h, current, payload, selected) => {
   const { answers, errors, refusal } = await validation.onSubmit(payload)
   if (hasErrors(errors)) {
-    const current = await state.get(request, h)
     kit.logRefusal(request, { fieldErrors: errors, ...refusal })
     return (await render(request, h, current, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
@@ -173,7 +186,7 @@ const postContinue = async (request, h, payload, selected) => {
     async () => {
       committed = await state.commit(request, h, answers)
     },
-    () => renderSaveUnavailable(request, h, selected)
+    () => renderSaveUnavailable(request, h, current, selected)
   )
   if (failure) {
     return failure
@@ -184,6 +197,14 @@ const postContinue = async (request, h, payload, selected) => {
 
 const get = async (request, h) => {
   const current = await state.get(request, h)
+  const overviewRedirect = redirectToOverviewUnlessApplicable(
+    request,
+    h,
+    current
+  )
+  if (overviewRedirect) {
+    return overviewRedirect
+  }
   const { values, errors, refusal } = await validation.onStored(current.answers)
   if (hasErrors(errors)) {
     request.logger.info(
@@ -195,16 +216,25 @@ const get = async (request, h) => {
 }
 
 const post = async (request, h) => {
+  const current = await state.get(request, h)
+  const overviewRedirect = redirectToOverviewUnlessApplicable(
+    request,
+    h,
+    current
+  )
+  if (overviewRedirect) {
+    return overviewRedirect
+  }
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
   const { transitedCountries: selected } = validation.fromPayload(payload)
   if (action === ADD_ACTION) {
-    return postAdd(request, h, selected)
+    return postAdd(request, h, current, selected)
   }
   if (isRemoveAction(action)) {
-    return postRemove(request, h, selected, removeCodeOf(action))
+    return postRemove(request, h, current, selected, removeCodeOf(action))
   }
-  return postContinue(request, h, payload, selected)
+  return postContinue(request, h, current, payload, selected)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

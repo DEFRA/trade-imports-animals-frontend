@@ -59,6 +59,7 @@ export const copy = {
     }
   },
   transitCountries: {
+    pageTitle: 'Transit countries',
     title: 'Which countries will the consignment travel through?',
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',

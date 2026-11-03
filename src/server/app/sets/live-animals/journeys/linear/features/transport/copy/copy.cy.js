@@ -59,6 +59,7 @@ export const copy = {
     }
   },
   transitCountries: {
+    pageTitle: 'Gwledydd tramwy',
     title: 'Drwy ba wledydd y bydd y llwyth yn teithio?',
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
