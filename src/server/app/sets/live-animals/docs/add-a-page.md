@@ -146,7 +146,7 @@ Extend `shared/layout.njk`, which resolves from the `src/server/app` Nunjucks ro
 Include the shared error summary and save actions. Import the section caption with
 `{% from "shared/section-caption.njk" import sectionCaption %}` and call
 `{{ sectionCaption(caption) }}` immediately above the page heading, passing the
-caption size that matches the heading. `journeys/linear/features/origin/template.njk`
+caption size that matches the heading. `journeys/linear/features/additional-details/template.njk`
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
