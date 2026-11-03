@@ -118,31 +118,31 @@ const documentRight = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().right + window.scrollX)
 
 /**
- * Fails unless the second element has wrapped onto a line below the first and the two end on the
- * same right edge.
+ * Fails unless, once the layout settles, the second element has wrapped onto a line below the
+ * first and the two end on the same right edge.
  *
  * @param {import('@playwright/test').Locator} above - the element on the upper line.
  * @param {import('@playwright/test').Locator} below - the element expected to have wrapped under it.
  * @param {string} subject - names the pair in the failure message.
  */
 export const expectStackedOnSameRightEdge = async (above, below, subject) => {
-  const [aboveBottom, belowTop, aboveRight, belowRight] = [
-    await documentBottom(above),
-    await documentTop(below),
-    await documentRight(above),
-    await documentRight(below)
-  ]
-
-  expect(
-    belowTop,
-    `${subject} share a line, so there is no stacked alignment to check`
-  ).toBeGreaterThanOrEqual(aboveBottom)
+  await expect
+    .poll(
+      async () => (await documentTop(below)) - (await documentBottom(above)),
+      {
+        message: `${subject} share a line, so there is no stacked alignment to check`
+      }
+    )
+    .toBeGreaterThanOrEqual(0)
 
   const edgeTolerancePx = 1
-  expect(
-    Math.abs(belowRight - aboveRight),
-    `${subject} end on different right edges: ${aboveRight} and ${belowRight}`
-  ).toBeLessThanOrEqual(edgeTolerancePx)
+  await expect
+    .poll(
+      async () =>
+        Math.abs((await documentRight(below)) - (await documentRight(above))),
+      { message: `${subject} end on different right edges` }
+    )
+    .toBeLessThanOrEqual(edgeTolerancePx)
 }
 
 /**
