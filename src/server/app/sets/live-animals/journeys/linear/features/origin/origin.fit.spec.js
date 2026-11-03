@@ -297,12 +297,16 @@ test.describe('origin region of origin code and internal reference', () => {
     await regionCodeField(page).fill('75')
     await page.getByLabel(copy.internalReference.label).fill(INTERNAL_REFERENCE)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page).toHaveURL(hubUrlOf(originUrl))
 
-    await page.goto(originUrl)
-    await expect(regionCodeField(page)).toHaveValue('')
+    await expect(page).toHaveURL(originUrl)
+    await expect(
+      page.getByRole('link', { name: copy.errors.countryRequired })
+    ).toBeVisible()
+    await expect(regionCodeField(page)).toHaveValue('75')
 
-    await answerOriginDetails(page, { regionCode: '75' })
+    await chooseCountryOfOrigin(page, france.name)
+    await expect(regionCodePrefix(page)).toHaveText(france.code)
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page).toHaveURL(hubUrlOf(originUrl))
 
     await openNotificationView(page)
