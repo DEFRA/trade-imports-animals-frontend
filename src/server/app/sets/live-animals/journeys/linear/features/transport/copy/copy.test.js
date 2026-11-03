@@ -195,6 +195,24 @@ describe('transport copy module', () => {
     }
   )
 
+  test.each([
+    {
+      language: 'English',
+      bundle: copy,
+      expected: 'Select a means of transport to the port of entry'
+    },
+    {
+      language: 'Welsh',
+      bundle: copyCy,
+      expected: 'Dewiswch gyfrwng cludo i’r porthladd mynediad'
+    }
+  ])(
+    'Should word the means of transport required error exactly in $language',
+    ({ bundle, expected }) => {
+      expect(bundle.portOfEntry.errors.meansOfTransportRequired).toBe(expected)
+    }
+  )
+
   test('Should end the arrival date hint with the shared date example in both languages', () => {
     expect(
       copy.portOfEntry.arrivalDate.hint.endsWith(sharedEn.dateExample)

@@ -8,10 +8,10 @@ import {
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
   journeyUrl,
+  saveAndContinue,
+  saveArrivalByAir,
   searchByPressingEnter,
   signIn,
-  startNotification,
-  unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
@@ -53,15 +53,8 @@ const transporterRow = (page, name) =>
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name, exact: true }) })
 
-const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
-
 const openTransporterList = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await submit(page)
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await saveArrivalByAir(page)
   await page.getByRole('link', { name: 'Transport details' }).click()
   await expect(
     page.getByRole('heading', { name: copy.transporters.title })
@@ -107,7 +100,7 @@ const openCommercialAdd = async (page) => {
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
-  await submit(page)
+  await saveAndContinue(page).click()
   await expect(
     page.getByRole('heading', {
       name: copy.commercialTransporterDetails.title
@@ -128,7 +121,7 @@ const openPrivate = async (page) => {
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
     .check()
-  await submit(page)
+  await saveAndContinue(page).click()
   await expect(
     page.getByRole('heading', { name: copy.privateTransporterDetails.title })
   ).toBeVisible()
@@ -363,7 +356,7 @@ test.describe('transporter list page', () => {
   }) => {
     await openTransporterList(page)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -381,7 +374,7 @@ test.describe('transporter list page', () => {
   }) => {
     await openTransporterList(page)
     await page.getByRole('radio', { name: privateRecord.name }).check()
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -404,7 +397,7 @@ test.describe('transporter list page', () => {
   }) => {
     await openPrivate(page)
     await fillPrivateTransporter(page, handTypedTransporter)
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await page.goto(journeyUrl(page, 'transporters'))
     await expect(
@@ -412,7 +405,7 @@ test.describe('transporter list page', () => {
         name: handTypedTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
@@ -432,7 +425,7 @@ test.describe('transporter list page', () => {
     await tickAsUnknownTransporter(
       page.getByRole('radio', { name: commercialRecord.name })
     )
-    await submit(page)
+    await saveAndContinue(page).click()
 
     const link = errorLink(page, copy.transporters.errors.transporterRequired)
     await expect(link).toBeVisible()
@@ -558,7 +551,7 @@ test.describe('filtering the transporter list as the trader types', () => {
     await tickAsUnknownTransporter(
       page.getByRole('radio', { name: commercialRecord.name })
     )
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
 
     await expect(
@@ -604,7 +597,7 @@ test.describe('filtering the transporter list as the trader types', () => {
 
     await searchBoxOf(page).fill(privateRecord.name)
     await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -694,7 +687,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     await openTransporterList(page)
     await searchTransporters(page, commercialRecord.name)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page.goto(journeyUrl(page, 'transporters'))
@@ -831,7 +824,7 @@ test.describe('adding a transporter that is not on the list', () => {
         radio.value = 'Invalid transporter type'
         radio.checked = true
       })
-    await submit(page)
+    await saveAndContinue(page).click()
 
     const link = errorLink(page, validatorDefaults.oneOf)
     await expect(link).toBeVisible()
@@ -875,7 +868,7 @@ test.describe('adding a transporter that is not on the list', () => {
     }
     await openPrivate(page)
     await fillPrivateTransporter(page, reusedTransporter)
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await openTransporterList(page)
@@ -897,7 +890,7 @@ test.describe('adding a transporter that is not on the list', () => {
     )
 
     await row.getByRole('radio').check()
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
@@ -944,7 +937,7 @@ test.describe('commercial transporter page', () => {
     await tickAsUnknownTransporter(
       page.getByRole('radio', { name: selected.name })
     )
-    await submit(page)
+    await saveAndContinue(page).click()
 
     const link = errorLink(
       page,
@@ -966,7 +959,7 @@ test.describe('commercial transporter page', () => {
     await openCommercialRegister(page)
     const selected = values.commercialTransporter
     await page.getByRole('radio', { name: selected.name }).check()
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page.goto(journeyUrl(page, REGISTER_SLUG))
     await expect(page.getByRole('radio', { name: selected.name })).toBeChecked()
@@ -1022,7 +1015,7 @@ test.describe('private transporter rendering and optionality', () => {
     page
   }) => {
     await openPrivate(page)
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
@@ -1052,7 +1045,7 @@ test.describe('private transporter required validations', () => {
       } else {
         await page.locator(`#${field}`).fill('')
       }
-      await submit(page)
+      await saveAndContinue(page).click()
 
       const link = errorLink(page, copy.privateTransporterDetails.errors[error])
       await expect(link).toBeVisible()
@@ -1080,7 +1073,7 @@ test.describe('private transporter format validations', () => {
         ...validPrivateTransporter,
         [field]: invalid
       })
-      await submit(page)
+      await saveAndContinue(page).click()
 
       const link = errorLink(page, copy.privateTransporterDetails.errors[error])
       await expect(link).toBeVisible()
@@ -1104,7 +1097,7 @@ test.describe('private transporter format validations', () => {
       select.add(new Option(outOfList, outOfList))
       select.value = outOfList
     }, invalidCountry)
-    await submit(page)
+    await saveAndContinue(page).click()
 
     const link = errorLink(
       page,
@@ -1142,7 +1135,7 @@ test.describe('private transporter persistence', () => {
         await control.fill(value)
       }
     }
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))

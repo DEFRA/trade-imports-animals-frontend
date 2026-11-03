@@ -891,17 +891,33 @@ export const openArrival = async (page) => {
 }
 
 /**
+ * Opens the arrival details page from a fresh notification, chooses the means
+ * of transport, saves and lands on the overview.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveArrivalWithMeans = async (page, meansOfTransport) => {
+  await openArrival(page)
+  await page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
+  await save(page)
+  await expectOverview(page)
+}
+
+/**
+ * Saves the arrival details by air, a means of transport with no transit countries.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const saveArrivalByAir = (page) => saveArrivalWithMeans(page, 'AIRPLANE')
+
+/**
  * Opens the transit countries page from a fresh notification, arriving by road.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const openTransit = async (page) => {
-  await openArrival(page)
-  await page
-    .locator(MEANS_OF_TRANSPORT_SELECT)
-    .selectOption(values.meansOfTransport)
-  await save(page)
-  await expectOverview(page)
+  await saveArrivalWithMeans(page, values.meansOfTransport)
   await page
     .getByRole('link', {
       name: hubCopy.rows.transitCountries.title,
