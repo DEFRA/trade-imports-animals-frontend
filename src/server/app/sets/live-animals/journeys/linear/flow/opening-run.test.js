@@ -90,6 +90,19 @@ const postBreedingInternalMarketReason = (openingRun) =>
     openingRun
   })
 
+const commoditySelectionPayload = { species: [lineKey(FELIS_CATUS_ROW)] }
+
+const postCommoditySelection = ({
+  payload = commoditySelectionPayload,
+  openingRun
+} = {}) =>
+  driveHandler(postHandlerOf(commoditiesSearch), {
+    payload,
+    seed: { countryOfOrigin: 'FR' },
+    flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
+    openingRun
+  })
+
 const startPostHandler = () =>
   dashboard.routes.find(
     (route) => route.method === 'POST' && route.path === createRoutePath()
@@ -151,24 +164,12 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
-    const payload = { species: [lineKey(FELIS_CATUS_ROW)] }
-    const seed = { countryOfOrigin: 'FR' }
-    const flowOnly = { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }
-    const inRun = await driveHandler(postHandlerOf(commoditiesSearch), {
-      payload,
-      seed,
-      flowOnly,
-      openingRun: RUN_ACTIVE
-    })
+    const inRun = await postCommoditySelection({ openingRun: RUN_ACTIVE })
     expect(inRun.response.redirect).toBe(
       pagePath(inRun.journeyId, 'import-reason')
     )
 
-    const outside = await driveHandler(postHandlerOf(commoditiesSearch), {
-      payload,
-      seed,
-      flowOnly
-    })
+    const outside = await postCommoditySelection()
     expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
   })
 
@@ -418,8 +419,8 @@ describe('the opening run', () => {
     const originPost = postHandlerOf(origin)
 
     it('Should honour Save and return to overview mid-run', async () => {
-      const { journeyId, response } = await driveHandler(originPost, {
-        payload: { ...originPayload, exit: 'hub' },
+      const { journeyId, response } = await postCommoditySelection({
+        payload: { ...commoditySelectionPayload, exit: 'hub' },
         openingRun: RUN_ACTIVE
       })
       expect(response.redirect).toBe(hubPath(journeyId))

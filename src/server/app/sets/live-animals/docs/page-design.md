@@ -57,6 +57,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   add form is open): there the amend "Save and return" also posts the submitted
   value `amendFormActions` returns. A page reached from another page or a
   picker ends with the first two only.
+- The Origin of the import page is the exception to the first rule: the
+  overview links to it directly, but it ends with "Save and continue" alone,
+  and while amending with "Save and return" and "Save and continue" only.
 
 ## Check your answers (review)
 

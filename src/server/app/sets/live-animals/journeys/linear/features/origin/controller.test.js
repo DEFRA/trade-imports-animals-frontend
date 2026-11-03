@@ -247,6 +247,17 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should hold the user on the page, with "Yes" still chosen, when the box is submitted empty', async () => {
+    const result = await postSuffix('')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.values.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should hold the user on the page when the typed part is only the prefix', async () => {
     const result = await postSuffix('fr-')
 
@@ -345,50 +356,6 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     )
     expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('ABCDEF')
-    expect(result.after).toEqual(result.before)
-  })
-})
-
-describe('POST /origin — Save and return to overview', () => {
-  const postRegion = (regionOfOriginCodeSuffix, extra = {}) =>
-    driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'FR',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix,
-        internalReferenceNumber: '',
-        ...extra
-      }
-    })
-
-  it('Should refuse "Yes" with the region code left blank, keep "Yes" chosen and save nothing', async () => {
-    const result = await postRegion('', { exit: 'hub' })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_REQUIRED_MESSAGE
-    )
-    expect(result.view.context.values.regionOfOriginCodeRequirement).toBe('yes')
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should refuse a region code over 5 characters and save nothing', async () => {
-    const result = await postRegion('ABCDEF', { exit: 'hub' })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_MAX_LENGTH_MESSAGE
-    )
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should keep refusing a blank region code on Save and continue', async () => {
-    const result = await postRegion('')
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_REQUIRED_MESSAGE
-    )
     expect(result.after).toEqual(result.before)
   })
 })

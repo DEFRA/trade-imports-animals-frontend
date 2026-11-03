@@ -160,7 +160,7 @@ On a page whose save buttons post to another service, the Upload documents page,
 neither has a URL of its own, so the amend Save and return also posts the
 submitted value `amendFormActions` returns. While amending, a task-row page shows Save and return, Save and
 continue and Save and return to overview. A page that also passes
-`showReturnControls: false` (the CPH number page, the role address pickers) or
+`showReturnControls: false` (the origin page, the CPH number page, the role address pickers) or
 `hubExitWhileAmending: false` (the contact address page) shows only the first two.
 Do not pass `amend` on an add-another sub-page that returns to its own list page:
 the transporter add, select and details pages pass `showReturnControls: false`
