@@ -26,7 +26,11 @@ export const isUsersOwnInputRefusal = (reason) =>
   reason === TRANSIT_REFUSAL.alreadyAdded
 
 export const offeredCodes = async () =>
-  new Set((await countries.originCountries()).map(({ value }) => value))
+  new Set(
+    (await countries.countryAndSubdivisionOptionsNamedWithCountry()).map(
+      ({ value }) => value
+    )
+  )
 
 export const partitionByOffered = async (codes) => {
   const offered = await offeredCodes()
@@ -52,19 +56,19 @@ const listRefusal = async (codes, { stored = false } = {}) => {
   return null
 }
 
-const MESSAGES_NEEDING_NO_COUNTRY_LABEL = Object.freeze({
-  [TRANSIT_REFUSAL.nothingChosen]: copy.errors.chooseCountry,
-  [TRANSIT_REFUSAL.notOnList]: copy.errors.fromList,
-  [TRANSIT_REFUSAL.noLongerAvailable]: copy.errors.someNoLongerAvailable,
-  [TRANSIT_REFUSAL.maxCountries]: copy.errors.maxCountries(
-    MAX_TRANSITED_COUNTRIES
-  )
-})
-
-export const refusalMessage = async (reason, chosen) =>
-  reason === TRANSIT_REFUSAL.alreadyAdded
-    ? copy.errors.alreadyAdded(await countries.originLabel(chosen))
-    : MESSAGES_NEEDING_NO_COUNTRY_LABEL[reason]
+export const refusalMessage = async (reason, chosen) => {
+  const messagesNeedingNoCountryLabel = {
+    [TRANSIT_REFUSAL.nothingChosen]: copy.errors.chooseCountry,
+    [TRANSIT_REFUSAL.notOnList]: copy.errors.fromList,
+    [TRANSIT_REFUSAL.noLongerAvailable]: copy.errors.someNoLongerAvailable,
+    [TRANSIT_REFUSAL.maxCountries]: copy.errors.maxCountries(
+      MAX_TRANSITED_COUNTRIES
+    )
+  }
+  return reason === TRANSIT_REFUSAL.alreadyAdded
+    ? copy.errors.alreadyAdded(await countries.countryDisplayLabel(chosen))
+    : messagesNeedingNoCountryLabel[reason]
+}
 
 const listChecks = async (refusal) =>
   refusal

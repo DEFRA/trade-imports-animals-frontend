@@ -35,15 +35,16 @@ const get = transitCountries.routes.find(
 ).handler
 const post = postHandlerOf(transitCountries)
 
-const codes = (await countries.originCountries()).map(
-  (country) => country.value
-)
+const codes = (
+  await countries.countryAndSubdivisionOptionsNamedWithCountry()
+).map((option) => option.value)
 const atCapacity = codes.slice(0, MAX_TRANSITED_COUNTRIES)
 const tooManyCodes = codes.slice(0, MAX_TRANSITED_COUNTRIES + 1)
 const seed = { meansOfTransport: 'ROAD_VEHICLE' }
 const SAVE_ANSWERS = 'save answers'
 const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
 const SELECT_TEXT = 'Select a country'
+const CANARY_ISLANDS = 'Canary Islands (Spain)'
 
 describe('POST transit-countries — adding a country', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -179,13 +180,13 @@ describe('POST transit-countries — adding a country', () => {
     )
     expect(result.view.context.atLimit).toBe(true)
     expect(result.view.context.showCountryField).toBe(false)
-    const lastName = await countries.originLabel(atCapacity.at(-1))
+    const lastName = await countries.countryDisplayLabel(atCapacity.at(-1))
     expect(result.view.context.status).toBe(
       `${lastName} added. Maximum of ${MAX_TRANSITED_COUNTRIES} countries reached. Remove a country to add another.`
     )
   })
 
-  it('Should refuse GB, which the label lookup resolves but the list never offers', async () => {
+  it('Should refuse GB as not on the list and leave the search box empty', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'GB', transitedCountries: [] }
@@ -195,6 +196,51 @@ describe('POST transit-countries — adding a country', () => {
       NOT_ON_THE_LIST_MESSAGE
     )
     expect(result.view.context.selectedCountries).toEqual([])
+    expect(result.view.context.chosenLabel).toBe('')
+  })
+
+  it('Should leave the search box empty for a refused code that is not in the list', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'add', transitedCountry: 'ZZ', transitedCountries: [] }
+    })
+    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(
+      NOT_ON_THE_LIST_MESSAGE
+    )
+    expect(result.view.context.chosenLabel).toBe('')
+  })
+
+  it('Should list an added territory named with its country and announce it', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        action: 'add',
+        transitedCountry: 'ES-CN',
+        transitedCountries: ['FR']
+      }
+    })
+    expect(result.response.statusCode).toBe(200)
+    expect(result.view.context.selectedCountries).toEqual(['FR', 'ES-CN'])
+    expect(result.view.context.countryRows.map((row) => row.name)).toEqual([
+      'France',
+      CANARY_ISLANDS
+    ])
+    expect(result.view.context.status).toBe(`${CANARY_ISLANDS} added.`)
+  })
+
+  it('Should refuse an already-added territory naming it with its country and show that name back in the search box', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        action: 'add',
+        transitedCountry: 'ES-CN',
+        transitedCountries: ['ES-CN']
+      }
+    })
+    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(
+      `You have already added ${CANARY_ISLANDS}`
+    )
+    expect(result.view.context.chosenLabel).toBe(CANARY_ISLANDS)
   })
 })
 
@@ -433,6 +479,15 @@ describe('GET transit-countries — a stored list containing a code the page no 
 describe('POST transit-countries — Continue silently drops stored stale codes via the filtered working list', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
+  it('Should commit a territory code when continuing', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['ES-CN'] }
+    })
+    expect(result.after.transitedCountries).toEqual(['ES-CN'])
+    expect(result.response.redirect).toBeDefined()
+  })
+
   it('Should commit only the codes the render filtered through', async () => {
     const result = await driveHandler(post, {
       seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] },
@@ -447,11 +502,28 @@ describe('POST transit-countries — Continue silently drops stored stale codes 
 describe('GET transit-countries', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should open the country list with an empty-valued entry reading "Select a country", then every origin country', async () => {
+  it('Should open the country list with an empty-valued entry reading "Select a country", then every country and territory, each territory named with its country', async () => {
     const result = await driveHandler(get, { seed })
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: SELECT_TEXT })
-    expect(items.slice(1)).toEqual(await countries.originCountries())
+    expect(items.slice(1)).toEqual(
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
+    )
+    expect(items).toContainEqual({
+      value: 'ES-CN',
+      text: CANARY_ISLANDS
+    })
+  })
+
+  it('Should read a stored territory back as a row named with its country, with no banner', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['ES-CN'] }
+    })
+    expect(result.view.context.selectedCountries).toEqual(['ES-CN'])
+    expect(result.view.context.countryRows.map((row) => row.name)).toEqual([
+      CANARY_ISLANDS
+    ])
+    expect(result.view.context.errors).toEqual({})
   })
 
   it('Should read the stored countries back as rows, with nothing announced', async () => {

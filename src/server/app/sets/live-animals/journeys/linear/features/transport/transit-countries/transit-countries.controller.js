@@ -38,7 +38,7 @@ const copy = copyFor({ en, cy }).transitCountries
 
 const countryItems = async () => [
   { value: '', text: copy.country.selectText },
-  ...(await countries.originCountries())
+  ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 ]
 
 const render = async (
@@ -52,10 +52,12 @@ const render = async (
   const offeredLabelled = await Promise.all(
     offeredSelected.map(async (code) => ({
       code,
-      label: (await countries.originLabel(code)) ?? code
+      label: await countries.countryDisplayLabel(code)
     }))
   )
-  const chosenLabel = (await countries.originLabel(chosen)) ?? ''
+  const chosenLabel = (await offeredCodes()).has(chosen)
+    ? await countries.countryDisplayLabel(chosen)
+    : ''
   const rows = countryRows(offeredLabelled)
   return h.view(view, {
     ...kit.base(copy.pageTitle, {
@@ -151,7 +153,7 @@ const postAdd = async (request, h, current, selected) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
-  const chosenLabel = await countries.originLabel(chosen)
+  const chosenLabel = await countries.countryDisplayLabel(chosen)
   return render(request, h, current, added, {
     status: withLimitNotice(copy.added(chosenLabel), added)
   })
@@ -159,7 +161,7 @@ const postAdd = async (request, h, current, selected) => {
 
 const postRemove = async (request, h, current, selected, code) => {
   const remaining = selected.filter((entry) => entry !== code)
-  const codeLabel = (await countries.originLabel(code)) ?? code
+  const codeLabel = await countries.countryDisplayLabel(code)
   return render(request, h, current, remaining, {
     status: copy.removed(codeLabel)
   })

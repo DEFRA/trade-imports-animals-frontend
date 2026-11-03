@@ -9,14 +9,9 @@ import { toArray } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-/**
- * The countries the consignment travels through.
- */
 export const transitCountriesCard = async (journeyId, answers, readOnly) => {
   const codes = toArray(answers.transitedCountries)
-  const labels = await Promise.all(
-    codes.map(async (code) => (await countries.originLabel(code)) ?? code)
-  )
+  const labels = await Promise.all(codes.map(countries.countryDisplayLabel))
   return {
     id: 'transitCountries',
     title: copy.cards.transitCountries,

@@ -20,7 +20,7 @@ import {
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import {
-  countriesOrigin,
+  countryAndSubdivisionEntriesNamedWithCountry,
   portsOfEntry
 } from '../../../../../../../services/_capture/fixtures.js'
 import {
@@ -50,6 +50,7 @@ const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
 const TRANSIT_PAGE = 'transit-countries'
+const CANARY_ISLANDS = 'Canary Islands (Spain)'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -711,7 +712,7 @@ test.describe('transit countries rendering and validation', () => {
     ).toBeVisible()
   })
 
-  test('the transit select opens on "Select a country" followed by every captured country', async ({
+  test('the transit select opens on "Select a country" followed by every captured country and territory, each territory named with its country', async ({
     page
   }) => {
     await openTransit(page)
@@ -729,8 +730,23 @@ test.describe('transit countries rendering and validation', () => {
       label: copy.transitCountries.country.selectText
     })
     expect(options.slice(1)).toEqual(
-      countriesOrigin.map(({ code, name }) => ({ code, label: name }))
+      countryAndSubdivisionEntriesNamedWithCountry().map(({ code, name }) => ({
+        code,
+        label: name
+      }))
     )
+  })
+
+  test('typing a country lists its territory named with that country', async ({
+    page
+  }) => {
+    await openTransit(page)
+
+    await transitField(page).fill('spain')
+
+    await expect(
+      page.getByRole('option', { name: CANARY_ISLANDS, exact: true })
+    ).toBeVisible()
   })
 
   test('filters the country list by what the user types', async ({ page }) => {
@@ -877,8 +893,9 @@ test.describe('transit countries list, limits and persistence', () => {
     page
   }) => {
     await openTransit(page)
-    const before = countriesOrigin.slice(0, MAX_TRANSITED_COUNTRIES - 1)
-    const last = countriesOrigin[MAX_TRANSITED_COUNTRIES - 1]
+    const offered = countryAndSubdivisionEntriesNamedWithCountry()
+    const before = offered.slice(0, MAX_TRANSITED_COUNTRIES - 1)
+    const last = offered[MAX_TRANSITED_COUNTRIES - 1]
     await submitTransitedCountriesTheFormCannotProduce(
       page,
       before.map(({ code }) => code)
@@ -907,7 +924,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await openTransit(page)
     await submitTransitedCountriesTheFormCannotProduce(
       page,
-      countriesOrigin
+      countryAndSubdivisionEntriesNamedWithCountry()
         .slice(0, MAX_TRANSITED_COUNTRIES + 1)
         .map(({ code }) => code)
     )
@@ -935,6 +952,21 @@ test.describe('transit countries list, limits and persistence', () => {
     await expect(page.locator(transitStatus)).toHaveText('')
   })
 
+  test('a territory added through the search is listed named with its country, saved, and listed again under the same name when the page is reopened', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, CANARY_ISLANDS)
+    await expect(listedCountryNames(page)).toHaveText([CANARY_ISLANDS])
+    await saveAndContinue(page).click()
+    await expectOverview(page)
+
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+
+    await expect(listedCountryNames(page)).toHaveText([CANARY_ISLANDS])
+    expect(await addedCountries(page)).toEqual(['ES-CN'])
+  })
+
   test('each added country has its Remove control at the right-hand end of its row', async ({
     page
   }) => {
@@ -960,6 +992,22 @@ test.describe('transit countries without JavaScript', () => {
     ).toBeVisible()
     await saveAndContinue(page).click()
     await expectOverview(page)
+  })
+
+  test('the native select names a territory with its country and adding it lists that name', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await expect(
+      transitField(page).getByRole('option', {
+        name: CANARY_ISLANDS,
+        exact: true
+      })
+    ).toHaveAttribute('value', 'ES-CN')
+
+    await addTransitCountry(page, CANARY_ISLANDS)
+
+    await expect(listedCountryNames(page)).toHaveText([CANARY_ISLANDS])
   })
 })
 

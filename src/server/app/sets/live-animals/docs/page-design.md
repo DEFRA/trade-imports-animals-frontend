@@ -483,8 +483,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A stored transit list is checked against the page's own rules on GET, and a
   banner names any country no longer offered before Continue saves the
   filtered list.
-- The transit page offers the origin list, not every code the label lookup
-  resolves: GB has a label for address forms but is not offered here.
+- The transit page offers the same countries and territories as the country of
+  origin page, each territory named with its country, not every code the label
+  lookup resolves: GB has a label for address forms but is not offered here.
 - An empty transit list is a valid answer, because the question is optional. A
   list holding a country not offered is refused: on submit as not from the
   list, on a stored answer as no longer available.
