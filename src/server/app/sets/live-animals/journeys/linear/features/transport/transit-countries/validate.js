@@ -66,7 +66,7 @@ export const refusalMessage = async (reason, chosen) =>
     ? copy.errors.alreadyAdded(await countries.originLabel(chosen))
     : MESSAGES_NEEDING_NO_COUNTRY_LABEL[reason]
 
-const errorsFromRefusal = async (refusal) =>
+const listChecks = async (refusal) =>
   refusal
     ? {
         errors: { [COUNTRY_FIELD]: await refusalMessage(refusal.reason) },
@@ -83,7 +83,7 @@ const selectedFrom = (payload) => [
 export const validation = pageValidation({
   fields: () => compose(),
   checks: async (values, { stored }) =>
-    errorsFromRefusal(await listRefusal(values.transitedCountries, { stored })),
+    listChecks(await listRefusal(values.transitedCountries, { stored })),
   fromPayload: (payload) => ({
     transitedCountries: selectedFrom(payload)
   }),

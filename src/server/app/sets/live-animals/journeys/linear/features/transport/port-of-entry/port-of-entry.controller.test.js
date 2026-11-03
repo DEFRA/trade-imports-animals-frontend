@@ -39,7 +39,7 @@ describe('POST port-of-entry — port membership', () => {
   })
 })
 
-describe('POST port-of-entry — means of transport', () => {
+describe('POST port-of-entry — means of transport on the merged page', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an out-of-list means with an error and commit nothing', async () => {

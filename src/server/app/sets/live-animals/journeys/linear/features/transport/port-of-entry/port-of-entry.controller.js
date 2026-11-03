@@ -32,6 +32,8 @@ const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
 
+const QUESTION_LABEL_CLASSES = 'govuk-label--m'
+
 const portItems = async (selected) => [
   { value: '', text: copy.port.selectText },
   ...(await ports.portOptions()).map((option) => ({
@@ -55,9 +57,8 @@ const render = async (
   dateWindow,
   values,
   { errors = {}, recoverableError = false } = {}
-) => {
-  const questionLabelClasses = 'govuk-label--m'
-  return h.view(view, {
+) =>
+  h.view(view, {
     ...kit.base(copy.title, {
       request: h.request,
       backLink: hubPath(journey.journeyId),
@@ -66,7 +67,7 @@ const render = async (
       recoverableError
     }),
     copy,
-    questionLabelClasses,
+    questionLabelClasses: QUESTION_LABEL_CLASSES,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -75,14 +76,13 @@ const render = async (
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
       hint: copy.arrivalDate.hint,
-      labelClasses: questionLabelClasses,
+      labelClasses: QUESTION_LABEL_CLASSES,
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
       maxDate: dateWindow.maxText
     })
   })
-}
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)

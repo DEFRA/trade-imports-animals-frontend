@@ -117,7 +117,7 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
-  it('Should walk the arrival-details row over all five arrival and transport collects', () => {
+  it('Should walk the arrival-details row over the merged page (all five arrival and transport collects)', () => {
     expect(statusIn('arrivalDetails', unlocked)).toBe(NOT_STARTED)
     expect(
       statusIn('arrivalDetails', { ...unlocked, portOfEntry: 'GB ABD' })

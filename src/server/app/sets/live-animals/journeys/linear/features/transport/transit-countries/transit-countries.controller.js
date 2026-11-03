@@ -167,9 +167,12 @@ const postContinue = async (request, h, payload, selected) => {
     )
   }
 
-  const { value: committed, failure } = await kit.recoverableSave(
+  let committed
+  const { failure } = await kit.recoverableSave(
     request,
-    () => state.commit(request, h, answers),
+    async () => {
+      committed = await state.commit(request, h, answers)
+    },
     () => renderSaveUnavailable(request, h, selected)
   )
   if (failure) {

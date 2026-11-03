@@ -19,8 +19,6 @@ const approvalNumberInput = '#approvalNumber'
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
-const linkButtonNamed = (page, name) => page.getByRole('button', { name })
-
 const openCommercialForm = async (page) => {
   await startNotification(page)
   await unlockSections(page)
@@ -28,7 +26,8 @@ const openCommercialForm = async (page) => {
   await submit(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page.getByRole('link', { name: 'Transport details' }).click()
-  await linkButtonNamed(page, copy.transporters.add).click()
+  // The govuk button macro renders an href as a link with role="button".
+  await page.getByRole('button', { name: copy.transporters.add }).click()
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
