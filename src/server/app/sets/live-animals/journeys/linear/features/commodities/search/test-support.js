@@ -6,6 +6,7 @@ import {
 
 export const BISON_BISON = 'Bison bison'
 export const BOS_TAURUS = 'Bos taurus'
+export const BUBALUS_BUBALIS = 'Bubalus bubalis'
 export const EQUUS_CABALUS = 'Equus cabalus'
 export const FELIS_CATUS = 'Felis catus'
 export const CANIS_FAMILIARIS = 'Canis familiaris'
@@ -23,6 +24,12 @@ export const BOS_TAURUS_ROW = {
   commodityCode: CATTLE_CODE,
   speciesLatinName: BOS_TAURUS,
   speciesCommonName: CATTLE_OR_COW
+}
+
+export const BUBALUS_BUBALIS_ROW = {
+  commodityCode: CATTLE_CODE,
+  speciesLatinName: BUBALUS_BUBALIS,
+  speciesCommonName: 'Water Buffalo'
 }
 
 export const EQUUS_CABALUS_ROW = {

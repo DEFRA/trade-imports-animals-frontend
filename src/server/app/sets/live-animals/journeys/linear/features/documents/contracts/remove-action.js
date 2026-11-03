@@ -1,15 +1,19 @@
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { removeActionButton } from '../../../../../../../../common/constants/table-cells.js'
 
 const copy = copyFor({ en, cy })
 
 export const REMOVE_ACTION_PREFIX = 'remove:'
 
-// Submitting the page form carries the crumb, so no GET can trigger a removal.
 export const removeButton = (index) =>
-  `<button type="submit" class="govuk-link app-link-button govuk-!-margin-left-3" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
-  `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></button>`
+  removeActionButton({
+    action: `${REMOVE_ACTION_PREFIX}${index}`,
+    text: copy.remove,
+    hiddenText: copy.removeHidden(index + 1),
+    classes: 'govuk-!-margin-left-3'
+  })
 
 export const isRemoveAction = (action) =>
   action.startsWith(REMOVE_ACTION_PREFIX)

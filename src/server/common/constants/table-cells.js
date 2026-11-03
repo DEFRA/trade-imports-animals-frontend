@@ -19,9 +19,18 @@ export const hiddenActionsHeading = (text) => ({
   html: visuallyHiddenText(text)
 })
 
-export const removeActionCell = ({ action, text, hiddenText }) => {
+const trailingClass = (classes) => (classes ? ` ${classes}` : '')
+
+export const removeActionButton = ({
+  action,
+  text,
+  hiddenText,
+  classes = ''
+}) => {
+  const buttonClasses = `govuk-link app-link-button${trailingClass(classes)}`
   const hiddenName = visuallyHiddenText(` ${hiddenText}`)
-  return actionsCell(
-    `<button type="submit" class="govuk-link app-link-button" name="action" value="${escapeHtml(action)}">${escapeHtml(text)}${hiddenName}</button>`
-  )
+  return `<button type="submit" class="${buttonClasses}" name="action" value="${escapeHtml(action)}">${escapeHtml(text)}${hiddenName}</button>`
 }
+
+export const removeActionCell = ({ action, text, hiddenText }) =>
+  actionsCell(removeActionButton({ action, text, hiddenText }))

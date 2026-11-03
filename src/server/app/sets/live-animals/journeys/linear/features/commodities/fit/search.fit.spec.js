@@ -2,12 +2,15 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
+  BUBALUS_BUBALIS,
   FELIS_CATUS,
   answerOriginEntry,
   saveAndContinue,
   expectNoSeriousOrCriticalViolations,
+  expectSpeciesSelected,
   expectThreeSaveControls,
   openCommoditySearch,
+  pressSpeciesRemove,
   searchCommodities,
   selectSpecies,
   selectedSummary,
@@ -105,14 +108,21 @@ test.describe('commodity search', () => {
     await expect(group).toBeVisible()
     await expect(group.getByRole('checkbox')).toHaveCount(3)
     await expect(
-      group.getByRole('checkbox', { name: 'Bubalus bubalis', exact: true })
+      group.getByRole('checkbox', {
+        name: BUBALUS_BUBALIS.speciesLatinName,
+        exact: true
+      })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(3)
   })
 
   test('offers each species by its scientific name', async ({ page }) => {
     await searchCommodities(page, 'buffalo')
-    const scientificNames = ['Bubalus', 'Bubalus bubalis', 'Syncerus']
+    const scientificNames = [
+      'Bubalus',
+      BUBALUS_BUBALIS.speciesLatinName,
+      'Syncerus'
+    ]
     const checkboxes = page.getByRole('checkbox')
     await expect(checkboxes).toHaveCount(scientificNames.length)
     for (const [index, name] of scientificNames.entries()) {
@@ -188,12 +198,8 @@ test.describe('commodity search — choosing and saving species', () => {
     await searchCommodities(page, 'Struthio')
 
     await expectSelectedHeading(page, 2)
-    await expect(selectedSummary(page)).toContainText(
-      `${CATTLE_CODE}: ${BOS_TAURUS.speciesLatinName}`
-    )
-    await expect(selectedSummary(page)).toContainText(
-      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.speciesLatinName}`
-    )
+    await expectSpeciesSelected(page, BOS_TAURUS)
+    await expectSpeciesSelected(page, FELIS_CATUS)
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
@@ -258,10 +264,9 @@ test.describe('commodity search — choosing and saving species', () => {
     await backLink(page).click()
     await reopenSelection(page)
     await expectSelectedHeading(page, 3)
-    await expect(selectedSummary(page).getByRole('listitem')).toHaveText([
-      `${CATTLE_CODE}: ${BISON_BISON.speciesLatinName}, ${BOS_TAURUS.speciesLatinName}`,
-      `${OTHER_LIVE_MAMMALS_CODE}: ${FELIS_CATUS.speciesLatinName}`
-    ])
+    await expectSpeciesSelected(page, BISON_BISON)
+    await expectSpeciesSelected(page, BOS_TAURUS)
+    await expectSpeciesSelected(page, FELIS_CATUS)
   })
 
   test('ticks a result that is already on the notification', async ({
@@ -296,10 +301,67 @@ test.describe('commodity search — choosing and saving species', () => {
     ).not.toBeChecked()
   })
 
+  test('shows a Remove control named for each chosen species', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
+    await searchCommodities(page, 'Struthio')
+    await expectSpeciesSelected(page, BOS_TAURUS)
+    await expectSpeciesSelected(page, FELIS_CATUS)
+    await expect(
+      selectedSummary(page).getByRole('button', {
+        name: `Remove ${BOS_TAURUS.speciesLatinName}`,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      selectedSummary(page).getByRole('button', {
+        name: `Remove ${FELIS_CATUS.speciesLatinName}`,
+        exact: true
+      })
+    ).toBeVisible()
+  })
+
+  test('removes one chosen species and leaves the other chosen and ticked on screen', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
+    await searchCommodities(page, 'felis')
+    await pressSpeciesRemove(page, BOS_TAURUS)
+
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, FELIS_CATUS)
+    await expect(
+      page.getByRole('checkbox', {
+        name: FELIS_CATUS.speciesLatinName,
+        exact: true
+      })
+    ).toBeChecked()
+  })
+
+  test('unticking a shown species then pressing its Remove leaves it unchosen and the other chosen', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
+    await searchCommodities(page, BOS_TAURUS.speciesLatinName)
+    await page
+      .getByRole('group', { name: CATTLE_CODE })
+      .getByRole('checkbox', { name: BOS_TAURUS.speciesLatinName, exact: true })
+      .uncheck()
+    await pressSpeciesRemove(page, BOS_TAURUS)
+
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+    await expect(page.getByRole('group', { name: CATTLE_CODE })).toBeVisible()
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, FELIS_CATUS)
+  })
+
   test('has no serious or critical axe violations', async ({ page }) => {
     await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
 
-    await selectSpecies(page, [BOS_TAURUS])
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
     await searchCommodities(page, '0106')
     await page.getByText(copy.search.help.summary, { exact: true }).click()
     await expectNoSeriousOrCriticalViolations(
@@ -344,6 +406,52 @@ test.describe('commodity search by code', () => {
     await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
     await expect(page.getByRole('checkbox')).toHaveCount(100)
   })
+
+  test('lists 0102 species in species-label order', async ({ page }) => {
+    await searchCommodities(page, CATTLE_CODE)
+    const expectedOrder = [
+      'Bibos spp.',
+      'Bison',
+      'Bison bison',
+      'Bison bonasus',
+      'Bos',
+      'Bos sp.',
+      BOS_TAURUS.speciesLatinName,
+      'Bubalus',
+      BUBALUS_BUBALIS.speciesLatinName,
+      'Elephas maximus',
+      'Loxodonta africana',
+      'Novibos spp.',
+      'Ovibos',
+      'Poephagus spp.',
+      'Syncerus'
+    ]
+    const checkboxes = page
+      .getByRole('group', { name: CATTLE_CODE })
+      .getByRole('checkbox')
+    await expect(checkboxes).toHaveCount(expectedOrder.length)
+    for (const [index, name] of expectedOrder.entries()) {
+      await expect(checkboxes.nth(index)).toHaveAccessibleName(name)
+    }
+  })
+})
+
+test.describe('commodity search — emphasis', () => {
+  test.beforeEach(signInAndOpenSelection)
+
+  test('bolds the matched text in the commodity heading and in a species label', async ({
+    page
+  }) => {
+    await searchCommodities(page, CATTLE_CODE)
+    await expect(
+      page.getByRole('group', { name: CATTLE_CODE }).locator('legend strong')
+    ).toHaveText(CATTLE_CODE)
+
+    await searchCommodities(page, 'taurus')
+    await expect(
+      page.getByRole('group', { name: CATTLE_CODE }).locator('label strong')
+    ).toHaveText('taurus')
+  })
 })
 
 test.describe('commodity search reached through the opening sequence', () => {
@@ -360,5 +468,28 @@ test.describe('commodity search reached through the opening sequence', () => {
     page
   }) => {
     await expectThreeSaveControls(page)
+  })
+})
+
+test.describe('commodity search without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+  test.beforeEach(signInAndOpenSelection)
+
+  test('Search, one species Remove and Clear all all work', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'buffalo')
+    const group = page.getByRole('group', { name: CATTLE_CODE })
+    await expect(group.getByRole('checkbox')).toHaveCount(3)
+
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
+    await pressSpeciesRemove(page, BOS_TAURUS)
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, FELIS_CATUS)
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await expect(selectedSummary(page)).toHaveCount(0)
   })
 })

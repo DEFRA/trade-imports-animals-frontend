@@ -78,7 +78,9 @@ so generic notification-mapper code does not import the set.
   rows shown since it last saved as the flow-only answer
   `commoditySearchRows`. They are never sent to the backend. The chosen species
   also ride back as hidden `selection` values, so a choice made under an earlier
-  query survives a new search.
+  query survives a new search. The page lists the results it received in
+  commodity-heading then species-label order, and the selected panel offers a
+  removal per chosen species.
 - The stub reads
   [`_capture/fixtures/commodities.json`](../../../services/_capture/fixtures/commodities.json),
   which `npm run capture:live-animals` refreshes from reference-data: every

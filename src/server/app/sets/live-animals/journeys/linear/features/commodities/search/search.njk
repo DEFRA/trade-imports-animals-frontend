@@ -50,7 +50,7 @@
             idPrefix: "species" if loop.first else "species-group-" + loop.index,
             name: "species",
             classes: "govuk-checkboxes--small",
-            fieldset: { legend: { text: group.legend, classes: "govuk-fieldset__legend--s" } },
+            fieldset: { legend: { html: group.legendHtml, classes: "govuk-fieldset__legend--s" } },
             items: group.items
           }) }}
         {% endfor %}
@@ -62,13 +62,17 @@
     {% if selectedSummary.count %}
       <div id="commodity-selection">
         <h2 class="govuk-heading-s">{{ selectedSummary.heading }}</h2>
-        <ul class="govuk-list govuk-!-margin-bottom-4">
-          {% for group in selectedSummary.groups %}
-            <li>
-              <span class="govuk-!-font-weight-bold">{{ group.legend }}</span>: {{ group.items | join(", ") }}
-            </li>
-          {% endfor %}
-        </ul>
+        {% for group in selectedSummary.groups %}
+          <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ group.legend }}:</p>
+          <ul class="govuk-list govuk-!-margin-bottom-4">
+            {% for item in group.items %}
+              <li>
+                {{ item.label }}
+                {{ item.removeHtml | safe }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
         {{ govukButton({
           text: copy.selected.clearAll,
           classes: "govuk-button--secondary",

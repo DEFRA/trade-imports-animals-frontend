@@ -15,6 +15,7 @@ import {
   mergedKeysFromPayload,
   storedKeys
 } from './selection/selected-keys.js'
+import { isRemoveAction, removeKeyOf } from './selection/remove-action.js'
 import {
   knownRowsByKey,
   replaceStoredSearchRows,
@@ -43,7 +44,7 @@ const render = async (
   current,
   { selected, results = null, query = '', errorText = null }
 ) => {
-  const groups = commodityGroups(results, selected)
+  const groups = commodityGroups(results, selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
@@ -94,10 +95,11 @@ const post = async (request, h) => {
   const SEARCH_ACTION = 'search'
   const CLEAR_ACTION = 'clear'
   const payload = request.payload ?? {}
+  const action = String(payload.action ?? '')
   const query = normaliseQuery(payload[SEARCH_FIELD])
   const rowsByKey = knownRowsByKey(await state.get(request, h))
 
-  if (payload.action === CLEAR_ACTION) {
+  if (action === CLEAR_ACTION) {
     return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected: [],
       query
@@ -113,9 +115,21 @@ const post = async (request, h) => {
     )
   }
 
-  if (payload.action === SEARCH_ACTION) {
+  if (action === SEARCH_ACTION) {
     return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected,
+      query
+    })
+  }
+
+  if (isRemoveAction(action)) {
+    const removedKey = removeKeyOf(action)
+    if (!rowsByKey.has(removedKey)) {
+      kit.logRefusal(request, { reason: 'no-species-at-key', key: removedKey })
+      return h.response().code(HTTP_STATUS_BAD_REQUEST)
+    }
+    return searchStoreRowsAndRender(request, h, rowsByKey, {
+      selected: selected.filter((key) => key !== removedKey),
       query
     })
   }

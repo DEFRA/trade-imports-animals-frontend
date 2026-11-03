@@ -6,6 +6,7 @@ import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/s
 import {
   driveHandler,
   expectBackLinkIsPage,
+  expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
   stubH,
@@ -13,16 +14,19 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 
 import * as search from './search.controller.js'
 import { lineKey } from './selection/line-key.js'
+import { removeActionFor } from './selection/remove-action.js'
 import { STORED_SEARCH_ROWS } from './selection/rows.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
+  BUBALUS_BUBALIS,
   CANIS_FAMILIARIS_ROW,
   FELIS_CATUS_ROW
 } from './test-support.js'
@@ -54,12 +58,36 @@ const searchFor = (commoditySearch, payload = {}, flowOnly = undefined) =>
 
 const groupsOf = (result) => result.view.context.commodityGroups
 
-const legendsOf = (result) => groupsOf(result).map((group) => group.legend)
+const plainTextOf = (html) => {
+  const entities = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'"
+  }
+  const withoutTags = html
+    .split(/[<>]/)
+    .filter((_, index) => index % 2 === 0)
+    .join('')
+  return Object.entries(entities).reduce(
+    (text, [entity, char]) => text.replaceAll(entity, char),
+    withoutTags
+  )
+}
+
+const legendsOf = (result) =>
+  groupsOf(result).map((group) => plainTextOf(group.legendHtml))
 
 const textsOf = (result) =>
-  groupsOf(result).flatMap((group) => group.items.map((item) => item.text))
+  groupsOf(result).flatMap((group) =>
+    group.items.map((item) => plainTextOf(item.html))
+  )
 
 const keysOf = (lines) => lines.map(lineKey)
+
+const removeButtonHtml = (key, label) =>
+  `<button type="submit" class="govuk-link app-link-button" name="action" value="remove:${key}">Remove<span class="govuk-visually-hidden"> ${label}</span></button>`
 
 describe('commodity search', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -84,15 +112,15 @@ describe('commodity search', () => {
     const result = await searchFor('buffalo')
     expect(groupsOf(result)).toEqual([
       {
-        legend: '0102',
+        legendHtml: '0102',
         items: [
-          { value: '0102|Bubalus', text: 'Bubalus', checked: false },
+          { value: '0102|Bubalus', html: 'Bubalus', checked: false },
           {
-            value: '0102|Bubalus bubalis',
-            text: 'Bubalus bubalis',
+            value: `0102|${BUBALUS_BUBALIS}`,
+            html: BUBALUS_BUBALIS,
             checked: false
           },
-          { value: '0102|Syncerus', text: 'Syncerus', checked: false }
+          { value: '0102|Syncerus', html: 'Syncerus', checked: false }
         ]
       }
     ])
@@ -101,11 +129,41 @@ describe('commodity search', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should list every species under a code searched for', async () => {
+  it('Should list every species under a code searched for, in species-label order', async () => {
     const result = await searchFor('0102')
     expect(legendsOf(result)).toEqual(['0102'])
-    expect(textsOf(result)).toHaveLength(15)
-    expect(textsOf(result)).toContain('Bison bison')
+    expect(textsOf(result)).toEqual([
+      'Bibos spp.',
+      'Bison',
+      'Bison bison',
+      'Bison bonasus',
+      'Bos',
+      'Bos sp.',
+      'Bos taurus',
+      'Bubalus',
+      BUBALUS_BUBALIS,
+      'Elephas maximus',
+      'Loxodonta africana',
+      'Novibos spp.',
+      'Ovibos',
+      'Poephagus spp.',
+      'Syncerus'
+    ])
+  })
+
+  it('Should bold the matched text in a group heading and in a species label', async () => {
+    const headingResult = await searchFor('0102')
+    expect(groupsOf(headingResult)[0].legendHtml).toBe(
+      '<strong class="govuk-!-font-weight-bold">0102</strong>'
+    )
+
+    const labelResult = await searchFor('taurus')
+    const bosTaurusItem = groupsOf(labelResult)
+      .flatMap((group) => group.items)
+      .find((item) => item.value === BOS_TAURUS_KEY)
+    expect(bosTaurusItem.html).toBe(
+      'Bos <strong class="govuk-!-font-weight-bold">taurus</strong>'
+    )
   })
 
   it('Should list no more than a hundred species for one search', async () => {
@@ -129,7 +187,7 @@ describe('commodity search', () => {
   it('Should tick a result the trader has already chosen', async () => {
     const bubalis = {
       commodityCode: '0102',
-      speciesLatinName: 'Bubalus bubalis',
+      speciesLatinName: BUBALUS_BUBALIS,
       speciesCommonName: 'Water Buffalo'
     }
     const result = await searchFor(
@@ -271,11 +329,34 @@ describe('commodity search — what has been chosen so far', () => {
         {
           legend: '0102',
           items: [
-            BISON_BISON_ROW.speciesLatinName,
-            BOS_TAURUS_ROW.speciesLatinName
+            {
+              label: BISON_BISON_ROW.speciesLatinName,
+              removeHtml: removeButtonHtml(
+                BISON_BISON_KEY,
+                BISON_BISON_ROW.speciesLatinName
+              )
+            },
+            {
+              label: BOS_TAURUS_ROW.speciesLatinName,
+              removeHtml: removeButtonHtml(
+                BOS_TAURUS_KEY,
+                BOS_TAURUS_ROW.speciesLatinName
+              )
+            }
           ]
         },
-        { legend: '01061900', items: [FELIS_CATUS_ROW.speciesLatinName] }
+        {
+          legend: '01061900',
+          items: [
+            {
+              label: FELIS_CATUS_ROW.speciesLatinName,
+              removeHtml: removeButtonHtml(
+                FELIS_CATUS_KEY,
+                FELIS_CATUS_ROW.speciesLatinName
+              )
+            }
+          ]
+        }
       ]
     })
   })
@@ -292,6 +373,59 @@ describe('commodity search — what has been chosen so far', () => {
     expect(result.view.context.selectedSummary.count).toBe(0)
     expect(result.view.context.query).toBe('buffalo')
     expect(legendsOf(result)).toEqual(['0102'])
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('commodity search — removing one chosen species', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should remove one chosen species carried off screen, leave the other chosen and keep the query and results on screen', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: removeActionFor(BOS_TAURUS_KEY),
+        [search.SEARCH_FIELD]: 'felis',
+        selection: BOS_TAURUS_KEY,
+        species: FELIS_CATUS_KEY
+      },
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+    })
+    expect(result.response.statusCode).toBe(200)
+    expect(result.view.context.query).toBe('felis')
+    expect(legendsOf(result)).toEqual(['01061900'])
+    expect(result.view.context.selectedSummary.count).toBe(1)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should honour a remove naming a species the submitted selection no longer holds, leave the other chosen and log nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: removeActionFor(BOS_TAURUS_KEY),
+        [search.SEARCH_FIELD]: 'felis',
+        species: FELIS_CATUS_KEY
+      },
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+    })
+    expect(result.response.statusCode).toBe(200)
+    expect(result.view.context.query).toBe('felis')
+    expect(result.view.context.selectedSummary.count).toBe(1)
+    expect(result.logger.entries).toEqual([])
+  })
+
+  it('Should refuse a remove naming a key the stored search rows never held, store nothing and log one refusal naming the journey and the key', async () => {
+    const tamperedKey = '0102|Not a species'
+    const result = await driveHandler(post, {
+      payload: {
+        action: removeActionFor(tamperedKey),
+        species: BOS_TAURUS_KEY
+      },
+      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
+    })
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      reason: 'no-species-at-key',
+      key: tamperedKey
+    })
     expect(result.after).toEqual(result.before)
   })
 })

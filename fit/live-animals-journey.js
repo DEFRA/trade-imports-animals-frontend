@@ -13,6 +13,7 @@ import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
+  BUBALUS_BUBALIS_ROW,
   CANIS_FAMILIARIS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
@@ -32,6 +33,7 @@ export const BASE = SET_BASE
 
 export const BISON_BISON = BISON_BISON_ROW
 export const BOS_TAURUS = BOS_TAURUS_ROW
+export const BUBALUS_BUBALIS = BUBALUS_BUBALIS_ROW
 export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
 export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
 export const FELIS_CATUS = FELIS_CATUS_ROW
@@ -647,13 +649,21 @@ export const selectedSummary = (page) => page.locator('#commodity-selection')
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
-) =>
-  expect(
+) => {
+  await expect(
+    selectedSummary(page).getByText(`${commodityCode}:`, { exact: true })
+  ).toBeVisible()
+  await expect(
     selectedSummary(page)
       .getByRole('listitem')
-      .filter({ hasText: `${commodityCode}:` })
       .filter({ hasText: speciesLatinName })
   ).toBeVisible()
+}
+
+export const pressSpeciesRemove = (page, { speciesLatinName }) =>
+  selectedSummary(page)
+    .getByRole('button', { name: `Remove ${speciesLatinName}`, exact: true })
+    .click()
 
 export const unlockSections = async (page, chosen = FELIS_CATUS) => {
   await answerCountryOfOrigin(page)

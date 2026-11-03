@@ -12,7 +12,8 @@ export const copy = {
     noResults: 'No results found',
     selected: {
       heading: (count) => `${count} selected`,
-      clearAll: 'Clear all'
+      clearAll: 'Clear all',
+      remove: 'Remove'
     },
     help: {
       summary: 'Help with commodity codes',

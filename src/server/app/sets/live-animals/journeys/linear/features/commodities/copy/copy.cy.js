@@ -16,7 +16,8 @@ export const copy = {
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
-      clearAll: 'Clirio’r cyfan'
+      clearAll: 'Clirio’r cyfan',
+      remove: 'Tynnu'
     },
     help: {
       summary: 'Help gyda chodau nwyddau',

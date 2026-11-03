@@ -247,6 +247,20 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - A choice made under an earlier search has no tick box on screen, so it is
   sent back with the form as a hidden value.
+- A search's results are listed in order: the commodity groups by their
+  heading, and each group's species by the label they are offered under, over
+  the page of results the search returned.
+- The selected panel offers a removal per chosen species, posting the page
+  form with the species' key in the button value so the entry pressed is the
+  entry removed however the panel is ordered — the same rule the Transport
+  section states at the Transit countries bullet below.
+- Because a tick box on screen carries no hidden value, a removal naming a
+  choice the post no longer carries, because the trader unticked that box
+  first, is honoured and nothing is logged. A removal naming a key the stored
+  search rows never held is refused with a bad request and one logged
+  refusal — reachable by a tampered post, and by a page left open across a
+  save and a later removal of that commodity line on commodity details,
+  because a save empties the stored search rows.
 - Commodity code 01061900 covers several commodities and hundreds of species.
   Each chosen species gets its own Selected commodities row, named by the
   species, on both Commodity details and Identification.
@@ -256,8 +270,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   do not read at the weight of their hints.
 - The number of animals question has no hint because the page repeats it per
   species, so an example would repeat with it.
-- Each search option shows its common name with the Latin name in brackets, so
-  a trader who does not read Latin can tell the tick boxes apart.
+- A search option shows the species label with the part the query matched in
+  bold, so a trader can see at a glance why each result was offered.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
 - A removal returns to Commodity details while a line is left, and to the
