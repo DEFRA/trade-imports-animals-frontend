@@ -899,7 +899,13 @@ export const openArrival = async (page) => {
  */
 export const saveArrivalWithMeans = async (page, meansOfTransport) => {
   await openArrival(page)
-  await saveMeansOfTransportAt(page, page.url(), meansOfTransport)
+  await chooseMeansAndSave(page, meansOfTransport)
+}
+
+const chooseMeansAndSave = async (page, meansOfTransport) => {
+  await page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
+  await save(page)
+  await expectOverview(page)
 }
 
 /**
@@ -916,9 +922,7 @@ export const saveMeansOfTransportAt = async (
   meansOfTransport
 ) => {
   await page.goto(arrivalUrl)
-  await page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
-  await save(page)
-  await expectOverview(page)
+  await chooseMeansAndSave(page, meansOfTransport)
 }
 
 /**

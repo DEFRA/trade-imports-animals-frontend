@@ -110,9 +110,7 @@ picker parses. `arrivalWindow()` returns both shapes for this reason: `min`/`max
 for the validator, `minText`/`maxText` for the field. Build bounds with the
 [`calendar.js`](../lib/validate/calendar.js) helpers rather than by hand.
 
-The arrival details page reads the arrival window once per request and hands it to
-both the date widget and the validator, so the two cannot disagree across midnight.
-A reading with no widget takes the window as it stands.
+A field and its validator share one window, passed to both.
 
 Structured values such as addresses are opaque to model completeness: a non-blank
 object is filled. The collecting controller must validate required subfields before

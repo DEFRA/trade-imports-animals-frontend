@@ -19,7 +19,8 @@ import {
   MAX_TRANSITED_COUNTRIES,
   TRANSIT_REFUSAL,
   isUsersOwnInputRefusal,
-  offeredCodes,
+  loadOfferedCodes,
+  offeredCodesOf,
   partitionByOffered,
   refusalMessage,
   validation
@@ -36,11 +37,6 @@ export { COUNTRY_FIELD, MAX_TRANSITED_COUNTRIES }
 
 const copy = copyFor({ en, cy }).transitCountries
 
-const countryItems = async () => [
-  { value: '', text: copy.country.selectText },
-  ...(await countries.countryAndSubdivisionOptionsNamedWithCountry())
-]
-
 const render = async (
   request,
   h,
@@ -48,14 +44,16 @@ const render = async (
   selected,
   { errors = {}, status = '', chosen = '', recoverableError = false } = {}
 ) => {
-  const { offered: offeredSelected } = await partitionByOffered(selected)
+  const options = await countries.countryAndSubdivisionOptionsNamedWithCountry()
+  const offered = offeredCodesOf(options)
+  const { offered: offeredSelected } = partitionByOffered(selected, offered)
   const offeredLabelled = await Promise.all(
     offeredSelected.map(async (code) => ({
       code,
       label: await countries.countryDisplayLabel(code)
     }))
   )
-  const chosenLabel = (await offeredCodes()).has(chosen)
+  const chosenLabel = offered.has(chosen)
     ? await countries.countryDisplayLabel(chosen)
     : ''
   const rows = countryRows(offeredLabelled)
@@ -70,7 +68,7 @@ const render = async (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: await countryItems(),
+    countryItems: [{ value: '', text: copy.country.selectText }, ...options],
     selectedCountries: offeredSelected,
     countryRows: rows,
     countriesTable: countriesTable(rows, copy),
@@ -107,8 +105,8 @@ const addRefusalReason = (chosen, selected, offered) => {
   return null
 }
 
-const addRefusal = async (chosen, selected) => {
-  const reason = addRefusalReason(chosen, selected, await offeredCodes())
+const addRefusal = async (chosen, selected, offered) => {
+  const reason = addRefusalReason(chosen, selected, offered)
   return reason && { reason, message: await refusalMessage(reason, chosen) }
 }
 
@@ -144,7 +142,8 @@ const redirectToOverviewUnlessApplicable = (request, h, current) => {
 
 const postAdd = async (request, h, current, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
-  const refusal = await addRefusal(chosen, selected)
+  const offered = await loadOfferedCodes()
+  const refusal = await addRefusal(chosen, selected, offered)
   if (refusal) {
     const errors = { [COUNTRY_FIELD]: refusal.message }
     logRefusalUnlessUsersOwnInput(request, refusal, { errors, chosen })

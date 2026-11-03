@@ -448,6 +448,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The arrival date hint gives a fixed date showing the format, not a date tied
   to the window. The date picker's bounds and the out-of-range error police
   the window.
+- The arrival details page reads the arrival window once per request and hands
+  it to both the date widget and the validator, so the two cannot disagree
+  across midnight. A reading with no widget takes the window as it stands.
 - The port search shows the search placeholder "Select a port" in its empty
   box, in the same words as the select text that is the no-JavaScript list's
   first entry.

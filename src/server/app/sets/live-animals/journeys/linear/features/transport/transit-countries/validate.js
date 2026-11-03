@@ -25,23 +25,20 @@ export const isUsersOwnInputRefusal = (reason) =>
   reason === TRANSIT_REFUSAL.nothingChosen ||
   reason === TRANSIT_REFUSAL.alreadyAdded
 
-export const offeredCodes = async () =>
-  new Set(
-    (await countries.countryAndSubdivisionOptionsNamedWithCountry()).map(
-      ({ value }) => value
-    )
-  )
+export const offeredCodesOf = (options) =>
+  new Set(options.map(({ value }) => value))
 
-export const partitionByOffered = async (codes) => {
-  const offered = await offeredCodes()
-  return {
-    offered: codes.filter((code) => offered.has(code)),
-    notOffered: codes.filter((code) => !offered.has(code))
-  }
-}
+export const partitionByOffered = (codes, offered) => ({
+  offered: codes.filter((code) => offered.has(code)),
+  notOffered: codes.filter((code) => !offered.has(code))
+})
+
+export const loadOfferedCodes = async () =>
+  offeredCodesOf(await countries.countryAndSubdivisionOptionsNamedWithCountry())
 
 const listRefusal = async (codes, { stored = false } = {}) => {
-  const { notOffered } = await partitionByOffered(codes)
+  const offered = await loadOfferedCodes()
+  const { notOffered } = partitionByOffered(codes, offered)
   if (notOffered.length > 0) {
     return {
       reason: stored

@@ -374,6 +374,15 @@ describe('POST transit-countries — continuing', () => {
     expect(result.response.redirect).not.toContain('transit-countries')
   })
 
+  it('Should commit a territory code when continuing', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['ES-CN'] }
+    })
+    expect(result.after.transitedCountries).toEqual(['ES-CN'])
+    expect(result.response.redirect).toBe(hubPath(result.journeyId))
+  })
+
   it('Should re-render at 500 with the recoverable-error flag when the backend is unavailable on save', async () => {
     const result = await driveHandler(post, {
       seed,
@@ -479,15 +488,6 @@ describe('GET transit-countries — a stored list containing a code the page no 
 describe('POST transit-countries — Continue silently drops stored stale codes via the filtered working list', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should commit a territory code when continuing', async () => {
-    const result = await driveHandler(post, {
-      seed,
-      payload: { transitedCountries: ['ES-CN'] }
-    })
-    expect(result.after.transitedCountries).toEqual(['ES-CN'])
-    expect(result.response.redirect).toBeDefined()
-  })
-
   it('Should commit only the codes the render filtered through', async () => {
     const result = await driveHandler(post, {
       seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] },
@@ -495,7 +495,7 @@ describe('POST transit-countries — Continue silently drops stored stale codes 
     })
     expect(result.before.transitedCountries).toEqual(['FR', 'BE', 'ZZ'])
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
-    expect(result.response.redirect).toBeDefined()
+    expect(result.response.redirect).toBe(hubPath(result.journeyId))
   })
 })
 
