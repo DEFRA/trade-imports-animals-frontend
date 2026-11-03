@@ -418,7 +418,7 @@ describe('the opening run', () => {
   describe('explicit exits beat the run', () => {
     const originPost = postHandlerOf(origin)
 
-    it('Should honour Save and return to overview mid-run', async () => {
+    it('Should honour Save and return to overview on What are you importing? mid-run', async () => {
       const { journeyId, response } = await postCommoditySelection({
         payload: { ...commoditySelectionPayload, exit: 'hub' },
         openingRun: RUN_ACTIVE
