@@ -10,10 +10,11 @@ import { get } from '../../../../../engine/read.js'
 import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
 import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
-import { openingRunStarted } from '../../../../../flow/run-state.js'
+import {
+  inOpeningRun,
+  openingRunStarted
+} from '../../../../../flow/run-state.js'
 
-// A function, not a module-load constant: `request.path` now carries the Hapi
-// mount prefix, which is only known inside a request's set context.
 const journeyPrefix = () => `${setBase()}/notifications/`
 const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
 
@@ -32,10 +33,6 @@ export const guardedJourneyPath = (path) => {
   return Boolean(journeyId) && !isEntrySurface
 }
 
-/** Only a model answer the USER entered starts a journey. System populated
- * obligations do not represent user progress, and flow-only keys such as
- * `declaration` are session state rather than canonical fulfilment, so they
- * never resolve to a manifest obligation. */
 const userEntered = (key) => {
   const obligation = obligationByName(key)
   return obligation !== undefined && !SYSTEM_POPULATED.has(key)
@@ -46,23 +43,27 @@ export const hasCommittedNotificationAnswers = (answers) =>
     ([key, value]) => userEntered(key) && isAnswered(value)
   )
 
-export const entryBackLink = (journey, answers) =>
+const overviewAdmitsRequest = async (request, journey, answers) =>
+  (await openingRunStarted(request, journey.journeyId)) ||
   hasCommittedNotificationAnswers(answers)
+
+export const entryBackLink = async (request, journey, answers) => {
+  if (await inOpeningRun(request, journey.journeyId)) {
+    return dashboardPath()
+  }
+  return (await overviewAdmitsRequest(request, journey, answers))
     ? hubPath(journey.journeyId)
     : dashboardPath()
+}
 
-/** Deep-link guard: a journey with neither a run record in this session nor
- * committed user answers is sent to the entry page (see
- * sets/live-animals/docs/journey-flow-and-gates.md, "Opening run and entry guard"). */
+/** Deep-link guard: a journey the overview would not admit is sent to the
+ * entry page. Returns that page's path, or null when the request may proceed. */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null
   }
   const { journey, answers } = await get(request, h)
-  if (await openingRunStarted(request, journey.journeyId)) {
-    return null
-  }
-  if (hasCommittedNotificationAnswers(answers)) {
+  if (await overviewAdmitsRequest(request, journey, answers)) {
     return null
   }
   return pagePath(request.params.journeyId, originPage.slug)
