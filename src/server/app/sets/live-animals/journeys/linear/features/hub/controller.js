@@ -5,6 +5,7 @@ import {
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { rowEntry } from '../../../../../../flow/navigation.js'
+import { pageGatePasses } from '../../../../../../flow/gates.js'
 import * as state from '../../../../../../engine/index.js'
 import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
@@ -53,7 +54,11 @@ const statusTag = (status, invalid) =>
 
 const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
 
-const isHiddenRow = (row, status) => row.conditional && status === NA
+const somePageOpens = (row, scope) =>
+  row.pages.some((page) => pageGatePasses(page, scope))
+
+const isHiddenRow = (row, status, scope) =>
+  row.conditional && (status === NA || !somePageOpens(row, scope))
 
 const rowItem = (base, row, scope, status, journeyId, invalid) => ({
   ...base,
@@ -72,7 +77,7 @@ const buildRowItem = (
   const { title, hint } = copy.rows[id]
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
-  if (isHiddenRow(row, status)) {
+  if (isHiddenRow(row, status, scope)) {
     return null
   }
   const base = {

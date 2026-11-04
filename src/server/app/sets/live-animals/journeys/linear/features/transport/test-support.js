@@ -6,6 +6,19 @@ import {
   parties,
   partiesFor
 } from '../../../../../../services/transporters/index.js'
+import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
+
+export const transitAppliesSeed = Object.freeze({
+  countryOfOrigin: 'FR',
+  commodityLines: [FELIS_CATUS_ROW],
+  meansOfTransport: 'ROAD_VEHICLE'
+})
+
+export const transitAppliesSeedWithout = (answerName, overrides = {}) => {
+  const answers = { ...transitAppliesSeed, ...overrides }
+  delete answers[answerName]
+  return answers
+}
 
 export const addedTransportersOf = (organisationId) =>
   partiesFor(organisationId).filter(
