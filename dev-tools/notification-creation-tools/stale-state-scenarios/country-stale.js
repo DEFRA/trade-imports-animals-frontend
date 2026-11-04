@@ -4,7 +4,7 @@ import * as countries from '../../../src/server/app/services/countries/index.js'
 const STALE_CODE = 'ZZ'
 
 const assertBogus = async () => {
-  const list = await countries.originCountries()
+  const list = await countries.countryAndSubdivisionOptionsNamedWithCountry()
   if (list.some((c) => c.value === STALE_CODE)) {
     throw new Error(
       `STALE_CODE '${STALE_CODE}' is now in the catalogue — pick a different sentinel.`

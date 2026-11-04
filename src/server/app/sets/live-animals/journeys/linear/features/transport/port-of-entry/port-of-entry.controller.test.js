@@ -228,7 +228,7 @@ describe('port-of-entry — the arrival-date window', () => {
     ['a day after the latest allowed date', dayOutside('max', 1)]
   ])('Should reject %s and commit nothing', async (_label, value) => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: value }
+      payload: { arrivalDateAtPort: value, meansOfTransport: validMeans }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -269,7 +269,11 @@ describe('port-of-entry — the arrival-date window', () => {
 
   it('Should keep the real-date message on Save and return to overview, saving nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: '31/2/2026', exit: 'hub' }
+      payload: {
+        arrivalDateAtPort: '31/2/2026',
+        meansOfTransport: validMeans,
+        exit: 'hub'
+      }
     })
 
     expect(result.response.statusCode).toBe(400)
