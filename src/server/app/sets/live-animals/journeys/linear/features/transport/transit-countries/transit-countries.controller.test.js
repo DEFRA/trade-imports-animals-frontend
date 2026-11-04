@@ -18,7 +18,10 @@ import {
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
-import { transitAppliesSeed } from '../test-support.js'
+import {
+  transitAppliesSeed,
+  transitAppliesSeedWithout
+} from '../test-support.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
 import { copy } from '../copy/copy.en.js'
@@ -587,12 +590,6 @@ describe('transit-countries — when the page gate does not pass', () => {
   const GATE_REDIRECT_MESSAGE =
     'Redirected to the overview: the transit countries page gate did not pass'
 
-  const seedWithout = (answerName, overrides = {}) => {
-    const answers = { ...seed, ...overrides }
-    delete answers[answerName]
-    return answers
-  }
-
   const outOfScopeSeeds = [
     {
       name: 'Air',
@@ -606,29 +603,33 @@ describe('transit-countries — when the page gate does not pass', () => {
     },
     {
       name: 'no means saved',
-      seed: seedWithout('meansOfTransport'),
+      seed: transitAppliesSeedWithout('meansOfTransport'),
       logged: 'none'
     }
   ]
   const missingEarlierAnswerSeeds = [
     {
       name: 'rail and no country of origin',
-      seed: seedWithout('countryOfOrigin', { meansOfTransport: 'RAILWAY' }),
+      seed: transitAppliesSeedWithout('countryOfOrigin', {
+        meansOfTransport: 'RAILWAY'
+      }),
       logged: 'RAILWAY'
     },
     {
       name: 'road and no country of origin',
-      seed: seedWithout('countryOfOrigin'),
+      seed: transitAppliesSeedWithout('countryOfOrigin'),
       logged: 'ROAD_VEHICLE'
     },
     {
       name: 'rail and no commodity',
-      seed: seedWithout('commodityLines', { meansOfTransport: 'RAILWAY' }),
+      seed: transitAppliesSeedWithout('commodityLines', {
+        meansOfTransport: 'RAILWAY'
+      }),
       logged: 'RAILWAY'
     },
     {
       name: 'road and no commodity',
-      seed: seedWithout('commodityLines'),
+      seed: transitAppliesSeedWithout('commodityLines'),
       logged: 'ROAD_VEHICLE'
     }
   ]

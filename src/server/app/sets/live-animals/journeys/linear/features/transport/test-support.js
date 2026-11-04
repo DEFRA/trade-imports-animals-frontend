@@ -14,6 +14,12 @@ export const transitAppliesSeed = Object.freeze({
   meansOfTransport: 'ROAD_VEHICLE'
 })
 
+export const transitAppliesSeedWithout = (answerName, overrides = {}) => {
+  const answers = { ...transitAppliesSeed, ...overrides }
+  delete answers[answerName]
+  return answers
+}
+
 export const addedTransportersOf = (organisationId) =>
   partiesFor(organisationId).filter(
     (record) => !parties().some((shipped) => shipped.id === record.id)
