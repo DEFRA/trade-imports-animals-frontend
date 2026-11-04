@@ -22,6 +22,7 @@ export const copy = {
     hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag.'
   },
   errors: {
+    countryRequired: 'Dewiswch wlad tarddiad',
     countryFromList: 'Dewiswch wlad o’r rhestr',
     countryNoLongerAvailable:
       "Nid yw'r wlad a arbedwyd ar gael mwyach. Dewiswch wlad o’r rhestr.",

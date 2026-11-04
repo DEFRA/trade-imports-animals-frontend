@@ -148,20 +148,39 @@ export const ukPhone = (name, message = defaults.ukPhone) =>
  * rule would otherwise degrade to any non-empty string.
  * @param {string} name
  * @param {readonly string[]} values - the values the field accepts.
- * @param {string} message - shown when the value is blank, absent or unknown.
+ * @param {string | { required: string, only?: string }} messageOrMessages -
+ * shown when the value is blank or absent (`required`), and when it is
+ * unknown (`only`, defaulting to `required`).
  */
-export const requiredOneOf = (name, values, message) => {
-  const required = Joi.string().trim().required()
+export const requiredOneOf = (name, values, messageOrMessages) => {
+  const messages =
+    typeof messageOrMessages === 'string'
+      ? { required: messageOrMessages, only: messageOrMessages }
+      : {
+          required: messageOrMessages.required,
+          only: messageOrMessages.only ?? messageOrMessages.required
+        }
   const membership =
     values.length === 0
-      ? required.custom((_raw, helpers) => helpers.error(ONLY_ERROR_CODE))
-      : required.valid(...values)
+      ? Joi.string()
+          .trim()
+          .required()
+          .custom((_raw, helpers) => helpers.error(ONLY_ERROR_CODE))
+      : Joi.string()
+          .trim()
+          .required()
+          .custom((raw, helpers) => {
+            if (!values.includes(raw)) {
+              return helpers.error(ONLY_ERROR_CODE)
+            }
+            return raw
+          })
   return single(
     name,
     membership.messages({
-      'string.empty': message,
-      'any.required': message,
-      [ONLY_ERROR_CODE]: message
+      'string.empty': messages.required,
+      'any.required': messages.required,
+      [ONLY_ERROR_CODE]: messages.only
     })
   )
 }
