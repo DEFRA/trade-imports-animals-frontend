@@ -25,6 +25,7 @@ import {
   tattooCommodityCodes,
   unweanedCommodityCodes
 } from '../services/commodities/index.js'
+import { COMMODITY_GROUPS } from '../services/commodities/stub.js'
 
 const UNLISTED_VALUE = 'Unicorn'
 
@@ -35,14 +36,22 @@ beforeAll(() => {
 })
 
 describe('package-count list → numberOfPackages (line-scoped)', () => {
-  for (const code of packageCountCommodityCodes()) {
-    it(`Should put numberOfPackages in scope for a line with code = '${code}'`, () => {
-      const state = evaluate({
-        [commodityCode.id]: { line1: code }
-      })
-      const fulfilmentIndexes =
-        state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
-      expect(fulfilmentIndexes).toContain('line1')
+  const servedCommodityCodes = COMMODITY_GROUPS.map((group) => group.code)
+
+  const isInNumberOfPackagesScope = (code) => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: code }
+    })
+    const fulfilmentIndexes =
+      state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
+    return fulfilmentIndexes.includes('line1')
+  }
+
+  for (const code of servedCommodityCodes) {
+    it(`Should put numberOfPackages in scope for a line with code = '${code}' only when the code is on the package-count list`, () => {
+      expect(isInNumberOfPackagesScope(code)).toBe(
+        packageCountCommodityCodes().includes(code)
+      )
     })
   }
 
@@ -53,6 +62,17 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
     const fulfilmentIndexes =
       state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
     expect(fulfilmentIndexes).toEqual([])
+  })
+
+  it('Should leave rabbits other than domestic, ratites and pigeons out of numberOfPackages scope, and no other served code', () => {
+    const codesOutOfScope = servedCommodityCodes.filter(
+      (code) => !isInNumberOfPackagesScope(code)
+    )
+    expect([...codesOutOfScope].sort()).toEqual([
+      '01061490',
+      '01063300',
+      '01063910'
+    ])
   })
 })
 
@@ -202,32 +222,34 @@ describe('permanent-address list → permanentAddress (unit-record-scoped)', () 
   })
 })
 
+const LIVE_ANIMALS_DATA_FIELDS_NUMBER_OF_PACKAGES_CODES = [
+  '0101',
+  '0102',
+  '0103',
+  '010410',
+  '010420',
+  '01051111',
+  '01051200',
+  '01051300',
+  '01051400',
+  '01051500',
+  '01059400',
+  '01059910',
+  '01059920',
+  '01059930',
+  '01059950',
+  '01061410',
+  '01061900',
+  '01062000',
+  '01063100',
+  '01063200',
+  '01063980',
+  '01064100',
+  '01064900'
+]
+
 const EXPECTED = {
-  'package-count list': [
-    '0101',
-    '0102',
-    '0103',
-    '010410',
-    '010420',
-    '01051111',
-    '01051200',
-    '01051300',
-    '01051400',
-    '01051500',
-    '01059400',
-    '01059910',
-    '01059920',
-    '01059930',
-    '01059950',
-    '01061410',
-    '01061900',
-    '01062000',
-    '01063100',
-    '01063200',
-    '01063980',
-    '01064100',
-    '01064900'
-  ],
+  'package-count list': LIVE_ANIMALS_DATA_FIELDS_NUMBER_OF_PACKAGES_CODES,
   'CPH exemptions': ['0101', '01061900'],
   'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],

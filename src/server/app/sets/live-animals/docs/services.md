@@ -63,9 +63,14 @@ so generic notification-mapper code does not import the set.
   (MDM's "Cat") is not listed. `Canis familiaris` (MDM's dog) is listed for the
   permanent-address gate. `Canis lupus familiaris` is not listed — MDM does not
   hold that spelling.
-- The package-count list holds the codes of the design's package-count list
-  that MDM's live-animal data holds. Where the design named an entry by animal,
-  the whole code is on the list.
+- The package-count list is the live animals data-fields specification's
+  number-of-packages commodities that MDM's live-animal data holds. Where the
+  specification named an entry by animal, the whole code is on the list. It
+  leaves out three codes MDM serves: rabbits other than domestic (`01061490`),
+  because the specification lists only the domestic rabbit entries, which both
+  sit under `01061410`; and ratites (`01063300`) and pigeons (`01063910`),
+  because the specification names birds of prey, psittaciformes and other game
+  birds but not those two.
 - The Domestic/Game split on `0102` comes from the IPAFFS commodity-categories
   extract, which names `Bos spp.` as Game. MDM lists `Bos sp.`, so no `0102`
   species MDM offers is Game today. Every other code has one type with blank
@@ -77,7 +82,7 @@ so generic notification-mapper code does not import the set.
   carries MDM's `commonName`. GBN-AG reads `description` on the entry and
   `commonName` on each species. The dashboard list label joins entry names from
   `commodities[]`, or falls back to the single legacy `commodity` field until
-  reference-data supplies names for every CN code (EUDPA-617).
+  reference-data supplies names for every CN code.
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
   `commoditySearchRows`. They are never sent to the backend. The chosen species

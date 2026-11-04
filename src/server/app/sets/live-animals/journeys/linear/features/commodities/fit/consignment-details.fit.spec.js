@@ -4,6 +4,7 @@ import {
   BOS_TAURUS,
   CANIS_FAMILIARIS,
   FELIS_CATUS,
+  STRUTHIO,
   saveAndContinue,
   numberOfAnimalsFor,
   PHONE_VIEWPORT,
@@ -260,6 +261,31 @@ test.describe('commodity consignment details — rendering and validation', () =
     await links.click()
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toBeFocused()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
+  })
+})
+
+test.describe('commodity consignment details — package-count scope', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openCommodityDetails(page, [BOS_TAURUS, STRUTHIO])
+  })
+
+  test('asks the listed species for a number of animals and a number of packages, and the served unlisted species for a number of animals alone', async ({
+    page
+  }) => {
+    await expect(page.getByRole('heading', { level: 3 })).toHaveText([
+      BOS_TAURUS.speciesLatinName,
+      STRUTHIO.speciesLatinName
+    ])
+    await expect(
+      page.locator(
+        'label[for^="numberOfAnimalsQuantity"], label[for^="numberOfPackages"]'
+      )
+    ).toHaveText([
+      copy.consignmentDetails.animals.label,
+      copy.consignmentDetails.packages.label,
+      copy.consignmentDetails.animals.label
+    ])
   })
 })
 
