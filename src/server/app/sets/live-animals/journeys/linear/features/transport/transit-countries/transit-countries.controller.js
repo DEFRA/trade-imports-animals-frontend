@@ -7,6 +7,7 @@ import {
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { pageGatePasses } from '../../../../../../../flow/gates.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import { transitCountriesPage as page } from '../page.js'
@@ -125,17 +126,17 @@ const logRefusalUnlessUsersOwnInput = (
 }
 
 const redirectToOverviewUnlessApplicable = (request, h, current) => {
-  if (meta.collects.every((name) => current.scope.has(name))) {
+  if (pageGatePasses(page, current.scope)) {
     return null
   }
   const { journeyId } = current.journey
   request.logger.info(
     {
       journeyId,
-      reason: 'transit-countries-out-of-scope',
+      reason: 'page-gate-not-passed',
       meansOfTransport: current.answers.meansOfTransport ?? 'none'
     },
-    'Redirected to the overview: transit countries do not apply'
+    'Redirected to the overview: the transit countries page gate did not pass'
   )
   return h.redirect(hubPath(journeyId))
 }

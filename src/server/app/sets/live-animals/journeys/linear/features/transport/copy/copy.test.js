@@ -8,6 +8,7 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { transitAppliesSeed } from '../test-support.js'
 
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from '../transit-countries/transit-countries.controller.js'
@@ -426,9 +427,7 @@ describe('GET /transit-countries', () => {
     const get = transitCountries.routes.find(
       (route) => route.method === 'GET'
     ).handler
-    const result = await driveHandler(get, {
-      seed: { meansOfTransport: 'ROAD_VEHICLE' }
-    })
+    const result = await driveHandler(get, { seed: transitAppliesSeed })
     expect(result.view.context.pageTitle).toBe('Transit countries')
     expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
   })

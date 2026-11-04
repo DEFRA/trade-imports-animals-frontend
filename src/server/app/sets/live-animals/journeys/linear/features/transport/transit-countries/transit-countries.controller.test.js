@@ -11,7 +11,6 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { FELIS_CATUS_ROW } from '../../commodities/search/test-support.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -19,6 +18,7 @@ import {
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
+import { transitAppliesSeed } from '../test-support.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
 import { copy } from '../copy/copy.en.js'
@@ -40,7 +40,7 @@ const codes = (
 ).map((option) => option.value)
 const atCapacity = codes.slice(0, MAX_TRANSITED_COUNTRIES)
 const tooManyCodes = codes.slice(0, MAX_TRANSITED_COUNTRIES + 1)
-const seed = { meansOfTransport: 'ROAD_VEHICLE' }
+const seed = transitAppliesSeed
 const SAVE_ANSWERS = 'save answers'
 const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
 const SELECT_TEXT = 'Select a country'
@@ -558,15 +558,9 @@ describe('GET transit-countries', () => {
 describe('transit-countries — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const catSeed = {
-    ...seed,
-    countryOfOrigin: 'FR',
-    commodityLines: [FELIS_CATUS_ROW]
-  }
-
   it('Should go Back to the arrival details while the opening run is on', async () => {
     const result = await driveHandler(get, {
-      seed: catSeed,
+      seed,
       openingRun: RUN_ACTIVE
     })
     expectBackLinkIsPage(result, 'port-of-entry')
@@ -574,7 +568,7 @@ describe('transit-countries — the Back link', () => {
 
   it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
     const result = await driveHandler(post, {
-      seed: catSeed,
+      seed,
       payload: { action: 'add', transitedCountry: 'FR' },
       openingRun: RUN_ACTIVE
     })
@@ -582,58 +576,121 @@ describe('transit-countries — the Back link', () => {
   })
 
   it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(get, { seed: catSeed })
+    const result = await driveHandler(get, { seed })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })
 
-describe('transit-countries — when the means of transport leaves transit countries out', () => {
+describe('transit-countries — when the page gate does not pass', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const outOfScopeSeeds = [
-    { name: 'Air', seed: { meansOfTransport: 'AIRPLANE' }, logged: 'AIRPLANE' },
-    { name: 'Sea', seed: { meansOfTransport: 'VESSEL' }, logged: 'VESSEL' },
-    { name: 'no means saved', seed: {}, logged: 'none' }
-  ]
-  const airSeed = { meansOfTransport: 'AIRPLANE' }
+  const GATE_REDIRECT_MESSAGE =
+    'Redirected to the overview: the transit countries page gate did not pass'
 
-  it.each(outOfScopeSeeds)(
-    'Should go to the overview, rendering nothing, when the page is opened with $name',
-    async ({ seed: outOfScopeSeed }) => {
-      const result = await driveHandler(get, { seed: outOfScopeSeed })
+  const seedWithout = (answerName, overrides = {}) => {
+    const answers = { ...seed, ...overrides }
+    delete answers[answerName]
+    return answers
+  }
+
+  const outOfScopeSeeds = [
+    {
+      name: 'Air',
+      seed: { ...seed, meansOfTransport: 'AIRPLANE' },
+      logged: 'AIRPLANE'
+    },
+    {
+      name: 'Sea',
+      seed: { ...seed, meansOfTransport: 'VESSEL' },
+      logged: 'VESSEL'
+    },
+    {
+      name: 'no means saved',
+      seed: seedWithout('meansOfTransport'),
+      logged: 'none'
+    }
+  ]
+  const missingEarlierAnswerSeeds = [
+    {
+      name: 'rail and no country of origin',
+      seed: seedWithout('countryOfOrigin', { meansOfTransport: 'RAILWAY' }),
+      logged: 'RAILWAY'
+    },
+    {
+      name: 'road and no country of origin',
+      seed: seedWithout('countryOfOrigin'),
+      logged: 'ROAD_VEHICLE'
+    },
+    {
+      name: 'rail and no commodity',
+      seed: seedWithout('commodityLines', { meansOfTransport: 'RAILWAY' }),
+      logged: 'RAILWAY'
+    },
+    {
+      name: 'road and no commodity',
+      seed: seedWithout('commodityLines'),
+      logged: 'ROAD_VEHICLE'
+    }
+  ]
+  const gateFailingSeeds = [...outOfScopeSeeds, ...missingEarlierAnswerSeeds]
+  const airSeed = outOfScopeSeeds[0].seed
+  const submitButtons = [
+    {
+      button: 'Add country',
+      payload: { action: 'add', transitedCountry: 'FR' }
+    },
+    {
+      button: 'Remove',
+      payload: {
+        action: `${REMOVE_ACTION_PREFIX}FR`,
+        transitedCountries: ['FR']
+      }
+    },
+    { button: 'Save and continue', payload: { transitedCountries: ['FR'] } },
+    {
+      button: 'Save and return to overview',
+      payload: { transitedCountries: ['FR'], exit: 'hub' }
+    }
+  ]
+
+  it.each(gateFailingSeeds)(
+    'Should go to the overview, rendering nothing and saving nothing, when the page is opened with $name',
+    async ({ seed: gateFailingSeed }) => {
+      const result = await driveHandler(get, { seed: gateFailingSeed })
 
       expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+      expect(result.after).toEqual(result.before)
+    }
+  )
+
+  it.each(
+    missingEarlierAnswerSeeds.flatMap((gateFailing) =>
+      submitButtons.map((submit) => ({ ...gateFailing, ...submit }))
+    )
+  )(
+    'Should go to the overview and save nothing when $button is submitted with $name',
+    async ({ seed: gateFailingSeed, payload }) => {
+      const result = await driveHandler(post, {
+        seed: gateFailingSeed,
+        payload
+      })
+
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+      expect(result.after).toEqual(result.before)
     }
   )
 
   it('Should render the transit countries page, not go to the overview, when the saved means is rail', async () => {
     const result = await driveHandler(get, {
-      seed: { meansOfTransport: 'RAILWAY' }
+      seed: { ...seed, meansOfTransport: 'RAILWAY' }
     })
 
     expect(result.response).not.toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
   })
 
-  it.each([
-    {
-      name: 'Add country',
-      payload: { action: 'add', transitedCountry: 'FR' }
-    },
-    {
-      name: 'Remove',
-      payload: {
-        action: `${REMOVE_ACTION_PREFIX}FR`,
-        transitedCountries: ['FR']
-      }
-    },
-    { name: 'Save and continue', payload: { transitedCountries: ['FR'] } },
-    {
-      name: 'Save and return to overview',
-      payload: { transitedCountries: ['FR'], exit: 'hub' }
-    }
-  ])(
-    'Should go to the overview without attempting a save when $name is submitted and saves are refused',
+  it.each(submitButtons)(
+    'Should go to the overview without attempting a save when $button is submitted with Air and saves are refused',
     async ({ payload }) => {
       const result = await driveHandler(post, {
         seed: airSeed,
@@ -645,19 +702,19 @@ describe('transit-countries — when the means of transport leaves transit count
     }
   )
 
-  it.each(outOfScopeSeeds)(
+  it.each(gateFailingSeeds)(
     'Should log the redirect once at info with the journey id, the reason and the saved means when the page is opened with $name',
-    async ({ seed: outOfScopeSeed, logged }) => {
-      const result = await driveHandler(get, { seed: outOfScopeSeed })
+    async ({ seed: gateFailingSeed, logged }) => {
+      const result = await driveHandler(get, { seed: gateFailingSeed })
 
       expectOneLogged(result.logger, {
         level: 'info',
         fields: {
           journeyId: result.journeyId,
-          reason: 'transit-countries-out-of-scope',
+          reason: 'page-gate-not-passed',
           meansOfTransport: logged
         },
-        message: 'Redirected to the overview: transit countries do not apply'
+        message: GATE_REDIRECT_MESSAGE
       })
     }
   )
@@ -672,10 +729,10 @@ describe('transit-countries — when the means of transport leaves transit count
       level: 'info',
       fields: {
         journeyId: result.journeyId,
-        reason: 'transit-countries-out-of-scope',
+        reason: 'page-gate-not-passed',
         meansOfTransport: 'AIRPLANE'
       },
-      message: 'Redirected to the overview: transit countries do not apply'
+      message: GATE_REDIRECT_MESSAGE
     })
   })
 })
