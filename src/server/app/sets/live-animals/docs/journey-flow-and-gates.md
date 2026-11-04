@@ -148,7 +148,9 @@ is unaffected.
 
 Animal identification, arrival details, the transporter, roles and addresses
 and the contact address keep their Back link on the overview. Origin goes back
-to the dashboard until something is saved, then to the overview. The
+to the dashboard while the opening run is active; otherwise to the overview
+when the overview would admit the request (see
+[the entry guard](#opening-run-and-entry-guard)), else to the dashboard. The
 identification condition is `identifiesAnAnimal`, the rule that also decides
 whether the identification task row applies.
 
@@ -178,11 +180,14 @@ notification.
 The opening run begins when the notification is created — the dashboard's
 create POST in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-is the only caller of `beginOpeningRun`. The origin page is the journey entry
-and an ordinary page otherwise: it has no opening-run special case.
+is the only caller of `beginOpeningRun`. The origin page is the journey entry.
+Its Back link reads the opening-run record (see the Back link rules above), and
+its save goes on through `kit.nextTarget` like any other page.
 
 The guard admits a request when the opening run has begun for that journey in
-this session, or the journey carries committed user answers. A journey with
+this session, or the journey carries committed user answers. System-populated
+obligations and flow-only keys such as `declaration` never count as user
+answers. A journey with
 neither — a deep link to an id this session never created and that holds no
 answers — is sent to the origin page. The origin page and its children are
 exempt from the guard, so there is no redirect loop.

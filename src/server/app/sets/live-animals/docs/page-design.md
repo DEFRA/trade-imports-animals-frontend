@@ -163,10 +163,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   depends on the country.
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
-- The back link goes to the dashboard until something is saved, then to the
-  overview. A fresh draft loaded from the backend carries only the reference
-  number the backend minted, which is not a saved answer, so its back link
-  stays on the dashboard while the status strip still shows.
+- The back link returns to where the page was opened from: the overview or the
+  dashboard. The rule is in
+  [Opening run and entry guard](journey-flow-and-gates.md#opening-run-and-entry-guard).
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,
   so a country the reference data no longer offers is named on the page.
