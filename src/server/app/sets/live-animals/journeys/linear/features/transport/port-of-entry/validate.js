@@ -3,7 +3,8 @@ import {
   dateTextInRange,
   maxText,
   oneOf,
-  pageValidation
+  pageValidation,
+  requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import { dateTextOf, readDate } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -25,9 +26,17 @@ const arrivalDateRangeMessage = (stored, dateWindow) =>
     ? copy.errors.arrivalDateNoLongerInWindow
     : copy.errors.arrivalDateOutOfRange(dateWindow.minText, dateWindow.maxText)
 
-// The page hands in the window it drew the date widget with — two clock
-// reads in one request would let widget bounds and server bounds disagree
-// across midnight. A reading with no widget takes the window as it stands.
+const meansOfTransportRule = (stored) => {
+  const codes = transportReference.meansOfTransport()
+  return stored
+    ? oneOf('meansOfTransport', codes)
+    : requiredOneOf(
+        'meansOfTransport',
+        codes,
+        copy.errors.meansOfTransportRequired
+      )
+}
+
 const fields = async (
   _values,
   { dateWindow = arrivalWindow(), stored } = {}
@@ -41,7 +50,7 @@ const fields = async (
       rangeMessage: arrivalDateRangeMessage(stored, dateWindow)
     }),
     oneOf('portOfEntry', portCodes, portMessage(stored)),
-    oneOf('meansOfTransport', transportReference.meansOfTransport()),
+    meansOfTransportRule(stored),
     maxText(
       'transportIdentification',
       TRANSPORT_FIELD_MAX_LENGTH,

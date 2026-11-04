@@ -9,7 +9,6 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import {
   addUtcDays,
@@ -24,6 +23,8 @@ const post = postHandlerOf(portOfEntry)
 const get = portOfEntry.routes.find((route) => route.method === 'GET').handler
 
 const oneOfError = 'Select a valid option'
+const meansRequiredError = copy.portOfEntry.errors.meansOfTransportRequired
+const ROAD_VEHICLE = 'ROAD_VEHICLE'
 
 describe('POST port-of-entry — port membership', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -42,19 +43,19 @@ describe('POST port-of-entry — port membership', () => {
 describe('POST port-of-entry — means of transport on the merged page', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should re-render an out-of-list means with an error and commit nothing', async () => {
+  it('Should re-render an out-of-list means with the means-required error and commit nothing', async () => {
     const result = await driveHandler(post, {
       payload: { meansOfTransport: 'Hovercraft' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.meansOfTransport).toBe(oneOfError)
+    expect(result.view.context.errors.meansOfTransport).toBe(meansRequiredError)
     expect(result.after).toEqual(result.before)
   })
 
   it('Should wipe the transited countries when the means changes off the overland set', async () => {
     const result = await driveHandler(post, {
       seed: {
-        meansOfTransport: 'ROAD_VEHICLE',
+        meansOfTransport: ROAD_VEHICLE,
         transitedCountries: ['FR', 'BE']
       },
       payload: { meansOfTransport: 'AIRPLANE' }
@@ -66,7 +67,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
   it('Should keep the transited countries while the means stays overland', async () => {
     const result = await driveHandler(post, {
       seed: {
-        meansOfTransport: 'ROAD_VEHICLE',
+        meansOfTransport: ROAD_VEHICLE,
         transitedCountries: ['FR', 'BE']
       },
       payload: { meansOfTransport: 'RAILWAY' }
@@ -74,7 +75,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
   })
 
-  it('Should save the port and go to the overview on Save and return to overview with no means of transport', async () => {
+  it('Should refuse Save and return to overview with no means of transport, keeping the port entered and committing nothing', async () => {
     const [firstPort] = await ports.list()
 
     const result = await driveHandler(post, {
@@ -85,8 +86,57 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
       }
     })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.after.portOfEntry).toBe(firstPort.code)
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.meansOfTransport).toBe(meansRequiredError)
+    expect(result.view.context.values.portOfEntry).toBe(firstPort.code)
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST port-of-entry — a means of transport is required to save', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should refuse a submit with nothing answered, naming the means of transport, and commit nothing', async () => {
+    const result = await driveHandler(post, { payload: {} })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.meansOfTransport).toBe(meansRequiredError)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse the same submit on Save and return to overview too, with no redirect', async () => {
+    const result = await driveHandler(post, { payload: { exit: 'hub' } })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.meansOfTransport).toBe(meansRequiredError)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save a means of transport alone, leaving the other arrival answers blank', async () => {
+    const result = await driveHandler(post, {
+      payload: { meansOfTransport: ROAD_VEHICLE }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.meansOfTransport).toBe(ROAD_VEHICLE)
+    expect(result.after.portOfEntry).toBe('')
+    expect(result.after.transportIdentification).toBe('')
+    expect(result.after.transportDocumentReference).toBe('')
+    expect(result.after.arrivalDateAtPort).toEqual({
+      day: '',
+      month: '',
+      year: ''
+    })
+  })
+})
+
+describe('GET port-of-entry — no means-of-transport error before the question is answered', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should render no means-of-transport error on a GET of a notification with no answers', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.errors.meansOfTransport).toBeUndefined()
   })
 })
 
@@ -116,7 +166,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
       { value: '', text: 'Select one' },
       { value: 'AIRPLANE', text: 'Air', selected: false },
       { value: 'RAILWAY', text: 'Rail', selected: false },
-      { value: 'ROAD_VEHICLE', text: 'Road', selected: false },
+      { value: ROAD_VEHICLE, text: 'Road', selected: false },
       { value: 'VESSEL', text: 'Sea', selected: false }
     ])
   })
@@ -140,7 +190,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
   it.each([
     ['AIRPLANE', 'Air'],
     ['RAILWAY', 'Rail'],
-    ['ROAD_VEHICLE', 'Road'],
+    [ROAD_VEHICLE, 'Road'],
     ['VESSEL', 'Sea']
   ])(
     'Should store %s when the user chooses %s, and offer it under that label',
@@ -189,7 +239,10 @@ describe('port-of-entry — the arrival-date window', () => {
     ['a day after the latest allowed date', dayOutside('max', 1)]
   ])('Should reject %s and commit nothing', async (_label, value) => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: value }
+      payload: {
+        arrivalDateAtPort: value,
+        meansOfTransport: ROAD_VEHICLE
+      }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -204,7 +257,10 @@ describe('port-of-entry — the arrival-date window', () => {
     ['the latest allowed date', 'max']
   ])('Should accept and commit %s', async (_label, bound) => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: formatDateText(dateWindow[bound]) }
+      payload: {
+        arrivalDateAtPort: formatDateText(dateWindow[bound]),
+        meansOfTransport: ROAD_VEHICLE
+      }
     })
 
     expect(result.view).toBeUndefined()
@@ -237,15 +293,21 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should save an empty page and go to the overview on Save and return to overview', async () => {
+  it('Should refuse an empty page on Save and return to overview, naming the means of transport', async () => {
     const result = await driveHandler(post, { payload: { exit: 'hub' } })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.meansOfTransport).toBe(
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
   })
 
   it('Should leave a blank arrival date optional', async () => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: '' }
+      payload: {
+        arrivalDateAtPort: '',
+        meansOfTransport: ROAD_VEHICLE
+      }
     })
 
     expect(result.view).toBeUndefined()
@@ -319,13 +381,19 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
     await ports.ensureLoaded()
 
     const accepted = await driveHandler(post, {
-      payload: { portOfEntry: 'ZZ 001' }
+      payload: {
+        portOfEntry: 'ZZ 001',
+        meansOfTransport: ROAD_VEHICLE
+      }
     })
     expect(accepted.view).toBeUndefined()
     expect(accepted.after.portOfEntry).toBe('ZZ 001')
 
     const rejected = await driveHandler(post, {
-      payload: { portOfEntry: 'GB ABD' }
+      payload: {
+        portOfEntry: 'GB ABD',
+        meansOfTransport: ROAD_VEHICLE
+      }
     })
     expect(rejected.view.context.errors.portOfEntry).toBe(oneOfError)
   })

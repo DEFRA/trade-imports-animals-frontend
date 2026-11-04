@@ -51,6 +51,7 @@ export const copy = {
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       arrivalDateNoLongerInWindow:
         "Nid yw'r dyddiad cyrraedd a arbedwyd yn ddyddiad y gallwch ei ddewis mwyach. Rhowch ddyddiad cyrraedd newydd.",
+      meansOfTransportRequired: 'Dewiswch gyfrwng cludo i’r porthladd mynediad',
       identificationMaxLength:
         'Rhaid i adnabod y cludiant fod yn 58 nod neu lai',
       documentReferenceMaxLength:

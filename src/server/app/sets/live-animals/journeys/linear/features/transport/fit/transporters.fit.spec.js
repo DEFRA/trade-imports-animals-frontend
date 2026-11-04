@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   FORM_GROUP_ANCESTOR_XPATH,
   PHONE_VIEWPORT,
+  answerMeansAndReturnToOverview,
   contentWidthOf,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
@@ -10,8 +11,6 @@ import {
   journeyUrl,
   searchByPressingEnter,
   signIn,
-  startNotification,
-  unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
@@ -57,11 +56,7 @@ const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
 const openTransporterList = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await submit(page)
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await answerMeansAndReturnToOverview(page)
   await page.getByRole('link', { name: 'Transport details' }).click()
   await expect(
     page.getByRole('heading', { name: copy.transporters.title })

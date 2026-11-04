@@ -11,6 +11,7 @@ import {
   openArrival,
   openDatePicker,
   openTransit,
+  saveAndReturnToHub,
   signIn,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
@@ -468,11 +469,51 @@ test.describe('arrival details validation', () => {
     })
     await submit(page)
 
-    const link = errorLink(page, validatorDefaults.oneOf)
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toBeFocused()
     await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue('')
+    await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
+  })
+
+  test('means validation: a save with nothing chosen holds the page, naming the means of transport', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await submit(page)
+
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toBeFocused()
+    await expect(
+      page.getByRole('heading', { name: copy.portOfEntry.title })
+    ).toBeVisible()
+  })
+
+  test('means validation: the same refusal holds Save and return to overview, keeping the port chosen', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await choosePortOfEntry(page)
+    await saveAndReturnToHub(page).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      errorLink(page, copy.portOfEntry.errors.meansOfTransportRequired)
+    ).toBeVisible()
     await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
 })
@@ -569,6 +610,33 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(values.transportDocumentReference)
+  })
+
+  test('saves a means of transport alone, with the other arrival answers left blank', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page
+      .locator(MEANS_OF_TRANSPORT_SELECT)
+      .selectOption(values.meansOfTransport)
+    await submit(page)
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue(
+      values.meansOfTransport
+    )
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue('')
+    await expect(page.locator(portNativeSelect)).toHaveValue('')
+    await expect(
+      page.getByLabel(copy.portOfEntry.identification.label)
+    ).toHaveValue('')
+    await expect(
+      page.getByLabel(copy.portOfEntry.documentReference.label)
+    ).toHaveValue('')
   })
 })
 
@@ -864,6 +932,20 @@ test.describe('arrival and transit accessibility', () => {
     await expectNoSeriousOrCriticalViolations(
       page,
       'Arrival details with date picker open'
+    )
+  })
+
+  test('arrival page with the means-of-transport error has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await submit(page)
+    await expect(
+      errorLink(page, copy.portOfEntry.errors.meansOfTransportRequired)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Arrival details with the means-of-transport error'
     )
   })
 

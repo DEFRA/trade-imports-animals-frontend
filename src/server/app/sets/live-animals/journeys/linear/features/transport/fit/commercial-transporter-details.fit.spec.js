@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
+  answerMeansAndReturnToOverview,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
-  signIn,
-  startNotification,
-  unlockSections
+  signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -20,13 +19,8 @@ const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
 const openCommercialForm = async (page) => {
-  await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await submit(page)
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await answerMeansAndReturnToOverview(page)
   await page.getByRole('link', { name: 'Transport details' }).click()
-  // The govuk button macro renders an href as a link with role="button".
   await page.getByRole('button', { name: copy.transporters.add }).click()
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })

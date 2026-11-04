@@ -62,6 +62,8 @@ live-animals helper uses
   is answered, so reaching the hub means answering it.
 - The animal count is save-blocking, so a driver that reaches past commodity
   details fills it.
+- The means of transport is save-blocking, so a driver that reaches past
+  arrival details chooses one.
 - Dogs are identified by microchip in law, so a chip number on its own is enough
   to save a dog.
 

@@ -850,14 +850,15 @@ export const answerCphNumberFromAddLink = async (page) => {
 
 export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'
 
+export const chooseMeansOfTransport = (page) =>
+  page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(values.meansOfTransport)
+
 export const answerArrivalDetails = async (page) => {
   await page
     .getByLabel('Arrival date at port of entry')
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePortOfEntry(page)
-  await page
-    .locator(MEANS_OF_TRANSPORT_SELECT)
-    .selectOption(values.meansOfTransport)
+  await chooseMeansOfTransport(page)
   await page
     .getByLabel('Transport identification')
     .fill(values.transportIdentification)
@@ -900,18 +901,20 @@ export const openArrival = async (page) => {
   ).toBeVisible()
 }
 
+export const answerMeansAndReturnToOverview = async (page) => {
+  await openArrival(page)
+  await chooseMeansOfTransport(page)
+  await save(page)
+  await expectOverview(page)
+}
+
 /**
  * Opens the transit countries page from a fresh notification, arriving by road.
  *
  * @param {import('@playwright/test').Page} page
  */
 export const openTransit = async (page) => {
-  await openArrival(page)
-  await page
-    .locator(MEANS_OF_TRANSPORT_SELECT)
-    .selectOption(values.meansOfTransport)
-  await save(page)
-  await expectOverview(page)
+  await answerMeansAndReturnToOverview(page)
   await page
     .getByRole('link', {
       name: hubCopy.rows.transitCountries.title,
