@@ -23,6 +23,7 @@ const get = getHandlerOf(origin)
 
 const COUNTRY_CODE_OUTSIDE_THE_LIST = 'ZZ'
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
+const COUNTRY_REQUIRED_MESSAGE = 'Select a country of origin'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 const REGION_CODE_MAX_LENGTH_MESSAGE =
   'Region of origin code must be 5 characters or less'
@@ -68,8 +69,8 @@ describe('POST /origin — invalid payload', () => {
   )
 })
 
-describe('POST /origin — an unanswered country still saves', () => {
-  it('Should keep the rest of the page and move on when no country is chosen', async () => {
+describe('POST /origin — save and continue without a country', () => {
+  it('Should refuse with the country message and commit nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
@@ -78,13 +79,15 @@ describe('POST /origin — an unanswered country still saves', () => {
       }
     })
 
-    expect(result.view).toBeUndefined()
-    expect(result.after.countryOfOrigin).toBe('')
-    expect(result.after.internalReferenceNumber).toBe('Imports456GB')
-    expect(result.after.regionOfOriginCodeRequirement).toBe('no')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      COUNTRY_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+    expectNoRefusalLogged(result.logger)
   })
 
-  it('Should save a page answered by nothing but the internal reference', async () => {
+  it('Should refuse when only the internal reference is answered', async () => {
     const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
@@ -93,31 +96,39 @@ describe('POST /origin — an unanswered country still saves', () => {
       }
     })
 
-    expect(result.view).toBeUndefined()
-    expect(result.after.internalReferenceNumber).toBe('Imports456GB')
-    expect(result.after.countryOfOrigin).toBe('')
-    expect(result.after.regionOfOriginCodeRequirement).toBe('')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      COUNTRY_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
   })
 
-  it('Should save no region code while no country gives it its prefix', async () => {
+  it('Should report both the country and region code length errors when no country is chosen', async () => {
     const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
         regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix: '75',
+        regionOfOriginCodeSuffix: '123456',
         internalReferenceNumber: ''
       }
     })
 
-    expect(result.view).toBeUndefined()
-    expect(result.after.regionOfOriginCodeRequirement).toBe('yes')
-    expect(result.after.regionOfOriginCode).toBe('')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      COUNTRY_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_MAX_LENGTH_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
   })
+})
 
-  it('Should keep the typed code on the page when the save is refused for another answer', async () => {
+describe('POST /origin — preserved field values when save is refused', () => {
+  it('Should keep the typed region code on the page when the save is refused for another answer', async () => {
     const result = await driveHandler(post, {
       payload: {
-        countryOfOrigin: '',
+        countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'yes',
         regionOfOriginCodeSuffix: '75',
         internalReferenceNumber: 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1)
@@ -126,7 +137,7 @@ describe('POST /origin — an unanswered country still saves', () => {
 
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
-    expect(result.view.context.regionCodePrefix).toBe('')
+    expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.after).toEqual(result.before)
   })
 })
@@ -379,6 +390,7 @@ describe('GET /origin — region of origin code splits back into its two parts',
   it('Should give an empty prefix value and an empty box before a country has been chosen', async () => {
     const result = await driveHandler(get)
 
+    expect(result.view.context.errors).toEqual({})
     expect(result.view.context.regionCodePrefix).toBe('')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
   })
@@ -483,8 +495,8 @@ describe('GET /origin — region code prefix for each offered country', () => {
   })
 })
 
-describe('POST /origin — empty country overwrites a stored answer', () => {
-  it('Should replace a previously stored country with an empty string when the select text is submitted', async () => {
+describe('POST /origin — clearing a stored country on save and continue', () => {
+  it('Should refuse when the country field is submitted empty', async () => {
     const result = await driveHandler(post, {
       seed: {
         countryOfOrigin: 'FR',
@@ -498,9 +510,11 @@ describe('POST /origin — empty country overwrites a stored answer', () => {
       }
     })
 
-    expect(result.view).toBeUndefined()
-    expect(result.before.countryOfOrigin).toBe('FR')
-    expect(result.after.countryOfOrigin).toBe('')
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      COUNTRY_REQUIRED_MESSAGE
+    )
+    expect(result.after.countryOfOrigin).toBe('FR')
   })
 })
 
@@ -561,25 +575,6 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
     expect(result.before.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
     expect(result.after.countryOfOrigin).toBe(COUNTRY_CODE_OUTSIDE_THE_LIST)
     expect(result.after.regionOfOriginCode).toBe('AT-123')
-  })
-})
-
-describe('POST /origin — a region code typed with no country chosen', () => {
-  it('Should refuse a code over 5 characters with the length error and no country error', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        countryOfOrigin: '',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix: 'AT-123',
-        internalReferenceNumber: ''
-      }
-    })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      REGION_CODE_MAX_LENGTH_MESSAGE
-    )
-    expect(result.view.context.errors.countryOfOrigin).toBeUndefined()
   })
 })
 
