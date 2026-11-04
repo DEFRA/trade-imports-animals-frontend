@@ -31,7 +31,8 @@ module.exports = {
       url: collectUrls(),
       puppeteerScript: './tests/lighthouse/auth-setup.cjs',
       puppeteerLaunchOptions: {
-        args: ['--no-sandbox', '--disable-gpu']
+        args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+        timeout: 60_000
       },
       numberOfRuns: 1,
       settings: {
