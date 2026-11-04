@@ -29,7 +29,6 @@ import { addressSummary } from '../transporters/transporter-record.js'
 const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
-const REGISTER_SLUG = 'transporters/select'
 const TABLE = '.govuk-table'
 const BACK_LINK = '.govuk-back-link'
 const ERROR_SUMMARY = '.govuk-error-summary'
@@ -112,14 +111,6 @@ const openCommercialAdd = async (page) => {
     page.getByRole('heading', {
       name: copy.commercialTransporterDetails.title
     })
-  ).toBeVisible()
-}
-
-const openCommercialRegister = async (page) => {
-  await openCommercialAdd(page)
-  await page.goto(journeyUrl(page, REGISTER_SLUG))
-  await expect(
-    page.getByRole('heading', { name: copy.transportersSelect.title })
   ).toBeVisible()
 }
 
@@ -367,10 +358,6 @@ test.describe('transporter list page', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
-    await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
-    ).toBeChecked()
-    await page.goto(journeyUrl(page, REGISTER_SLUG))
     await expect(
       page.getByRole('radio', { name: commercialRecord.name })
     ).toBeChecked()
@@ -915,64 +902,6 @@ test.describe('adding a transporter that is not on the list', () => {
   })
 })
 
-test.describe('commercial transporter page', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-  })
-
-  test('commercial transporter page renders address and approval details', async ({
-    page
-  }) => {
-    await openCommercialRegister(page)
-    await expect(page.getByText(copy.transportersSelect.hint)).toBeVisible()
-
-    const selected = values.commercialTransporter
-    await expect(page.getByRole('radio', { name: selected.name })).toBeVisible()
-    const group = page.getByRole('group', {
-      name: copy.transportersSelect.title
-    })
-    await expect(group).toContainText(selected.address.addressLine1)
-    await expect(group).toContainText(selected.address.country)
-    await expect(group).toContainText(selected.approvalNumber)
-  })
-
-  test('commercial transporter validation: out-of-list value links to and focuses the cleared group', async ({
-    page
-  }) => {
-    await openCommercialRegister(page)
-    const selected = values.commercialTransporter
-    await tickAsUnknownTransporter(
-      page.getByRole('radio', { name: selected.name })
-    )
-    await submit(page)
-
-    const link = errorLink(
-      page,
-      copy.transportersSelect.errors.transporterRequired
-    )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(
-      page.locator('input[name="commercialTransporter"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="commercialTransporter"]:checked')
-    ).toHaveCount(0)
-  })
-
-  test('commercial transporter selection saves and persists', async ({
-    page
-  }) => {
-    await openCommercialRegister(page)
-    const selected = values.commercialTransporter
-    await page.getByRole('radio', { name: selected.name }).check()
-    await submit(page)
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await page.goto(journeyUrl(page, REGISTER_SLUG))
-    await expect(page.getByRole('radio', { name: selected.name })).toBeChecked()
-  })
-})
-
 test.describe('private transporter rendering and optionality', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -1177,13 +1106,6 @@ test.describe('transporter pages accessibility', () => {
   }) => {
     await openTransporterType(page)
     await expectNoSeriousOrCriticalViolations(page, 'Transporter type')
-  })
-
-  test('commercial transporter page has no serious or critical axe violations', async ({
-    page
-  }) => {
-    await openCommercialRegister(page)
-    await expectNoSeriousOrCriticalViolations(page, 'Commercial transporter')
   })
 
   test('private transporter page has no serious or critical axe violations', async ({

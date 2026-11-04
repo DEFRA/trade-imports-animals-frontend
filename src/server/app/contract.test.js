@@ -44,7 +44,6 @@ import * as portOfEntry from './sets/live-animals/journeys/linear/features/trans
 import * as transitCountries from './sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.js'
 import * as transporterAdd from './sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.js'
-import * as transportersSelect from './sets/live-animals/journeys/linear/features/transport/transporters-select/transporters-select.controller.js'
 import * as commercialTransporterDetails from './sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
@@ -389,9 +388,9 @@ describe('transporter commit contract — the list and its add spokes', () => {
         new Set(['transporterType', expected])
       )
 
-      // The body, not just which obligation flipped: a dropped approval number
-      // or a swapped name would ship green into the notification mapper.
-      const record = transportersService.party(transporter)
+      const record = transportersService
+        .parties()
+        .find((candidate) => candidate.id === transporter)
       if (expected === 'commercialTransporter') {
         expect(result.after.commercialTransporter).toEqual({
           name: record.name,
@@ -420,12 +419,6 @@ describe('transporter commit contract — the list and its add spokes', () => {
       payload: { transporterType: 'Private' }
     })
     expect(committedIds(chooser)).toEqual(['transporterType'])
-
-    const register = await drive(postHandlerOf(transportersSelect), {
-      seed: { transporterType: 'Commercial' },
-      payload: { commercialTransporter: 'garcia-livestock-transport' }
-    })
-    expect(committedIds(register)).toEqual(['commercialTransporter'])
 
     const typedInCommercial = await drive(
       postHandlerOf(commercialTransporterDetails),

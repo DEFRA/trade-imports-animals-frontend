@@ -157,15 +157,6 @@ export const copy = {
       }
     }
   },
-  transportersSelect: {
-    title: 'Search for an approved commercial transporter',
-    hint: 'Selecting a transporter copies their name, address and approval number into this notification.',
-    optionHint: (address, approvalNumber) =>
-      `${address} — approval number ${approvalNumber}`,
-    errors: {
-      transporterRequired: 'Select a transporter from the list'
-    }
-  },
   commercialTransporterDetails: {
     title: 'Add commercial transporter',
     guidanceTitle: 'Help with transporter authorisation',

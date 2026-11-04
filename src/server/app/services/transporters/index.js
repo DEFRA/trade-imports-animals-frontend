@@ -17,8 +17,6 @@ export {
 /** Every transporter the service ships, commercial and private together. */
 export const parties = () => TRANSPORTER_OPTIONS
 
-export const party = (id) => parties().find((record) => record.id === id)
-
 /** Every transporter this organisation can pick: the ones it has added for
  * itself, then the ones the service ships.
  *
@@ -34,6 +32,3 @@ export const partiesFor = (orgId) => {
     ...parties().filter((record) => !addedNames.has(nameKey(record.name)))
   ]
 }
-
-export const commercialParties = () =>
-  parties().filter((record) => record.type === COMMERCIAL)

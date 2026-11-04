@@ -16,9 +16,6 @@ import { copy as copyCy } from './copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
-const SAMPLE_ADDRESS = '1 Farm Lane, Kent'
-const SAMPLE_APPROVAL_NUMBER = 'GB-01'
-
 describe('transport copy module', () => {
   test('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
@@ -214,12 +211,6 @@ describe('transport copy module', () => {
 })
 
 describe('transport copy module — transporter pages', () => {
-  test('Should interpolate transportersSelect.optionHint', () => {
-    expect(
-      copy.transportersSelect.optionHint(SAMPLE_ADDRESS, SAMPLE_APPROVAL_NUMBER)
-    ).toBe('1 Farm Lane, Kent — approval number GB-01')
-  })
-
   test('Should head every column of the transporter list in English and Welsh', () => {
     expect(copy.transporters.table).toEqual({
       selectHidden: 'Select',

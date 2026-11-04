@@ -52,7 +52,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
   leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter add, select and details pages.
+  and the transporter add and details pages.
 - While a notification is being amended, a page ends with "Save and return"
   (back to the review) and "Save and continue" (on, never back to the review)
   side by side, then a secondary "Save and return to overview" button on its

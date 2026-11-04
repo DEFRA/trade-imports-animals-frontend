@@ -158,15 +158,6 @@ export const copy = {
       }
     }
   },
-  transportersSelect: {
-    title: 'Chwilio am gludwr masnachol cymeradwy',
-    hint: 'Mae dewis cludwr yn copïo eu henw, eu cyfeiriad a’u rhif cymeradwyo i’r hysbysiad hwn.',
-    optionHint: (address, approvalNumber) =>
-      `${address} — rhif cymeradwyo ${approvalNumber}`,
-    errors: {
-      transporterRequired: 'Dewiswch gludwr o’r rhestr'
-    }
-  },
   commercialTransporterDetails: {
     title: 'Ychwanegu cludwr masnachol',
     guidanceTitle: 'Help gydag awdurdodiad cludwr',
