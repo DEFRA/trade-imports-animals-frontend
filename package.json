@@ -137,13 +137,6 @@
     "webpack-cli": "7.2.3"
   },
   "overrides": {
-    "@hapi/bell": {
-      "joi": "17.13.9"
-    },
-    "@hapi/catbox-redis": {
-      "joi": "17.13.9"
-    },
-    "@hapi/content": "6.0.3",
     "@lhci/cli": {
       "uuid": "11.1.1"
     },
