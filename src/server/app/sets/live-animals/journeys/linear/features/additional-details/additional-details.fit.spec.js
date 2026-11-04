@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   BOS_TAURUS,
   EQUUS_CABALUS,
+  FELIS_CATUS,
   answerCountryOfOrigin,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
@@ -16,6 +17,8 @@ import {
 import * as certification from '../../../../../../services/certification-purposes/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+
+const SAVED_NOTIFICATION_URL = urlUnderBase('/notifications/[^/]+')
 
 const startAtAdditionalDetails = async (page, chosenSpecies = BOS_TAURUS) => {
   await startNotification(page)
@@ -62,6 +65,35 @@ const clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer = async (
   ).toBeChecked()
 }
 
+const expectUnweanedQuestionVisible = async (page) => {
+  const unweaned = page.getByRole('group', { name: copy.unweaned.legend })
+  await expect(unweaned).toContainText(copy.unweaned.hint)
+  await expect(
+    unweaned.getByRole('radio', { name: copy.unweaned.yes })
+  ).toBeVisible()
+  await expect(
+    unweaned.getByRole('radio', { name: copy.unweaned.no })
+  ).toBeVisible()
+}
+
+const saveSlaughterAndUnweanedNoThenReopen = async (page, detailsUrl) => {
+  await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
+  await page.getByRole('radio', { name: copy.unweaned.no }).check()
+  await saveAndContinue(page).click()
+
+  await expect(page).toHaveURL(SAVED_NOTIFICATION_URL)
+  await page.goto(detailsUrl)
+}
+
+const expectSlaughterAndUnweanedNoChecked = async (page) => {
+  await expect(
+    page.getByRole('radio', { name: 'Slaughter', exact: true })
+  ).toBeChecked()
+  await expect(
+    page.getByRole('radio', { name: copy.unweaned.no })
+  ).toBeChecked()
+}
+
 test.describe('additional-details feature — rendering', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -85,14 +117,7 @@ test.describe('additional-details feature — rendering', () => {
       ).toBeVisible()
     }
 
-    const unweaned = page.getByRole('group', { name: copy.unweaned.legend })
-    await expect(unweaned).toContainText(copy.unweaned.hint)
-    await expect(
-      unweaned.getByRole('radio', { name: copy.unweaned.yes })
-    ).toBeVisible()
-    await expect(
-      unweaned.getByRole('radio', { name: copy.unweaned.no })
-    ).toBeVisible()
+    await expectUnweanedQuestionVisible(page)
   })
 
   test('sets both question legends at the medium size', async ({ page }) => {
@@ -114,38 +139,63 @@ test.describe('additional-details feature — rendering', () => {
 })
 
 test.describe('additional-details feature — the unweaned commodity gate', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await startAtAdditionalDetails(page, EQUUS_CABALUS)
+  test.describe('an equine consignment', () => {
+    test.beforeEach(async ({ page }) => {
+      await signIn(page)
+      await startAtAdditionalDetails(page, EQUUS_CABALUS)
+    })
+
+    test('asks the unweaned question alongside certification, with its hint and both options', async ({
+      page
+    }) => {
+      await expect(
+        page.getByRole('group', { name: copy.certified.legend })
+      ).toBeVisible()
+      await expectUnweanedQuestionVisible(page)
+    })
+
+    test('saves the unweaned answer and shows it chosen when the page is reopened', async ({
+      page
+    }) => {
+      const detailsUrl = page.url()
+
+      await saveSlaughterAndUnweanedNoThenReopen(page, detailsUrl)
+      await expectSlaughterAndUnweanedNoChecked(page)
+    })
   })
 
-  test('does not ask a horses-only consignment about unweaned animals', async ({
-    page
-  }) => {
-    await expect(
-      page.getByRole('group', { name: copy.certified.legend })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('group', { name: copy.unweaned.legend })
-    ).toHaveCount(0)
-  })
+  test.describe('a commodity the unweaned list excludes', () => {
+    test.beforeEach(async ({ page }) => {
+      await signIn(page)
+      await startAtAdditionalDetails(page, FELIS_CATUS)
+    })
 
-  test('saves a horses-only consignment without an unweaned answer', async ({
-    page
-  }) => {
-    const detailsUrl = page.url()
+    test('asks only the certification question', async ({ page }) => {
+      await expect(
+        page.getByRole('group', { name: copy.certified.legend })
+      ).toBeVisible()
+      await expect(
+        page.getByRole('group', { name: copy.unweaned.legend })
+      ).toHaveCount(0)
+    })
 
-    await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
-    await saveAndContinue(page).click()
+    test('saves without an unweaned answer and reopens with the certification answer alone', async ({
+      page
+    }) => {
+      const detailsUrl = page.url()
 
-    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
-    await page.goto(detailsUrl)
-    await expect(
-      page.getByRole('radio', { name: 'Slaughter', exact: true })
-    ).toBeChecked()
-    await expect(
-      page.getByRole('group', { name: copy.unweaned.legend })
-    ).toHaveCount(0)
+      await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
+      await saveAndContinue(page).click()
+
+      await expect(page).toHaveURL(SAVED_NOTIFICATION_URL)
+      await page.goto(detailsUrl)
+      await expect(
+        page.getByRole('radio', { name: 'Slaughter', exact: true })
+      ).toBeChecked()
+      await expect(
+        page.getByRole('group', { name: copy.unweaned.legend })
+      ).toHaveCount(0)
+    })
   })
 })
 
@@ -223,18 +273,8 @@ test.describe('additional-details feature — persistence and accessibility', ()
   test('saves both answers, redirects and persists them', async ({ page }) => {
     const detailsUrl = page.url()
 
-    await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
-    await page.getByRole('radio', { name: copy.unweaned.no }).check()
-    await saveAndContinue(page).click()
-
-    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
-    await page.goto(detailsUrl)
-    await expect(
-      page.getByRole('radio', { name: 'Slaughter', exact: true })
-    ).toBeChecked()
-    await expect(
-      page.getByRole('radio', { name: copy.unweaned.no })
-    ).toBeChecked()
+    await saveSlaughterAndUnweanedNoThenReopen(page, detailsUrl)
+    await expectSlaughterAndUnweanedNoChecked(page)
   })
 
   test('saves both questions blank on Save and return to overview and persists the blank state', async ({

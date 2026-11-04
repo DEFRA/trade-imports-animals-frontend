@@ -110,9 +110,9 @@ describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)',
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
 
-  it('Should not put containsUnweanedAnimals in scope for a horses-only consignment', () => {
+  it('Should not put containsUnweanedAnimals in scope for a cats-dogs-ferrets-only consignment', () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: '0101' }
+      [commodityCode.id]: { line1: '01061900' }
     })
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
@@ -229,7 +229,7 @@ const EXPECTED = {
     '01064900'
   ],
   'CPH exemptions': ['0101', '01061900'],
-  'unweaned list': ['0102'],
+  'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
   'tattoo list': ['01061900'],

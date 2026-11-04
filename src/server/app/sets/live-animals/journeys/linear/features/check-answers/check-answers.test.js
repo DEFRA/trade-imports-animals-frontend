@@ -50,8 +50,10 @@ import {
 } from '../commodities/search/test-support.js'
 import {
   CATTLE_CODE,
+  GOAT_CODE,
   HORSES_CODE,
   OTHER_LIVE_MAMMALS_CODE,
+  SHEEP_CODE,
   SWINE_CODE
 } from '../../../../services/commodities/rules.js'
 
@@ -1395,8 +1397,10 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
 
   const MATRIX = [
     { commodityCode: CATTLE_CODE, packages: true, unweaned: true, cph: true },
-    { commodityCode: SWINE_CODE, packages: true, unweaned: false, cph: true },
-    { commodityCode: HORSES_CODE, packages: true, unweaned: false, cph: false },
+    { commodityCode: SWINE_CODE, packages: true, unweaned: true, cph: true },
+    { commodityCode: SHEEP_CODE, packages: true, unweaned: true, cph: true },
+    { commodityCode: GOAT_CODE, packages: true, unweaned: true, cph: true },
+    { commodityCode: HORSES_CODE, packages: true, unweaned: true, cph: false },
     {
       commodityCode: OTHER_LIVE_MAMMALS_CODE,
       packages: true,

@@ -1,6 +1,8 @@
 export const HORSES_CODE = '0101'
 export const CATTLE_CODE = '0102'
 export const SWINE_CODE = '0103'
+export const SHEEP_CODE = '010410'
+export const GOAT_CODE = '010420'
 export const OTHER_LIVE_MAMMALS_CODE = '01061900'
 
 export const COMMODITY_IDENTIFIERS = {
@@ -38,8 +40,8 @@ export const PACKAGE_COUNT_CODES = [
   HORSES_CODE,
   CATTLE_CODE,
   SWINE_CODE,
-  '010410',
-  '010420',
+  SHEEP_CODE,
+  GOAT_CODE,
   '01051111',
   '01051200',
   '01051300',
@@ -74,7 +76,13 @@ export const PERMANENT_ADDRESS_CODE_SPECIES = Object.entries(
   latinNames.map((latinName) => [code, latinName])
 )
 
-export const UNWEANED_CODES = [CATTLE_CODE]
+export const UNWEANED_CODES = [
+  HORSES_CODE,
+  CATTLE_CODE,
+  SWINE_CODE,
+  SHEEP_CODE,
+  GOAT_CODE
+]
 
 export const CPH_EXEMPT_CODES = [HORSES_CODE, OTHER_LIVE_MAMMALS_CODE]
 

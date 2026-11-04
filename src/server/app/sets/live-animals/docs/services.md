@@ -22,7 +22,8 @@ so generic notification-mapper code does not import the set.
 
 - `COMMODITY_IDENTIFIERS` lists each CN code's identifiers in the order the
   identification page asks for them. The order belongs to the code: `0102`
-  (cattle) is asked for its ear tag first, `0101` (horses) for its microchip.
+  (cattle) is asked for its ear tag first, `0101` (equines: horses, asses,
+  mules and hinnies) for its microchip.
 - The per-identifier allow-lists are derived from that map, so an identifier's
   gate and its place on the page cannot drift apart. Adding an identifier to a
   code is one edit. `IDENTIFIED_CODES` is derived from the same map, so whether
@@ -40,10 +41,12 @@ so generic notification-mapper code does not import the set.
   [`index.test.js`](../services/commodities/index.test.js) pins this: every
   permanent-address species MDM holds sits under an identified code.
 - The unweaned-animals question is asked of a line whose code is in
-  `UNWEANED_CODES`: `0102` (cattle).
+  `UNWEANED_CODES`: `0101` (equines), `0102` (cattle), `0103` (pigs),
+  `010410` (sheep) and `010420` (goats), set by the live animals data-fields
+  specification.
 - Every consignment is asked for a CPH number unless every line's code is
-  exempt. `CPH_EXEMPT_CODES` names the exemptions by code: `0101` (horses and
-  donkeys) and `01061900` (cats, dogs and ferrets, which are asked for each
+  exempt. `CPH_EXEMPT_CODES` names the exemptions by code: `0101` (equines)
+  and `01061900` (cats, dogs and ferrets, which are asked for each
   animal's permanent address instead). A line with no code yet is ignored, and a
   code added under any other value is asked.
 
