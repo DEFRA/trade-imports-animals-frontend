@@ -6,9 +6,12 @@ import {
   chooseTodayFromDatePicker,
   describeCalendarPosition,
   expectNoSeriousOrCriticalViolations,
+  expectOverview,
   journeyUrl,
   visitOverviewThenOpen,
   openDatePicker,
+  saveAndContinue,
+  saveAndReturnToHub,
   startNotificationAtImportReason,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -27,7 +30,6 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
-const SUBMIT_BUTTON = 'form button[type="submit"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
 const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
@@ -132,6 +134,31 @@ const expectSelectOpensOnSelectText = async (select, expectedOptions) => {
   expect(await everyOptionIn(select)).toEqual(expectedOptions)
 }
 
+const INTERNAL_MARKET_REASON = importReasonPurpose
+  .reasons()
+  .find(({ value }) => value === 'internalMarket')
+const BREEDING_PURPOSE = importReasonPurpose
+  .purposes()
+  .find(({ value }) => value === 'breeding')
+
+const chooseInternalMarketBreeding = async (page) => {
+  await page
+    .getByRole('radio', { name: INTERNAL_MARKET_REASON.text, exact: true })
+    .check()
+  await page
+    .getByRole('radio', { name: BREEDING_PURPOSE.text, exact: true })
+    .check()
+}
+
+const expectInternalMarketBreedingChecked = async (page) => {
+  await expect(
+    page.getByRole('radio', { name: INTERNAL_MARKET_REASON.text, exact: true })
+  ).toBeChecked()
+  await expect(
+    page.getByRole('radio', { name: BREEDING_PURPOSE.text, exact: true })
+  ).toBeChecked()
+}
+
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -182,7 +209,7 @@ test.describe('import-reason feature', () => {
         input.value = 'not-a-real-reason'
         input.checked = true
       })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const reasonError = page
       .getByRole('alert')
@@ -199,25 +226,13 @@ test.describe('import-reason feature', () => {
     page
   }) => {
     const reasonUrl = page.url()
-    const selected = importReasonPurpose
-      .reasons()
-      .find(({ value }) => value === 'internalMarket')
-    const purpose = importReasonPurpose
-      .purposes()
-      .find(({ value }) => value === 'breeding')
 
-    await page.getByRole('radio', { name: selected.text, exact: true }).check()
-    await page.getByRole('radio', { name: purpose.text, exact: true }).check()
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await chooseInternalMarketBreeding(page)
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
-    await expect(
-      page.getByRole('radio', { name: selected.text, exact: true })
-    ).toBeChecked()
-    await expect(
-      page.getByRole('radio', { name: purpose.text, exact: true })
-    ).toBeChecked()
+    await expectInternalMarketBreedingChecked(page)
   })
 
   test('back link returns to the overview when the page is opened from the overview', async ({
@@ -229,6 +244,21 @@ test.describe('import-reason feature', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(journeyUrl(page))
+  })
+
+  test('Save and return to overview inside the opening run saves the answer and shows the overview rather than commodity details', async ({
+    page
+  }) => {
+    await carryOpeningRunToImportReason(page)
+    const reasonUrl = page.url()
+
+    await chooseInternalMarketBreeding(page)
+    await saveAndReturnToHub(page).click()
+
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expectOverview(page)
+    await page.goto(reasonUrl)
+    await expectInternalMarketBreedingChecked(page)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -360,7 +390,7 @@ test.describe('import-reason reveals', () => {
     await radioFor(page, 'transit').check()
     await chooseTypeAheadOption(page, TRANSIT_PORT)
     await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
@@ -370,13 +400,20 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
     await expect(page.locator(transitCountryInput)).toHaveValue(IRELAND.name)
   })
+})
+
+test.describe('import-reason reveal validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtImportReason(page)
+  })
 
   test('refuses an unanswered reveal, links to the field and keeps the reveal open', async ({
     page
   }) => {
     await radioFor(page, 'transit').check()
     await chooseTypeAheadOption(page, TRANSIT_PORT)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const countryError = page
       .getByRole('alert')
@@ -387,11 +424,48 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
   })
 
+  test('transit reveal validation: the same refusal holds Save and return to overview, naming both missing answers and keeping the reveal open', async ({
+    page
+  }) => {
+    await radioFor(page, 'transit').check()
+    await saveAndReturnToHub(page).click()
+
+    const portError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.portRequired })
+    const countryError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.countryRequired })
+    await expect(portError).toBeVisible()
+    await expect(countryError).toBeVisible()
+    await expect(radioFor(page, 'transit')).toBeChecked()
+    const reveal = await revealFor(page, 'transit')
+    await expect(reveal).toBeVisible()
+    await expect(reveal).toContainText(copy.errors.portRequired)
+    await expect(reveal).toContainText(copy.errors.countryRequired)
+  })
+
+  test('transit reveal validation: the same refusal holds Save and return to overview when only the port is missing, keeping the country shown', async ({
+    page
+  }) => {
+    await radioFor(page, 'transit').check()
+    await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
+    await saveAndReturnToHub(page).click()
+
+    const portError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.portRequired })
+    await expect(portError).toBeVisible()
+    await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
+    const reveal = await revealFor(page, 'transit')
+    await expect(reveal).toBeVisible()
+  })
+
   test('refuses an unanswered internal-market purpose, links to the first radio and keeps the reveal open', async ({
     page
   }) => {
     await radioFor(page, 'internalMarket').check()
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const purposeError = page
       .getByRole('alert')
@@ -416,7 +490,7 @@ test.describe('import-reason reveals', () => {
     const expected = await chooseTodayFromDatePicker(page, copy.date.label)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
     await chooseTypeAheadOption(page, TEMPORARY_ADMISSION_PORT)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
@@ -434,7 +508,7 @@ test.describe('import-reason reveals', () => {
   }) => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
     await chooseTypeAheadOption(page, TEMPORARY_ADMISSION_PORT)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const dateError = page
       .getByRole('alert')
@@ -484,7 +558,7 @@ test.describe('import-reason destination territories', () => {
       optionName: CANARY_ISLANDS.name,
       inputId: 'transhipmentDestinationCountry'
     })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
@@ -635,7 +709,7 @@ test.describe('import-reason port and country without JavaScript', () => {
     await page
       .locator('select#transitDestinationCountry')
       .selectOption(COUNTRY_CODE)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
@@ -652,7 +726,7 @@ test.describe('import-reason port and country without JavaScript', () => {
     await page
       .locator('select#temporaryAdmissionPortOfExit')
       .selectOption(PORT_CODE)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
@@ -664,7 +738,7 @@ test.describe('import-reason port and country without JavaScript', () => {
     await page
       .locator('select#transhipmentDestinationCountry')
       .selectOption(COUNTRY_CODE)
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
@@ -683,7 +757,7 @@ test.describe('import-reason reveal accessibility', () => {
     page
   }) => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('alert')).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
@@ -693,7 +767,7 @@ test.describe('import-reason reveal accessibility', () => {
     page
   }) => {
     await radioFor(page, 'transit').check()
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('alert')).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
@@ -713,7 +787,7 @@ test.describe('import-reason reveal accessibility', () => {
     page
   }) => {
     await radioFor(page, 'internalMarket').check()
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('alert')).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)

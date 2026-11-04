@@ -4,8 +4,11 @@ import {
   EQUUS_CABALUS,
   answerCountryOfOrigin,
   expectNoSeriousOrCriticalViolations,
+  expectOverview,
   journeyUrl,
   urlUnderBase,
+  saveAndContinue,
+  saveAndReturnToHub,
   selectSpecies,
   signIn,
   startNotification
@@ -14,25 +17,49 @@ import * as certification from '../../../../../../services/certification-purpose
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
-const SAVE_AND_CONTINUE = 'Save and continue'
-
 const startAtAdditionalDetails = async (page, chosenSpecies = BOS_TAURUS) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, [chosenSpecies])
-  await page
-    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-    .click()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await saveAndContinue(page).click()
+  await expectOverview(page)
   await page.getByRole('link', { name: 'Commodity details' }).click()
   await page.getByLabel('Number of animals').fill('1')
   await page.getByLabel('Number of packages (when required)').fill('1')
-  await page
-    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-    .click()
+  await saveAndContinue(page).click()
   await page.goto(journeyUrl(page, 'additional-details'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+}
+
+const answerUnweanedAndTamperCertificationOutOfList = async (page) => {
+  const certified = page.getByRole('group', { name: copy.certified.legend })
+  const unweaned = page.getByRole('group', { name: copy.unweaned.legend })
+  await unweaned.getByRole('radio', { name: copy.unweaned.no }).check()
+  await certified
+    .getByRole('radio')
+    .first()
+    .evaluate((input) => {
+      input.value = 'not-a-real-purpose'
+      input.checked = true
+    })
+  return { certified, unweaned }
+}
+
+const clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer = async (
+  page,
+  { certified, unweaned }
+) => {
+  const certificationError = page
+    .getByRole('alert')
+    .getByRole('link', { name: validatorDefaults.oneOf })
+  await expect(certificationError).toBeVisible()
+  await certificationError.click()
+  await expect(certified.getByRole('radio').first()).toBeFocused()
+  await expect(certified.getByRole('radio', { checked: true })).toHaveCount(0)
+  await expect(
+    unweaned.getByRole('radio', { name: copy.unweaned.no })
+  ).toBeChecked()
 }
 
 test.describe('additional-details feature — rendering', () => {
@@ -109,9 +136,7 @@ test.describe('additional-details feature — the unweaned commodity gate', () =
     const detailsUrl = page.url()
 
     await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
-    await page
-      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-      .click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(detailsUrl)
@@ -133,31 +158,29 @@ test.describe('additional-details feature — validation', () => {
   test('certification validation: invalid option links to and focuses the group while preserving the valid unweaned answer', async ({
     page
   }) => {
-    const certified = page.getByRole('group', { name: copy.certified.legend })
-    const unweaned = page.getByRole('group', { name: copy.unweaned.legend })
-    await unweaned.getByRole('radio', { name: copy.unweaned.no }).check()
-    await certified
-      .getByRole('radio')
-      .first()
-      .evaluate((input) => {
-        input.value = 'not-a-real-purpose'
-        input.checked = true
-      })
+    const { certified, unweaned } =
+      await answerUnweanedAndTamperCertificationOutOfList(page)
 
-    await page
-      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-      .click()
+    await saveAndContinue(page).click()
 
-    const certificationError = page
-      .getByRole('alert')
-      .getByRole('link', { name: validatorDefaults.oneOf })
-    await expect(certificationError).toBeVisible()
-    await certificationError.click()
-    await expect(certified.getByRole('radio').first()).toBeFocused()
-    await expect(certified.getByRole('radio', { checked: true })).toHaveCount(0)
-    await expect(
-      unweaned.getByRole('radio', { name: copy.unweaned.no })
-    ).toBeChecked()
+    await clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer(page, {
+      certified,
+      unweaned
+    })
+  })
+
+  test('certification validation: the same refusal holds Save and return to overview, keeping the valid unweaned answer checked', async ({
+    page
+  }) => {
+    const { certified, unweaned } =
+      await answerUnweanedAndTamperCertificationOutOfList(page)
+
+    await saveAndReturnToHub(page).click()
+
+    await clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer(page, {
+      certified,
+      unweaned
+    })
   })
 
   test('unweaned validation: invalid option links to and focuses the group while preserving the valid certification', async ({
@@ -176,9 +199,7 @@ test.describe('additional-details feature — validation', () => {
         input.checked = true
       })
 
-    await page
-      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-      .click()
+    await saveAndContinue(page).click()
 
     const unweanedError = page
       .getByRole('alert')
@@ -204,9 +225,7 @@ test.describe('additional-details feature — persistence and accessibility', ()
 
     await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
     await page.getByRole('radio', { name: copy.unweaned.no }).check()
-    await page
-      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
-      .click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(detailsUrl)
@@ -216,6 +235,21 @@ test.describe('additional-details feature — persistence and accessibility', ()
     await expect(
       page.getByRole('radio', { name: copy.unweaned.no })
     ).toBeChecked()
+  })
+
+  test('saves both questions blank on Save and return to overview and persists the blank state', async ({
+    page
+  }) => {
+    const detailsUrl = page.url()
+
+    await saveAndReturnToHub(page).click()
+    await expectOverview(page)
+
+    await page.goto(detailsUrl)
+    const certified = page.getByRole('group', { name: copy.certified.legend })
+    const unweaned = page.getByRole('group', { name: copy.unweaned.legend })
+    await expect(certified.getByRole('radio', { checked: true })).toHaveCount(0)
+    await expect(unweaned.getByRole('radio', { checked: true })).toHaveCount(0)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
