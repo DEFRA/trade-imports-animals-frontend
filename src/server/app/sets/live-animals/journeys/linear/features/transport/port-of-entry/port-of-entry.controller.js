@@ -84,16 +84,6 @@ const render = async (
     })
   })
 
-const holdsValueTheFormCannotSend = async (values) => {
-  const portCodes = (await ports.list()).map((port) => port.code)
-  const meansCodes = transportReference.meansOfTransport()
-  return (
-    (values.portOfEntry !== '' && !portCodes.includes(values.portOfEntry)) ||
-    (values.meansOfTransport !== '' &&
-      !meansCodes.includes(values.meansOfTransport))
-  )
-}
-
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const dateWindow = arrivalWindow()
@@ -108,12 +98,6 @@ const post = async (request, h) => {
     { dateWindow }
   )
   if (hasErrors(errors)) {
-    if (await holdsValueTheFormCannotSend(values)) {
-      kit.logRefusal(request, {
-        fieldErrors: errors,
-        reason: 'value-not-offered'
-      })
-    }
     const { journey } = await state.get(request, h)
     return (await render(h, journey, dateWindow, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST

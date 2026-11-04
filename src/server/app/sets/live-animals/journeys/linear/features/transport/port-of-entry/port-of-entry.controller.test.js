@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import {
   driveHandler,
   expectNoRefusalLogged,
-  expectOneRefusalLogged,
   postHandlerOf,
   useReferenceDataServing,
   useStubbedJourney
@@ -37,11 +36,7 @@ describe('POST port-of-entry — port membership', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: expect.arrayContaining(['portOfEntry']),
-      reason: 'value-not-offered'
-    })
+    expectNoRefusalLogged(result.logger)
   })
 })
 
@@ -55,25 +50,6 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.meansOfTransport).toBe(meansRequiredError)
     expect(result.after).toEqual(result.before)
-  })
-
-  it('Should log one refusal carrying the journey id when the means is not on the list', async () => {
-    const result = await driveHandler(post, {
-      payload: { meansOfTransport: 'Hovercraft' }
-    })
-    expectOneRefusalLogged(result.logger, {
-      journeyId: result.journeyId,
-      errorCodes: expect.arrayContaining(['meansOfTransport']),
-      reason: 'value-not-offered'
-    })
-  })
-
-  it('Should log nothing when the means of transport is blank', async () => {
-    const result = await driveHandler(post, {
-      payload: { meansOfTransport: '' }
-    })
-    expect(result.response.statusCode).toBe(400)
-    expectNoRefusalLogged(result.logger)
   })
 
   it.each([
