@@ -1,15 +1,21 @@
 # Lighthouse
 
-Lighthouse CI checks a fixed set of frontend URLs. The source of truth is
-`lighthouserc.cjs`.
+Lighthouse CI audits the set's own pages. The URLs are derived from the set's
+GET routes, so the audit follows the routes. The config is `lighthouserc.cjs`
+and the target derivation is `scripts/lighthouse/audit-targets.js`.
 
 ## What the run does
 
-`npm run lighthouse` runs `lhci autorun`.
+`npm run lighthouse` is `run-s lighthouse:targets lighthouse:run`.
+
+`lighthouse:targets` signs in, seeds the notifications the journey routes need,
+derives the audit URLs from the set's GET routes and writes them to
+`.lighthouse/targets.json`. `lighthouse:run` runs `lhci autorun` over those
+URLs.
 
 The config:
 
-- collects 19 literal URLs on `http://localhost:3000`
+- collects the URLs from `.lighthouse/targets.json` on `http://localhost:3000`
 - runs each URL once
 - uses the desktop preset
 - starts Chromium with `--no-sandbox` and `--disable-gpu`
@@ -20,8 +26,7 @@ The auth script opens the requested URL. If it finds the Defra ID stub form, it
 signs in with user `2100010101`. It reads the password from `AUTH_PASSWORD` and
 uses the stub password when that variable is absent.
 
-The current config does not read `LH_BASE_URL`. Change the URL entries in
-`lighthouserc.cjs` when the target host or route set changes.
+The current config does not read `LH_BASE_URL`.
 
 ## Passing scores
 
@@ -40,22 +45,22 @@ contain a simple finding that should be fixed.
 
 ## Add or change a page
 
-Review the `collect.url` list when a route changes.
+A new page needs only its route. The audit picks up every GET route of the set.
 
 For a page that should be audited:
 
-1. Add a stable URL to the list.
+1. Register the route.
 2. Make sure the workspace stack can serve it.
 3. Make sure the auth script can reach the page after sign-in.
 4. Run Lighthouse and open that page's HTML report.
 5. Check all three asserted categories.
 
-The list contains literal paths. Journey routes include a notification ID, so
-they need a reliable way to create or seed that ID before they can replace a
-literal audit URL.
+A route that is not a page goes in `SKIPPED` in
+`scripts/lighthouse/audit-targets.js` with a reason. Journey routes include a
+notification id, which `lighthouse:targets` seeds.
 
-Do not lower a score to make a change pass without agreement. Record why a URL
-is removed. A removed URL no longer has a Lighthouse check.
+Do not lower a score to make a change pass without agreement. Record why a
+route is in `SKIPPED`. A skipped route has no Lighthouse check.
 
 ## Read the output
 
@@ -101,3 +106,21 @@ result, report URL and flagged findings to the workspace status action.
 
 When a Lighthouse change fails in CI, use the uploaded report for that branch.
 Reproduce it against the same route and stack before changing code or limits.
+
+## The derived targets
+
+`scripts/lighthouse/audit-targets.js` derives the audited URLs from the set's
+GET routes.
+
+- Lighthouse builds its URLs outside the server, so it never enters a request's
+  set context. The script registers the set's mount, which makes the set the
+  sole mounted set and lets the link builders resolve the prefix the server
+  serves on.
+- The route table holds prefix-free route shapes. Every shape becomes a link
+  under the set's mount. The dashboard's `/` shape maps to the set base itself
+  rather than to `<base>/`.
+- `SKIPPED` names the GET routes that are not audited, each with its reason.
+  The start entry is there because it creates a draft and redirects, so it is
+  not a page. Each entry is checked against the live route table.
+- A report is named after the page's route, with the set's mount prefix and the
+  seeded journey id dropped, so a run overwrites its predecessor's reports.

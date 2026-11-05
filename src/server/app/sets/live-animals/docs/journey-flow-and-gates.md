@@ -177,10 +177,12 @@ this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
 
-The opening run begins when the notification is created — the dashboard's
-create POST in
+The opening run begins when the notification is created. The dashboard's
+create POST and the start entry (`<set>/start`, which the Import Notification
+Service's type question opens) both create it, through one helper in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-is the only caller of `beginOpeningRun`. The origin page is the journey entry.
+that calls `beginOpeningRun`. The start entry sits outside `/notifications/`, so
+the entry guard never sees it. The origin page is the journey entry.
 Its Back link reads the opening-run record (see the Back link rules above), and
 its save goes on through `kit.nextTarget` like any other page.
 

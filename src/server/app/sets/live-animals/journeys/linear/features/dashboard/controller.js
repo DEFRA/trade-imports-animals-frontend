@@ -5,8 +5,10 @@ import {
   dashboardRoutePath,
   hubPath,
   pagePath,
-  pageRoutePath
+  pageRoutePath,
+  startRoutePath
 } from '../../../../../../shared/paths.js'
+import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js'
 import { TEMPLATES } from '../../config.js'
 import { DELETED } from '../../../../../../engine/index.js'
 import {
@@ -134,11 +136,21 @@ const amendPost = async (request, h) => {
   )
 }
 
-const createPost = async (request, h) => {
+const openNewNotification = async (request, h) => {
   const journey = await startJourney(request, h)
   await beginOpeningRun(request, h, journey.journeyId)
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      organisationId: buildActor(request.auth?.credentials)?.organisationId
+    },
+    'New notification opened'
+  )
   return h.redirect(pagePath(journey.journeyId, originPage.slug))
 }
+
+const startGet = async (request, h) =>
+  (await openNewNotification(request, h)).header('Cache-Control', 'no-store')
 
 export const routes = [
   {
@@ -157,6 +169,12 @@ export const routes = [
     method: 'POST',
     path: createRoutePath(),
     options: routeOptions,
-    handler: createPost
+    handler: openNewNotification
+  },
+  {
+    method: 'GET',
+    path: startRoutePath(),
+    options: routeOptions,
+    handler: startGet
   }
 ]
