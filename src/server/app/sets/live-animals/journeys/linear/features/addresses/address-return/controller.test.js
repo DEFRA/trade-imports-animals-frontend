@@ -5,6 +5,7 @@ import { addressHandshakeTokensCookie } from '../../../../../../../engine/persis
 import {
   addressBookAnswering,
   driveHandler,
+  refusingSaves,
   expectOneLogged,
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
@@ -196,7 +197,7 @@ describe('GET /address-return', () => {
       const result = await driveHandler(handler, {
         query: returnedQuery(ADDRESS_LANDING.SELECT),
         state: handshakeState(),
-        saveFailure: failure
+        startingFrom: [refusingSaves(failure)]
       })
 
       expect(result.response.redirect).toBe(

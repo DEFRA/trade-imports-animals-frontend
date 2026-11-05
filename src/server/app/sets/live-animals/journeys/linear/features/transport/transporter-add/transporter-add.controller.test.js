@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -40,7 +42,9 @@ describe('/transporters/add', () => {
   })
 
   it('Should keep the change context on Back when the trader is changing an answer', async () => {
-    const result = await driveHandler(getHandler, { query: { change: '1' } })
+    const result = await driveHandler(getHandler, {
+      startingFrom: [openedFromChangeLink()]
+    })
 
     expect(result.view.context.backLink).toBe(
       `${pagePath(result.journeyId, LIST_SLUG)}?change=1`
@@ -94,7 +98,7 @@ describe('/transporters/add', () => {
   it('Should keep the change context on the onward redirect', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: COMMERCIAL },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -117,7 +121,9 @@ describe('/transporters/add', () => {
   it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {
     const { response } = await driveHandler(postHandler, {
       payload: { transporterType: COMMERCIAL },
-      saveFailure: unavailableBackendError('save the transporter type')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter type'))
+      ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, {

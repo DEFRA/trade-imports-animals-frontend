@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -173,7 +174,9 @@ describe('/transporters', () => {
   it('Should re-render the list at 500 with the pick kept after a recoverable save failure', async () => {
     const { response } = await driveHandler(postHandler, {
       payload: { transporter: GARCIA_ID },
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, [GARCIA_ID], {
@@ -188,7 +191,9 @@ describe('/transporters', () => {
         search: 'aberdeen',
         transporter: ABERDEEN_ID
       },
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)

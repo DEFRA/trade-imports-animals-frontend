@@ -211,16 +211,10 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
-const flowOnlyState = (journeyId, flowOnly) =>
-  flowOnly ? { [flowOnlyAnswersCookie()]: { [journeyId]: flowOnly } } : {}
-
-const openingRunState = (journeyId, openingRun) =>
-  openingRun ? { [openingRunCookie()]: { [journeyId]: openingRun } } : {}
-
-const openingRunEntryState = (journeyId, openingRunEntry) =>
-  openingRunEntry
-    ? { [openingRunEntryCookie()]: { [journeyId]: openingRunEntry } }
-    : {}
+/** The cookie that records `phase` of the opening run for `journeyId`. */
+export const openingRunCookieFor = (journeyId, phase) => ({
+  [openingRunCookie()]: { [journeyId]: phase }
+})
 
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
@@ -236,63 +230,135 @@ const recordsRejectingSaves = (failure) => ({
   }
 })
 
-/** Seeds a journey, runs one handler against it and reports the answers before
- * and after, alongside the cookies the handler set, the names of the cookies it
- * unstated and the lines it logged.
- * `journeyId` drives an existing journey rather than creating one; `flowOnly`
- * seeds the journey's session-only answers; `amend` submits the journey and
- * opens an amendment first; `openingRun`
- * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
- * the journey; `openingRunEntry`
- * (`RUN_ENTRY_START` or `RUN_ENTRY_LIST_CREATE`) records the entry that began
- * it; `pathOf(journeyId)`
- * gives the request the path it was made to; `saveFailure` makes the records
- * store refuse every save the handler makes with that error. */
-export const driveHandler = async (
-  handler,
-  {
-    payload = {},
-    seed = {},
-    flowOnly,
-    params = {},
-    query = {},
-    state = {},
-    amend = false,
-    journeyId,
-    openingRun,
-    openingRunEntry,
-    saveFailure,
-    pathOf
-  } = {}
-) => {
-  const journey = journeyId ? { journeyId } : await store.create()
-  await store.seedAnswers(journey.journeyId, seed)
-  if (amend) {
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
+/** A starting state for `driveHandler`: the journey is submitted and an
+ * amendment opened on it. */
+export const amendmentOpened = () => ({
+  seedStore: async (journeyId) => {
+    await store.submit(journeyId)
+    await records.amend(journeyId)
   }
-  const request = journeyRequest(journey.journeyId, {
-    payload,
-    params,
-    query,
-    state: {
-      ...flowOnlyState(journey.journeyId, flowOnly),
-      ...openingRunState(journey.journeyId, openingRun),
-      ...openingRunEntryState(journey.journeyId, openingRunEntry),
-      ...state
-    },
-    ...requestLocation(pathOf, journey.journeyId, query)
+})
+
+/** A starting state for `driveHandler`: the journey is at `phase` of the
+ * opening run (`RUN_ACTIVE` or `RUN_COMPLETE`), begun from `entry`
+ * (`RUN_ENTRY_START` or `RUN_ENTRY_LIST_CREATE`) when one is given. */
+export const openingRunAt = (phase, { entry } = {}) => ({
+  cookies: (journeyId) => ({
+    ...openingRunCookieFor(journeyId, phase),
+    ...(entry ? { [openingRunEntryCookie()]: { [journeyId]: entry } } : {})
   })
-  const h = stubH(request)
-  if (saveFailure) {
-    configureRecords(currentSetId(), recordsRejectingSaves(saveFailure))
+})
+
+/** A starting state for `driveHandler`: the journey holds `answers` in the
+ * session only, never in the records store. */
+export const withFlowOnlyAnswers = (answers) => ({
+  cookies: (journeyId) => ({
+    [flowOnlyAnswersCookie()]: { [journeyId]: answers }
+  })
+})
+
+/** A starting state for `driveHandler`: the page is opened from a Change link. */
+export const openedFromChangeLink = () => ({ query: { change: '1' } })
+
+/** A starting state for `driveHandler`: the records store refuses every save
+ * the handler makes, with `failure`. */
+export const refusingSaves = (failure) => ({
+  handlerRecords: recordsRejectingSaves(failure)
+})
+
+/** Starting states for `driveHandler`: an amendment of a submitted notification, opened from a Change link. */
+export const amendmentOpenedFromChangeLink = () => [
+  amendmentOpened(),
+  openedFromChangeLink()
+]
+
+const refuseUnknownOptions = (unknownOptions) => {
+  const unknown = Object.keys(unknownOptions)
+  if (unknown.length > 0) {
+    throw new Error(
+      `driveHandler does not take ${unknown.join(', ')}: seed that state through a helper in startingFrom`
+    )
   }
-  let response
+}
+
+const seedStoreForStartingStates = async (journeyId, startingFrom) => {
+  for (const { seedStore } of startingFrom) {
+    await seedStore?.(journeyId)
+  }
+}
+
+const cookiesOfStartingStates = (journeyId, startingFrom) =>
+  Object.assign({}, ...startingFrom.map(({ cookies }) => cookies?.(journeyId)))
+
+const queryOfStartingStates = (startingFrom) =>
+  Object.assign({}, ...startingFrom.map(({ query }) => query))
+
+const callHandlerWithStartingRecords = async (
+  handler,
+  request,
+  h,
+  startingFrom
+) => {
+  const refusingStates = startingFrom.filter(
+    ({ handlerRecords }) => handlerRecords
+  )
+  if (refusingStates.length > 1) {
+    throw new Error('driveHandler takes one refusingSaves starting state')
+  }
+  const refusingRecords = refusingStates[0]?.handlerRecords
+  if (refusingRecords) {
+    configureRecords(currentSetId(), refusingRecords)
+  }
   try {
-    response = await handler(request, h)
+    return await handler(request, h)
   } finally {
     configureRecords(currentSetId(), recordsStub)
   }
+}
+
+/** Seeds a journey, runs one handler against it and reports the answers before
+ * and after, alongside the cookies the handler set, the names of the cookies it
+ * unstated and the lines it logged.
+ * `startingFrom` lists the states the journey and request start in, each from
+ * a helper: `amendmentOpened`, `openingRunAt`, `withFlowOnlyAnswers`,
+ * `openedFromChangeLink` and `refusingSaves`. `journeyId` drives an existing
+ * journey rather than creating one; `pathOf(journeyId)` gives the request the
+ * path it was made to. `query` and `state` win over what a starting state
+ * adds. It throws on any other option. */
+export const driveHandler = async (handler, options = {}) => {
+  const {
+    payload = {},
+    seed = {},
+    params = {},
+    query = {},
+    state = {},
+    journeyId,
+    pathOf,
+    startingFrom = [],
+    ...unknownOptions
+  } = options
+  refuseUnknownOptions(unknownOptions)
+  const journey = journeyId ? { journeyId } : await store.create()
+  await store.seedAnswers(journey.journeyId, seed)
+  await seedStoreForStartingStates(journey.journeyId, startingFrom)
+  const requestQuery = { ...queryOfStartingStates(startingFrom), ...query }
+  const request = journeyRequest(journey.journeyId, {
+    payload,
+    params,
+    query: requestQuery,
+    state: {
+      ...cookiesOfStartingStates(journey.journeyId, startingFrom),
+      ...state
+    },
+    ...requestLocation(pathOf, journey.journeyId, requestQuery)
+  })
+  const h = stubH(request)
+  const response = await callHandlerWithStartingRecords(
+    handler,
+    request,
+    h,
+    startingFrom
+  )
   const after = (await store.get(journey.journeyId)).answers
   return {
     journeyId: journey.journeyId,

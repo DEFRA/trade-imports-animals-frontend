@@ -7,6 +7,8 @@ import { store } from '../../../../../../../engine/store.js'
 import {
   crumbProtectedServerMounting,
   driveHandler,
+  openedFromChangeLink,
+  openingRunAt,
   expectBackLinkIsPage,
   expectOneLogged,
   expectRemovalRefusedLogged,
@@ -314,7 +316,7 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
   it('Should carry the change context on the redirect away from an empty details page', async () => {
     const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, commoditiesPage.slug)}?change=1`
@@ -633,7 +635,7 @@ describe('#consignmentDetailsController — the Back link', () => {
   it('Should go Back to What are you importing? while the opening run is on', async () => {
     const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, commoditiesPage.slug)
   })
@@ -642,7 +644,7 @@ describe('#consignmentDetailsController — the Back link', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
       ANIMALS_REQUIRED_MESSAGE

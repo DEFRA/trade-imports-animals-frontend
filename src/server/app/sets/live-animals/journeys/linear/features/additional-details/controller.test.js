@@ -9,6 +9,8 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  openingRunAt,
+  refusingSaves,
   expectBackLinkIsPage,
   expectNoRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -68,7 +70,7 @@ describe('POST additional-details — backend unavailable', () => {
         animalsCertifiedFor: 'slaughter',
         containsUnweanedAnimals: 'no'
       },
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expect(result.response.statusCode).toBe(500)
@@ -114,7 +116,7 @@ describe('additional-details — the Back link', () => {
   it('Should go Back to identification in the opening run when a chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
       seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, IDENTIFICATION_SLUG)
   })
@@ -122,7 +124,7 @@ describe('additional-details — the Back link', () => {
   it('Should go Back to the consignment details in the opening run when no chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
       seed: { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, CONSIGNMENT_DETAILS_SLUG)
   })
@@ -131,7 +133,7 @@ describe('additional-details — the Back link', () => {
     const result = await driveHandler(post, {
       seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
       payload: { animalsCertifiedFor: 'not-a-real-purpose' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.response.statusCode).toBe(400)
     expectBackLinkIsPage(result, IDENTIFICATION_SLUG)

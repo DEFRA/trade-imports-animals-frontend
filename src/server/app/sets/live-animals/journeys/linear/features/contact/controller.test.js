@@ -5,6 +5,8 @@ import {
   addressBookAnswering,
   addressBookPage,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   expectNoRefusalLogged,
   postHandlerOf,
   useInsFrontendBaseUrl,
@@ -116,7 +118,7 @@ describe('GET contact — select an address from the book', () => {
   it('Should carry the change context onto the current contact edit link', async () => {
     const result = await driveHandler(get, {
       seed: { contactAddress: HELD_CONTACT },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.view.context.currentContact.editHref).toBe(
@@ -227,7 +229,7 @@ describe('POST contact — recoverable save failure', () => {
   it('Should re-render the page when saving the selection fails', async () => {
     const result = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id },
-      saveFailure: unavailableBackendError('save answers')
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -239,7 +241,7 @@ describe('POST contact — recoverable save failure', () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
       payload: { contactAddress: CONTACT.id },
-      saveFailure: unavailableBackendError('save answers')
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)

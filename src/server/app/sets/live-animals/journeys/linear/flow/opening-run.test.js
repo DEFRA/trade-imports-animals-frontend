@@ -18,9 +18,13 @@ import {
   expectOneLogged,
   getHandlerOf,
   journeyRequest,
+  openedFromChangeLink,
+  openingRunAt,
+  openingRunCookieFor,
   postHandlerOf,
   stubH,
-  useStubbedJourney
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../engine/test-support.js'
 import {
   typedInCommercialTransporterPayload,
@@ -63,10 +67,6 @@ const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
 
-const runRecord = (journeyId, phase = RUN_ACTIVE) => ({
-  [openingRunCookie()]: { [journeyId]: phase }
-})
-
 const lineSeed = {
   countryOfOrigin: 'FR',
   commodityLines: [lineOf(FELIS_CATUS_ROW)]
@@ -79,27 +79,29 @@ const unidentifiedLineSeed = {
 
 const completeSeed = completeNotification()
 
-const postBreedingInternalMarketReason = (openingRun) =>
+const postBreedingInternalMarketReason = (startingFrom) =>
   driveHandler(postHandlerOf(importReason), {
     seed: lineSeed,
     payload: {
       reasonForImport: 'internalMarket',
       purposeInInternalMarket: 'breeding'
     },
-    openingRun
+    startingFrom
   })
 
 const commoditySelectionPayload = { species: [lineKey(FELIS_CATUS_ROW)] }
 
 const postCommoditySelection = ({
   payload = commoditySelectionPayload,
-  openingRun
+  startingFrom = []
 } = {}) =>
   driveHandler(postHandlerOf(commoditiesSearch), {
     payload,
     seed: { countryOfOrigin: 'FR' },
-    flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
-    openingRun
+    startingFrom: [
+      withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }),
+      ...startingFrom
+    ]
   })
 
 const originPayload = {
@@ -107,13 +109,12 @@ const originPayload = {
   regionOfOriginCodeRequirement: 'no'
 }
 
-const postOrigin = ({ journeyId, state, query, openingRun } = {}) =>
+const postOrigin = ({ journeyId, state, startingFrom } = {}) =>
   driveHandler(postHandlerOf(origin), {
     payload: originPayload,
     journeyId,
     state,
-    query,
-    openingRun
+    startingFrom
   })
 
 const startPostHandler = () =>
@@ -158,12 +159,16 @@ const creatingANotificationOpensTheRun = () => {
 
 const saveAndContinueFollowsTheRunSequence = () => {
   it('Should send origin to the commodity search mid-run', async () => {
-    const { journeyId, response } = await postOrigin({ openingRun: RUN_ACTIVE })
+    const { journeyId, response } = await postOrigin({
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
+    })
     expect(response.redirect).toBe(pagePath(journeyId, 'commodities'))
   })
 
   it('Should send What are you importing? on to the main import reason mid-run, and to the overview outside the run', async () => {
-    const inRun = await postCommoditySelection({ openingRun: RUN_ACTIVE })
+    const inRun = await postCommoditySelection({
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
+    })
     expect(inRun.response.redirect).toBe(
       pagePath(inRun.journeyId, 'import-reason')
     )
@@ -177,7 +182,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     const inRun = await driveHandler(postHandlerOf(consignmentDetails), {
       payload,
       seed: lineSeed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(inRun.response.redirect).toBe(
       pagePath(inRun.journeyId, 'commodities/identification')
@@ -196,7 +201,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       {
         payload: { action: 'implicit-submit' },
         seed: lineSeed,
-        openingRun: RUN_ACTIVE
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
       }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
@@ -205,7 +210,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
   it('Should log the skip and carry a consignment with nothing to identify on to additional details mid-run', async () => {
     const { journeyId, response, view, logger } = await driveHandler(
       getHandlerOf(animalIdentification),
-      { seed: unidentifiedLineSeed, openingRun: RUN_ACTIVE }
+      { seed: unidentifiedLineSeed, startingFrom: [openingRunAt(RUN_ACTIVE)] }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'additional-details'))
     expect(view).toBeUndefined()
@@ -218,8 +223,9 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should send import reason on to the consignment details mid-run', async () => {
-    const { journeyId, response } =
-      await postBreedingInternalMarketReason(RUN_ACTIVE)
+    const { journeyId, response } = await postBreedingInternalMarketReason([
+      openingRunAt(RUN_ACTIVE)
+    ])
     expect(response.redirect).toBe(
       pagePath(journeyId, CONSIGNMENT_DETAILS_SLUG)
     )
@@ -231,7 +237,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       {
         payload: { animalsCertifiedFor: 'slaughter' },
         seed: lineSeed,
-        openingRun: RUN_ACTIVE
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
       }
     )
     expect(response.redirect).toBe(pagePath(journeyId, 'port-of-entry'))
@@ -241,7 +247,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     driveHandler(postHandlerOf(featureModule), {
       seed: { ...completeSeed, ...seed },
       payload,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
 
   it('Should carry a hand-entered commercial transporter on to the documents mid-run, continuing from the list rather than the spoke', async () => {
@@ -275,7 +281,7 @@ const endOfTheRunFollowsTheRunSequence = () => {
   it('Should carry roles and addresses on to the contact address mid-run', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(addresses),
-      { seed: lineSeed, openingRun: RUN_ACTIVE }
+      { seed: lineSeed, startingFrom: [openingRunAt(RUN_ACTIVE)] }
     )
     expect(response.redirect).toBe(
       pagePath(journeyId, 'consignment/contact/select')
@@ -285,7 +291,7 @@ const endOfTheRunFollowsTheRunSequence = () => {
   it('Should send roles and addresses to the overview mid-run once every task is complete', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(addresses),
-      { seed: completeSeed, openingRun: RUN_ACTIVE }
+      { seed: completeSeed, startingFrom: [openingRunAt(RUN_ACTIVE)] }
     )
     expect(response.redirect).toBe(hubPath(journeyId))
   })
@@ -295,7 +301,7 @@ const endOfTheRunFollowsTheRunSequence = () => {
     const inRun = await driveHandler(postHandlerOf(cphNumber), {
       payload,
       seed: lineSeed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(inRun.response.redirect).toBe(pagePath(inRun.journeyId, 'addresses'))
 
@@ -312,7 +318,7 @@ const endOfTheRunFollowsTheRunSequence = () => {
     const { journeyId, response } = await driveHandler(postHandlerOf(contact), {
       payload: { contactAddress: CONTACT.id },
       seed: lineSeed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(response.redirect).toBe(pagePath(journeyId, NOTIFICATION_VIEW_SLUG))
   })
@@ -370,15 +376,17 @@ const deepLinkGuardTests = () => {
 
   it.each([RUN_ACTIVE, RUN_COMPLETE])(
     'Should let a journey that entered through the journey entry straight through while the run is %s',
-    async (openingRun) => {
-      const { response } = await guardFor({ openingRun })
+    async (phase) => {
+      const { response } = await guardFor({
+        startingFrom: [openingRunAt(phase)]
+      })
       expect(response).toBeNull()
     }
   )
 
   it('Should not let another journey entry vouch for a fresh journey', async () => {
     const { journeyId, response } = await guardFor({
-      state: runRecord('some-other-journey')
+      state: openingRunCookieFor('some-other-journey', RUN_ACTIVE)
     })
     expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })
@@ -408,15 +416,14 @@ describe('the opening run', () => {
     it('Should honour Save and return to overview on What are you importing? mid-run', async () => {
       const { journeyId, response } = await postCommoditySelection({
         payload: { ...commoditySelectionPayload, exit: 'hub' },
-        openingRun: RUN_ACTIVE
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
       })
       expect(response.redirect).toBe(hubPath(journeyId))
     })
 
     it('Should honour the change context over the run target', async () => {
       const { journeyId, response } = await postOrigin({
-        query: { change: '1' },
-        openingRun: RUN_ACTIVE
+        startingFrom: [openedFromChangeLink(), openingRunAt(RUN_ACTIVE)]
       })
       expect(response.redirect).toBe(
         pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
@@ -429,7 +436,7 @@ describe('the opening run', () => {
 
     it('Should flip the record to complete on hub arrival', async () => {
       const { journeyId, cookies } = await driveHandler(hubGet, {
-        openingRun: RUN_ACTIVE
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
       })
       expect(cookies[openingRunCookie()]).toEqual({
         [journeyId]: RUN_COMPLETE
@@ -438,14 +445,14 @@ describe('the opening run', () => {
 
     it('Should leave a completed record alone on later hub visits', async () => {
       const { cookies } = await driveHandler(hubGet, {
-        openingRun: RUN_COMPLETE
+        startingFrom: [openingRunAt(RUN_COMPLETE)]
       })
       expect(openingRunCookie() in cookies).toBe(false)
     })
 
     it('Should send origin to the overview and write no run record once the run is complete', async () => {
       const { journeyId, response, cookies } = await postOrigin({
-        openingRun: RUN_COMPLETE
+        startingFrom: [openingRunAt(RUN_COMPLETE)]
       })
       expect(response.redirect).toBe(hubPath(journeyId))
       expect(openingRunCookie() in cookies).toBe(false)
@@ -453,8 +460,7 @@ describe('the opening run', () => {
 
     it('Should send a change=1 origin save to check your answers once the run is complete', async () => {
       const { journeyId, response, cookies } = await postOrigin({
-        query: { change: '1' },
-        openingRun: RUN_COMPLETE
+        startingFrom: [openedFromChangeLink(), openingRunAt(RUN_COMPLETE)]
       })
       expect(response.redirect).toBe(
         pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
@@ -465,8 +471,9 @@ describe('the opening run', () => {
 
   describe('a page opened from its overview task returns to the overview', () => {
     it('Should send the main import reason to the overview, not on to the additional details', async () => {
-      const { journeyId, response } =
-        await postBreedingInternalMarketReason(RUN_COMPLETE)
+      const { journeyId, response } = await postBreedingInternalMarketReason([
+        openingRunAt(RUN_COMPLETE)
+      ])
       expect(response.redirect).toBe(hubPath(journeyId))
     })
 
@@ -476,7 +483,7 @@ describe('the opening run', () => {
         {
           payload: { animalsCertifiedFor: 'slaughter' },
           seed: lineSeed,
-          openingRun: RUN_COMPLETE
+          startingFrom: [openingRunAt(RUN_COMPLETE)]
         }
       )
       expect(response.redirect).toBe(hubPath(journeyId))
@@ -487,7 +494,7 @@ describe('the opening run', () => {
       const inRun = await driveHandler(postHandlerOf(portOfEntry), {
         payload,
         seed: completeSeed,
-        openingRun: RUN_ACTIVE
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
       })
       expect(inRun.response.redirect).toBe(
         pagePath(inRun.journeyId, 'transit-countries')
@@ -496,7 +503,7 @@ describe('the opening run', () => {
       const outside = await driveHandler(postHandlerOf(portOfEntry), {
         payload,
         seed: completeSeed,
-        openingRun: RUN_COMPLETE
+        startingFrom: [openingRunAt(RUN_COMPLETE)]
       })
       expect(outside.response.redirect).toBe(hubPath(outside.journeyId))
     })
@@ -506,7 +513,7 @@ describe('the opening run', () => {
       delete withoutCph.countyParishHoldingCph
       const { journeyId, response } = await driveHandler(
         postHandlerOf(addresses),
-        { seed: withoutCph, openingRun: RUN_COMPLETE }
+        { seed: withoutCph, startingFrom: [openingRunAt(RUN_COMPLETE)] }
       )
       expect(response.redirect).toBe(hubPath(journeyId))
     })
@@ -516,7 +523,7 @@ describe('the opening run', () => {
     it('Should flip the record to complete when the review page is shown', async () => {
       const { journeyId, cookies } = await driveHandler(
         getHandlerOf(checkAnswers),
-        { openingRun: RUN_ACTIVE }
+        { startingFrom: [openingRunAt(RUN_ACTIVE)] }
       )
       expect(cookies[openingRunCookie()]).toEqual({
         [journeyId]: RUN_COMPLETE
@@ -527,7 +534,7 @@ describe('the opening run', () => {
   describe('the run is scoped to its journey', () => {
     it('Should open its own run alongside a record belonging to a different journey', async () => {
       const { journeyId, cookies } = await createNotification(
-        runRecord('some-other-journey')
+        openingRunCookieFor('some-other-journey', RUN_ACTIVE)
       )
       expect(cookies[openingRunCookie()]).toEqual({
         'some-other-journey': RUN_ACTIVE,

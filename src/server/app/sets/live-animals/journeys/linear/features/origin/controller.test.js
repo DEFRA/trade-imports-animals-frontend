@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  openedFromChangeLink,
+  openingRunAt,
   expectBackLinkIsPath,
   expectNoRefusalLogged,
   getHandlerOf,
@@ -415,8 +417,9 @@ describe('GET /origin — where Back goes', () => {
     async ({ seed }) => {
       const result = await driveHandler(get, {
         seed,
-        openingRun: RUN_ACTIVE,
-        openingRunEntry: RUN_ENTRY_LIST_CREATE
+        startingFrom: [
+          openingRunAt(RUN_ACTIVE, { entry: RUN_ENTRY_LIST_CREATE })
+        ]
       })
 
       expect(result.view.context.backLink).toBe(dashboardPath())
@@ -426,7 +429,10 @@ describe('GET /origin — where Back goes', () => {
   it.each(seeds)(
     'Should send Back to the dashboard while the opening run is active and its entry is unrecorded with $name',
     async ({ seed }) => {
-      const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
+      const result = await driveHandler(get, {
+        seed,
+        startingFrom: [openingRunAt(RUN_ACTIVE)]
+      })
 
       expect(result.view.context.backLink).toBe(dashboardPath())
     }
@@ -444,8 +450,7 @@ describe('GET /origin — where Back goes', () => {
       async ({ seed }) => {
         const result = await driveHandler(get, {
           seed,
-          openingRun: RUN_ACTIVE,
-          openingRunEntry: RUN_ENTRY_START
+          startingFrom: [openingRunAt(RUN_ACTIVE, { entry: RUN_ENTRY_START })]
         })
 
         expect(result.view.context.backLink).toBe(
@@ -457,8 +462,7 @@ describe('GET /origin — where Back goes', () => {
     it('Should send Back to the overview once the opening run is complete, even though it began at the start entry', async () => {
       const result = await driveHandler(get, {
         seed: answer,
-        openingRun: RUN_COMPLETE,
-        openingRunEntry: RUN_ENTRY_START
+        startingFrom: [openingRunAt(RUN_COMPLETE, { entry: RUN_ENTRY_START })]
       })
 
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
@@ -468,7 +472,10 @@ describe('GET /origin — where Back goes', () => {
   it.each(seeds)(
     'Should send Back to the overview once the opening run is complete with $name',
     async ({ seed }) => {
-      const result = await driveHandler(get, { seed, openingRun: RUN_COMPLETE })
+      const result = await driveHandler(get, {
+        seed,
+        startingFrom: [openingRunAt(RUN_COMPLETE)]
+      })
 
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     }
@@ -483,7 +490,7 @@ describe('GET /origin — where Back goes', () => {
   it('Should send Back to the overview for a committed answer on a draft opened from a Change link', async () => {
     const result = await driveHandler(get, {
       seed: answer,
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expectBackLinkIsPath(result, hubPath(result.journeyId))

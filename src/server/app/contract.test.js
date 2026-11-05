@@ -12,7 +12,8 @@ import { session as sessionStub } from './services/persistence/session/stub.js'
 import {
   driveHandler,
   postHandlerOf,
-  postHandlerEndingWith
+  postHandlerEndingWith,
+  withFlowOnlyAnswers
 } from './engine/test-support.js'
 import {
   transitAppliesSeed,
@@ -237,9 +238,11 @@ describe('controller <-> model commit contract', () => {
   it('Should commit commodity lines via the search (batch create) handler it declares', async () => {
     expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
     const result = await drive(postHandlerOf(commoditiesSearch), {
-      flowOnly: {
-        commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
-      },
+      startingFrom: [
+        withFlowOnlyAnswers({
+          commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
+        })
+      ],
       payload: { species: [BOS_TAURUS_ROW, FELIS_CATUS_ROW].map(lineKey) }
     })
     expect(new Set(committedIds(result))).toEqual(

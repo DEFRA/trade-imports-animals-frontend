@@ -337,9 +337,13 @@ set-up in the test file:
   [`engine/test-support.js`](../../../engine/test-support.js) exports:
   - `driveHandler` seeds a journey, runs one handler and returns the answers
     before and after, the response, the view, the cookies and the logger; its
-    `openingRun` option (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the
-    opening run, and `saveFailure` makes every save the handler makes fail with
-    the error it is given
+    `startingFrom` option takes the states the journey starts in, each from a
+    helper: `amendmentOpened`, `openingRunAt` (a phase, `RUN_ACTIVE` or
+    `RUN_COMPLETE`, and optionally the entry that began the run),
+    `withFlowOnlyAnswers`, `openedFromChangeLink`, `amendmentOpenedFromChangeLink` (a list, so
+    pass it as the whole `startingFrom`) and `refusingSaves` (every save
+    the handler makes fails with the error it is given); `driveHandler` throws on
+    any other option it does not take
   - `getHandlerOf` returns the GET handler of a feature module
   - `postHandlerOf` and `postHandlerEndingWith` return its POST handler
   - `useStubbedJourney` registers the stub records, the stub session and the

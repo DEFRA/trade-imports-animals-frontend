@@ -3,15 +3,21 @@ import { hubPath, pagePath } from '../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../flow/run-state.js'
 import { appendChangeContext } from '../../../../shared/kit.js'
 import {
+  amendmentOpenedFromChangeLink,
   driveHandler,
-  expectBackLinkIsPath
+  expectBackLinkIsPath,
+  openedFromChangeLink,
+  openingRunAt
 } from '../../../../engine/test-support.js'
 
 export const itSendsBackCarryingChangeTo = (get, cases) =>
   it.each(cases)(
     'Should send Back to %s carrying the change on a draft opened from a Change link',
     async (_description, seed, slug) => {
-      const result = await driveHandler(get, { seed, query: { change: '1' } })
+      const result = await driveHandler(get, {
+        seed,
+        startingFrom: [openedFromChangeLink()]
+      })
 
       expectBackLinkIsPath(
         result,
@@ -22,12 +28,18 @@ export const itSendsBackCarryingChangeTo = (get, cases) =>
 
 export const itSendsBackToOverview = (get, { seed = {}, cases } = {}) => {
   const overviewCases = [
-    ['while the opening run is active', { openingRun: RUN_ACTIVE }],
-    ['on a draft opened from a Change link', { query: { change: '1' } }],
+    [
+      'while the opening run is active',
+      { startingFrom: [openingRunAt(RUN_ACTIVE)] }
+    ],
+    [
+      'on a draft opened from a Change link',
+      { startingFrom: [openedFromChangeLink()] }
+    ],
     ['when opened from the Overview', {}],
     [
       'on an amendment opened from a Change link',
-      { amend: true, query: { change: '1' } }
+      { startingFrom: amendmentOpenedFromChangeLink() }
     ]
   ]
 
@@ -47,7 +59,7 @@ export const itSendsBackToOverviewOnRefusal = (post, payload, seed = {}) =>
     const result = await driveHandler(post, {
       seed,
       payload,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
 
     expectBackLinkIsPath(result, hubPath(result.journeyId))

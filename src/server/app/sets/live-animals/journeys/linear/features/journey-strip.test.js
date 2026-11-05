@@ -15,6 +15,7 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
+  amendmentOpened,
   driveHandler,
   getHandlerOf,
   journeyRequest,
@@ -102,7 +103,7 @@ describe('journey reference strip', () => {
 
   it('Should offer Cancel amend on the hub while amending', async () => {
     const { view } = await driveHandler(getHandlerOf({ routes: hubRoutes }), {
-      amend: true
+      startingFrom: [amendmentOpened()]
     })
     expect(view.context.journeyStrip.cancelAmend.href).toMatch(
       /\/cancel-amend$/
@@ -199,7 +200,9 @@ describe('journey reference strip', () => {
     })
 
     it('Should render no strip on an amendment', async () => {
-      const { view } = await driveHandler(declarationHandler, { amend: true })
+      const { view } = await driveHandler(declarationHandler, {
+        startingFrom: [amendmentOpened()]
+      })
       expect(view.context.journeyStrip).toBeNull()
     })
   })

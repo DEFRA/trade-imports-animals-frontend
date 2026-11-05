@@ -11,7 +11,9 @@ import { session as sessionStub } from '../../../../../services/persistence/sess
 import {
   driveHandler,
   getHandlerOf,
-  postHandlerOf
+  openedFromChangeLink,
+  postHandlerOf,
+  withFlowOnlyAnswers
 } from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
@@ -79,9 +81,11 @@ describe('change context — context survives the internal loop navigation', () 
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
-        flowOnly: { [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] },
-        payload: { species: [lineKey(FELIS_CATUS_ROW)] },
-        query: change
+        startingFrom: [
+          withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }),
+          openedFromChangeLink()
+        ],
+        payload: { species: [lineKey(FELIS_CATUS_ROW)] }
       }
     )
     expect(response).toEqual({
@@ -95,7 +99,7 @@ describe('change context — context survives the internal loop navigation', () 
   it('Should carry the context and the return marker on the details page Add-another affordance', async () => {
     const { journeyId, view } = await driveHandler(
       getHandlerOf(consignmentDetails),
-      { seed: lineSeed, query: change }
+      { seed: lineSeed, startingFrom: [openedFromChangeLink()] }
     )
     const { addHref, groups } = view.context
     expect(addHref).toBe(
@@ -109,7 +113,7 @@ describe('change context — context survives the internal loop navigation', () 
       postHandlerOf(consignmentDetails),
       {
         payload: { action: 'remove:0' },
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         seed: lineSeed
       }
     )
@@ -127,7 +131,7 @@ describe('change context — context survives the internal loop navigation', () 
           action: 'add:0',
           'animalIdentifierPassport-0': 'UK123456789'
         },
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         seed: seedWithCommodityLineOfAnimals(2)
       }
     )
@@ -141,7 +145,7 @@ describe('change context — context survives the internal loop navigation', () 
 
   it('Should carry the context through a documents upload-return cycle with the entry committed', async () => {
     const { journeyId, response, after } = await driveReturnFromUpload({
-      query: change
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(response).toEqual({
@@ -154,7 +158,7 @@ describe('change context — context survives the internal loop navigation', () 
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(documents),
       {
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         payload: { action: 'remove:0' },
         seed: { documents: [{ accompanyingDocumentReference: 'GBHC1' }] }
       }
@@ -172,7 +176,7 @@ describe('change context — only the collection exit repoints to check your ans
       postHandlerOf(consignmentDetails),
       {
         payload: savableLineCountPayload,
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         seed: lineSeed
       }
     )
@@ -184,7 +188,7 @@ describe('change context — only the collection exit repoints to check your ans
       postHandlerOf(animalIdentification),
       {
         payload: { action: IMPLICIT_SUBMIT },
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         seed: lineSeed
       }
     )
@@ -195,7 +199,7 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await driveHandler(
       postHandlerOf(documents),
       {
-        query: change
+        startingFrom: [openedFromChangeLink()]
       }
     )
     expect(response).toEqual({ redirect: cya(journeyId) })
@@ -226,7 +230,7 @@ describe('change context — only the collection exit repoints to check your ans
   it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
     const details = await driveHandler(postHandlerOf(consignmentDetails), {
       payload: { ...savableLineCountPayload, exit: 'hub' },
-      query: change,
+      startingFrom: [openedFromChangeLink()],
       seed: lineSeed
     })
     expect(details.response).toEqual({
@@ -237,7 +241,7 @@ describe('change context — only the collection exit repoints to check your ans
       postHandlerOf(animalIdentification),
       {
         payload: { exit: 'hub', action: IMPLICIT_SUBMIT },
-        query: change,
+        startingFrom: [openedFromChangeLink()],
         seed: lineSeed
       }
     )

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  openingRunAt,
+  refusingSaves,
   expectBackLinkIsPage,
   expectOneLogged,
   expectOneRefusalLogged,
@@ -394,7 +396,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      saveFailure: unavailableBackendError(SAVE_ANSWERS)
+      startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -407,7 +409,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expectOneSaveFallbackLogged(result.logger, {
@@ -569,7 +571,7 @@ describe('transit-countries — the Back link', () => {
   it('Should go Back to the arrival details while the opening run is on', async () => {
     const result = await driveHandler(get, {
       seed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
@@ -578,7 +580,7 @@ describe('transit-countries — the Back link', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'FR' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
@@ -705,7 +707,7 @@ describe('transit-countries — when the page gate does not pass', () => {
       const result = await driveHandler(post, {
         seed: airSeed,
         payload,
-        saveFailure: unavailableBackendError(SAVE_ANSWERS)
+        startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
       })
 
       expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })

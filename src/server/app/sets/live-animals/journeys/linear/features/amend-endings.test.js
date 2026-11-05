@@ -9,7 +9,10 @@ import { configureSession } from '../../../../../engine/persistence/session.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../engine/test-support.js'
+import {
+  amendmentOpened,
+  driveHandler
+} from '../../../../../engine/test-support.js'
 import { pagePath } from '../../../../../shared/paths.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { taskRows } from '../flow/task-rows.js'
@@ -44,7 +47,7 @@ const pageGetHandler = (page) =>
 const renderAmending = async (page) => {
   const { journeyId, view } = await driveHandler(pageGetHandler(page), {
     seed: comprehensive,
-    amend: true,
+    startingFrom: [amendmentOpened()],
     pathOf: (id) => pagePath(id, page.slug)
   })
   return {

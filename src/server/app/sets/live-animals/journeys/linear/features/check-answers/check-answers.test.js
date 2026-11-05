@@ -14,6 +14,7 @@ import { configureSession } from '../../../../../../engine/persistence/session.j
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
+  amendmentOpened,
   driveHandler,
   journeyRequest,
   postHandlerOf,
@@ -1337,10 +1338,17 @@ describe(`${SUITE} — Continue on an amend review`, () => {
   setupCheckAnswersEngine()
 
   const continueAmend = (seed) =>
-    driveHandler(declarationRoutesFromReview[0].handler, { seed, amend: true })
+    driveHandler(declarationRoutesFromReview[0].handler, {
+      seed,
+      startingFrom: [amendmentOpened()]
+    })
 
   const refusedAmendReview = (seed) =>
-    driveHandler(getHandler, { seed, query: { refused: '1' }, amend: true })
+    driveHandler(getHandler, {
+      seed,
+      query: { refused: '1' },
+      startingFrom: [amendmentOpened()]
+    })
 
   it('Should refuse an incomplete amend back to the review as refused', async () => {
     const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed

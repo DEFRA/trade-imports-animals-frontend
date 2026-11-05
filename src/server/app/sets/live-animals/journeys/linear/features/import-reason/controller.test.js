@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  openingRunAt,
   expectBackLinkIsPage,
   expectNoRefusalLogged,
   getHandlerOf,
@@ -623,7 +624,10 @@ describe('import-reason — the Back link', () => {
   }
 
   it('Should go Back to What are you importing? while the opening run is on', async () => {
-    const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
+    const result = await driveHandler(get, {
+      seed,
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
+    })
     expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
@@ -631,7 +635,7 @@ describe('import-reason — the Back link', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { reasonForImport: 'not-a-real-reason' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.response.statusCode).toBe(400)
     expectBackLinkIsPage(result, commoditiesPage.slug)
