@@ -8,6 +8,7 @@ import {
 import { registerSetMount } from '../../src/server/app/shared/set-context.js'
 import { SET_BASE, SET_ID } from '../../src/server/app/sets/live-animals/set.js'
 import { lineKey } from '../../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
+import { parties } from '../../src/server/app/services/transporters/index.js'
 
 registerSetMount(SET_ID, SET_BASE)
 
@@ -31,7 +32,15 @@ export const { values } = JSON.parse(
 const [firstLine] = values.commodityLines
 const [firstUnit] = firstLine.animalIdentifiers
 const arrival = values.arrivalDateAtPort
-const { privateTransporter } = values
+const { commercialTransporter, privateTransporter } = values
+
+const shippedTransporterIdFor = ({ name }) => {
+  const record = parties().find((candidate) => candidate.name === name)
+  if (!record) {
+    throw new Error(`No shipped transporter is named "${name}"`)
+  }
+  return record.id
+}
 
 const ukDate = ({ day, month, year }) => `${day}/${month}/${year}`
 
@@ -173,8 +182,8 @@ const TRANSPORTER_STEPS = new Map([
     'Commercial',
     [
       {
-        slug: 'transporters/select',
-        fields: firstOption('commercialTransporter')
+        slug: 'transporters',
+        fields: { transporter: shippedTransporterIdFor(commercialTransporter) }
       }
     ]
   ],

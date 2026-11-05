@@ -52,8 +52,6 @@ describe('#proveFlowReachability', () => {
         (problem) => problem.reason === REASON_UNREACHABLE_IN_SCOPE
       )
     ).toBe(true)
-    // A transport obligation (owned by transporters-select) is dead — its page
-    // was dropped; a commodities obligation is not.
     const deadObligations = problems.map((problem) => problem.obligation)
     expect(deadObligations).toContain('transporterType')
     expect(deadObligations).not.toContain('commodityLines')

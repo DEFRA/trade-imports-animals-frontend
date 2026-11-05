@@ -201,11 +201,7 @@ describe('#buildDispatch', () => {
       inScope: makeScope({ transporterType: 'Private' }).inScope,
       answered: () => true
     }
-    for (const spoke of [
-      'transporter-add',
-      'transporters-select',
-      'private-transporter-details'
-    ]) {
+    for (const spoke of ['transporter-add', 'private-transporter-details']) {
       expect(nextInSection(spoke, scope, 'journey-1')).toMatch(
         /\/notifications\/journey-1$/
       )
