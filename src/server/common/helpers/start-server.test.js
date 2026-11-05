@@ -1,4 +1,5 @@
 import { getDefaultAutoSelectFamilyAttemptTimeout } from 'node:net'
+import Wreck from '@hapi/wreck'
 
 import { beforeAll, afterAll, describe, expect, test, vi } from 'vitest'
 import { statusCodes } from '../constants/status-codes.js'
@@ -48,6 +49,10 @@ describe('#startServer', () => {
 
     test('gives each address of a host one second to connect before trying the next', () => {
       expect(getDefaultAutoSelectFamilyAttemptTimeout()).toBe(1000)
+    })
+
+    test('keeps the connections of Wreck calls made without an agent open for the next call', () => {
+      expect(Wreck.agents.http.keepAlive).toBe(true)
     })
   })
 
