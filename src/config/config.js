@@ -8,6 +8,7 @@ const env = process.env.NODE_ENV
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const fourHoursMs = 14400000
+const oneWeekMs = 604800000
 
 const isProduction = env === 'production'
 const isTest = env === 'test'
@@ -59,7 +60,7 @@ export const config = convict({
   staticCacheTimeout: {
     doc: 'Static cache timeout in milliseconds',
     format: Number,
-    default: 7 * 24 * 60 * 60 * 1000,
+    default: oneWeekMs,
     env: 'STATIC_CACHE_TIMEOUT'
   },
   serviceName: {
