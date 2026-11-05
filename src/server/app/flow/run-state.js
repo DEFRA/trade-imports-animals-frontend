@@ -21,7 +21,7 @@ export const completeOpeningRun = async (request, h, journeyId) => {
 export const inOpeningRun = async (request, journeyId) =>
   (await session.openingRun(request, journeyId)) === RUN_ACTIVE
 
-export const openingRunBeganAtStartEntry = async (request, journeyId) =>
+export const activeOpeningRunBeganAtStartEntry = async (request, journeyId) =>
   (await inOpeningRun(request, journeyId)) &&
   (await session.openingRunEntry(request, journeyId)) === RUN_ENTRY_START
 

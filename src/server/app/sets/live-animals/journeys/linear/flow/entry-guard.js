@@ -12,7 +12,7 @@ import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import {
   inOpeningRun,
-  openingRunBeganAtStartEntry,
+  activeOpeningRunBeganAtStartEntry,
   openingRunStarted
 } from '../../../../../flow/run-state.js'
 import { buildInsFrontendUrl } from '../../../../../../common/helpers/ins-frontend-url.js'
@@ -59,7 +59,7 @@ const insTypeQuestionUrl = (journeyId) => {
 }
 
 export const entryBackLink = async (request, journey, answers) => {
-  if (await openingRunBeganAtStartEntry(request, journey.journeyId)) {
+  if (await activeOpeningRunBeganAtStartEntry(request, journey.journeyId)) {
     return insTypeQuestionUrl(journey.journeyId)
   }
   if (await inOpeningRun(request, journey.journeyId)) {

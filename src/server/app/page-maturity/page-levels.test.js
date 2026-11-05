@@ -1,23 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { config } from '../../../config/config.js'
-import { createServer } from '../../server.js'
+import { startStubModeServer } from '../../common/test-helpers/stub-mode-server.js'
 import { LEVELS, TAG_CLASSES } from './levels.js'
 import { PAGE_LEVELS, SECTION_LEVELS } from './page-levels.js'
 import { isInSection } from './page-maturity.js'
 
-const originalStubMode = config.get('stubMode')
 let server
+let stopServer
 
 beforeAll(async () => {
-  config.set('stubMode', true)
-  server = await createServer()
-  await server.initialize()
+  ;({ server, stop: stopServer } = await startStubModeServer())
 })
 
 afterAll(async () => {
-  config.set('stubMode', originalStubMode)
-  await server.stop({ timeout: 0 })
+  await stopServer()
 })
 
 const registeredGetPaths = () =>

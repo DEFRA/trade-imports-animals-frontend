@@ -440,7 +440,7 @@ describe('GET /origin — where Back goes', () => {
     })
 
     it.each(seeds)(
-      'Should send Back to the INS type question for this notification while the opening run is active and began at the start entry with $name',
+      'Should send Back to the INS type question for this notification while the active opening run began at the start entry with $name',
       async ({ seed }) => {
         const result = await driveHandler(get, {
           seed,

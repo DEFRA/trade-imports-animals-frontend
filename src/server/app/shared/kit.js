@@ -252,9 +252,9 @@ const previousStepBackLink = async (
 ) => {
   const { journeyId } = request.params
   const opensInRun = await inOpeningRun(request, journeyId)
-  const carriesChange =
-    !opensInRun && journey.status === DRAFT && Boolean(changeContext(request))
-  if (!opensInRun && !carriesChange) {
+  const draftOpenedFromChangeLink =
+    !opensInRun && journey.status === DRAFT && changeContext(request)
+  if (!opensInRun && !draftOpenedFromChangeLink) {
     return null
   }
   const previousStep = journeyPreviousRunTarget(
@@ -262,7 +262,7 @@ const previousStepBackLink = async (
     { scope, answers },
     journeyId
   )
-  return carriesChange && previousStep
+  return draftOpenedFromChangeLink && previousStep
     ? appendChangeContext(previousStep)
     : previousStep
 }

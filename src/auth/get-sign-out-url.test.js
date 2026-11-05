@@ -1,85 +1,74 @@
-import { vi } from 'vitest'
+import { config } from '../config/config.js'
 import { getSignOutUrl } from './get-sign-out-url.js'
-
-const configGetMock = vi.hoisted(() => vi.fn())
-
-vi.mock('../config/config.js', () => ({
-  config: {
-    get: configGetMock
-  }
-}))
 
 const SIGN_OUT_REDIRECT_URL = 'http://localhost:3000/auth/sign-out-oidc'
 const REDIRECT_QUERY = `?post_logout_redirect_uri=${encodeURIComponent(SIGN_OUT_REDIRECT_URL)}`
 
-function configWith(overrides) {
-  return (key) => {
-    if (key in overrides) {
-      return overrides[key]
-    }
-    if (key === 'defraId.signOutRedirectUrl') {
-      return SIGN_OUT_REDIRECT_URL
-    }
-    if (key === 'defraId.signOutHostnameRewrite.enabled') {
-      return true
-    }
-    if (key === 'defraId.signOutHostnameRewrite.from') {
-      return ['host.docker.internal', 'trade-imports-defra-id-stub']
-    }
-    if (key === 'defraId.signOutHostnameRewrite.to') {
-      return 'localhost'
-    }
-    return undefined
+const DEFAULT_CONFIG = {
+  'defraId.signOutRedirectUrl': SIGN_OUT_REDIRECT_URL,
+  'defraId.browserFacingHostnameRewrite.enabled': true,
+  'defraId.browserFacingHostnameRewrite.from': [
+    'host.docker.internal',
+    'trade-imports-defra-id-stub'
+  ],
+  'defraId.browserFacingHostnameRewrite.to': 'localhost'
+}
+
+const configKeys = [...Object.keys(DEFAULT_CONFIG), 'defraId.oidcDiscoveryUrl']
+
+function setConfig(overrides) {
+  for (const [key, value] of Object.entries({
+    ...DEFAULT_CONFIG,
+    ...overrides
+  })) {
+    config.set(key, value)
   }
 }
 
 describe('getSignOutUrl', () => {
+  let originalConfig
+
   beforeEach(() => {
-    configGetMock.mockReset()
-    configGetMock.mockImplementation(configWith({}))
+    originalConfig = Object.fromEntries(
+      configKeys.map((key) => [key, config.get(key)])
+    )
   })
 
   afterEach(() => {
-    vi.unstubAllEnvs()
+    for (const [key, value] of Object.entries(originalConfig)) {
+      config.set(key, value)
+    }
   })
 
   test('builds signout URL from discovery URL with post-logout redirect', async () => {
-    configGetMock.mockImplementation(
-      configWith({
-        'defraId.oidcDiscoveryUrl':
-          'https://mock-auth-server/some/tenant/.well-known/openid-configuration'
-      })
-    )
+    setConfig({
+      'defraId.oidcDiscoveryUrl':
+        'https://mock-auth-server/some/tenant/.well-known/openid-configuration'
+    })
 
     const url = await getSignOutUrl({}, 'token')
 
-    expect(configGetMock).toHaveBeenCalledWith('defraId.oidcDiscoveryUrl')
     expect(url).toBe(
       `https://mock-auth-server/some/tenant/signout${REDIRECT_QUERY}`
     )
   })
 
   test('handles discovery URL at root /.well-known/openid-configuration', async () => {
-    configGetMock.mockImplementation(
-      configWith({
-        'defraId.oidcDiscoveryUrl':
-          'https://mock-auth-server/.well-known/openid-configuration'
-      })
-    )
+    setConfig({
+      'defraId.oidcDiscoveryUrl':
+        'https://mock-auth-server/.well-known/openid-configuration'
+    })
 
     const url = await getSignOutUrl({}, 'token')
 
-    expect(configGetMock).toHaveBeenCalledWith('defraId.oidcDiscoveryUrl')
     expect(url).toBe(`https://mock-auth-server/signout${REDIRECT_QUERY}`)
   })
 
   test('rewrites configured Docker internal OIDC hostnames using configured target hostname', async () => {
-    configGetMock.mockImplementation(
-      configWith({
-        'defraId.oidcDiscoveryUrl':
-          'http://host.docker.internal:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration'
-      })
-    )
+    setConfig({
+      'defraId.oidcDiscoveryUrl':
+        'http://host.docker.internal:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration'
+    })
 
     const url = await getSignOutUrl({}, 'token')
 
@@ -89,12 +78,10 @@ describe('getSignOutUrl', () => {
   })
 
   test('rewrites trade-imports-defra-id-stub hostname when configured', async () => {
-    configGetMock.mockImplementation(
-      configWith({
-        'defraId.oidcDiscoveryUrl':
-          'http://trade-imports-defra-id-stub:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration'
-      })
-    )
+    setConfig({
+      'defraId.oidcDiscoveryUrl':
+        'http://trade-imports-defra-id-stub:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration'
+    })
 
     const url = await getSignOutUrl({}, 'token')
 
@@ -104,13 +91,11 @@ describe('getSignOutUrl', () => {
   })
 
   test('does not rewrite when hostname rewrite is disabled in config', async () => {
-    configGetMock.mockImplementation(
-      configWith({
-        'defraId.oidcDiscoveryUrl':
-          'http://host.docker.internal:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration',
-        'defraId.signOutHostnameRewrite.enabled': false
-      })
-    )
+    setConfig({
+      'defraId.oidcDiscoveryUrl':
+        'http://host.docker.internal:3007/idphub/b2c/b2c_1a/.well-known/openid-configuration',
+      'defraId.browserFacingHostnameRewrite.enabled': false
+    })
 
     const url = await getSignOutUrl({}, 'token')
 

@@ -236,12 +236,12 @@ export const config = convict({
       default: 'http://localhost:3000/auth/sign-out-oidc',
       env: 'DEFRA_ID_SIGN_OUT_REDIRECT_URL'
     },
-    signOutHostnameRewrite: {
+    browserFacingHostnameRewrite: {
       enabled: {
         doc: 'Rewrite internal OIDC hostnames in sign-out URL for local environments',
         format: STRICT_BOOLEAN,
         default: !isProduction,
-        env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED'
+        env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_ENABLED'
       },
       from: {
         doc: 'OIDC hostnames list for sign-out URL re-write',
@@ -252,7 +252,7 @@ export const config = convict({
         doc: 'Target hostname used for sign-out OIDC URL rewrite',
         format: String,
         default: 'localhost',
-        env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO'
+        env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_TO'
       }
     },
     refreshTokens: {

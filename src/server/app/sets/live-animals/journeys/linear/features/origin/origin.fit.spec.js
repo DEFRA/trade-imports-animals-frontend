@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectPageEndsWithPrimaryAlone,
+  journeyIdFromPage,
   openNotificationView,
   startNotificationAtOrigin,
   urlUnderBase,
@@ -218,7 +219,7 @@ test.describe('origin feature', () => {
   }) => {
     await page.goto(`${BASE}/start`)
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
-    const reference = page.url().split('/notifications/')[1].split('/')[0]
+    const reference = journeyIdFromPage(page)
 
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })

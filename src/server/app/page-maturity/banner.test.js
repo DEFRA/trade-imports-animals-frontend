@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { config } from '../../../config/config.js'
-import { createServer } from '../../server.js'
+import { startStubModeServer } from '../../common/test-helpers/stub-mode-server.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
 import {
   documentOf,
@@ -144,10 +144,10 @@ describe('page maturity banner', () => {
 
 describe('page maturity banner on a served page', () => {
   const ENABLED_KEY = 'pageMaturityBanner.enabled'
-  const originalStubMode = config.get('stubMode')
   const originalEnabled = config.get(ENABLED_KEY)
   const SERVED_PAGE_URL = SET_BASE
   let server
+  let stopServer
   let cookie
 
   const phaseBannersOfServedPage = async () => {
@@ -160,9 +160,7 @@ describe('page maturity banner on a served page', () => {
   }
 
   beforeAll(async () => {
-    config.set('stubMode', true)
-    server = await createServer()
-    await server.initialize()
+    ;({ server, stop: stopServer } = await startStubModeServer())
     const signIn = await server.inject({
       method: 'GET',
       url: '/auth/stub-sign-in'
@@ -180,8 +178,7 @@ describe('page maturity banner on a served page', () => {
   })
 
   afterAll(async () => {
-    config.set('stubMode', originalStubMode)
-    await server.stop({ timeout: 0 })
+    await stopServer()
   })
 
   it('Should show the Exploring tag on the live animals start page', async () => {
