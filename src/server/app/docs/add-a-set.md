@@ -51,10 +51,21 @@ second registration overwrite the first. The eight seams are
 `configureJourneyFlow`, `buildDispatch`, `configureRecords` and
 `configureSession`.
 
-**2. A request resolves its set from the owning plugin realm, never from the
-URL.** Each gateway installs an `onPreAuth` extension that calls
-`enterSetContext(setId)`, so Hapi's own routing decides the set. Do not parse
-the path to work out which set you are in.
+**2. A set route resolves its set from the owning plugin realm, and a set's own
+code never parses the path.** Each gateway installs an `onPreAuth` extension
+that calls `enterSetContext(setId)`, so Hapi's own routing decides the set.
+
+Three server-wide cases run where no set route's context holds: before routing,
+outside every set route, or after the handler. They resolve the set from the
+request path through the one shared resolver, `setIdForPath` in
+`shared/set-context.js`:
+
+- the set context resolved before routing;
+- the shared error page;
+- the global view context. It resolves from the path because the view renders
+  after the handler returns, when the handler's set context may be gone. It
+  supplies the chrome's home link for every rendered view, and a view's own
+  context, such as `kit.base()`'s, overrides it.
 
 **3. Every set-owned lifecycle extension passes `{ sandbox: 'plugin' }`.**
 Plugin ownership alone does **not** scope an extension. An extension registered

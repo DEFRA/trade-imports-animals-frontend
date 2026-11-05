@@ -5,9 +5,7 @@ import {
   openingRunEntryCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
-
-const isObject = (value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
+import { isObject } from '../../../lib/object.js'
 
 const knownFrom = (request) => {
   const known = request?.state?.[knownJourneysCookie()]

@@ -1,10 +1,10 @@
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isObject } from '../../../../lib/object.js'
 import { runGate } from './run-gate.js'
 import { stampGateMetadata } from './stamp-gate-metadata.js'
 
 const pairByFulfilmentIndex = (first, second) =>
   Object.fromEntries(
-    Object.entries(isNonArrayObject(first) ? first : {}).map(
+    Object.entries(isObject(first) ? first : {}).map(
       ([fulfilmentIndex, value]) => [
         fulfilmentIndex,
         [value, second?.[fulfilmentIndex]]

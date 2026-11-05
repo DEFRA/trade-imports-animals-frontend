@@ -12,17 +12,21 @@ const copy = copyFor({ en, cy })
 /**
  * What the animals are certified for, and whether any of them are unweaned.
  */
-export const additionalAnimalDetailsCard = (journeyId, answers, readOnly) => ({
+export const additionalAnimalDetailsCard = ({
+  journeyId,
+  answers,
+  readOnly
+}) => ({
   id: 'additionalAnimalDetails',
   title: copy.cards.additionalAnimalDetails,
-  ...editableActions(
+  ...editableActions({
     readOnly,
-    cardAction(
+    actions: cardAction(
       journeyId,
       additionalDetailsPage.slug,
       copy.hidden.cards.additionalAnimalDetails
     )
-  ),
+  }),
   rows: [
     row(
       copy.rows.certifiedFor,

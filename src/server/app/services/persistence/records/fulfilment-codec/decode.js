@@ -1,7 +1,7 @@
 import { fail } from './fail.js'
 import { obligationsById } from './obligations/lookup.js'
 import { decodeRecords } from './records/decode-records.js'
-import { hasExactlyKeys, hasOwn, isObject } from './shape/object.js'
+import { hasExactlyKeys, hasOwn, isObject } from '../../../../lib/object.js'
 import { validateCurrentForm } from './validate/current-form.js'
 import { validateObligationId } from './validate/obligation-id.js'
 import { validateValue } from './validate/value.js'

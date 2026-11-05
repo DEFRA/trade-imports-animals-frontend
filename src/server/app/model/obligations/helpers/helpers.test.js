@@ -15,7 +15,7 @@ import {
   present,
   presentGate
 } from './index.js'
-import { isNonArrayObject, readGate } from '../helper-internals.js'
+import { readGate } from '../helper-internals.js'
 
 const codeObl = { id: 'code-obl' }
 const boolObl = { id: 'bool-obl' }
@@ -643,40 +643,6 @@ describe('moreThanOne', () => {
     expect(
       obligationMetadata({ applyTo: moreThanOne(inner) }).dependsOn
     ).toBeUndefined()
-  })
-})
-
-describe('isNonArrayObject', () => {
-  it('Should return true for a plain indexedFulfilments object', () => {
-    expect(isNonArrayObject({ line1: 'a', line2: 'b' })).toBe(true)
-  })
-
-  it('Should return true for an empty object (still an indexedFulfilments shape)', () => {
-    expect(isNonArrayObject({})).toBe(true)
-  })
-
-  it('Should return false for primitive strings', () => {
-    expect(isNonArrayObject('a')).toBe(false)
-    expect(isNonArrayObject('')).toBe(false)
-  })
-
-  it('Should return false for other primitives', () => {
-    expect(isNonArrayObject(0)).toBe(false)
-    expect(isNonArrayObject(false)).toBe(false)
-    expect(isNonArrayObject(true)).toBe(false)
-  })
-
-  it('Should return false for undefined', () => {
-    expect(isNonArrayObject(undefined)).toBe(false)
-  })
-
-  it('Should return false for null', () => {
-    expect(isNonArrayObject(null)).toBe(false)
-  })
-
-  it('Should return false for arrays', () => {
-    expect(isNonArrayObject([])).toBe(false)
-    expect(isNonArrayObject(['a', 'b'])).toBe(false)
   })
 })
 

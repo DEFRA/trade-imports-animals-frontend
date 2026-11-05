@@ -5,13 +5,13 @@ import { contactAddressCard } from '../cards/addresses/contact-address.js'
 
 const copy = copyFor({ en, cy })
 
-export const contactAddressSection = (
+export const contactAddressSection = ({
   journeyId,
   answers,
   readOnly,
   parties = answers,
   partyErrors = {}
-) => ({
+}) => ({
   // Suffixed, like the documents section and for the same reason: the contact
   // address CARD already owns the `contact-address` id, which is what the error
   // summary's "Complete contact address for this consignment" link anchors to.
@@ -21,7 +21,13 @@ export const contactAddressSection = (
     {
       heading: copy.groups.contactAddress,
       cards: [
-        contactAddressCard(journeyId, answers, readOnly, parties, partyErrors)
+        contactAddressCard({
+          journeyId,
+          answers,
+          readOnly,
+          parties,
+          partyErrors
+        })
       ]
     }
   ]

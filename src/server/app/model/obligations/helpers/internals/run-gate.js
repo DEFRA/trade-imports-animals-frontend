@@ -1,4 +1,4 @@
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isObject } from '../../../../lib/object.js'
 import { INDEX_DELIMITER } from '../../index-delimiter.js'
 
 // Two shape branches, dispatched below in `runGate`:
@@ -65,7 +65,7 @@ export const runGate = (
   // default, the undefined would fall through to `runGateUnindexed` and
   // the predicate could spuriously return `true` on `undefined`.
   const fulfilmentOrEmpty = fulfilment ?? {}
-  return isNonArrayObject(fulfilmentOrEmpty)
+  return isObject(fulfilmentOrEmpty)
     ? runGateIndexed(
         fulfilmentOrEmpty,
         predicate,

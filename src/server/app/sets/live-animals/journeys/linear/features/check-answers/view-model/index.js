@@ -5,7 +5,7 @@ import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
 import { transportAndArrivalSection } from './sections/transport-and-arrival.js'
 
-export const buildSections = async (
+export const buildSections = async ({
   answers,
   scope,
   evaluation,
@@ -13,23 +13,29 @@ export const buildSections = async (
   readOnly = false,
   parties = answers,
   partyErrors = {}
-) => {
+}) => {
   const [aboutConsignment, transportAndArrival] = await Promise.all([
-    aboutConsignmentSection(journeyId, answers, scope, readOnly),
-    transportAndArrivalSection(journeyId, answers, scope, readOnly)
+    aboutConsignmentSection({ journeyId, answers, scope, readOnly }),
+    transportAndArrivalSection({ journeyId, answers, scope, readOnly })
   ])
   return [
     aboutConsignment,
-    descriptionOfGoodsSection(journeyId, answers, evaluation, readOnly),
+    descriptionOfGoodsSection({ journeyId, answers, evaluation, readOnly }),
     transportAndArrival,
-    documentsSection(journeyId, answers, evaluation, readOnly),
-    consignmentPartiesSection(
+    documentsSection({ journeyId, answers, evaluation, readOnly }),
+    consignmentPartiesSection({
       journeyId,
       answers,
       readOnly,
       parties,
       partyErrors
-    ),
-    contactAddressSection(journeyId, answers, readOnly, parties, partyErrors)
+    }),
+    contactAddressSection({
+      journeyId,
+      answers,
+      readOnly,
+      parties,
+      partyErrors
+    })
   ]
 }

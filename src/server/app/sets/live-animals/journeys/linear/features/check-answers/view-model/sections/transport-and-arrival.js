@@ -8,30 +8,32 @@ import { transportDetailsCard } from '../cards/movement/transport-details.js'
 
 const copy = copyFor({ en, cy })
 
-export const transportAndArrivalSection = async (
+export const transportAndArrivalSection = async ({
   journeyId,
   answers,
   scope,
   readOnly
-) => ({
+}) => ({
   anchor: 'transport-and-arrival',
   heading: copy.sections.transportAndArrival,
   groups: [
     {
       heading: copy.groups.arrivalDetails,
-      cards: [await arrivalDetailsCard(journeyId, answers, readOnly)]
+      cards: [await arrivalDetailsCard({ journeyId, answers, readOnly })]
     },
     ...(transitedCountriesApplies(answers, scope)
       ? [
           {
             heading: copy.groups.transitCountries,
-            cards: [await transitCountriesCard(journeyId, answers, readOnly)]
+            cards: [
+              await transitCountriesCard({ journeyId, answers, readOnly })
+            ]
           }
         ]
       : []),
     {
       heading: copy.groups.transportDetails,
-      cards: [transportDetailsCard(journeyId, answers, scope, readOnly)]
+      cards: [transportDetailsCard({ journeyId, answers, scope, readOnly })]
     }
   ]
 })

@@ -1,8 +1,6 @@
 import { isBlankValue } from './is-blank-value.js'
 import { deriveUnion } from './helpers/internals/derive-union.js'
-
-export const isNonArrayObject = (value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
+import { isObject } from '../../lib/object.js'
 
 const samePair = (listed, value) =>
   Array.isArray(listed) &&
@@ -52,7 +50,7 @@ export const readGate = (fulfilments, gateId) => {
   if (fulfilment === undefined) {
     return { present: false, candidates: [] }
   }
-  if (isNonArrayObject(fulfilment)) {
+  if (isObject(fulfilment)) {
     return { present: true, candidates: Object.values(fulfilment) }
   }
   return { present: true, candidates: [fulfilment] }

@@ -44,19 +44,24 @@ export const activeTransporterRows = (transporter) =>
       ]
     : []
 
-export const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
+export const transportDetailsCard = ({
+  journeyId,
+  answers,
+  scope,
+  readOnly
+}) => {
   const transporter = activeTransporter(answers, scope)
   return {
     id: 'transportDetails',
     title: copy.cards.transportDetails,
-    ...editableActions(
+    ...editableActions({
       readOnly,
-      cardAction(
+      actions: cardAction(
         journeyId,
         transportersPage.slug,
         copy.hidden.cards.transportDetails
       )
-    ),
+    }),
     rows: [
       ...activeTransporterRows(transporter),
       row(copy.rows.type, answers.transporterType)

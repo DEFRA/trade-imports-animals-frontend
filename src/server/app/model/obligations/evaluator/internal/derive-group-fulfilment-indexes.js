@@ -1,5 +1,5 @@
 import { INDEX_DELIMITER } from '../../index-delimiter.js'
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isObject } from '../../../../lib/object.js'
 const joinFulfilmentIndex = (segments) => segments.join(INDEX_DELIMITER)
 const splitFulfilmentIndex = (fulfilmentIndex) =>
   fulfilmentIndex.split(INDEX_DELIMITER)
@@ -8,7 +8,7 @@ const splitFulfilmentIndex = (fulfilmentIndex) =>
 // group's fulfilmentIndex set — take the first `prefixLength` segments
 // of each stored fulfilmentIndex.
 const indexPrefixesFromDescendant = (fulfilment, prefixLength) => {
-  if (!isNonArrayObject(fulfilment)) {
+  if (!isObject(fulfilment)) {
     return []
   }
   return Object.keys(fulfilment)

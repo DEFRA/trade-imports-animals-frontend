@@ -8,7 +8,12 @@ const copy = copyFor({ en, cy })
 // Unconditional: the section is part of the review whether or not anything has
 // been uploaded, so a trader with no documents still sees them named and still
 // has a link to the upload page.
-export const documentsSection = (journeyId, answers, evaluation, readOnly) => ({
+export const documentsSection = ({
+  journeyId,
+  answers,
+  evaluation,
+  readOnly
+}) => ({
   // Suffixed, unlike its sibling sections: the documents CARD already owns the
   // `documents` id, which is what the error summary's "Complete documents" link
   // anchors to. Normalising this to the plain slug would duplicate the id and
@@ -18,7 +23,7 @@ export const documentsSection = (journeyId, answers, evaluation, readOnly) => ({
   groups: [
     {
       heading: copy.groups.uploadDocuments,
-      cards: [documentsCard(journeyId, answers, evaluation, readOnly)]
+      cards: [documentsCard({ journeyId, answers, evaluation, readOnly })]
     }
   ]
 })

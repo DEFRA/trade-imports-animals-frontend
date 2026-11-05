@@ -1,4 +1,4 @@
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isObject } from '../../../../lib/object.js'
 
 // purge may recreate indexedFulfilments entries as fresh objects with the
 // same content — reference equality wouldn't catch convergence, so compare
@@ -25,8 +25,8 @@ const indexedFulfilmentsEqual = (indexedA, indexedB) => {
 // or an indexedFulfilments map (deep-compared).
 const fulfilmentEqual = (fulfilmentA, fulfilmentB) =>
   fulfilmentA === fulfilmentB ||
-  (isNonArrayObject(fulfilmentA) &&
-    isNonArrayObject(fulfilmentB) &&
+  (isObject(fulfilmentA) &&
+    isObject(fulfilmentB) &&
     indexedFulfilmentsEqual(fulfilmentA, fulfilmentB))
 
 // Structural equality between two fulfilments snapshots (obligation-id →

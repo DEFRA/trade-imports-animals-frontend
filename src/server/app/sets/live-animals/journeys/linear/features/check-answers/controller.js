@@ -89,15 +89,15 @@ const renderCya = async (
   }
 ) => {
   const sections = withCardErrors(
-    await buildSections(
+    await buildSections({
       answers,
       scope,
       evaluation,
-      journey.journeyId,
+      journeyId: journey.journeyId,
       readOnly,
       parties,
       partyErrors
-    ),
+    }),
     cardErrors
   )
   return h.view(view, {

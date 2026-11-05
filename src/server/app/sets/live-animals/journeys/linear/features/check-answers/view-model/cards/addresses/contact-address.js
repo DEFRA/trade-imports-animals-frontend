@@ -10,23 +10,23 @@ import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })
 
-export const contactAddressCard = (
+export const contactAddressCard = ({
   journeyId,
   answers,
   readOnly,
   parties = answers,
   partyErrors = {}
-) => ({
+}) => ({
   id: 'contactAddress',
   title: copy.cards.contactAddress,
-  ...editableActions(
+  ...editableActions({
     readOnly,
-    cardAction(
+    actions: cardAction(
       journeyId,
       consignmentContactSelectPage.slug,
       copy.hidden.cards.contactAddress
     )
-  ),
+  }),
   rows: [
     partyRow(copy.rows.contactAddress, parties.contactAddress, {
       errorText: partyErrors.contactAddress,

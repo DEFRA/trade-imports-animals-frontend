@@ -6,13 +6,13 @@ import { speciesCards } from '../cards/consignment/species/species-cards.js'
 
 const copy = copyFor({ en, cy })
 
-export const descriptionOfGoodsSection = (
+export const descriptionOfGoodsSection = ({
   journeyId,
   answers,
   evaluation,
   readOnly
-) => {
-  const species = speciesCards(journeyId, answers, evaluation, readOnly)
+}) => {
+  const species = speciesCards({ journeyId, answers, evaluation, readOnly })
   return {
     anchor: 'description-of-the-goods',
     heading: copy.sections.descriptionOfTheGoods,
@@ -22,7 +22,7 @@ export const descriptionOfGoodsSection = (
         : []),
       {
         heading: copy.groups.additionalDetails,
-        cards: [additionalAnimalDetailsCard(journeyId, answers, readOnly)]
+        cards: [additionalAnimalDetailsCard({ journeyId, answers, readOnly })]
       }
     ]
   }

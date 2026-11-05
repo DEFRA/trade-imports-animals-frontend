@@ -295,7 +295,7 @@ labels only the review shows go in the check-answers copy bundles.
 
 Rows carry no Change link — `row(key, value)` is a key and a value. Each new
 card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
-wrapped in `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf
+wrapped in `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf
 in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that
 leaf the fit assertion "every Change link sits in a card heading and no summary
 row carries one"
