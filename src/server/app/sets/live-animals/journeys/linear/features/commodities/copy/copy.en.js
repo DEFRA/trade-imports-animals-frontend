@@ -1,3 +1,5 @@
+import { withThousandsSeparators } from './thousands-separators.js'
+
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
 export const copy = {
@@ -53,6 +55,8 @@ export const copy = {
     errors: {
       animalsRequired: 'Enter the number of animals',
       animalsWholeNumber: 'Enter a whole number greater than 0',
+      animalsAboveMax: (max) =>
+        `Number of animals must be ${withThousandsSeparators(max)} or fewer`,
       packagesWholeNumber: 'Number of packages must be a whole number, like 5',
       countDrop: (records, species, entered) =>
         `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`

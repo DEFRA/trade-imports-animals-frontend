@@ -7,11 +7,7 @@ import { simulateJourney } from '../../../../../analysis/simulate.js'
 
 // The add spokes hang off the transporter list rather than sitting in the
 // journey, so no set of answers walks the simulator through them.
-const ADD_SPOKE_PAGES = [
-  'transporter-add',
-  'transporters-select',
-  'private-transporter-details'
-]
+const ADD_SPOKE_PAGES = ['transporter-add', 'private-transporter-details']
 
 describe('#simulateJourney', () => {
   beforeAll(() => {

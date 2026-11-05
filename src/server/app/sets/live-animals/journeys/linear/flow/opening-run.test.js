@@ -50,7 +50,6 @@ import * as addresses from '../features/addresses/controller.js'
 import * as contact from '../features/contact/controller.js'
 import * as checkAnswers from '../features/check-answers/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
-import * as transportersSelect from '../features/transport/transporters-select/transporters-select.controller.js'
 import * as commercialTransporterDetails from '../features/transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from '../features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as hub from '../features/hub/controller.js'
@@ -246,16 +245,6 @@ const saveAndContinueFollowsTheRunSequence = () => {
       payload,
       openingRun: RUN_ACTIVE
     })
-
-  it('Should carry a commercial register pick on to the documents mid-run, continuing from the list rather than the spoke', async () => {
-    const { journeyId, response } = await driveAddSpoke(transportersSelect, {
-      seed: { transporterType: 'Commercial' },
-      payload: { commercialTransporter: 'garcia-livestock-transport' }
-    })
-
-    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
-    expect(response.redirect).not.toBe(hubPath(journeyId))
-  })
 
   it('Should carry a hand-entered commercial transporter on to the documents mid-run, continuing from the list rather than the spoke', async () => {
     const { journeyId, response } = await driveAddSpoke(

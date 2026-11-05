@@ -1,5 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 
+import { withThousandsSeparators } from './thousands-separators.js'
+
 const plural = (count, noun) => `${count} ${noun}`
 
 const ACTIONS_HIDDEN = 'Camau gweithredu'
@@ -57,6 +59,8 @@ export const copy = {
     errors: {
       animalsRequired: 'Rhowch nifer yr anifeiliaid',
       animalsWholeNumber: 'Rhowch rif cyfan sy’n fwy na 0',
+      animalsAboveMax: (max) =>
+        `Rhaid i nifer yr anifeiliaid fod yn ${withThousandsSeparators(max)} neu lai`,
       packagesWholeNumber: 'Rhaid i nifer y pecynnau fod yn rif cyfan, fel 5',
       countDrop: (records, species, entered) =>
         `Mae gennych ${plural(records, 'cofnod dynodwr')} ar gyfer ${species} ond fe wnaethoch nodi ${plural(entered, 'anifail')}. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`

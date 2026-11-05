@@ -19,6 +19,14 @@ represent. Mapper B layers its additional fields over Mapper A. A new obligation
 always needs a feature binding, but it only gets a mapper field when the target
 backend schema has a real home for it.
 
+## A number of animals above the largest signed 64-bit integer is refused, but the save path holds less than that exactly
+
+Commodity details refuses a number of animals above 9,223,372,036,854,775,807,
+the largest signed 64-bit integer. The save path does not hold every accepted
+value exactly: it converts the count with `Number()`, which holds an integer
+exactly only up to 9,007,199,254,740,991, so a count between that figure and
+the enforced cap is accepted and then saved as a different number.
+
 ## Collection positions are snapshot-local
 
 Grouped fulfilment tokens such as `line0` and `unit1` are positions in one canonical

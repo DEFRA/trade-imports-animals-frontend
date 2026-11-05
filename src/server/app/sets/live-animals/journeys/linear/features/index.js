@@ -16,7 +16,6 @@ import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './transport/transporters/transporters.controller.js'
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
-import * as transportersSelect from './transport/transporters-select/transporters-select.controller.js'
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
@@ -64,7 +63,6 @@ export const allRoutes = [
   ...transitCountries.routes,
   ...transporters.routes,
   ...transporterAdd.routes,
-  ...transportersSelect.routes,
   ...commercialTransporterDetails.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
