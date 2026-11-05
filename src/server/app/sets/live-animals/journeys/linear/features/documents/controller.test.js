@@ -58,6 +58,7 @@ import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
+import { itSendsBackToOverview } from '../../test-support.js'
 import { addDocumentSubmission, driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
@@ -609,11 +610,7 @@ describe('documents — the Back link', () => {
     expectBackLinkIsPage(result, CYA_SLUG)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview on a draft', async () => {
-    const result = await driveHandler(get)
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
+  itSendsBackToOverview(get, { cases: ['when opened from the Overview'] })
 
   it('Should keep the review back link after the page refuses a part-filled document returned from the upload service', async () => {
     const result = await driveReturnFromUpload({

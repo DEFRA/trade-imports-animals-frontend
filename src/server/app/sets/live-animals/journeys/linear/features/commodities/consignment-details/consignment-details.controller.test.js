@@ -1,7 +1,7 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
@@ -17,7 +17,10 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { itSendsBackCarryingChangeTo } from '../../../test-support.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../../test-support.js'
 import { commoditiesPage, consignmentDetailsPage } from '../page.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
@@ -647,11 +650,9 @@ describe('#consignmentDetailsController — the Back link', () => {
     expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
-      seed
-    })
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  itSendsBackToOverview(pageGetHandlerOf(consignmentDetails), {
+    seed,
+    cases: ['when opened from the Overview']
   })
 
   itSendsBackCarryingChangeTo(pageGetHandlerOf(consignmentDetails), [

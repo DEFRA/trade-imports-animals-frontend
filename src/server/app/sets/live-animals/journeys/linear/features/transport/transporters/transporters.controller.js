@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import {
@@ -36,13 +36,14 @@ const availableTransporters = (request) =>
 
 const isSearchAction = (payload) => payload.action === 'search'
 
-const render = (
+const render = async (
   request,
   h,
-  journey,
+  current,
   values,
   { errors = {}, recoverableError = false } = {}
 ) => {
+  const { journey } = current
   const query = String(values.query ?? '')
   const available = availableTransporters(request)
   const rows = transporterRows(
@@ -53,8 +54,8 @@ const render = (
     matchingTransporters(available, query).length === 0
   return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
       journey,
       page,
       recoverableError
@@ -89,7 +90,8 @@ const selectedIdFor = (request, answers) => {
 }
 
 const get = async (request, h) => {
-  const { journey, answers, storedAnswers } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, storedAnswers } = current
   const { errors } = await validation.onStored(answers, {
     request,
     storedAnswers
@@ -97,7 +99,7 @@ const get = async (request, h) => {
   return render(
     request,
     h,
-    journey,
+    current,
     { selectedId: selectedIdFor(request, answers) },
     { errors }
   )
@@ -113,45 +115,40 @@ const post = async (request, h) => {
   const query = String(payload.search ?? '')
 
   if (isSearchAction(payload)) {
-    const { journey, answers } = await state.get(request, h)
-    return render(request, h, journey, {
+    const current = await state.get(request, h)
+    return render(request, h, current, {
       query,
       narrowBy: query,
       selectedId:
         payload.transporter ||
         payload.selected ||
-        selectedIdFor(request, answers)
+        selectedIdFor(request, current.answers)
     })
   }
 
   const records = availableTransporters(request)
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
-    return render(
-      request,
-      h,
-      journey,
-      { query, narrowBy: query },
-      { errors }
+    const current = await state.get(request, h)
+    return (
+      await render(request, h, current, { query, narrowBy: query }, { errors })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = records.find((record) => record.id === payload.transporter)
-  let committed
-  const { failure } = await kit.recoverableSave(
+  const { value: committed, failure } = await kit.recoverableSave(
     request,
+    () => commitOrSkip(request, h, chosen),
     async () => {
-      committed = await commitOrSkip(request, h, chosen)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return render(
-        request,
-        h,
-        journey,
-        { selectedId: chosen?.id, query, narrowBy: query },
-        { recoverableError: true }
+      const current = await state.get(request, h)
+      return (
+        await render(
+          request,
+          h,
+          current,
+          { selectedId: chosen?.id, query, narrowBy: query },
+          { recoverableError: true }
+        )
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

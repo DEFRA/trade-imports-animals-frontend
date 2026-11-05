@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -8,8 +7,6 @@ import {
 import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
@@ -32,12 +29,11 @@ export const meta = { ...page, collects: ['contactAddress'], validation }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
-const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const handshakeErrorSummary = (error) =>
   error
     ? {
-        titleText: sharedCopy.errorSummary.title,
+        titleText: kit.sharedCopy.errorSummary.title,
         errorList: [{ text: error, href: '#contactAddress' }]
       }
     : null
@@ -65,9 +61,10 @@ const issueAddAddressLink = (request, h, journey) =>
   !isStubMode() &&
   issueInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
 
-const render = (
+const render = async (
+  request,
   h,
-  journey,
+  current,
   values,
   options,
   addAddressHref,
@@ -81,9 +78,9 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       recoverableError,
       successBanner
     }),
@@ -91,7 +88,7 @@ const render = (
     errors,
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
-    addNewAddressLabel: sharedCopy.addressHandshake.addNewAddress,
+    addNewAddressLabel: kit.sharedCopy.addressHandshake.addNewAddress,
     currentContact,
     contactOptions: options.map((option) => ({
       value: option.id,
@@ -102,7 +99,8 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { journey, answers } = current
   const orgId = organisationIdOf(request)
   const options = [...(await addressBook.all(orgId))]
   const { errors } = await validation.onStored(answers, {
@@ -110,13 +108,14 @@ const get = async (request, h) => {
   })
   const pickedFromId = answers.contactAddress?.pickedFromId
   const handshakeError = handshakeErrorMessage(
-    sharedCopy.addressHandshake.errors,
+    kit.sharedCopy.addressHandshake.errors,
     request.query.handshakeError
   )
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(
+    request,
     h,
-    journey,
+    current,
     {
       selectedId: options.some((option) => option.id === pickedFromId)
         ? pickedFromId
@@ -146,53 +145,59 @@ const post = async (request, h) => {
     addressOptions: options
   })
   if (hasErrors(errors)) {
-    const { journey, answers } = await state.get(request, h)
-    return render(
-      h,
-      journey,
-      {},
-      options,
-      issueAddAddressLink(request, h, journey),
-      {
-        errors,
-        currentContact: await currentContactOf(
-          request,
-          journey.journeyId,
-          answers
-        )
-      }
-    ).code(HTTP_STATUS_BAD_REQUEST)
-  }
-
-  const chosen = payload.contactAddress
-    ? await addressBook.party(orgId, payload.contactAddress)
-    : undefined
-  let committed
-  const { failure } = await kit.recoverableSave(
-    request,
-    async () => {
-      committed = chosen
-        ? await state.commit(request, h, {
-            contactAddress: answerFor(CONTACT_PARTY, chosen)
-          })
-        : await state.get(request, h)
-    },
-    async () => {
-      const { journey, answers } = await state.get(request, h)
-      return render(
+    const current = await state.get(request, h)
+    const { journey, answers } = current
+    return (
+      await render(
+        request,
         h,
-        journey,
-        { selectedId: chosen?.id },
+        current,
+        {},
         options,
         issueAddAddressLink(request, h, journey),
         {
-          recoverableError: true,
+          errors,
           currentContact: await currentContactOf(
             request,
             journey.journeyId,
             answers
           )
         }
+      )
+    ).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  const chosen = payload.contactAddress
+    ? await addressBook.party(orgId, payload.contactAddress)
+    : undefined
+  const { value: committed, failure } = await kit.recoverableSave(
+    request,
+    () =>
+      chosen
+        ? state.commit(request, h, {
+            contactAddress: answerFor(CONTACT_PARTY, chosen)
+          })
+        : state.get(request, h),
+    async () => {
+      const current = await state.get(request, h)
+      const { journey, answers } = current
+      return (
+        await render(
+          request,
+          h,
+          current,
+          { selectedId: chosen?.id },
+          options,
+          issueAddAddressLink(request, h, journey),
+          {
+            recoverableError: true,
+            currentContact: await currentContactOf(
+              request,
+              journey.journeyId,
+              answers
+            )
+          }
+        )
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

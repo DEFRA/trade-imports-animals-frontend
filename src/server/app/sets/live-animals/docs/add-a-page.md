@@ -356,6 +356,16 @@ set-up in the test file:
     registers the test that a page opened from a Change link on a draft sends
     Back to a given page carrying change context; it takes the GET handler and
     a list of cases, each a description, a seed and the previous page's slug
+  - `itSendsBackToOverview`, from the same file, registers the tests that a
+    page whose Back link is the Overview keeps it while the opening run is
+    active, on a draft opened from a Change link, when opened from the
+    Overview and on an amendment opened from a Change link; it takes the GET
+    handler and an options object with an optional `seed` and an optional
+    `cases` list of the case descriptions to register (all four when omitted)
+  - `itSendsBackToOverviewOnRefusal`, from the same file, registers the test
+    that a page whose Back link is the Overview keeps it on the refused
+    re-render while the opening run is active; it takes the POST handler, the
+    refused payload and an optional seed
   - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line

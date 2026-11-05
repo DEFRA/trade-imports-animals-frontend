@@ -1,8 +1,4 @@
-import {
-  dashboardPath,
-  hubPath,
-  pagePath
-} from '../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -10,14 +6,14 @@ import {
   CYA_SLUG,
   errorSummary,
   journeyStrip,
-  pageRoutes
+  pageRoutes,
+  runBackLink,
+  sharedCopy
 } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
@@ -38,7 +34,6 @@ import { declarationPage } from '../declaration/page.js'
 const view = `${TEMPLATES}/features/check-answers/template`
 
 const copy = copyFor({ en, cy })
-const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const PARTY_KEY_PREFIX = 'party:'
 
@@ -71,12 +66,13 @@ const reviewErrorSummary = (
     }
   )
 
-const backLinkFor = (journey) =>
-  journey.status === state.SUBMITTED
+const backLinkFor = async (request, current) =>
+  current.journey.status === state.SUBMITTED
     ? dashboardPath()
-    : hubPath(journey.journeyId)
+    : runBackLink(request, page.id, current)
 
 const renderCya = async (
+  request,
   h,
   journey,
   {
@@ -132,7 +128,7 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    backLink: backLinkFor(journey)
+    backLink: await backLinkFor(request, { journey, scope, answers })
   })
 }
 
@@ -171,7 +167,7 @@ export const renderNotificationView = async (
   const speciesErrors = hidesAnswerErrors
     ? {}
     : await speciesCardErrors(journey, answers, { refused })
-  return renderCya(h, journey, {
+  return renderCya(request, h, journey, {
     answers,
     scope,
     evaluation,

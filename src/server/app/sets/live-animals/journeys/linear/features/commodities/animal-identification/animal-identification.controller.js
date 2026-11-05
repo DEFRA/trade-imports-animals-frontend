@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -47,14 +47,13 @@ const cardLines = (answers, evaluation) =>
     capAllowsEntry(identifierCapOf(answers, index))
   )
 
-const render = (
+const render = async (
   request,
   h,
-  journey,
-  answers,
-  evaluation,
+  current,
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
+  const { journey, answers, evaluation } = current
   const changeCountHref = kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, consignmentDetailsPage.slug)
@@ -66,7 +65,7 @@ const render = (
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page.id, current),
       journey,
       page,
       surface: 'display'
@@ -93,19 +92,10 @@ const render = (
   })
 }
 
-const renderRefused = (request, h, journey, answers, evaluation, options) =>
-  render(request, h, journey, answers, evaluation, options).code(
-    HTTP_STATUS_BAD_REQUEST
-  )
+const renderRefused = async (request, h, current, options) =>
+  (await render(request, h, current, options)).code(HTTP_STATUS_BAD_REQUEST)
 
-const logCapRefusalsAndRender = (
-  request,
-  h,
-  journey,
-  answers,
-  evaluation,
-  options
-) => {
+const logCapRefusalsAndRender = (request, h, current, options) => {
   for (const { index, cap } of options.cardErrors) {
     kit.logRefusal(request, {
       reason: 'animal-identifier-cap-reached',
@@ -114,7 +104,7 @@ const logCapRefusalsAndRender = (
       level: 'warn'
     })
   }
-  return renderRefused(request, h, journey, answers, evaluation, options)
+  return renderRefused(request, h, current, options)
 }
 
 const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
@@ -132,16 +122,18 @@ const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
 }
 
 const get = async (request, h) => {
-  const { journey, answers, evaluation, scope } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation, scope } = current
   const onwards = await noIdentifiersTarget(request, answers, evaluation, scope)
   if (onwards) {
     return h.redirect(onwards)
   }
-  return render(request, h, journey, answers, evaluation)
+  return render(request, h, current)
 }
 
 const post = async (request, h) => {
-  const { journey, answers, evaluation, scope } = await state.get(request, h)
+  const current = await state.get(request, h)
+  const { answers, evaluation, scope } = current
   const onwards = await noIdentifiersTarget(request, answers, evaluation, scope)
   if (onwards) {
     return h.redirect(onwards)
@@ -162,9 +154,7 @@ const post = async (request, h) => {
     render: logCapRefusalsAndRender,
     request,
     h,
-    journey,
-    answers,
-    evaluation,
+    current,
     forms,
     addIndex,
     capByLineAtCap
@@ -176,29 +166,15 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    return renderRefused(request, h, journey, answers, evaluation, {
-      forms,
-      errors
-    })
+    return renderRefused(request, h, current, { forms, errors })
   }
 
   const cardErrors = await appendLineRecords(request, h, forms)
 
   if (cardErrors.length > 0) {
-    const { answers: current, evaluation: currentEvaluation } = await state.get(
-      request,
-      h
-    )
-    return logCapRefusalsAndRender(
-      request,
-      h,
-      journey,
-      current,
-      currentEvaluation,
-      {
-        cardErrors
-      }
-    )
+    return logCapRefusalsAndRender(request, h, await state.get(request, h), {
+      cardErrors
+    })
   }
 
   if (staysOnIdentification(action, forms, answers)) {

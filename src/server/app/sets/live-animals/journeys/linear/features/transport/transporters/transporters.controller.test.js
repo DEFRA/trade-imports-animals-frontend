@@ -22,6 +22,10 @@ import {
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import {
+  itSendsBackToOverview,
+  itSendsBackToOverviewOnRefusal
+} from '../../../test-support.js'
+import {
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
@@ -490,4 +494,12 @@ describe('/transporters with a transporter the organisation added', () => {
 
     expect(rowFor(result.view.context, kept.id).checked).toBe(true)
   })
+})
+
+describe('/transporters — Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  itSendsBackToOverview(getHandler)
+
+  itSendsBackToOverviewOnRefusal(postHandler, { transporter: NOT_ON_THE_LIST })
 })

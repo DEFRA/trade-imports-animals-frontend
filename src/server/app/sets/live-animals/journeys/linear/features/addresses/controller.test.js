@@ -11,6 +11,7 @@ import {
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { itSendsBackToOverview } from '../../test-support.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import {
   BOS_TAURUS_ROW,
@@ -276,26 +277,7 @@ describe('GET addresses — change context', () => {
     ).toBe(pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG))
   })
 
-  it('Should point Back at the Overview, not the review, on a draft opened from a Change link', async () => {
-    const result = await driveAddresses({}, { change: '1' })
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
-
-  it('Should point Back at the Overview, never the review, while amending', async () => {
-    const { journeyId, view } = await driveHandler(getAddresses, {
-      query: { change: '1' },
-      amend: true
-    })
-
-    expect(view.context.backLink).toBe(hubPath(journeyId))
-  })
-
-  it('Should point Back at the Overview when not changing', async () => {
-    const result = await driveAddresses({})
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
+  itSendsBackToOverview(getAddresses)
 })
 
 describe('POST addresses — change context', () => {

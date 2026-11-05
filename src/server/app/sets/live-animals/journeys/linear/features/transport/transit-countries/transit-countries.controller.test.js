@@ -16,7 +16,10 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
-import { itSendsBackCarryingChangeTo } from '../../../test-support.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../../test-support.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
 import {
@@ -580,9 +583,9 @@ describe('transit-countries — the Back link', () => {
     expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(get, { seed })
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  itSendsBackToOverview(get, {
+    seed,
+    cases: ['when opened from the Overview']
   })
 
   itSendsBackCarryingChangeTo(get, [

@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import {
@@ -32,8 +31,6 @@ const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
 
-const QUESTION_LABEL_CLASSES = 'govuk-label--m'
-
 const portItems = async (selected) => [
   { value: '', text: copy.port.selectText },
   ...(await ports.portOptions()).map((option) => ({
@@ -52,22 +49,24 @@ const meansItems = (selected) => [
 ]
 
 const render = async (
+  request,
   h,
-  journey,
+  current,
   dateWindow,
   values,
   { errors = {}, recoverableError = false } = {}
-) =>
-  h.view(view, {
+) => {
+  const questionLabelClasses = 'govuk-label--m'
+  return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: hubPath(journey.journeyId),
-      journey,
+      request,
+      backLink: await kit.runBackLink(request, page.id, current),
+      journey: current.journey,
       page,
       recoverableError
     }),
     copy,
-    questionLabelClasses: QUESTION_LABEL_CLASSES,
+    questionLabelClasses,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -76,19 +75,22 @@ const render = async (
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
       hint: copy.arrivalDate.hint,
-      labelClasses: QUESTION_LABEL_CLASSES,
+      labelClasses: questionLabelClasses,
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
       maxDate: dateWindow.maxText
     })
   })
+}
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const current = await state.get(request, h)
   const dateWindow = arrivalWindow()
-  const { values, errors } = await validation.onStored(answers, { dateWindow })
-  return render(h, journey, dateWindow, values, { errors })
+  const { values, errors } = await validation.onStored(current.answers, {
+    dateWindow
+  })
+  return render(request, h, current, dateWindow, values, { errors })
 }
 
 const post = async (request, h) => {
@@ -98,19 +100,19 @@ const post = async (request, h) => {
     { dateWindow }
   )
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
-    return (await render(h, journey, dateWindow, values, { errors })).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    const current = await state.get(request, h)
+    return (
+      await render(request, h, current, dateWindow, values, { errors })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { value: committed, failure } = await kit.recoverableSave(
     request,
     () => state.commit(request, h, answers),
     async () => {
-      const { journey } = await state.get(request, h)
+      const current = await state.get(request, h)
       return (
-        await render(h, journey, dateWindow, values, {
+        await render(request, h, current, dateWindow, values, {
           recoverableError: true
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)

@@ -1,5 +1,6 @@
 import { it } from 'vitest'
-import { pagePath } from '../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../shared/paths.js'
+import { RUN_ACTIVE } from '../../../../flow/run-state.js'
 import { appendChangeContext } from '../../../../shared/kit.js'
 import {
   driveHandler,
@@ -18,3 +19,36 @@ export const itSendsBackCarryingChangeTo = (get, cases) =>
       )
     }
   )
+
+export const itSendsBackToOverview = (get, { seed = {}, cases } = {}) => {
+  const overviewCases = [
+    ['while the opening run is active', { openingRun: RUN_ACTIVE }],
+    ['on a draft opened from a Change link', { query: { change: '1' } }],
+    ['when opened from the Overview', {}],
+    [
+      'on an amendment opened from a Change link',
+      { amend: true, query: { change: '1' } }
+    ]
+  ]
+
+  return it.each(
+    overviewCases.filter(
+      ([description]) => !cases || cases.includes(description)
+    )
+  )('Should send Back to the Overview %s', async (_description, options) => {
+    const result = await driveHandler(get, { seed, ...options })
+
+    expectBackLinkIsPath(result, hubPath(result.journeyId))
+  })
+}
+
+export const itSendsBackToOverviewOnRefusal = (post, payload, seed = {}) =>
+  it('Should send Back to the Overview on the refused re-render while the opening run is active', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload,
+      openingRun: RUN_ACTIVE
+    })
+
+    expectBackLinkIsPath(result, hubPath(result.journeyId))
+  })

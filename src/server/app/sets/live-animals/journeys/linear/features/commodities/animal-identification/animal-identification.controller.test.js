@@ -20,6 +20,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
+import { itSendsBackToOverview } from '../../../test-support.js'
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 
 import {
@@ -1026,5 +1027,15 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()
     expect(result.after).toEqual(untouchedStruthioAnswers)
+  })
+})
+
+describe(`${SUITE} — the Back link`, () => {
+  setupIdentificationEngine()
+
+  itSendsBackToOverview(getHandler, {
+    seed: {
+      commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+    }
   })
 })

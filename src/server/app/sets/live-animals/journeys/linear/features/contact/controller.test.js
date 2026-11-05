@@ -12,6 +12,10 @@ import {
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import {
+  itSendsBackToOverview,
+  itSendsBackToOverviewOnRefusal
+} from '../../test-support.js'
 import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
@@ -25,6 +29,7 @@ const post = postHandlerOf(contact)
 const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
+const NOT_IN_THE_BOOK = 'not-a-real-contact'
 const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
 const editHrefOf = (journeyId) =>
   `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
@@ -148,7 +153,7 @@ describe('POST contact — invalid payload', () => {
 
   it('Should answer 400 and re-render an out-of-list contact, committing nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { contactAddress: 'not-a-real-contact' }
+      payload: { contactAddress: NOT_IN_THE_BOOK }
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
@@ -159,7 +164,7 @@ describe('POST contact — invalid payload', () => {
   it('Should keep the current contact card on a 400 re-render', async () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
-      payload: { contactAddress: 'not-a-real-contact' }
+      payload: { contactAddress: NOT_IN_THE_BOOK }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -242,4 +247,12 @@ describe('POST contact — recoverable save failure', () => {
       name: HELD_CONTACT.name
     })
   })
+})
+
+describe('contact — Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  itSendsBackToOverview(get)
+
+  itSendsBackToOverviewOnRefusal(post, { contactAddress: NOT_IN_THE_BOOK })
 })
