@@ -56,6 +56,19 @@ export const STRUTHIO_ROW = {
   speciesCommonName: 'Ostriches'
 }
 
+const LABELS_BY_LATIN_NAME = {
+  [BISON_BISON]: 'Bison bison (Bisons Spp)',
+  [BOS_TAURUS]: 'Bos taurus (Cattle or Cow)',
+  [BUBALUS_BUBALIS]: 'Bubalus bubalis (Water Buffalo)',
+  [EQUUS_CABALUS]: 'Equus cabalus (Horse)',
+  [FELIS_CATUS]: 'Felis catus (Domestic Cat)',
+  [CANIS_FAMILIARIS]: 'Canis familiaris (Dog)',
+  [STRUTHIO]: 'Struthio (Ostriches)'
+}
+
+export const labelFor = (speciesLatinName) =>
+  LABELS_BY_LATIN_NAME[speciesLatinName]
+
 export const lineOf = (row, extra = {}) => ({
   ...row,
   numberOfPackages: '',

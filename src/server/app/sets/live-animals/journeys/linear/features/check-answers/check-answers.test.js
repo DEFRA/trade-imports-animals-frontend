@@ -495,6 +495,15 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(rows, TRANSITED_COUNTRIES_KEY)).toBe('France, Belgium')
   })
 
+  it('Should name a transited territory with its parent country', async () => {
+    const rows = rowsOf(
+      await sectionsFor({ ...fullSeed, transitedCountries: ['ES-CN', 'FR'] })
+    )
+    expect(valueOf(rows, TRANSITED_COUNTRIES_KEY)).toBe(
+      'Canary Islands (Spain), France'
+    )
+  })
+
   it('Should expand the commercial transporter in the transport-details card when the type is commercial', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
@@ -1004,7 +1013,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
   })
 
-  it('Should name a subdivision destination country with its parent country', async () => {
+  it('Should name a destination territory with its parent country', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({

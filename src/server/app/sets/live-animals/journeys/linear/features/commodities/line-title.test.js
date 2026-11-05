@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { lineTitle } from './line-title.js'
 
 describe('#lineTitle', () => {
-  it('Should title a line by its code, a dash and the Latin name of its species', () => {
+  it('Should title a line by its code, a dash and the scientific name of its species, leaving out the common name', () => {
     expect(
       lineTitle({
         commodityCode: ' 0102 ',

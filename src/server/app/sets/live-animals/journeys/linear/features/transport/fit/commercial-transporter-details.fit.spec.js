@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
-  answerMeansAndReturnToOverview,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
+  saveAndContinue,
+  saveArrivalByAir,
   signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
@@ -15,17 +16,14 @@ const NORTHERN_IRELAND = 'Northern Ireland'
 const BACK_LINK = '.govuk-back-link'
 const approvalNumberInput = '#approvalNumber'
 
-const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
-
 const openCommercialForm = async (page) => {
-  await answerMeansAndReturnToOverview(page)
+  await saveArrivalByAir(page)
   await page.getByRole('link', { name: 'Transport details' }).click()
   await page.getByRole('button', { name: copy.transporters.add }).click()
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
-  await submit(page)
+  await saveAndContinue(page).click()
   await expect(page.getByRole('heading', { name: form.title })).toBeVisible()
 }
 
@@ -224,7 +222,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await openCommercialForm(page)
     await fillTransporter(page)
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
@@ -239,7 +237,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await openCommercialForm(page)
     await fillTransporter(page)
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await page.goto(journeyUrl(page, 'transporters'))
     // The transporter joined the list on the way through, so it is the row the
@@ -249,7 +247,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
         name: validTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
-    await submit(page)
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
@@ -262,7 +260,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     page
   }) => {
     await openCommercialForm(page)
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
@@ -280,7 +278,7 @@ test.describe('commercial transporter required validations', () => {
       await openCommercialForm(page)
       await fillTransporter(page)
       await page.locator(`#${field}`).fill('')
-      await submit(page)
+      await saveAndContinue(page).click()
 
       const link = errorLink(page, form.errors[error])
       await expect(link).toBeVisible()
@@ -305,7 +303,7 @@ test.describe('commercial transporter format validations', () => {
     }) => {
       await openCommercialForm(page)
       await fillTransporter(page, { ...validTransporter, [field]: invalid })
-      await submit(page)
+      await saveAndContinue(page).click()
 
       const link = errorLink(page, form.errors[error])
       await expect(link).toBeVisible()
@@ -341,7 +339,7 @@ test.describe('commercial transporter form accessibility', () => {
     await openCommercialForm(page)
     await fillTransporter(page)
     await page.locator(approvalNumberInput).fill('')
-    await submit(page)
+    await saveAndContinue(page).click()
 
     await expect(page.locator('.govuk-error-summary')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(

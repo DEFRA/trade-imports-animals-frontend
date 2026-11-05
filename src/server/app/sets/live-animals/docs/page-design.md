@@ -259,6 +259,14 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A search's results are listed in order: the commodity groups by their
   heading, and each group's species by the label they are offered under, over
   the page of results the search returned.
+- A species reads as its scientific name with its common name in round
+  brackets wherever it is listed or named — the search results, the selected
+  panel, Commodity details, the Selected commodities tables and
+  Identification details — and as its scientific name alone where the
+  reference data holds no common name for it. The permanent-address rule and
+  the identifier-column rule read the line's stored scientific name rather
+  than that label, so a species whose common name changes what it reads as
+  still gates the same way.
 - The selected panel offers a removal per chosen species, posting the page
   form with the species' key in the button value so the entry pressed is the
   entry removed however the panel is ordered — the same rule the Transport
@@ -463,6 +471,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The arrival date hint gives a fixed date showing the format, not a date tied
   to the window. The date picker's bounds and the out-of-range error police
   the window.
+- The arrival details page reads the arrival window once per request and hands
+  it to both the date widget and the validator, so the two cannot disagree
+  across midnight. A reading with no widget takes the window as it stands.
 - The port search shows the search placeholder "Select a port" in its empty
   box, in the same words as the select text that is the no-JavaScript list's
   first entry.
@@ -487,6 +498,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   check your answers returns there and not into the journey.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
+- The transit page's browser title is the short task name, "Transit countries",
+  not its question heading, as the design sets it.
 - The transit search's select text, "Select a country", and its empty-box
   text, "Search for a country", differ because the select asks for a choice
   and the box asks for a search.
@@ -496,8 +509,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A stored transit list is checked against the page's own rules on GET, and a
   banner names any country no longer offered before Continue saves the
   filtered list.
-- The transit page offers the origin list, not every code the label lookup
-  resolves: GB has a label for address forms but is not offered here.
+- The transit page offers the same countries and territories as the country of
+  origin page, each territory named with its country, not every code the label
+  lookup resolves: GB has a label for address forms but is not offered here.
 - An empty transit list is a valid answer, because the question is optional. A
   list holding a country not offered is refused: on submit as not from the
   list, on a stored answer as no longer available.

@@ -1,7 +1,7 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { codeAndLatinNameOf } from '../selection/line-key.js'
+import { lineKey } from '../selection/line-key.js'
 import { removeActionFor } from '../selection/remove-action.js'
 import { speciesLabel } from '../../species-label.js'
 import { legendFor } from '../../commodity-legend.js'
@@ -9,28 +9,28 @@ import { removeActionButton } from '../../../../../../../../../common/constants/
 
 const copy = copyFor({ en, cy }).search
 
-const itemFor = (key) => {
-  const label = speciesLabel({ speciesLatinName: codeAndLatinNameOf(key)[1] })
+const itemFor = (row) => {
+  const label = speciesLabel(row)
   return {
     label,
     removeHtml: removeActionButton({
-      action: removeActionFor(key),
+      action: removeActionFor(lineKey(row)),
       text: copy.selected.remove,
       hiddenText: label
     })
   }
 }
 
-const groupsFor = (selected) =>
-  [...Map.groupBy(selected, (key) => codeAndLatinNameOf(key)[0])].map(
-    ([commodityCode, keys]) => ({
+const groupsFor = (rows) =>
+  [...Map.groupBy(rows, (row) => row.commodityCode)].map(
+    ([commodityCode, rowsForCode]) => ({
       legend: legendFor(commodityCode),
-      items: keys.map(itemFor)
+      items: rowsForCode.map(itemFor)
     })
   )
 
-export const selectedSummary = (selected) => ({
-  count: selected.length,
-  heading: copy.selected.heading(selected.length),
-  groups: groupsFor(selected)
+export const selectedSummary = (rows) => ({
+  count: rows.length,
+  heading: copy.selected.heading(rows.length),
+  groups: groupsFor(rows)
 })

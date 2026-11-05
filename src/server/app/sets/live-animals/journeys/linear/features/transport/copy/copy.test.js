@@ -8,8 +8,10 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { transitAppliesSeed } from '../test-support.js'
 
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
+import * as transitCountries from '../transit-countries/transit-countries.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
@@ -192,6 +194,24 @@ describe('transport copy module', () => {
     'Should word the identification lead-in exactly in $language',
     ({ bundle, expected }) => {
       expect(bundle.portOfEntry.identification.hint.lead).toBe(expected)
+    }
+  )
+
+  test.each([
+    {
+      language: 'English',
+      bundle: copy,
+      expected: 'Select a means of transport to the port of entry'
+    },
+    {
+      language: 'Welsh',
+      bundle: copyCy,
+      expected: 'Dewiswch gyfrwng cludo i’r porthladd mynediad'
+    }
+  ])(
+    'Should word the means of transport required error exactly in $language',
+    ({ bundle, expected }) => {
+      expect(bundle.portOfEntry.errors.meansOfTransportRequired).toBe(expected)
     }
   )
 
@@ -397,6 +417,19 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.arrivalDate.hint.text).toBe(
       copy.portOfEntry.arrivalDate.hint
     )
+  })
+})
+
+describe('GET /transit-countries', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  test('Should supply the short task name as the browser title and keep the question as the heading', async () => {
+    const get = transitCountries.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get, { seed: transitAppliesSeed })
+    expect(result.view.context.pageTitle).toBe('Transit countries')
+    expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
   })
 })
 

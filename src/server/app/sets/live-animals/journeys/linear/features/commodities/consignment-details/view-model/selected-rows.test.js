@@ -12,13 +12,14 @@ import {
   FELIS_CATUS,
   FELIS_CATUS_ROW,
   STRUTHIO,
-  STRUTHIO_ROW
+  STRUTHIO_ROW,
+  labelFor
 } from '../../search/test-support.js'
 
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
 
 describe('#buildSelectedRows', () => {
-  it('Should give a code one row keyed to its group index, listing the Latin name of every species under it', () => {
+  it('Should give a code one row keyed to its group index, listing the label of every species under it', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
@@ -30,12 +31,12 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS, BISON_BISON],
+        labels: [labelFor(BOS_TAURUS), labelFor(BISON_BISON)],
         removeAction: 'remove:0'
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
+        labels: [labelFor(STRUTHIO)],
         removeAction: 'remove:1'
       }
     ])
@@ -49,12 +50,12 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '01061900',
-        latinNames: [FELIS_CATUS],
+        labels: [labelFor(FELIS_CATUS)],
         removeAction: REMOVE_FIRST_SPECIES
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
+        labels: [labelFor(STRUTHIO)],
         removeAction: 'remove:1'
       }
     ])
@@ -72,17 +73,17 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS],
+        labels: [labelFor(BOS_TAURUS)],
         removeAction: 'remove:0'
       },
       {
         code: '01061900',
-        latinNames: [CANIS_FAMILIARIS],
+        labels: [labelFor(CANIS_FAMILIARIS)],
         removeAction: 'remove-species:1'
       },
       {
         code: '01061900',
-        latinNames: [FELIS_CATUS],
+        labels: [labelFor(FELIS_CATUS)],
         removeAction: 'remove-species:2'
       }
     ])

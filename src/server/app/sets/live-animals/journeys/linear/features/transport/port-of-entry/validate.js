@@ -16,16 +16,6 @@ import { arrivalWindow } from './arrival-window.js'
 
 const copy = copyFor({ en, cy }).portOfEntry
 
-const TRANSPORT_FIELD_MAX_LENGTH = 58
-
-const portMessage = (stored) =>
-  stored ? copy.errors.portNoLongerAvailable : undefined
-
-const arrivalDateRangeMessage = (stored, dateWindow) =>
-  stored
-    ? copy.errors.arrivalDateNoLongerInWindow
-    : copy.errors.arrivalDateOutOfRange(dateWindow.minText, dateWindow.maxText)
-
 const meansOfTransportRule = (stored) => {
   const codes = transportReference.meansOfTransport()
   return stored
@@ -37,10 +27,19 @@ const meansOfTransportRule = (stored) => {
       )
 }
 
+const portMessage = (stored) =>
+  stored ? copy.errors.portNoLongerAvailable : undefined
+
+const arrivalDateRangeMessage = (stored, dateWindow) =>
+  stored
+    ? copy.errors.arrivalDateNoLongerInWindow
+    : copy.errors.arrivalDateOutOfRange(dateWindow.minText, dateWindow.maxText)
+
 const fields = async (
   _values,
   { dateWindow = arrivalWindow(), stored } = {}
 ) => {
+  const TRANSPORT_FIELD_MAX_LENGTH = 58
   const portCodes = (await ports.list()).map((port) => port.code)
   return compose(
     dateTextInRange('arrivalDateAtPort', {

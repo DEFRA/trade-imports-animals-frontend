@@ -64,11 +64,16 @@ only changes where a valid save goes.
 
 One page's validation is stated once with `pageValidation`, then read against a
 submitted form and against the answers already stored (the task list and the review
-page). The rules and the field set are the same for both, so what counts as a valid
-answer cannot drift. The reading that is running is passed to the rules as `stored`,
-so one broken rule can be worded for each: "Select a port from the list" suits a
-trader who has just mistyped, and not one whose stored port has since closed. Errors
-come back keyed by the page's own field names.
+page). The field set is the same for both readings. The reading that is running is passed
+to each rule as `stored`, so a rule may change its wording or how it treats a blank.
+One broken rule can be worded for each: "Select a port from the list" suits a
+trader who has just mistyped, and not one whose stored port has since closed. A rule
+may also use `stored` to refuse a blank answer on submit, with `requiredOneOf` or
+`requiredDateText`, while accepting it on the stored reading, with `oneOf` or
+`compose()`, so a page with a required answer does not open in error before the
+trader has answered. See
+[`import-reason/validate.js`](../sets/live-animals/journeys/linear/features/import-reason/validate.js)
+for an example. Errors come back keyed by the page's own field names.
 
 [`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
 continue-time gate for configured fields that must be answered before later pages

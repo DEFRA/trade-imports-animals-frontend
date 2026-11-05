@@ -12,7 +12,8 @@ import {
   FELIS_CATUS,
   FELIS_CATUS_ROW,
   STRUTHIO,
-  STRUTHIO_ROW
+  STRUTHIO_ROW,
+  labelFor
 } from '../../search/test-support.js'
 
 describe('#buildSelectedCommodities', () => {
@@ -28,12 +29,12 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS, BISON_BISON],
+        labels: [labelFor(BOS_TAURUS), labelFor(BISON_BISON)],
         animals: '7'
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
+        labels: [labelFor(STRUTHIO)],
         animals: '1'
       }
     ])
@@ -53,7 +54,7 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS],
+        labels: [labelFor(BOS_TAURUS)],
         animals: ''
       }
     ])
@@ -63,10 +64,10 @@ describe('#buildSelectedCommodities', () => {
     expect(
       buildSelectedCommodities(
         commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
-      ).map(({ code, latinNames, animals }) => [code, latinNames, animals])
+      ).map(({ code, labels, animals }) => [code, labels, animals])
     ).toEqual([
-      ['01061900', [CANIS_FAMILIARIS], '1'],
-      ['01061900', [FELIS_CATUS], '4']
+      ['01061900', [labelFor(CANIS_FAMILIARIS)], '1'],
+      ['01061900', [labelFor(FELIS_CATUS)], '4']
     ])
   })
 
@@ -78,7 +79,7 @@ describe('#buildSelectedCommodities', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS, BISON_BISON],
+        labels: [labelFor(BOS_TAURUS), labelFor(BISON_BISON)],
         animals: '2'
       }
     ])

@@ -49,6 +49,7 @@ const render = async (
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
   const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
+  const rowsByKey = knownRowsByKey(current)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -63,7 +64,7 @@ const render = async (
     commodityGroups: groups,
     noResults: isSearchable(query) && groups.length === 0,
     carriedKeys: selected.filter((key) => !onScreen.has(key)),
-    selectedSummary: selectedSummary(selected),
+    selectedSummary: selectedSummary(rowsFor(selected, rowsByKey)),
     errors,
     errorSummary: kit.errorSummary(errors)
   })

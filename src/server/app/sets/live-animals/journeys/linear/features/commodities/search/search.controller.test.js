@@ -28,7 +28,8 @@ import {
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS,
   CANIS_FAMILIARIS_ROW,
-  FELIS_CATUS_ROW
+  FELIS_CATUS_ROW,
+  labelFor
 } from './test-support.js'
 
 const get = search.routes.find((route) => route.method === 'GET').handler
@@ -108,19 +109,27 @@ describe('commodity search', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should group the species a query reaches under their code, each named by its scientific name', async () => {
+  it('Should group the species a query reaches under their code, each named by its label', async () => {
     const result = await searchFor('buffalo')
     expect(groupsOf(result)).toEqual([
       {
         legendHtml: '0102',
         items: [
-          { value: '0102|Bubalus', html: 'Bubalus', checked: false },
           {
-            value: `0102|${BUBALUS_BUBALIS}`,
-            html: BUBALUS_BUBALIS,
+            value: '0102|Bubalus',
+            html: 'Bubalus (water <strong class="govuk-!-font-weight-bold">buffalo</strong>s)',
             checked: false
           },
-          { value: '0102|Syncerus', html: 'Syncerus', checked: false }
+          {
+            value: `0102|${BUBALUS_BUBALIS}`,
+            html: `${BUBALUS_BUBALIS} (Water <strong class="govuk-!-font-weight-bold">Buffalo</strong>)`,
+            checked: false
+          },
+          {
+            value: '0102|Syncerus',
+            html: 'Syncerus (African <strong class="govuk-!-font-weight-bold">Buffalo</strong>es)',
+            checked: false
+          }
         ]
       }
     ])
@@ -133,21 +142,21 @@ describe('commodity search', () => {
     const result = await searchFor('0102')
     expect(legendsOf(result)).toEqual(['0102'])
     expect(textsOf(result)).toEqual([
-      'Bibos spp.',
-      'Bison',
-      'Bison bison',
-      'Bison bonasus',
-      'Bos',
-      'Bos sp.',
-      'Bos taurus',
-      'Bubalus',
-      BUBALUS_BUBALIS,
-      'Elephas maximus',
-      'Loxodonta africana',
-      'Novibos spp.',
-      'Ovibos',
-      'Poephagus spp.',
-      'Syncerus'
+      'Bibos spp. (Cattle)',
+      'Bison (Bison)',
+      'Bison bison (Bisons Spp)',
+      'Bison bonasus (European Bison)',
+      'Bos (Cattle)',
+      'Bos sp. (Cattle)',
+      'Bos taurus (Cattle or Cow)',
+      'Bubalus (water buffalos)',
+      `${BUBALUS_BUBALIS} (Water Buffalo)`,
+      'Elephas maximus (Asian Elephant)',
+      'Loxodonta africana (African elephant)',
+      'Novibos spp. (Cattle)',
+      'Ovibos (Muskoxen)',
+      'Poephagus spp. (Animals)',
+      'Syncerus (African Buffaloes)'
     ])
   })
 
@@ -162,7 +171,7 @@ describe('commodity search', () => {
       .flatMap((group) => group.items)
       .find((item) => item.value === BOS_TAURUS_KEY)
     expect(bosTaurusItem.html).toBe(
-      'Bos <strong class="govuk-!-font-weight-bold">taurus</strong>'
+      'Bos <strong class="govuk-!-font-weight-bold">taurus</strong> (Cattle or Cow)'
     )
   })
 
@@ -175,7 +184,7 @@ describe('commodity search', () => {
   it('Should reach a species by its common name', async () => {
     const result = await searchFor('ferret')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toEqual(['Mustela putorius furo'])
+    expect(textsOf(result)).toEqual(['Mustela putorius furo (Ferret)'])
   })
 
   it('Should say so when a long-enough query matches nothing', async () => {
@@ -306,20 +315,7 @@ describe('commodity search — what has been chosen so far', () => {
   it('Should summarise the stored selection, counted and grouped by code', async () => {
     const result = await driveHandler(get, {
       seed: {
-        commodityLines: [
-          {
-            commodityCode: '0102',
-            speciesLatinName: BOS_TAURUS_ROW.speciesLatinName
-          },
-          {
-            commodityCode: '0102',
-            speciesLatinName: BISON_BISON_ROW.speciesLatinName
-          },
-          {
-            commodityCode: '01061900',
-            speciesLatinName: FELIS_CATUS_ROW.speciesLatinName
-          }
-        ]
+        commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
       }
     })
     expect(result.view.context.selectedSummary).toEqual({
@@ -330,17 +326,17 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '0102',
           items: [
             {
-              label: BISON_BISON_ROW.speciesLatinName,
+              label: labelFor(BISON_BISON_ROW.speciesLatinName),
               removeHtml: removeButtonHtml(
                 BISON_BISON_KEY,
-                BISON_BISON_ROW.speciesLatinName
+                labelFor(BISON_BISON_ROW.speciesLatinName)
               )
             },
             {
-              label: BOS_TAURUS_ROW.speciesLatinName,
+              label: labelFor(BOS_TAURUS_ROW.speciesLatinName),
               removeHtml: removeButtonHtml(
                 BOS_TAURUS_KEY,
-                BOS_TAURUS_ROW.speciesLatinName
+                labelFor(BOS_TAURUS_ROW.speciesLatinName)
               )
             }
           ]
@@ -349,10 +345,10 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '01061900',
           items: [
             {
-              label: FELIS_CATUS_ROW.speciesLatinName,
+              label: labelFor(FELIS_CATUS_ROW.speciesLatinName),
               removeHtml: removeButtonHtml(
                 FELIS_CATUS_KEY,
-                FELIS_CATUS_ROW.speciesLatinName
+                labelFor(FELIS_CATUS_ROW.speciesLatinName)
               )
             }
           ]

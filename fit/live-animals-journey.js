@@ -17,7 +17,8 @@ import {
   CANIS_FAMILIARIS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
-  STRUTHIO_ROW
+  STRUTHIO_ROW,
+  labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
@@ -120,31 +121,31 @@ const documentRight = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().right + window.scrollX)
 
 /**
- * Fails unless the second element has wrapped onto a line below the first and the two end on the
- * same right edge.
+ * Fails unless, once the layout settles, the second element has wrapped onto a line below the
+ * first and the two end on the same right edge.
  *
  * @param {import('@playwright/test').Locator} above - the element on the upper line.
  * @param {import('@playwright/test').Locator} below - the element expected to have wrapped under it.
  * @param {string} subject - names the pair in the failure message.
  */
 export const expectStackedOnSameRightEdge = async (above, below, subject) => {
-  const [aboveBottom, belowTop, aboveRight, belowRight] = [
-    await documentBottom(above),
-    await documentTop(below),
-    await documentRight(above),
-    await documentRight(below)
-  ]
-
-  expect(
-    belowTop,
-    `${subject} share a line, so there is no stacked alignment to check`
-  ).toBeGreaterThanOrEqual(aboveBottom)
+  await expect
+    .poll(
+      async () => (await documentTop(below)) - (await documentBottom(above)),
+      {
+        message: `${subject} share a line, so there is no stacked alignment to check`
+      }
+    )
+    .toBeGreaterThanOrEqual(0)
 
   const edgeTolerancePx = 1
-  expect(
-    Math.abs(belowRight - aboveRight),
-    `${subject} end on different right edges: ${aboveRight} and ${belowRight}`
-  ).toBeLessThanOrEqual(edgeTolerancePx)
+  await expect
+    .poll(
+      async () =>
+        Math.abs((await documentRight(below)) - (await documentRight(above))),
+      { message: `${subject} end on different right edges` }
+    )
+    .toBeLessThanOrEqual(edgeTolerancePx)
 }
 
 /**
@@ -594,7 +595,7 @@ export const searchCommodities = async (page, query) => {
 const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
   page
     .getByRole('group', { name: commodityCode })
-    .getByRole('checkbox', { name: speciesLatinName, exact: true })
+    .getByRole('checkbox', { name: labelFor(speciesLatinName), exact: true })
     .check()
 
 export const selectSpecies = async (page, speciesToSelect) => {
@@ -605,16 +606,17 @@ export const selectSpecies = async (page, speciesToSelect) => {
 }
 
 export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
+  const label = labelFor(speciesLatinName)
   await page
-    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .getByRole('heading', { level: 3, name: label, exact: true })
     .waitFor()
   const speciesHeadings = await page
     .getByRole('heading', { level: 3 })
     .allTextContents()
-  const position = speciesHeadings.indexOf(speciesLatinName)
+  const position = speciesHeadings.indexOf(label)
   if (position === -1) {
     throw new Error(
-      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+      `No "${label}" heading among: ${speciesHeadings.join(', ')}`
     )
   }
   return page
@@ -656,13 +658,16 @@ export const expectSpeciesSelected = async (
   await expect(
     selectedSummary(page)
       .getByRole('listitem')
-      .filter({ hasText: speciesLatinName })
+      .filter({ hasText: labelFor(speciesLatinName) })
   ).toBeVisible()
 }
 
 export const pressSpeciesRemove = (page, { speciesLatinName }) =>
   selectedSummary(page)
-    .getByRole('button', { name: `Remove ${speciesLatinName}`, exact: true })
+    .getByRole('button', {
+      name: `Remove ${labelFor(speciesLatinName)}`,
+      exact: true
+    })
     .click()
 
 export const unlockSections = async (page, chosen = FELIS_CATUS) => {
@@ -850,15 +855,15 @@ export const answerCphNumberFromAddLink = async (page) => {
 
 export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'
 
-export const chooseMeansOfTransport = (page) =>
-  page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(values.meansOfTransport)
+export const chooseMeansOfTransport = (page, meansOfTransport) =>
+  page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
 
 export const answerArrivalDetails = async (page) => {
   await page
     .getByLabel('Arrival date at port of entry')
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePortOfEntry(page)
-  await chooseMeansOfTransport(page)
+  await chooseMeansOfTransport(page, values.meansOfTransport)
   await page
     .getByLabel('Transport identification')
     .fill(values.transportIdentification)
@@ -901,12 +906,47 @@ export const openArrival = async (page) => {
   ).toBeVisible()
 }
 
-export const answerMeansAndReturnToOverview = async (page) => {
+/**
+ * Opens the arrival details page from a fresh notification, chooses the means
+ * of transport, saves and lands on the overview.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveArrivalWithMeans = async (page, meansOfTransport) => {
   await openArrival(page)
-  await chooseMeansOfTransport(page)
+  await chooseMeansAndSave(page, meansOfTransport)
+}
+
+const chooseMeansAndSave = async (page, meansOfTransport) => {
+  await chooseMeansOfTransport(page, meansOfTransport)
   await save(page)
   await expectOverview(page)
 }
+
+/**
+ * Opens the arrival details page at the given address, chooses the means of
+ * transport, saves and lands on the overview.
+ *
+ * @param {import('@playwright/test').Page} page - the page to drive; it need not be the one that opened the notification.
+ * @param {string} arrivalUrl - the address of the arrival details page.
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveMeansOfTransportAt = async (
+  page,
+  arrivalUrl,
+  meansOfTransport
+) => {
+  await page.goto(arrivalUrl)
+  await chooseMeansAndSave(page, meansOfTransport)
+}
+
+/**
+ * Saves the arrival details by air, a means of transport with no transit countries.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const saveArrivalByAir = (page) => saveArrivalWithMeans(page, 'AIRPLANE')
 
 /**
  * Opens the transit countries page from a fresh notification, arriving by road.
@@ -914,7 +954,7 @@ export const answerMeansAndReturnToOverview = async (page) => {
  * @param {import('@playwright/test').Page} page
  */
 export const openTransit = async (page) => {
-  await answerMeansAndReturnToOverview(page)
+  await saveArrivalWithMeans(page, values.meansOfTransport)
   await page
     .getByRole('link', {
       name: hubCopy.rows.transitCountries.title,

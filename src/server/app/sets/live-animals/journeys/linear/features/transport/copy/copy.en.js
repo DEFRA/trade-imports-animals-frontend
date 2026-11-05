@@ -46,12 +46,12 @@ export const copy = {
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
+      meansOfTransportRequired:
+        'Select a means of transport to the port of entry',
       portNoLongerAvailable:
         'The saved port of entry is no longer available. Select a port from the list.',
       arrivalDateNoLongerInWindow:
         'The saved arrival date is no longer a date you can choose. Enter a new arrival date.',
-      meansOfTransportRequired:
-        'Select a means of transport to the port of entry',
       identificationMaxLength:
         'Transport identification must be 58 characters or less',
       documentReferenceMaxLength:
@@ -59,6 +59,7 @@ export const copy = {
     }
   },
   transitCountries: {
+    pageTitle: 'Transit countries',
     title: 'Which countries will the consignment travel through?',
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',

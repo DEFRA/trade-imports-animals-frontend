@@ -21,19 +21,19 @@ import { identificationCardAnchor } from './error-summary.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const overCountTextFor = (cap, species, units) =>
+const overCountTextFor = (cap, label, units) =>
   cap !== null && units > cap
-    ? copy.overCount(cap, species, units, units - cap)
+    ? copy.overCount(cap, label, units, units - cap)
     : null
 
-const animalLabelOf = (species, number) =>
-  species ? copy.animalRowNamed(species, number) : copy.animalRow(number)
+const animalLabelOf = (label, number) =>
+  label ? copy.animalRowNamed(label, number) : copy.animalRow(number)
 
-const unitEntries = (index, species, columns, units) =>
+const unitEntries = (index, label, columns, units) =>
   units.map((unit, unitIndex) => ({
     line: index,
     unitIndex,
-    label: animalLabelOf(species, unitIndex + 1),
+    label: animalLabelOf(label, unitIndex + 1),
     cells: columns.map(([id]) => identifierCellText(unit, id)),
     removeAria: copy.removeRowAria(unitIndex + 1)
   }))
@@ -93,22 +93,23 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const units = entry.animalIdentifiers ?? []
   const cap = identifierCapOf(answers, index)
   const atCap = isAtCap(cap, units.length)
-  const species = speciesLabel(entry)
+  const scientificName = entry.speciesLatinName
+  const label = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(commodityCode, species)
-  const columns = identifierColumns(commodityCode, species)
-  const unitRows = unitEntries(index, species, columns, units)
+  const showAddress = permanentAddressApplies(commodityCode, scientificName)
+  const columns = identifierColumns(commodityCode, scientificName)
+  const unitRows = unitEntries(index, label, columns, units)
   return {
     index,
     anchor: identificationCardAnchor(index),
-    title: species,
+    title: label,
     changeCountHref,
-    counter: atCap ? null : copy.counter(species, units.length + 1, cap),
-    overCountText: overCountTextFor(cap, species, units.length),
+    counter: atCap ? null : copy.counter(label, units.length + 1, cap),
+    overCountText: overCountTextFor(cap, label, units.length),
     saveButtonText: atCap ? null : saveButtonTextFor(cap, units.length),
     savedAnimalsTable: savedAnimalsTableOf(
-      columns.map(([, label]) => label),
+      columns.map(([, columnLabel]) => columnLabel),
       unitRows
     ),
     hasUnits: units.length > 0,

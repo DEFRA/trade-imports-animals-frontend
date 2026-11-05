@@ -22,9 +22,15 @@ import { consignmentDetailsPage } from '../page.js'
 import * as consignmentDetails from './consignment-details.controller.js'
 import {
   BISON_BISON,
+  BISON_BISON_ROW,
   BOS_TAURUS,
+  BOS_TAURUS_ROW,
   CANIS_FAMILIARIS,
-  FELIS_CATUS
+  CANIS_FAMILIARIS_ROW,
+  FELIS_CATUS,
+  FELIS_CATUS_ROW,
+  labelFor,
+  lineOf
 } from '../search/test-support.js'
 
 const post = postHandlerOf(consignmentDetails)
@@ -50,20 +56,14 @@ const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
 const COMMODITIES_SLUG = 'commodities'
 
+const blankCattlePairLines = () => [
+  lineOf(BOS_TAURUS_ROW),
+  lineOf(BISON_BISON_ROW)
+]
+
 const seedLines = () => ({
   commodityLines: [
-    {
-      commodityCode: '0102',
-      speciesLatinName: BOS_TAURUS,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    },
-    {
-      commodityCode: '0102',
-      speciesLatinName: BISON_BISON,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    },
+    ...blankCattlePairLines(),
     {
       commodityCode: '01063300',
       speciesLatinName: 'Struthio',
@@ -74,30 +74,9 @@ const seedLines = () => ({
 
 const seedPerSpeciesLines = () => ({
   commodityLines: [
-    {
-      commodityCode: '0102',
-      speciesLatinName: BOS_TAURUS,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    },
-    {
-      commodityCode: '0102',
-      speciesLatinName: BISON_BISON,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    },
-    {
-      commodityCode: '01061900',
-      speciesLatinName: CANIS_FAMILIARIS,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    },
-    {
-      commodityCode: '01061900',
-      speciesLatinName: FELIS_CATUS,
-      numberOfPackages: '',
-      numberOfAnimalsQuantity: ''
-    }
+    ...blankCattlePairLines(),
+    lineOf(CANIS_FAMILIARIS_ROW),
+    lineOf(FELIS_CATUS_ROW)
   ]
 })
 
@@ -249,9 +228,9 @@ describe('#consignmentDetailsController — per-species quantities over every li
       ['0102', '0102'],
       ['01063300', '01063300']
     ])
-    expect(groups[0].lines.map((line) => line.latinName)).toEqual([
-      BOS_TAURUS,
-      BISON_BISON
+    expect(groups[0].lines.map((line) => line.label)).toEqual([
+      labelFor(BOS_TAURUS),
+      labelFor(BISON_BISON)
     ])
     expect(groups[0].showPackages).toBe(true)
     expect(groups[1].showPackages).toBe(false)
@@ -376,15 +355,15 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
   it('Should list each chosen species on code 01061900 as its own row, and every other code as one row', async () => {
     const { selectedRows } = await contextOf(seedPerSpeciesLines())
     expect(
-      selectedRows.map(({ code, latinNames, removeAction }) => [
+      selectedRows.map(({ code, labels, removeAction }) => [
         code,
-        latinNames,
+        labels,
         removeAction
       ])
     ).toEqual([
-      ['0102', [BOS_TAURUS, BISON_BISON], 'remove:0'],
-      ['01061900', [CANIS_FAMILIARIS], 'remove-species:2'],
-      ['01061900', [FELIS_CATUS], 'remove-species:3']
+      ['0102', [labelFor(BOS_TAURUS), labelFor(BISON_BISON)], 'remove:0'],
+      ['01061900', [labelFor(CANIS_FAMILIARIS)], 'remove-species:2'],
+      ['01061900', [labelFor(FELIS_CATUS)], 'remove-species:3']
     ])
   })
 

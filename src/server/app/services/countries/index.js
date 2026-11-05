@@ -90,11 +90,6 @@ export const countryDisplayLabel = async (code) => {
   return (await originLabel(code)) ?? code
 }
 
-export const originCountries = async () => {
-  await ensureLoaded()
-  return Object.entries(labels).map(([value, text]) => ({ value, text }))
-}
-
 /**
  * @returns {Promise<{ value: string, text: string }[]>}
  */

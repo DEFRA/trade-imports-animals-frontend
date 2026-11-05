@@ -5,7 +5,7 @@ import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
 
 export const groupLine = ({ index, entry }, values, errors) => ({
   index,
-  latinName: speciesLabel(entry),
+  label: speciesLabel(entry),
   animalsField: animalsField(index),
   packagesField: packagesField(index),
   animalsValue: values[animalsField(index)] ?? '',

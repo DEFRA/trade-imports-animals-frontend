@@ -20,6 +20,7 @@ import {
 import { copy } from '../copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
+import { labelFor } from '../search/test-support.js'
 
 const FIRST_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-0'
 const FIRST_ANIMALS_QUANTITY_INPUT = `#${FIRST_ANIMALS_QUANTITY_FIELD}`
@@ -28,8 +29,8 @@ const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
-const REMOVE_BOS_TAURUS = `Remove ${BOS_TAURUS.commodityCode} ${BOS_TAURUS.speciesLatinName}`
-const REMOVE_FELIS_CATUS = `Remove ${FELIS_CATUS.commodityCode} ${FELIS_CATUS.speciesLatinName}`
+const REMOVE_BOS_TAURUS = `Remove ${BOS_TAURUS.commodityCode} ${labelFor(BOS_TAURUS.speciesLatinName)}`
+const REMOVE_FELIS_CATUS = `Remove ${FELIS_CATUS.commodityCode} ${labelFor(FELIS_CATUS.speciesLatinName)}`
 
 const selectedCommoditiesTable = (page) =>
   page.getByRole('table', { name: copy.selectedCommodities.caption })
@@ -78,15 +79,17 @@ test.describe('commodity consignment details — rendering and validation', () =
     ])
     await expect(
       table.getByRole('row', { name: new RegExp(BOS_TAURUS.commodityCode) })
-    ).toContainText(BOS_TAURUS.speciesLatinName)
+    ).toContainText(labelFor(BOS_TAURUS.speciesLatinName))
     await expect(
       table.getByRole('row', { name: new RegExp(FELIS_CATUS.commodityCode) })
-    ).toContainText(FELIS_CATUS.speciesLatinName)
+    ).toContainText(labelFor(FELIS_CATUS.speciesLatinName))
     await expect(
-      page.getByRole('heading', { name: BOS_TAURUS.speciesLatinName })
+      page.getByRole('heading', { name: labelFor(BOS_TAURUS.speciesLatinName) })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: FELIS_CATUS.speciesLatinName })
+      page.getByRole('heading', {
+        name: labelFor(FELIS_CATUS.speciesLatinName)
+      })
     ).toBeVisible()
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
@@ -112,7 +115,7 @@ test.describe('commodity consignment details — rendering and validation', () =
       })
     ).toHaveClass(/govuk-heading-l/)
     await expect(
-      page.getByRole('heading', { name: BOS_TAURUS.speciesLatinName })
+      page.getByRole('heading', { name: labelFor(BOS_TAURUS.speciesLatinName) })
     ).toHaveClass(/govuk-heading-m/)
     await expect(
       page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
@@ -212,7 +215,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     expect(rule.y).toBeLessThan(secondCommodityHeading.y)
   })
 
-  test('lists every Latin name chosen under a commodity in its Species cell', async ({
+  test('lists every species label chosen under a commodity in its Species cell', async ({
     page
   }) => {
     await page
@@ -229,7 +232,7 @@ test.describe('commodity consignment details — rendering and validation', () =
       .filter({ has: page.getByRole('cell', { name: '0102', exact: true }) })
     const speciesCell = codeRow.getByRole('cell').nth(1)
     expect(await speciesCell.evaluate((el) => el.innerText)).toBe(
-      `${BISON_BISON.speciesLatinName},\n${BOS_TAURUS.speciesLatinName}`
+      `${labelFor(BISON_BISON.speciesLatinName)},\n${labelFor(BOS_TAURUS.speciesLatinName)}`
     )
   })
 
@@ -274,8 +277,8 @@ test.describe('commodity consignment details — package-count scope', () => {
     page
   }) => {
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
-      BOS_TAURUS.speciesLatinName,
-      STRUTHIO.speciesLatinName
+      labelFor(BOS_TAURUS.speciesLatinName),
+      labelFor(STRUTHIO.speciesLatinName)
     ])
     await expect(
       page.locator(
@@ -315,9 +318,17 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await page.getByRole('button', { name: REMOVE_FELIS_CATUS }).click()
 
-    await expect(selectedCommoditiesTable(page)).not.toContainText(
-      FELIS_CATUS.speciesLatinName
-    )
+    const table = selectedCommoditiesTable(page)
+    await expect(table.getByRole('row')).toHaveCount(2)
+    await expect(
+      table.getByRole('cell', { name: '0102', exact: true })
+    ).toBeVisible()
+    await expect(
+      table.getByRole('cell', {
+        name: labelFor(BOS_TAURUS.speciesLatinName),
+        exact: true
+      })
+    ).toBeVisible()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
 
@@ -330,8 +341,19 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
 
     const table = selectedCommoditiesTable(page)
-    await expect(table).not.toContainText(BOS_TAURUS.speciesLatinName)
-    await expect(table).toContainText(FELIS_CATUS.speciesLatinName)
+    await expect(table.getByRole('row')).toHaveCount(2)
+    await expect(
+      table.getByRole('cell', {
+        name: FELIS_CATUS.commodityCode,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      table.getByRole('cell', {
+        name: labelFor(FELIS_CATUS.speciesLatinName),
+        exact: true
+      })
+    ).toBeVisible()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
   })
 
@@ -368,7 +390,7 @@ test.describe('commodity consignment details — persistence and accessibility',
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
     await expect(selectedCommoditiesTable(page)).toContainText(
-      CANIS_FAMILIARIS.speciesLatinName
+      labelFor(CANIS_FAMILIARIS.speciesLatinName)
     )
     await expect(await numberOfAnimalsFor(page, BOS_TAURUS)).toHaveValue('25')
     await expect(await numberOfAnimalsFor(page, CANIS_FAMILIARIS)).toHaveValue(

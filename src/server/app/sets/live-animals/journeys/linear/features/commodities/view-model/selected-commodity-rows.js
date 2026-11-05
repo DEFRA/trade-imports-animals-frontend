@@ -10,11 +10,11 @@ import { escapeHtml } from '../../../../../../../shared/escape-html.js'
 import { speciesLabel } from '../species-label.js'
 import { buildCommodityGroups } from './commodity-groups.js'
 
-const latinNameOf = ({ entry }) => speciesLabel(entry)
+const labelOf = ({ entry }) => speciesLabel(entry)
 
 const commodityRow = ({ index, code, lines }) => ({
   code,
-  latinNames: lines.map(latinNameOf),
+  labels: lines.map(labelOf),
   lines,
   groupIndex: index,
   perSpecies: false
@@ -23,7 +23,7 @@ const commodityRow = ({ index, code, lines }) => ({
 const speciesRows = ({ index, code, lines }) =>
   lines.map((line) => ({
     code,
-    latinNames: [latinNameOf(line)],
+    labels: [labelOf(line)],
     lines: [line],
     groupIndex: index,
     perSpecies: true
@@ -36,11 +36,11 @@ export const buildSelectedCommodityRows = (lines) =>
       : [commodityRow(group)]
   )
 
-const speciesHtml = (latinNames) => latinNames.map(escapeHtml).join(',<br>')
+const speciesHtml = (labels) => labels.map(escapeHtml).join(',<br>')
 
-const selectedCommodityCells = ({ code, latinNames }) => [
+const selectedCommodityCells = ({ code, labels }) => [
   wrappingCell({ text: code }),
-  wrappingCell({ html: speciesHtml(latinNames) })
+  wrappingCell({ html: speciesHtml(labels) })
 ]
 
 export const buildSelectedCommoditiesTable = (rows, headings) => ({
@@ -50,7 +50,7 @@ export const buildSelectedCommoditiesTable = (rows, headings) => ({
   rows: rows.map(selectedCommodityCells)
 })
 
-const rowLabel = ({ code, latinNames }) => `${code} ${latinNames.join(', ')}`
+const rowLabel = ({ code, labels }) => `${code} ${labels.join(', ')}`
 
 const changeLink = (row, copy, changeHref) => {
   const hiddenName = visuallyHiddenText(` ${rowLabel(row)}`)
