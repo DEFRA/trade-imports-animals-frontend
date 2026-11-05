@@ -8,24 +8,16 @@ const env = process.env.NODE_ENV
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const fourHoursMs = 14400000
-const oneWeekMs = 604800000
 
 const isProduction = env === 'production'
 const isTest = env === 'test'
 const isDevelopment = env === 'development'
 const isLocal = isDevelopment || isTest
-const isPlatform = !isLocal // Deployed to CDP platform
-
-const authCookieSameSite = 'Lax'
-const csrfEnabled = !isTest
 
 convict.addFormats(convictFormatWithValidator)
 
 const STRICT_BOOLEAN = 'strict-boolean'
 
-// convict's built-in Boolean format coerces any string other than 'false' to
-// true, so a typo like 'flase' would silently enable the flag; this format
-// only accepts a real boolean or the literal 'true'/'false' string.
 convict.addFormat({
   name: STRICT_BOOLEAN,
   validate(val) {
@@ -67,7 +59,7 @@ export const config = convict({
   staticCacheTimeout: {
     doc: 'Static cache timeout in milliseconds',
     format: Number,
-    default: oneWeekMs,
+    default: 7 * 24 * 60 * 60 * 1000,
     env: 'STATIC_CACHE_TIMEOUT'
   },
   serviceName: {
@@ -181,16 +173,16 @@ export const config = convict({
         format: STRICT_BOOLEAN,
         default: isProduction,
         env: 'SESSION_COOKIE_SECURE'
-      },
-      sameSite: {
-        doc: 'SameSite attribute for Bell OAuth state cookie',
-        format: ['Strict', 'Lax', 'None'],
-        default: authCookieSameSite,
-        env: 'AUTH_COOKIE_SAME_SITE'
       }
     }
   },
   defraId: {
+    stateCookieSameSite: {
+      doc: 'SameSite attribute of the Bell state cookie set during Defra ID sign-in',
+      format: ['Strict', 'Lax', 'None'],
+      default: 'Lax',
+      env: 'DEFRA_ID_STATE_COOKIE_SAME_SITE'
+    },
     oidcDiscoveryUrl: {
       doc: 'Defra ID OIDC well-known configuration URL',
       format: String,
@@ -339,13 +331,13 @@ export const config = convict({
     enabled: {
       doc: 'Enable CSRF protection (disabled during test runs)',
       format: Boolean,
-      default: csrfEnabled
+      default: !isTest
     },
     cookie: {
       secure: {
         doc: 'Set secure flag on CSRF cookie',
         format: Boolean,
-        default: isPlatform
+        default: !isLocal
       }
     }
   },
@@ -378,7 +370,7 @@ export const config = convict({
       enabled: {
         doc: 'Write one EMF document per page request with its backend calls and session resolutions',
         format: STRICT_BOOLEAN,
-        default: isPlatform,
+        default: !isLocal,
         env: 'CALL_COUNTS_METRICS_ENABLED'
       }
     }

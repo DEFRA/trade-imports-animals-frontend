@@ -215,6 +215,15 @@ DEFRA_ID_SERVICE_ID=aeaa0a80-15f3-48b2-8bd7-0e02874b3d32
 DEFRA_ID_POLICY=b2c_1a_cui_cpdev_signupsigninsfi
 ```
 
+### Cookie SameSite settings
+
+| Cookie                       | SameSite         | Set by                                                            |
+| ---------------------------- | ---------------- | ----------------------------------------------------------------- |
+| Session cookie               | `Strict`         | fixed in the auth plugin                                          |
+| Defra ID (Bell) state cookie | `Lax` by default | `DEFRA_ID_STATE_COOKIE_SAME_SITE` (`defraId.stateCookieSameSite`) |
+
+The Defra ID callback is a cross-site, top-level navigation. A `Strict` state cookie is not sent on it, so sign-in fails.
+
 ## Docker
 
 ### Development image

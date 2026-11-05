@@ -12,26 +12,15 @@ export const authPlugin = {
   plugin: {
     name: 'auth-plugin',
     register: async (server) => {
-      // Cookie is a built-in authentication strategy for hapi.js that authenticates users based on a session cookie
-      // Used for all non-Defra Identity routes
-      // Lax policy required to allow redirection after Defra Identity sign out
       server.auth.strategy('session', 'cookie', getCookieOptions())
-
-      // Set the default authentication strategy to session
-      // All routes will require authentication unless explicitly set to 'defra-id' or `auth: false`
       server.auth.default('session')
 
-      // In stub mode, skip Bell/Defra ID entirely - stub-sign-in.js writes
-      // a session directly instead. Auth is still enforced everywhere else.
       if (isStubMode()) {
         return
       }
 
       const oidcConfig = await getOidcConfigWithRetry(server.logger)
 
-      // Bell is a third-party plugin that provides a common interface for OAuth 2.0 authentication
-      // Used to authenticate users with Defra Identity and a pre-requisite for the Cookie authentication strategy
-      // Also used for changing organisations and signing out
       server.auth.strategy('defra-id', 'bell', getBellOptions(oidcConfig))
     }
   }
@@ -48,9 +37,6 @@ function getBellOptions(oidcConfig) {
       scope: ['openid', 'offline_access', config.get('defraId.clientId')],
       profile: function (credentials, _params, _get) {
         const payload = Jwt.token.decode(credentials.token).decoded.payload
-
-        // Map all JWT properties to the credentials object so it can be stored in the session
-        // Add some additional properties to the profile object for convenience
         credentials.profile = {
           ...payload,
           crn: payload.contactId,
@@ -63,14 +49,9 @@ function getBellOptions(oidcConfig) {
     clientSecret: config.get('defraId.clientSecret'),
     password: config.get('session.cookie.password'),
     isSecure: config.get('isProduction'),
-    // OAuth/OIDC redirects back from the identity provider are top-level navigations.
-    // `SameSite=Strict` can prevent the Bell nonce cookie from being sent on callback,
-    // which causes Bell auth to return `isAuthenticated: false`.
-    isSameSite: config.get('session.cookie.sameSite'),
+    isSameSite: config.get('defraId.stateCookieSameSite'),
     location: function (request) {
-      // If request includes a redirect query parameter, store it in the session to allow redirection after authentication
       if (request.query.redirect) {
-        // Ensure redirect is a relative path to prevent redirect attacks
         const safeRedirect = getSafeRedirect(request.query.redirect)
         request.yar.set('redirect', safeRedirect)
       }
@@ -84,10 +65,8 @@ function getBellOptions(oidcConfig) {
         response_mode: 'query'
       }
 
-      // If user intends to switch organisation, force Defra Identity to display the organisation selection screen
       if (request.path === '/auth/organisation') {
         params.forceReselection = true
-        // If user has already selected an organisation in another service, pass the organisation Id to force Defra Id to skip the organisation selection screen
         if (request.query.organisationId) {
           params.relationshipId = request.query.organisationId
         }
@@ -104,7 +83,8 @@ function getCookieOptions() {
       name: config.get('auth.cookieName'),
       password: config.get('session.cookie.password'),
       path: '/',
-      isSecure: config.get('isProduction')
+      isSecure: config.get('isProduction'),
+      isSameSite: 'Strict'
     },
     redirectTo: function (request) {
       const target = `${request.url.pathname}${request.url.search}`
@@ -114,16 +94,14 @@ function getCookieOptions() {
       countSessionResolution(request)
       const userSession = await request.server.app.cache.get(session.sessionId)
 
-      // If session does not exist, return an invalid session
       if (!userSession) {
         return { isValid: false }
       }
 
-      // Verify Defra Identity token has not expired
       try {
         const decoded = Jwt.token.decode(userSession.token)
-        // Allow 60 second tolerance for clock skew between servers
-        Jwt.token.verifyTime(decoded, { timeSkewSec: 60 })
+        const clockSkewToleranceSec = 60
+        Jwt.token.verifyTime(decoded, { timeSkewSec: clockSkewToleranceSec })
       } catch {
         if (!config.get('defraId.refreshTokens')) {
           return { isValid: false }
@@ -139,8 +117,6 @@ function getCookieOptions() {
         }
       }
 
-      // Set the user's details on the request object and allow the request to continue
-      // Depending on the service, additional checks can be performed here before returning `isValid: true`
       return { isValid: true, credentials: userSession }
     }
   }

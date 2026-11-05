@@ -73,28 +73,30 @@ describe('auth plugin', () => {
     logger: { warn: vi.fn() }
   })
 
+  const configValues = {
+    'defraId.clientId': 'test-client-id',
+    'defraId.clientSecret': 'test-client-secret',
+    'session.cookie.password': 'some-password-32-chars-long-000000',
+    'auth.cookieName': AUTH_COOKIE_NAME,
+    isProduction: false,
+    'defraId.stateCookieSameSite': 'Lax',
+    'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
+    'defraId.serviceId': 'service-123',
+    'defraId.policy': 'policy-abc',
+    'defraId.refreshTokens': true
+  }
+
+  const stubConfig = (overrides = {}) => {
+    const values = { ...configValues, ...overrides }
+    configGetMock.mockImplementation((key) => values[key])
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
 
     isStubModeMock.mockReturnValue(false)
     getOidcConfigWithRetryMock.mockResolvedValue(oidcConfig)
-
-    configGetMock.mockImplementation((key) => {
-      const map = {
-        'defraId.clientId': 'test-client-id',
-        'defraId.clientSecret': 'test-client-secret',
-        'session.cookie.password': 'some-password-32-chars-long-000000',
-        'auth.cookieName': AUTH_COOKIE_NAME,
-        isProduction: false,
-        'session.cookie.sameSite': 'Lax',
-        'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
-        'defraId.serviceId': 'service-123',
-        'defraId.policy': 'policy-abc',
-        'defraId.refreshTokens': true
-      }
-
-      return map[key]
-    })
+    stubConfig()
   })
 
   test('register registers Bell + cookie strategies and sets default auth to session', async () => {
@@ -136,11 +138,6 @@ describe('auth plugin', () => {
   })
 
   test('register skips Bell and the OIDC fetch in stub mode, still enforcing session auth', async () => {
-    // Stub mode replaces the Defra ID round-trip, not authentication itself:
-    // stub-sign-in.js writes the session that the cookie strategy then checks,
-    // so the strategy and the default must still be in place. Reaching for the
-    // OIDC config would also fail outright — there is no identity provider
-    // configured in the environments stub mode is meant for.
     isStubModeMock.mockReturnValue(true)
     const server = buildServer()
 
@@ -180,6 +177,12 @@ describe('auth plugin', () => {
     expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
       expect.any(Number)
     )
+  })
+
+  test('getBellOptions sets the configured SameSite on the Bell state cookie', () => {
+    stubConfig({ 'defraId.stateCookieSameSite': 'Strict' })
+
+    expect(getBellOptions(oidcConfig).isSameSite).toBe('Strict')
   })
 
   test('getBellOptions.location stores safe redirect and returns redirectUrl', () => {
@@ -299,6 +302,10 @@ describe('auth plugin', () => {
 
     test('uses the configured auth cookie name', () => {
       expect(getCookieOptions().cookie.name).toBe(AUTH_COOKIE_NAME)
+    })
+
+    test('sets SameSite Strict on the session cookie', () => {
+      expect(getCookieOptions().cookie.isSameSite).toBe('Strict')
     })
 
     test('redirectTo builds /auth/sign-in redirect including pathname and search', () => {
@@ -476,23 +483,7 @@ describe('auth plugin', () => {
     })
 
     test('validate returns isValid:false when verification fails and refreshTokens disabled', async () => {
-      configGetMock.mockImplementation((key) => {
-        if (key === 'defraId.refreshTokens') return false
-
-        const map = {
-          'defraId.clientId': 'test-client-id',
-          'defraId.clientSecret': 'test-client-secret',
-          'session.cookie.password': 'some-password-32-chars-long-000000',
-          isProduction: false,
-          'session.cookie.sameSite': 'Lax',
-          'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
-          'defraId.serviceId': 'service-123',
-          'defraId.policy': 'policy-abc',
-          'defraId.refreshTokens': false
-        }
-
-        return map[key]
-      })
+      stubConfig({ 'defraId.refreshTokens': false })
 
       const options = getCookieOptions()
       const userSession = {

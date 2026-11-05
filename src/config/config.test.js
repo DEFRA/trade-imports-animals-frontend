@@ -165,6 +165,30 @@ describe('#config', () => {
       expect(freshConfig.get('auth.cookieName')).toBe('custom-sid')
     })
   })
+
+  describe('defraId.stateCookieSameSite', () => {
+    beforeEach(() => {
+      vi.resetModules()
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    test('defaults to Lax', async () => {
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('defraId.stateCookieSameSite')).toBe('Lax')
+    })
+
+    test('reads DEFRA_ID_STATE_COOKIE_SAME_SITE as the state cookie SameSite', async () => {
+      vi.stubEnv('DEFRA_ID_STATE_COOKIE_SAME_SITE', 'Strict')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('defraId.stateCookieSameSite')).toBe('Strict')
+    })
+  })
 })
 
 describe('config URL validation', () => {
