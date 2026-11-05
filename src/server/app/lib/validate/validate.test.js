@@ -189,7 +189,7 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     expect(validate(schema, { itemSelector: SELECTOR_ALPHA }).errors).toBeNull()
   })
 
-  it('Should block blank and missing values — unlike composing requiredText with oneOf', () => {
+  it('Should block blank and missing values on a requiredOneOf field', () => {
     expect(validate(schema, { itemSelector: '' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
     })
@@ -198,9 +198,27 @@ describe('#requiredOneOf — save-blocking value domain', () => {
     })
   })
 
-  it('Should reject a value outside the domain', () => {
+  it('Should reject a value outside the domain with the same message when only one is given', () => {
     expect(validate(schema, { itemSelector: 'gold-plated' }).errors).toEqual({
       itemSelector: SELECTOR_REQUIRED_MESSAGE
+    })
+  })
+
+  it('Should use separate required and only messages when both are given', () => {
+    const dual = requiredOneOf(
+      'itemSelector',
+      [SELECTOR_ALPHA, SELECTOR_BRAVO],
+      {
+        required: 'Pick one',
+        only: 'Not in list'
+      }
+    )
+
+    expect(validate(dual, { itemSelector: '' }).errors).toEqual({
+      itemSelector: 'Pick one'
+    })
+    expect(validate(dual, { itemSelector: 'gold-plated' }).errors).toEqual({
+      itemSelector: 'Not in list'
     })
   })
 

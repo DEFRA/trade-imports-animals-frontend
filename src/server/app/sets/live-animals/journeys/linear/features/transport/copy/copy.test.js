@@ -8,16 +8,15 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { transitAppliesSeed } from '../test-support.js'
 
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
+import * as transitCountries from '../transit-countries/transit-countries.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
-
-const SAMPLE_ADDRESS = '1 Farm Lane, Kent'
-const SAMPLE_APPROVAL_NUMBER = 'GB-01'
 
 describe('transport copy module', () => {
   test('Should have a non-empty string (or string-returning function) at every leaf', () => {
@@ -195,6 +194,24 @@ describe('transport copy module', () => {
     }
   )
 
+  test.each([
+    {
+      language: 'English',
+      bundle: copy,
+      expected: 'Select a means of transport to the port of entry'
+    },
+    {
+      language: 'Welsh',
+      bundle: copyCy,
+      expected: 'Dewiswch gyfrwng cludo i’r porthladd mynediad'
+    }
+  ])(
+    'Should word the means of transport required error exactly in $language',
+    ({ bundle, expected }) => {
+      expect(bundle.portOfEntry.errors.meansOfTransportRequired).toBe(expected)
+    }
+  )
+
   test('Should end the arrival date hint with the shared date example in both languages', () => {
     expect(
       copy.portOfEntry.arrivalDate.hint.endsWith(sharedEn.dateExample)
@@ -214,12 +231,6 @@ describe('transport copy module', () => {
 })
 
 describe('transport copy module — transporter pages', () => {
-  test('Should interpolate transportersSelect.optionHint', () => {
-    expect(
-      copy.transportersSelect.optionHint(SAMPLE_ADDRESS, SAMPLE_APPROVAL_NUMBER)
-    ).toBe('1 Farm Lane, Kent — approval number GB-01')
-  })
-
   test('Should head every column of the transporter list in English and Welsh', () => {
     expect(copy.transporters.table).toEqual({
       selectHidden: 'Select',
@@ -397,6 +408,19 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.arrivalDate.hint.text).toBe(
       copy.portOfEntry.arrivalDate.hint
     )
+  })
+})
+
+describe('GET /transit-countries', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  test('Should supply the short task name as the browser title and keep the question as the heading', async () => {
+    const get = transitCountries.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get, { seed: transitAppliesSeed })
+    expect(result.view.context.pageTitle).toBe('Transit countries')
+    expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
   })
 })
 

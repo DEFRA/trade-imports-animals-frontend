@@ -47,6 +47,7 @@ export const copy = {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
+      meansOfTransportRequired: 'Dewiswch gyfrwng cludo i’r porthladd mynediad',
       portNoLongerAvailable:
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       arrivalDateNoLongerInWindow:
@@ -58,6 +59,7 @@ export const copy = {
     }
   },
   transitCountries: {
+    pageTitle: 'Gwledydd tramwy',
     title: 'Drwy ba wledydd y bydd y llwyth yn teithio?',
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
@@ -156,15 +158,6 @@ export const copy = {
         text: 'Masnachol',
         hint: 'Dim ond cludwr masnachol o Ogledd Iwerddon y gall hwn fod.'
       }
-    }
-  },
-  transportersSelect: {
-    title: 'Chwilio am gludwr masnachol cymeradwy',
-    hint: 'Mae dewis cludwr yn copïo eu henw, eu cyfeiriad a’u rhif cymeradwyo i’r hysbysiad hwn.',
-    optionHint: (address, approvalNumber) =>
-      `${address} — rhif cymeradwyo ${approvalNumber}`,
-    errors: {
-      transporterRequired: 'Dewiswch gludwr o’r rhestr'
     }
   },
   commercialTransporterDetails: {

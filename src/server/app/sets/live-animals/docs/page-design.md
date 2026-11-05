@@ -52,7 +52,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
   leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter add, select and details pages.
+  and the transporter add and details pages.
 - While a notification is being amended, a page ends with "Save and return"
   (back to the review) and "Save and continue" (on, never back to the review)
   side by side, then a secondary "Save and return to overview" button on its
@@ -134,8 +134,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Origin of the import
 
-- The country is checked only against the list, not required, so a trader can
-  save what they know and return.
+- The country is required on save and continue. An empty answer is refused with
+  **Select a country of origin**; a typed value not in the list is refused with
+  **Select a country from the list**. A saved country the reference data no
+  longer offers is refused on submit with its own message.
 - The list names a territory with its country, "Canary Islands (Spain)", and
   is sorted by the name shown.
 - With JavaScript the region code box shows the country's code as a fixed
@@ -447,6 +449,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The arrival date hint gives a fixed date showing the format, not a date tied
   to the window. The date picker's bounds and the out-of-range error police
   the window.
+- The arrival details page reads the arrival window once per request and hands
+  it to both the date widget and the validator, so the two cannot disagree
+  across midnight. A reading with no widget takes the window as it stands.
 - The port search shows the search placeholder "Select a port" in its empty
   box, in the same words as the select text that is the no-JavaScript list's
   first entry.
@@ -471,6 +476,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   check your answers returns there and not into the journey.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
+- The transit page's browser title is the short task name, "Transit countries",
+  not its question heading, as the design sets it.
 - The transit search's select text, "Select a country", and its empty-box
   text, "Search for a country", differ because the select asks for a choice
   and the box asks for a search.
@@ -480,8 +487,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A stored transit list is checked against the page's own rules on GET, and a
   banner names any country no longer offered before Continue saves the
   filtered list.
-- The transit page offers the origin list, not every code the label lookup
-  resolves: GB has a label for address forms but is not offered here.
+- The transit page offers the same countries and territories as the country of
+  origin page, each territory named with its country, not every code the label
+  lookup resolves: GB has a label for address forms but is not offered here.
 - An empty transit list is a valid answer, because the question is optional. A
   list holding a country not offered is refused: on submit as not from the
   list, on a stored answer as no longer available.
