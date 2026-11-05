@@ -396,17 +396,6 @@ describe('dashboard row actions', () => {
     })
   })
 
-  it('Should expose the copy success banner only after a copy redirect', async () => {
-    const ordinary = await renderList()
-    const copied = await renderList({ query: { copied: '1' } })
-
-    expect(ordinary.successBanner).toBeNull()
-    expect(copied.successBanner).toEqual({
-      titleText: sharedEn.notificationActions.copy.successTitle,
-      text: sharedEn.notificationActions.copy.successBody
-    })
-  })
-
   it('Should expose the amend-refused banner only after a refused-amend redirect', async () => {
     const ordinary = await renderList()
     const refused = await renderList({ query: { amendRefused: '1' } })

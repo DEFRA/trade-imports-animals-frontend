@@ -47,21 +47,12 @@ const parseReferenceNumber = (value) => {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
-const succeededAction = (query) => {
-  if (query?.deleted === '1') {
-    return sharedCopy.notificationActions.delete
-  }
-  if (query?.copied === '1') {
-    return sharedCopy.notificationActions.copy
-  }
-  return null
-}
-
 const successBannerFor = (query) => {
-  const action = succeededAction(query)
-  return action
-    ? { titleText: action.successTitle, text: action.successBody }
-    : null
+  if (query?.deleted !== '1') {
+    return null
+  }
+  const { successTitle, successBody } = sharedCopy.notificationActions.delete
+  return { titleText: successTitle, text: successBody }
 }
 
 export const renderDashboard = async (
