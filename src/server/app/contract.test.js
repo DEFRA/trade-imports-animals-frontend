@@ -15,6 +15,7 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import {
+  transitAppliesSeed,
   typedInCommercialTransporterPayload,
   typedInPrivateTransporterPayload
 } from './sets/live-animals/journeys/linear/features/transport/test-support.js'
@@ -127,7 +128,7 @@ const cases = [
     id: 'transit-countries',
     collects: transitCountries.meta.collects,
     handler: postHandlerOf(transitCountries),
-    seed: { meansOfTransport: 'ROAD_VEHICLE' },
+    seed: transitAppliesSeed,
     payload: { transitedCountries: ['FR', 'BE'] }
   },
   {

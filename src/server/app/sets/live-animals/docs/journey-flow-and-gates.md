@@ -90,7 +90,11 @@ That puts the cost on the pages, not the hub: a page behind a row has to render
 and save sensibly when nothing else has been answered. Where there is genuinely
 nothing to ask yet the page says so itself — the consignment-details page
 ([`consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
-redirects to the commodity question when the notification holds no line.
+redirects to the commodity question when the notification holds no line, and
+the transit countries page
+([`transit-countries.controller.js`](../journeys/linear/features/transport/transit-countries/transit-countries.controller.js))
+sends a load or any submit to the overview, saving nothing, when the means of
+transport leaves transit countries out of scope.
 
 ## Opening run and entry guard
 

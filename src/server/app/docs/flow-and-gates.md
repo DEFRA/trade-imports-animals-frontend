@@ -67,6 +67,13 @@ who has answered nothing else — the live-animals
 sends a user to the commodity question when the notification holds no commodity
 line.
 
+A conditional row (`conditional: true` in the set's task rows) is different:
+the hub leaves it out while it does not apply or while none of its pages passes
+its gate, so Overview never links to a page the flow would turn away. The
+live-animals transit countries row stays off Overview until rail or road is
+saved and a country of origin and a commodity are answered, matching the
+transit countries page's own redirect.
+
 [`src/server/app/flow/section-status.js`](../flow/section-status.js) calculates
 section status from dispatch ownership. Submit readiness is the conjunction of the
 configured task-row statuses: fulfilled, not applicable and optional rows are

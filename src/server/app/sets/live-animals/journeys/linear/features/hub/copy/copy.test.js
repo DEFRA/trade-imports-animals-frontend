@@ -12,6 +12,7 @@ import {
   journeyRequest
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { transitAppliesSeedWithout } from '../../transport/test-support.js'
 import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 import { dashboardPath, pagePath } from '../../../../../../../shared/paths.js'
 
@@ -51,6 +52,7 @@ const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
 const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
+const IDENTIFICATION_ROW_TITLE = 'Identification details'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
 const ADDRESSES_ROW_HINT =
@@ -74,7 +76,7 @@ const UNLOCKED_ROW_TITLES_BY_GROUP = [
   [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
   [
     CONSIGNMENT_DETAILS_ROW_TITLE,
-    'Identification details',
+    IDENTIFICATION_ROW_TITLE,
     'Additional details'
   ],
   [ARRIVAL_ROW_TITLE, 'Transport details'],
@@ -291,7 +293,7 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual(
       COMPLETE_STATUS
     )
-    const identificationRow = rowByTitle(context, 'Identification details')
+    const identificationRow = rowByTitle(context, IDENTIFICATION_ROW_TITLE)
     expect(identificationRow.status).toEqual(TO_DO_STATUS)
     expect(identificationRow.href).toBe(
       pagePath(context.journeyId, 'commodities/identification')
@@ -314,6 +316,30 @@ describe('#hubHandler', () => {
       pagePath(byRoad.journeyId, 'transit-countries')
     )
     expect(transitRow.status).toEqual(TO_DO_STATUS)
+  })
+
+  it.each([
+    ['ROAD_VEHICLE', 'countryOfOrigin'],
+    ['ROAD_VEHICLE', 'commodityLines'],
+    ['RAILWAY', 'countryOfOrigin'],
+    ['RAILWAY', 'commodityLines']
+  ])(
+    'Should hide the transit row for %s while %s is not answered',
+    async (meansOfTransport, unanswered) => {
+      const context = await renderHub(
+        transitAppliesSeedWithout(unanswered, { meansOfTransport })
+      )
+      expect(rowByTitle(context, TRANSIT_ROW_TITLE)).toBeUndefined()
+      expect(rowByTitle(context, ARRIVAL_ROW_TITLE)).toBeDefined()
+    }
+  )
+
+  it('Should hide the identification row while no country of origin is saved', async () => {
+    const withoutOrigin = { ...twoIdentifiedSpeciesSeed }
+    delete withoutOrigin.countryOfOrigin
+    const context = await renderHub(withoutOrigin)
+    expect(rowByTitle(context, IDENTIFICATION_ROW_TITLE)).toBeUndefined()
+    expect(rowByTitle(context, COMMODITIES_ROW_TITLE)).toBeDefined()
   })
 
   it('Should tag the optional documents row "To do" like any other unfinished row', async () => {

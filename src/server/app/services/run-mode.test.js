@@ -70,7 +70,9 @@ describe('countries service — stub mode', () => {
     switchToStubMode()
     const countries = await import('./countries/index.js')
     expect(await countries.originLabel('AT')).toBe('Austria')
-    expect(await countries.originCountries()).toContainEqual({
+    expect(
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
+    ).toContainEqual({
       value: 'AT',
       text: 'Austria'
     })
@@ -119,9 +121,9 @@ describe('countries service — real mode', () => {
 
     expect(await countries.originLabel('ZZ')).toBe('Zedland')
     expect(await countries.originLabel('AT')).toBeUndefined()
-    expect(await countries.originCountries()).toEqual([
-      { value: 'ZZ', text: 'Zedland' }
-    ])
+    expect(
+      await countries.countryAndSubdivisionOptionsNamedWithCountry()
+    ).toEqual([{ value: 'ZZ', text: 'Zedland' }])
     expect(await countries.addressCountries()).toEqual([
       'United Kingdom',
       'Zedland'
@@ -179,7 +181,7 @@ describe('countries service — real mode', () => {
     const countries = await import('./countries/index.js')
 
     await countries.originLabel('ZZ')
-    await countries.originCountries()
+    await countries.countryAndSubdivisionOptionsNamedWithCountry()
     await countries.addressCountries()
     await countries.countryCodeOf('Zedland')
 
