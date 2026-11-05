@@ -13,6 +13,8 @@ import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
+import { itSendsBackCarryingChangeTo } from '../../test-support.js'
+import { commoditiesPage } from '../commodities/page.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -619,7 +621,7 @@ describe('import-reason — the Back link', () => {
 
   it('Should go Back to What are you importing? while the opening run is on', async () => {
     const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
-    expectBackLinkIsPage(result, 'commodities')
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
   it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
@@ -629,11 +631,24 @@ describe('import-reason — the Back link', () => {
       openingRun: RUN_ACTIVE
     })
     expect(result.response.statusCode).toBe(400)
-    expectBackLinkIsPage(result, 'commodities')
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
   it('Should go Back to the overview when the page is opened from the overview', async () => {
     const result = await driveHandler(get, { seed })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  itSendsBackCarryingChangeTo(get, [
+    ['What are you importing?', seed, commoditiesPage.slug]
+  ])
+
+  it('Should go Back to the overview when the page is opened from a Change link while amending', async () => {
+    const result = await driveHandler(get, {
+      seed,
+      query: { change: '1' },
+      amend: true
+    })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 })

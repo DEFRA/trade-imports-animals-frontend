@@ -276,15 +276,13 @@ describe('GET addresses — change context', () => {
     ).toBe(pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG))
   })
 
-  it('Should point Back at check your answers under change context', async () => {
+  it('Should point Back at the Overview, not the review, on a draft opened from a Change link', async () => {
     const result = await driveAddresses({}, { change: '1' })
 
-    expect(result.view.context.backLink).toBe(
-      pagePath(result.journeyId, CYA_SLUG)
-    )
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 
-  it('Should point Back at the task list, never the review, while amending', async () => {
+  it('Should point Back at the Overview, never the review, while amending', async () => {
     const { journeyId, view } = await driveHandler(getAddresses, {
       query: { change: '1' },
       amend: true
@@ -293,7 +291,7 @@ describe('GET addresses — change context', () => {
     expect(view.context.backLink).toBe(hubPath(journeyId))
   })
 
-  it('Should point Back at the task list when not changing', async () => {
+  it('Should point Back at the Overview when not changing', async () => {
     const result = await driveAddresses({})
 
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))

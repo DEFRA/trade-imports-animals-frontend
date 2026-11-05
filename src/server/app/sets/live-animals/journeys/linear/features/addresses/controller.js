@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -72,18 +72,17 @@ const sections = (request, journeyId, answers, scope, parties) => [
     : [])
 ]
 
-const backLinkOf = (request, journey) =>
-  kit.changeContext(request) && journey.status !== state.AMEND
-    ? pagePath(journey.journeyId, kit.CYA_SLUG)
-    : hubPath(journey.journeyId)
-
 const get = async (request, h) => {
   const { journey, answers, scope } = await state.get(request, h)
   const parties = await partiesFromStoredAnswers(answers)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
-      backLink: backLinkOf(request, journey),
+      backLink: await kit.runBackLink(request, page.id, {
+        journey,
+        scope,
+        answers
+      }),
       journey,
       page,
       successBanner: takeAddedAddressBanner(request, h)

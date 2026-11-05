@@ -103,7 +103,8 @@ shows no status strip still passes `journey`, with `showJourneyStrip: false`.
 Pass `page` so the section caption renders. The normal back link is
 `hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
 back link from `kit.runBackLink()`, which opens the previous run step while the
-run is active and falls back to the overview when the run is over or no named
+run is active, and on a draft opened from a review Change link, where it carries
+change context. It falls back to the overview otherwise, or when no named
 earlier step applies. A page that returns to the review rather than the
 overview says so to the same helper, with its `returnsToReview` option,
 rather than building its own target.
@@ -347,7 +348,14 @@ set-up in the test file:
     nested
   - `journeyRequest`, `stubH`, `recordingH` and `recordingLogger` build the
     request, toolkit and logger
-  - `expectBackLinkIsPage` asserts the Back link is a page of the journey
+  - `expectBackLinkIsPage` asserts the Back link is a page of the journey, and
+    `expectBackLinkIsPath` asserts it is a given path, such as a page carrying
+    change context
+  - `itSendsBackCarryingChangeTo`, from
+    [`journeys/linear/test-support.js`](../journeys/linear/test-support.js),
+    registers the test that a page opened from a Change link on a draft sends
+    Back to a given page carrying change context; it takes the GET handler and
+    a list of cases, each a description, a seed and the previous page's slug
   - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line

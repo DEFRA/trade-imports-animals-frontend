@@ -357,8 +357,11 @@ export const purgeTestJourney = async () => {
 export const getHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'GET').handler
 
+export const expectBackLinkIsPath = (result, path) =>
+  expect(result.view.context.backLink).toBe(path)
+
 export const expectBackLinkIsPage = (result, slug) =>
-  expect(result.view.context.backLink).toBe(pagePath(result.journeyId, slug))
+  expectBackLinkIsPath(result, pagePath(result.journeyId, slug))
 
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler

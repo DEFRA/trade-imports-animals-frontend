@@ -17,7 +17,8 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { consignmentDetailsPage } from '../page.js'
+import { itSendsBackCarryingChangeTo } from '../../../test-support.js'
+import { commoditiesPage, consignmentDetailsPage } from '../page.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
 import {
@@ -48,7 +49,6 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
-const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
   commodityLines: [
@@ -286,7 +286,7 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       payload: { action: 'remove:0' }
     })
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, COMMODITIES_SLUG)
+      pagePath(result.journeyId, commoditiesPage.slug)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -300,7 +300,7 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       seed: { commodityLines: [] }
     })
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
+      redirect: pagePath(result.journeyId, commoditiesPage.slug)
     })
     expect(result.view).toBeUndefined()
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -314,7 +314,7 @@ describe('#consignmentDetailsController — remove and empty-selection redirects
       query: { change: '1' }
     })
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
+      redirect: `${pagePath(result.journeyId, commoditiesPage.slug)}?change=1`
     })
     expectRedirectedToCommodityQuestionLogged(result, {
       reason: 'no-commodities-on-load'
@@ -442,7 +442,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       payload: { action: 'remove-species:0' }
     })
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, COMMODITIES_SLUG)
+      pagePath(result.journeyId, commoditiesPage.slug)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -607,7 +607,7 @@ describe('#consignmentDetailsController — Add another commodity', () => {
       seed: seedLines()
     })
     expect(result.view.context.addHref).toBe(
-      `${pagePath(result.journeyId, COMMODITIES_SLUG)}?return=${consignmentDetailsPage.slug}`
+      `${pagePath(result.journeyId, commoditiesPage.slug)}?return=${consignmentDetailsPage.slug}`
     )
   })
 })
@@ -632,7 +632,7 @@ describe('#consignmentDetailsController — the Back link', () => {
       seed,
       openingRun: RUN_ACTIVE
     })
-    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
   it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
@@ -644,7 +644,7 @@ describe('#consignmentDetailsController — the Back link', () => {
     expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
       ANIMALS_REQUIRED_MESSAGE
     )
-    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
   it('Should go Back to the overview when the page is opened from the overview', async () => {
@@ -653,4 +653,8 @@ describe('#consignmentDetailsController — the Back link', () => {
     })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
+
+  itSendsBackCarryingChangeTo(pageGetHandlerOf(consignmentDetails), [
+    ['What are you importing?', seed, commoditiesPage.slug]
+  ])
 })

@@ -16,6 +16,7 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import { itSendsBackCarryingChangeTo } from '../../../test-support.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
 import {
@@ -559,6 +560,7 @@ describe('GET transit-countries', () => {
 })
 
 describe('transit-countries — the Back link', () => {
+  const ARRIVAL_DETAILS_SLUG = 'port-of-entry'
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should go Back to the arrival details while the opening run is on', async () => {
@@ -566,7 +568,7 @@ describe('transit-countries — the Back link', () => {
       seed,
       openingRun: RUN_ACTIVE
     })
-    expectBackLinkIsPage(result, 'port-of-entry')
+    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
 
   it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
@@ -575,13 +577,17 @@ describe('transit-countries — the Back link', () => {
       payload: { action: 'add', transitedCountry: 'FR' },
       openingRun: RUN_ACTIVE
     })
-    expectBackLinkIsPage(result, 'port-of-entry')
+    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
 
   it('Should go Back to the overview when the page is opened from the overview', async () => {
     const result = await driveHandler(get, { seed })
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
+
+  itSendsBackCarryingChangeTo(get, [
+    ['the arrival details', seed, ARRIVAL_DETAILS_SLUG]
+  ])
 })
 
 describe('transit-countries — when the page gate does not pass', () => {

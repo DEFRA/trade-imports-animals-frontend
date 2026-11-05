@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectBackLinkIsPath,
   expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
@@ -477,6 +478,15 @@ describe('GET /origin — where Back goes', () => {
     const result = await driveHandler(get, { seed: answer })
 
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should send Back to the overview for a committed answer on a draft opened from a Change link', async () => {
+    const result = await driveHandler(get, {
+      seed: answer,
+      query: { change: '1' }
+    })
+
+    expectBackLinkIsPath(result, hubPath(result.journeyId))
   })
 
   it('Should send Back to the dashboard for a notification with no answer and no opening run', async () => {

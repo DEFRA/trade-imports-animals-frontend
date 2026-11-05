@@ -87,9 +87,11 @@ create), through the injected session port. `openingRunBeganAtStartEntry`
 answers whether the active run began at the start entry. The journey supplies
 `nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
 the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
-`previousRunTarget` while the opening run is active, and with the overview
-otherwise, or when no named earlier step applies. `previousRunTarget` receives the step id, the notification's scope and
-answers, and the journey id.
+`previousRunTarget` while the opening run is active. On a draft notification
+whose request carries change context, it answers with `previousRunTarget` with
+change context appended. Otherwise it answers with the overview, or the review
+when `returnsToReview` applies. `previousRunTarget` receives the step id, the
+notification's scope and answers, and the journey id.
 
 A page can declare, through `kit.runBackLink()`'s `returnsToReview` option,
 that it returns to the review rather than the overview. For such a page, a

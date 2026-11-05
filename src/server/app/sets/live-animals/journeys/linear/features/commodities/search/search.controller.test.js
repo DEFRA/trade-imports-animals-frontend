@@ -11,6 +11,8 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itSendsBackCarryingChangeTo } from '../../../test-support.js'
+import { originPage } from '../../origin/page.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
@@ -657,4 +659,8 @@ describe('commodity search — the Back link', () => {
       `${pagePath(result.journeyId, consignmentDetailsPage.slug)}?change=1`
     )
   })
+
+  itSendsBackCarryingChangeTo(get, [
+    ['the origin of the import', undefined, originPage.slug]
+  ])
 })
