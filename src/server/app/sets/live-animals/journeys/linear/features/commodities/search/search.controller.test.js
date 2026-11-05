@@ -27,8 +27,8 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS,
-  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
   labelFor
 } from './test-support.js'
 
@@ -117,7 +117,7 @@ describe('commodity search', () => {
         items: [
           {
             value: '0102|Bubalus',
-            html: 'Bubalus (water <strong class="govuk-!-font-weight-bold">buffalo</strong>s)',
+            html: 'Bubalus (Water <strong class="govuk-!-font-weight-bold">Buffalo</strong>es)',
             checked: false
           },
           {
@@ -144,12 +144,12 @@ describe('commodity search', () => {
     expect(textsOf(result)).toEqual([
       'Bibos spp. (Cattle)',
       'Bison (Bison)',
-      'Bison bison (Bisons Spp)',
+      'Bison bison (American Bison)',
       'Bison bonasus (European Bison)',
       'Bos (Cattle)',
       'Bos sp. (Cattle)',
-      'Bos taurus (Cattle or Cow)',
-      'Bubalus (water buffalos)',
+      'Bos taurus (Domestic Cattle)',
+      'Bubalus (Water Buffaloes)',
       `${BUBALUS_BUBALIS} (Water Buffalo)`,
       'Elephas maximus (Asian Elephant)',
       'Loxodonta africana (African elephant)',
@@ -171,20 +171,28 @@ describe('commodity search', () => {
       .flatMap((group) => group.items)
       .find((item) => item.value === BOS_TAURUS_KEY)
     expect(bosTaurusItem.html).toBe(
-      'Bos <strong class="govuk-!-font-weight-bold">taurus</strong> (Cattle or Cow)'
+      'Bos <strong class="govuk-!-font-weight-bold">taurus</strong> (Domestic Cattle)'
     )
   })
 
   it('Should list no more than a hundred species for one search', async () => {
-    const result = await searchFor('01061900')
-    expect(legendsOf(result)).toEqual(['01061900'])
+    const result = await searchFor('0106')
+    expect(legendsOf(result)).toEqual([
+      '01061410',
+      '01061490',
+      '01061900',
+      '01063980'
+    ])
     expect(textsOf(result)).toHaveLength(100)
   })
 
   it('Should reach a species by its common name', async () => {
     const result = await searchFor('ferret')
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(textsOf(result)).toEqual(['Mustela putorius furo (Ferret)'])
+    expect(textsOf(result)).toEqual([
+      'Mustela putorius furo (Ferret)',
+      'Mustela spp. (Weasels (including ermines, polecats, ferrets, and related species))'
+    ])
   })
 
   it('Should say so when a long-enough query matches nothing', async () => {
@@ -192,6 +200,10 @@ describe('commodity search', () => {
     expect(groupsOf(result)).toEqual([])
     expect(result.view.context.noResults).toBe(true)
   })
+})
+
+describe('commodity search — carried and stored search rows', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should tick a result the trader has already chosen', async () => {
     const bubalis = {
@@ -253,6 +265,12 @@ describe('commodity search', () => {
     expect(storedSearchRowsOf(result)).toEqual([
       BOS_TAURUS_ROW,
       BISON_BISON_ROW,
+      {
+        commodityCode: '01061900',
+        speciesLatinName: 'Mustela spp.',
+        speciesCommonName:
+          'Weasels (including ermines, polecats, ferrets, and related species)'
+      },
       {
         commodityCode: '01061900',
         speciesLatinName: 'Mustela putorius furo',
@@ -468,13 +486,18 @@ describe('commodity search — saving the selection', () => {
         containsUnweanedAnimals: 'yes',
         commodityLines: [BOS_TAURUS_ROW]
       },
-      payload: { species: [FELIS_CATUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
-      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW, CANIS_FAMILIARIS_ROW)
+      payload: {
+        species: [FELIS_CATUS_KEY, lineKey(MUSTELA_PUTORIUS_FURO_ROW)]
+      },
+      flowOnly: searchRowsShownEarlier(
+        FELIS_CATUS_ROW,
+        MUSTELA_PUTORIUS_FURO_ROW
+      )
     })
     expect('containsUnweanedAnimals' in result.after).toBe(false)
     expect(keysOf(result.after.commodityLines)).toEqual([
-      lineKey(CANIS_FAMILIARIS_ROW),
-      FELIS_CATUS_KEY
+      FELIS_CATUS_KEY,
+      lineKey(MUSTELA_PUTORIUS_FURO_ROW)
     ])
   })
 
@@ -559,13 +582,15 @@ describe('commodity search — saving the selection', () => {
           }
         ]
       },
-      payload: { species: [BOS_TAURUS_KEY, lineKey(CANIS_FAMILIARIS_ROW)] },
-      flowOnly: searchRowsShownEarlier(CANIS_FAMILIARIS_ROW)
+      payload: {
+        species: [BOS_TAURUS_KEY, lineKey(MUSTELA_PUTORIUS_FURO_ROW)]
+      },
+      flowOnly: searchRowsShownEarlier(MUSTELA_PUTORIUS_FURO_ROW)
     })
     expect(result.after.commodityLines).toEqual([
       { ...kept, numberOfAnimalsQuantity: 25 },
       {
-        ...CANIS_FAMILIARIS_ROW,
+        ...MUSTELA_PUTORIUS_FURO_ROW,
         commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
@@ -575,8 +600,8 @@ describe('commodity search — saving the selection', () => {
 
   it('Should save a species with no common name without a speciesCommonName key', async () => {
     const unnamedRow = {
-      commodityCode: '01061900',
-      speciesLatinName: 'Carnivora excluding Canis familiaris',
+      commodityCode: '01062000',
+      speciesLatinName: 'Otra Testudinata',
       speciesCommonName: null
     }
     const result = await driveHandler(post, {
@@ -585,8 +610,8 @@ describe('commodity search — saving the selection', () => {
     })
     expect(result.after.commodityLines).toStrictEqual([
       {
-        commodityCode: '01061900',
-        speciesLatinName: 'Carnivora excluding Canis familiaris',
+        commodityCode: '01062000',
+        speciesLatinName: 'Otra Testudinata',
         commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''

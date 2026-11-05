@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
-  CANIS_FAMILIARIS,
   FELIS_CATUS,
+  MUSTELA_PUTORIUS_FURO,
   STRUTHIO,
   saveAndContinue,
   numberOfAnimalsFor,
@@ -384,18 +384,18 @@ test.describe('commodity consignment details — persistence and accessibility',
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
     await expectSpeciesSelected(page, BOS_TAURUS)
-    await selectSpecies(page, [CANIS_FAMILIARIS])
+    await selectSpecies(page, [MUSTELA_PUTORIUS_FURO])
     await saveAndContinue(page).click()
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
     await expect(selectedCommoditiesTable(page)).toContainText(
-      labelFor(CANIS_FAMILIARIS.speciesLatinName)
+      labelFor(MUSTELA_PUTORIUS_FURO.speciesLatinName)
     )
     await expect(await numberOfAnimalsFor(page, BOS_TAURUS)).toHaveValue('25')
-    await expect(await numberOfAnimalsFor(page, CANIS_FAMILIARIS)).toHaveValue(
-      ''
-    )
+    await expect(
+      await numberOfAnimalsFor(page, MUSTELA_PUTORIUS_FURO)
+    ).toHaveValue('')
     await expect(await numberOfAnimalsFor(page, FELIS_CATUS)).toHaveValue('2')
   })
 

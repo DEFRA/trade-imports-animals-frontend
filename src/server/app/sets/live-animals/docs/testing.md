@@ -42,9 +42,9 @@ live-animals helper uses
 
 - `selectSpecies` takes a stored-line shape and ticks the box, inside the
   group for its commodity code, named by the label the page offers that
-  species under. A species can sit under several codes (`Bos taurus` is under
-  `0102` and `01061900`), so the code is part of the choice and the result
-  order never decides it.
+  species under. A species can sit under several codes (`Gallus gallus` is
+  under `01051111` and `01059400`), so the code is part of the choice and the
+  result order never decides it.
 - The shared species rows (`BOS_TAURUS_ROW`, `FELIS_CATUS_ROW` and so on) live in
   `features/commodities/search/test-support.js`, carrying the scientific name
   and the common name the stub serves; `fit/live-animals-journey.js` imports and
@@ -69,8 +69,8 @@ live-animals helper uses
   details fills it.
 - The means of transport is save-blocking, so a driver that reaches past
   arrival details chooses one.
-- Dogs are identified by microchip in law, so a chip number on its own is enough
-  to save a dog.
+- Ferrets are identified by microchip in law, so a chip number on its own is
+  enough to save a ferret.
 
 ## Type-ahead style tests
 

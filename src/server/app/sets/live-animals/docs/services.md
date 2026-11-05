@@ -55,14 +55,18 @@ so generic notification-mapper code does not import the set.
 - MDM supplies the CN codes and the species under them, but no rules, so the
   rules live in [`rules.js`](../services/commodities/rules.js). A rule keyed by
   a Latin name matches MDM's spelling exactly: if MDM corrects a spelling, the
-  rule stops matching and has to follow it.
+  rule stops matching until it is confirmed against MDM and corrected to
+  follow it. Whether the domestic dog's entry below still needs that
+  correction is an open question, not resolved here.
 - `PERMANENT_ADDRESS_SPECIES` gates on the code and the species together, as
   above. `01061900` holds the domestic cats, dogs and ferrets that need one
   alongside many mammals that do not, and MDM lists one species under several
   codes, so neither the code nor the species alone is enough. The genus Felis
-  (MDM's "Cat") is not listed. `Canis familiaris` (MDM's dog) is listed for the
-  permanent-address gate. `Canis lupus familiaris` is not listed — MDM does not
-  hold that spelling.
+  (MDM's "Cat") is not listed. The rule lists `Felis catus`, `Canis familiaris`
+  and `Mustela putorius furo`; the captured MDM data the stub serves reaches
+  the gate with `Felis catus` and `Mustela putorius furo` only — it holds no
+  `Canis familiaris` spelling. `Canis lupus familiaris` is not listed either —
+  MDM does not hold that spelling.
 - The package-count list is the live animals data-fields specification's
   number-of-packages commodities that MDM's live-animal data holds. Where the
   specification named an entry by animal, the whole code is on the list. It
@@ -91,10 +95,16 @@ so generic notification-mapper code does not import the set.
   commodity-heading then species-label order, and the selected panel offers a
   removal per chosen species.
 - The stub reads
-  [`_capture/fixtures/commodities.json`](../../../services/_capture/fixtures/commodities.json),
-  which `npm run capture:live-animals` refreshes from reference-data: every
-  species the `010` search lists, grouped by code. The stub does not rank
-  matches as MDM does; it lists them in data order.
+  [`_capture/fixtures/commodities.json`](../../../services/_capture/fixtures/commodities.json):
+  every species the stub's own saved `010` search lists, grouped by code.
+  `npm run capture:live-animals` cannot refresh this one fixture by itself:
+  reference-data answers at most a hundred species for one search and the
+  stub answers only the first page it is asked for, so a run of the script
+  against the stack collects only the first hundred species and would delete
+  the rest of the file. Until reference-data or the stub can answer a whole
+  species list in one request, the fixture is derived by hand from the stub's
+  saved MDM response rather than captured through the running stack. The stub
+  does not rank matches as MDM does; it lists them in data order.
 - The species check at submission reads a renamed species as a removed one:
   the old name is no longer listed under its code.
 

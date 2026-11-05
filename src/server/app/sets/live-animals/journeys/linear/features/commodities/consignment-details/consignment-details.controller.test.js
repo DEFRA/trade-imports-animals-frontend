@@ -25,10 +25,10 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO,
+  MUSTELA_PUTORIUS_FURO_ROW,
   labelFor,
   lineOf
 } from '../search/test-support.js'
@@ -75,7 +75,7 @@ const seedLines = () => ({
 const seedPerSpeciesLines = () => ({
   commodityLines: [
     ...blankCattlePairLines(),
-    lineOf(CANIS_FAMILIARIS_ROW),
+    lineOf(MUSTELA_PUTORIUS_FURO_ROW),
     lineOf(FELIS_CATUS_ROW)
   ]
 })
@@ -90,7 +90,7 @@ const seedTwoSpeciesOfOneCommodity = () => ({
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: CANIS_FAMILIARIS,
+      speciesLatinName: MUSTELA_PUTORIUS_FURO,
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '7'
     },
@@ -362,7 +362,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       ])
     ).toEqual([
       ['0102', [labelFor(BOS_TAURUS), labelFor(BISON_BISON)], 'remove:0'],
-      ['01061900', [labelFor(CANIS_FAMILIARIS)], 'remove-species:2'],
+      ['01061900', [labelFor(MUSTELA_PUTORIUS_FURO)], 'remove-species:2'],
       ['01061900', [labelFor(FELIS_CATUS)], 'remove-species:3']
     ])
   })
@@ -412,7 +412,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         commodityLines: [
           {
             commodityCode: '01061900',
-            speciesLatinName: CANIS_FAMILIARIS,
+            speciesLatinName: MUSTELA_PUTORIUS_FURO,
             numberOfPackages: '3',
             numberOfAnimalsQuantity: '7'
           }

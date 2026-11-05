@@ -119,8 +119,8 @@
         "line1": "Bison bison"
       },
       "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-        "line0": "Cattle or Cow",
-        "line1": "Bisons Spp"
+        "line0": "Domestic Cattle",
+        "line1": "American Bison"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 2,
@@ -290,8 +290,8 @@
           "line1": "Bison bison"
         },
         "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-          "line0": "Cattle or Cow",
-          "line1": "Bisons Spp"
+          "line0": "Domestic Cattle",
+          "line1": "American Bison"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 2,
@@ -716,7 +716,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
-          "speciesCommonName": "Cattle or Cow",
+          "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 2,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -743,7 +743,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bison bison",
-          "speciesCommonName": "Bisons Spp",
+          "speciesCommonName": "American Bison",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -885,7 +885,7 @@
             {
               "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Cattle or Cow",
+              "commonName": "Domestic Cattle",
               "noOfAnimals": "2",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -913,7 +913,7 @@
             {
               "value": "Bison bison",
               "text": "Bison bison",
-              "commonName": "Bisons Spp",
+              "commonName": "American Bison",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK000000000001",
@@ -1427,7 +1427,7 @@
         "line0": "Bos taurus"
       },
       "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-        "line0": "Cattle or Cow"
+        "line0": "Domestic Cattle"
       },
       "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
         "line0": 1
@@ -1453,7 +1453,7 @@
           "line0": "Bos taurus"
         },
         "c8824345-0a1a-421d-8f35-f932fa1874f7": {
-          "line0": "Cattle or Cow"
+          "line0": "Domestic Cattle"
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "line0": 1
@@ -1716,7 +1716,7 @@
           "commodityCode": "0102",
           "commodityType": "16",
           "speciesLatinName": "Bos taurus",
-          "speciesCommonName": "Cattle or Cow",
+          "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
           "animalIdentifiers": [
@@ -1742,7 +1742,7 @@
             {
               "value": "Bos taurus",
               "text": "Bos taurus",
-              "commonName": "Cattle or Cow",
+              "commonName": "Domestic Cattle",
               "noOfAnimals": "1",
               "noOfPackages": "1",
               "earTag": "UK123456789012",
@@ -1768,7 +1768,7 @@
         "line0": "2"
       },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-        "line0": "Struthio"
+        "line0": "Struthio spp."
       },
       "c8824345-0a1a-421d-8f35-f932fa1874f7": {
         "line0": "Ostriches"
@@ -1793,7 +1793,7 @@
           "line0": "2"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
-          "line0": "Struthio"
+          "line0": "Struthio spp."
         },
         "c8824345-0a1a-421d-8f35-f932fa1874f7": {
           "line0": "Ostriches"
@@ -2028,7 +2028,7 @@
         {
           "commodityCode": "01063300",
           "commodityType": "2",
-          "speciesLatinName": "Struthio",
+          "speciesLatinName": "Struthio spp.",
           "speciesCommonName": "Ostriches",
           "numberOfAnimalsQuantity": 1,
           "numberOfPackages": "1",
@@ -2051,8 +2051,8 @@
           "totalNoOfPackages": 1,
           "species": [
             {
-              "value": "Struthio",
-              "text": "Struthio",
+              "value": "Struthio spp.",
+              "text": "Struthio spp.",
               "commonName": "Ostriches",
               "noOfAnimals": "1",
               "noOfPackages": "1",

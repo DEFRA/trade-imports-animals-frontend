@@ -4,6 +4,7 @@ import {
   buildChangeableCommoditiesTable,
   buildRemovableCommoditiesTable
 } from './selected-commodity-rows.js'
+import { BOS_TAURUS, labelFor } from '../search/test-support.js'
 
 const headings = {
   commodityCode: 'Commodity code',
@@ -12,7 +13,7 @@ const headings = {
   actionsHidden: 'Actions'
 }
 
-const SPECIES_LABEL = 'Bos taurus (Cattle or Cow)'
+const SPECIES_LABEL = labelFor(BOS_TAURUS)
 const HTML_LABEL = 'Felis <catus> & friends'
 const ESCAPED_LABEL = 'Felis &lt;catus&gt; &amp; friends'
 const WRAPPING = 'app-table__cell--break-anywhere'

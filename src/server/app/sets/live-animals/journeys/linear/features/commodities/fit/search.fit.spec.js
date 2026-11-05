@@ -4,6 +4,7 @@ import {
   BOS_TAURUS,
   BUBALUS_BUBALIS,
   FELIS_CATUS,
+  GALLUS_GALLUS,
   answerOriginEntry,
   saveAndContinue,
   expectNoSeriousOrCriticalViolations,
@@ -54,6 +55,13 @@ const reopenSelection = async (page) => {
 const signInAndOpenSelection = async ({ page }) => {
   await signIn(page)
   await openCommoditySearch(page)
+}
+
+const saveGallusGallusUnderItsFirstCodeThenSearchGallus = async (page) => {
+  await selectSpecies(page, [GALLUS_GALLUS])
+  await saveAndContinue(page).click()
+  await reopenSelection(page)
+  await searchCommodities(page, 'gallus')
 }
 
 test.describe('commodity search', () => {
@@ -120,7 +128,7 @@ test.describe('commodity search', () => {
   test('offers each species by its label', async ({ page }) => {
     await searchCommodities(page, 'buffalo')
     const labels = [
-      'Bubalus (water buffalos)',
+      'Bubalus (Water Buffaloes)',
       labelFor(BUBALUS_BUBALIS.speciesLatinName),
       'Syncerus (African Buffaloes)'
     ]
@@ -140,16 +148,22 @@ test.describe('commodity search', () => {
         exact: true
       })
     ).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(1)
+    await expect(
+      group.getByRole('checkbox', {
+        name: 'Mustela spp. (Weasels (including ermines, polecats, ferrets, and related species))',
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
 
   test('offers a species the reference data holds no common name for as its scientific name alone', async ({
     page
   }) => {
-    await searchCommodities(page, 'Capreolus')
-    const group = page.getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
+    await searchCommodities(page, 'Catreus')
+    const group = page.getByRole('group', { name: '01063980' })
     await expect(
-      group.getByRole('checkbox', { name: 'Capreolus', exact: true })
+      group.getByRole('checkbox', { name: 'Catreus', exact: true })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(1)
   })
@@ -173,20 +187,18 @@ test.describe('commodity search', () => {
   test('renders a separate group per matching commodity code', async ({
     page
   }) => {
-    await searchCommodities(page, 'taurus')
-    const cattle = page.getByRole('group', { name: CATTLE_CODE })
-    const otherMammals = page.getByRole('group', {
-      name: OTHER_LIVE_MAMMALS_CODE
-    })
+    await searchCommodities(page, 'gallus')
+    const firstCode = page.getByRole('group', { name: '01051111' })
+    const secondCode = page.getByRole('group', { name: '01059400' })
     await expect(
-      cattle.getByRole('checkbox', {
-        name: labelFor(BOS_TAURUS.speciesLatinName),
+      firstCode.getByRole('checkbox', {
+        name: labelFor(GALLUS_GALLUS.speciesLatinName),
         exact: true
       })
     ).toBeVisible()
     await expect(
-      otherMammals.getByRole('checkbox', {
-        name: labelFor(BOS_TAURUS.speciesLatinName),
+      secondCode.getByRole('checkbox', {
+        name: labelFor(GALLUS_GALLUS.speciesLatinName),
         exact: true
       })
     ).toBeVisible()
@@ -284,32 +296,26 @@ test.describe('commodity search — choosing and saving species', () => {
   test('ticks a result that is already on the notification', async ({
     page
   }) => {
-    await selectSpecies(page, [BOS_TAURUS])
-    await saveAndContinue(page).click()
-    await reopenSelection(page)
-    await searchCommodities(page, 'taurus')
+    await saveGallusGallusUnderItsFirstCodeThenSearchGallus(page)
     await expect(
-      page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox', {
-        name: labelFor(BOS_TAURUS.speciesLatinName),
-        exact: true
-      })
+      page
+        .getByRole('group', { name: GALLUS_GALLUS.commodityCode })
+        .getByRole('checkbox', {
+          name: labelFor(GALLUS_GALLUS.speciesLatinName),
+          exact: true
+        })
     ).toBeChecked()
   })
 
   test('leaves the same species under another code unticked', async ({
     page
   }) => {
-    await selectSpecies(page, [BOS_TAURUS])
-    await saveAndContinue(page).click()
-    await reopenSelection(page)
-    await searchCommodities(page, 'taurus')
+    await saveGallusGallusUnderItsFirstCodeThenSearchGallus(page)
     await expect(
-      page
-        .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
-        .getByRole('checkbox', {
-          name: labelFor(BOS_TAURUS.speciesLatinName),
-          exact: true
-        })
+      page.getByRole('group', { name: '01059400' }).getByRole('checkbox', {
+        name: labelFor(GALLUS_GALLUS.speciesLatinName),
+        exact: true
+      })
     ).not.toBeChecked()
   })
 
@@ -418,7 +424,7 @@ test.describe('commodity search by code', () => {
   test('lists no more than a hundred species for one search', async ({
     page
   }) => {
-    await searchCommodities(page, OTHER_LIVE_MAMMALS_CODE)
+    await searchCommodities(page, '0106')
     await expect(page.getByRole('checkbox')).toHaveCount(100)
   })
 
@@ -427,12 +433,12 @@ test.describe('commodity search by code', () => {
     const expectedOrder = [
       'Bibos spp. (Cattle)',
       'Bison (Bison)',
-      'Bison bison (Bisons Spp)',
+      labelFor(BISON_BISON.speciesLatinName),
       'Bison bonasus (European Bison)',
       'Bos (Cattle)',
       'Bos sp. (Cattle)',
       labelFor(BOS_TAURUS.speciesLatinName),
-      'Bubalus (water buffalos)',
+      'Bubalus (Water Buffaloes)',
       labelFor(BUBALUS_BUBALIS.speciesLatinName),
       'Elephas maximus (Asian Elephant)',
       'Loxodonta africana (African elephant)',
@@ -471,10 +477,12 @@ test.describe('commodity search — emphasis', () => {
   test('bolds the matched text inside the common name when a search matches it', async ({
     page
   }) => {
-    await searchCommodities(page, 'cow')
+    await searchCommodities(page, 'dog')
     await expect(
-      page.getByRole('group', { name: CATTLE_CODE }).locator('label strong')
-    ).toHaveText('Cow')
+      page
+        .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
+        .locator('label strong')
+    ).toHaveText('Dog')
   })
 })
 

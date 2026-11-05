@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON,
   BOS_TAURUS,
-  CANIS_FAMILIARIS,
   EQUUS_CABALUS,
   FELIS_CATUS,
+  MUSTELA_PUTORIUS_FURO,
   PHONE_VIEWPORT,
   saveAndContinue,
   STRUTHIO,
@@ -778,10 +778,10 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
   })
 
-  test('saves a Canis familiaris identified only by its microchip and reads the number back', async ({
+  test('saves a Mustela putorius furo identified only by its microchip and reads the number back', async ({
     page
   }) => {
-    await openIdentification(page, [[CANIS_FAMILIARIS, '2']])
+    await openIdentification(page, [[MUSTELA_PUTORIUS_FURO, '2']])
     await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
     await fillAddress(page)
     await submitAdd(page)
@@ -794,7 +794,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
     await page.reload()
     await expect(
-      savedAnimalRow(page, CANIS_FAMILIARIS, 1).getByRole('cell', {
+      savedAnimalRow(page, MUSTELA_PUTORIUS_FURO, 1).getByRole('cell', {
         name: MICROCHIP_NUMBER,
         exact: true
       })

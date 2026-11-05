@@ -14,9 +14,10 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS_ROW,
-  CANIS_FAMILIARIS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
+  GALLUS_GALLUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
@@ -35,9 +36,10 @@ export const BASE = SET_BASE
 export const BISON_BISON = BISON_BISON_ROW
 export const BOS_TAURUS = BOS_TAURUS_ROW
 export const BUBALUS_BUBALIS = BUBALUS_BUBALIS_ROW
-export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
 export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
 export const FELIS_CATUS = FELIS_CATUS_ROW
+export const GALLUS_GALLUS = GALLUS_GALLUS_ROW
+export const MUSTELA_PUTORIUS_FURO = MUSTELA_PUTORIUS_FURO_ROW
 export const STRUTHIO = STRUTHIO_ROW
 
 const isGovukConditionalRevealFalsePositive = (violation) =>

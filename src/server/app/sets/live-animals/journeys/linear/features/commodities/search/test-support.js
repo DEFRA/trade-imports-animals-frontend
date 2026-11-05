@@ -9,21 +9,21 @@ export const BOS_TAURUS = 'Bos taurus'
 export const BUBALUS_BUBALIS = 'Bubalus bubalis'
 export const EQUUS_CABALUS = 'Equus cabalus'
 export const FELIS_CATUS = 'Felis catus'
-export const CANIS_FAMILIARIS = 'Canis familiaris'
-export const STRUTHIO = 'Struthio'
+export const GALLUS_GALLUS = 'Gallus gallus'
+export const MUSTELA_PUTORIUS_FURO = 'Mustela putorius furo'
+export const STRUTHIO = 'Struthio spp.'
 export const OSTRICHES_CODE = '01063300'
-export const CATTLE_OR_COW = 'Cattle or Cow'
 
 export const BISON_BISON_ROW = {
   commodityCode: CATTLE_CODE,
   speciesLatinName: BISON_BISON,
-  speciesCommonName: 'Bisons Spp'
+  speciesCommonName: 'American Bison'
 }
 
 export const BOS_TAURUS_ROW = {
   commodityCode: CATTLE_CODE,
   speciesLatinName: BOS_TAURUS,
-  speciesCommonName: CATTLE_OR_COW
+  speciesCommonName: 'Domestic Cattle'
 }
 
 export const BUBALUS_BUBALIS_ROW = {
@@ -44,10 +44,16 @@ export const FELIS_CATUS_ROW = {
   speciesCommonName: 'Domestic Cat'
 }
 
-export const CANIS_FAMILIARIS_ROW = {
+export const GALLUS_GALLUS_ROW = {
+  commodityCode: '01051111',
+  speciesLatinName: GALLUS_GALLUS,
+  speciesCommonName: 'Chicken'
+}
+
+export const MUSTELA_PUTORIUS_FURO_ROW = {
   commodityCode: OTHER_LIVE_MAMMALS_CODE,
-  speciesLatinName: CANIS_FAMILIARIS,
-  speciesCommonName: 'Dog'
+  speciesLatinName: MUSTELA_PUTORIUS_FURO,
+  speciesCommonName: 'Ferret'
 }
 
 export const STRUTHIO_ROW = {
@@ -57,13 +63,14 @@ export const STRUTHIO_ROW = {
 }
 
 const LABELS_BY_LATIN_NAME = {
-  [BISON_BISON]: 'Bison bison (Bisons Spp)',
-  [BOS_TAURUS]: 'Bos taurus (Cattle or Cow)',
+  [BISON_BISON]: 'Bison bison (American Bison)',
+  [BOS_TAURUS]: 'Bos taurus (Domestic Cattle)',
   [BUBALUS_BUBALIS]: 'Bubalus bubalis (Water Buffalo)',
   [EQUUS_CABALUS]: 'Equus cabalus (Horse)',
   [FELIS_CATUS]: 'Felis catus (Domestic Cat)',
-  [CANIS_FAMILIARIS]: 'Canis familiaris (Dog)',
-  [STRUTHIO]: 'Struthio (Ostriches)'
+  [GALLUS_GALLUS]: 'Gallus gallus (Chicken)',
+  [MUSTELA_PUTORIUS_FURO]: 'Mustela putorius furo (Ferret)',
+  [STRUTHIO]: 'Struthio spp. (Ostriches)'
 }
 
 export const labelFor = (speciesLatinName) =>

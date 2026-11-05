@@ -7,10 +7,10 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO,
+  MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO,
   STRUTHIO_ROW,
   labelFor
@@ -63,10 +63,13 @@ describe('#buildSelectedCommodities', () => {
   it('Should give each species on code 01061900 its own row counted on its own', () => {
     expect(
       buildSelectedCommodities(
-        commodityLinesFixture([CANIS_FAMILIARIS_ROW, 1], [FELIS_CATUS_ROW, 4])
+        commodityLinesFixture(
+          [MUSTELA_PUTORIUS_FURO_ROW, 1],
+          [FELIS_CATUS_ROW, 4]
+        )
       ).map(({ code, labels, animals }) => [code, labels, animals])
     ).toEqual([
-      ['01061900', [labelFor(CANIS_FAMILIARIS)], '1'],
+      ['01061900', [labelFor(MUSTELA_PUTORIUS_FURO)], '1'],
       ['01061900', [labelFor(FELIS_CATUS)], '4']
     ])
   })

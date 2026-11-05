@@ -7,10 +7,10 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO,
+  MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO,
   STRUTHIO_ROW,
   labelFor
@@ -66,7 +66,7 @@ describe('#buildSelectedRows', () => {
       buildSelectedRows(
         commodityLinesFixture(
           [BOS_TAURUS_ROW],
-          [CANIS_FAMILIARIS_ROW],
+          [MUSTELA_PUTORIUS_FURO_ROW],
           [FELIS_CATUS_ROW]
         )
       )
@@ -78,7 +78,7 @@ describe('#buildSelectedRows', () => {
       },
       {
         code: '01061900',
-        labels: [labelFor(CANIS_FAMILIARIS)],
+        labels: [labelFor(MUSTELA_PUTORIUS_FURO)],
         removeAction: 'remove-species:1'
       },
       {
