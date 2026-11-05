@@ -148,7 +148,9 @@ is unaffected.
 
 Animal identification, arrival details, the transporter, roles and addresses
 and the contact address keep their Back link on the overview. Origin goes back
-to the dashboard while the opening run is active; otherwise to the overview
+to the Import Notification Service's type question, for this notification,
+while the opening run is active and began at the start entry; to the dashboard
+while it is active and began at the list's create; otherwise to the overview
 when the overview would admit the request (see
 [the entry guard](#opening-run-and-entry-guard)), else to the dashboard. The
 identification condition is `identifiesAnAnimal`, the rule that also decides
@@ -181,7 +183,8 @@ The opening run begins when the notification is created. The dashboard's
 create POST and the start entry (`<set>/start`, which the Import Notification
 Service's type question opens) both create it, through one helper in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-that calls `beginOpeningRun`. The start entry sits outside `/notifications/`, so
+that calls `beginOpeningRun` and records which of the two entries began the
+run. The start entry sits outside `/notifications/`, so
 the entry guard never sees it. The origin page is the journey entry.
 Its Back link reads the opening-run record (see the Back link rules above), and
 its save goes on through `kit.nextTarget` like any other page.

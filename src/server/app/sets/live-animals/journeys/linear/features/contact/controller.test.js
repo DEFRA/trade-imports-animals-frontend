@@ -1,14 +1,13 @@
 import { SET_ID } from '../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { config } from '../../../../../../../../config/config.js'
 import {
   addressBookAnswering,
   addressBookPage,
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
-  resetMocksAndConfigAfterTests,
+  useInsFrontendBaseUrl,
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
@@ -26,7 +25,6 @@ const post = postHandlerOf(contact)
 const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
-const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
 const editHrefOf = (journeyId) =>
   `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
@@ -199,10 +197,10 @@ describe('POST contact — invalid payload', () => {
 
 describe('GET contact — INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+    setInsFrontendBaseUrl('http://localhost:3002')
     addressBookAnswering(addressBookPage())
 
     const result = await driveHandler(get)

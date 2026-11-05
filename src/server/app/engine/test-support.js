@@ -25,7 +25,8 @@ import {
   configureSession,
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  openingRunEntryCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 
@@ -216,6 +217,11 @@ const flowOnlyState = (journeyId, flowOnly) =>
 const openingRunState = (journeyId, openingRun) =>
   openingRun ? { [openingRunCookie()]: { [journeyId]: openingRun } } : {}
 
+const openingRunEntryState = (journeyId, openingRunEntry) =>
+  openingRunEntry
+    ? { [openingRunEntryCookie()]: { [journeyId]: openingRunEntry } }
+    : {}
+
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
   new BackendRequestError(operation, {
@@ -237,9 +243,11 @@ const recordsRejectingSaves = (failure) => ({
  * seeds the journey's session-only answers; `amend` submits the journey and
  * opens an amendment first; `openingRun`
  * (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the opening run for
- * the journey; `pathOf(journeyId)` gives the request the path it was made to;
- * `saveFailure` makes the records store refuse every save the handler makes
- * with that error. */
+ * the journey; `openingRunEntry`
+ * (`RUN_ENTRY_START` or `RUN_ENTRY_LIST_CREATE`) records the entry that began
+ * it; `pathOf(journeyId)`
+ * gives the request the path it was made to; `saveFailure` makes the records
+ * store refuse every save the handler makes with that error. */
 export const driveHandler = async (
   handler,
   {
@@ -252,6 +260,7 @@ export const driveHandler = async (
     amend = false,
     journeyId,
     openingRun,
+    openingRunEntry,
     saveFailure,
     pathOf
   } = {}
@@ -269,6 +278,7 @@ export const driveHandler = async (
     state: {
       ...flowOnlyState(journey.journeyId, flowOnly),
       ...openingRunState(journey.journeyId, openingRun),
+      ...openingRunEntryState(journey.journeyId, openingRunEntry),
       ...state
     },
     ...requestLocation(pathOf, journey.journeyId, query)
@@ -375,6 +385,13 @@ export const resetMocksAndConfigAfterTests = (...configKeys) => {
     vi.unstubAllGlobals()
     originals.forEach(([key, value]) => config.set(key, value))
   })
+}
+
+/** Restores the INS frontend base URL after each test and returns the setter
+ * a test uses to point it somewhere. */
+export const useInsFrontendBaseUrl = () => {
+  resetMocksAndConfigAfterTests('tradeImportsInsFrontend.baseUrl')
+  return (url) => config.set('tradeImportsInsFrontend.baseUrl', url)
 }
 
 export const useReferenceDataServing = () => {

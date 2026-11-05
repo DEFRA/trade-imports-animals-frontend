@@ -23,6 +23,8 @@ import {
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+import { buildInsFrontendUrl } from '../../../../../../../common/helpers/ins-frontend-url.js'
+import { SET_ID } from '../../../../set.js'
 
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
@@ -209,6 +211,23 @@ test.describe('origin feature', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(BASE)
+  })
+
+  test('back link goes to the INS type question for this notification when the page was opened through the start entry', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+    const reference = page.url().split('/notifications/')[1].split('/')[0]
+
+    await expect(
+      page.getByRole('link', { name: 'Back', exact: true })
+    ).toHaveAttribute(
+      'href',
+      buildInsFrontendUrl(
+        `/notification-type?notification-id=${reference}&current-notification-type=${SET_ID}`
+      )
+    )
   })
 
   test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({

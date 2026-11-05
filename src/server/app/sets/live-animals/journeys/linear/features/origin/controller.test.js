@@ -1,16 +1,22 @@
 import { SET_ID } from '../../../../set.js'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
   expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
+  useInsFrontendBaseUrl,
   useReferenceDataServing,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../../flow/run-state.js'
+import {
+  RUN_ACTIVE,
+  RUN_COMPLETE,
+  RUN_ENTRY_LIST_CREATE,
+  RUN_ENTRY_START
+} from '../../../../../../flow/run-state.js'
 import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import * as countries from '../../../../../../services/countries/index.js'
 
@@ -404,13 +410,59 @@ describe('GET /origin — where Back goes', () => {
   ]
 
   it.each(seeds)(
-    'Should send Back to the dashboard while the opening run is active with $name',
+    'Should send Back to the dashboard while the opening run is active and began at the list with $name',
+    async ({ seed }) => {
+      const result = await driveHandler(get, {
+        seed,
+        openingRun: RUN_ACTIVE,
+        openingRunEntry: RUN_ENTRY_LIST_CREATE
+      })
+
+      expect(result.view.context.backLink).toBe(dashboardPath())
+    }
+  )
+
+  it.each(seeds)(
+    'Should send Back to the dashboard while the opening run is active and its entry is unrecorded with $name',
     async ({ seed }) => {
       const result = await driveHandler(get, { seed, openingRun: RUN_ACTIVE })
 
       expect(result.view.context.backLink).toBe(dashboardPath())
     }
   )
+
+  describe('with the INS frontend at a configured address', () => {
+    const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
+
+    beforeEach(() => {
+      setInsFrontendBaseUrl('http://ins.example/')
+    })
+
+    it.each(seeds)(
+      'Should send Back to the INS type question for this notification while the opening run is active and began at the start entry with $name',
+      async ({ seed }) => {
+        const result = await driveHandler(get, {
+          seed,
+          openingRun: RUN_ACTIVE,
+          openingRunEntry: RUN_ENTRY_START
+        })
+
+        expect(result.view.context.backLink).toBe(
+          `http://ins.example/notification-type?notification-id=${result.journeyId}&current-notification-type=live-animals`
+        )
+      }
+    )
+
+    it('Should send Back to the overview once the opening run is complete, even though it began at the start entry', async () => {
+      const result = await driveHandler(get, {
+        seed: answer,
+        openingRun: RUN_COMPLETE,
+        openingRunEntry: RUN_ENTRY_START
+      })
+
+      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+    })
+  })
 
   it.each(seeds)(
     'Should send Back to the overview once the opening run is complete with $name',

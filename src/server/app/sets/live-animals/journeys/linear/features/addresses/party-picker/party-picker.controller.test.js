@@ -1,7 +1,6 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { config } from '../../../../../../../../../config/config.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
   driveHandler,
@@ -13,6 +12,7 @@ import {
   listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
+  useInsFrontendBaseUrl,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -31,7 +31,6 @@ const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
-const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(
@@ -437,12 +436,12 @@ describe('GET /consignors/select — list order', () => {
 
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
     async (_title, slug) => {
-      config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+      setInsFrontendBaseUrl('http://localhost:3002')
       addressBookAnswering(addressBookPage())
 
       const result = await driveHandler(handlerFor('GET', slug))

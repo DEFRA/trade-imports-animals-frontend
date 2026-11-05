@@ -10,7 +10,8 @@ import {
 import {
   configureSession,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  openingRunEntryCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
@@ -22,7 +23,11 @@ import {
 } from '../../../../../../shared/paths.js'
 import { SET_BASE } from '../../../../set.js'
 import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
-import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
+import {
+  RUN_ACTIVE,
+  RUN_ENTRY_LIST_CREATE,
+  RUN_ENTRY_START
+} from '../../../../../../flow/run-state.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 
 import { routes } from './controller.js'
@@ -452,37 +457,52 @@ describe.each([
 )
 
 describe.each([
-  ['create POST', createPost],
-  ['start entry', startGet]
-])('dashboard create opens the opening run through the %s', (_entry, open) => {
-  it('Should begin the opening run for the new notification before any page is answered', async () => {
-    const request = journeyRequest()
-    const h = stubH(request)
+  ['create POST', createPost, RUN_ENTRY_LIST_CREATE],
+  ['start entry', startGet, RUN_ENTRY_START]
+])(
+  'dashboard create opens the opening run through the %s',
+  (_name, open, entry) => {
+    it('Should record the entry that began the opening run', async () => {
+      const request = journeyRequest()
+      const h = stubH(request)
 
-    const response = await open(request, h)
+      await open(request, h)
 
-    const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-    expect(response.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
-    expect(h.cookies[openingRunCookie()]).toEqual({
-      [newJourneyId]: RUN_ACTIVE
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(h.cookies[openingRunEntryCookie()]).toEqual({
+        [newJourneyId]: entry
+      })
     })
-  })
 
-  it('Should leave an earlier notification run record intact', async () => {
-    const request = journeyRequest(undefined, {
-      state: { [openingRunCookie()]: { 'an-earlier-journey': RUN_ACTIVE } }
+    it('Should begin the opening run for the new notification before any page is answered', async () => {
+      const request = journeyRequest()
+      const h = stubH(request)
+
+      const response = await open(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(response.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
+      expect(h.cookies[openingRunCookie()]).toEqual({
+        [newJourneyId]: RUN_ACTIVE
+      })
     })
-    const h = stubH(request)
 
-    await open(request, h)
+    it('Should leave an earlier notification run record intact', async () => {
+      const request = journeyRequest(undefined, {
+        state: { [openingRunCookie()]: { 'an-earlier-journey': RUN_ACTIVE } }
+      })
+      const h = stubH(request)
 
-    const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-    expect(h.cookies[openingRunCookie()]).toEqual({
-      'an-earlier-journey': RUN_ACTIVE,
-      [newJourneyId]: RUN_ACTIVE
+      await open(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(h.cookies[openingRunCookie()]).toEqual({
+        'an-earlier-journey': RUN_ACTIVE,
+        [newJourneyId]: RUN_ACTIVE
+      })
     })
-  })
-})
+  }
+)
 
 describe('dashboard amend', () => {
   it('Should NOT begin a run when an existing notification is amended', async () => {
@@ -524,11 +544,11 @@ describe('dashboard start entry', () => {
 
 describe('opening a new notification logs it once', () => {
   it.each([
-    ['the create POST', createPost],
-    ['the start entry', startGet]
+    ['the create POST', createPost, RUN_ENTRY_LIST_CREATE],
+    ['the start entry', startGet, RUN_ENTRY_START]
   ])(
-    'Should log the new notification and its organisation once for %s',
-    async (_entry, handler) => {
+    'Should log the new notification, its organisation and the entry that opened it once for %s',
+    async (_name, handler, entry) => {
       const request = journeyRequest()
       const h = stubH(request)
 
@@ -539,6 +559,7 @@ describe('opening a new notification logs it once', () => {
         level: 'info',
         fields: {
           journeyId: newJourneyId,
+          entry,
           organisationId: authenticatedActor.organisationId
         },
         message: 'New notification opened'

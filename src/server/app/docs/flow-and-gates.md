@@ -82,7 +82,9 @@ ready.
 ## Opening-run state
 
 [`src/server/app/flow/run-state.js`](../flow/run-state.js) stores whether a journey is
-in its opening run through the injected session port. The journey supplies
+in its opening run, and which entry began it (the start entry or the list's
+create), through the injected session port. `openingRunBeganAtStartEntry`
+answers whether the active run began at the start entry. The journey supplies
 `nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
 the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
 `previousRunTarget` while the opening run is active, and with the overview

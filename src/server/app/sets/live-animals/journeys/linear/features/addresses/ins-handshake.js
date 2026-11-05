@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 
-import { config } from '../../../../../../../../config/config.js'
+import { buildInsFrontendUrl } from '../../../../../../../common/helpers/ins-frontend-url.js'
 import {
   addedAddressBannerCookie,
   addressHandshakeTokensCookie
@@ -86,7 +86,6 @@ export const issueInsAddAddressUrl = (request, h, notificationId, party) => {
   const token = crypto.randomBytes(HANDSHAKE_TOKEN_BYTES).toString('hex')
   storeHandshakeToken(request, h, fulfilmentId, token)
 
-  const base = config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')
   const params = new URLSearchParams({
     'journey-type': JOURNEY_TYPE,
     'notification-id': notificationId,
@@ -94,5 +93,5 @@ export const issueInsAddAddressUrl = (request, h, notificationId, party) => {
     'handshake-token': token
   })
 
-  return `${base}/address-book/add?${params.toString()}`
+  return buildInsFrontendUrl(`/address-book/add?${params.toString()}`)
 }

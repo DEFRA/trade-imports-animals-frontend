@@ -95,7 +95,8 @@ records and session contracts. L1 passes the selected adapters to
 `configureRecords()` and `configureSession()`.
 
 The records adapter owns canonical storage and backend notification projections.
-The session adapter owns known journey ids, opening-run state and flow-only answers.
+The session adapter owns known journey ids, opening-run state, the entry that
+began the opening run, flow-only answers and the reviewed token.
 See [Persistence](persistence.md).
 
 ## Set-owned services
@@ -117,8 +118,10 @@ The live-animals commodities service is documented in the
 | `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002`                                       |
 
 `tradeImportsInsFrontend.baseUrl` is browser-visible (the service navigation's
-Address book link and the address handshake), so under the workspace stack it
-stays `localhost` while the backend, reference-data and address-book URLs use
+Address book link, the address handshake, and the origin page's Back link to the
+INS type question, which carries the notification's reference as
+`notification-id` and its type as `current-notification-type`), so under the
+workspace stack it stays `localhost` while the backend, reference-data and address-book URLs use
 `host.docker.internal`.
 
 `cdpUploader.scanResultCallbackUrl` is resolved by cdp-uploader itself, not by

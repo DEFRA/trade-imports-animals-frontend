@@ -8,6 +8,7 @@ import {
   journeyCookieNames,
   knownJourneysCookie,
   openingRunCookie,
+  openingRunEntryCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
@@ -37,6 +38,7 @@ describe('per-set cookie names', () => {
     inLiveAnimalsSet(() => {
       expect(knownJourneysCookie()).toBe('liveAnimalsKnownJourneys')
       expect(openingRunCookie()).toBe('liveAnimalsOpeningRun')
+      expect(openingRunEntryCookie()).toBe('liveAnimalsOpeningRunEntry')
       expect(flowOnlyAnswersCookie()).toBe('liveAnimalsFlowOnlyAnswers')
       expect(addressHandshakeTokensCookie()).toBe(
         'liveAnimalsAddressHandshakeTokens'
@@ -55,6 +57,7 @@ describe('per-set cookie names', () => {
         [
           'liveAnimalsKnownJourneys',
           'liveAnimalsOpeningRun',
+          'liveAnimalsOpeningRunEntry',
           'liveAnimalsFlowOnlyAnswers',
           'liveAnimalsAddressHandshakeTokens',
           'liveAnimalsAddedAddressBanner',
@@ -148,6 +151,56 @@ describe('#session.openingRun', () => {
         'journey-1': 'active',
         'journey-2': 'complete'
       })
+    })
+  )
+})
+
+describe('#session.openingRunEntry', () => {
+  it(
+    'Should round-trip entries without leaking them between journeys',
+    inLiveAnimalsSet(async () => {
+      const h = recordingH()
+      await session.setOpeningRunEntry(h, 'journey-1', 'start', { state: {} })
+      const stored = h.cookies[openingRunEntryCookie()]
+      expect(stored).toEqual({ 'journey-1': 'start' })
+      expect(
+        await session.openingRunEntry(
+          { state: { [openingRunEntryCookie()]: stored } },
+          'journey-1'
+        )
+      ).toBe('start')
+      expect(
+        await session.openingRunEntry(
+          { state: { [openingRunEntryCookie()]: stored } },
+          'journey-2'
+        )
+      ).toBeUndefined()
+    })
+  )
+
+  it(
+    'Should preserve another journey entry while updating the current one',
+    inLiveAnimalsSet(async () => {
+      const h = recordingH()
+      await session.setOpeningRunEntry(h, 'journey-2', 'list-create', {
+        state: { [openingRunEntryCookie()]: { 'journey-1': 'start' } }
+      })
+      expect(h.cookies[openingRunEntryCookie()]).toEqual({
+        'journey-1': 'start',
+        'journey-2': 'list-create'
+      })
+    })
+  )
+
+  it(
+    'Should read no entry when the stored value is not an object',
+    inLiveAnimalsSet(async () => {
+      expect(
+        await session.openingRunEntry(
+          { state: { [openingRunEntryCookie()]: 'start' } },
+          'journey-1'
+        )
+      ).toBeUndefined()
     })
   )
 })
@@ -255,6 +308,7 @@ describe('per-set cookie names with two sets mounted', () => {
   const OTHER_NAMES = Object.freeze({
     knownJourneys: 'probeKnownJourneys',
     openingRun: 'probeOpeningRun',
+    openingRunEntry: 'probeOpeningRunEntry',
     flowOnlyAnswers: 'probeFlowOnlyAnswers',
     addressHandshakeTokens: 'probeAddressHandshakeTokens',
     addedAddressBanner: 'probeAddedAddressBanner',
@@ -276,6 +330,12 @@ describe('per-set cookie names with two sets mounted', () => {
     )
     expect(withSetContext(OTHER_SET, openingRunCookie)).toBe(
       OTHER_NAMES.openingRun
+    )
+    expect(withSetContext(SET_ID, openingRunEntryCookie)).toBe(
+      SESSION_COOKIE_NAMES.openingRunEntry
+    )
+    expect(withSetContext(OTHER_SET, openingRunEntryCookie)).toBe(
+      OTHER_NAMES.openingRunEntry
     )
     expect(withSetContext(SET_ID, flowOnlyAnswersCookie)).toBe(
       SESSION_COOKIE_NAMES.flowOnlyAnswers
