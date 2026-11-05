@@ -43,8 +43,7 @@ export const ensureAddressBookHasAnAddress = async () => {
       countryCode: 'GB',
       phone: '01632 960000',
       email: 'lighthouse@example.com',
-      addressType: 'ORIGIN_OR_CONSIGNOR',
-      uses: ['PLACE_OF_ORIGIN']
+      roles: ['PLACE_OF_ORIGIN']
     })
   })
   if (created.status !== HTTP_CREATED && created.status !== HTTP_OK) {
