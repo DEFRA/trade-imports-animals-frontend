@@ -62,6 +62,8 @@ export const copy = {
       animalsAboveMax: (max) =>
         `Rhaid i nifer yr anifeiliaid fod yn ${withThousandsSeparators(max)} neu lai`,
       packagesWholeNumber: 'Rhaid i nifer y pecynnau fod yn rif cyfan, fel 5',
+      packagesAboveMax: (max) =>
+        `Rhaid i nifer y pecynnau fod yn ${withThousandsSeparators(max)} neu lai`,
       countDrop: (records, species, entered) =>
         `Mae gennych ${plural(records, 'cofnod dynodwr')} ar gyfer ${species} ond fe wnaethoch nodi ${plural(entered, 'anifail')}. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`
     }

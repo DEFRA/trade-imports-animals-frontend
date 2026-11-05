@@ -104,9 +104,6 @@ destination and transit selects offer must leave as its country. The identificat
 page stores the ISO code, so persistence carries it through without a reverse
 lookup.
 
-Each line also carries a species common name. The mapper does not send it yet;
-EUDPA-669 maps it into the payload.
-
 ## Boot wiring
 
 Each set's gateway — today

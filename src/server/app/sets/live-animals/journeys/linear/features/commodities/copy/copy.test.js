@@ -97,13 +97,11 @@ describe('#copy', () => {
   })
 
   it('Should interpolate animalsAboveMax with thousands separators, in English and in Welsh', () => {
-    expect(
-      copy.consignmentDetails.errors.animalsAboveMax(9223372036854775807n)
-    ).toBe('Number of animals must be 9,223,372,036,854,775,807 or fewer')
-    expect(
-      copyCy.consignmentDetails.errors.animalsAboveMax(9223372036854775807n)
-    ).toBe(
-      'Rhaid i nifer yr anifeiliaid fod yn 9,223,372,036,854,775,807 neu lai'
+    expect(copy.consignmentDetails.errors.animalsAboveMax(2147483647)).toBe(
+      'Number of animals must be 2,147,483,647 or fewer'
+    )
+    expect(copyCy.consignmentDetails.errors.animalsAboveMax(2147483647)).toBe(
+      'Rhaid i nifer yr anifeiliaid fod yn 2,147,483,647 neu lai'
     )
   })
 

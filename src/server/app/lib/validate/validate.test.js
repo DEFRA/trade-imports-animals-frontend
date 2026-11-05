@@ -38,8 +38,6 @@ const FLIP_FIELD_REQUIRED_MESSAGE = 'Enter the code'
 const FLIP_FIELD_MAX_LENGTH_MESSAGE = 'Code must be 5 characters or less'
 const COUNT_REQUIRED_MESSAGE = 'Enter the number of items'
 const COUNT_WHOLE_NUMBER_MESSAGE = 'Enter a whole number greater than 0'
-const COUNT_ABOVE_MAX_MESSAGE = 'Enter 9,223,372,036,854,775,807 or fewer'
-const LARGEST_SIGNED_64_BIT_INTEGER = 9223372036854775807n
 const NOT_A_DATE = 'not a date'
 const BLOCKS_BLANK_WHITESPACE_AND_MISSING =
   'Should block blank, whitespace-only and missing values with the required message'
@@ -265,6 +263,15 @@ describe('#integerInRange — bounds', () => {
       year: message
     })
   })
+
+  it('Should refuse an extremely long digit string without an upper bound to compare it against, and return promptly', () => {
+    const unbounded = integerInRange('year', { min: 1 })
+    const massiveDigitString = '9'.repeat(100000)
+
+    expect(validate(unbounded, { year: massiveDigitString }).errors).toEqual({
+      year: validatorDefaults.wholeNumber
+    })
+  })
 })
 
 describe('#requiredIntegerInRange — save-blocking whole number in a range', () => {
@@ -317,48 +324,6 @@ describe('#requiredIntegerInRange — save-blocking whole number in a range', ()
         itemCount: validatorDefaults.numberBetween(1, 10)
       }
     )
-  })
-
-  it('Should reject a value one above an upper bound outside Number.MAX_SAFE_INTEGER with the max message, and accept the bound itself', () => {
-    const schemaWithLargeMax = requiredIntegerInRange('itemCount', {
-      min: 1,
-      max: LARGEST_SIGNED_64_BIT_INTEGER,
-      messages: {
-        required: COUNT_REQUIRED_MESSAGE,
-        invalid: COUNT_WHOLE_NUMBER_MESSAGE,
-        max: COUNT_ABOVE_MAX_MESSAGE
-      }
-    })
-
-    expect(
-      validate(schemaWithLargeMax, {
-        itemCount: (LARGEST_SIGNED_64_BIT_INTEGER + 1n).toString()
-      }).errors
-    ).toEqual({ itemCount: COUNT_ABOVE_MAX_MESSAGE })
-    expect(
-      validate(schemaWithLargeMax, {
-        itemCount: LARGEST_SIGNED_64_BIT_INTEGER.toString()
-      }).errors
-    ).toBeNull()
-  })
-
-  it('Should reject a value with far more digits than the upper bound with the max message, and accept a value padded with leading zeros that is inside the bounds', () => {
-    const schemaWithLargeMax = requiredIntegerInRange('itemCount', {
-      min: 1,
-      max: LARGEST_SIGNED_64_BIT_INTEGER,
-      messages: {
-        required: COUNT_REQUIRED_MESSAGE,
-        invalid: COUNT_WHOLE_NUMBER_MESSAGE,
-        max: COUNT_ABOVE_MAX_MESSAGE
-      }
-    })
-
-    expect(
-      validate(schemaWithLargeMax, { itemCount: '9'.repeat(1000) }).errors
-    ).toEqual({ itemCount: COUNT_ABOVE_MAX_MESSAGE })
-    expect(
-      validate(schemaWithLargeMax, { itemCount: '0000000005' }).errors
-    ).toBeNull()
   })
 })
 

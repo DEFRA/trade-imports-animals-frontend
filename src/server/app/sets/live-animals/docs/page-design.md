@@ -259,12 +259,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A search's results are listed in order: the commodity groups by their
   heading, and each group's species by the label they are offered under, over
   the page of results the search returned.
-- A species reads as its scientific name with its common name in round
+- A species reads as its Latin name with its common name in round
   brackets wherever it is listed or named — the search results, the selected
   panel, Commodity details, the Selected commodities tables and
-  Identification details — and as its scientific name alone where the
+  Identification details — and as its Latin name alone where the
   reference data holds no common name for it. The permanent-address rule and
-  the identifier-column rule read the line's stored scientific name rather
+  the identifier-column rule read the line's stored Latin name rather
   than that label, so a species whose common name changes what it reads as
   still gates the same way.
 - The selected panel offers a removal per chosen species, posting the page

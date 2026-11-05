@@ -104,7 +104,18 @@ so generic notification-mapper code does not import the set.
   the rest of the file. Until reference-data or the stub can answer a whole
   species list in one request, the fixture is derived by hand from the stub's
   saved MDM response rather than captured through the running stack. The stub
-  does not rank matches as MDM does; it lists them in data order.
+  does not rank matches as MDM does; it lists them in data order. The species
+  labels this fixture carries are pinned on two sides, by two independent
+  suites, and neither compares the fixture against the other: in this repo,
+  [`fixtures.test.js`](../../../services/_capture/fixtures.test.js) compares
+  the fixture against the codes, Latin names and common names it lists, and
+  nothing outside this repo; in the tests repo, the stack test
+  `trade-imports-ins-tests` `tests/animals/e2e/pages/commodities.spec.ts`
+  asserts the species checkbox accessible names and the selected panel
+  against `speciesLabel(commodityLines.cattle)` (`commodities.spec.ts:69`
+  and `:109`), so it fails if the MDM stub's common name changes.
+  Whoever recaptures the stub must update this fixture by hand to match,
+  because no automated check compares the two files.
 - The species check at submission reads a renamed species as a removed one:
   the old name is no longer listed under its code.
 

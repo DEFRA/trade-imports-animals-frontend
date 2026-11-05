@@ -157,7 +157,7 @@ test.describe('commodity search', () => {
     await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
 
-  test('offers a species the reference data holds no common name for as its scientific name alone', async ({
+  test('offers a species the reference data holds no common name for as its Latin name alone', async ({
     page
   }) => {
     await searchCommodities(page, 'Catreus')

@@ -3,6 +3,7 @@ import {
   HORSES_CODE,
   OTHER_LIVE_MAMMALS_CODE
 } from '../../../../../services/commodities/rules.js'
+import { speciesLabel } from '../species-label.js'
 
 export const BISON_BISON = 'Bison bison'
 export const BOS_TAURUS = 'Bos taurus'
@@ -62,19 +63,26 @@ export const STRUTHIO_ROW = {
   speciesCommonName: 'Ostriches'
 }
 
-const LABELS_BY_LATIN_NAME = {
-  [BISON_BISON]: 'Bison bison (American Bison)',
-  [BOS_TAURUS]: 'Bos taurus (Domestic Cattle)',
-  [BUBALUS_BUBALIS]: 'Bubalus bubalis (Water Buffalo)',
-  [EQUUS_CABALUS]: 'Equus cabalus (Horse)',
-  [FELIS_CATUS]: 'Felis catus (Domestic Cat)',
-  [GALLUS_GALLUS]: 'Gallus gallus (Chicken)',
-  [MUSTELA_PUTORIUS_FURO]: 'Mustela putorius furo (Ferret)',
-  [STRUTHIO]: 'Struthio spp. (Ostriches)'
-}
+const ROWS_BY_LATIN_NAME = Object.fromEntries(
+  [
+    BISON_BISON_ROW,
+    BOS_TAURUS_ROW,
+    BUBALUS_BUBALIS_ROW,
+    EQUUS_CABALUS_ROW,
+    FELIS_CATUS_ROW,
+    GALLUS_GALLUS_ROW,
+    MUSTELA_PUTORIUS_FURO_ROW,
+    STRUTHIO_ROW
+  ].map((row) => [row.speciesLatinName, row])
+)
 
-export const labelFor = (speciesLatinName) =>
-  LABELS_BY_LATIN_NAME[speciesLatinName]
+export const labelFor = (speciesLatinName) => {
+  const row = ROWS_BY_LATIN_NAME[speciesLatinName]
+  if (!row) {
+    throw new Error(`No test row carries the Latin name "${speciesLatinName}"`)
+  }
+  return speciesLabel(row)
+}
 
 export const lineOf = (row, extra = {}) => ({
   ...row,

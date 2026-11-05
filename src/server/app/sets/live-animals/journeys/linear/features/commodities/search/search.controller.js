@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -124,8 +126,8 @@ const post = async (request, h) => {
   if (isRemoveAction(action)) {
     const removedKey = removeKeyOf(action)
     if (!rowsByKey.has(removedKey)) {
-      kit.logRefusal(request, { reason: 'no-species-at-key', key: removedKey })
-      return h.response().code(HTTP_STATUS_BAD_REQUEST)
+      kit.logRefusal(request, { reason: 'no-species-for-key', key: removedKey })
+      return Boom.badRequest()
     }
     return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected: selected.filter((key) => key !== removedKey),

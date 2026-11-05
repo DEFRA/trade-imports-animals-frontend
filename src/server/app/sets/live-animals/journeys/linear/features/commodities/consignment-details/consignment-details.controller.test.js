@@ -12,6 +12,7 @@ import {
   expectRemovalRefusedLogged,
   postHandlerOf,
   journeyRequest,
+  renderedErrorPageFor,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -58,7 +59,9 @@ const ANIMALS_ABOVE_MAX_MESSAGE =
   'Number of animals must be 2,147,483,647 or fewer'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
-const LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES = 2147483647
+const PACKAGES_ABOVE_MAX_MESSAGE =
+  'Number of packages must be 2,147,483,647 or fewer'
+const LARGEST_QUANTITY_THE_SERVICE_STORES = 2147483647
 const COMMODITIES_SLUG = 'commodities'
 const REMOVE_CATTLE = `remove:${BOS_TAURUS_ROW.commodityCode}`
 
@@ -182,7 +185,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   })
 
   it('Should re-render a number of animals above the largest the service stores against its own line, keeping what was typed, saving nothing and logging nothing', async () => {
-    const aboveMax = String(LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES + 1)
+    const aboveMax = String(LARGEST_QUANTITY_THE_SERVICE_STORES + 1)
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -206,7 +209,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       seed: seedLines(),
       payload: {
         'numberOfAnimalsQuantity-0': String(
-          LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES
+          LARGEST_QUANTITY_THE_SERVICE_STORES
         ),
         'numberOfAnimalsQuantity-1': '10',
         'numberOfAnimalsQuantity-2': '40'
@@ -215,7 +218,47 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.view).toBeUndefined()
     expect(result.response.redirect).toBeDefined()
     expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(
-      LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES
+      LARGEST_QUANTITY_THE_SERVICE_STORES
+    )
+  })
+
+  it('Should re-render a number of packages above the largest the service stores against its own line, keeping what was typed, saving nothing and logging nothing', async () => {
+    const aboveMax = String(LARGEST_QUANTITY_THE_SERVICE_STORES + 1)
+    const result = await driveHandler(post, {
+      seed: seedLines(),
+      payload: {
+        'numberOfAnimalsQuantity-0': '25',
+        'numberOfAnimalsQuantity-1': '10',
+        'numberOfAnimalsQuantity-2': '40',
+        'numberOfPackages-0': aboveMax,
+        'numberOfPackages-1': '5'
+      }
+    })
+    const lines = result.view.context.groups.flatMap((group) => group.lines)
+    expect(lines[0].packagesValue).toBe(aboveMax)
+    expect(result.view.context.errors['numberOfPackages-0']).toBe(
+      PACKAGES_ABOVE_MAX_MESSAGE
+    )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.after).toEqual(result.before)
+    expect(result.logger.entries).toEqual([])
+  })
+
+  it('Should accept and exactly save a number of packages at the largest the service stores', async () => {
+    const result = await driveHandler(post, {
+      seed: seedLines(),
+      payload: {
+        'numberOfAnimalsQuantity-0': '25',
+        'numberOfAnimalsQuantity-1': '10',
+        'numberOfAnimalsQuantity-2': '40',
+        'numberOfPackages-0': String(LARGEST_QUANTITY_THE_SERVICE_STORES),
+        'numberOfPackages-1': '5'
+      }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.commodityLines[0].numberOfPackages).toBe(
+      String(LARGEST_QUANTITY_THE_SERVICE_STORES)
     )
   })
 
@@ -461,7 +504,11 @@ describe('#consignmentDetailsController — a removal keeps the numbers typed in
     const second = journeyRequest(journey.journeyId, { payload })
     const response = await post(second, stubH(second))
 
-    expect(response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(renderedErrorPageFor(response)).toMatchObject({
+      heading: HTTP_STATUS_BAD_REQUEST,
+      message: 'There is a problem with your request'
+    })
     expectRemovalRefusedLogged(
       { logger: second.logger, journeyId: journey.journeyId },
       { reason: 'no-commodity-for-code', code: BOS_TAURUS_ROW.commodityCode }
@@ -550,7 +597,7 @@ describe('#consignmentDetailsController — removal and empty-selection redirect
       seed,
       payload: { action: 'remove:9999' }
     })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...COMMODITY_REMOVAL_REFUSED,
       code: '9999'
@@ -683,7 +730,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
         action: `remove-species:${lineKey(seed.commodityLines[0])}`
       }
     })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
       key: lineKey(seed.commodityLines[0]),
@@ -698,7 +745,11 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       seed,
       payload: { action: 'remove-species:9999|Not a line' }
     })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(renderedErrorPageFor(result.response)).toMatchObject({
+      heading: HTTP_STATUS_BAD_REQUEST,
+      message: 'There is a problem with your request'
+    })
     expectRemovalRefusedLogged(result, {
       ...SPECIES_REMOVAL_REFUSED,
       key: '9999|Not a line'

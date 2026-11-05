@@ -1,5 +1,6 @@
+import Boom from '@hapi/boom'
+
 import * as state from '../../../../../../../../engine/index.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { entriesNotOfCode } from '../../lines.js'
@@ -34,7 +35,7 @@ export const postRemove = async (
       reason: 'no-commodity-for-code',
       code: commodityCode
     })
-    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+    return Boom.badRequest()
   }
 
   const kept = entriesNotOfCode(stored, commodityCode)
@@ -67,7 +68,7 @@ export const postRemoveSpecies = async (
       key,
       commodityCode: line?.commodityCode
     })
-    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+    return Boom.badRequest()
   }
 
   const kept = stored.filter((entry) => lineKeyOf(entry) !== key)

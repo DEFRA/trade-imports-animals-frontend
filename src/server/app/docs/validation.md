@@ -79,24 +79,6 @@ for an example. Errors come back keyed by the page's own field names.
 continue-time gate for configured fields that must be answered before later pages
 open.
 
-## Whole-number bounds
-
-A bound outside the range a JavaScript number holds exactly (beyond
-`Number.MAX_SAFE_INTEGER`) must be given to `integerInRange` or
-`requiredIntegerInRange` as a `bigint` literal (`123n`), never a plain numeric
-literal. A numeric literal that large is already the wrong value once the
-JavaScript engine parses it as a `Number`, and comparing a submitted value
-against it through `Number` would then accept one value above the bound as
-though it were the bound itself. Both primitives compare in exact integer
-arithmetic instead, so a `bigint` bound is held precisely however many digits
-it carries.
-
-Before converting to `BigInt`, both primitives first compare the submitted
-value's significant digit count against the bound's own digit count. A value
-with more digits than the bound it would breach is refused on that count
-alone, so a value padded with an unbounded number of digits is never passed
-to `BigInt` for the exact comparison.
-
 ## Dates and structured values
 
 The date helpers validate a `dd/mm/yyyy` text value, then

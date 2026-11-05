@@ -9,6 +9,7 @@ import {
   expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
+  renderedErrorPageFor,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -435,9 +436,13 @@ describe('commodity search — removing one chosen species', () => {
       },
       flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
     })
-    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(renderedErrorPageFor(result.response)).toMatchObject({
+      heading: HTTP_STATUS_BAD_REQUEST,
+      message: 'There is a problem with your request'
+    })
     expectRemovalRefusedLogged(result, {
-      reason: 'no-species-at-key',
+      reason: 'no-species-for-key',
       key: tamperedKey
     })
     expect(result.after).toEqual(result.before)

@@ -1,20 +1,12 @@
-const REMOVE_ACTION_PREFIX = 'remove:'
-const REMOVE_SPECIES_ACTION_PREFIX = 'remove-species:'
+import { actionsPrefixed } from '../../action-prefix.js'
 
-export const removeActionFor = (commodityCode) =>
-  `${REMOVE_ACTION_PREFIX}${commodityCode}`
+const removeAction = actionsPrefixed('remove:')
+const removeSpeciesAction = actionsPrefixed('remove-species:')
 
-export const isRemoveAction = (action) =>
-  action.startsWith(REMOVE_ACTION_PREFIX)
+export const removeActionFor = removeAction.actionFor
+export const isRemoveAction = removeAction.isAction
+export const removeCodeOf = removeAction.keyOf
 
-export const removeCodeOf = (action) =>
-  action.slice(REMOVE_ACTION_PREFIX.length)
-
-export const removeSpeciesActionFor = (key) =>
-  `${REMOVE_SPECIES_ACTION_PREFIX}${key}`
-
-export const isRemoveSpeciesAction = (action) =>
-  action.startsWith(REMOVE_SPECIES_ACTION_PREFIX)
-
-export const removeKeyOf = (action) =>
-  action.slice(REMOVE_SPECIES_ACTION_PREFIX.length)
+export const removeSpeciesActionFor = removeSpeciesAction.actionFor
+export const isRemoveSpeciesAction = removeSpeciesAction.isAction
+export const removeKeyOf = removeSpeciesAction.keyOf

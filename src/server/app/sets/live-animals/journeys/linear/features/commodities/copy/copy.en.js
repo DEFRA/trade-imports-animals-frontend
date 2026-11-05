@@ -58,6 +58,8 @@ export const copy = {
       animalsAboveMax: (max) =>
         `Number of animals must be ${withThousandsSeparators(max)} or fewer`,
       packagesWholeNumber: 'Number of packages must be a whole number, like 5',
+      packagesAboveMax: (max) =>
+        `Number of packages must be ${withThousandsSeparators(max)} or fewer`,
       countDrop: (records, species, entered) =>
         `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`
     }

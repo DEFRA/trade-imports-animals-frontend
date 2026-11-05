@@ -46,7 +46,7 @@ live-animals helper uses
   under `01051111` and `01059400`), so the code is part of the choice and the
   result order never decides it.
 - The shared species rows (`BOS_TAURUS_ROW`, `FELIS_CATUS_ROW` and so on) live in
-  `features/commodities/search/test-support.js`, carrying the scientific name
+  `features/commodities/search/test-support.js`, carrying the Latin name
   and the common name the stub serves; `fit/live-animals-journey.js` imports and
   re-exports them under the bare names. Specs import them rather than declaring
   their own. The spelled-out label for each row lives beside them in

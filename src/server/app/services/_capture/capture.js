@@ -19,43 +19,6 @@ const targets = [
   }
 ]
 
-const COMMODITY_SEARCH_TERM = '010'
-const COMMODITY_PAGE_SIZE = 100
-
-const commodityPageUrl = (page) => {
-  const url = referenceDataUrl('/commodities')
-  url.searchParams.set('q', COMMODITY_SEARCH_TERM)
-  url.searchParams.set('page', String(page))
-  url.searchParams.set('size', String(COMMODITY_PAGE_SIZE))
-  return url.toString()
-}
-
-const mergeGroups = (groups) =>
-  [...Map.groupBy(groups, (group) => group.code)].map(([code, sameCode]) => ({
-    code,
-    species: sameCode.flatMap((group) => group.species)
-  }))
-
-const commodityPages = async (target) => {
-  const groups = []
-  let listed = 0
-  for (let page = 0; ; page += 1) {
-    const response = await fetchTarget({
-      ...target,
-      url: commodityPageUrl(page)
-    })
-    if (!response) {
-      return null
-    }
-    const body = await response.json()
-    groups.push(...body.groups)
-    listed += body.groups.reduce((sum, group) => sum + group.species.length, 0)
-    if (listed >= body.total || body.groups.length === 0) {
-      return mergeGroups(groups)
-    }
-  }
-}
-
 const reportFetchFailure = (target, message) => {
   console.log(`${target.name}: ${message}`)
   process.exitCode = 1
@@ -94,10 +57,7 @@ const singleResponse = async (target) => {
   return response ? response.json() : null
 }
 
-const captures = [
-  ...targets.map((target) => ({ target, collect: singleResponse })),
-  { target: { name: 'commodities' }, collect: commodityPages }
-]
+const captures = targets.map((target) => ({ target, collect: singleResponse }))
 
 await mkdir(outDir, { recursive: true })
 

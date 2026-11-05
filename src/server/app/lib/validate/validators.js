@@ -195,39 +195,39 @@ export const oneOf = (name, values, message = defaults.oneOf) =>
       .messages({ 'any.only': message })
   )
 
-const significantDigitCount = (bound) =>
-  BigInt(bound).toString().replace('-', '').length
-
-const significantDigitsOf = (raw) => ({
-  negative: raw.startsWith('-'),
-  digits: raw.replace(/^-?0*/, '') || '0'
-})
-
-const exceedsSignificantDigits = (digits, bound) =>
-  bound != null && digits.length > significantDigitCount(bound)
-
 const wholeNumberInRange = (min, max) => (raw, helpers) => {
   if (!/^-?\d+$/.test(raw)) {
     return helpers.error(NUMBER_ERROR_CODE)
   }
-  const { negative, digits } = significantDigitsOf(raw)
-  const bound = negative ? min : max
-  if (exceedsSignificantDigits(digits, bound)) {
-    return helpers.error(
-      negative ? NUMBER_MIN_ERROR_CODE : NUMBER_MAX_ERROR_CODE
-    )
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) {
+    return helpers.error(NUMBER_ERROR_CODE)
   }
-  const parsed = BigInt(negative ? `-${digits}` : digits)
-  if (min != null && parsed < BigInt(min)) {
+  if (min != null && parsed < min) {
     return helpers.error(NUMBER_MIN_ERROR_CODE)
   }
-  if (max != null && parsed > BigInt(max)) {
+  if (max != null && parsed > max) {
     return helpers.error(NUMBER_MAX_ERROR_CODE)
   }
   return raw
 }
 
-export const integerInRange = (name, { min, max, message } = {}) =>
+/**
+ * Save-blocking whole number in a range; blank passes.
+ * @param {string} name
+ * @param {object} [options]
+ * @param {number} [options.min] - Inclusive lower bound.
+ * @param {number} [options.max] - Inclusive upper bound.
+ * @param {string} [options.message] - Shown for every out-of-range or
+ * non-numeric value, when the field has one message for every case.
+ * @param {object} [options.messages] - An alternative to `message` for a
+ * field whose maximum needs its own wording.
+ * @param {string} [options.messages.invalid] - Shown when the value is not a
+ * whole number, and when it falls below the lower bound.
+ * @param {string} [options.messages.max] - Shown when the value is above the
+ * upper bound, falling back to `messages.invalid` when not given.
+ */
+export const integerInRange = (name, { min, max, message, messages } = {}) =>
   single(
     name,
     Joi.string()
@@ -235,9 +235,15 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       .allow('')
       .custom(wholeNumberInRange(min, max))
       .messages({
-        [NUMBER_ERROR_CODE]: message ?? defaults.wholeNumber,
-        [NUMBER_MIN_ERROR_CODE]: message ?? defaults.numberBetween(min, max),
-        [NUMBER_MAX_ERROR_CODE]: message ?? defaults.numberBetween(min, max)
+        [NUMBER_ERROR_CODE]:
+          messages?.invalid ?? message ?? defaults.wholeNumber,
+        [NUMBER_MIN_ERROR_CODE]:
+          messages?.invalid ?? message ?? defaults.numberBetween(min, max),
+        [NUMBER_MAX_ERROR_CODE]:
+          messages?.max ??
+          messages?.invalid ??
+          message ??
+          defaults.numberBetween(min, max)
       })
   )
 
@@ -248,11 +254,8 @@ export const integerInRange = (name, { min, max, message } = {}) =>
  * rule — blank would then pass. `requiredMaxText` exists for the same reason.
  * @param {string} name
  * @param {object} options
- * @param {number | bigint} [options.min] - Inclusive lower bound. A bound
- * outside the range a JavaScript number holds exactly must be given as a
- * `bigint` literal (`123n`).
- * @param {number | bigint} [options.max] - Inclusive upper bound, same
- * contract as `min`.
+ * @param {number} [options.min] - Inclusive lower bound.
+ * @param {number} [options.max] - Inclusive upper bound.
  * @param {object} options.messages
  * @param {string} options.messages.required - Shown when the value is blank or
  * absent.

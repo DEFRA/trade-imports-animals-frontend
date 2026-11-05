@@ -5,7 +5,7 @@ import { lineKey } from '../selection/line-key.js'
 import { removeActionFor } from '../selection/remove-action.js'
 import { speciesLabel } from '../../species-label.js'
 import { legendFor } from '../../commodity-legend.js'
-import { removeActionButton } from '../../../../../../../../../common/constants/table-cells.js'
+import { removeActionButton } from '../../../../../../../../../common/components/remove-action-button.js'
 
 const copy = copyFor({ en, cy }).search
 
