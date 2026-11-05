@@ -9,9 +9,9 @@ import { copy as transportCopy } from '../src/server/app/sets/live-animals/journ
 import {
   addDocument,
   BASE,
-  BOS_TAURUS,
-  FELIS_CATUS,
-  STRUTHIO,
+  BOS_TAURUS_ROW,
+  FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
   answerAdditionalDetails,
   answerAnimalIdentification,
   answerArrivalDetails,
@@ -73,7 +73,7 @@ test.describe('live-animals journey glue', () => {
     await save()
     await expect(heading(commoditiesCopy.search.title)).toBeVisible()
 
-    await selectSpecies(page, [FELIS_CATUS])
+    await selectSpecies(page, [FELIS_CATUS_ROW])
     await save()
     await expect(heading(importReasonCopy.title)).toBeVisible()
 
@@ -157,7 +157,7 @@ test.describe('live-animals journey glue', () => {
 
     await followBack(page)
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
-    await expectSpeciesSelected(page, BOS_TAURUS)
+    await expectSpeciesSelected(page, BOS_TAURUS_ROW)
 
     await saveAndContinue()
     await expect(exactHeading(page, importReasonCopy.title)).toBeVisible()
@@ -182,7 +182,7 @@ test.describe('live-animals journey glue', () => {
     await followBack(page)
 
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
-    await expectSpeciesSelected(page, BOS_TAURUS)
+    await expectSpeciesSelected(page, BOS_TAURUS_ROW)
   })
 
   test('in the opening run, Back from Additional details opens Identification details when a chosen species needs identifiers', async ({
@@ -202,7 +202,7 @@ test.describe('live-animals journey glue', () => {
   }) => {
     await startNotificationAtOrigin(page)
     await answerOriginDetails(page)
-    await selectSpecies(page, [STRUTHIO])
+    await selectSpecies(page, [STRUTHIO_ROW])
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await answerImportReason(page)
     await page.getByLabel('Number of animals').fill('2')

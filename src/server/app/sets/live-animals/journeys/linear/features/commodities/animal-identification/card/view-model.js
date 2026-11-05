@@ -7,6 +7,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
+import { lineKey } from '../../search/selection/line-key.js'
 import { speciesLabel } from '../../species-label.js'
 import { addressFieldsFor, blankAddress } from '../address/fields.js'
 import { fieldName } from '../fields.js'
@@ -29,9 +30,9 @@ const overCountTextFor = (cap, label, units) =>
 const animalLabelOf = (label, number) =>
   label ? copy.animalRowNamed(label, number) : copy.animalRow(number)
 
-const unitEntries = (index, label, columns, units) =>
+const unitEntries = (key, label, columns, units) =>
   units.map((unit, unitIndex) => ({
-    line: index,
+    key,
     unitIndex,
     label: animalLabelOf(label, unitIndex + 1),
     cells: columns.map(([id]) => identifierCellText(unit, id)),
@@ -48,7 +49,7 @@ const savedAnimalsTableOf = (columns, unitRows) => ({
   rows: unitRows.map((unitRow) => [
     ...wrappingCells([unitRow.label, ...unitRow.cells]),
     removeActionCell({
-      action: `remove:${unitRow.line}:${unitRow.unitIndex}`,
+      action: `remove:${unitRow.key}:${unitRow.unitIndex}`,
       text: copy.removeRow,
       hiddenText: unitRow.removeAria
     })
@@ -93,13 +94,13 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const units = entry.animalIdentifiers ?? []
   const cap = identifierCapOf(answers, index)
   const atCap = isAtCap(cap, units.length)
-  const scientificName = entry.speciesLatinName
+  const speciesLatinName = entry.speciesLatinName
   const label = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
   const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(commodityCode, scientificName)
-  const columns = identifierColumns(commodityCode, scientificName)
-  const unitRows = unitEntries(index, label, columns, units)
+  const showAddress = permanentAddressApplies(commodityCode, speciesLatinName)
+  const columns = identifierColumns(commodityCode, speciesLatinName)
+  const unitRows = unitEntries(lineKey(entry), label, columns, units)
   return {
     index,
     anchor: identificationCardAnchor(index),

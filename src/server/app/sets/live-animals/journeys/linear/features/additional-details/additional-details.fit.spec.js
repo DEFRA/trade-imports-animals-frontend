@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
-  BOS_TAURUS,
-  EQUUS_CABALUS,
-  FELIS_CATUS,
+  BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
   answerCountryOfOrigin,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
@@ -20,7 +20,10 @@ import { copy } from './copy/copy.en.js'
 
 const SAVED_NOTIFICATION_URL = urlUnderBase('/notifications/[^/]+')
 
-const startAtAdditionalDetails = async (page, chosenSpecies = BOS_TAURUS) => {
+const startAtAdditionalDetails = async (
+  page,
+  chosenSpecies = BOS_TAURUS_ROW
+) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
@@ -142,7 +145,7 @@ test.describe('additional-details feature — the unweaned commodity gate', () =
   test.describe('an equine consignment', () => {
     test.beforeEach(async ({ page }) => {
       await signIn(page)
-      await startAtAdditionalDetails(page, EQUUS_CABALUS)
+      await startAtAdditionalDetails(page, EQUUS_CABALUS_ROW)
     })
 
     test('asks the unweaned question alongside certification, with its hint and both options', async ({
@@ -167,7 +170,7 @@ test.describe('additional-details feature — the unweaned commodity gate', () =
   test.describe('a commodity the unweaned list excludes', () => {
     test.beforeEach(async ({ page }) => {
       await signIn(page)
-      await startAtAdditionalDetails(page, FELIS_CATUS)
+      await startAtAdditionalDetails(page, FELIS_CATUS_ROW)
     })
 
     test('asks only the certification question', async ({ page }) => {

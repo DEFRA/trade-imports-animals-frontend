@@ -5,21 +5,13 @@ import { lineKey } from '../selection/line-key.js'
 import { removeActionFor } from '../selection/remove-action.js'
 import { speciesLabel } from '../../species-label.js'
 import { legendFor } from '../../commodity-legend.js'
-import { removeActionButton } from '../../../../../../../../../common/components/remove-action-button.js'
 
 const copy = copyFor({ en, cy }).search
 
-const itemFor = (row) => {
-  const label = speciesLabel(row)
-  return {
-    label,
-    removeHtml: removeActionButton({
-      action: removeActionFor(lineKey(row)),
-      text: copy.selected.remove,
-      hiddenText: label
-    })
-  }
-}
+const itemFor = (row) => ({
+  label: speciesLabel(row),
+  removeAction: removeActionFor(lineKey(row))
+})
 
 const groupsFor = (rows) =>
   [...Map.groupBy(rows, (row) => row.commodityCode)].map(

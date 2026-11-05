@@ -308,13 +308,20 @@ dangling out of scope is pruned too:
 await state.removeEntry(request, h, 'documents', index)
 ```
 
+Look the instance up before writing and refuse an index the collection has no
+entry for, so a forged or stale index is rejected rather than acted on —
+[`animal-identification/remove/post-remove.js`](../journeys/linear/features/commodities/animal-identification/remove/post-remove.js)
+looks the unit up before the write and refuses a missing one with one logged
+refusal and a bad request.
+
 The documents collection still keys its `remove:<index>` action by
-position, and so does an identifier unit's removal within a species line —
-each entry in these collections has no stable value of its own to carry on
-the action, only its place in the list. Where an entry does have one — a
-commodity code on a code row, a line's key on a species row — the action
-value carries that entry rather than its index, the convention
-[`page-design.md`](page-design.md) states for Commodity details.
+position — each entry has no stable value of its own to carry on the
+action, only its place in the list. An identifier unit's removal carries
+its species line's key and the unit's position within that line, because
+a commodity line does have a stable value: the line's key picks out the
+line, and the unit's position stays positional within it, the same
+convention [`page-design.md`](page-design.md) states for Commodity
+details.
 
 `appendEntry` / `updateEntry` / `removeEntry` are the top-level convenience
 forms; each delegates to the `…At` form with a single-segment path

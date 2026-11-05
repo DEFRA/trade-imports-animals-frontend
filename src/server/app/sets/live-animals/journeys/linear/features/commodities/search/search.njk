@@ -63,15 +63,17 @@
       <div id="commodity-selection">
         <h2 class="govuk-heading-s">{{ selectedSummary.heading }}</h2>
         {% for group in selectedSummary.groups %}
-          <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ group.legend }}:</p>
-          <ul class="govuk-list govuk-!-margin-bottom-4">
-            {% for item in group.items %}
-              <li>
-                {{ item.label }}
-                {{ item.removeHtml | safe }}
-              </li>
-            {% endfor %}
-          </ul>
+          <div class="govuk-!-margin-bottom-4">
+            <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ group.legend }}:</p>
+            <ul class="govuk-list">
+              {% for item in group.items %}
+                <li>
+                  {{ item.label }}
+                  <button type="submit" class="govuk-link app-link-button" name="action" value="{{ item.removeAction }}">{{ copy.selected.remove }}<span class="govuk-visually-hidden"> {{ item.label }}</span></button>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
         {% endfor %}
         {{ govukButton({
           text: copy.selected.clearAll,

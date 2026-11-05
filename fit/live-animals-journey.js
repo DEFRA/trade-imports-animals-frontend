@@ -33,14 +33,16 @@ export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
 
-export const BISON_BISON = BISON_BISON_ROW
-export const BOS_TAURUS = BOS_TAURUS_ROW
-export const BUBALUS_BUBALIS = BUBALUS_BUBALIS_ROW
-export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
-export const FELIS_CATUS = FELIS_CATUS_ROW
-export const GALLUS_GALLUS = GALLUS_GALLUS_ROW
-export const MUSTELA_PUTORIUS_FURO = MUSTELA_PUTORIUS_FURO_ROW
-export const STRUTHIO = STRUTHIO_ROW
+export {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  BUBALUS_BUBALIS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  GALLUS_GALLUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
+  STRUTHIO_ROW
+}
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
@@ -654,13 +656,14 @@ export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) => {
+  const group = selectedSummary(page)
+    .locator('div')
+    .filter({ hasText: `${commodityCode}:` })
   await expect(
-    selectedSummary(page).getByText(`${commodityCode}:`, { exact: true })
+    group.getByText(`${commodityCode}:`, { exact: true })
   ).toBeVisible()
   await expect(
-    selectedSummary(page)
-      .getByRole('listitem')
-      .filter({ hasText: labelFor(speciesLatinName) })
+    group.getByRole('listitem').filter({ hasText: labelFor(speciesLatinName) })
   ).toBeVisible()
 }
 
@@ -672,7 +675,7 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
     })
     .click()
 
-export const unlockSections = async (page, chosen = FELIS_CATUS) => {
+export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -754,7 +757,10 @@ export const answerOriginDetails = async (
   await save(page)
 }
 
-export const answerWhatYouAreImporting = async (page, chosen = BOS_TAURUS) => {
+export const answerWhatYouAreImporting = async (
+  page,
+  chosen = BOS_TAURUS_ROW
+) => {
   await selectSpecies(page, [chosen])
   await save(page)
 }

@@ -31,8 +31,7 @@ import { buildRemovableCommoditiesTable } from '../view-model/selected-commodity
 import {
   payloadValues,
   storedValues,
-  survivorKeysMissingRenderedCount,
-  survivorValues
+  survivorForm
 } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
@@ -110,11 +109,7 @@ const renderAfterRemoval = async (request, h, postedLines, payload, action) => {
   const current = await state.get(request, h)
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
-  const missingCountKeys = survivorKeysMissingRenderedCount(
-    postedLines,
-    payload,
-    lines
-  )
+  const { values, missingCountKeys } = survivorForm(postedLines, payload, lines)
   if (missingCountKeys.length > 0) {
     request.logger.warn(
       {
@@ -130,7 +125,7 @@ const renderAfterRemoval = async (request, h, postedLines, payload, action) => {
     h,
     current,
     lines,
-    values: survivorValues(postedLines, payload, lines)
+    values
   })
 }
 

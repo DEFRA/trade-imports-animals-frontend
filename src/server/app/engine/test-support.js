@@ -503,8 +503,7 @@ export const useBackendRecords = (setId) => {
 export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>
   expectOneRefusalLogged(logger, { journeyId, errorCodes: [], ...details })
 
-/** The context the shared error view renders for a response; `undefined` when the response is not a Boom error. */
-export const renderedErrorPageFor = (response) => {
+export const errorViewContextFor = (response) => {
   const view = vi.fn()
   catchAll(
     { response, logger: { error: vi.fn() } },

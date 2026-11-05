@@ -1,5 +1,5 @@
-import { escapeHtml } from '../../app/shared/escape-html.js'
 import { removeActionButton } from '../components/remove-action-button.js'
+import { visuallyHiddenText } from '../visually-hidden-text.js'
 
 export const BREAK_ANYWHERE_CELL = 'app-table__cell--break-anywhere'
 
@@ -7,9 +7,6 @@ export const wrappingCell = (content) => ({
   ...content,
   classes: BREAK_ANYWHERE_CELL
 })
-
-export const visuallyHiddenText = (text) =>
-  `<span class="govuk-visually-hidden">${escapeHtml(text)}</span>`
 
 export const actionsCell = (html) => ({
   html,

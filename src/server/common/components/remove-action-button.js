@@ -1,5 +1,5 @@
 import { escapeHtml } from '../../app/shared/escape-html.js'
-import { visuallyHiddenText } from '../constants/table-cells.js'
+import { visuallyHiddenText } from '../visually-hidden-text.js'
 
 const trailingClass = (classes) => (classes ? ` ${classes}` : '')
 

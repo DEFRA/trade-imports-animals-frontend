@@ -9,7 +9,7 @@ import {
   expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
-  renderedErrorPageFor,
+  errorViewContextFor,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -87,9 +87,6 @@ const textsOf = (result) =>
   )
 
 const keysOf = (lines) => lines.map(lineKey)
-
-const removeButtonHtml = (key, label) =>
-  `<button type="submit" class="govuk-link app-link-button" name="action" value="remove:${key}">Remove<span class="govuk-visually-hidden"> ${label}</span></button>`
 
 describe('commodity search', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -346,17 +343,11 @@ describe('commodity search — what has been chosen so far', () => {
           items: [
             {
               label: labelFor(BISON_BISON_ROW.speciesLatinName),
-              removeHtml: removeButtonHtml(
-                BISON_BISON_KEY,
-                labelFor(BISON_BISON_ROW.speciesLatinName)
-              )
+              removeAction: removeActionFor(BISON_BISON_KEY)
             },
             {
               label: labelFor(BOS_TAURUS_ROW.speciesLatinName),
-              removeHtml: removeButtonHtml(
-                BOS_TAURUS_KEY,
-                labelFor(BOS_TAURUS_ROW.speciesLatinName)
-              )
+              removeAction: removeActionFor(BOS_TAURUS_KEY)
             }
           ]
         },
@@ -365,10 +356,7 @@ describe('commodity search — what has been chosen so far', () => {
           items: [
             {
               label: labelFor(FELIS_CATUS_ROW.speciesLatinName),
-              removeHtml: removeButtonHtml(
-                FELIS_CATUS_KEY,
-                labelFor(FELIS_CATUS_ROW.speciesLatinName)
-              )
+              removeAction: removeActionFor(FELIS_CATUS_KEY)
             }
           ]
         }
@@ -437,7 +425,7 @@ describe('commodity search — removing one chosen species', () => {
       flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
     })
     expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(renderedErrorPageFor(result.response)).toMatchObject({
+    expect(errorViewContextFor(result.response)).toMatchObject({
       heading: HTTP_STATUS_BAD_REQUEST,
       message: 'There is a problem with your request'
     })

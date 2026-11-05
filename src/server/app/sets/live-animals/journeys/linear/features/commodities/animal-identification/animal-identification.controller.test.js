@@ -21,6 +21,7 @@ import {
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
+import { lineKey } from '../search/selection/line-key.js'
 
 import {
   BISON_BISON,
@@ -50,7 +51,8 @@ const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
 const EAR_TAG_FIELD_1 = 'animalIdentifierEarTag-1'
 const IDENTIFICATION_PAGE = 'commodities/identification'
-const REMOVE_FIRST_UNIT = 'remove:0:0'
+const removeUnitAction = (line, unitIndex) =>
+  `remove:${lineKey(line)}:${unitIndex}`
 const BOS_TAURUS_1 = `${labelFor(BOS_TAURUS)} 1`
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 const IMPLICIT_SUBMIT = 'implicit-submit'
@@ -802,7 +804,7 @@ describe(`${SUITE} — Remove`, () => {
           })
         ]
       },
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
     })
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
@@ -810,7 +812,30 @@ describe(`${SUITE} — Remove`, () => {
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
   })
 
-  it('Should refuse a remove for an out-of-range line index and delete nothing', async () => {
+  it('Should remove a unit from the line its key names, even when that line is not first', async () => {
+    const seed = {
+      commodityLines: [
+        felisCatusLine({
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierMicrochip: 'MC1' }]
+        }),
+        lineOf(BOS_TAURUS_ROW, {
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
+    })
+    expect(result.after.commodityLines[0].animalIdentifiers).toEqual([
+      { animalIdentifierMicrochip: 'MC1' }
+    ])
+    expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+  })
+
+  it('Should refuse a remove naming a line key the selection does not hold, and delete nothing', async () => {
     const seed = {
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, {
@@ -820,13 +845,13 @@ describe(`${SUITE} — Remove`, () => {
     }
     const result = await driveHandler(post, {
       seed,
-      payload: { action: 'remove:5:0' }
+      payload: { action: 'remove:9999|Not a line:0' }
     })
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
-      lineIndex: 5,
+      key: '9999|Not a line',
       unitIndex: 0,
-      reason: 'no-animal-identifier-at-index'
+      reason: 'no-commodity-line-for-key'
     })
     expect(result.after).toEqual(seed)
   })
@@ -841,7 +866,7 @@ describe(`${SUITE} — Remove`, () => {
     }
     const result = await driveHandler(post, {
       seed,
-      payload: { action: 'remove:0:5' }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 5) }
     })
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
@@ -861,7 +886,7 @@ describe(`${SUITE} — Remove`, () => {
     const forged = await server.inject({
       method: 'POST',
       url: pagePath('journey-1', IDENTIFICATION_PAGE),
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
     })
     expect(forged.statusCode).toBe(403)
 
@@ -1033,7 +1058,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       seed: {
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
       },
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(STRUTHIO_ROW, 0) }
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()

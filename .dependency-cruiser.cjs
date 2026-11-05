@@ -153,7 +153,7 @@ module.exports = {
       name: 'no-circular',
       comment: 'Cycles are forbidden throughout the application architecture.',
       severity: 'error',
-      from: { path: `^${APP}/` },
+      from: { path: '^src/server/(app|common)/' },
       to: { circular: true }
     },
     {

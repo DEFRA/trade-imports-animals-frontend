@@ -21,6 +21,16 @@ const afterRemoval = (request, h, kept, commodityCode, renderSurvivors) => {
   return renderSurvivors()
 }
 
+const honourSettledRemoval = (request, h, stored, renderSurvivors, details) => {
+  request.logger.warn(
+    { journeyId: request.params.journeyId, ...details },
+    'A removal named an entry the selection no longer holds: the page is shown as it now stands'
+  )
+  return stored.length === 0
+    ? h.redirect(commodityQuestionPath(request))
+    : renderSurvivors()
+}
+
 export const postRemove = async (
   request,
   h,
@@ -31,11 +41,9 @@ export const postRemove = async (
   const { answers } = await state.get(request, h)
   const stored = answers.commodityLines ?? []
   if (!stored.some((entry) => entry.commodityCode === commodityCode)) {
-    kit.logRefusal(request, {
-      reason: 'no-commodity-for-code',
-      code: commodityCode
+    return honourSettledRemoval(request, h, stored, renderSurvivors, {
+      commodityCode
     })
-    return Boom.badRequest()
   }
 
   const kept = entriesNotOfCode(stored, commodityCode)
@@ -59,14 +67,14 @@ export const postRemoveSpecies = async (
   const { answers } = await state.get(request, h)
   const stored = answers.commodityLines ?? []
   const line = stored.find((entry) => lineKeyOf(entry) === key)
-  if (
-    line === undefined ||
-    !commodities.listsSpeciesIndividually(line.commodityCode)
-  ) {
+  if (line === undefined) {
+    return honourSettledRemoval(request, h, stored, renderSurvivors, { key })
+  }
+  if (!commodities.listsSpeciesIndividually(line.commodityCode)) {
     kit.logRefusal(request, {
       reason: 'no-species-for-key',
       key,
-      commodityCode: line?.commodityCode
+      commodityCode: line.commodityCode
     })
     return Boom.badRequest()
   }

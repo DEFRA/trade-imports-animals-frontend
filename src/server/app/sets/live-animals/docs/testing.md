@@ -48,8 +48,8 @@ live-animals helper uses
 - The shared species rows (`BOS_TAURUS_ROW`, `FELIS_CATUS_ROW` and so on) live in
   `features/commodities/search/test-support.js`, carrying the Latin name
   and the common name the stub serves; `fit/live-animals-journey.js` imports and
-  re-exports them under the bare names. Specs import them rather than declaring
-  their own. The spelled-out label for each row lives beside them in
+  re-exports them under their own `_ROW` names. Specs import them rather than
+  declaring their own. The spelled-out label for each row lives beside them in
   `test-support.js`, for a driver or a spec that holds a row and needs its label.
 - `openCommoditySearch` and `openCommodityDetails` take a notification from the
   start to the commodity search page and to the commodity details page.

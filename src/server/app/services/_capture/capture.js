@@ -57,12 +57,10 @@ const singleResponse = async (target) => {
   return response ? response.json() : null
 }
 
-const captures = targets.map((target) => ({ target, collect: singleResponse }))
-
 await mkdir(outDir, { recursive: true })
 
-for (const { target, collect } of captures) {
-  const body = await collect(target)
+for (const target of targets) {
+  const body = await singleResponse(target)
   if (body) {
     await writeFixture(target, body)
   }

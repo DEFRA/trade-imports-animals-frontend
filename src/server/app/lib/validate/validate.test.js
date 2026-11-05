@@ -257,7 +257,7 @@ describe('#integerInRange — bounds', () => {
     const schemaWithMessage = integerInRange('year', {
       min: 1900,
       max: 2100,
-      message
+      messages: { invalid: message }
     })
     expect(validate(schemaWithMessage, { year: '2101' }).errors).toEqual({
       year: message
@@ -270,6 +270,20 @@ describe('#integerInRange — bounds', () => {
 
     expect(validate(unbounded, { year: massiveDigitString }).errors).toEqual({
       year: validatorDefaults.wholeNumber
+    })
+  })
+
+  it('Should refuse an extremely long digit string with the above-maximum message when the field has an upper bound', () => {
+    const ABOVE_MAX_MESSAGE = 'Enter a year of 2100 or earlier'
+    const bounded = integerInRange('year', {
+      min: 1,
+      max: 2100,
+      messages: { invalid: 'Enter a whole number', max: ABOVE_MAX_MESSAGE }
+    })
+    const massiveDigitString = '9'.repeat(100000)
+
+    expect(validate(bounded, { year: massiveDigitString }).errors).toEqual({
+      year: ABOVE_MAX_MESSAGE
     })
   })
 })
