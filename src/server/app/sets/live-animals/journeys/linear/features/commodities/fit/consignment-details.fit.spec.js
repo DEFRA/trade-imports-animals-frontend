@@ -62,6 +62,19 @@ const errorFor = (field) =>
     ? copy.consignmentDetails.errors.animalsWholeNumber
     : copy.consignmentDetails.errors.packagesWholeNumber
 
+const removeBosTaurusLeavingOnlyFelisCatus = async (page) => {
+  await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
+
+  const table = selectedCommoditiesTable(page)
+  await expect(table.getByRole('row')).toHaveCount(2)
+  await expect(
+    table.getByRole('cell', {
+      name: FELIS_CATUS.commodityCode,
+      exact: true
+    })
+  ).toBeVisible()
+}
+
 test.describe('commodity consignment details — rendering and validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -125,16 +138,19 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toHaveClass(/govuk-label--s/)
   })
 
-  test('keeps the code-level remove for 0102 Bos taurus and gives each species on code 01061900 its own remove', async ({
+  test('keeps the code-level remove for 0102 Bos taurus and gives each species on code 01061900 its own remove, each naming the entry it removes', async ({
     page
   }) => {
     const table = selectedCommoditiesTable(page)
     await expect(
       table.getByRole('button', { name: REMOVE_BOS_TAURUS })
-    ).toHaveAttribute('value', 'remove:0')
+    ).toHaveAttribute('value', `remove:${BOS_TAURUS.commodityCode}`)
     await expect(
       table.getByRole('button', { name: REMOVE_FELIS_CATUS })
-    ).toHaveAttribute('value', 'remove-species:1')
+    ).toHaveAttribute(
+      'value',
+      `remove-species:${FELIS_CATUS.commodityCode}|${FELIS_CATUS.speciesLatinName}`
+    )
   })
 
   test('back link returns to the overview the hub task came from', async ({
@@ -338,23 +354,34 @@ test.describe('commodity consignment details — persistence and accessibility',
     await fillValidQuantities(page)
     await saveAndContinue(page).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-    await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
+    await removeBosTaurusLeavingOnlyFelisCatus(page)
 
-    const table = selectedCommoditiesTable(page)
-    await expect(table.getByRole('row')).toHaveCount(2)
     await expect(
-      table.getByRole('cell', {
-        name: FELIS_CATUS.commodityCode,
-        exact: true
-      })
-    ).toBeVisible()
-    await expect(
-      table.getByRole('cell', {
+      selectedCommoditiesTable(page).getByRole('cell', {
         name: labelFor(FELIS_CATUS.speciesLatinName),
         exact: true
       })
     ).toBeVisible()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
+  })
+
+  test('keeps numbers typed but not yet saved in the remaining line after removing another commodity', async ({
+    page
+  }) => {
+    await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).fill('11')
+    await page.locator(SECOND_ANIMALS_QUANTITY_INPUT).fill('22')
+    await removeBosTaurusLeavingOnlyFelisCatus(page)
+
+    await expect(await numberOfAnimalsFor(page, FELIS_CATUS)).toHaveValue('22')
+  })
+
+  test('saves the page rather than removing a commodity when Enter is pressed in a quantity field', async ({
+    page
+  }) => {
+    await fillValidQuantities(page)
+    await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).press('Enter')
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('removing the last commodity returns to the commodity question, as does reopening the page with nothing selected', async ({

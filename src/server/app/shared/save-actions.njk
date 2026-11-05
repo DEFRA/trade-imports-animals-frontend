@@ -1,6 +1,20 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {#
+  implicitSubmitButton — a hidden implicit-submit button, placed ahead of a
+  page's other submit controls so Enter activates it rather than the first
+  one that follows.
+
+  Params:
+    text   (string) the accessible name of the control Enter activates
+    name   (string) optional form field name for the submitted action
+    value  (string) the value posted for name, when name is set
+#}
+{% macro implicitSubmitButton(params) %}
+  <button type="submit"{% if params.name %} name="{{ params.name }}" value="{{ params.value }}"{% endif %} class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ params.text }}</button>
+{% endmacro %}
+
+{#
   saveActions — the Save and continue controls of a journey page.
 
   Params:

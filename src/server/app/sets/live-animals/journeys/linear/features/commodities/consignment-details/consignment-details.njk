@@ -1,7 +1,7 @@
 {% extends "shared/layout.njk" %}
 {% from "live-animals/journeys/linear/features/commodities/consignment-details/_selected-commodities-table.njk" import selectedCommoditiesTable %}
 {% from "live-animals/journeys/linear/features/commodities/consignment-details/_species-quantities.njk" import speciesQuantityGroup %}
-{% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/save-actions.njk" import implicitSubmitButton, saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
@@ -13,16 +13,14 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+
+    {{ implicitSubmitButton({ text: sharedCopy.saveActions.saveAndContinue }) }}
+
     {{ selectedCommoditiesTable(selectedTable, selectedCommoditiesCopy) }}
-  </form>
 
-  <p class="govuk-body govuk-!-margin-bottom-7">
-    <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnother }}</a>
-  </p>
-
-  <form method="post" novalidate>
-    <input type="hidden" name="crumb" value="{{ crumb }}" />
-    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+    <p class="govuk-body govuk-!-margin-bottom-7">
+      <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnother }}</a>
+    </p>
 
     {% for group in groups %}
       {% if not loop.first %}

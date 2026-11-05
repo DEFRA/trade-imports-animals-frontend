@@ -12,20 +12,18 @@ import { buildCommodityGroups } from './commodity-groups.js'
 
 const labelOf = ({ entry }) => speciesLabel(entry)
 
-const commodityRow = ({ index, code, lines }) => ({
+const commodityRow = ({ code, lines }) => ({
   code,
   labels: lines.map(labelOf),
   lines,
-  groupIndex: index,
   perSpecies: false
 })
 
-const speciesRows = ({ index, code, lines }) =>
+const speciesRows = ({ code, lines }) =>
   lines.map((line) => ({
     code,
     labels: [labelOf(line)],
     lines: [line],
-    groupIndex: index,
     perSpecies: true
   }))
 

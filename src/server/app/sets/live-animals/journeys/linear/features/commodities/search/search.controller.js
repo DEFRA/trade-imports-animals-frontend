@@ -24,8 +24,6 @@ import {
 import { commodityGroups } from './view-model/commodity-groups.js'
 import { selectedSummary } from './view-model/selected-summary.js'
 
-export { lineKey } from './selection/line-key.js'
-
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search/search`
 

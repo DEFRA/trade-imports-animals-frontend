@@ -291,10 +291,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   bold, so a trader can see at a glance why each result was offered.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
-- A removal returns to Commodity details while a line is left, and to the
-  commodity question once the last line is gone, because that is where the next
-  answer comes from. A removal is a POST on the page form with no GET, so a
-  link cannot trigger it.
+- A removal leaves the trader on Commodity details while a line is left, with
+  every number they had typed still in its field, because the page answers
+  the removal itself rather than redirecting to it. The page is one form,
+  opening with a hidden submit before the selected-commodities table, so
+  Enter hits it rather than the first Remove, and ending with the save
+  actions. Each Remove carries the entry it removes — the
+  commodity's code on a code row, the line's key on a species row — so a
+  repeated or stale removal is refused rather than taking another row, the
+  same rule this doc states above for the selected panel and below for
+  transit countries. A removal that empties the selection still goes to the
+  commodity question, because that is where the next answer comes from. A
+  removal is a POST on the page form with no GET, so a link cannot trigger
+  it.
 
 ## Consignment addresses pages
 
