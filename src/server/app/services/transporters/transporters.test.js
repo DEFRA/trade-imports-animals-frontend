@@ -5,6 +5,9 @@ import * as addressBook from '../address-book/index.js'
 import { addressCountries } from '../countries/index.js'
 import * as transportReference from '../transport-reference/index.js'
 
+const partiesOfType = (type) =>
+  transporters.parties().filter((record) => record.type === type)
+
 describe('#parties', () => {
   test('Should return every transporter with a stable id', () => {
     const records = transporters.parties()
@@ -51,13 +54,13 @@ describe('#parties', () => {
   })
 
   test('Should carry the approval number the address book cannot represent on every commercial record', () => {
-    for (const record of transporters.commercialParties()) {
+    for (const record of partiesOfType(transporters.COMMERCIAL)) {
       expect(record.approvalNumber).toBeTruthy()
     }
   })
 
   test('Should carry a country code on every commercial record', () => {
-    for (const record of transporters.commercialParties()) {
+    for (const record of partiesOfType(transporters.COMMERCIAL)) {
       expect(record.address.countryCode, record.id).toBeTruthy()
     }
   })
@@ -65,9 +68,7 @@ describe('#parties', () => {
   test('Should carry every field the private-transporter form makes mandatory on every private record', async () => {
     const addresses = await addressCountries()
 
-    for (const record of transporters
-      .parties()
-      .filter((candidate) => candidate.type === transporters.PRIVATE)) {
+    for (const record of partiesOfType(transporters.PRIVATE)) {
       expect(record.name, `${record.id} name`).toBeTruthy()
 
       for (const field of [
@@ -91,30 +92,6 @@ describe('#parties', () => {
 
   test('Should resolve synchronously, so the pickers can validate at module load', () => {
     expect(transporters.parties()).not.toBeInstanceOf(Promise)
-  })
-})
-
-describe('#commercialParties', () => {
-  test('Should narrow the list to the approved commercial register', () => {
-    const commercial = transporters.commercialParties()
-
-    expect(commercial.length).toBeGreaterThan(0)
-    expect(commercial.length).toBeLessThan(transporters.parties().length)
-    expect(
-      commercial.every((record) => record.type === transporters.COMMERCIAL)
-    ).toBe(true)
-  })
-})
-
-describe('#party', () => {
-  test('Should look a transporter up by its id', () => {
-    const first = transporters.parties()[0]
-
-    expect(transporters.party(first.id).name).toBe(first.name)
-  })
-
-  test('Should return undefined for an id that is not a transporter', () => {
-    expect(transporters.party('not-a-transporter')).toBeUndefined()
   })
 })
 

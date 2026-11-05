@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { documentOf } from '../../src/server/common/test-helpers/document-of.js'
 import { SET_BASE } from '../../src/server/app/sets/live-animals/set.js'
 import {
+  COMMERCIAL,
+  parties
+} from '../../src/server/app/services/transporters/index.js'
+import {
   journeyIdIn,
   SEED_SHAPES,
   seedSteps,
@@ -68,6 +72,18 @@ describe('#seedSteps cph-number', () => {
     expect(`${cphCounty}${cphParish}${cphHolding}`).toBe(
       values.countyParishHoldingCph.replace(/\D/g, '')
     )
+  })
+})
+
+describe('#seedSteps commercial transporter', () => {
+  it("Should pick the fixture's commercial transporter on the transporter list", () => {
+    const { transporter } = stepFor('transporters').fields
+    const picked = parties().find((record) => record.id === transporter)
+
+    expect(picked).toMatchObject({
+      name: values.commercialTransporter.name,
+      type: COMMERCIAL
+    })
   })
 })
 

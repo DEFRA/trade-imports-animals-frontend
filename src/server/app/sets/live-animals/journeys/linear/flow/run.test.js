@@ -17,8 +17,7 @@ import {
   privateTransporterDetailsPage,
   transitCountriesPage,
   transporterAddPage,
-  transportersPage,
-  transportersSelectPage
+  transportersPage
 } from '../features/transport/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
@@ -156,7 +155,6 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 
   it('Should return null for the transporter add spokes — they are not run steps', () => {
     expect(next(transporterAddPage.id, completeSeed)).toBeNull()
-    expect(next(transportersSelectPage.id, completeSeed)).toBeNull()
     expect(next(privateTransporterDetailsPage.id, completeSeed)).toBeNull()
   })
 
