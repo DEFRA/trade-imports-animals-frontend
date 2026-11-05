@@ -55,11 +55,10 @@ const cattleLineHoldingThreeIdentifiers = () => ({
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const ANIMALS_ABOVE_MAX_MESSAGE =
-  'Number of animals must be 9,223,372,036,854,775,807 or fewer'
+  'Number of animals must be 2,147,483,647 or fewer'
 const PACKAGES_WHOLE_NUMBER_MESSAGE =
   'Number of packages must be a whole number, like 5'
-const LARGEST_SIGNED_64_BIT_INTEGER = 9223372036854775807n
-const LARGEST_SAFE_INTEGER_FOR_STORAGE = '9007199254740991'
+const LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES = 2147483647
 const COMMODITIES_SLUG = 'commodities'
 const REMOVE_CATTLE = `remove:${BOS_TAURUS_ROW.commodityCode}`
 
@@ -182,8 +181,8 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.logger.entries).toEqual([])
   })
 
-  it('Should re-render a number of animals above the largest signed 64-bit integer against its own line, keeping what was typed, saving nothing and logging nothing', async () => {
-    const aboveMax = (LARGEST_SIGNED_64_BIT_INTEGER + 1n).toString()
+  it('Should re-render a number of animals above the largest the service stores against its own line, keeping what was typed, saving nothing and logging nothing', async () => {
+    const aboveMax = String(LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES + 1)
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
@@ -202,30 +201,21 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.logger.entries).toEqual([])
   })
 
-  it('Should accept a number of animals exactly at the largest signed 64-bit integer', async () => {
+  it('Should accept and exactly save a number of animals at the largest the service stores', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
-        'numberOfAnimalsQuantity-0': LARGEST_SIGNED_64_BIT_INTEGER.toString(),
+        'numberOfAnimalsQuantity-0': String(
+          LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES
+        ),
         'numberOfAnimalsQuantity-1': '10',
         'numberOfAnimalsQuantity-2': '40'
       }
     })
     expect(result.view).toBeUndefined()
     expect(result.response.redirect).toBeDefined()
-  })
-
-  it('Should save a number of animals at the largest figure the save path holds exactly as the digits typed', async () => {
-    const result = await driveHandler(post, {
-      seed: seedLines(),
-      payload: {
-        'numberOfAnimalsQuantity-0': LARGEST_SAFE_INTEGER_FOR_STORAGE,
-        'numberOfAnimalsQuantity-1': '10',
-        'numberOfAnimalsQuantity-2': '40'
-      }
-    })
     expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(
-      Number(LARGEST_SAFE_INTEGER_FOR_STORAGE)
+      LARGEST_NUMBER_OF_ANIMALS_THE_SERVICE_STORES
     )
   })
 

@@ -14,7 +14,7 @@ export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`
 
 const animalsValidatorsFor = (lines) => {
-  const ANIMALS_MAX = 9223372036854775807n
+  const ANIMALS_MAX = 2147483647
   return lines.map(({ index }) =>
     requiredIntegerInRange(animalsField(index), {
       min: 1,

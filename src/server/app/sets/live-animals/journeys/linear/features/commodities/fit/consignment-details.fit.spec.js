@@ -289,11 +289,11 @@ test.describe('commodity consignment details — the number-of-animals cap', () 
     await openDetails(page)
   })
 
-  test('validation: a number of animals above the largest signed 64-bit integer holds the page with one error against that species, keeping both fields exactly as typed', async ({
+  test('validation: a number of animals above the largest the service stores holds the page with one error against that species, keeping both fields exactly as typed', async ({
     page
   }) => {
-    const atMax = '9223372036854775807'
-    const aboveMax = '9223372036854775808'
+    const atMax = '2147483647'
+    const aboveMax = '2147483648'
     await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).fill(atMax)
     await page.locator(SECOND_ANIMALS_QUANTITY_INPUT).fill(aboveMax)
     await saveAndContinue(page).click()
@@ -301,7 +301,7 @@ test.describe('commodity consignment details — the number-of-animals cap', () 
     const links = page.getByRole('alert').getByRole('link')
     await expect(links).toHaveCount(1)
     await expect(links).toHaveText(
-      copy.consignmentDetails.errors.animalsAboveMax(9223372036854775807n)
+      copy.consignmentDetails.errors.animalsAboveMax(2147483647)
     )
     await links.click()
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toBeFocused()

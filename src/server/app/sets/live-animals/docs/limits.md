@@ -19,13 +19,12 @@ represent. Mapper B layers its additional fields over Mapper A. A new obligation
 always needs a feature binding, but it only gets a mapper field when the target
 backend schema has a real home for it.
 
-## A number of animals above the largest signed 64-bit integer is refused, but the save path holds less than that exactly
+## A number of animals above what the backend's field can hold is refused
 
-Commodity details refuses a number of animals above 9,223,372,036,854,775,807,
-the largest signed 64-bit integer. The save path does not hold every accepted
-value exactly: it converts the count with `Number()`, which holds an integer
-exactly only up to 9,007,199,254,740,991, so a count between that figure and
-the enforced cap is accepted and then saved as a different number.
+Commodity details refuses a number of animals above 2,147,483,647. The
+animals backend's `CommodityComplement.totalNoOfAnimals` is a Java `Integer`,
+so a count above its range is rejected by the backend rather than stored, and
+the cap enforced here matches that field's own range exactly.
 
 ## Collection positions are snapshot-local
 
