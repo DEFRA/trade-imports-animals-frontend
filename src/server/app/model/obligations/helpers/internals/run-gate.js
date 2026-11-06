@@ -60,10 +60,6 @@ export const runGate = (
   gatedParentGroup,
   fulfilmentIndexesByObligationId
 ) => {
-  // `{}` for "nothing stored" routes through the indexed branch, which
-  // yields `{ inScope: false }` on empty admittedIndexes. Without the
-  // default, the undefined would fall through to `runGateUnindexed` and
-  // the predicate could spuriously return `true` on `undefined`.
   const fulfilmentOrEmpty = fulfilment ?? {}
   return isObject(fulfilmentOrEmpty)
     ? runGateIndexed(

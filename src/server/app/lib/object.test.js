@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { isObject } from './object.js'
 
 describe('isObject', () => {
-  it('Should return true for a plain indexedFulfilments object', () => {
+  it('Should return true for a plain object', () => {
     expect(isObject({ line1: 'a', line2: 'b' })).toBe(true)
   })
 
-  it('Should return true for an empty object (still an indexedFulfilments shape)', () => {
+  it('Should return true for an empty object', () => {
     expect(isObject({})).toBe(true)
   })
 

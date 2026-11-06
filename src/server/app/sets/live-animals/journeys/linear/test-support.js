@@ -43,6 +43,15 @@ export const itSendsBackToOverview = (get, { seed = {}, cases } = {}) => {
     ]
   ]
 
+  const unknownCases = (cases ?? []).filter(
+    (name) => !overviewCases.some(([description]) => description === name)
+  )
+  if (unknownCases.length) {
+    throw new Error(
+      `itSendsBackToOverview: no overview case named ${unknownCases.join(', ')}`
+    )
+  }
+
   return it.each(
     overviewCases.filter(
       ([description]) => !cases || cases.includes(description)

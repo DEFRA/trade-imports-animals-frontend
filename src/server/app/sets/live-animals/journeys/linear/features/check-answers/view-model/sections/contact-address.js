@@ -12,9 +12,6 @@ export const contactAddressSection = ({
   parties = answers,
   partyErrors = {}
 }) => ({
-  // Suffixed, like the documents section and for the same reason: the contact
-  // address CARD already owns the `contact-address` id, which is what the error
-  // summary's "Complete contact address for this consignment" link anchors to.
   anchor: 'contact-address-section',
   heading: copy.sections.contactAddress,
   groups: [

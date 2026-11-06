@@ -2,9 +2,8 @@ import { Agent } from 'node:http'
 import { connect } from 'node:net'
 import Wreck from '@hapi/wreck'
 
-const NEVER_OPENED = new Set(['ETIMEDOUT', 'ECONNREFUSED'])
-
 const connectWithOneRetry = (options, logger, oncreate) => {
+  const neverOpenedCodes = new Set(['ETIMEDOUT', 'ECONNREFUSED'])
   const attempt = (retrying) => {
     const socket = connect(options)
     const onConnect = () => {
@@ -13,7 +12,7 @@ const connectWithOneRetry = (options, logger, oncreate) => {
     }
     const onError = (error) => {
       socket.off('connect', onConnect)
-      if (retrying || !NEVER_OPENED.has(error.code)) {
+      if (retrying || !neverOpenedCodes.has(error.code)) {
         oncreate(error)
         return
       }

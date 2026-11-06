@@ -51,7 +51,7 @@ describe('#startServer', () => {
       expect(getDefaultAutoSelectFamilyAttemptTimeout()).toBe(1000)
     })
 
-    test('keeps the connections of Wreck calls made without an agent open for the next call', () => {
+    test('installs a keep-alive agent for Wreck calls made without an agent', () => {
       expect(Wreck.agents.http.keepAlive).toBe(true)
     })
   })

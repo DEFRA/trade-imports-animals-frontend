@@ -3,42 +3,22 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../config/config.js'
 import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
+import { withServerSideEndpointsAtDiscoveryHostname } from './defra-id-hostnames.js'
 
 const OIDC_DOCUMENT_TIMEOUT_MS = 1000
-const SERVER_SIDE_ENDPOINTS = ['token_endpoint', 'jwks_uri']
-const LOCAL_HOSTNAMES = new Set(['localhost', 'host.docker.internal'])
-
-function rewriteEndpointHostnames(payload, targetHostname) {
-  for (const key of SERVER_SIDE_ENDPOINTS) {
-    if (typeof payload[key] !== 'string') {
-      continue
-    }
-    const endpoint = new URL(payload[key])
-    if (endpoint.hostname !== targetHostname) {
-      endpoint.hostname = targetHostname
-      payload[key] = endpoint.toString()
-    }
-  }
-}
 
 async function getOidcConfig() {
-  const discoveryUrl = config.get('defraId.oidcDiscoveryUrl')
   const { payload } = await measureExternalCall(
     DEFRA_ID_CALLS.openidConfiguration,
     () =>
-      Wreck.get(discoveryUrl, {
+      Wreck.get(config.get('defraId.oidcDiscoveryUrl'), {
         headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
         json: true,
         timeout: OIDC_DOCUMENT_TIMEOUT_MS
       })
   )
 
-  const discoveryHostname = new URL(discoveryUrl).hostname
-  if (LOCAL_HOSTNAMES.has(discoveryHostname)) {
-    rewriteEndpointHostnames(payload, discoveryHostname)
-  }
-
-  return payload
+  return withServerSideEndpointsAtDiscoveryHostname(payload)
 }
 
 export { getOidcConfig, OIDC_DOCUMENT_TIMEOUT_MS }
