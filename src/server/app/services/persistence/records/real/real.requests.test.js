@@ -14,6 +14,7 @@ import {
 } from '../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
+import { bindOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import { mapStatus, records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -53,6 +54,7 @@ const jsonOf = (request) => request.clone().json()
 describe('real records adapter — canonical fulfilment boundary', () => {
   beforeEach(() => {
     fetchMocker.resetMocks()
+    bindOrganisationId('5900001')
   })
 
   it('Should map every backend lifecycle status and reject contract drift', () => {
@@ -147,6 +149,17 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
   it('Should return undefined when the fulfilment GET returns 404', async () => {
     fetchMocker.mockResponse('Not Found', { status: 404 })
+
+    const loaded = await records.load({ journeyId })
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
+    expect(request.method).toBe('GET')
+    expect(loaded).toBeUndefined()
+  })
+
+  it('Should return undefined when the fulfilment GET returns 403 for another organisation', async () => {
+    fetchMocker.mockResponse('Forbidden', { status: 403 })
 
     const loaded = await records.load({ journeyId })
 
@@ -418,7 +431,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(request.method).toBe('GET')
   })
 
-  it("Should not send the reader's organisation to the backend", async () => {
+  it("Should send the reader's organisation to the backend", async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -432,6 +445,6 @@ describe('real records adapter — lifecycle and list', () => {
     await records.list({ page: 1 })
 
     const [request] = fetchMocker.requests()
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900001')
   })
 })

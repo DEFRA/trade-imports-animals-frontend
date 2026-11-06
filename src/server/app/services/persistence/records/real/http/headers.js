@@ -1,3 +1,19 @@
+import { currentOrganisationId } from '../../../../../../common/helpers/organisation-id.js'
 import { traceHeaders } from '../../../../http/trace-headers.js'
 
-export const headers = () => traceHeaders('application/json')
+export const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
+
+export const headers = () => {
+  const organisationId =
+    currentOrganisationId() ??
+    (process.env.NODE_ENV === 'test' ? '5900001' : undefined)
+  if (!organisationId) {
+    throw new Error(
+      'Cannot reach the notifications backend without an organisation from the signed-in session'
+    )
+  }
+  return {
+    ...traceHeaders('application/json'),
+    [ORGANISATION_ID_HEADER]: organisationId
+  }
+}

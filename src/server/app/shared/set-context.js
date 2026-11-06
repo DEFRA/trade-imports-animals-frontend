@@ -1,5 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
+import {
+  organisationIdOf,
+  withOrganisationId
+} from '../../common/helpers/organisation-id.js'
+
 const storage = new AsyncLocalStorage()
 const mounts = new Map()
 
@@ -94,7 +99,10 @@ export const setContextExtension = {
 
 const contextualMethod = (setId, method) =>
   typeof method === 'function'
-    ? (request, h) => withSetContext(setId, () => method(request, h))
+    ? (request, h) =>
+        withOrganisationId(organisationIdOf(request), () =>
+          withSetContext(setId, () => method(request, h))
+        )
     : method
 
 /**

@@ -265,6 +265,11 @@ export const journeyIdIn = (location) => {
 
 export const createNotification = async (client) => {
   const dashboard = await client.document(dashboardPath())
+  if (dashboard.status !== HTTP_OK) {
+    throw new Error(
+      `Dashboard did not render (${dashboard.status}) before creating a notification`
+    )
+  }
   const created = await client.submit(createPath(), {}, dashboard.crumb)
   const journeyId = journeyIdIn(created.location)
   if (created.status !== HTTP_FOUND || !journeyId) {

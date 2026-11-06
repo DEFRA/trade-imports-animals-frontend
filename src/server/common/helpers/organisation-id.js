@@ -1,3 +1,7 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
+
+const storage = new AsyncLocalStorage()
+
 /** The organisation the signed-in user is acting for on this request.
  *
  * The one place this value is read. It is forwarded to services that scope on
@@ -11,5 +15,20 @@
  * Returns undefined when the request is unauthenticated. Callers decide what
  * that means for them; none of them may substitute a guess.
  */
-export const organisationIdOf = (request) =>
-  request?.auth?.credentials?.organisationId
+export const organisationIdOf = (request) => {
+  const credentials = request?.auth?.credentials
+  if (!credentials) {
+    return undefined
+  }
+  return credentials.organisationId ?? credentials.currentRelationshipId
+}
+
+/** Bind the verified organisation for outbound backend calls in this request. */
+export const bindOrganisationId = (organisationId) => {
+  storage.enterWith(organisationId)
+}
+
+export const currentOrganisationId = () => storage.getStore()
+
+export const withOrganisationId = (organisationId, fn) =>
+  storage.run(organisationId, fn)
