@@ -232,15 +232,15 @@ describe('save actions — hub exit semantics', () => {
   })
 })
 
+const postAmending = (startingFrom, { payload = internalMarketPayload } = {}) =>
+  driveHandler(postHandlerOf(importReason), {
+    seed: reasonPrerequisites,
+    payload,
+    startingFrom: [amendmentOpened(), ...startingFrom]
+  })
+
 describe('save actions — amend endings', () => {
   it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
-    const postAmending = (startingFrom) =>
-      driveHandler(postHandlerOf(importReason), {
-        seed: reasonPrerequisites,
-        payload: internalMarketPayload,
-        startingFrom: [amendmentOpened(), ...startingFrom]
-      })
-
     const saveAndReturn = await postAmending([openedFromChangeLink()])
     const saveAndContinue = await postAmending([])
 
@@ -250,5 +250,24 @@ describe('save actions — amend endings', () => {
     expect(saveAndContinue.response).toEqual({
       redirect: hubPath(saveAndContinue.journeyId)
     })
+  })
+
+  it("Should hold an amend's Save and return to the page's own checks, with the same errors and no commit as outside the amendment", async () => {
+    const partlyAnsweredTransit = {
+      reasonForImport: 'transit',
+      transitPortOfExit: 'GB DVR',
+      transitDestinationCountry: ''
+    }
+    const amending = await postAmending([openedFromChangeLink()], {
+      payload: partlyAnsweredTransit
+    })
+    const outside = await driveHandler(postHandlerOf(importReason), {
+      payload: partlyAnsweredTransit,
+      seed: reasonPrerequisites
+    })
+
+    expect(amending.response.redirect).toBeUndefined()
+    expect(amending.view.context.errors).toEqual(outside.view.context.errors)
+    expect(amending.after).toEqual(amending.before)
   })
 })

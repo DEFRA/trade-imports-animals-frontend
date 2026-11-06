@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -15,6 +17,7 @@ import {
   mergedKeysFromPayload,
   storedKeys
 } from './selection/selected-keys.js'
+import { isRemoveAction, removeKeyOf } from './selection/remove-action.js'
 import {
   knownRowsByKey,
   replaceStoredSearchRows,
@@ -22,8 +25,6 @@ import {
 } from './selection/rows.js'
 import { commodityGroups } from './view-model/commodity-groups.js'
 import { selectedSummary } from './view-model/selected-summary.js'
-
-export { lineKey } from './selection/line-key.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search/search`
@@ -43,11 +44,12 @@ const render = async (
   current,
   { selected, results = null, query = '', errorText = null }
 ) => {
-  const groups = commodityGroups(results, selected)
+  const groups = commodityGroups(results, selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
   const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
+  const rowsByKey = knownRowsByKey(current)
   return h.view(view, {
     ...kit.base(copy.title, {
       request,
@@ -62,7 +64,7 @@ const render = async (
     commodityGroups: groups,
     noResults: isSearchable(query) && groups.length === 0,
     carriedKeys: selected.filter((key) => !onScreen.has(key)),
-    selectedSummary: selectedSummary(selected),
+    selectedSummary: selectedSummary(rowsFor(selected, rowsByKey)),
     errors,
     errorSummary: kit.errorSummary(errors)
   })
@@ -94,10 +96,11 @@ const post = async (request, h) => {
   const SEARCH_ACTION = 'search'
   const CLEAR_ACTION = 'clear'
   const payload = request.payload ?? {}
+  const action = String(payload.action ?? '')
   const query = normaliseQuery(payload[SEARCH_FIELD])
   const rowsByKey = knownRowsByKey(await state.get(request, h))
 
-  if (payload.action === CLEAR_ACTION) {
+  if (action === CLEAR_ACTION) {
     return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected: [],
       query
@@ -113,9 +116,21 @@ const post = async (request, h) => {
     )
   }
 
-  if (payload.action === SEARCH_ACTION) {
+  if (action === SEARCH_ACTION) {
     return searchStoreRowsAndRender(request, h, rowsByKey, {
       selected,
+      query
+    })
+  }
+
+  if (isRemoveAction(action)) {
+    const removedKey = removeKeyOf(action)
+    if (!rowsByKey.has(removedKey)) {
+      kit.logRefusal(request, { reason: 'no-species-for-key', key: removedKey })
+      return Boom.badRequest()
+    }
+    return searchStoreRowsAndRender(request, h, rowsByKey, {
+      selected: selected.filter((key) => key !== removedKey),
       query
     })
   }

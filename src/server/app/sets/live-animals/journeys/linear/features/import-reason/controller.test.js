@@ -79,8 +79,6 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // The reason radio stays optional to proceed; only the questions a chosen
-  // reason opens are enforced.
   it('Should still accept a submit that names no reason at all', async () => {
     const result = await driveHandler(post, {
       payload: { reasonForImport: '' }
@@ -146,8 +144,6 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  // The exit date is asked only under temporary admission, so leaving it blank
-  // under any other reason is not a mistake to report.
   it('Should not ask for the exit date under a reason that never reveals it', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -357,9 +353,6 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
   })
 })
 
-// `ZZ` is absent from the captured countries fixture and `GB ZZZ` is absent
-// from the captured ports fixture, so each doubles as a stale stored value.
-
 describe('GET import-reason — a stored destination country the reader no longer offers', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -392,7 +385,7 @@ describe('GET import-reason — a stored destination country the reader no longe
     expect(result.view.context.errors.transitDestinationCountry).toBeUndefined()
   })
 
-  it('Should surface the error on the transit reveal field under a transit reason', async () => {
+  it('Should surface the stale-country error on the transit reveal destination country under a transit reason', async () => {
     const result = await driveHandler(get, {
       seed: { reasonForImport: 'transit', destinationCountry: 'ZZ' }
     })
@@ -444,7 +437,7 @@ describe('GET import-reason — a stored port of exit the reader no longer offer
     ).toBeUndefined()
   })
 
-  it('Should surface the error on the transit reveal field under a transit reason', async () => {
+  it('Should surface the stale-port error on the transit reveal port of exit under a transit reason', async () => {
     const result = await driveHandler(get, {
       seed: { reasonForImport: 'transit', portOfExit: 'GB ZZZ' }
     })
@@ -507,6 +500,13 @@ describe('POST import-reason — a stale destination country submitted verbatim 
 
 describe('POST import-reason — Save and return to overview', () => {
   useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should still accept a Save and return to overview submit that names no reason at all', async () => {
+    const result = await driveHandler(post, {
+      payload: { reasonForImport: '', exit: 'hub' }
+    })
+    expect(result.response.redirect).toBeDefined()
+  })
 
   it('Should refuse a transit reason with its port and country left blank, naming both, and save nothing', async () => {
     const result = await driveHandler(post, {

@@ -6,6 +6,7 @@ import createFetchMock from 'vitest-fetch-mock'
 import { config } from '../../../config/config.js'
 import { restoreConfigAfterEach } from '../../common/test-helpers/restore-config-after-each.js'
 import { SET_ID } from '../../../../test/fixtures/index.js'
+import { catchAll } from '../../common/helpers/errors.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
 import { pagePath } from '../shared/paths.js'
@@ -577,3 +578,16 @@ export const useBackendRecords = (setId) => {
 
 export const expectRemovalRefusedLogged = ({ logger, journeyId }, details) =>
   expectOneRefusalLogged(logger, { journeyId, errorCodes: [], ...details })
+
+export const errorViewContextFor = (response) => {
+  const view = vi.fn()
+  catchAll(
+    { response, logger: { error: vi.fn() } },
+    {
+      view: view.mockReturnThis(),
+      code: vi.fn().mockReturnThis(),
+      continue: Symbol('continue')
+    }
+  )
+  return view.mock.calls[0]?.[1]
+}

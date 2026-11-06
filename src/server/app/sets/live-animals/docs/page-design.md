@@ -255,6 +255,28 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - A choice made under an earlier search has no tick box on screen, so it is
   sent back with the form as a hidden value.
+- A search's results are listed in order: the commodity groups by their
+  heading, and each group's species by the label they are offered under, over
+  the page of results the search returned.
+- A species reads as its Latin name with its common name in round
+  brackets wherever it is listed or named — the search results, the selected
+  panel, Commodity details, the Selected commodities tables and
+  Identification details — and as its Latin name alone where the
+  reference data holds no common name for it. The permanent-address rule and
+  the identifier-column rule read the line's stored Latin name rather
+  than that label, so a species whose common name changes what it reads as
+  still gates the same way.
+- The selected panel offers a removal per chosen species, posting the page
+  form with the species' key in the button value so the entry pressed is the
+  entry removed however the panel is ordered — the same rule the Transport
+  section states at the Transit countries bullet below.
+- Because a tick box on screen carries no hidden value, a removal naming a
+  choice the post no longer carries, because the trader unticked that box
+  first, is honoured and nothing is logged. A removal naming a key the stored
+  search rows never held is refused with a bad request and one logged
+  refusal — reachable by a tampered post, and by a page left open across a
+  save and a later removal of that commodity line on commodity details,
+  because a save empties the stored search rows.
 - Commodity code 01061900 covers several commodities and hundreds of species.
   Each chosen species gets its own Selected commodities row, named by the
   species, on both Commodity details and Identification.
@@ -264,14 +286,23 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   do not read at the weight of their hints.
 - The number of animals question has no hint because the page repeats it per
   species, so an example would repeat with it.
-- Each search option shows its common name with the Latin name in brackets, so
-  a trader who does not read Latin can tell the tick boxes apart.
+- A search option shows the species label with the part the query matched in
+  bold, so a trader can see at a glance why each result was offered.
 - The inset's second sentence stops a reader concluding that goods with no
   certificate need no notification.
-- A removal returns to Commodity details while a line is left, and to the
-  commodity question once the last line is gone, because that is where the next
-  answer comes from. A removal is a POST on the page form with no GET, so a
-  link cannot trigger it.
+- A removal leaves the trader on Commodity details while a line is left, with
+  every number they had typed still in its field, because the page answers
+  the removal itself rather than redirecting to it. The page is one form,
+  opening with a hidden submit before the selected-commodities table, so
+  Enter hits it rather than the first Remove, and ending with the save
+  actions. Each Remove carries the entry it removes — the
+  commodity's code on a code row, the line's key on a species row — so a
+  repeated or stale removal is refused rather than taking another row, the
+  same rule this doc states above for the selected panel and below for
+  transit countries. A removal that empties the selection still goes to the
+  commodity question, because that is where the next answer comes from. A
+  removal is a POST on the page form with no GET, so a link cannot trigger
+  it.
 
 ## Consignment addresses pages
 

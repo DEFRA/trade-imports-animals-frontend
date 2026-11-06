@@ -80,6 +80,23 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     }
   )
 
+  it('Should save a means of transport alone, leaving the other arrival answers blank', async () => {
+    const result = await driveHandler(post, {
+      payload: { meansOfTransport: validMeans }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.meansOfTransport).toBe(validMeans)
+    expect(result.after.portOfEntry).toBe('')
+    expect(result.after.transportIdentification).toBe('')
+    expect(result.after.transportDocumentReference).toBe('')
+    expect(result.after.arrivalDateAtPort).toEqual({
+      day: '',
+      month: '',
+      year: ''
+    })
+  })
+
   it('Should wipe the transited countries when the means changes off the overland set', async () => {
     const result = await driveHandler(post, {
       seed: {

@@ -125,7 +125,7 @@ describe('Mapper A PUT /notifications contract', () => {
             {
               value: 'Bos taurus',
               text: 'Bos taurus',
-              commonName: 'Cattle or Cow',
+              commonName: 'Domestic Cattle',
               noOfAnimals: '1',
               noOfPackages: '5',
               earTag: 'UK123456789012',

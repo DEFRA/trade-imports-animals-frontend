@@ -3,7 +3,7 @@
 {% macro speciesQuantityGroup(group, copy) %}
   <h2 class="govuk-heading-l">{{ group.heading }}</h2>
   {% for line in group.lines %}
-    <h3 class="govuk-heading-m">{{ line.latinName }}</h3>
+    <h3 class="govuk-heading-m">{{ line.label }}</h3>
 
     {{ govukInput({
       id: line.animalsField,

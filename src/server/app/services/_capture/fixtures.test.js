@@ -48,12 +48,43 @@ describe('#captured reference fixtures', () => {
     )
   })
 
-  it('Should load commodities as { code, species } groups, each species a Latin and common name', () => {
-    expect(commodityGroups).toContainEqual({
-      code: '0101',
-      species: expect.arrayContaining([
-        { latinName: 'Equus cabalus', commonName: 'Horse' }
-      ])
-    })
+  it('Should load commodities as { code, species } groups holding the pinned vocabulary of codes, Latin names and common names', () => {
+    const pinnedSpecies = [
+      { code: '0101', latinName: 'Equus cabalus', commonName: 'Horse' },
+      { code: '0102', latinName: 'Bos taurus', commonName: 'Domestic Cattle' },
+      { code: '0102', latinName: 'Bison bison', commonName: 'American Bison' },
+      {
+        code: '0102',
+        latinName: 'Bubalus bubalis',
+        commonName: 'Water Buffalo'
+      },
+      {
+        code: '01051111',
+        latinName: 'Gallus gallus',
+        commonName: 'Chicken'
+      },
+      {
+        code: '01061900',
+        latinName: 'Felis catus',
+        commonName: 'Domestic Cat'
+      },
+      {
+        code: '01061900',
+        latinName: 'Nyctereutes procyonoides',
+        commonName: 'Raccoon Dog'
+      },
+      {
+        code: '01061900',
+        latinName: 'Mustela putorius furo',
+        commonName: 'Ferret'
+      },
+      { code: '01063300', latinName: 'Struthio spp.', commonName: 'Ostriches' }
+    ]
+    for (const { code, latinName, commonName } of pinnedSpecies) {
+      expect(commodityGroups).toContainEqual({
+        code,
+        species: expect.arrayContaining([{ latinName, commonName }])
+      })
+    }
   })
 })

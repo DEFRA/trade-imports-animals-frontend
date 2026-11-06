@@ -50,11 +50,14 @@ owned once and that grouped binding paths match each `within` chain.
 [`src/server/app/sets/live-animals/obligations/coverage.test.js`](../obligations/coverage.test.js)
 checks manifest identity, dependency and group invariants.
 [`src/server/app/sets/live-animals/obligations/allowlists.test.js`](../obligations/allowlists.test.js)
-checks commodity allow-lists against the set-owned reference service. The test
-iterates every allow-list and gated obligation pair, checks that a control value on
-no list leaves the obligation out of scope, and pins each allow-list to an expected
-list, so a single-file edit to a service list fails the drift check. To change an
-allow-list on purpose, edit it in
+checks the commodity allow-lists against the set-owned reference service; each
+list's describe iterates its own allow-list and checks that a control value on
+no list leaves the obligation out of scope; the package-count describe
+instead iterates every code the set's captured catalogue serves and asserts
+the exact served codes the list leaves out, which is where a code new to the
+capture fails; one anti-drift describe pins every list's exact contents
+against the expected map, so a single-file edit to a service list fails
+there; to change an allow-list on purpose, edit it in
 [`rules.js`](../services/commodities/rules.js) and update the matching expected list
 in the test in the same change.
 

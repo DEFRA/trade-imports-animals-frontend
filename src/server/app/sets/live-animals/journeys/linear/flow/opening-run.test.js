@@ -79,13 +79,21 @@ const unidentifiedLineSeed = {
 
 const completeSeed = completeNotification()
 
-const postBreedingInternalMarketReason = (startingFrom) =>
+const postBreedingInternalMarketReason = (startingFrom, { payload } = {}) =>
   driveHandler(postHandlerOf(importReason), {
     seed: lineSeed,
     payload: {
       reasonForImport: 'internalMarket',
-      purposeInInternalMarket: 'breeding'
+      purposeInInternalMarket: 'breeding',
+      ...payload
     },
+    startingFrom
+  })
+
+const postSlaughterAdditionalDetails = (startingFrom, { payload } = {}) =>
+  driveHandler(postHandlerOf(additionalDetails), {
+    payload: { animalsCertifiedFor: 'slaughter', ...payload },
+    seed: lineSeed,
     startingFrom
   })
 
@@ -232,14 +240,9 @@ const saveAndContinueFollowsTheRunSequence = () => {
   })
 
   it('Should carry additional details on to the arrival details mid-run rather than ending on the hub', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(additionalDetails),
-      {
-        payload: { animalsCertifiedFor: 'slaughter' },
-        seed: lineSeed,
-        startingFrom: [openingRunAt(RUN_ACTIVE)]
-      }
-    )
+    const { journeyId, response } = await postSlaughterAdditionalDetails([
+      openingRunAt(RUN_ACTIVE)
+    ])
     expect(response.redirect).toBe(pagePath(journeyId, 'port-of-entry'))
   })
 
@@ -429,6 +432,22 @@ describe('the opening run', () => {
         pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
       )
     })
+
+    it('Should honour Save and return to overview on the main import reason mid-run, not the commodity details the run would send it to', async () => {
+      const { journeyId, response } = await postBreedingInternalMarketReason(
+        [openingRunAt(RUN_ACTIVE)],
+        { payload: { exit: 'hub' } }
+      )
+      expect(response.redirect).toBe(hubPath(journeyId))
+    })
+
+    it('Should honour Save and return to overview on additional details mid-run, not the port of entry the run would send it to', async () => {
+      const { journeyId, response } = await postSlaughterAdditionalDetails(
+        [openingRunAt(RUN_ACTIVE)],
+        { payload: { exit: 'hub' } }
+      )
+      expect(response.redirect).toBe(hubPath(journeyId))
+    })
   })
 
   describe('reaching the hub ends the run', () => {
@@ -478,14 +497,9 @@ describe('the opening run', () => {
     })
 
     it('Should send additional details to the overview, not on to the arrival details', async () => {
-      const { journeyId, response } = await driveHandler(
-        postHandlerOf(additionalDetails),
-        {
-          payload: { animalsCertifiedFor: 'slaughter' },
-          seed: lineSeed,
-          startingFrom: [openingRunAt(RUN_COMPLETE)]
-        }
-      )
+      const { journeyId, response } = await postSlaughterAdditionalDetails([
+        openingRunAt(RUN_COMPLETE)
+      ])
       expect(response.redirect).toBe(hubPath(journeyId))
     })
 

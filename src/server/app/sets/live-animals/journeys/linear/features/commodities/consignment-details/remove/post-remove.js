@@ -1,16 +1,12 @@
-import { pagePath } from '../../../../../../../../shared/paths.js'
+import Boom from '@hapi/boom'
+
 import * as state from '../../../../../../../../engine/index.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { consignmentDetailsPage as page } from '../../page.js'
-import { commodityCodesOf, entriesNotOfCode, linesOf } from '../../lines.js'
+import { entriesNotOfCode } from '../../lines.js'
 import { commodityQuestionPath } from '../../commodity-question-detour.js'
 
-export const groupCodes = (answers, evaluation) =>
-  commodityCodesOf(linesOf(answers, evaluation))
-
-const afterRemoval = (request, h, kept, commodityCode) => {
+const afterRemoval = (request, h, kept, commodityCode, renderSurvivors) => {
   if (kept.length === 0) {
     request.logger.info(
       {
@@ -22,44 +18,74 @@ const afterRemoval = (request, h, kept, commodityCode) => {
     )
     return h.redirect(commodityQuestionPath(request))
   }
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
+  return renderSurvivors()
+}
+
+const honourSettledRemoval = (request, h, stored, renderSurvivors, details) => {
+  request.logger.warn(
+    { journeyId: request.params.journeyId, ...details },
+    'A removal named an entry the selection no longer holds: the page is shown as it now stands'
   )
+  return stored.length === 0
+    ? h.redirect(commodityQuestionPath(request))
+    : renderSurvivors()
 }
 
-export const postRemove = async (request, h, index, lineKey) => {
-  const { answers, evaluation } = await state.get(request, h)
-  const code = groupCodes(answers, evaluation)[index]
-  if (code === undefined) {
-    kit.logRefusal(request, { reason: 'no-commodity-at-index', index })
-    return h.response().code(HTTP_STATUS_BAD_REQUEST)
-  }
-
-  const kept = entriesNotOfCode(answers.commodityLines ?? [], code)
-  await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return afterRemoval(request, h, kept, code)
-}
-
-export const postRemoveSpecies = async (request, h, index, lineKey) => {
+export const postRemove = async (
+  request,
+  h,
+  commodityCode,
+  lineKeyOf,
+  renderSurvivors
+) => {
   const { answers } = await state.get(request, h)
   const stored = answers.commodityLines ?? []
-  const line = stored[index]
-  if (
-    line === undefined ||
-    !commodities.listsSpeciesIndividually(line.commodityCode)
-  ) {
-    kit.logRefusal(request, {
-      reason: 'no-species-at-index',
-      index,
-      commodityCode: line?.commodityCode
+  if (!stored.some((entry) => entry.commodityCode === commodityCode)) {
+    return honourSettledRemoval(request, h, stored, renderSurvivors, {
+      commodityCode
     })
-    return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const kept = stored.toSpliced(index, 1)
-  await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return afterRemoval(request, h, kept, line.commodityCode)
+  const kept = entriesNotOfCode(stored, commodityCode)
+  await state.reconcileEntriesAt(
+    request,
+    h,
+    ['commodityLines'],
+    lineKeyOf,
+    kept
+  )
+  return afterRemoval(request, h, kept, commodityCode, renderSurvivors)
+}
+
+export const postRemoveSpecies = async (
+  request,
+  h,
+  key,
+  lineKeyOf,
+  renderSurvivors
+) => {
+  const { answers } = await state.get(request, h)
+  const stored = answers.commodityLines ?? []
+  const line = stored.find((entry) => lineKeyOf(entry) === key)
+  if (line === undefined) {
+    return honourSettledRemoval(request, h, stored, renderSurvivors, { key })
+  }
+  if (!commodities.listsSpeciesIndividually(line.commodityCode)) {
+    kit.logRefusal(request, {
+      reason: 'no-species-for-key',
+      key,
+      commodityCode: line.commodityCode
+    })
+    return Boom.badRequest()
+  }
+
+  const kept = stored.filter((entry) => lineKeyOf(entry) !== key)
+  await state.reconcileEntriesAt(
+    request,
+    h,
+    ['commodityLines'],
+    lineKeyOf,
+    kept
+  )
+  return afterRemoval(request, h, kept, line.commodityCode, renderSurvivors)
 }

@@ -25,6 +25,7 @@ import {
   tattooCommodityCodes,
   unweanedCommodityCodes
 } from '../services/commodities/index.js'
+import { COMMODITY_GROUPS } from '../services/commodities/stub.js'
 
 const UNLISTED_VALUE = 'Unicorn'
 
@@ -35,14 +36,22 @@ beforeAll(() => {
 })
 
 describe('package-count list → numberOfPackages (line-scoped)', () => {
-  for (const code of packageCountCommodityCodes()) {
-    it(`Should put numberOfPackages in scope for a line with code = '${code}'`, () => {
-      const state = evaluate({
-        [commodityCode.id]: { line1: code }
-      })
-      const fulfilmentIndexes =
-        state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
-      expect(fulfilmentIndexes).toContain('line1')
+  const servedCommodityCodes = COMMODITY_GROUPS.map((group) => group.code)
+
+  const isInNumberOfPackagesScope = (code) => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: code }
+    })
+    const fulfilmentIndexes =
+      state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
+    return fulfilmentIndexes.includes('line1')
+  }
+
+  for (const code of servedCommodityCodes) {
+    it(`Should put numberOfPackages in scope for a line with code = '${code}' only when the code is on the package-count list`, () => {
+      expect(isInNumberOfPackagesScope(code)).toBe(
+        packageCountCommodityCodes().includes(code)
+      )
     })
   }
 
@@ -53,6 +62,17 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
     const fulfilmentIndexes =
       state.obligations[numberOfPackages.id].fulfilmentIndexes ?? []
     expect(fulfilmentIndexes).toEqual([])
+  })
+
+  it('Should leave rabbits other than domestic, ratites and pigeons out of numberOfPackages scope, and no other served code', () => {
+    const codesOutOfScope = servedCommodityCodes.filter(
+      (code) => !isInNumberOfPackagesScope(code)
+    )
+    expect([...codesOutOfScope].sort()).toEqual([
+      '01061490',
+      '01063300',
+      '01063910'
+    ])
   })
 })
 
@@ -110,9 +130,9 @@ describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)',
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
 
-  it('Should not put containsUnweanedAnimals in scope for a horses-only consignment', () => {
+  it('Should not put containsUnweanedAnimals in scope for a cats-dogs-ferrets-only consignment', () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: '0101' }
+      [commodityCode.id]: { line1: '01061900' }
     })
     expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
   })
@@ -229,7 +249,7 @@ const EXPECTED = {
     '01064900'
   ],
   'CPH exemptions': ['0101', '01061900'],
-  'unweaned list': ['0102'],
+  'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
   'tattoo list': ['01061900'],

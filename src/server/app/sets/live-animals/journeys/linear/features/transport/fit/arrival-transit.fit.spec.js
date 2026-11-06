@@ -624,6 +624,33 @@ test.describe('arrival save and routing', () => {
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(values.transportDocumentReference)
   })
+
+  test('saves a means of transport alone, with the other arrival answers left blank', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page
+      .locator(MEANS_OF_TRANSPORT_SELECT)
+      .selectOption(values.meansOfTransport)
+    await saveAndContinue(page).click()
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue(
+      values.meansOfTransport
+    )
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue('')
+    await expect(page.locator(portNativeSelect)).toHaveValue('')
+    await expect(
+      page.getByLabel(copy.portOfEntry.identification.label)
+    ).toHaveValue('')
+    await expect(
+      page.getByLabel(copy.portOfEntry.documentReference.label)
+    ).toHaveValue('')
+  })
 })
 
 test.describe('transit countries rendering and validation', () => {
@@ -1024,6 +1051,20 @@ test.describe('arrival and transit accessibility', () => {
     await expectNoSeriousOrCriticalViolations(
       page,
       'Arrival details with date picker open'
+    )
+  })
+
+  test('arrival page with the means-of-transport error has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await saveAndContinue(page).click()
+    await expect(
+      errorLink(page, copy.portOfEntry.errors.meansOfTransportRequired)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Arrival details with the means-of-transport error'
     )
   })
 

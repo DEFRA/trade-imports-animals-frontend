@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSelectedRows } from './selected-rows.js'
+import { lineKey } from '../../search/selection/line-key.js'
 import { commodityLinesFixture } from '../../test-support.js'
 import {
   BISON_BISON,
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS,
-  CANIS_FAMILIARIS_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO,
+  MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO,
-  STRUTHIO_ROW
+  STRUTHIO_ROW,
+  labelFor
 } from '../../search/test-support.js'
 
-const REMOVE_FIRST_SPECIES = 'remove-species:0'
-
 describe('#buildSelectedRows', () => {
-  it('Should give a code one row keyed to its group index, listing the Latin name of every species under it', () => {
+  it('Should give a code one row naming the commodity code, listing the label of every species under it', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
@@ -30,18 +30,18 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS, BISON_BISON],
-        removeAction: 'remove:0'
+        labels: [labelFor(BOS_TAURUS), labelFor(BISON_BISON)],
+        removeAction: 'remove:0102'
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
-        removeAction: 'remove:1'
+        labels: [labelFor(STRUTHIO)],
+        removeAction: 'remove:01063300'
       }
     ])
   })
 
-  it('Should key a code row to its group index even where a species group is built before it', () => {
+  it('Should name a code row by its commodity code even where a species group is built before it', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture([FELIS_CATUS_ROW], [STRUTHIO_ROW])
@@ -49,41 +49,41 @@ describe('#buildSelectedRows', () => {
     ).toEqual([
       {
         code: '01061900',
-        latinNames: [FELIS_CATUS],
-        removeAction: REMOVE_FIRST_SPECIES
+        labels: [labelFor(FELIS_CATUS)],
+        removeAction: `remove-species:${lineKey(FELIS_CATUS_ROW)}`
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
-        removeAction: 'remove:1'
+        labels: [labelFor(STRUTHIO)],
+        removeAction: 'remove:01063300'
       }
     ])
   })
 
-  it('Should give each species on code 01061900 its own row and its own remove', () => {
+  it('Should give each species on code 01061900 its own row and its own remove naming its line key', () => {
     expect(
       buildSelectedRows(
         commodityLinesFixture(
           [BOS_TAURUS_ROW],
-          [CANIS_FAMILIARIS_ROW],
+          [MUSTELA_PUTORIUS_FURO_ROW],
           [FELIS_CATUS_ROW]
         )
       )
     ).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS],
-        removeAction: 'remove:0'
+        labels: [labelFor(BOS_TAURUS)],
+        removeAction: 'remove:0102'
       },
       {
         code: '01061900',
-        latinNames: [CANIS_FAMILIARIS],
-        removeAction: 'remove-species:1'
+        labels: [labelFor(MUSTELA_PUTORIUS_FURO)],
+        removeAction: `remove-species:${lineKey(MUSTELA_PUTORIUS_FURO_ROW)}`
       },
       {
         code: '01061900',
-        latinNames: [FELIS_CATUS],
-        removeAction: 'remove-species:2'
+        labels: [labelFor(FELIS_CATUS)],
+        removeAction: `remove-species:${lineKey(FELIS_CATUS_ROW)}`
       }
     ])
   })

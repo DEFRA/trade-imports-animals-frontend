@@ -13,10 +13,13 @@ import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
-  CANIS_FAMILIARIS_ROW,
+  BUBALUS_BUBALIS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
-  STRUTHIO_ROW
+  GALLUS_GALLUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
+  STRUTHIO_ROW,
+  labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
@@ -30,12 +33,16 @@ export { signIn } from './sign-in.js'
 
 export const BASE = SET_BASE
 
-export const BISON_BISON = BISON_BISON_ROW
-export const BOS_TAURUS = BOS_TAURUS_ROW
-export const CANIS_FAMILIARIS = CANIS_FAMILIARIS_ROW
-export const EQUUS_CABALUS = EQUUS_CABALUS_ROW
-export const FELIS_CATUS = FELIS_CATUS_ROW
-export const STRUTHIO = STRUTHIO_ROW
+export {
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
+  BUBALUS_BUBALIS_ROW,
+  EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
+  GALLUS_GALLUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
+  STRUTHIO_ROW
+}
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
   violation.id === 'aria-allowed-attr' &&
@@ -592,7 +599,7 @@ export const searchCommodities = async (page, query) => {
 const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
   page
     .getByRole('group', { name: commodityCode })
-    .getByRole('checkbox', { name: speciesLatinName, exact: true })
+    .getByRole('checkbox', { name: labelFor(speciesLatinName), exact: true })
     .check()
 
 export const selectSpecies = async (page, speciesToSelect) => {
@@ -603,16 +610,17 @@ export const selectSpecies = async (page, speciesToSelect) => {
 }
 
 export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
+  const label = labelFor(speciesLatinName)
   await page
-    .getByRole('heading', { level: 3, name: speciesLatinName, exact: true })
+    .getByRole('heading', { level: 3, name: label, exact: true })
     .waitFor()
   const speciesHeadings = await page
     .getByRole('heading', { level: 3 })
     .allTextContents()
-  const position = speciesHeadings.indexOf(speciesLatinName)
+  const position = speciesHeadings.indexOf(label)
   if (position === -1) {
     throw new Error(
-      `No "${speciesLatinName}" heading among: ${speciesHeadings.join(', ')}`
+      `No "${label}" heading among: ${speciesHeadings.join(', ')}`
     )
   }
   return page
@@ -647,15 +655,27 @@ export const selectedSummary = (page) => page.locator('#commodity-selection')
 export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
-) =>
-  expect(
-    selectedSummary(page)
-      .getByRole('listitem')
-      .filter({ hasText: `${commodityCode}:` })
-      .filter({ hasText: speciesLatinName })
+) => {
+  const group = selectedSummary(page)
+    .locator('div')
+    .filter({ hasText: `${commodityCode}:` })
+  await expect(
+    group.getByText(`${commodityCode}:`, { exact: true })
   ).toBeVisible()
+  await expect(
+    group.getByRole('listitem').filter({ hasText: labelFor(speciesLatinName) })
+  ).toBeVisible()
+}
 
-export const unlockSections = async (page, chosen = FELIS_CATUS) => {
+export const pressSpeciesRemove = (page, { speciesLatinName }) =>
+  selectedSummary(page)
+    .getByRole('button', {
+      name: `Remove ${labelFor(speciesLatinName)}`,
+      exact: true
+    })
+    .click()
+
+export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -737,7 +757,10 @@ export const answerOriginDetails = async (
   await save(page)
 }
 
-export const answerWhatYouAreImporting = async (page, chosen = BOS_TAURUS) => {
+export const answerWhatYouAreImporting = async (
+  page,
+  chosen = BOS_TAURUS_ROW
+) => {
   await selectSpecies(page, [chosen])
   await save(page)
 }
@@ -840,14 +863,15 @@ export const answerCphNumberFromAddLink = async (page) => {
 
 export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'
 
+export const chooseMeansOfTransport = (page, meansOfTransport) =>
+  page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
+
 export const answerArrivalDetails = async (page) => {
   await page
     .getByLabel('Arrival date at port of entry')
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePortOfEntry(page)
-  await page
-    .locator(MEANS_OF_TRANSPORT_SELECT)
-    .selectOption(values.meansOfTransport)
+  await chooseMeansOfTransport(page, values.meansOfTransport)
   await page
     .getByLabel('Transport identification')
     .fill(values.transportIdentification)
@@ -903,7 +927,7 @@ export const saveArrivalWithMeans = async (page, meansOfTransport) => {
 }
 
 const chooseMeansAndSave = async (page, meansOfTransport) => {
-  await page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
+  await chooseMeansOfTransport(page, meansOfTransport)
   await save(page)
   await expectOverview(page)
 }

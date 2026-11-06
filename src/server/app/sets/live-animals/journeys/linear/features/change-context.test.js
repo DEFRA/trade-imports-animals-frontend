@@ -112,7 +112,7 @@ describe('change context — context survives the internal loop navigation', () 
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
-        payload: { action: 'remove:0' },
+        payload: { action: `remove:${FELIS_CATUS_ROW.commodityCode}` },
         startingFrom: [openedFromChangeLink()],
         seed: lineSeed
       }
