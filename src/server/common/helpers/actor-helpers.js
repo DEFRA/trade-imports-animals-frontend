@@ -9,7 +9,8 @@ export function buildActor(credentials) {
     source: isB2C ? 'dynamics-contact' : 'entra-oid',
     userType: isB2C ? 'B2C' : 'B2B',
     displayName: credentials.name,
-    organisationId: credentials.currentRelationshipId
+    organisationId:
+      credentials.organisationId ?? credentials.currentRelationshipId
   }
   if (credentials.onBehalfOfOrganisationId) {
     actor.onBehalfOfOrganisationId = credentials.onBehalfOfOrganisationId

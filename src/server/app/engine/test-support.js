@@ -31,6 +31,7 @@ import {
   openingRunEntryCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
+import { bindOrganisationId } from '../../common/helpers/organisation-id.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -159,23 +160,27 @@ export const recordingLogger = () => {
 export const journeyRequest = (
   journeyId,
   { knownJourneyIds, ...overrides } = {}
-) => ({
-  app: {},
-  payload: {},
-  query: {},
-  headers: {},
-  logger: recordingLogger(),
-  auth: {
-    isAuthenticated: true,
-    credentials: authenticatedCredentials
-  },
-  ...overrides,
-  params: { journeyId, ...overrides.params },
-  state: {
-    [knownJourneysCookie()]: knownJourneyIds ?? (journeyId ? [journeyId] : []),
-    ...overrides.state
+) => {
+  bindOrganisationId(authenticatedCredentials.organisationId)
+  return {
+    app: {},
+    payload: {},
+    query: {},
+    headers: {},
+    logger: recordingLogger(),
+    auth: {
+      isAuthenticated: true,
+      credentials: authenticatedCredentials
+    },
+    ...overrides,
+    params: { journeyId, ...overrides.params },
+    state: {
+      [knownJourneysCookie()]:
+        knownJourneyIds ?? (journeyId ? [journeyId] : []),
+      ...overrides.state
+    }
   }
-})
+}
 
 /** The text a copy leaf gives: the string itself, or what the copy function
  * returns for the sample arguments. */

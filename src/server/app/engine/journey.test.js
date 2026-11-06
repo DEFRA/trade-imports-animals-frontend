@@ -33,6 +33,7 @@ import {
   recordingH
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
+import { bindOrganisationId } from '../../common/helpers/organisation-id.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -226,6 +227,7 @@ describe('#amendJourney against the backend', () => {
     configureRecords(SET_ID, recordsReal)
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
+    bindOrganisationId('5900001')
   })
 
   it('Should refuse an id the backend does not hold, log it and send no amend request', async () => {
@@ -349,9 +351,10 @@ describe('#listKnownJourneys against the backend', () => {
   beforeEach(() => {
     configureRecords(SET_ID, recordsReal)
     fetchMocker.resetMocks()
+    bindOrganisationId('5900001')
   })
 
-  it('Should request the page asked for without the organisation', async () => {
+  it('Should request the page asked for with the organisation header', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 2,
@@ -369,7 +372,7 @@ describe('#listKnownJourneys against the backend', () => {
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${notificationsUrl}?page=2&sort=arrivalDate,desc`)
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900001')
   })
 })
 
@@ -379,6 +382,7 @@ describe('backend requests carry the authenticated actor', () => {
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
     fetchMocker.mockResponse(backendNotification({ status: 'SUBMITTED' }))
+    bindOrganisationId('5900001')
   })
 
   it('Should send the authenticated actor as the body of the create request', async () => {
@@ -436,6 +440,7 @@ describe('#replaceJourneyFulfilment', () => {
     configureRecords(SET_ID, recordsReal)
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
+    bindOrganisationId('5900001')
   })
 
   it('Should send the concurrencyToken the first save returned on a second save in the same request', async () => {
