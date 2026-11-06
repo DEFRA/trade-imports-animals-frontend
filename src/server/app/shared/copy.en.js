@@ -49,9 +49,7 @@ export const copy = {
   },
   notificationActions: {
     copy: {
-      text: 'Copy as new',
-      successTitle: 'Notification copied',
-      successBody: 'A new draft notification has been created.'
+      text: 'Copy as new'
     },
     delete: {
       text: 'Delete',
