@@ -142,7 +142,7 @@ describe('getOidcConfig', () => {
 
   test('does not rewrite endpoints when discovery URL is a non-local hostname', async () => {
     const productionDiscoveryUrl =
-      'https://real-auth-server/idp/.well-known/openid-configuration'
+      'https://mock-auth-server/idp/.well-known/openid-configuration'
 
     configGetMock.mockImplementation((key) => {
       if (key === 'defraId.oidcDiscoveryUrl') return productionDiscoveryUrl
