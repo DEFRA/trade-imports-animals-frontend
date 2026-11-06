@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -79,7 +81,7 @@ describe('/transporters/add/private', () => {
   it('Should keep the change context on Back when the trader is changing an answer', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: PRIVATE },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.view.context.backLink).toBe(
@@ -161,7 +163,9 @@ describe('/transporters/add/private', () => {
     const { response } = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: RECORD,
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, RECORD)
@@ -209,7 +213,9 @@ describe('/transporters/add/private keeps the transporter for the organisation',
     await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: UNSHIPPED_HAULIER,
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expect(added()).toHaveLength(0)

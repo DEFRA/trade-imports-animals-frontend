@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  amendmentOpened,
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
@@ -193,7 +194,7 @@ describe('cph-number — entry from the addresses page (?return=addresses)', () 
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
         query: { return: 'addresses', change: '1' },
-        amend: true
+        startingFrom: [amendmentOpened()]
       })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'notification-view')

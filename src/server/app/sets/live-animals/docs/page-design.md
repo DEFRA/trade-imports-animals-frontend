@@ -165,8 +165,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   depends on the country.
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
-- The back link returns to where the page was opened from: the overview or the
-  dashboard. The rule is in
+- The back link follows the rule in
   [Opening run and entry guard](journey-flow-and-gates.md#opening-run-and-entry-guard).
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,

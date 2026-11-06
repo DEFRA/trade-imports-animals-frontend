@@ -9,6 +9,10 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import {
+  itSendsBackToOverview,
+  itSendsBackToOverviewOnRefusal
+} from '../../../test-support.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import {
   addUtcDays,
@@ -362,4 +366,12 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
     })
     expect(rejected.view.context.errors.portOfEntry).toBe(oneOfError)
   })
+})
+
+describe('port-of-entry — Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  itSendsBackToOverview(get)
+
+  itSendsBackToOverviewOnRefusal(post, { portOfEntry: 'XX NOPE' })
 })

@@ -39,11 +39,15 @@ import { BackendRequestError } from '../../../../../../services/persistence/reco
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
+  amendmentOpened,
+  amendmentOpenedFromChangeLink,
   driveHandler,
   getHandlerOf,
   expectBackLinkIsPage,
   expectOneLogged,
+  openedFromChangeLink,
   postHandlerOf,
+  refusingSaves,
   registerTestRequestLogger,
   registerTestSessionAuth,
   saveFallbackEntry,
@@ -58,6 +62,7 @@ import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
+import { itSendsBackToOverview } from '../../test-support.js'
 import { addDocumentSubmission, driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
@@ -448,13 +453,13 @@ describe('documents — leaving the page by the save choice a returned upload ca
     [
       'the amend Save and return',
       AMEND_SAVE_AND_RETURN,
-      { query: { change: '1' }, amend: true },
+      { startingFrom: amendmentOpenedFromChangeLink() },
       (journeyId) => pagePath(journeyId, CYA_SLUG)
     ],
     [
       'the amend Save and continue',
       SAVE_AND_CONTINUE,
-      { query: { change: '1' }, amend: true },
+      { startingFrom: amendmentOpenedFromChangeLink() },
       (journeyId) => hubPath(journeyId)
     ]
   ])(
@@ -530,7 +535,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   it('Should send an untouched form returned with Save and continue from a page opened with a Change link to the review when the notification is not being amended', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -540,8 +545,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   it('Should send an untouched form returned with the amend Save and return from a page opened with a Change link to the review', async () => {
     const result = await driveClaim(AMEND_SAVE_AND_RETURN, {
-      query: { change: '1' },
-      amend: true
+      startingFrom: amendmentOpenedFromChangeLink()
     })
 
     expect(result.response).toEqual({
@@ -551,8 +555,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   it('Should send an untouched form returned with the amend Save and continue from a page opened with a Change link to the overview', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
-      query: { change: '1' },
-      amend: true
+      startingFrom: amendmentOpenedFromChangeLink()
     })
 
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
@@ -598,27 +601,27 @@ describe('documents — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should go Back to the review when the page was opened by changing an answer from the review', async () => {
-    const result = await driveHandler(get, { query: { change: '1' } })
+    const result = await driveHandler(get, {
+      startingFrom: [openedFromChangeLink()]
+    })
 
     expectBackLinkIsPage(result, CYA_SLUG)
   })
 
   it('Should go Back to the review while the notification is being amended, with nothing in the address saying where the trader came from', async () => {
-    const result = await driveHandler(get, { amend: true })
+    const result = await driveHandler(get, {
+      startingFrom: [amendmentOpened()]
+    })
 
     expectBackLinkIsPage(result, CYA_SLUG)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview on a draft', async () => {
-    const result = await driveHandler(get)
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
+  itSendsBackToOverview(get, { cases: ['when opened from the Overview'] })
 
   it('Should keep the review back link after the page refuses a part-filled document returned from the upload service', async () => {
     const result = await driveReturnFromUpload({
       submission: validDocument,
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
@@ -879,9 +882,11 @@ describe('documents — taking on a returned upload a service refuses', () => {
   })
 
   it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, appending nothing and logging the failure once', async () => {
-    const saveFailure = backendRefusal()
+    const saveRefusal = backendRefusal()
 
-    const result = await driveClaim(submittedDocument(), { saveFailure })
+    const result = await driveClaim(submittedDocument(), {
+      startingFrom: [refusingSaves(saveRefusal)]
+    })
 
     expectHeldOnPageWithProblemBanner(result)
     expect(errorEntries(result)).toHaveLength(1)
@@ -889,19 +894,19 @@ describe('documents — taking on a returned upload a service refuses', () => {
     expect(logged).toEqual({
       level: 'error',
       fields: {
-        err: saveFailure,
+        err: saveRefusal,
         journeyId: result.journeyId,
         uploadId: result.session.uploadId,
         correlationId: result.session.correlationId
       },
       message: 'Took on the returned upload but could not save the document'
     })
-    expect(logged.fields.err).toBe(saveFailure)
+    expect(logged.fields.err).toBe(saveRefusal)
   })
 
   it('Should say the document was not saved to the notification, rather than that the answers were saved', async () => {
     const result = await driveClaim(submittedDocument(), {
-      saveFailure: backendRefusal()
+      startingFrom: [refusingSaves(backendRefusal())]
     })
 
     expect(result.view.context.recoverableErrorBody).toBe(
@@ -911,7 +916,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   it('Should carry the handle the next save takes the upload on again by', async () => {
     const result = await driveClaim(submittedDocument(), {
-      saveFailure: backendRefusal()
+      startingFrom: [refusingSaves(backendRefusal())]
     })
 
     expect(result.view.context.unsavedDocument).toEqual({
@@ -1963,7 +1968,7 @@ describe('documents — the session the add form posts to', () => {
     const refused = await driveHandler(post, {
       journeyId: opened.journeyId,
       seed: { documents: [storedDocument()] },
-      saveFailure: backendRefusal(),
+      startingFrom: [refusingSaves(backendRefusal())],
       payload: {
         action: 'remove:0',
         uploadSession: opened.view.context.uploadSession
@@ -2164,7 +2169,7 @@ describe('documents — backend and upload service failures', () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
       seed,
-      saveFailure: failure,
+      startingFrom: [refusingSaves(failure)],
       payload: { action: 'remove:0' }
     })
     expect(result.response.statusCode).toBe(500)
@@ -2191,7 +2196,7 @@ describe('documents — backend and upload service failures', () => {
   it('Should log the retried removal save fallback once, with the backend error, when the notification still cannot be saved', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
     const result = await driveHandler(post, {
-      saveFailure: failure,
+      startingFrom: [refusingSaves(failure)],
       payload: retryRemovalPayload
     })
     expect(result.response.statusCode).toBe(500)
@@ -2278,7 +2283,7 @@ describe('documents — where the save buttons post', () => {
 
   it('Should post both save buttons to this page when a taken-on document is waiting to be saved, so the save is retried', async () => {
     const result = await driveClaim(submittedDocument(), {
-      saveFailure: backendRefusal()
+      startingFrom: [refusingSaves(backendRefusal())]
     })
 
     expect(result.view.context.unsavedDocument).toBeDefined()
@@ -2293,7 +2298,7 @@ describe('documents — where the save buttons post', () => {
     const result = await driveHandler(post, {
       journeyId: opened.journeyId,
       seed: { documents: [storedDocument()] },
-      saveFailure: backendRefusal(),
+      startingFrom: [refusingSaves(backendRefusal())],
       payload: { action: 'remove:0' }
     })
 

@@ -103,7 +103,8 @@ shows no status strip still passes `journey`, with `showJourneyStrip: false`.
 Pass `page` so the section caption renders. The normal back link is
 `hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
 back link from `kit.runBackLink()`, which opens the previous run step while the
-run is active and falls back to the overview when the run is over or no named
+run is active, and on a draft opened from a review Change link, where it carries
+change context. It falls back to the overview otherwise, or when no named
 earlier step applies. A page that returns to the review rather than the
 overview says so to the same helper, with its `returnsToReview` option,
 rather than building its own target.
@@ -249,7 +250,7 @@ labels only the review shows go in the check-answers copy bundles.
 Rows carry no Change link — `row(key, value)` is a
 key and a value. If the page's fields go into a NEW card, the card needs one
 `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
-`editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf in BOTH
+`editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf in BOTH
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
 the fit assertion "every Change link sits in a card heading and no summary row
 carries one"
@@ -336,9 +337,13 @@ set-up in the test file:
   [`engine/test-support.js`](../../../engine/test-support.js) exports:
   - `driveHandler` seeds a journey, runs one handler and returns the answers
     before and after, the response, the view, the cookies and the logger; its
-    `openingRun` option (`RUN_ACTIVE` or `RUN_COMPLETE`) records that phase of the
-    opening run, and `saveFailure` makes every save the handler makes fail with
-    the error it is given
+    `startingFrom` option takes the states the journey starts in, each from a
+    helper: `amendmentOpened`, `openingRunAt` (a phase, `RUN_ACTIVE` or
+    `RUN_COMPLETE`, and optionally the entry that began the run),
+    `withFlowOnlyAnswers`, `openedFromChangeLink`, `amendmentOpenedFromChangeLink` (a list, so
+    pass it as the whole `startingFrom`) and `refusingSaves` (every save
+    the handler makes fails with the error it is given); `driveHandler` throws on
+    any other option it does not take
   - `getHandlerOf` returns the GET handler of a feature module
   - `postHandlerOf` and `postHandlerEndingWith` return its POST handler
   - `useStubbedJourney` registers the stub records, the stub session and the
@@ -347,7 +352,24 @@ set-up in the test file:
     nested
   - `journeyRequest`, `stubH`, `recordingH` and `recordingLogger` build the
     request, toolkit and logger
-  - `expectBackLinkIsPage` asserts the Back link is a page of the journey
+  - `expectBackLinkIsPage` asserts the Back link is a page of the journey, and
+    `expectBackLinkIsPath` asserts it is a given path, such as a page carrying
+    change context
+  - `itSendsBackCarryingChangeTo`, from
+    [`journeys/linear/test-support.js`](../journeys/linear/test-support.js),
+    registers the test that a page opened from a Change link on a draft sends
+    Back to a given page carrying change context; it takes the GET handler and
+    a list of cases, each a description, a seed and the previous page's slug
+  - `itSendsBackToOverview`, from the same file, registers the tests that a
+    page whose Back link is the Overview keeps it while the opening run is
+    active, on a draft opened from a Change link, when opened from the
+    Overview and on an amendment opened from a Change link; it takes the GET
+    handler and an options object with an optional `seed` and an optional
+    `cases` list of the case descriptions to register (all four when omitted)
+  - `itSendsBackToOverviewOnRefusal`, from the same file, registers the test
+    that a page whose Back link is the Overview keeps it on the refused
+    re-render while the opening run is active; it takes the POST handler, the
+    refused payload and an optional seed
   - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line
@@ -365,6 +387,13 @@ set-up in the test file:
   - `useReferenceDataServing` registers `resetMocksAndConfigAfterTests()` for the
     describe that calls it, and returns the function that serves given rows as
     the reference-data response
+- config in a test:
+  [`common/test-helpers/restore-config-after-each.js`](../../../../common/test-helpers/restore-config-after-each.js)
+  exports `restoreConfigAfterEach(keys)`, which restores those config keys
+  after each test and is the one snapshot and restore every other helper uses;
+  [`common/test-helpers/use-ins-frontend-base-url.js`](../../../../common/test-helpers/use-ins-frontend-base-url.js)
+  exports `useInsFrontendBaseUrl`, which restores the INS frontend base URL
+  after each test and returns the setter a test uses to point it somewhere
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,

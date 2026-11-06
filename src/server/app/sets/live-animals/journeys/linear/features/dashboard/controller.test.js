@@ -10,20 +10,34 @@ import {
 import {
   configureSession,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  openingRunEntryCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { createRoutePath } from '../../../../../../shared/paths.js'
+import {
+  createRoutePath,
+  startRoutePath
+} from '../../../../../../shared/paths.js'
 import { SET_BASE } from '../../../../set.js'
 import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
-import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
+import {
+  RUN_ACTIVE,
+  RUN_ENTRY_LIST_CREATE,
+  RUN_ENTRY_START
+} from '../../../../../../flow/run-state.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 
 import { routes } from './controller.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  authenticatedActor,
+  expectOneLogged,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
+import { startStubModeServer } from '../../../../../../../common/test-helpers/stub-mode-server.js'
 import { CATTLE_CODE } from '../../../../services/commodities/rules.js'
 
 const hubUrl = (journeyId) => `${SET_BASE}/notifications/${journeyId}`
@@ -40,8 +54,11 @@ const handlerOf = (method, pathSuffix) =>
 
 const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
-const startPost = routes.find(
+const createPost = routes.find(
   (route) => route.method === 'POST' && route.path === createRoutePath()
+).handler
+const startGet = routes.find(
+  (route) => route.method === 'GET' && route.path === startRoutePath()
 ).handler
 
 const startDraft = async () => records.create()
@@ -66,13 +83,13 @@ const postAmend = async (journeyId, overrides = {}) => {
   return { response, h }
 }
 
-describe('dashboard notifications list', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-  })
-  beforeEach(() => records.clear())
+beforeAll(() => {
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+})
+beforeEach(() => records.clear())
 
+describe('dashboard notifications list', () => {
   it('Should show the empty state when the session knows no journeys', async () => {
     const context = await renderList()
 
@@ -271,11 +288,6 @@ describe('dashboard notifications list', () => {
 })
 
 describe('dashboard content width', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-  })
-
   it('Should render the notification list as a display surface', async () => {
     const context = await renderList()
 
@@ -284,12 +296,6 @@ describe('dashboard content width', () => {
 })
 
 describe('dashboard row actions', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-  })
-  beforeEach(() => records.clear())
-
   it('Should expose no resume or view indirection routes', () => {
     expect(routes.some((route) => route.path.endsWith('/resume'))).toBe(false)
     expect(routes.some((route) => route.path.endsWith('/view'))).toBe(false)
@@ -405,75 +411,89 @@ describe('dashboard row actions', () => {
   })
 })
 
-describe('dashboard start with an in-flight draft', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-  })
-  beforeEach(() => records.clear())
-
-  it('Should start a NEW journey and keep the old one listed', async () => {
-    const oldDraft = await startDraft()
-    await records.replaceFulfilment(
-      oldDraft.journeyId,
-      assembleFulfilments({ countryOfOrigin: 'FR' })
-    )
-    const request = journeyRequest(undefined, {
-      knownJourneyIds: [oldDraft.journeyId]
-    })
-    const h = stubH(request)
-
-    await startPost(request, h)
-
-    const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-    expect(newJourneyId).not.toBe(oldDraft.journeyId)
-    expect(h.cookies[knownJourneysCookie()]).toEqual([
-      oldDraft.journeyId,
-      newJourneyId
-    ])
-    expect(
-      projectAnswers(
-        (await records.load({ journeyId: oldDraft.journeyId })).fulfilment
+describe.each([
+  ['create POST', createPost],
+  ['start entry', startGet]
+])(
+  'dashboard create with an in-flight draft through the %s',
+  (_entry, open) => {
+    it('Should start a NEW journey and keep the old one listed', async () => {
+      const oldDraft = await startDraft()
+      await records.replaceFulfilment(
+        oldDraft.journeyId,
+        assembleFulfilments({ countryOfOrigin: 'FR' })
       )
-    ).toEqual({ countryOfOrigin: 'FR' })
-  })
-})
+      const request = journeyRequest(undefined, {
+        knownJourneyIds: [oldDraft.journeyId]
+      })
+      const h = stubH(request)
 
-describe('dashboard start opens the opening run', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-  })
-  beforeEach(() => records.clear())
+      await open(request, h)
 
-  it('Should begin the opening run for the new notification before any page is answered', async () => {
-    const request = journeyRequest()
-    const h = stubH(request)
-
-    const response = await startPost(request, h)
-
-    const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-    expect(response.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
-    expect(h.cookies[openingRunCookie()]).toEqual({
-      [newJourneyId]: RUN_ACTIVE
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(newJourneyId).not.toBe(oldDraft.journeyId)
+      expect(h.cookies[knownJourneysCookie()]).toEqual([
+        oldDraft.journeyId,
+        newJourneyId
+      ])
+      expect(
+        projectAnswers(
+          (await records.load({ journeyId: oldDraft.journeyId })).fulfilment
+        )
+      ).toEqual({ countryOfOrigin: 'FR' })
     })
-  })
+  }
+)
 
-  it('Should leave an earlier notification run record intact', async () => {
-    const request = journeyRequest(undefined, {
-      state: { [openingRunCookie()]: { 'an-earlier-journey': RUN_ACTIVE } }
+describe.each([
+  ['create POST', createPost, RUN_ENTRY_LIST_CREATE],
+  ['start entry', startGet, RUN_ENTRY_START]
+])(
+  'dashboard create opens the opening run through the %s',
+  (_name, open, entry) => {
+    it('Should record the entry that began the opening run', async () => {
+      const request = journeyRequest()
+      const h = stubH(request)
+
+      await open(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(h.cookies[openingRunEntryCookie()]).toEqual({
+        [newJourneyId]: entry
+      })
     })
-    const h = stubH(request)
 
-    await startPost(request, h)
+    it('Should begin the opening run for the new notification before any page is answered', async () => {
+      const request = journeyRequest()
+      const h = stubH(request)
 
-    const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-    expect(h.cookies[openingRunCookie()]).toEqual({
-      'an-earlier-journey': RUN_ACTIVE,
-      [newJourneyId]: RUN_ACTIVE
+      const response = await open(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(response.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
+      expect(h.cookies[openingRunCookie()]).toEqual({
+        [newJourneyId]: RUN_ACTIVE
+      })
     })
-  })
 
+    it('Should leave an earlier notification run record intact', async () => {
+      const request = journeyRequest(undefined, {
+        state: { [openingRunCookie()]: { 'an-earlier-journey': RUN_ACTIVE } }
+      })
+      const h = stubH(request)
+
+      await open(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expect(h.cookies[openingRunCookie()]).toEqual({
+        'an-earlier-journey': RUN_ACTIVE,
+        [newJourneyId]: RUN_ACTIVE
+      })
+    })
+  }
+)
+
+describe('dashboard amend', () => {
   it('Should NOT begin a run when an existing notification is amended', async () => {
     const submitted = await startSubmitted()
 
@@ -482,4 +502,57 @@ describe('dashboard start opens the opening run', () => {
     expect(response.redirect).toBe(hubUrl(submitted.journeyId))
     expect(openingRunCookie() in h.cookies).toBe(false)
   })
+})
+
+describe('dashboard start entry', () => {
+  it('Should forbid caching the start response', async () => {
+    const request = journeyRequest()
+    const h = stubH(request)
+
+    const response = await startGet(request, h)
+
+    expect(response.headers).toEqual({ 'cache-control': 'no-store' })
+  })
+
+  it('Should send a request with no session at the start entry to sign in', async () => {
+    const startUrl = `${SET_BASE}/start`
+    const { server, stop } = await startStubModeServer()
+
+    const response = await server.inject({
+      method: 'GET',
+      url: startUrl
+    })
+    await stop()
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(
+      `/auth/sign-in?redirect=${encodeURIComponent(startUrl)}`
+    )
+  })
+})
+
+describe('opening a new notification logs it once', () => {
+  it.each([
+    ['the create POST', createPost, RUN_ENTRY_LIST_CREATE],
+    ['the start entry', startGet, RUN_ENTRY_START]
+  ])(
+    'Should log the new notification, its organisation and the entry that opened it once for %s',
+    async (_name, handler, entry) => {
+      const request = journeyRequest()
+      const h = stubH(request)
+
+      await handler(request, h)
+
+      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
+      expectOneLogged(request.logger, {
+        level: 'info',
+        fields: {
+          journeyId: newJourneyId,
+          entry,
+          organisationId: authenticatedActor.organisationId
+        },
+        message: 'New notification opened'
+      })
+    }
+  )
 })

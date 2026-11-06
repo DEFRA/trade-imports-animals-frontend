@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -64,7 +66,7 @@ describe('/transporters/add/commercial', () => {
   it('Should keep the change context on Back when the trader is changing an answer', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: COMMERCIAL },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.view.context.backLink).toBe(
@@ -184,7 +186,7 @@ describe('/transporters/add/commercial', () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -207,7 +209,9 @@ describe('/transporters/add/commercial', () => {
     const { response } = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, RECORD)
@@ -257,7 +261,9 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
     await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: HAULIER,
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expect(added()).toHaveLength(0)

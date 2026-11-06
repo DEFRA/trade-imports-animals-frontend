@@ -1,7 +1,4 @@
-import { isNonArrayObject } from '../../helper-internals.js'
-
-// The five implication constructors below correspond to the five categories
-// emitted by `classifyObligations`.
+import { isObject } from '../../../../lib/object.js'
 
 const unindexedImplication = (obligation, applicabilityDecision) => {
   if (applicabilityDecision) {
@@ -67,9 +64,7 @@ const userInputDerivedImplication = (
   const implication = {
     inScope: true,
     status: obligation.status,
-    fulfilmentIndexes: isNonArrayObject(fulfilment)
-      ? Object.keys(fulfilment)
-      : []
+    fulfilmentIndexes: isObject(fulfilment) ? Object.keys(fulfilment) : []
   }
   if (applicabilityDecision?.reasons) {
     implication.reasons = applicabilityDecision.reasons

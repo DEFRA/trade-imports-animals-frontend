@@ -5,12 +5,14 @@ import { store } from '../../../../../../engine/store.js'
 import {
   addressBookRefusingAddresses,
   driveHandler,
+  openedFromChangeLink,
   journeyRequest,
   resetMocksAndConfigAfterTests,
   stubH,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { itSendsBackToOverview } from '../../test-support.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import {
   BOS_TAURUS_ROW,
@@ -28,8 +30,8 @@ const postAddresses = addresses.routes.find(
   (route) => route.method === 'POST'
 ).handler
 
-const driveAddresses = async (seed, query = {}) =>
-  driveHandler(getAddresses, { seed, query })
+const driveAddresses = async (seed, startingFrom = []) =>
+  driveHandler(getAddresses, { seed, startingFrom })
 const sectionsOf = (result) => result.view.context.sections
 const sectionTitled = (sections, title) =>
   sections.find((section) => section.title === title)
@@ -234,7 +236,7 @@ describe('GET addresses — change context', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should carry change context into every party add link', async () => {
-    const result = await driveAddresses({}, { change: '1' })
+    const result = await driveAddresses({}, [openedFromChangeLink()])
 
     for (const party of PARTIES) {
       expect(sectionTitled(sectionsOf(result), party.title).addLink.href).toBe(
@@ -244,10 +246,9 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should carry change context into a chosen party Change and Edit details links', async () => {
-    const result = await driveAddresses(
-      { consignor: { name: ASTRA_NAME } },
-      { change: '1' }
-    )
+    const result = await driveAddresses({ consignor: { name: ASTRA_NAME } }, [
+      openedFromChangeLink()
+    ])
 
     expect(
       sectionTitled(sectionsOf(result), CONSIGNOR_TITLE).chosen
@@ -258,10 +259,9 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should leave the CPH link alone, its slug already carrying a query string', async () => {
-    const result = await driveAddresses(
-      { commodityLines: CPH_ASKED_LINES },
-      { change: '1' }
-    )
+    const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES }, [
+      openedFromChangeLink()
+    ])
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).addLink.href).toBe(
       pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
@@ -276,35 +276,16 @@ describe('GET addresses — change context', () => {
     ).toBe(pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG))
   })
 
-  it('Should point Back at check your answers under change context', async () => {
-    const result = await driveAddresses({}, { change: '1' })
-
-    expect(result.view.context.backLink).toBe(
-      pagePath(result.journeyId, CYA_SLUG)
-    )
-  })
-
-  it('Should point Back at the task list, never the review, while amending', async () => {
-    const { journeyId, view } = await driveHandler(getAddresses, {
-      query: { change: '1' },
-      amend: true
-    })
-
-    expect(view.context.backLink).toBe(hubPath(journeyId))
-  })
-
-  it('Should point Back at the task list when not changing', async () => {
-    const result = await driveAddresses({})
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
+  itSendsBackToOverview(getAddresses)
 })
 
 describe('POST addresses — change context', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should exit to check your answers when continuing under change context', async () => {
-    const result = await driveHandler(postAddresses, { query: { change: '1' } })
+    const result = await driveHandler(postAddresses, {
+      startingFrom: [openedFromChangeLink()]
+    })
 
     expect(result.response.redirect).toBe(pagePath(result.journeyId, CYA_SLUG))
   })

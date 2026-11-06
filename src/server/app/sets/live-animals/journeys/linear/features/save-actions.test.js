@@ -3,15 +3,17 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
+import {
+  amendmentOpened,
+  driveHandler,
+  openedFromChangeLink,
+  postHandlerOf
+} from '../../../../../engine/test-support.js'
 import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import {
-  driveHandler,
-  postHandlerOf
-} from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import { base, hubExitTarget } from '../../../../../shared/kit.js'
@@ -133,7 +135,7 @@ describe('save actions — hub exit semantics', () => {
       postHandlerOf(importReason),
       {
         payload: internalMarketPayload,
-        query: { change: '1' },
+        startingFrom: [openedFromChangeLink()],
         seed: reasonPrerequisites
       }
     )
@@ -147,7 +149,7 @@ describe('save actions — hub exit semantics', () => {
       postHandlerOf(importReason),
       {
         payload: { ...internalMarketPayload, exit: 'hub' },
-        query: { change: '1' },
+        startingFrom: [openedFromChangeLink()],
         seed: reasonPrerequisites
       }
     )
@@ -230,18 +232,17 @@ describe('save actions — hub exit semantics', () => {
   })
 })
 
-const postAmending = ({ payload = internalMarketPayload, query } = {}) =>
+const postAmending = (startingFrom, { payload = internalMarketPayload } = {}) =>
   driveHandler(postHandlerOf(importReason), {
     seed: reasonPrerequisites,
     payload,
-    query,
-    amend: true
+    startingFrom: [amendmentOpened(), ...startingFrom]
   })
 
 describe('save actions — amend endings', () => {
   it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
-    const saveAndReturn = await postAmending({ query: { change: '1' } })
-    const saveAndContinue = await postAmending({ query: {} })
+    const saveAndReturn = await postAmending([openedFromChangeLink()])
+    const saveAndContinue = await postAmending([])
 
     expect(saveAndReturn.response).toEqual({
       redirect: pagePath(saveAndReturn.journeyId, 'notification-view')
@@ -257,9 +258,8 @@ describe('save actions — amend endings', () => {
       transitPortOfExit: 'GB DVR',
       transitDestinationCountry: ''
     }
-    const amending = await postAmending({
-      payload: partlyAnsweredTransit,
-      query: { change: '1' }
+    const amending = await postAmending([openedFromChangeLink()], {
+      payload: partlyAnsweredTransit
     })
     const outside = await driveHandler(postHandlerOf(importReason), {
       payload: partlyAnsweredTransit,

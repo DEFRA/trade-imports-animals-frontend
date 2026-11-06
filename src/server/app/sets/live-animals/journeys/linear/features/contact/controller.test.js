@@ -1,18 +1,24 @@
 import { SET_ID } from '../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { config } from '../../../../../../../../config/config.js'
 import {
   addressBookAnswering,
   addressBookPage,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
+  resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
   postHandlerOf,
-  resetMocksAndConfigAfterTests,
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
+import {
+  itSendsBackToOverview,
+  itSendsBackToOverviewOnRefusal
+} from '../../test-support.js'
 import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
@@ -26,7 +32,7 @@ const post = postHandlerOf(contact)
 const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
-const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
+const NOT_IN_THE_BOOK = 'not-a-real-contact'
 const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
 const editHrefOf = (journeyId) =>
   `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
@@ -113,7 +119,7 @@ describe('GET contact — select an address from the book', () => {
   it('Should carry the change context onto the current contact edit link', async () => {
     const result = await driveHandler(get, {
       seed: { contactAddress: HELD_CONTACT },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.view.context.currentContact.editHref).toBe(
@@ -150,7 +156,7 @@ describe('POST contact — invalid payload', () => {
 
   it('Should answer 400 and re-render an out-of-list contact, committing nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { contactAddress: 'not-a-real-contact' }
+      payload: { contactAddress: NOT_IN_THE_BOOK }
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
@@ -161,7 +167,7 @@ describe('POST contact — invalid payload', () => {
   it('Should keep the current contact card on a 400 re-render', async () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
-      payload: { contactAddress: 'not-a-real-contact' }
+      payload: { contactAddress: NOT_IN_THE_BOOK }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -199,10 +205,11 @@ describe('POST contact — invalid payload', () => {
 
 describe('GET contact — INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests()
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+    setInsFrontendBaseUrl('http://localhost:3002')
     addressBookAnswering(addressBookPage())
 
     const result = await driveHandler(get)
@@ -224,7 +231,7 @@ describe('POST contact — recoverable save failure', () => {
   it('Should re-render the page when saving the selection fails', async () => {
     const result = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id },
-      saveFailure: unavailableBackendError('save answers')
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -236,7 +243,7 @@ describe('POST contact — recoverable save failure', () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
       payload: { contactAddress: CONTACT.id },
-      saveFailure: unavailableBackendError('save answers')
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -244,4 +251,12 @@ describe('POST contact — recoverable save failure', () => {
       name: HELD_CONTACT.name
     })
   })
+})
+
+describe('contact — Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  itSendsBackToOverview(get)
+
+  itSendsBackToOverviewOnRefusal(post, { contactAddress: NOT_IN_THE_BOOK })
 })

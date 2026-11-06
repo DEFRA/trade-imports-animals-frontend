@@ -1,13 +1,11 @@
 import crypto from 'node:crypto'
 
-import { config } from '../../../../../../../../config/config.js'
+import { buildInsFrontendUrl } from '../../../../../../../common/helpers/ins-frontend-url.js'
 import {
   addedAddressBannerCookie,
   addressHandshakeTokensCookie
 } from '../../../../../../engine/persistence/session.js'
-import { copyFor } from '../../../../../../shared/copy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
+import { sharedCopy } from '../../../../../../shared/kit.js'
 import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
 
 export const JOURNEY_TYPE = 'gbn-ag'
@@ -69,11 +67,10 @@ export const takeAddedAddressBanner = (request, h) => {
     return null
   }
   h.unstate(addedAddressBannerCookie())
-  const addedBannerCopy = copyFor({ en: sharedEn, cy: sharedCy })
-    .addressHandshake.addedBanner
+  const { title, text } = sharedCopy.addressHandshake.addedBanner
   return {
-    titleText: addedBannerCopy.title,
-    text: addedBannerCopy.text(added.name)
+    titleText: title,
+    text: text(added.name)
   }
 }
 
@@ -86,7 +83,6 @@ export const issueInsAddAddressUrl = (request, h, notificationId, party) => {
   const token = crypto.randomBytes(HANDSHAKE_TOKEN_BYTES).toString('hex')
   storeHandshakeToken(request, h, fulfilmentId, token)
 
-  const base = config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')
   const params = new URLSearchParams({
     'journey-type': JOURNEY_TYPE,
     'notification-id': notificationId,
@@ -94,5 +90,5 @@ export const issueInsAddAddressUrl = (request, h, notificationId, party) => {
     'handshake-token': token
   })
 
-  return `${base}/address-book/add?${params.toString()}`
+  return buildInsFrontendUrl(`/address-book/add?${params.toString()}`)
 }

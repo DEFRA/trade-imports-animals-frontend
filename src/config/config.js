@@ -14,18 +14,11 @@ const isProduction = env === 'production'
 const isTest = env === 'test'
 const isDevelopment = env === 'development'
 const isLocal = isDevelopment || isTest
-const isPlatform = !isLocal // Deployed to CDP platform
-
-const authCookieSameSite = 'Lax'
-const csrfEnabled = !isTest
 
 convict.addFormats(convictFormatWithValidator)
 
 const STRICT_BOOLEAN = 'strict-boolean'
 
-// convict's built-in Boolean format coerces any string other than 'false' to
-// true, so a typo like 'flase' would silently enable the flag; this format
-// only accepts a real boolean or the literal 'true'/'false' string.
 convict.addFormat({
   name: STRICT_BOOLEAN,
   validate(val) {
@@ -181,16 +174,16 @@ export const config = convict({
         format: STRICT_BOOLEAN,
         default: isProduction,
         env: 'SESSION_COOKIE_SECURE'
-      },
-      sameSite: {
-        doc: 'SameSite attribute for Bell OAuth state cookie',
-        format: ['Strict', 'Lax', 'None'],
-        default: authCookieSameSite,
-        env: 'AUTH_COOKIE_SAME_SITE'
       }
     }
   },
   defraId: {
+    stateCookieSameSite: {
+      doc: 'SameSite attribute of the Bell state cookie set during Defra ID sign-in',
+      format: ['Strict', 'Lax', 'None'],
+      default: 'Lax',
+      env: 'DEFRA_ID_STATE_COOKIE_SAME_SITE'
+    },
     oidcDiscoveryUrl: {
       doc: 'Defra ID OIDC well-known configuration URL',
       format: String,
@@ -236,23 +229,23 @@ export const config = convict({
       default: 'http://localhost:3000/auth/sign-out-oidc',
       env: 'DEFRA_ID_SIGN_OUT_REDIRECT_URL'
     },
-    signOutHostnameRewrite: {
+    browserFacingHostnameRewrite: {
       enabled: {
-        doc: 'Rewrite internal OIDC hostnames in sign-out URL for local environments',
+        doc: 'Rewrite Defra ID hostnames: browser-facing discovery and sign-out URLs move to the browser-facing hostname, and the server-side token and JWKS endpoints move to the discovery hostname',
         format: STRICT_BOOLEAN,
         default: !isProduction,
-        env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED'
+        env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_ENABLED'
       },
       from: {
-        doc: 'OIDC hostnames list for sign-out URL re-write',
+        doc: 'Defra ID hostnames the rewrite covers',
         format: Array,
         default: ['host.docker.internal', 'trade-imports-defra-id-stub']
       },
       to: {
-        doc: 'Target hostname used for sign-out OIDC URL rewrite',
+        doc: 'Browser-facing hostname the rewrite targets',
         format: String,
         default: 'localhost',
-        env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO'
+        env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_TO'
       }
     },
     refreshTokens: {
@@ -339,13 +332,13 @@ export const config = convict({
     enabled: {
       doc: 'Enable CSRF protection (disabled during test runs)',
       format: Boolean,
-      default: csrfEnabled
+      default: !isTest
     },
     cookie: {
       secure: {
         doc: 'Set secure flag on CSRF cookie',
         format: Boolean,
-        default: isPlatform
+        default: !isLocal
       }
     }
   },
@@ -378,7 +371,7 @@ export const config = convict({
       enabled: {
         doc: 'Write one EMF document per page request with its backend calls and session resolutions',
         format: STRICT_BOOLEAN,
-        default: isPlatform,
+        default: !isLocal,
         env: 'CALL_COUNTS_METRICS_ENABLED'
       }
     }

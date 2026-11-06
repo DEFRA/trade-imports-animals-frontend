@@ -5,6 +5,9 @@ import { store } from '../../../../../../../engine/store.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   driveHandler,
+  openedFromChangeLink,
+  openingRunAt,
+  withFlowOnlyAnswers,
   expectBackLinkIsPage,
   expectRemovalRefusedLogged,
   journeyRequest,
@@ -13,6 +16,11 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../../test-support.js'
+import { originPage } from '../../origin/page.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -43,19 +51,20 @@ const FELIS_CATUS_KEY = lineKey(FELIS_CATUS_ROW)
 const SELECT_COMMODITY = 'Select a commodity'
 const UNLISTED_RETURN = 'https://example.test/elsewhere'
 
-const searchRowsShownEarlier = (...rows) => ({ [STORED_SEARCH_ROWS]: rows })
+const afterSearchShowed = (...rows) =>
+  withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: rows })
 
 const storedSearchRowsOf = (result) =>
   result.cookies[flowOnlyAnswersCookie()][result.journeyId][STORED_SEARCH_ROWS]
 
-const searchFor = (commoditySearch, payload = {}, flowOnly = undefined) =>
+const searchFor = (commoditySearch, payload = {}, startingFrom = []) =>
   driveHandler(post, {
     payload: {
       action: 'search',
       [search.SEARCH_FIELD]: commoditySearch,
       ...payload
     },
-    flowOnly
+    startingFrom
   })
 
 const groupsOf = (result) => result.view.context.commodityGroups
@@ -209,11 +218,9 @@ describe('commodity search — carried and stored search rows', () => {
       speciesLatinName: BUBALUS_BUBALIS,
       speciesCommonName: 'Water Buffalo'
     }
-    const result = await searchFor(
-      'buffalo',
-      { selection: lineKey(bubalis) },
-      searchRowsShownEarlier(bubalis)
-    )
+    const result = await searchFor('buffalo', { selection: lineKey(bubalis) }, [
+      afterSearchShowed(bubalis)
+    ])
     const items = groupsOf(result).flatMap((group) => group.items)
     expect(
       items.filter((item) => item.checked).map((item) => item.value)
@@ -221,45 +228,35 @@ describe('commodity search — carried and stored search rows', () => {
   })
 
   it('Should carry a choice made under an earlier query off screen', async () => {
-    const result = await searchFor(
-      'felis',
-      { selection: BOS_TAURUS_KEY },
-      searchRowsShownEarlier(BOS_TAURUS_ROW)
-    )
+    const result = await searchFor('felis', { selection: BOS_TAURUS_KEY }, [
+      afterSearchShowed(BOS_TAURUS_ROW)
+    ])
     expect(legendsOf(result)).toEqual(['01061900'])
     expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
   })
 
   it('Should keep a ticked result off the carried list while it is on screen', async () => {
-    const result = await searchFor(
-      'felis',
-      { species: FELIS_CATUS_KEY },
-      searchRowsShownEarlier(FELIS_CATUS_ROW)
-    )
+    const result = await searchFor('felis', { species: FELIS_CATUS_KEY }, [
+      afterSearchShowed(FELIS_CATUS_ROW)
+    ])
     expect(result.view.context.carriedKeys).toEqual([])
   })
 
   it('Should drop a result the trader unticked before searching again', async () => {
-    const ticked = await searchFor(
-      'felis',
-      { species: FELIS_CATUS_KEY },
-      searchRowsShownEarlier(FELIS_CATUS_ROW)
-    )
-    const unticked = await searchFor(
-      'felis',
-      {},
-      searchRowsShownEarlier(FELIS_CATUS_ROW)
-    )
+    const ticked = await searchFor('felis', { species: FELIS_CATUS_KEY }, [
+      afterSearchShowed(FELIS_CATUS_ROW)
+    ])
+    const unticked = await searchFor('felis', {}, [
+      afterSearchShowed(FELIS_CATUS_ROW)
+    ])
     expect(ticked.view.context.selectedSummary.count).toBe(1)
     expect(unticked.view.context.selectedSummary.count).toBe(0)
   })
 
   it("Should store this search's rows beside the rows already shown", async () => {
-    const result = await searchFor(
-      'ferret',
-      { selection: BOS_TAURUS_KEY },
-      searchRowsShownEarlier(BOS_TAURUS_ROW, BISON_BISON_ROW)
-    )
+    const result = await searchFor('ferret', { selection: BOS_TAURUS_KEY }, [
+      afterSearchShowed(BOS_TAURUS_ROW, BISON_BISON_ROW)
+    ])
     expect(storedSearchRowsOf(result)).toEqual([
       BOS_TAURUS_ROW,
       BISON_BISON_ROW,
@@ -278,16 +275,16 @@ describe('commodity search — carried and stored search rows', () => {
   })
 
   it('Should keep a row an earlier search showed, so a later search cannot lose the choice', async () => {
-    const later = await searchFor(
-      'felis',
-      {},
-      searchRowsShownEarlier(BOS_TAURUS_ROW)
-    )
+    const later = await searchFor('felis', {}, [
+      afterSearchShowed(BOS_TAURUS_ROW)
+    ])
     expect(storedSearchRowsOf(later)).toContainEqual(BOS_TAURUS_ROW)
 
     const saved = await driveHandler(post, {
       payload: { species: BOS_TAURUS_KEY },
-      flowOnly: { [STORED_SEARCH_ROWS]: storedSearchRowsOf(later) }
+      startingFrom: [
+        withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: storedSearchRowsOf(later) })
+      ]
     })
     expect(keysOf(saved.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
   })
@@ -313,7 +310,7 @@ describe('commodity search — carried and stored search rows', () => {
   it('Should forget the rows once the page has saved its lines', async () => {
     const result = await driveHandler(post, {
       payload: { species: BOS_TAURUS_KEY },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW)]
     })
     expect(storedSearchRowsOf(result)).toEqual([])
   })
@@ -371,7 +368,7 @@ describe('commodity search — what has been chosen so far', () => {
         [search.SEARCH_FIELD]: 'buffalo',
         selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
     })
     expect(result.view.context.selectedSummary.count).toBe(0)
     expect(result.view.context.query).toBe('buffalo')
@@ -391,7 +388,7 @@ describe('commodity search — removing one chosen species', () => {
         selection: BOS_TAURUS_KEY,
         species: FELIS_CATUS_KEY
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
     })
     expect(result.response.statusCode).toBe(200)
     expect(result.view.context.query).toBe('felis')
@@ -407,7 +404,7 @@ describe('commodity search — removing one chosen species', () => {
         [search.SEARCH_FIELD]: 'felis',
         species: FELIS_CATUS_KEY
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
     })
     expect(result.response.statusCode).toBe(200)
     expect(result.view.context.query).toBe('felis')
@@ -422,7 +419,7 @@ describe('commodity search — removing one chosen species', () => {
         action: removeActionFor(tamperedKey),
         species: BOS_TAURUS_KEY
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW)]
     })
     expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(errorViewContextFor(result.response)).toMatchObject({
@@ -482,10 +479,9 @@ describe('commodity search — saving the selection', () => {
       payload: {
         species: [FELIS_CATUS_KEY, lineKey(MUSTELA_PUTORIUS_FURO_ROW)]
       },
-      flowOnly: searchRowsShownEarlier(
-        FELIS_CATUS_ROW,
-        MUSTELA_PUTORIUS_FURO_ROW
-      )
+      startingFrom: [
+        afterSearchShowed(FELIS_CATUS_ROW, MUSTELA_PUTORIUS_FURO_ROW)
+      ]
     })
     expect('containsUnweanedAnimals' in result.after).toBe(false)
     expect(keysOf(result.after.commodityLines)).toEqual([
@@ -513,11 +509,9 @@ describe('commodity search — saving the selection', () => {
   it('Should create one line per chosen species in canonical order, with its common name', async () => {
     const result = await driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY, BOS_TAURUS_KEY, BISON_BISON_KEY] },
-      flowOnly: searchRowsShownEarlier(
-        FELIS_CATUS_ROW,
-        BOS_TAURUS_ROW,
-        BISON_BISON_ROW
-      )
+      startingFrom: [
+        afterSearchShowed(FELIS_CATUS_ROW, BOS_TAURUS_ROW, BISON_BISON_ROW)
+      ]
     })
     expect(result.after.commodityLines).toEqual([
       {
@@ -549,7 +543,7 @@ describe('commodity search — saving the selection', () => {
         selection: BOS_TAURUS_KEY,
         species: FELIS_CATUS_KEY
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW, FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
     })
     expect(keysOf(result.after.commodityLines)).toEqual([
       BOS_TAURUS_KEY,
@@ -578,7 +572,7 @@ describe('commodity search — saving the selection', () => {
       payload: {
         species: [BOS_TAURUS_KEY, lineKey(MUSTELA_PUTORIUS_FURO_ROW)]
       },
-      flowOnly: searchRowsShownEarlier(MUSTELA_PUTORIUS_FURO_ROW)
+      startingFrom: [afterSearchShowed(MUSTELA_PUTORIUS_FURO_ROW)]
     })
     expect(result.after.commodityLines).toEqual([
       { ...kept, numberOfAnimalsQuantity: 25 },
@@ -599,7 +593,7 @@ describe('commodity search — saving the selection', () => {
     }
     const result = await driveHandler(post, {
       payload: { species: lineKey(unnamedRow) },
-      flowOnly: searchRowsShownEarlier(unnamedRow)
+      startingFrom: [afterSearchShowed(unnamedRow)]
     })
     expect(result.after.commodityLines).toStrictEqual([
       {
@@ -618,7 +612,7 @@ describe('commodity search — saving the selection', () => {
         selection: ['0102|Canis lupus', BOS_TAURUS_KEY],
         species: [BOS_TAURUS_KEY, 'not-a-key']
       },
-      flowOnly: searchRowsShownEarlier(BOS_TAURUS_ROW)
+      startingFrom: [afterSearchShowed(BOS_TAURUS_ROW)]
     })
     expect(keysOf(result.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
   })
@@ -627,12 +621,15 @@ describe('commodity search — saving the selection', () => {
 describe('commodity search — saving when another page opened the question', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const savedFrom = (slug, { payload = {}, query = {}, seed } = {}) =>
+  const savedFrom = (slug, { payload = {}, seed, startingFrom = [] } = {}) =>
     driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY], ...payload },
-      query: { return: slug, ...query },
+      query: { return: slug },
       seed,
-      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW, BOS_TAURUS_ROW)
+      startingFrom: [
+        afterSearchShowed(FELIS_CATUS_ROW, BOS_TAURUS_ROW),
+        ...startingFrom
+      ]
     })
 
   it('Should return to commodity details when commodity details opened the question', async () => {
@@ -663,7 +660,7 @@ describe('commodity search — saving when another page opened the question', ()
 
   it('Should return to the opener carrying the change context', async () => {
     const result = await savedFrom(consignmentDetailsPage.slug, {
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
     expect(result.response.redirect).toBe(
       `${pagePath(result.journeyId, consignmentDetailsPage.slug)}?change=1`
@@ -674,7 +671,7 @@ describe('commodity search — saving when another page opened the question', ()
     const refused = await savedFrom(UNLISTED_RETURN)
     const unmarked = await driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY] },
-      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
     expect(refused.response.redirect).toBe(hubPath(refused.journeyId))
     expect(refused.response.redirect).toBe(
@@ -697,7 +694,7 @@ describe('commodity search — logging a save when another page opened the quest
     driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY] },
       query: marker === undefined ? {} : { return: marker },
-      flowOnly: searchRowsShownEarlier(FELIS_CATUS_ROW)
+      startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
 
   it('Should log the page returned to once at info when the marker names an opener', async () => {
@@ -751,9 +748,11 @@ describe('commodity search — the Back link', () => {
   it('Should go Back as an unmarked visit does when the return value names a page not opening the question', async () => {
     const refused = await driveHandler(get, {
       query: { return: UNLISTED_RETURN },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    const unmarked = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    const unmarked = await driveHandler(get, {
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
+    })
     expect(refused.view.context.backLink).toBe(
       unmarked.view.context.backLink.replace(
         unmarked.journeyId,
@@ -763,27 +762,26 @@ describe('commodity search — the Back link', () => {
   })
 
   it('Should go Back to the origin of the import while the opening run is on', async () => {
-    const result = await driveHandler(get, { openingRun: RUN_ACTIVE })
+    const result = await driveHandler(get, {
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
+    })
     expectBackLinkIsPage(result, 'origin')
   })
 
   it('Should keep Back on the origin of the import when the page is shown again by a search in the run', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'search', [search.SEARCH_FIELD]: 'cat' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, 'origin')
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(get)
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
+  itSendsBackToOverview(get, { cases: ['when opened from the Overview'] })
 
   it('Should go Back to commodity details when commodity details opened the question', async () => {
     const result = await driveHandler(get, {
       query: { return: consignmentDetailsPage.slug },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, consignmentDetailsPage.slug)
   })
@@ -791,7 +789,7 @@ describe('commodity search — the Back link', () => {
   it('Should go Back to identification details when identification details opened the question', async () => {
     const result = await driveHandler(get, {
       query: { return: animalIdentificationPage.slug },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expectBackLinkIsPage(result, animalIdentificationPage.slug)
   })
@@ -799,10 +797,14 @@ describe('commodity search — the Back link', () => {
   it('Should carry the change context on the Back link to the opener', async () => {
     const result = await driveHandler(get, {
       query: { return: consignmentDetailsPage.slug, change: '1' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.view.context.backLink).toBe(
       `${pagePath(result.journeyId, consignmentDetailsPage.slug)}?change=1`
     )
   })
+
+  itSendsBackCarryingChangeTo(get, [
+    ['the origin of the import', undefined, originPage.slug]
+  ])
 })

@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { config } from '../../../../../../../../config/config.js'
 import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
 import {
   recordingH,
   journeyRequest
 } from '../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { consignor } from '../../../../obligations/index.js'
 import { PARTIES } from './parties.js'
 import {
@@ -15,18 +15,13 @@ import {
 } from './ins-handshake.js'
 import { addedAddressBannerState } from './test-support.js'
 
-const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const notificationId = 'notification-123'
 
 describe('ins-handshake', () => {
-  const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
-
-  afterEach(() => {
-    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
-  })
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it('issues a handshake token, stores it in the tokens cookie and returns the INS add URL carrying it', () => {
-    config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002/')
+    setInsFrontendBaseUrl('http://localhost:3002/')
     const party = PARTIES.find((each) => each.id === 'consignor')
     const h = recordingH()
     const request = journeyRequest(notificationId)

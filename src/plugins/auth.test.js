@@ -1,7 +1,10 @@
 import hapi from '@hapi/hapi'
+import hapiBell from '@hapi/bell'
 import hapiCookie from '@hapi/cookie'
-import { describe, expect, test, vi, beforeEach } from 'vitest'
+import Jwt from '@hapi/jwt'
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
+import { config } from '../config/config.js'
 import {
   callCounts,
   callCountsOf,
@@ -9,319 +12,320 @@ import {
 } from '../server/common/helpers/call-counts/call-counts.js'
 import { callCountsRoutes } from '../server/common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../server/common/helpers/call-counts/call-count-totals.js'
+import { createLogger } from '../server/common/helpers/logging/logger.js'
+import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
-const getOidcConfigWithRetryMock = vi.hoisted(() => vi.fn())
-const configGetMock = vi.hoisted(() => vi.fn())
-const refreshTokensMock = vi.hoisted(() => vi.fn())
-const getSafeRedirectMock = vi.hoisted(() => vi.fn())
-const isStubModeMock = vi.hoisted(() => vi.fn())
+const wreckGetMock = vi.hoisted(() => vi.fn())
+const wreckPostMock = vi.hoisted(() => vi.fn())
 
-const jwtDecodeMock = vi.hoisted(() => vi.fn())
-const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
-
-vi.mock('../auth/get-oidc-config-with-retry.js', () => ({
-  getOidcConfigWithRetry: getOidcConfigWithRetryMock
-}))
-
-vi.mock('../config/config.js', () => ({
-  config: {
-    get: configGetMock
-  }
-}))
-
-vi.mock('../auth/refresh-tokens.js', () => ({
-  refreshTokens: refreshTokensMock
-}))
-
-vi.mock('../auth/get-safe-redirect.js', () => ({
-  getSafeRedirect: getSafeRedirectMock
-}))
-
-vi.mock('../server/common/services/mode.js', () => ({
-  isStubMode: isStubModeMock
-}))
-
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
-}))
-
-vi.mock('@hapi/jwt', () => ({
-  default: {
-    token: {
-      decode: jwtDecodeMock,
-      verifyTime: jwtVerifyTimeMock
-    }
-  }
+vi.mock('@hapi/wreck', () => ({
+  default: { get: wreckGetMock, post: wreckPostMock }
 }))
 
 const AUTH_COOKIE_NAME = 'test-auth-cookie'
+const SIGN_IN_REDIRECT_URL = 'http://localhost:3000/auth/sign-in-oidc'
+
+const configValues = {
+  'defraId.clientId': 'test-client-id',
+  'defraId.clientSecret': 'test-client-secret',
+  'session.cookie.password': 'some-password-32-chars-long-000000',
+  'auth.cookieName': AUTH_COOKIE_NAME,
+  isProduction: false,
+  stubMode: false,
+  'defraId.stateCookieSameSite': 'Lax',
+  'defraId.redirectUrl': SIGN_IN_REDIRECT_URL,
+  'defraId.serviceId': 'service-123',
+  'defraId.policy': 'policy-abc',
+  'defraId.refreshTokens': true,
+  'defraId.oidcDiscoveryUrl':
+    'https://idp.example.com/.well-known/openid-configuration'
+}
+
+const sessionIdInCache = 'session-1'
+
+const buildRequestWithCachedSession = (userSession) => {
+  const sessions = new Map(userSession ? [[sessionIdInCache, userSession]] : [])
+  return {
+    sessions,
+    request: {
+      server: {
+        app: {
+          cache: {
+            get: async (sessionId) => sessions.get(sessionId) ?? null,
+            set: async (sessionId, value) => {
+              sessions.set(sessionId, value)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const tokenExpiringIn = (ttlSec, payload = {}) =>
+  Jwt.token.generate(
+    payload,
+    { key: 'test-token-signing-secret', algorithm: 'HS256' },
+    { ttlSec }
+  )
+
+const SECONDS_PER_HOUR = 3600
+const unexpiredToken = tokenExpiringIn(SECONDS_PER_HOUR)
+const expiredToken = tokenExpiringIn(-SECONDS_PER_HOUR)
 
 describe('auth plugin', () => {
   const oidcConfig = {
     authorization_endpoint: 'https://idp.example.com/auth',
     token_endpoint: 'https://idp.example.com/token'
   }
-  const buildServer = () => ({
-    auth: {
-      strategy: vi.fn(),
-      default: vi.fn()
-    },
-    logger: { warn: vi.fn() }
-  })
+
+  restoreConfigAfterEach(Object.keys(configValues))
+
+  let logSpy
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
-    isStubModeMock.mockReturnValue(false)
-    getOidcConfigWithRetryMock.mockResolvedValue(oidcConfig)
-
-    configGetMock.mockImplementation((key) => {
-      const map = {
-        'defraId.clientId': 'test-client-id',
-        'defraId.clientSecret': 'test-client-secret',
-        'session.cookie.password': 'some-password-32-chars-long-000000',
-        'auth.cookieName': AUTH_COOKIE_NAME,
-        isProduction: false,
-        'session.cookie.sameSite': 'Lax',
-        'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
-        'defraId.serviceId': 'service-123',
-        'defraId.policy': 'policy-abc',
-        'defraId.refreshTokens': true
-      }
-
-      return map[key]
-    })
+    for (const [key, value] of Object.entries(configValues)) {
+      config.set(key, value)
+    }
+    wreckGetMock.mockResolvedValue({ payload: oidcConfig })
   })
 
-  test('register registers Bell + cookie strategies and sets default auth to session', async () => {
-    const server = buildServer()
+  afterEach(() => {
+    logSpy.mockRestore()
+    vi.useRealTimers()
+  })
 
-    await authPlugin.plugin.register(server)
+  describe('register', () => {
+    const buildServer = async () => {
+      const server = hapi.server()
+      server.decorate('server', 'logger', createLogger())
+      await server.register([hapiCookie, hapiBell])
+      return server
+    }
 
-    expect(getOidcConfigWithRetryMock).toHaveBeenCalledWith(server.logger)
-
-    expect(server.auth.strategy).toHaveBeenCalledWith(
-      'defra-id',
-      'bell',
-      expect.objectContaining({
-        provider: expect.objectContaining({
-          auth: oidcConfig.authorization_endpoint,
-          token: expect.any(Function)
-        }),
-        clientId: 'test-client-id',
-        clientSecret: 'test-client-secret',
-        password: expect.any(String)
+    test('registers Bell with the discovered authorization endpoint and the configured client', async () => {
+      const server = await buildServer()
+      await server.register(authPlugin)
+      server.route({
+        method: 'GET',
+        path: '/sign-in-with-defra-id',
+        options: { auth: 'defra-id' },
+        handler: () => 'signed in'
       })
-    )
 
-    expect(server.auth.strategy).toHaveBeenCalledWith(
-      'session',
-      'cookie',
-      expect.objectContaining({
-        cookie: expect.objectContaining({
-          password: expect.any(String),
-          path: '/'
-        }),
-        redirectTo: expect.any(Function),
-        validate: expect.any(Function)
-      })
-    )
+      const response = await server.inject('/sign-in-with-defra-id')
 
-    expect(server.auth.default).toHaveBeenCalledWith('session')
-    expect(isStubModeMock).toHaveBeenCalled()
-  })
-
-  test('register skips Bell and the OIDC fetch in stub mode, still enforcing session auth', async () => {
-    // Stub mode replaces the Defra ID round-trip, not authentication itself:
-    // stub-sign-in.js writes the session that the cookie strategy then checks,
-    // so the strategy and the default must still be in place. Reaching for the
-    // OIDC config would also fail outright — there is no identity provider
-    // configured in the environments stub mode is meant for.
-    isStubModeMock.mockReturnValue(true)
-    const server = buildServer()
-
-    await authPlugin.plugin.register(server)
-
-    expect(server.auth.strategy).toHaveBeenCalledTimes(1)
-    expect(server.auth.strategy.mock.calls[0][0]).toBe('session')
-    expect(server.auth.default).toHaveBeenCalledWith('session')
-    expect(getOidcConfigWithRetryMock).not.toHaveBeenCalled()
-  })
-
-  test('register registers no Bell strategy when OIDC discovery fails', async () => {
-    getOidcConfigWithRetryMock.mockRejectedValue(
-      new Error(
-        'OIDC discovery at https://idp.example.com/.well-known/openid-configuration failed after 4 attempts'
+      const location = new URL(response.headers.location)
+      expect(response.statusCode).toBe(302)
+      expect(`${location.origin}${location.pathname}`).toBe(
+        oidcConfig.authorization_endpoint
       )
-    )
-    const server = buildServer()
+      expect(Object.fromEntries(location.searchParams)).toMatchObject({
+        client_id: 'test-client-id',
+        redirect_uri: SIGN_IN_REDIRECT_URL,
+        serviceId: 'service-123',
+        p: 'policy-abc',
+        response_mode: 'query'
+      })
+    })
 
-    await expect(authPlugin.plugin.register(server)).rejects.toThrow(
-      'OIDC discovery at'
-    )
+    test('sets default auth to the session cookie strategy', async () => {
+      const server = await buildServer()
+      await server.register(authPlugin)
+      server.route({ method: 'GET', path: '/private', handler: () => 'ok' })
 
-    expect(server.auth.strategy).not.toHaveBeenCalledWith(
-      'defra-id',
-      'bell',
-      expect.anything()
-    )
+      const response = await server.inject('/private')
+
+      expect(response.statusCode).toBe(302)
+      expect(response.headers.location).toBe(
+        '/auth/sign-in?redirect=%2Fprivate'
+      )
+    })
+
+    test('skips Bell and the OIDC fetch in stub mode, still enforcing session auth', async () => {
+      config.set('stubMode', true)
+      const server = await buildServer()
+      await server.register(authPlugin)
+      server.route({ method: 'GET', path: '/private', handler: () => 'ok' })
+
+      const response = await server.inject('/private')
+
+      expect(wreckGetMock).not.toHaveBeenCalled()
+      expect(response.statusCode).toBe(302)
+      expect(response.headers.location).toBe(
+        '/auth/sign-in?redirect=%2Fprivate'
+      )
+      expect(() =>
+        server.route({
+          method: 'GET',
+          path: '/sign-in-with-defra-id',
+          options: { auth: 'defra-id' },
+          handler: () => 'signed in'
+        })
+      ).toThrow(/defra-id/)
+    })
+
+    test('registers no Bell strategy when OIDC discovery fails', async () => {
+      vi.useFakeTimers()
+      wreckGetMock.mockRejectedValue(new Error('connection refused'))
+      const server = await buildServer()
+
+      const registration = expect(server.register(authPlugin)).rejects.toThrow(
+        'OIDC discovery at'
+      )
+      await vi.advanceTimersByTimeAsync(7000)
+      await registration
+
+      expect(() =>
+        server.route({
+          method: 'GET',
+          path: '/sign-in-with-defra-id',
+          options: { auth: 'defra-id' },
+          handler: () => 'signed in'
+        })
+      ).toThrow(/defra-id/)
+    })
   })
 
-  test('getBellOptions.provider.token returns the token endpoint and marks when the exchange started', () => {
-    const request = { app: {} }
+  describe('getBellOptions', () => {
+    test('provider.token returns the token endpoint and marks when the exchange started', () => {
+      const request = { app: {} }
 
-    const token = getBellOptions(oidcConfig).provider.token(request)
+      const token = getBellOptions(oidcConfig).provider.token(request)
 
-    expect(token).toBe(oidcConfig.token_endpoint)
-    expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
-      expect.any(Number)
-    )
-  })
+      expect(token).toBe(oidcConfig.token_endpoint)
+      expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
+        expect.any(Number)
+      )
+    })
 
-  test('getBellOptions.location stores safe redirect and returns redirectUrl', () => {
-    const options = getBellOptions(oidcConfig)
+    test('sets the configured SameSite on the Bell state cookie', () => {
+      config.set('defraId.stateCookieSameSite', 'Strict')
 
-    const request = {
-      query: { redirect: '/some/path?x=1' },
-      yar: {
-        set: vi.fn()
+      expect(getBellOptions(oidcConfig).isSameSite).toBe('Strict')
+    })
+
+    test('location stores the safe redirect and returns redirectUrl', () => {
+      const stored = {}
+      const request = {
+        query: { redirect: '/some/path?x=1' },
+        yar: { set: (key, value) => (stored[key] = value) }
       }
-    }
 
-    getSafeRedirectMock.mockReturnValue('/safe/redirect')
+      const location = getBellOptions(oidcConfig).location(request)
 
-    const location = options.location(request)
+      expect(stored).toEqual({ redirect: '/some/path?x=1' })
+      expect(location).toBe(SIGN_IN_REDIRECT_URL)
+    })
 
-    expect(getSafeRedirectMock).toHaveBeenCalledWith('/some/path?x=1')
-    expect(request.yar.set).toHaveBeenCalledWith('redirect', '/safe/redirect')
-    expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
-  })
-
-  test('getBellOptions.location stores nothing when no redirect is requested', () => {
-    const options = getBellOptions(oidcConfig)
-
-    const request = {
-      query: {},
-      yar: {
-        set: vi.fn()
+    test('location stores the home page when the requested redirect is unsafe', () => {
+      const stored = {}
+      const request = {
+        query: { redirect: 'https://evil.example/path' },
+        yar: { set: (key, value) => (stored[key] = value) }
       }
-    }
 
-    const location = options.location(request)
+      getBellOptions(oidcConfig).location(request)
 
-    expect(request.yar.set).not.toHaveBeenCalled()
-    expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
-  })
-
-  test('getBellOptions.providerParams adds forceReselection for /auth/organisation', () => {
-    const options = getBellOptions(oidcConfig)
-
-    const base = options.providerParams({
-      path: '/some/other-path',
-      query: {}
+      expect(stored).toEqual({ redirect: '/' })
     })
 
-    expect(base).toEqual({
-      serviceId: 'service-123',
-      p: 'policy-abc',
-      response_mode: 'query'
-    })
-
-    const withForce = options.providerParams({
-      path: '/auth/organisation',
-      query: {}
-    })
-
-    expect(withForce).toEqual({
-      serviceId: 'service-123',
-      p: 'policy-abc',
-      response_mode: 'query',
-      forceReselection: true
-    })
-
-    const withRelationshipId = options.providerParams({
-      path: '/auth/organisation',
-      query: { organisationId: 'org-999' }
-    })
-
-    expect(withRelationshipId).toEqual({
-      serviceId: 'service-123',
-      p: 'policy-abc',
-      response_mode: 'query',
-      forceReselection: true,
-      relationshipId: 'org-999'
-    })
-  })
-
-  test('getBellOptions.provider.profile maps decoded JWT payload to credentials.profile', () => {
-    const options = getBellOptions(oidcConfig)
-
-    const credentials = { token: 'jwt-token' }
-    jwtDecodeMock.mockReturnValue({
-      decoded: {
-        payload: {
-          contactId: 'CRN123',
-          firstName: 'Andrew',
-          lastName: 'Farmer',
-          currentRelationshipId: 'REL-1'
-        }
+    test('location stores nothing when no redirect is requested', () => {
+      const stored = {}
+      const request = {
+        query: {},
+        yar: { set: (key, value) => (stored[key] = value) }
       }
+
+      const location = getBellOptions(oidcConfig).location(request)
+
+      expect(stored).toEqual({})
+      expect(location).toBe(SIGN_IN_REDIRECT_URL)
     })
 
-    options.provider.profile(credentials)
+    test('providerParams adds forceReselection for /auth/organisation', () => {
+      const options = getBellOptions(oidcConfig)
 
-    expect(credentials.profile).toEqual({
-      contactId: 'CRN123',
-      firstName: 'Andrew',
-      lastName: 'Farmer',
-      currentRelationshipId: 'REL-1',
-      crn: 'CRN123',
-      name: 'Andrew Farmer',
-      organisationId: 'REL-1'
+      const base = options.providerParams({
+        path: '/some/other-path',
+        query: {}
+      })
+
+      expect(base).toEqual({
+        serviceId: 'service-123',
+        p: 'policy-abc',
+        response_mode: 'query'
+      })
+
+      const withForce = options.providerParams({
+        path: '/auth/organisation',
+        query: {}
+      })
+
+      expect(withForce).toEqual({
+        serviceId: 'service-123',
+        p: 'policy-abc',
+        response_mode: 'query',
+        forceReselection: true
+      })
+
+      const withRelationshipId = options.providerParams({
+        path: '/auth/organisation',
+        query: { organisationId: 'org-999' }
+      })
+
+      expect(withRelationshipId).toEqual({
+        serviceId: 'service-123',
+        p: 'policy-abc',
+        response_mode: 'query',
+        forceReselection: true,
+        relationshipId: 'org-999'
+      })
+    })
+
+    test('provider.profile maps decoded JWT payload to credentials.profile', () => {
+      const payload = {
+        contactId: 'CRN123',
+        firstName: 'Andrew',
+        lastName: 'Farmer',
+        currentRelationshipId: 'REL-1'
+      }
+      const credentials = { token: tokenExpiringIn(SECONDS_PER_HOUR, payload) }
+
+      getBellOptions(oidcConfig).provider.profile(credentials)
+
+      expect(credentials.profile).toMatchObject({
+        ...payload,
+        crn: 'CRN123',
+        name: 'Andrew Farmer',
+        organisationId: 'REL-1'
+      })
     })
   })
 
   describe('getCookieOptions', () => {
-    const buildRequestWithCachedSession = (userSession) => ({
-      server: {
-        app: {
-          cache: {
-            get: vi.fn().mockResolvedValue(userSession),
-            set: vi.fn()
-          }
-        }
-      }
-    })
-
     test('uses the configured auth cookie name', () => {
       expect(getCookieOptions().cookie.name).toBe(AUTH_COOKIE_NAME)
     })
 
-    test('redirectTo builds /auth/sign-in redirect including pathname and search', () => {
-      const options = getCookieOptions()
+    test('sets SameSite Strict on the session cookie', () => {
+      expect(getCookieOptions().cookie.isSameSite).toBe('Strict')
+    })
 
-      const redirect = options.redirectTo({
-        url: {
-          pathname: '/origin',
-          search: '?a=1'
-        }
+    test('redirectTo builds /auth/sign-in redirect including pathname and search', () => {
+      const redirect = getCookieOptions().redirectTo({
+        url: { pathname: '/origin', search: '?a=1' }
       })
 
       expect(redirect).toBe('/auth/sign-in?redirect=%2Forigin%3Fa%3D1')
     })
 
     test('redirectTo encodes the return URL query string', () => {
-      const options = getCookieOptions()
-
-      const redirect = options.redirectTo({
-        url: {
-          pathname: '/address-book',
-          search: '?q=France&page=2'
-        }
+      const redirect = getCookieOptions().redirectTo({
+        url: { pathname: '/address-book', search: '?q=France&page=2' }
       })
 
       expect(redirect).toBe(
@@ -330,43 +334,32 @@ describe('auth plugin', () => {
     })
 
     test('redirectTo keeps sending unauthenticated requests to /auth/sign-in in stub mode', () => {
-      isStubModeMock.mockReturnValue(true)
-      const options = getCookieOptions()
+      config.set('stubMode', true)
 
-      const redirect = options.redirectTo({
-        url: {
-          pathname: '/origin',
-          search: '?a=1'
-        }
+      const redirect = getCookieOptions().redirectTo({
+        url: { pathname: '/origin', search: '?a=1' }
       })
 
       expect(redirect).toBe('/auth/sign-in?redirect=%2Forigin%3Fa%3D1')
     })
 
     test('validate returns isValid:false when session does not exist in cache', async () => {
-      const options = getCookieOptions()
+      const { request } = buildRequestWithCachedSession(null)
 
-      const request = {
-        server: {
-          app: {
-            cache: {
-              get: vi.fn().mockResolvedValue(null)
-            }
-          }
-        }
-      }
+      const res = await getCookieOptions().validate(request, {
+        sessionId: 'missing'
+      })
 
-      const res = await options.validate(request, { sessionId: 'missing' })
       expect(res).toEqual({ isValid: false })
     })
 
     test('validate counts one session resolution for the request', async () => {
-      const request = {
-        ...buildRequestWithCachedSession(null),
-        plugins: { 'call-counts': newCallCounts() }
-      }
+      const { request } = buildRequestWithCachedSession(null)
+      request.plugins = { 'call-counts': newCallCounts() }
 
-      await getCookieOptions().validate(request, { sessionId: 'session-1' })
+      await getCookieOptions().validate(request, {
+        sessionId: sessionIdInCache
+      })
 
       expect(callCountsOf(request).sessionResolutions).toBe(1)
       expect(callCountsOf(request).backendCalls).toBe(0)
@@ -374,14 +367,13 @@ describe('auth plugin', () => {
 
     test('a request with a valid session cookie resolves the session once in a counted route', async () => {
       clearCallCountTotals()
-      const userSession = { token: 'token', refreshToken: 'refresh-token' }
-      jwtDecodeMock.mockReturnValue({ exp: 999999 })
-      jwtVerifyTimeMock.mockImplementation(() => undefined)
-      const server = hapi.server()
-      server.app.cache = {
-        get: vi.fn().mockResolvedValue(userSession),
-        set: vi.fn()
+      const userSession = {
+        token: unexpiredToken,
+        refreshToken: 'refresh-token'
       }
+      const server = hapi.server()
+      server.app.cache =
+        buildRequestWithCachedSession(userSession).request.server.app.cache
       await server.register([hapiCookie, callCounts, callCountsRoutes])
       server.auth.strategy('session', 'cookie', getCookieOptions())
       server.auth.default('session')
@@ -391,7 +383,7 @@ describe('auth plugin', () => {
           path: '/sign-in',
           options: { auth: false },
           handler: (request, h) => {
-            request.cookieAuth.set({ sessionId: 'session-1' })
+            request.cookieAuth.set({ sessionId: sessionIdInCache })
             return h.response('signed in')
           }
         },
@@ -419,120 +411,89 @@ describe('auth plugin', () => {
     })
 
     test('validate returns isValid:true when token verification succeeds', async () => {
-      const options = getCookieOptions()
       const userSession = {
-        token: 'token',
+        token: unexpiredToken,
         refreshToken: 'refresh-token'
       }
+      const { request, sessions } = buildRequestWithCachedSession(userSession)
 
-      const request = buildRequestWithCachedSession(userSession)
-
-      jwtDecodeMock.mockReturnValue({ exp: 999999 })
-      jwtVerifyTimeMock.mockImplementation(() => undefined)
-
-      const res = await options.validate(request, { sessionId: 'session-1' })
+      const res = await getCookieOptions().validate(request, {
+        sessionId: sessionIdInCache
+      })
 
       expect(res).toEqual({ isValid: true, credentials: userSession })
-      expect(refreshTokensMock).not.toHaveBeenCalled()
-      expect(request.server.app.cache.set).not.toHaveBeenCalled()
+      expect(wreckPostMock).not.toHaveBeenCalled()
+      expect(sessions.get(sessionIdInCache)).toEqual({
+        token: unexpiredToken,
+        refreshToken: 'refresh-token'
+      })
     })
 
     test('validate refreshes tokens when verification fails and refreshTokens enabled', async () => {
-      const options = getCookieOptions()
-      const userSession = {
-        token: 'old-token',
+      const { request, sessions } = buildRequestWithCachedSession({
+        token: expiredToken,
         refreshToken: 'old-refresh'
-      }
-
-      const request = buildRequestWithCachedSession(userSession)
-
-      jwtDecodeMock.mockReturnValue({ exp: 1 })
-      jwtVerifyTimeMock.mockImplementation(() => {
-        throw new Error('token expired')
       })
-
-      refreshTokensMock.mockResolvedValue({
-        access_token: 'new-access-token',
-        refresh_token: 'new-refresh-token'
-      })
-
-      const res = await options.validate(request, { sessionId: 'session-1' })
-
-      expect(refreshTokensMock).toHaveBeenCalledWith('old-refresh')
-      expect(request.server.app.cache.set).toHaveBeenCalledWith('session-1', {
-        ...userSession,
-        token: 'new-access-token',
-        refreshToken: 'new-refresh-token'
-      })
-
-      expect(res).toEqual({
-        isValid: true,
-        credentials: {
-          ...userSession,
-          token: 'new-access-token',
-          refreshToken: 'new-refresh-token'
+      wreckPostMock.mockResolvedValue({
+        payload: {
+          access_token: 'new-access-token',
+          refresh_token: 'new-refresh-token'
         }
       })
+      const refreshed = {
+        token: 'new-access-token',
+        refreshToken: 'new-refresh-token'
+      }
+
+      const res = await getCookieOptions().validate(request, {
+        sessionId: sessionIdInCache
+      })
+
+      expect(wreckPostMock).toHaveBeenCalledWith(
+        oidcConfig.token_endpoint,
+        expect.objectContaining({
+          payload: expect.stringContaining('refresh_token=old-refresh')
+        })
+      )
+      expect(sessions.get(sessionIdInCache)).toEqual(refreshed)
+      expect(res).toEqual({ isValid: true, credentials: refreshed })
     })
 
     test('validate returns isValid:false when verification fails and refreshTokens disabled', async () => {
-      configGetMock.mockImplementation((key) => {
-        if (key === 'defraId.refreshTokens') return false
-
-        const map = {
-          'defraId.clientId': 'test-client-id',
-          'defraId.clientSecret': 'test-client-secret',
-          'session.cookie.password': 'some-password-32-chars-long-000000',
-          isProduction: false,
-          'session.cookie.sameSite': 'Lax',
-          'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
-          'defraId.serviceId': 'service-123',
-          'defraId.policy': 'policy-abc',
-          'defraId.refreshTokens': false
-        }
-
-        return map[key]
-      })
-
-      const options = getCookieOptions()
-      const userSession = {
-        token: 'old-token',
+      config.set('defraId.refreshTokens', false)
+      const { request, sessions } = buildRequestWithCachedSession({
+        token: expiredToken,
         refreshToken: 'old-refresh'
-      }
-
-      const request = buildRequestWithCachedSession(userSession)
-
-      jwtDecodeMock.mockReturnValue({ exp: 1 })
-      jwtVerifyTimeMock.mockImplementation(() => {
-        throw new Error('token expired')
       })
 
-      const res = await options.validate(request, { sessionId: 'session-1' })
+      const res = await getCookieOptions().validate(request, {
+        sessionId: sessionIdInCache
+      })
 
       expect(res).toEqual({ isValid: false })
-      expect(refreshTokensMock).not.toHaveBeenCalled()
-      expect(request.server.app.cache.set).not.toHaveBeenCalled()
+      expect(wreckPostMock).not.toHaveBeenCalled()
+      expect(sessions.get(sessionIdInCache)).toEqual({
+        token: expiredToken,
+        refreshToken: 'old-refresh'
+      })
     })
 
     test('validate returns isValid:false when refreshTokens rejects', async () => {
-      const options = getCookieOptions()
-      const userSession = {
-        token: 'old-token',
+      const { request, sessions } = buildRequestWithCachedSession({
+        token: expiredToken,
         refreshToken: 'old-refresh'
-      }
-
-      const request = buildRequestWithCachedSession(userSession)
-
-      jwtDecodeMock.mockReturnValue({ exp: 1 })
-      jwtVerifyTimeMock.mockImplementation(() => {
-        throw new Error('token expired')
       })
-      refreshTokensMock.mockRejectedValue(new Error('refresh failed'))
+      wreckPostMock.mockRejectedValue(new Error('refresh failed'))
 
-      const res = await options.validate(request, { sessionId: 'session-1' })
+      const res = await getCookieOptions().validate(request, {
+        sessionId: sessionIdInCache
+      })
 
       expect(res).toEqual({ isValid: false })
-      expect(request.server.app.cache.set).not.toHaveBeenCalled()
+      expect(sessions.get(sessionIdInCache)).toEqual({
+        token: expiredToken,
+        refreshToken: 'old-refresh'
+      })
     })
   })
 })

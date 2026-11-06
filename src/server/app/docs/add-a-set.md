@@ -51,10 +51,21 @@ second registration overwrite the first. The eight seams are
 `configureJourneyFlow`, `buildDispatch`, `configureRecords` and
 `configureSession`.
 
-**2. A request resolves its set from the owning plugin realm, never from the
-URL.** Each gateway installs an `onPreAuth` extension that calls
-`enterSetContext(setId)`, so Hapi's own routing decides the set. Do not parse
-the path to work out which set you are in.
+**2. A set route resolves its set from the owning plugin realm, and a set's own
+code never parses the path.** Each gateway installs an `onPreAuth` extension
+that calls `enterSetContext(setId)`, so Hapi's own routing decides the set.
+
+Three server-wide cases run where no set route's context holds: before routing,
+outside every set route, or after the handler. They resolve the set from the
+request path through the one shared resolver, `setIdForPath` in
+`shared/set-context.js`:
+
+- the set context resolved before routing;
+- the shared error page;
+- the global view context. It resolves from the path because the view renders
+  after the handler returns, when the handler's set context may be gone. It
+  supplies the chrome's home link for every rendered view, and a view's own
+  context, such as `kit.base()`'s, overrides it.
 
 **3. Every set-owned lifecycle extension passes `{ sandbox: 'plugin' }`.**
 Plugin ownership alone does **not** scope an extension. An extension registered
@@ -142,10 +153,10 @@ The resulting mount table with two sets in the tree:
 [`../shared/paths.js`](../shared/paths.js) exports two families, and using one
 where the other belongs is the defect this split exists to prevent.
 
-| Family       | Members                                                                  | Carries the prefix?                     | Evaluated                                                |
-| ------------ | ------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------- |
-| Route shapes | `dashboardRoutePath`, `createRoutePath`, `hubRoutePath`, `pageRoutePath` | No — Hapi's `routes.prefix` supplies it | At module load, when a controller builds its route table |
-| Links        | `dashboardPath`, `createPath`, `hubPath`, `pagePath`                     | Yes, from `setBase()`                   | Per request, inside the set context                      |
+| Family       | Members                                                                                    | Carries the prefix?                     | Evaluated                                                |
+| ------------ | ------------------------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------- |
+| Route shapes | `dashboardRoutePath`, `createRoutePath`, `startRoutePath`, `hubRoutePath`, `pageRoutePath` | No — Hapi's `routes.prefix` supplies it | At module load, when a controller builds its route table |
+| Links        | `dashboardPath`, `createPath`, `hubPath`, `pagePath`                                       | Yes, from `setBase()`                   | Per request, inside the set context                      |
 
 A link builder used as a route shape gives Hapi a path that already carries the
 prefix, which Hapi then prefixes again. A route builder used as a link drops
@@ -177,7 +188,7 @@ name the set without importing the whole composition root.
 
 Create `sets/<set-id>/` with its obligations manifest, its journey config, its
 flow modules and its features, following the `live-animals` tree. Its cookie
-names must be its own — all six of them. The prefix is the camelCase form of
+names must be its own — all seven of them. The prefix is the camelCase form of
 the kebab-case `<set-id>` from step 1, so `live-animals` gives
 `liveAnimalsKnownJourneys`. The shipped values are in
 [`../sets/live-animals/journeys/linear/config.js`](../sets/live-animals/journeys/linear/config.js):
@@ -186,6 +197,7 @@ the kebab-case `<set-id>` from step 1, so `live-animals` gives
 export const SESSION_COOKIE_NAMES = {
   knownJourneys: 'liveAnimalsKnownJourneys',
   openingRun: 'liveAnimalsOpeningRun',
+  openingRunEntry: 'liveAnimalsOpeningRunEntry',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
   addedAddressBanner: 'liveAnimalsAddedAddressBanner',

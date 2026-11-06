@@ -57,7 +57,7 @@ describe('#config', () => {
       'LOG_ENABLED',
       'ENABLE_SECURE_CONTEXT',
       'SESSION_COOKIE_SECURE',
-      'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED',
+      'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_ENABLED',
       'DEFRA_ID_REFRESH_TOKENS',
       'STUB_MODE',
       'AUTH_ENABLED',
@@ -163,6 +163,30 @@ describe('#config', () => {
       const { config: freshConfig } = await import('./config.js')
 
       expect(freshConfig.get('auth.cookieName')).toBe('custom-sid')
+    })
+  })
+
+  describe('defraId.stateCookieSameSite', () => {
+    beforeEach(() => {
+      vi.resetModules()
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    test('defaults to Lax', async () => {
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('defraId.stateCookieSameSite')).toBe('Lax')
+    })
+
+    test('reads DEFRA_ID_STATE_COOKIE_SAME_SITE as the state cookie SameSite', async () => {
+      vi.stubEnv('DEFRA_ID_STATE_COOKIE_SAME_SITE', 'Strict')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('defraId.stateCookieSameSite')).toBe('Strict')
     })
   })
 })

@@ -49,6 +49,7 @@ const OMITTABLE_SEAMS = REQUIRED_SEAMS.filter(
 const cookieNamesFor = (setId) => ({
   knownJourneys: `${setId}-known`,
   openingRun: `${setId}-run`,
+  openingRunEntry: `${setId}-run-entry`,
   flowOnlyAnswers: `${setId}-flow`,
   addressHandshakeTokens: `${setId}-tokens`,
   addedAddressBanner: `${setId}-banner`,
@@ -195,7 +196,7 @@ describe('set completeness — every journey cookie must be registered', () => {
   })
 
   it('Should register every journey cookie the set is configured with', async () => {
-    const setId = 'probe-six-cookies'
+    const setId = 'probe-all-cookies'
     const server = Hapi.server()
 
     await server.register(probeGateway(setId))

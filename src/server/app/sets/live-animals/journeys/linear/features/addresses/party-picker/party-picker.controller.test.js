@@ -1,10 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { config } from '../../../../../../../../../config/config.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
+  amendmentOpened,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   addressBookAnswering,
   addressBookPage,
   expectOneLogged,
@@ -15,6 +17,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
@@ -31,7 +34,6 @@ const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
-const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(
@@ -437,12 +439,13 @@ describe('GET /consignors/select — list order', () => {
 
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
-  resetMocksAndConfigAfterTests(INS_FRONTEND_BASE_URL_KEY)
+  resetMocksAndConfigAfterTests()
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(
     'Should offer an INS add-address link when not in stub mode (%s)',
     async (_title, slug) => {
-      config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+      setInsFrontendBaseUrl('http://localhost:3002')
       addressBookAnswering(addressBookPage())
 
       const result = await driveHandler(handlerFor('GET', slug))
@@ -468,7 +471,7 @@ describe('POST /consignors/select — recoverable save failure', () => {
     const failure = unavailableBackendError('save answers')
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -489,7 +492,7 @@ describe('/consignors/select — change context', () => {
   it('Should hand the save back to the hub still changing', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -501,7 +504,9 @@ describe('/consignors/select — change context', () => {
   })
 
   it('Should point Back at the hub still changing', async () => {
-    const result = await driveHandler(getConsignor, { query: { change: '1' } })
+    const result = await driveHandler(getConsignor, {
+      startingFrom: [openedFromChangeLink()]
+    })
 
     expect(result.view.context.backLink).toBe(
       `${pagePath(result.journeyId, 'addresses')}?change=1`
@@ -510,7 +515,8 @@ describe('/consignors/select — change context', () => {
 
   it('Should keep changing across a paged link, beside the search and the selection', async () => {
     const result = await driveHandler(getConsignor, {
-      query: { page: '2', selected: DANISH_MEAT_ID, change: '1' }
+      query: { page: '2', selected: DANISH_MEAT_ID },
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(pickerFrom(result).pagination.next.href).toBe(
@@ -538,18 +544,17 @@ describe('/consignors/select — save and return while amending', () => {
     address: { countryCode: 'FR' }
   }
 
-  const postAmending = (payload, query) =>
+  const postAmending = (payload, startingFrom = []) =>
     driveHandler(postConsignor, {
       seed: { consignor: HELD_CONSIGNOR },
       payload,
-      query,
-      amend: true
+      startingFrom: [amendmentOpened(), ...startingFrom]
     })
 
   it('Should return a chosen party to the review from a Change link', async () => {
     const { journeyId, response } = await postAmending(
       { action: 'save', party: ALPINE_DAIRY_ID },
-      { change: '1' }
+      [openedFromChangeLink()]
     )
 
     expect(response).toEqual({
@@ -558,10 +563,9 @@ describe('/consignors/select — save and return while amending', () => {
   })
 
   it('Should return to the review when saved with nothing chosen and an answer held', async () => {
-    const { journeyId, response } = await postAmending(
-      { action: 'save' },
-      { change: '1' }
-    )
+    const { journeyId, response } = await postAmending({ action: 'save' }, [
+      openedFromChangeLink()
+    ])
 
     expect(response).toEqual({
       redirect: pagePath(journeyId, 'notification-view')
@@ -569,10 +573,10 @@ describe('/consignors/select — save and return while amending', () => {
   })
 
   it('Should go on to the addresses hub, plain, from Save and continue', async () => {
-    const { journeyId, response } = await postAmending(
-      { action: 'save', party: ALPINE_DAIRY_ID },
-      {}
-    )
+    const { journeyId, response } = await postAmending({
+      action: 'save',
+      party: ALPINE_DAIRY_ID
+    })
 
     expect(response).toEqual({ redirect: pagePath(journeyId, 'addresses') })
   })
@@ -580,7 +584,7 @@ describe('/consignors/select — save and return while amending', () => {
   it('Should keep a draft going back to the addresses hub still changing', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({

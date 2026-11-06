@@ -12,31 +12,36 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-/** `parties` carries the stored party copies in display shape
- * ({@link partiesFromStoredAnswers}). `partyErrors` is computed once by the
- * controller and threaded down, so the rows and the error summary always agree
- * on which roles are in error.
+/**
+ * The roles and addresses summary card: one row per party, a CPH row when CPH
+ * applies and, unless read-only, a card Change action to the addresses page and
+ * an edit link on each party row.
  *
- * The CPH number is collected on its own page, so this card's rows span two.
- * The one Change link goes to the addresses page — the page the hub's addresses
- * task row leads with, and the page the five roles come from. */
-export const rolesAndAddressesCard = (
+ * @param {object} options
+ * @param {string} options.journeyId - the journey the card belongs to.
+ * @param {object} options.answers - the journey's answers.
+ * @param {boolean} options.readOnly - true to omit every Change action and edit link.
+ * @param {object} [options.parties] - the stored party copies in display shape; defaults to `answers`.
+ * @param {object} [options.partyErrors] - the error text per party id.
+ * @returns {object} the summary card.
+ */
+export const rolesAndAddressesCard = ({
   journeyId,
   answers,
   readOnly,
   parties = answers,
   partyErrors = {}
-) => ({
+}) => ({
   id: 'rolesAndAddresses',
   title: copy.cards.rolesAndAddresses,
-  ...editableActions(
+  ...editableActions({
     readOnly,
-    cardAction(
+    actions: cardAction(
       journeyId,
       addressesPage.slug,
       copy.hidden.cards.rolesAndAddresses
     )
-  ),
+  }),
   rows: [
     ...PARTIES.map((party) =>
       partyRow(copy.rows[party.id], parties[party.id], {

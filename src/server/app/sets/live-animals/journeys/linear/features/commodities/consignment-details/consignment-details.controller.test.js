@@ -1,12 +1,14 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
   crumbProtectedServerMounting,
   driveHandler,
+  openedFromChangeLink,
+  openingRunAt,
   expectBackLinkIsPage,
   expectOneLogged,
   expectRemovalRefusedLogged,
@@ -17,7 +19,11 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { consignmentDetailsPage } from '../page.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../../test-support.js'
+import { commoditiesPage, consignmentDetailsPage } from '../page.js'
 import { lineKey } from '../search/selection/line-key.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
@@ -61,7 +67,6 @@ const PACKAGES_WHOLE_NUMBER_MESSAGE =
 const PACKAGES_ABOVE_MAX_MESSAGE =
   'Number of packages must be 2,147,483,647 or fewer'
 const LARGEST_QUANTITY_THE_SERVICE_STORES = 2147483647
-const COMMODITIES_SLUG = 'commodities'
 const REMOVE_CATTLE = `remove:${BOS_TAURUS_ROW.commodityCode}`
 
 const blankCattlePairLines = () => [
@@ -617,7 +622,7 @@ describe('#consignmentDetailsController — removal and empty-selection redirect
       payload: { action: 'remove:01063300' }
     })
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, COMMODITIES_SLUG)
+      pagePath(result.journeyId, commoditiesPage.slug)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -631,7 +636,7 @@ describe('#consignmentDetailsController — removal and empty-selection redirect
       seed: { commodityLines: [] }
     })
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
+      redirect: pagePath(result.journeyId, commoditiesPage.slug)
     })
     expect(result.view).toBeUndefined()
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -642,10 +647,10 @@ describe('#consignmentDetailsController — removal and empty-selection redirect
   it('Should carry the change context on the redirect away from an empty details page', async () => {
     const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
+      redirect: `${pagePath(result.journeyId, commoditiesPage.slug)}?change=1`
     })
     expectRedirectedToCommodityQuestionLogged(result, {
       reason: 'no-commodities-on-load'
@@ -778,7 +783,7 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
       }
     })
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, COMMODITIES_SLUG)
+      pagePath(result.journeyId, commoditiesPage.slug)
     )
     expect(result.after.commodityLines ?? []).toEqual([])
     expectRedirectedToCommodityQuestionLogged(result, {
@@ -938,7 +943,7 @@ describe('#consignmentDetailsController — Add another commodity', () => {
       seed: seedLines()
     })
     expect(result.view.context.addHref).toBe(
-      `${pagePath(result.journeyId, COMMODITIES_SLUG)}?return=${consignmentDetailsPage.slug}`
+      `${pagePath(result.journeyId, commoditiesPage.slug)}?return=${consignmentDetailsPage.slug}`
     )
   })
 })
@@ -961,27 +966,29 @@ describe('#consignmentDetailsController — the Back link', () => {
   it('Should go Back to What are you importing? while the opening run is on', async () => {
     const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
   it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
       ANIMALS_REQUIRED_MESSAGE
     )
-    expectBackLinkIsPage(result, COMMODITIES_SLUG)
+    expectBackLinkIsPage(result, commoditiesPage.slug)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
-      seed
-    })
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  itSendsBackToOverview(pageGetHandlerOf(consignmentDetails), {
+    seed,
+    cases: ['when opened from the Overview']
   })
+
+  itSendsBackCarryingChangeTo(pageGetHandlerOf(consignmentDetails), [
+    ['What are you importing?', seed, commoditiesPage.slug]
+  ])
 })

@@ -6,6 +6,8 @@ import {
   addressBookRefusingAddresses,
   addressBookRequestUrls,
   driveHandler,
+  openedFromChangeLink,
+  refusingSaves,
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
@@ -90,7 +92,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
   it('Should send the trader to pick an address, saving nothing, when a save arrives with no copy', async () => {
     const result = await driveHandler(post, {
       payload: FORM,
-      query: { change: '1' }
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -203,7 +205,8 @@ describe('Edit address details — where the trader returns to', () => {
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,
-      query: { return: 'addresses', change: '1' }
+      query: { return: 'addresses' },
+      startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
@@ -253,7 +256,7 @@ describe('Edit address details — where the trader returns to', () => {
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)

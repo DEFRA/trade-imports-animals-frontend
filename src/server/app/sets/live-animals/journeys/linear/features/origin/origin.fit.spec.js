@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectPageEndsWithPrimaryAlone,
+  journeyIdFromPage,
   openNotificationView,
   startNotificationAtOrigin,
   urlUnderBase,
@@ -23,6 +24,8 @@ import {
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+import { config } from '../../../../../../../../config/config.js'
+import { SET_ID } from '../../../../set.js'
 
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
@@ -209,6 +212,30 @@ test.describe('origin feature', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(BASE)
+  })
+
+  test('back link goes to the INS type question for this notification when the page was opened through the start entry', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+    const reference = journeyIdFromPage(page)
+
+    const href = await page
+      .getByRole('link', { name: 'Back', exact: true })
+      .getAttribute('href')
+    const url = new URL(href)
+    expect({
+      origin: url.origin,
+      pathname: url.pathname,
+      notificationId: url.searchParams.get('notification-id'),
+      currentNotificationType: url.searchParams.get('current-notification-type')
+    }).toEqual({
+      origin: new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin,
+      pathname: '/notification-type',
+      notificationId: reference,
+      currentNotificationType: SET_ID
+    })
   })
 
   test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({

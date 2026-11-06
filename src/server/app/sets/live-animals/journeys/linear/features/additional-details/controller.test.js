@@ -9,6 +9,8 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
+  openingRunAt,
+  refusingSaves,
   expectBackLinkIsPage,
   expectNoRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -23,6 +25,10 @@ import {
   STRUTHIO_ROW
 } from '../commodities/search/test-support.js'
 import { hubPath } from '../../../../../../shared/paths.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../test-support.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { dispatchPages } from '../index.js'
@@ -65,7 +71,7 @@ describe('POST additional-details — backend unavailable', () => {
         animalsCertifiedFor: 'slaughter',
         containsUnweanedAnimals: 'no'
       },
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expect(result.response.statusCode).toBe(500)
@@ -112,37 +118,50 @@ describe('additional-details — the Back link', () => {
 
   const catLine = FELIS_CATUS_ROW
   const ostrichLine = STRUTHIO_ROW
+  const IDENTIFICATION_SLUG = 'commodities/identification'
+  const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
 
   it('Should go Back to identification in the opening run when a chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
       seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    expectBackLinkIsPage(result, 'commodities/identification')
+    expectBackLinkIsPage(result, IDENTIFICATION_SLUG)
   })
 
   it('Should go Back to the consignment details in the opening run when no chosen species needs identifiers', async () => {
     const result = await driveHandler(get, {
       seed: { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    expectBackLinkIsPage(result, 'consignment-details')
+    expectBackLinkIsPage(result, CONSIGNMENT_DETAILS_SLUG)
   })
 
   it('Should keep Back on identification when the page is shown again after a refusal in the run', async () => {
     const result = await driveHandler(post, {
       seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
       payload: { animalsCertifiedFor: 'not-a-real-purpose' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
     expect(result.response.statusCode).toBe(400)
-    expectBackLinkIsPage(result, 'commodities/identification')
+    expectBackLinkIsPage(result, IDENTIFICATION_SLUG)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(get, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] }
-    })
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  itSendsBackToOverview(get, {
+    seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
+    cases: ['when opened from the Overview']
   })
+
+  itSendsBackCarryingChangeTo(get, [
+    [
+      'identification, when a chosen species needs identifiers',
+      { countryOfOrigin: 'FR', commodityLines: [catLine] },
+      IDENTIFICATION_SLUG
+    ],
+    [
+      'the consignment details, when no chosen species needs identifiers',
+      { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
+      CONSIGNMENT_DETAILS_SLUG
+    ]
+  ])
 })

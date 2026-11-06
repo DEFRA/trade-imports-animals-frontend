@@ -27,5 +27,5 @@ export const cardAction = (journeyId, slug, visuallyHiddenText) => ({
   ]
 })
 
-export const editableActions = (readOnly, actions) =>
+export const editableActions = ({ readOnly, actions }) =>
   readOnly ? {} : { actions }

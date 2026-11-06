@@ -12,7 +12,7 @@ import { dateText } from '../rows/value-text.js'
 const copy = copyFor({ en, cy })
 const documentsCopy = copyFor({ en: documentsEn, cy: documentsCy })
 
-export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
+export const documentsCard = ({ journeyId, answers, evaluation, readOnly }) => {
   const documents = state
     .collectionView(answers, ['documents'], evaluation)
     .map(({ index, entry }) => ({
@@ -33,10 +33,14 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
   return {
     id: 'documents',
     title: copy.cards.documents,
-    ...editableActions(
+    ...editableActions({
       readOnly,
-      cardAction(journeyId, documentsPage.slug, copy.hidden.cards.documents)
-    ),
+      actions: cardAction(
+        journeyId,
+        documentsPage.slug,
+        copy.hidden.cards.documents
+      )
+    }),
     emptyText: documents.length === 0 ? copy.documentsEmpty : null,
     documents
   }

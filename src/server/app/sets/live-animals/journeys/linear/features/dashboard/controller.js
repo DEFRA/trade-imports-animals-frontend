@@ -5,8 +5,10 @@ import {
   dashboardRoutePath,
   hubPath,
   pagePath,
-  pageRoutePath
+  pageRoutePath,
+  startRoutePath
 } from '../../../../../../shared/paths.js'
+import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js'
 import { TEMPLATES } from '../../config.js'
 import { DELETED } from '../../../../../../engine/index.js'
 import {
@@ -14,16 +16,22 @@ import {
   listKnownJourneys,
   startJourney
 } from '../../../../../../engine/journey.js'
-import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
+import {
+  routeOptions,
+  sharedCopy,
+  surfaceClass
+} from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
-import { beginOpeningRun } from '../../../../../../flow/run-state.js'
+import {
+  beginOpeningRun,
+  RUN_ENTRY_LIST_CREATE,
+  RUN_ENTRY_START
+} from '../../../../../../flow/run-state.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import {
   buildHomeListQueryString,
   buildPageResultsRangeLabel,
@@ -37,7 +45,6 @@ import { sortOptions } from './view-model/sort-options.js'
 const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
-const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') {
@@ -125,11 +132,28 @@ const amendPost = async (request, h) => {
   )
 }
 
-const createPost = async (request, h) => {
+const openNewNotification = async (request, h, { entry }) => {
   const journey = await startJourney(request, h)
-  await beginOpeningRun(request, h, journey.journeyId)
+  await beginOpeningRun(request, h, journey.journeyId, { entry })
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      entry,
+      organisationId: buildActor(request.auth?.credentials)?.organisationId
+    },
+    'New notification opened'
+  )
   return h.redirect(pagePath(journey.journeyId, originPage.slug))
 }
+
+const createPost = async (request, h) =>
+  openNewNotification(request, h, { entry: RUN_ENTRY_LIST_CREATE })
+
+const startGet = async (request, h) =>
+  (await openNewNotification(request, h, { entry: RUN_ENTRY_START })).header(
+    'Cache-Control',
+    'no-store'
+  )
 
 export const routes = [
   {
@@ -149,5 +173,11 @@ export const routes = [
     path: createRoutePath(),
     options: routeOptions,
     handler: createPost
+  },
+  {
+    method: 'GET',
+    path: startRoutePath(),
+    options: routeOptions,
+    handler: startGet
   }
 ]

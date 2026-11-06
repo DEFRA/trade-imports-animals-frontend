@@ -115,9 +115,7 @@ export const capReachedResponse = ({
   render,
   request,
   h,
-  journey,
-  answers,
-  evaluation,
+  current,
   forms,
   addIndex,
   capByLineAtCap
@@ -126,7 +124,7 @@ export const capReachedResponse = ({
     return null
   }
   const cap = capByLineAtCap.get(addIndex)
-  return render(request, h, journey, answers, evaluation, {
+  return render(request, h, current, {
     forms,
     cardErrors: [{ index: addIndex, cap, text: copy.errors.capReached(cap) }]
   })

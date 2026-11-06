@@ -1,5 +1,5 @@
 import { hasIndexedSegments } from '../../../../../bridge/fulfilment-id.js'
-import { isObject } from '../shape/object.js'
+import { isObject } from '../../../../../lib/object.js'
 
 export const unknownStoredAsRecords = (stored) => {
   if (!isObject(stored)) {

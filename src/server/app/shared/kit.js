@@ -245,43 +245,63 @@ export const runTarget = async (request, stepId, scope) =>
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
+const previousStepBackLink = async (
+  request,
+  stepId,
+  { journey, scope, answers }
+) => {
+  const { journeyId } = request.params
+  const opensInRun = await inOpeningRun(request, journeyId)
+  const draftOpenedFromChangeLink =
+    !opensInRun && journey.status === DRAFT && changeContext(request)
+  if (!opensInRun && !draftOpenedFromChangeLink) {
+    return null
+  }
+  const previousStep = journeyPreviousRunTarget(
+    stepId,
+    { scope, answers },
+    journeyId
+  )
+  return draftOpenedFromChangeLink && previousStep
+    ? appendChangeContext(previousStep)
+    : previousStep
+}
+
 /**
  * Where a run step's Back link goes.
  *
  * @param {object} request - the request being answered.
  * @param {string} stepId - the run step's id.
- * @param {object} current - the page's current state.
- * @param {object} current.journey - the journey.
- * @param {object} current.scope - the journey's scope.
- * @param {object} current.answers - the journey's stored answers.
+ * @param {{ journey: object, scope: object, answers: object }} state - the
+ * journey, its scope and its stored answers.
  * @param {object} [options]
  * @param {boolean} [options.returnsToReview] - the page returns to the
  * review rather than the overview. When true, a request carrying change
  * context or a notification being amended is answered with the review;
  * every other state is answered exactly as it is without the option.
- * @returns {Promise<string>} the path to go to.
+ * @returns {Promise<string>} the review's path when returnsToReview applies
+ * and the request carries change context or the notification is being
+ * amended; otherwise the previous run step's path while the opening run is
+ * active, or, on a draft whose request carries change context, the previous
+ * run step's path with change context appended; otherwise, or when no earlier
+ * step applies, the overview's path.
  */
 export const runBackLink = async (
   request,
   stepId,
-  current,
+  { journey, scope, answers },
   { returnsToReview = false } = {}
 ) => {
-  const { journey, scope, answers } = current
   if (returnsToReview && (changeContext(request) || journey.status === AMEND)) {
     return pagePath(journey.journeyId, CYA_SLUG)
   }
-  const previousRunTarget = (await inOpeningRun(
-    request,
-    request.params.journeyId
-  ))
-    ? journeyPreviousRunTarget(
-        stepId,
-        { scope, answers },
-        request.params.journeyId
-      )
-    : null
-  return previousRunTarget ?? hubPath(journey.journeyId)
+  return (
+    (await previousStepBackLink(request, stepId, {
+      journey,
+      scope,
+      answers
+    })) ?? hubPath(journey.journeyId)
+  )
 }
 
 /**

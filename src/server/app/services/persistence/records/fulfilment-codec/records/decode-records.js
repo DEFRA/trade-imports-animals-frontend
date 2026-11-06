@@ -1,5 +1,5 @@
 import { fail } from '../fail.js'
-import { hasExactlyKeys, isObject } from '../shape/object.js'
+import { hasExactlyKeys, isObject } from '../../../../../lib/object.js'
 import { validateFulfilmentId } from '../validate/fulfilment-id.js'
 import { validateValue } from '../validate/value.js'
 

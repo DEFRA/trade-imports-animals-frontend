@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
+  refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -21,6 +22,10 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
+import {
+  itSendsBackToOverview,
+  itSendsBackToOverviewOnRefusal
+} from '../../../test-support.js'
 import {
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest
@@ -169,7 +174,9 @@ describe('/transporters', () => {
   it('Should re-render the list at 500 with the pick kept after a recoverable save failure', async () => {
     const { response } = await driveHandler(postHandler, {
       payload: { transporter: GARCIA_ID },
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, [GARCIA_ID], {
@@ -184,7 +191,9 @@ describe('/transporters', () => {
         search: 'aberdeen',
         transporter: ABERDEEN_ID
       },
-      saveFailure: unavailableBackendError('save the transporter')
+      startingFrom: [
+        refusingSaves(unavailableBackendError('save the transporter'))
+      ]
     })
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -490,4 +499,12 @@ describe('/transporters with a transporter the organisation added', () => {
 
     expect(rowFor(result.view.context, kept.id).checked).toBe(true)
   })
+})
+
+describe('/transporters — Back link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  itSendsBackToOverview(getHandler)
+
+  itSendsBackToOverviewOnRefusal(postHandler, { transporter: NOT_ON_THE_LIST })
 })

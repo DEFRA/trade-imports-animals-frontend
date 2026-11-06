@@ -1,4 +1,4 @@
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isObject } from '../../../../lib/object.js'
 
 // Keep only entries whose fulfilmentIndex is in the applyTo-authorised
 // set; `{ keep: false }` when nothing survives.
@@ -39,7 +39,7 @@ const purgedFulfilmentFor = (
   if (obligationCategory === 'unindexed') {
     return { keep: true, value: fulfilment }
   }
-  if (isNonArrayObject(fulfilment)) {
+  if (isObject(fulfilment)) {
     return purgedIndexedFulfilments(fulfilment)
   }
   return { keep: true, value: fulfilment }

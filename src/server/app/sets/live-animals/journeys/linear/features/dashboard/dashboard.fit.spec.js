@@ -77,6 +77,20 @@ test.describe('dashboard feature — empty state and start', () => {
     )
   })
 
+  test('the start entry opens a new notification at the origin page with a Draft strip', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+    const strip = page.locator('.app-journey-strip')
+    await expect(strip).toContainText('Draft')
+    await expect(strip).toContainText(journeyIdFromPage(page))
+  })
+
   test('starts a new notification at the origin page', async ({ page }) => {
     await page.goto(BASE)
 

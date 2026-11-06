@@ -131,8 +131,12 @@ During the run, a step's Back link opens the previous step rather than the
 overview, and following it does not end the run: a later Save and continue goes
 on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
 may open, nearest first, and `previousRunTarget` returns the first whose gate
-passes, so a skipped step is skipped going back too. `kit.runBackLink()` falls
-back to the overview when the run is over or no named earlier step applies. A
+passes, so a skipped step is skipped going back too. On a draft notification, a
+page opened from a Change link on the review has the same Back link, carrying
+change context so that its save still returns to the review. While the
+notification is being amended, every page keeps its usual Back link.
+`kit.runBackLink()` falls back to the overview when neither the run nor a draft
+Change link applies, or no named earlier step applies. A
 page that has declared, through the helper's `returnsToReview` option, that it
 returns to the review is answered with the review instead when the request
 carries change context or the notification is being amended; every other page
@@ -147,9 +151,12 @@ is unaffected.
 | Transit countries       | Arrival details                                                                       |
 
 Animal identification, arrival details, the transporter, roles and addresses
-and the contact address keep their Back link on the overview. Origin goes back
-to the dashboard while the opening run is active; otherwise to the overview
-when the overview would admit the request (see
+and the contact address keep their Back link on the overview, from a review
+Change link as well. Origin keeps the Back link it has without the Change link:
+it goes back to the Import Notification Service's type question, for this
+notification, while the opening run is active and began at the start entry; to
+the dashboard while it is active and began at the list's create; otherwise to
+the overview when the overview would admit the request (see
 [the entry guard](#opening-run-and-entry-guard)), else to the dashboard. The
 identification condition is `identifiesAnAnimal`, the rule that also decides
 whether the identification task row applies.
@@ -177,10 +184,13 @@ this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
 
-The opening run begins when the notification is created — the dashboard's
-create POST in
+The opening run begins when the notification is created. The dashboard's
+create POST and the start entry (`<set>/start`, which the Import Notification
+Service's type question opens) both create it, through one helper in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-is the only caller of `beginOpeningRun`. The origin page is the journey entry.
+that calls `beginOpeningRun` and records which of the two entries began the
+run. The start entry sits outside `/notifications/`, so
+the entry guard never sees it. The origin page is the journey entry.
 Its Back link reads the opening-run record (see the Back link rules above), and
 its save goes on through `kit.nextTarget` like any other page.
 

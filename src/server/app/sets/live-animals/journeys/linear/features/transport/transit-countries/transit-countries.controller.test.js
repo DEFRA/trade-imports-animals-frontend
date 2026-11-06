@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  openingRunAt,
+  refusingSaves,
   expectBackLinkIsPage,
   expectOneLogged,
   expectOneRefusalLogged,
@@ -16,6 +18,10 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
+import {
+  itSendsBackCarryingChangeTo,
+  itSendsBackToOverview
+} from '../../../test-support.js'
 import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 import { dispatchPages } from '../../index.js'
 import {
@@ -390,7 +396,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      saveFailure: unavailableBackendError(SAVE_ANSWERS)
+      startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -403,7 +409,7 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, {
       seed,
       payload: { transitedCountries: ['FR'] },
-      saveFailure: failure
+      startingFrom: [refusingSaves(failure)]
     })
 
     expectOneSaveFallbackLogged(result.logger, {
@@ -559,29 +565,34 @@ describe('GET transit-countries', () => {
 })
 
 describe('transit-countries — the Back link', () => {
+  const ARRIVAL_DETAILS_SLUG = 'port-of-entry'
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should go Back to the arrival details while the opening run is on', async () => {
     const result = await driveHandler(get, {
       seed,
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    expectBackLinkIsPage(result, 'port-of-entry')
+    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
 
   it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'FR' },
-      openingRun: RUN_ACTIVE
+      startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
-    expectBackLinkIsPage(result, 'port-of-entry')
+    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
   })
 
-  it('Should go Back to the overview when the page is opened from the overview', async () => {
-    const result = await driveHandler(get, { seed })
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  itSendsBackToOverview(get, {
+    seed,
+    cases: ['when opened from the Overview']
   })
+
+  itSendsBackCarryingChangeTo(get, [
+    ['the arrival details', seed, ARRIVAL_DETAILS_SLUG]
+  ])
 })
 
 describe('transit-countries — when the page gate does not pass', () => {
@@ -696,7 +707,7 @@ describe('transit-countries — when the page gate does not pass', () => {
       const result = await driveHandler(post, {
         seed: airSeed,
         payload,
-        saveFailure: unavailableBackendError(SAVE_ANSWERS)
+        startingFrom: [refusingSaves(unavailableBackendError(SAVE_ANSWERS))]
       })
 
       expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })

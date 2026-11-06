@@ -13,6 +13,7 @@ import {
   withSetContext
 } from '../../../server/app/shared/set-context.js'
 import { countSessionResolution } from '../../../server/common/helpers/call-counts/call-counts.js'
+import { buildInsFrontendUrl } from '../../../server/common/helpers/ins-frontend-url.js'
 import { pageMaturityContext } from '../../../server/app/page-maturity/page-maturity.js'
 
 const logger = createLogger()
@@ -25,14 +26,13 @@ const manifestPath = path.join(
 let webpackManifest
 
 /**
- * Which service-navigation item the current request sits under, so the layout
- * can mark it active. Section-wide, not page-wide: every notification page is
- * inside the dashboard's section of the service, which is why the answer for
- * `/notifications/123/origin` is still `dashboard`.
+ * The service-navigation item a request path sits under. Section-wide: any
+ * path inside the dashboard's section, a notification's pages included, is
+ * `dashboard`.
  *
  * @param {string} [requestPath] - the request path.
- * @returns {string|null} the id of the active navigation item, or null when the
- * request is under none of them.
+ * @returns {string|null} the id of the active navigation item, or null outside a
+ * set context or when the path is under none of them.
  */
 export function activeNavigationItem(requestPath = '') {
   if (!hasSetContext()) {
@@ -46,8 +46,7 @@ const resolveSession = (request, sessionId) => {
   return request.server.app.cache.get(sessionId)
 }
 
-const insAddressBookUrl = () =>
-  `${config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')}/address-book`
+const insAddressBookUrl = () => buildInsFrontendUrl('/address-book')
 
 async function context(request) {
   if (!webpackManifest) {
@@ -61,14 +60,9 @@ async function context(request) {
     }
   }
 
-  // If the user is authenticated, add the user's details to the view context
-  // This allows the view to display the user's session details and the ability to conditionally render content
   const sessionId = request.auth?.credentials?.sessionId
   const authData = sessionId ? await resolveSession(request, sessionId) : null
 
-  // Resolved from the path, not from an ambient context: hapi-vision marshals
-  // the view after the handler has returned, so an `enterWith` from a set's own
-  // extension may already have gone by the time this global context is built.
   const setId = setIdForPath(request.path)
 
   return {
@@ -77,9 +71,6 @@ async function context(request) {
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
-    // The chrome's home link for every rendered page, so a view built without
-    // kit.base() — the dashboard's own, for one — still links back into its own
-    // set. kit.base() supplies the same key, and a view's own context wins.
     homeUrl: setId ? withSetContext(setId, dashboardPath) : '/',
     activeNavigationItem: setId
       ? withSetContext(setId, () => activeNavigationItem(request.path))

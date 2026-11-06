@@ -186,7 +186,7 @@ Top-level primitives (used everywhere else in the module):
 - `is-blank-value.js` — the "blank fulfilment" predicate used by the read-side queries.
 - `state-queries.js` — read-side queries over evaluator output (`leafSatisfied`, `effectiveStatus`, `groupInvariantErrors`).
 - `instance-complete.js` — per-instance completeness verdict.
-- `helper-internals.js` — shape-level utilities shared by gate helpers (`isNonArrayObject`, `readGate`), and the one owner of the complement rule: `resolveUnion` and `isOutsideUnion` (a blank value is never outside the union), used by `notInUnionOf` and `anyNotInUnionOf`, and `admitsValue`, which answers from a gate's metadata whether it admits a value.
+- `helper-internals.js` — shape-level utilities shared by gate helpers (`readGate`; the plain-object check is `isObject` from `lib/object.js`), and the one owner of the complement rule: `resolveUnion` and `isOutsideUnion` (a blank value is never outside the union), used by `notInUnionOf` and `anyNotInUnionOf`, and `admitsValue`, which answers from a gate's metadata whether it admits a value.
 
 `evaluator/`:
 

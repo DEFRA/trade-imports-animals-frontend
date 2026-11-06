@@ -1,5 +1,5 @@
 import { fail } from '../fail.js'
-import { isObject } from '../shape/object.js'
+import { isObject } from '../../../../../lib/object.js'
 import { validateFulfilmentId } from '../validate/fulfilment-id.js'
 import { validateValue } from '../validate/value.js'
 

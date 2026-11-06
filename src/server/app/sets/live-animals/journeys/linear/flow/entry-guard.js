@@ -12,8 +12,11 @@ import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import {
   inOpeningRun,
+  activeOpeningRunBeganAtStartEntry,
   openingRunStarted
 } from '../../../../../flow/run-state.js'
+import { buildInsFrontendUrl } from '../../../../../../common/helpers/ins-frontend-url.js'
+import { SET_ID } from '../../../set.js'
 
 const journeyPrefix = () => `${setBase()}/notifications/`
 const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
@@ -47,7 +50,18 @@ const overviewAdmitsRequest = async (request, journey, answers) =>
   (await openingRunStarted(request, journey.journeyId)) ||
   hasCommittedNotificationAnswers(answers)
 
+const insTypeQuestionUrl = (journeyId) => {
+  const query = new URLSearchParams({
+    'notification-id': journeyId,
+    'current-notification-type': SET_ID
+  })
+  return buildInsFrontendUrl(`/notification-type?${query.toString()}`)
+}
+
 export const entryBackLink = async (request, journey, answers) => {
+  if (await activeOpeningRunBeganAtStartEntry(request, journey.journeyId)) {
+    return insTypeQuestionUrl(journey.journeyId)
+  }
   if (await inOpeningRun(request, journey.journeyId)) {
     return dashboardPath()
   }
@@ -56,8 +70,8 @@ export const entryBackLink = async (request, journey, answers) => {
     : dashboardPath()
 }
 
-/** Deep-link guard: a journey the overview would not admit is sent to the
- * entry page. Returns that page's path, or null when the request may proceed. */
+/** The entry page's path for a journey the overview would not admit, or null
+ * when the request may proceed. */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null

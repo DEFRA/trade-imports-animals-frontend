@@ -99,11 +99,15 @@ module.exports = {
     {
       name: 'model-import-boundary',
       comment:
-        'The pure model resolves only within model/ or through a services/<name>/index.js barrel.',
+        'The pure model resolves only within model/, through a services/<name>/index.js barrel, or to lib/object.js.',
       severity: 'error',
       from: { path: `^${APP}/model/` },
       to: {
-        pathNot: [`^${APP}/model/`, `^${APP}/services/[^/]+/index\\.js$`]
+        pathNot: [
+          `^${APP}/model/`,
+          `^${APP}/services/[^/]+/index\\.js$`,
+          `^${APP}/lib/object\\.js$`
+        ]
       }
     },
     {

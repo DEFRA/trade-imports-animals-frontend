@@ -5,26 +5,26 @@ import { rolesAndAddressesCard } from '../cards/addresses/roles-and-addresses.js
 
 const copy = copyFor({ en, cy })
 
-export const consignmentPartiesSection = (
+export const consignmentPartiesSection = ({
   journeyId,
   answers,
   readOnly,
   parties = answers,
   partyErrors = {}
-) => ({
+}) => ({
   anchor: 'consignment-parties',
   heading: copy.sections.consignmentParties,
   groups: [
     {
       heading: copy.groups.rolesAndAddresses,
       cards: [
-        rolesAndAddressesCard(
+        rolesAndAddressesCard({
           journeyId,
           answers,
           readOnly,
           parties,
           partyErrors
-        )
+        })
       ]
     }
   ]
