@@ -158,6 +158,27 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it('Should walk the additional-details row through Not yet started, In progress and Completed on its own two answers, with no import reason saved', () => {
+    const seed = {
+      countryOfOrigin: 'FR',
+      commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
+    }
+    expect(statusIn('additionalDetails', seed)).toBe(NOT_STARTED)
+    expect(
+      statusIn('additionalDetails', {
+        ...seed,
+        animalsCertifiedFor: 'slaughter'
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('additionalDetails', {
+        ...seed,
+        animalsCertifiedFor: 'slaughter',
+        containsUnweanedAnimals: 'no'
+      })
+    ).toBe(FULFILLED)
+  })
+
   it('Should keep the documents row Optional until an entry starts, In progress while one is partial, Completed when full', () => {
     expect(statusIn('documents', unlocked)).toBe(OPTIONAL)
     expect(

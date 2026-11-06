@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
-  EQUUS_CABALUS,
-  STRUTHIO,
+  EQUUS_CABALUS_ROW,
+  STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
   PHONE_VIEWPORT,
   addressBookInsetText,
@@ -260,7 +260,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   })
 
   test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, STRUTHIO)
+    await openAddresses(page, STRUTHIO_ROW)
 
     const section = addressesSection(page, copy.hub.cph.title)
     await expect(section.locator('.govuk-hint')).toHaveText(copy.hub.cph.hint)
@@ -270,7 +270,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   test('does not ask a consignment of horses for a CPH number', async ({
     page
   }) => {
-    await openAddresses(page, EQUUS_CABALUS)
+    await openAddresses(page, EQUUS_CABALUS_ROW)
 
     await expect(partySectionTitles(page)).toHaveText(
       PARTIES.map(({ title }) => title)

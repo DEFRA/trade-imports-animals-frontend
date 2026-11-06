@@ -21,6 +21,7 @@ import {
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
+import { lineKey } from '../search/selection/line-key.js'
 
 import {
   BISON_BISON,
@@ -33,6 +34,7 @@ import {
   FELIS_CATUS_ROW,
   STRUTHIO,
   STRUTHIO_ROW,
+  labelFor,
   lineOf
 } from '../search/test-support.js'
 
@@ -49,8 +51,9 @@ const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
 const EAR_TAG_FIELD_1 = 'animalIdentifierEarTag-1'
 const IDENTIFICATION_PAGE = 'commodities/identification'
-const REMOVE_FIRST_UNIT = 'remove:0:0'
-const BOS_TAURUS_1 = 'Bos taurus 1'
+const removeUnitAction = (line, unitIndex) =>
+  `remove:${lineKey(line)}:${unitIndex}`
+const BOS_TAURUS_1 = `${labelFor(BOS_TAURUS)} 1`
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 const IMPLICIT_SUBMIT = 'implicit-submit'
 const EAR_TAG_REFUSED = 'Ear tag must be 58 characters or less'
@@ -115,8 +118,10 @@ describe(`${SUITE} — the cards view`, () => {
         })
       ]
     })
-    expect(card.title).toBe(BOS_TAURUS)
-    expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
+    expect(card.title).toBe(labelFor(BOS_TAURUS))
+    expect(card.counter).toBe(
+      `Enter details for ${labelFor(BOS_TAURUS)} 2 of 2`
+    )
     expect(card.savedAnimalsTable.rows).toHaveLength(1)
     expect(savedAnimalLabels(card)[0]).toBe(BOS_TAURUS_1)
   })
@@ -135,8 +140,8 @@ describe(`${SUITE} — the cards view`, () => {
         cards.map((card) => card.title)
       ])
     ).toEqual([
-      ['0102', [BOS_TAURUS, BISON_BISON]],
-      ['0101', [EQUUS_CABALUS]]
+      ['0102', [labelFor(BOS_TAURUS), labelFor(BISON_BISON)]],
+      ['0101', [labelFor(EQUUS_CABALUS)]]
     ])
   })
 
@@ -146,7 +151,7 @@ describe(`${SUITE} — the cards view`, () => {
     expect(context.selectedCommodities).toEqual([
       {
         code: '01061900',
-        latinNames: [FELIS_CATUS],
+        labels: [labelFor(FELIS_CATUS)],
         animals: ''
       }
     ])
@@ -217,7 +222,7 @@ describe(`${SUITE} — the cards view`, () => {
     })
     expect(card.counter).toBeNull()
     expect(card.overCountText).toBe(
-      'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
+      `This commodity line lists 1 ${labelFor(BOS_TAURUS)} animals but you have entered details for 2. Remove 1 to continue.`
     )
     expect(card.savedAnimalsTable.rows).toHaveLength(2)
     expect(firstRemoveCellHtml(card)).toContain(HIDDEN_ANIMAL_1)
@@ -243,7 +248,9 @@ describe(`${SUITE} — the in-card save button`, () => {
         })
       ]
     })
-    expect(card.counter).toBe('Enter details for Bos taurus 2 of 3')
+    expect(card.counter).toBe(
+      `Enter details for ${labelFor(BOS_TAURUS)} 2 of 3`
+    )
     expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
   })
 
@@ -256,7 +263,9 @@ describe(`${SUITE} — the in-card save button`, () => {
         })
       ]
     })
-    expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
+    expect(card.counter).toBe(
+      `Enter details for ${labelFor(BOS_TAURUS)} 2 of 2`
+    )
     expect(card.saveButtonText).toBe('Save and finish')
   })
 
@@ -264,7 +273,9 @@ describe(`${SUITE} — the in-card save button`, () => {
     const [card] = await viewCards({
       commodityLines: [lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '1' })]
     })
-    expect(card.counter).toBe('Enter details for Bos taurus 1 of 1')
+    expect(card.counter).toBe(
+      `Enter details for ${labelFor(BOS_TAURUS)} 1 of 1`
+    )
     expect(card.saveButtonText).toBeNull()
   })
 
@@ -304,7 +315,7 @@ describe(`${SUITE} — the in-card save button`, () => {
 describe(`${SUITE} — the Selected commodities summary`, () => {
   setupIdentificationEngine()
 
-  it('Should summarise each commodity code with every Latin name and the total declared count', async () => {
+  it('Should summarise each commodity code with every species label and the total declared count', async () => {
     const context = await viewContext({
       commodityLines: [
         bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
@@ -315,12 +326,12 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS, BISON_BISON],
+        labels: [labelFor(BOS_TAURUS), labelFor(BISON_BISON)],
         animals: '7'
       },
       {
         code: '0101',
-        latinNames: [EQUUS_CABALUS],
+        labels: [labelFor(EQUUS_CABALUS)],
         animals: '3'
       }
     ])
@@ -413,7 +424,10 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(savedAnimalLabels(card)).toEqual([BOS_TAURUS_1, 'Bos taurus 2'])
+    expect(savedAnimalLabels(card)).toEqual([
+      BOS_TAURUS_1,
+      `${labelFor(BOS_TAURUS)} 2`
+    ])
     expect(savedIdentifierCells(card, 1)).toEqual(['', 'UK2'])
   })
 
@@ -432,7 +446,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
     })
     expect(cards).toHaveLength(2)
     expect(savedAnimalLabels(cards[0])).toEqual([BOS_TAURUS_1])
-    expect(savedAnimalLabels(cards[1])).toEqual(['Felis catus 1'])
+    expect(savedAnimalLabels(cards[1])).toEqual([`${labelFor(FELIS_CATUS)} 1`])
   })
 
   it('Should fall back to the positional label when the line names no species', async () => {
@@ -790,7 +804,7 @@ describe(`${SUITE} — Remove`, () => {
           })
         ]
       },
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
     })
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
@@ -798,7 +812,30 @@ describe(`${SUITE} — Remove`, () => {
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
   })
 
-  it('Should refuse a remove for an out-of-range line index and delete nothing', async () => {
+  it('Should remove a unit from the line its key names, even when that line is not first', async () => {
+    const seed = {
+      commodityLines: [
+        felisCatusLine({
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierMicrochip: 'MC1' }]
+        }),
+        lineOf(BOS_TAURUS_ROW, {
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
+    })
+    expect(result.after.commodityLines[0].animalIdentifiers).toEqual([
+      { animalIdentifierMicrochip: 'MC1' }
+    ])
+    expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+  })
+
+  it('Should refuse a remove naming a line key the selection does not hold, and delete nothing', async () => {
     const seed = {
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, {
@@ -808,13 +845,13 @@ describe(`${SUITE} — Remove`, () => {
     }
     const result = await driveHandler(post, {
       seed,
-      payload: { action: 'remove:5:0' }
+      payload: { action: 'remove:9999|Not a line:0' }
     })
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
-      lineIndex: 5,
+      key: '9999|Not a line',
       unitIndex: 0,
-      reason: 'no-animal-identifier-at-index'
+      reason: 'no-commodity-line-for-key'
     })
     expect(result.after).toEqual(seed)
   })
@@ -829,7 +866,7 @@ describe(`${SUITE} — Remove`, () => {
     }
     const result = await driveHandler(post, {
       seed,
-      payload: { action: 'remove:0:5' }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 5) }
     })
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expectRemovalRefusedLogged(result, {
@@ -849,7 +886,7 @@ describe(`${SUITE} — Remove`, () => {
     const forged = await server.inject({
       method: 'POST',
       url: pagePath('journey-1', IDENTIFICATION_PAGE),
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
     })
     expect(forged.statusCode).toBe(403)
 
@@ -948,12 +985,12 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',
-        latinNames: [BOS_TAURUS],
+        labels: [labelFor(BOS_TAURUS)],
         animals: '2'
       },
       {
         code: '01063300',
-        latinNames: [STRUTHIO],
+        labels: [labelFor(STRUTHIO)],
         animals: '3'
       }
     ])
@@ -1021,7 +1058,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       seed: {
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
       },
-      payload: { action: REMOVE_FIRST_UNIT }
+      payload: { action: removeUnitAction(STRUTHIO_ROW, 0) }
     })
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.view).toBeUndefined()

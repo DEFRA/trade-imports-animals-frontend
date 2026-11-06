@@ -23,6 +23,7 @@ import {
   STRUTHIO_ROW
 } from '../commodities/search/test-support.js'
 import { hubPath } from '../../../../../../shared/paths.js'
+import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { dispatchPages } from '../index.js'
 
@@ -88,13 +89,20 @@ describe('POST additional-details — Save and return to overview', () => {
     expect(result.after.containsUnweanedAnimals).toBe('')
   })
 
-  it('Should still refuse an answer outside its allowed values and commit nothing', async () => {
+  it('Should refuse an out-of-list unweaned answer with the shared default message and keep the valid certification answer submitted alongside it', async () => {
     const result = await driveHandler(post, {
       seed: UNWEANED_SEED,
-      payload: { containsUnweanedAnimals: 'perhaps', exit: 'hub' }
+      payload: {
+        animalsCertifiedFor: 'slaughter',
+        containsUnweanedAnimals: 'perhaps',
+        exit: 'hub'
+      }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.containsUnweanedAnimals).toBeDefined()
+    expect(result.view.context.errors.containsUnweanedAnimals).toBe(
+      validatorDefaults.oneOf
+    )
+    expect(result.view.context.values.animalsCertifiedFor).toBe('slaughter')
     expect(result.after).toEqual(result.before)
   })
 })

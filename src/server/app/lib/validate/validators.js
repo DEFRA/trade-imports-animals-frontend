@@ -19,7 +19,8 @@ const INVALID_ERROR_CODE = 'any.invalid'
 const ONLY_ERROR_CODE = 'any.only'
 const RANGE_ERROR_CODE = 'date.range'
 const NUMBER_ERROR_CODE = 'number.base'
-const NUMBER_RANGE_ERROR_CODE = 'number.range'
+const NUMBER_MIN_ERROR_CODE = 'number.min'
+const NUMBER_MAX_ERROR_CODE = 'number.max'
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
@@ -199,13 +200,32 @@ const wholeNumberInRange = (min, max) => (raw, helpers) => {
     return helpers.error(NUMBER_ERROR_CODE)
   }
   const parsed = Number(raw)
-  if ((min != null && parsed < min) || (max != null && parsed > max)) {
-    return helpers.error(NUMBER_RANGE_ERROR_CODE)
+  if (min != null && parsed < min) {
+    return helpers.error(NUMBER_MIN_ERROR_CODE)
+  }
+  if (max != null && parsed > max) {
+    return helpers.error(NUMBER_MAX_ERROR_CODE)
+  }
+  if (!Number.isFinite(parsed)) {
+    return helpers.error(NUMBER_ERROR_CODE)
   }
   return raw
 }
 
-export const integerInRange = (name, { min, max, message } = {}) =>
+/**
+ * Save-blocking whole number in a range; blank passes.
+ * @param {string} name
+ * @param {object} [options]
+ * @param {number} [options.min] - Inclusive lower bound.
+ * @param {number} [options.max] - Inclusive upper bound.
+ * @param {object} [options.messages] - Shown for every out-of-range or
+ * non-numeric value, when the field has one message for every case.
+ * @param {string} [options.messages.invalid] - Shown when the value is not a
+ * whole number, and when it falls below the lower bound.
+ * @param {string} [options.messages.max] - Shown when the value is above the
+ * upper bound, falling back to `messages.invalid` when not given.
+ */
+export const integerInRange = (name, { min, max, messages } = {}) =>
   single(
     name,
     Joi.string()
@@ -213,8 +233,11 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       .allow('')
       .custom(wholeNumberInRange(min, max))
       .messages({
-        [NUMBER_ERROR_CODE]: message ?? defaults.wholeNumber,
-        [NUMBER_RANGE_ERROR_CODE]: message ?? defaults.numberBetween(min, max)
+        [NUMBER_ERROR_CODE]: messages?.invalid ?? defaults.wholeNumber,
+        [NUMBER_MIN_ERROR_CODE]:
+          messages?.invalid ?? defaults.numberBetween(min, max),
+        [NUMBER_MAX_ERROR_CODE]:
+          messages?.max ?? messages?.invalid ?? defaults.numberBetween(min, max)
       })
   )
 
@@ -231,7 +254,9 @@ export const integerInRange = (name, { min, max, message } = {}) =>
  * @param {string} options.messages.required - Shown when the value is blank or
  * absent.
  * @param {string} [options.messages.invalid] - Shown when the value is not a
- * whole number, and when it falls outside the bounds.
+ * whole number, and when it falls below the lower bound.
+ * @param {string} [options.messages.max] - Shown when the value is above the
+ * upper bound, falling back to `messages.invalid` when not given.
  */
 export const requiredIntegerInRange = (name, { min, max, messages }) =>
   single(
@@ -244,8 +269,10 @@ export const requiredIntegerInRange = (name, { min, max, messages }) =>
         'string.empty': messages.required,
         'any.required': messages.required,
         [NUMBER_ERROR_CODE]: messages.invalid ?? defaults.wholeNumber,
-        [NUMBER_RANGE_ERROR_CODE]:
-          messages.invalid ?? defaults.numberBetween(min, max)
+        [NUMBER_MIN_ERROR_CODE]:
+          messages.invalid ?? defaults.numberBetween(min, max),
+        [NUMBER_MAX_ERROR_CODE]:
+          messages.max ?? messages.invalid ?? defaults.numberBetween(min, max)
       })
   )
 

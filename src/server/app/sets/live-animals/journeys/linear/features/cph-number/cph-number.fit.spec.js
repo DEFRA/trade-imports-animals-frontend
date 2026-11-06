@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  BOS_TAURUS,
+  BOS_TAURUS_ROW,
   answerOriginEntry,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
@@ -64,7 +64,7 @@ const startAtCphNumber = async (page) => {
   await answerOriginEntry(page)
 
   await page.goto(commodityUrl)
-  await selectSpecies(page, [BOS_TAURUS])
+  await selectSpecies(page, [BOS_TAURUS_ROW])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL(
     urlUnderBase('/notifications/[^/]+/import-reason')

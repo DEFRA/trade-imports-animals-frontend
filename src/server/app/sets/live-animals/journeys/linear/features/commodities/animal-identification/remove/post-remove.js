@@ -3,27 +3,39 @@ import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import { animalIdentificationPage as page } from '../../page.js'
+import { actionsPrefixed } from '../../action-prefix.js'
+import { lineKey } from '../../search/selection/line-key.js'
 
-const REMOVE_ACTION_PREFIX = 'remove:'
+const removeActions = actionsPrefixed('remove:')
 
-export const isRemoveAction = (action) =>
-  action.startsWith(REMOVE_ACTION_PREFIX)
+export const isRemoveAction = removeActions.isAction
 
-const removeTargetOf = (action) => {
-  const [line, unit] = action.slice(REMOVE_ACTION_PREFIX.length).split(':')
-  return { line: Number(line), unit: Number(unit) }
+const removeTargetOf = (answers, action) => {
+  const [key, unit] = removeActions.keyOf(action).split(':')
+  const lineIndex = (answers.commodityLines ?? []).findIndex(
+    (entry) => lineKey(entry) === key
+  )
+  return { key, lineIndex, unit: Number(unit) }
 }
 
-const unitAt = (answers, line, unit) =>
-  (answers.commodityLines ?? [])[line]?.animalIdentifiers?.[unit]
+const unitAt = (answers, lineIndex, unit) =>
+  (answers.commodityLines ?? [])[lineIndex]?.animalIdentifiers?.[unit]
 
 export const postRemove = async (request, h, action) => {
   const { answers } = await state.get(request, h)
-  const { line, unit } = removeTargetOf(action)
-  if (!unitAt(answers, line, unit)) {
+  const { key, lineIndex, unit } = removeTargetOf(answers, action)
+  if (lineIndex === -1) {
+    kit.logRefusal(request, {
+      reason: 'no-commodity-line-for-key',
+      key,
+      unitIndex: unit
+    })
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
+  if (!unitAt(answers, lineIndex, unit)) {
     kit.logRefusal(request, {
       reason: 'no-animal-identifier-at-index',
-      lineIndex: line,
+      lineIndex,
       unitIndex: unit
     })
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
@@ -31,7 +43,7 @@ export const postRemove = async (request, h, action) => {
   await state.removeEntryAt(
     request,
     h,
-    ['commodityLines', line, 'animalIdentifiers'],
+    ['commodityLines', lineIndex, 'animalIdentifiers'],
     unit
   )
   return h.redirect(

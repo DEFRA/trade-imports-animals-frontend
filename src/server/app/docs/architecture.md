@@ -148,13 +148,22 @@ declaration refuses a token the session has not recorded.
 
 A POST that saves redirects (post, redirect, get): to `kit.nextTarget()` on
 success, or to the page a refusal names. A POST that fails validation
-re-renders the page with status 400 and does not redirect. Two pages render
-from a POST on purpose:
+re-renders the page with status 400 and does not redirect. A POST that
+renders again and saves nothing covers the transporters list and the party
+pickers, which search in place; the transit countries page after Add and
+Remove, because it holds its working list in hidden fields until Continue;
+and the declaration, which renders straight from the review's `step=review`
+post so it can carry the reviewed token. Two pages save and then render on
+purpose, because they hold work the trader has not saved anywhere else yet:
 
-- the declaration renders straight from the review's `step=review` post, so it
-  can carry the reviewed token
-- the transit countries page re-renders after Add and Remove, because it holds
-  its working list in hidden fields until Continue
+- the commodity search page re-renders after a search, Clear all or a
+  per-species removal, because it holds the search rows and the ticks on
+  screen
+- Commodity details re-renders after a removal, because the quantity fields
+  hold numbers the trader has typed and not yet saved, which a redirect would
+  drop. Its removal names the entry it drops rather than its position, so a
+  resubmitted post is refused rather than taking a row the trader never
+  pressed.
 
 ### Page title
 

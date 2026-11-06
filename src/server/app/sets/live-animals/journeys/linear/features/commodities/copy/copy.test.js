@@ -96,6 +96,15 @@ describe('#copy', () => {
     ).toContain('1 identifier record for')
   })
 
+  it('Should interpolate animalsAboveMax with thousands separators, in English and in Welsh', () => {
+    expect(copy.consignmentDetails.errors.animalsAboveMax(2147483647)).toBe(
+      'Number of animals must be 2,147,483,647 or fewer'
+    )
+    expect(copyCy.consignmentDetails.errors.animalsAboveMax(2147483647)).toBe(
+      'Rhaid i nifer yr anifeiliaid fod yn 2,147,483,647 neu lai'
+    )
+  })
+
   it('Should interpolate counter', () => {
     expect(copy.identification.counter(BOS_TAURUS, 2, 2)).toBe(
       'Enter details for Bos taurus 2 of 2'

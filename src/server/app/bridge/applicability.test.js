@@ -29,8 +29,17 @@ describe('#appliesForGateValue', () => {
     )
   })
 
-  it('Should ask about unweaned animals for cattle (0102)', () => {
-    expect(appliesForGateValue('containsUnweanedAnimals', '0102')).toBe(true)
+  it.each(['0101', '0102', '0103', '010410', '010420'])(
+    'Should ask about unweaned animals for commodity code %s',
+    (code) => {
+      expect(appliesForGateValue('containsUnweanedAnimals', code)).toBe(true)
+    }
+  )
+
+  it('Should not ask about unweaned animals for cats, dogs and ferrets (01061900)', () => {
+    expect(appliesForGateValue('containsUnweanedAnimals', '01061900')).toBe(
+      false
+    )
   })
 
   it('Should ask for CPH for ostriches (01063300) but not for horses (0101)', () => {

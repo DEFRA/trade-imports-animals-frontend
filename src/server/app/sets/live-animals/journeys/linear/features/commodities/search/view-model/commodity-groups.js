@@ -1,21 +1,26 @@
 import { lineKey } from '../selection/line-key.js'
 import { resultRows } from '../selection/rows.js'
-import { speciesLabel } from '../../species-label.js'
-import { legendFor } from './labels.js'
+import { legendHtmlFor, speciesLabelHtml } from './labels.js'
+import { inLegendOrder, inSpeciesLabelOrder } from './result-order.js'
 
-const itemFor = (row, selected) => {
+const itemFor = (row, selected, query) => {
   const key = lineKey(row)
   return {
     value: key,
-    text: speciesLabel(row),
+    html: speciesLabelHtml(row, query),
     checked: selected.includes(key)
   }
 }
 
-export const commodityGroups = (results, selected) =>
-  [...Map.groupBy(resultRows(results), (row) => row.commodityCode)].map(
-    ([commodityCode, rows]) => ({
-      legend: legendFor(commodityCode),
-      items: rows.map((row) => itemFor(row, selected))
-    })
+export const commodityGroups = (results, selected, query = '') => {
+  const rowsByCode = Map.groupBy(
+    resultRows(results),
+    (row) => row.commodityCode
   )
+  return inLegendOrder([...rowsByCode.keys()]).map((commodityCode) => ({
+    legendHtml: legendHtmlFor(commodityCode, query),
+    items: inSpeciesLabelOrder(rowsByCode.get(commodityCode)).map((row) =>
+      itemFor(row, selected, query)
+    )
+  }))
+}

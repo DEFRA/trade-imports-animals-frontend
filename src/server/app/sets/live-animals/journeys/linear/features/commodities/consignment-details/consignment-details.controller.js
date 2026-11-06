@@ -9,7 +9,7 @@ import {
   commodityQuestionHref,
   commodityQuestionPath
 } from '../commodity-question-detour.js'
-import { lineKey } from '../search/search.controller.js'
+import { lineKey } from '../search/selection/line-key.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
@@ -20,15 +20,19 @@ import { linesOf } from '../lines.js'
 import {
   isRemoveAction,
   isRemoveSpeciesAction,
-  removeIndexOf,
-  removeSpeciesIndexOf
+  removeCodeOf,
+  removeKeyOf
 } from './remove/actions.js'
 import { postRemove, postRemoveSpecies } from './remove/post-remove.js'
 import { countDropIssues } from './validation/count-drop.js'
 import { buildGroups } from './view-model/groups.js'
 import { buildSelectedRows } from './view-model/selected-rows.js'
 import { buildRemovableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
-import { payloadValues, storedValues } from './view-model/values.js'
+import {
+  payloadValues,
+  storedValues,
+  survivorForm
+} from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-details`
@@ -101,17 +105,55 @@ const get = async (request, h) => {
   })
 }
 
+const renderAfterRemoval = async (request, h, postedLines, payload, action) => {
+  const current = await state.get(request, h)
+  const { answers, evaluation } = current
+  const lines = linesOf(answers, evaluation)
+  const { values, missingCountKeys } = survivorForm(postedLines, payload, lines)
+  if (missingCountKeys.length > 0) {
+    request.logger.warn(
+      {
+        journeyId: request.params.journeyId,
+        action,
+        lineKeys: missingCountKeys
+      },
+      'A removal post named no count the page renders for a surviving line: its stored value is shown'
+    )
+  }
+  return render({
+    request,
+    h,
+    current,
+    lines,
+    values
+  })
+}
+
 const post = async (request, h) => {
   const current = await state.get(request, h)
   const { answers, evaluation } = current
   const lines = linesOf(answers, evaluation)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
+  const renderSurvivors = () =>
+    renderAfterRemoval(request, h, lines, payload, action)
   if (isRemoveSpeciesAction(action)) {
-    return postRemoveSpecies(request, h, removeSpeciesIndexOf(action), lineKey)
+    return postRemoveSpecies(
+      request,
+      h,
+      removeKeyOf(action),
+      lineKey,
+      renderSurvivors
+    )
   }
   if (isRemoveAction(action)) {
-    return postRemove(request, h, removeIndexOf(action), lineKey)
+    return postRemove(
+      request,
+      h,
+      removeCodeOf(action),
+      lineKey,
+      renderSurvivors
+    )
   }
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)

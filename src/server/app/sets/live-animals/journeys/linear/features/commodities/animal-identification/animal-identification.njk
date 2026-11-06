@@ -2,7 +2,7 @@
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_identification-card.njk" import identificationCard %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_selected-commodities-summary.njk" import selectedCommoditiesSummary %}
-{% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/save-actions.njk" import implicitSubmitButton, saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
@@ -29,7 +29,7 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    <button type="submit" name="action" value="implicit-submit" class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ copy.saveAndFinish }}</button>
+    {{ implicitSubmitButton({ text: copy.saveAndFinish, name: "action", value: "implicit-submit" }) }}
 
     {% for section in sections %}
       <h2 class="govuk-heading-l">{{ section.heading }}</h2>

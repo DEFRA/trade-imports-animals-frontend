@@ -13,13 +13,17 @@ const copy = copyFor({ en, cy }).consignmentDetails
 export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`
 
+const BACKEND_QUANTITY_MAX = 2147483647
+
 const animalsValidatorsFor = (lines) =>
   lines.map(({ index }) =>
     requiredIntegerInRange(animalsField(index), {
       min: 1,
+      max: BACKEND_QUANTITY_MAX,
       messages: {
         required: copy.errors.animalsRequired,
-        invalid: copy.errors.animalsWholeNumber
+        invalid: copy.errors.animalsWholeNumber,
+        max: copy.errors.animalsAboveMax(BACKEND_QUANTITY_MAX)
       }
     })
   )
@@ -30,7 +34,11 @@ const packagesValidatorsFor = (lines) =>
     .map(({ index }) =>
       integerInRange(packagesField(index), {
         min: 1,
-        message: copy.errors.packagesWholeNumber
+        max: BACKEND_QUANTITY_MAX,
+        messages: {
+          invalid: copy.errors.packagesWholeNumber,
+          max: copy.errors.packagesAboveMax(BACKEND_QUANTITY_MAX)
+        }
       })
     )
 
