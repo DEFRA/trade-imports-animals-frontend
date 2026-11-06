@@ -42,7 +42,8 @@ export const ensureAddressBookHasAnAddress = async () => {
       postcode: 'SW1A 1AA',
       countryCode: 'GB',
       phone: '01632 960000',
-      email: 'lighthouse@example.com'
+      email: 'lighthouse@example.com',
+      roles: ['PLACE_OF_ORIGIN']
     })
   })
   if (created.status !== HTTP_CREATED && created.status !== HTTP_OK) {
