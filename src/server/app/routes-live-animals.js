@@ -50,6 +50,10 @@ import {
   routeWithSetContext,
   withSetContext
 } from './shared/set-context.js'
+import {
+  organisationIdOf,
+  withOrganisationId
+} from '../common/helpers/organisation-id.js'
 import { SET_BASE, SET_ID } from './sets/live-animals/set.js'
 
 export const liveAnimals = {
@@ -90,12 +94,13 @@ export const liveAnimals = {
         registerJourneyCookie(server)
         server.ext(
           'onPreHandler',
-          async (request, h) => {
-            const target = await withSetContext(SET_ID, () =>
-              journeyEntryGuardTarget(request, h)
-            )
-            return target ? h.redirect(target).takeover() : h.continue
-          },
+          async (request, h) =>
+            withOrganisationId(organisationIdOf(request), async () => {
+              const target = await withSetContext(SET_ID, () =>
+                journeyEntryGuardTarget(request, h)
+              )
+              return target ? h.redirect(target).takeover() : h.continue
+            }),
           { sandbox: 'plugin' }
         )
         server.route(

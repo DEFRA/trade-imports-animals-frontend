@@ -1,6 +1,7 @@
 import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
-import { failedResponse, traceHeaders } from '../http/trace-headers.js'
+import { failedResponse } from '../http/trace-headers.js'
+import { headers } from '../persistence/records/real/http/headers.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
@@ -14,7 +15,7 @@ export const documentUploads = {
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
       {
         method: 'POST',
-        headers: traceHeaders('application/json'),
+        headers: headers(),
         body: JSON.stringify({ uploadId, correlationId })
       }
     )
@@ -28,7 +29,7 @@ export const documentUploads = {
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/claim`,
       {
         method: 'POST',
-        headers: traceHeaders('application/json'),
+        headers: headers(),
         body: JSON.stringify({ documentType, documentReference, dateOfIssue })
       }
     )
@@ -40,7 +41,7 @@ export const documentUploads = {
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const response = await backendFetch(
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
-      { method: 'GET', headers: traceHeaders() }
+      { method: 'GET', headers: headers() }
     )
     if (response.status === HTTP_STATUS_NOT_FOUND) {
       return undefined
@@ -54,7 +55,7 @@ export const documentUploads = {
   listByNotification: async ({ journeyId }) => {
     const response = await backendFetch(
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
-      { method: 'GET', headers: traceHeaders() }
+      { method: 'GET', headers: headers() }
     )
     if (!response.ok) {
       throw failedResponse('list document uploads', response)
@@ -70,7 +71,7 @@ export const documentUploads = {
   scanStatus: async ({ uploadId }) => {
     const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'GET', headers: traceHeaders() }
+      { method: 'GET', headers: headers() }
     )
     if (!response.ok) {
       throw failedResponse('get document upload status', response)
@@ -82,7 +83,7 @@ export const documentUploads = {
   remove: async (uploadId) => {
     const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'DELETE', headers: traceHeaders() }
+      { method: 'DELETE', headers: headers() }
     )
     if (!response.ok) {
       throw failedResponse('delete document upload', response)
@@ -92,7 +93,7 @@ export const documentUploads = {
   streamFile: async (uploadId) => {
     const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/file`,
-      { method: 'GET', headers: traceHeaders() }
+      { method: 'GET', headers: headers() }
     )
     if (!response.ok) {
       throw failedResponse('stream document file', response)

@@ -23,6 +23,18 @@ describe('buildActor', () => {
     })
   })
 
+  it('prefers organisationId over currentRelationshipId on credentials', () => {
+    const actor = buildActor({
+      contactId: 2100010101,
+      sub: 'entra-oid-001',
+      name: userDisplayName,
+      organisationId: '5900001',
+      currentRelationshipId: '5900002'
+    })
+
+    expect(actor.organisationId).toBe('5900001')
+  })
+
   it('returns no actor when authentication is disabled', () => {
     expect(buildActor(null)).toBeUndefined()
   })

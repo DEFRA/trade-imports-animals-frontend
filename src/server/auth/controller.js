@@ -91,6 +91,7 @@ export const authController = {
       await request.server.app.cache.set(profile.sessionId, {
         isAuthenticated: true,
         ...profile,
+        currentRelationshipId: profile.organisationId,
         role,
         scope,
         token,

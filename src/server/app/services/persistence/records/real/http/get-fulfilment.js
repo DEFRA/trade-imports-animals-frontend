@@ -1,5 +1,8 @@
 import { notificationsUrl } from '../config.js'
-import { HTTP_STATUS_NOT_FOUND } from '../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_FORBIDDEN,
+  HTTP_STATUS_NOT_FOUND
+} from '../../../../../lib/http-status.js'
 import { failed } from './failed.js'
 import { headers } from './headers.js'
 import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
@@ -13,6 +16,9 @@ export const getFulfilment = async (journeyId) => {
     }
   )
   if (response.status === HTTP_STATUS_NOT_FOUND) {
+    return undefined
+  }
+  if (response.status === HTTP_STATUS_FORBIDDEN) {
     return undefined
   }
   if (!response.ok) {
