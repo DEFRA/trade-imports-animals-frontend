@@ -17,6 +17,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { useAnimalsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-animals-frontend-base-url.js'
 import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -87,20 +88,21 @@ describe('GET /consignors/select', () => {
     expect(picker.selected).toBeUndefined()
   })
 
-  it('Should expand each row into the whole record for the View details disclosure', async () => {
+  it('Should give each row its street lines and then its town and postcode on one line', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
-    const row = picker.rows[3]
 
-    expect(row.addressText).toBe('10 Market Street, Leeds, LS1 6HB')
-    expect(row.detailLines).toEqual([
-      'British Livestock Ltd',
+    expect(picker.rows[3].addressLines).toEqual([
       '10 Market Street',
-      'Leeds',
-      'LS1 6HB',
-      'United Kingdom',
-      '01632 960000',
-      'british-livestock-ltd@example.com'
+      'Leeds, LS1 6HB'
     ])
+  })
+
+  it('Should render the picker across the full width of the content column', async () => {
+    const result = await driveHandler(getConsignor)
+
+    expect(result.view.context.contentColumnClass).toBe(
+      'govuk-grid-column-full'
+    )
   })
 
   it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
@@ -462,6 +464,51 @@ describe('INS add-address link', () => {
       expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
     }
   )
+})
+
+describe('View link to the INS address book', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+  const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
+  const setAnimalsFrontendBaseUrl = useAnimalsFrontendBaseUrl()
+
+  const insAddressHrefReturningTo = (addressId, returnUrl) =>
+    `http://ins.example/address-book/${addressId}?${new URLSearchParams({ return: returnUrl })}`
+
+  const firstViewHrefOf = (result) => pickerFrom(result).rows[0].viewHref
+
+  it('Should link each row to its INS address page, returning to this picker with its search and selection', async () => {
+    setInsFrontendBaseUrl('http://ins.example/')
+    setAnimalsFrontendBaseUrl('http://animals.example/')
+
+    const result = await driveHandler(getConsignor, {
+      query: { q: 'denmark', selected: ALPINE_DAIRY_ID }
+    })
+
+    expect(firstViewHrefOf(result)).toBe(
+      insAddressHrefReturningTo(
+        DANISH_MEAT_ID,
+        `http://animals.example${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
+      )
+    )
+  })
+
+  it('Should return to the page being shown and keep changing when the picker was opened to change an answer', async () => {
+    setInsFrontendBaseUrl('http://ins.example')
+    setAnimalsFrontendBaseUrl('http://animals.example')
+
+    const result = await driveHandler(getConsignor, {
+      query: { page: '2' },
+      startingFrom: [openedFromChangeLink()]
+    })
+
+    expect(firstViewHrefOf(result)).toBe(
+      insAddressHrefReturningTo(
+        pickerFrom(result).rows[0].id,
+        `http://animals.example${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&change=1`
+      )
+    )
+  })
 })
 
 describe('POST /consignors/select — recoverable save failure', () => {

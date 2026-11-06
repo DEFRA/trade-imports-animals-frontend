@@ -43,15 +43,9 @@ const row = {
   id: 'astra-rosales',
   name: 'Astra Rosales',
   checked: false,
-  addressText: 'Rua da Boavista 100, Porto, 4050-113',
+  addressLines: ['Rua da Boavista 100', 'Porto, 4050-113'],
   country: 'Portugal',
-  detailLines: [
-    'Astra Rosales',
-    'Rua da Boavista 100',
-    'Porto',
-    '4050-113',
-    'Portugal'
-  ]
+  viewHref: 'http://localhost:3002/address-book/astra-rosales'
 }
 
 describe('addressPickerResults macro', () => {
