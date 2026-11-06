@@ -7,7 +7,7 @@ export const pickerTableRows = (rows, copy) =>
   rows.map((row) => [
     { html: renderMacro(CELLS_TEMPLATE, 'pickerSelectCell', row, copy) },
     { text: row.name },
-    { text: row.addressText },
+    { html: renderMacro(CELLS_TEMPLATE, 'pickerAddressCell', row) },
     { text: row.country },
-    { html: renderMacro(CELLS_TEMPLATE, 'pickerDetailsCell', row, copy) }
+    { html: renderMacro(CELLS_TEMPLATE, 'pickerViewCell', row, copy) }
   ])

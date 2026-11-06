@@ -107,15 +107,16 @@ The live-animals commodities service is documented in the
 
 ## Configuration
 
-| Convict key                             | Env var                             | Default                                                       |
-| --------------------------------------- | ----------------------------------- | ------------------------------------------------------------- |
-| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://localhost:8085`                                       |
-| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`  | `http://localhost:8086`                                       |
-| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`    | `http://localhost:8089`                                       |
-| `cdpUploader.baseUrl`                   | `CDP_UPLOADER_BASE_URL`             | `http://localhost:7337`                                       |
-| `cdpUploader.scanResultCallbackUrl`     | `CDP_UPLOADER_CALLBACK_URL`         | `http://localhost:8085/document-uploads/pending/scan-results` |
-| `cdpUploader.documentsBucket`           | `CDP_UPLOADER_DOCUMENTS_BUCKET`     | `trade-imports-animals-documents`                             |
-| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002`                                       |
+| Convict key                             | Env var                              | Default                                                       |
+| --------------------------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL`  | `http://localhost:8085`                                       |
+| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`   | `http://localhost:8086`                                       |
+| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`     | `http://localhost:8089`                                       |
+| `cdpUploader.baseUrl`                   | `CDP_UPLOADER_BASE_URL`              | `http://localhost:7337`                                       |
+| `cdpUploader.scanResultCallbackUrl`     | `CDP_UPLOADER_CALLBACK_URL`          | `http://localhost:8085/document-uploads/pending/scan-results` |
+| `cdpUploader.documentsBucket`           | `CDP_UPLOADER_DOCUMENTS_BUCKET`      | `trade-imports-animals-documents`                             |
+| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`     | `http://localhost:3002`                                       |
+| `tradeImportsAnimalsFrontend.baseUrl`   | `TRADE_IMPORTS_ANIMALS_FRONTEND_URL` | `http://localhost:3000`                                       |
 
 `tradeImportsInsFrontend.baseUrl` is browser-visible (the service navigation's
 Address book link, the address handshake, and the origin page's Back link to the
@@ -123,6 +124,15 @@ INS type question, which carries the notification's reference as
 `notification-id` and its type as `current-notification-type`), so under the
 workspace stack it stays `localhost` while the backend, reference-data and address-book URLs use
 `host.docker.internal`.
+
+`tradeImportsAnimalsFrontend.baseUrl` is this service's own browser-visible
+origin. A party picker's 'View' link to an address in the INS address book
+carries the picker as an absolute URL on it, because the INS address book
+honours a return only on the animals frontend origin it is configured with. It
+must equal that INS setting (`TRADE_IMPORTS_ANIMALS_FRONTEND_URL` on the INS
+frontend) in each environment; when it differs, INS ignores the return and its
+Back link goes to the address book list. Under the workspace stack it stays
+`localhost`.
 
 `cdpUploader.scanResultCallbackUrl` is resolved by cdp-uploader itself, not by
 this service or the browser, so it has to name the backend from inside the

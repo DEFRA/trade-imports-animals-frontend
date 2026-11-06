@@ -37,6 +37,11 @@ describe('#copy', () => {
     )
   })
 
+  it("Should word each picker row's link to the address book 'View' in English and 'Gweld' in Welsh", () => {
+    expect(copy.picker.view).toBe('View')
+    expect(copyCy.picker.view).toBe('Gweld')
+  })
+
   it.each([
     ['en', copy, sectionCaptionsEn],
     ['cy', copyCy, sectionCaptionsCy]

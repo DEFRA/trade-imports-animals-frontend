@@ -65,8 +65,7 @@ export const copy = {
       actionsHidden: 'Actions'
     },
     selectRowPrefix: 'Select',
-    viewDetails: 'View details',
-    viewDetailsFor: 'for',
+    view: 'View',
     addNewAddress: sharedCopy.addressHandshake.addNewAddress,
     handshakeErrors: sharedCopy.addressHandshake.errors
   }

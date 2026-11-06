@@ -61,7 +61,8 @@ const render = async (
       ),
       journey,
       recoverableError,
-      successBanner
+      successBanner,
+      surface: 'display'
     }),
     heading: party.title,
     description: party.hint,

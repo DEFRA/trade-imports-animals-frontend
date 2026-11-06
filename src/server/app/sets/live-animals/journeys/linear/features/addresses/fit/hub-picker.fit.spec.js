@@ -15,8 +15,10 @@ import {
   signIn,
   startNotification,
   unlockSections,
-  values
+  values,
+  withinFullWidthColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { config } from '../../../../../../../../../config/config.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -553,17 +555,29 @@ test.describe('party picker details and pagination', () => {
     await openPartyPicker(page, CONSIGNOR)
   })
 
-  test('picker expands an address to show its full details', async ({
+  test('picker spans the full content column and shows each address on its own lines, with a View link to it in the INS address book returning to this picker', async ({
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
       copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
     )
-    const detailedRow = page.getByRole('row', {
-      name: /Tech Imports Ltd/
-    })
-    await detailedRow.getByText(copy.picker.viewDetails).click()
-    await expect(detailedRow).toContainText('London')
+    await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
+    const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
+    const pickerReturn = `${config.get('tradeImportsAnimalsFrontend.baseUrl')}${new URL(page.url()).pathname}?page=1`
+
+    await expect(addressRow.getByRole('cell').nth(2)).toHaveText(
+      '18 Dockside Road\nLondon, E14 9GE',
+      { useInnerText: true }
+    )
+    await expect(
+      addressRow.getByRole('link', {
+        name: `${copy.picker.view} Tech Imports Ltd`,
+        exact: true
+      })
+    ).toHaveAttribute(
+      'href',
+      `${config.get('tradeImportsInsFrontend.baseUrl')}/address-book/tech-imports-ltd?${new URLSearchParams({ return: pickerReturn })}`
+    )
   })
 
   test('picker carries a later-page selection and keeps it selected off-page', async ({
