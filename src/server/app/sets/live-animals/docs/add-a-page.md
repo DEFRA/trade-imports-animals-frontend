@@ -387,6 +387,13 @@ set-up in the test file:
   - `useReferenceDataServing` registers `resetMocksAndConfigAfterTests()` for the
     describe that calls it, and returns the function that serves given rows as
     the reference-data response
+- config in a test:
+  [`common/test-helpers/restore-config-after-each.js`](../../../../common/test-helpers/restore-config-after-each.js)
+  exports `restoreConfigAfterEach(keys)`, which restores those config keys
+  after each test and is the one snapshot and restore every other helper uses;
+  [`common/test-helpers/use-ins-frontend-base-url.js`](../../../../common/test-helpers/use-ins-frontend-base-url.js)
+  exports `useInsFrontendBaseUrl`, which restores the INS frontend base URL
+  after each test and returns the setter a test uses to point it somewhere
 - browser tests:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,

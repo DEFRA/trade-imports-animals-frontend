@@ -231,18 +231,18 @@ export const config = convict({
     },
     browserFacingHostnameRewrite: {
       enabled: {
-        doc: 'Rewrite internal OIDC hostnames in sign-out URL for local environments',
+        doc: 'Rewrite Defra ID hostnames: browser-facing discovery and sign-out URLs move to the browser-facing hostname, and the server-side token and JWKS endpoints move to the discovery hostname',
         format: STRICT_BOOLEAN,
         default: !isProduction,
         env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_ENABLED'
       },
       from: {
-        doc: 'OIDC hostnames list for sign-out URL re-write',
+        doc: 'Defra ID hostnames the rewrite covers',
         format: Array,
         default: ['host.docker.internal', 'trade-imports-defra-id-stub']
       },
       to: {
-        doc: 'Target hostname used for sign-out OIDC URL rewrite',
+        doc: 'Browser-facing hostname the rewrite targets',
         format: String,
         default: 'localhost',
         env: 'DEFRA_ID_BROWSER_FACING_HOSTNAME_REWRITE_TO'

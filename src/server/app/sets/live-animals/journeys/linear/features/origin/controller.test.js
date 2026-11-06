@@ -9,10 +9,10 @@ import {
   expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
-  useInsFrontendBaseUrl,
   useReferenceDataServing,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
 import {
   RUN_ACTIVE,

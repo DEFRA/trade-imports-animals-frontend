@@ -1,4 +1,4 @@
-import { useInsFrontendBaseUrl } from '../../app/engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../test-helpers/use-ins-frontend-base-url.js'
 import { buildInsFrontendUrl } from './ins-frontend-url.js'
 
 describe('buildInsFrontendUrl', () => {

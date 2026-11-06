@@ -24,7 +24,7 @@ import {
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
-import { buildInsFrontendUrl } from '../../../../../../../common/helpers/ins-frontend-url.js'
+import { config } from '../../../../../../../../config/config.js'
 import { SET_ID } from '../../../../set.js'
 
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
@@ -221,14 +221,21 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
     const reference = journeyIdFromPage(page)
 
-    await expect(
-      page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute(
-      'href',
-      buildInsFrontendUrl(
-        `/notification-type?notification-id=${reference}&current-notification-type=${SET_ID}`
-      )
-    )
+    const href = await page
+      .getByRole('link', { name: 'Back', exact: true })
+      .getAttribute('href')
+    const url = new URL(href)
+    expect({
+      origin: url.origin,
+      pathname: url.pathname,
+      notificationId: url.searchParams.get('notification-id'),
+      currentNotificationType: url.searchParams.get('current-notification-type')
+    }).toEqual({
+      origin: new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin,
+      pathname: '/notification-type',
+      notificationId: reference,
+      currentNotificationType: SET_ID
+    })
   })
 
   test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({

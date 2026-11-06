@@ -87,6 +87,19 @@ describe('#defraIdHostnames', () => {
       })
     })
 
+    test('Should keep endpoints already at the discovery hostname exactly as served', () => {
+      setStackDefraIdRewrite()
+      configureDiscovery('http://localhost:3007')
+      const alreadyAtDiscoveryHostname = {
+        token_endpoint: 'http://localhost/token',
+        jwks_uri: 'http://localhost/jwks'
+      }
+
+      expect(
+        withServerSideEndpointsAtDiscoveryHostname(alreadyAtDiscoveryHostname)
+      ).toEqual(alreadyAtDiscoveryHostname)
+    })
+
     test('Should return the document exactly as served when the rewrite is disabled', () => {
       setStackDefraIdRewrite()
       config.set('defraId.browserFacingHostnameRewrite.enabled', false)

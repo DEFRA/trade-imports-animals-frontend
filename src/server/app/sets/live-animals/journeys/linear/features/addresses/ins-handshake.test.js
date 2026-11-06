@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
 import {
   recordingH,
-  journeyRequest,
-  useInsFrontendBaseUrl
+  journeyRequest
 } from '../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { consignor } from '../../../../obligations/index.js'
 import { PARTIES } from './parties.js'
 import {

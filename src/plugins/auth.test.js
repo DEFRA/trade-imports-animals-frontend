@@ -1,6 +1,7 @@
 import hapi from '@hapi/hapi'
 import hapiBell from '@hapi/bell'
 import hapiCookie from '@hapi/cookie'
+import Jwt from '@hapi/jwt'
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 import { config } from '../config/config.js'
@@ -16,20 +17,9 @@ import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-co
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
 const wreckPostMock = vi.hoisted(() => vi.fn())
-const jwtDecodeMock = vi.hoisted(() => vi.fn())
-const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock, post: wreckPostMock }
-}))
-
-vi.mock('@hapi/jwt', () => ({
-  default: {
-    token: {
-      decode: jwtDecodeMock,
-      verifyTime: jwtVerifyTimeMock
-    }
-  }
 }))
 
 const AUTH_COOKIE_NAME = 'test-auth-cookie'
@@ -72,12 +62,16 @@ const buildRequestWithCachedSession = (userSession) => {
   }
 }
 
-const expireToken = () => {
-  jwtDecodeMock.mockReturnValue({ exp: 1 })
-  jwtVerifyTimeMock.mockImplementation(() => {
-    throw new Error('token expired')
-  })
-}
+const tokenExpiringIn = (ttlSec, payload = {}) =>
+  Jwt.token.generate(
+    payload,
+    { key: 'test-token-signing-secret', algorithm: 'HS256' },
+    { ttlSec }
+  )
+
+const SECONDS_PER_HOUR = 3600
+const unexpiredToken = tokenExpiringIn(SECONDS_PER_HOUR)
+const expiredToken = tokenExpiringIn(-SECONDS_PER_HOUR)
 
 describe('auth plugin', () => {
   const oidcConfig = {
@@ -293,25 +287,18 @@ describe('auth plugin', () => {
     })
 
     test('provider.profile maps decoded JWT payload to credentials.profile', () => {
-      const credentials = { token: 'jwt-token' }
-      jwtDecodeMock.mockReturnValue({
-        decoded: {
-          payload: {
-            contactId: 'CRN123',
-            firstName: 'Andrew',
-            lastName: 'Farmer',
-            currentRelationshipId: 'REL-1'
-          }
-        }
-      })
-
-      getBellOptions(oidcConfig).provider.profile(credentials)
-
-      expect(credentials.profile).toEqual({
+      const payload = {
         contactId: 'CRN123',
         firstName: 'Andrew',
         lastName: 'Farmer',
-        currentRelationshipId: 'REL-1',
+        currentRelationshipId: 'REL-1'
+      }
+      const credentials = { token: tokenExpiringIn(SECONDS_PER_HOUR, payload) }
+
+      getBellOptions(oidcConfig).provider.profile(credentials)
+
+      expect(credentials.profile).toMatchObject({
+        ...payload,
         crn: 'CRN123',
         name: 'Andrew Farmer',
         organisationId: 'REL-1'
@@ -380,9 +367,10 @@ describe('auth plugin', () => {
 
     test('a request with a valid session cookie resolves the session once in a counted route', async () => {
       clearCallCountTotals()
-      const userSession = { token: 'token', refreshToken: 'refresh-token' }
-      jwtDecodeMock.mockReturnValue({ exp: 999999 })
-      jwtVerifyTimeMock.mockImplementation(() => undefined)
+      const userSession = {
+        token: unexpiredToken,
+        refreshToken: 'refresh-token'
+      }
       const server = hapi.server()
       server.app.cache =
         buildRequestWithCachedSession(userSession).request.server.app.cache
@@ -423,10 +411,11 @@ describe('auth plugin', () => {
     })
 
     test('validate returns isValid:true when token verification succeeds', async () => {
-      const userSession = { token: 'token', refreshToken: 'refresh-token' }
+      const userSession = {
+        token: unexpiredToken,
+        refreshToken: 'refresh-token'
+      }
       const { request, sessions } = buildRequestWithCachedSession(userSession)
-      jwtDecodeMock.mockReturnValue({ exp: 999999 })
-      jwtVerifyTimeMock.mockImplementation(() => undefined)
 
       const res = await getCookieOptions().validate(request, {
         sessionId: sessionIdInCache
@@ -435,17 +424,16 @@ describe('auth plugin', () => {
       expect(res).toEqual({ isValid: true, credentials: userSession })
       expect(wreckPostMock).not.toHaveBeenCalled()
       expect(sessions.get(sessionIdInCache)).toEqual({
-        token: 'token',
+        token: unexpiredToken,
         refreshToken: 'refresh-token'
       })
     })
 
     test('validate refreshes tokens when verification fails and refreshTokens enabled', async () => {
       const { request, sessions } = buildRequestWithCachedSession({
-        token: 'old-token',
+        token: expiredToken,
         refreshToken: 'old-refresh'
       })
-      expireToken()
       wreckPostMock.mockResolvedValue({
         payload: {
           access_token: 'new-access-token',
@@ -474,10 +462,9 @@ describe('auth plugin', () => {
     test('validate returns isValid:false when verification fails and refreshTokens disabled', async () => {
       config.set('defraId.refreshTokens', false)
       const { request, sessions } = buildRequestWithCachedSession({
-        token: 'old-token',
+        token: expiredToken,
         refreshToken: 'old-refresh'
       })
-      expireToken()
 
       const res = await getCookieOptions().validate(request, {
         sessionId: sessionIdInCache
@@ -486,17 +473,16 @@ describe('auth plugin', () => {
       expect(res).toEqual({ isValid: false })
       expect(wreckPostMock).not.toHaveBeenCalled()
       expect(sessions.get(sessionIdInCache)).toEqual({
-        token: 'old-token',
+        token: expiredToken,
         refreshToken: 'old-refresh'
       })
     })
 
     test('validate returns isValid:false when refreshTokens rejects', async () => {
       const { request, sessions } = buildRequestWithCachedSession({
-        token: 'old-token',
+        token: expiredToken,
         refreshToken: 'old-refresh'
       })
-      expireToken()
       wreckPostMock.mockRejectedValue(new Error('refresh failed'))
 
       const res = await getCookieOptions().validate(request, {
@@ -505,7 +491,7 @@ describe('auth plugin', () => {
 
       expect(res).toEqual({ isValid: false })
       expect(sessions.get(sessionIdInCache)).toEqual({
-        token: 'old-token',
+        token: expiredToken,
         refreshToken: 'old-refresh'
       })
     })

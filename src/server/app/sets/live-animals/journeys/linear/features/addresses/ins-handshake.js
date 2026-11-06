@@ -5,9 +5,7 @@ import {
   addedAddressBannerCookie,
   addressHandshakeTokensCookie
 } from '../../../../../../engine/persistence/session.js'
-import { copyFor } from '../../../../../../shared/copy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
+import { sharedCopy } from '../../../../../../shared/kit.js'
 import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
 
 export const JOURNEY_TYPE = 'gbn-ag'
@@ -69,11 +67,10 @@ export const takeAddedAddressBanner = (request, h) => {
     return null
   }
   h.unstate(addedAddressBannerCookie())
-  const addedBannerCopy = copyFor({ en: sharedEn, cy: sharedCy })
-    .addressHandshake.addedBanner
+  const { title, text } = sharedCopy.addressHandshake.addedBanner
   return {
-    titleText: addedBannerCopy.title,
-    text: addedBannerCopy.text(added.name)
+    titleText: title,
+    text: text(added.name)
   }
 }
 

@@ -15,9 +15,9 @@ import {
   listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
-  useInsFrontendBaseUrl,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
@@ -439,6 +439,7 @@ describe('GET /consignors/select — list order', () => {
 
 describe('INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
   const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it.each(PARTIES.map((party) => [party.title, party.slug]))(

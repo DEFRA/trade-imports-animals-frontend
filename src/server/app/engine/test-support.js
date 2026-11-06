@@ -4,6 +4,7 @@ import Hapi from '@hapi/hapi'
 import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { config } from '../../../config/config.js'
+import { restoreConfigAfterEach } from '../../common/test-helpers/restore-config-after-each.js'
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
@@ -445,22 +446,11 @@ export const getHandlerEndingWith = (featureModule, pathSuffix) =>
 export const fetchMock = createFetchMock(vi)
 
 export const resetMocksAndConfigAfterTests = (...configKeys) => {
-  const originals = ['stubMode', ...configKeys].map((key) => [
-    key,
-    config.get(key)
-  ])
+  restoreConfigAfterEach(['stubMode', ...configKeys])
   afterEach(() => {
     fetchMock.resetMocks()
     vi.unstubAllGlobals()
-    originals.forEach(([key, value]) => config.set(key, value))
   })
-}
-
-/** Restores the INS frontend base URL after each test and returns the setter
- * a test uses to point it somewhere. */
-export const useInsFrontendBaseUrl = () => {
-  resetMocksAndConfigAfterTests('tradeImportsInsFrontend.baseUrl')
-  return (url) => config.set('tradeImportsInsFrontend.baseUrl', url)
 }
 
 export const useReferenceDataServing = () => {

@@ -16,7 +16,11 @@ import {
   listKnownJourneys,
   startJourney
 } from '../../../../../../engine/journey.js'
-import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
+import {
+  routeOptions,
+  sharedCopy,
+  surfaceClass
+} from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
 import {
   beginOpeningRun,
@@ -28,8 +32,6 @@ import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import {
   buildHomeListQueryString,
   buildPageResultsRangeLabel,
@@ -43,7 +45,6 @@ import { sortOptions } from './view-model/sort-options.js'
 const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
-const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') {

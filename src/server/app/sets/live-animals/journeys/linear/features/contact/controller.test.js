@@ -7,12 +7,13 @@ import {
   driveHandler,
   openedFromChangeLink,
   refusingSaves,
+  resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
   postHandlerOf,
-  useInsFrontendBaseUrl,
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
+import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
 import {
   itSendsBackToOverview,
@@ -204,6 +205,7 @@ describe('POST contact — invalid payload', () => {
 
 describe('GET contact — INS add-address link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
   const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
   it('Should offer an INS add-address link when not in stub mode', async () => {
