@@ -77,16 +77,23 @@ The `address-book` client keeps three facts out of its code:
 
 [`transporters`](../services/transporters/index.js) holds the transporters the
 service ships and the ones an organisation adds for itself. The address book
-has no field for a transporter's approval number, so neither list lives there.
+is the store for an organisation's own transporters: `partiesFor` reads them
+from it through a client and stub in the shape `services/address-book/` sets,
+ahead of the shipped list; `saveTransporter` writes a journey form's save to
+it. The address book carries a transporter's approval number; the journey's
+own record never persists it outside that write.
 
-- The shipped list is a local fixture, read synchronously.
-- An organisation's added transporters are held in process memory, keyed on
-  the organisation and never on the user or session. They do not survive a
-  restart and are not shared between instances until a transporter register
-  service exists; the pages only call `partiesFor` and `rememberTransporter`,
-  so that service can replace the module without changing them.
+- The shipped list is the only local fixture left, read synchronously.
+- A transporter the organisation added carries no approval status: the
+  address book stores none, so the journey list's Status tag reads the
+  not-yet-approved word for every added transporter.
 - The two commercial fixtures carry status `APPROVED` as a placeholder: no
-  register has said what status they hold.
+  ruling has said what status they hold.
+- A commercial transporter's country is fixed to Northern Ireland; its stored
+  code and its display word live together in
+  [`services/transporters/commercial-country.js`](../services/transporters/commercial-country.js),
+  read by the commercial form's refusal, its record and the mapping that
+  sends a transporter to the address book.
 
 ## Persistence adapters
 

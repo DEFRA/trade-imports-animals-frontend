@@ -191,8 +191,8 @@ describe('/transporters/add/private keeps the transporter for the organisation',
       payload: UNSHIPPED_HAULIER
     })
 
-    expect(added()).toHaveLength(1)
-    const [kept] = added()
+    const [kept, ...rest] = await added()
+    expect(rest).toHaveLength(0)
     expect(kept.name).toBe(UNSHIPPED_HAULIER.nameOrOrganisationName)
     expect(kept.type).toBe(PRIVATE)
     expect(kept.status).toBe(NEW)
@@ -206,7 +206,7 @@ describe('/transporters/add/private keeps the transporter for the organisation',
       payload: {}
     })
 
-    expect(added()).toHaveLength(0)
+    expect(await added()).toHaveLength(0)
   })
 
   it('Should keep nothing when the notification refuses the save', async () => {
@@ -218,7 +218,7 @@ describe('/transporters/add/private keeps the transporter for the organisation',
       ]
     })
 
-    expect(added()).toHaveLength(0)
+    expect(await added()).toHaveLength(0)
   })
 })
 

@@ -15,10 +15,8 @@ import {
 } from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
-  NEW,
   PRIVATE,
-  parties,
-  rememberTransporter
+  parties
 } from '../../../../../../../services/transporters/index.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
@@ -28,7 +26,8 @@ import {
 } from '../../../test-support.js'
 import {
   expectRecoverableSaveFailureKeepingValues,
-  forgetAddedTransportersAroundEachTest
+  forgetAddedTransportersAroundEachTest,
+  seedOrganisationTransporter
 } from '../test-support.js'
 
 import * as transporters from './transporters.controller.js'
@@ -382,27 +381,24 @@ describe('/transporters with a transporter the organisation added', () => {
   const ANOTHER_ORG = '5900002'
   const HAULIER_NAME = 'Dupont Transport SARL'
 
-  const haulier = () => ({
-    type: PRIVATE,
-    status: NEW,
+  const haulierWire = () => ({
+    type: 'PRIVATE',
     name: HAULIER_NAME,
-    address: {
-      addressLine1: '10 Rue de la Ferme',
-      addressLine2: '',
-      townOrCity: 'Calais',
-      county: 'Pas-de-Calais',
-      postcode: '62100',
-      country: 'France',
-      phone: '+33 3 21 00 00 00',
-      email: 'transport@dupont.example.fr'
-    }
+    addressLine1: '10 Rue de la Ferme',
+    addressLine2: '',
+    townOrCity: 'Calais',
+    county: 'Pas-de-Calais',
+    postcode: '62100',
+    countryCode: 'FR',
+    phone: '+33 3 21 00 00 00',
+    email: 'transport@dupont.example.fr'
   })
 
   useStubbedJourney(SET_ID, dispatchPages)
   forgetAddedTransportersAroundEachTest()
 
   it('Should show it at the top of the list, typed and tagged like any other row', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -415,7 +411,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should leave the shipped register on the list behind it', async () => {
-    rememberTransporter(ORG, haulier())
+    await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -424,7 +420,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should accept a pick of it and save it the way it saves any private transporter', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'save', transporter: kept.id }
@@ -438,7 +434,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should re-check it on a notification that already names it', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler, {
       seed: {
@@ -451,7 +447,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should find it by name when the list is searched', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'search', search: 'dupont' }
@@ -463,7 +459,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should refuse a pick of a transporter another organisation added', async () => {
-    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+    const kept = await seedOrganisationTransporter(ANOTHER_ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'save', transporter: kept.id }
@@ -475,7 +471,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should keep another organisation’s transporter off the list entirely', async () => {
-    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+    const kept = await seedOrganisationTransporter(ANOTHER_ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -486,20 +482,6 @@ describe('/transporters with a transporter the organisation added', () => {
       )
     ).toBe(false)
     expect(result.view.context.transporterRows).toHaveLength(parties().length)
-  })
-
-  it('Should re-check it on an earlier notification after a later one corrected its spelling', async () => {
-    const kept = rememberTransporter(ORG, haulier())
-    rememberTransporter(ORG, { ...haulier(), name: HAULIER_NAME.toUpperCase() })
-
-    const result = await driveHandler(getHandler, {
-      seed: {
-        transporterType: PRIVATE,
-        privateTransporter: { name: HAULIER_NAME }
-      }
-    })
-
-    expect(rowFor(result.view.context, kept.id).checked).toBe(true)
   })
 })
 

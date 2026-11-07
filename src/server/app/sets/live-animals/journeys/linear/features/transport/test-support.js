@@ -2,10 +2,13 @@ import { afterEach, beforeEach, expect } from 'vitest'
 
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import {
-  forgetAddedTransporters,
   parties,
   partiesFor
 } from '../../../../../../services/transporters/index.js'
+import {
+  createTransporter,
+  forgetStubTransporters
+} from '../../../../../../services/transporters/stub/index.js'
 import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
 
 export const transitAppliesSeed = Object.freeze({
@@ -20,14 +23,26 @@ export const transitAppliesSeedWithout = (answerName, overrides = {}) => {
   return answers
 }
 
-export const addedTransportersOf = (organisationId) =>
-  partiesFor(organisationId).filter(
+export const addedTransportersOf = async (organisationId) => {
+  const available = await partiesFor(organisationId)
+  return available.filter(
     (record) => !parties().some((shipped) => shipped.id === record.id)
   )
+}
+
+/** Seeds a transporter in the organisation's address book, in the wire shape
+ * the address book's own API returns — the repo's unit suite runs in stub
+ * mode (`vitest.config.js` sets `STUB_MODE`), so this is the store
+ * `partiesFor` and `saveTransporter` read and write there.
+ *
+ * @returns {Promise<object>} the stored transporter, with its assigned id
+ */
+export const seedOrganisationTransporter = (organisationId, wireTransporter) =>
+  createTransporter(organisationId, wireTransporter)
 
 export const forgetAddedTransportersAroundEachTest = () => {
-  beforeEach(forgetAddedTransporters)
-  afterEach(forgetAddedTransporters)
+  beforeEach(forgetStubTransporters)
+  afterEach(forgetStubTransporters)
 }
 
 export const expectRecoverableSaveFailureKeepingValues = (

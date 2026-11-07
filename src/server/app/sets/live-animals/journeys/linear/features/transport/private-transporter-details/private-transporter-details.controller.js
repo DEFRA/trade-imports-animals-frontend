@@ -10,11 +10,7 @@ import {
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
-import {
-  NEW,
-  PRIVATE,
-  rememberTransporter
-} from '../../../../../../../services/transporters/index.js'
+import { saveTransporter } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import {
   privateTransporterDetailsPage as page,
@@ -194,11 +190,11 @@ const privateTransporterRecord = async (values) => ({
 })
 
 const remember = async (request, values) =>
-  rememberTransporter(organisationIdOf(request), {
-    ...(await privateTransporter(values)),
-    type: PRIVATE,
-    status: NEW
-  })
+  saveTransporter(
+    organisationIdOf(request),
+    await privateTransporter(values),
+    'PRIVATE'
+  )
 
 const post = saveTransporterDetails({
   trimmedValues,

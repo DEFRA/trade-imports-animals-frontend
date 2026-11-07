@@ -235,8 +235,15 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
     page
   }) => {
+    // Its own name, distinct from the other tests' saved transporters in this
+    // file: the address book keeps every save as its own row, so sharing a
+    // name here would make this test's own radio ambiguous.
+    const addedTransporter = {
+      ...validTransporter,
+      nameOrOrganisationName: 'Quay Road Haulage Ltd'
+    }
     await openCommercialForm(page)
-    await fillTransporter(page)
+    await fillTransporter(page, addedTransporter)
     await saveAndContinue(page).click()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -244,7 +251,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     // notification already names and the one that comes back checked.
     await expect(
       page.getByRole('radio', {
-        name: validTransporter.nameOrOrganisationName
+        name: addedTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
     await saveAndContinue(page).click()
@@ -252,7 +259,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
     await expect(page.locator(approvalNumberInput)).toHaveValue(
-      validTransporter.approvalNumber
+      addedTransporter.approvalNumber
     )
   })
 

@@ -323,7 +323,7 @@ test.describe('transporter list page', () => {
     ).toHaveClass(/govuk-visually-hidden/)
   })
 
-  test('lists every transporter the service knows about in headed columns, each row showing its address, approval number and type', async ({
+  test('lists the transporters the service ships in headed columns, each row showing its address, approval number and type', async ({
     page
   }) => {
     await openTransporterList(page)

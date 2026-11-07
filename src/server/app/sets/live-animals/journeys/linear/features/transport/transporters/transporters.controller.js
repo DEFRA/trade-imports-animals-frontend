@@ -31,7 +31,7 @@ const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 
-const availableTransporters = (request) =>
+const availableTransporters = async (request) =>
   transporters.partiesFor(organisationIdOf(request))
 
 const isSearchAction = (payload) => payload.action === 'search'
@@ -45,7 +45,7 @@ const render = async (
 ) => {
   const { journey } = current
   const query = String(values.query ?? '')
-  const available = availableTransporters(request)
+  const available = await availableTransporters(request)
   const rows = transporterRows(
     matchingTransporters(available, String(values.narrowBy ?? '')),
     { selectedId: values.selectedId }
@@ -77,14 +77,15 @@ const render = async (
   })
 }
 
-const selectedIdFor = (request, answers) => {
+const selectedIdFor = async (request, answers) => {
   const chosenName =
     answers.commercialTransporter?.name ?? answers.privateTransporter?.name
   if (!chosenName) {
     return undefined
   }
   const chosenKey = transporters.nameKey(chosenName)
-  return availableTransporters(request).find(
+  const available = await availableTransporters(request)
+  return available.find(
     (option) => transporters.nameKey(option.name) === chosenKey
   )?.id
 }
@@ -100,7 +101,7 @@ const get = async (request, h) => {
     request,
     h,
     current,
-    { selectedId: selectedIdFor(request, answers) },
+    { selectedId: await selectedIdFor(request, answers) },
     { errors }
   )
 }
@@ -122,11 +123,11 @@ const post = async (request, h) => {
       selectedId:
         payload.transporter ||
         payload.selected ||
-        selectedIdFor(request, current.answers)
+        (await selectedIdFor(request, current.answers))
     })
   }
 
-  const records = availableTransporters(request)
+  const records = await availableTransporters(request)
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)

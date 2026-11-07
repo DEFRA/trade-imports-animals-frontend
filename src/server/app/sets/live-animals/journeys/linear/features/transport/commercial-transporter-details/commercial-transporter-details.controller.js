@@ -14,9 +14,8 @@ import {
   transporterAddPage
 } from '../page.js'
 import {
-  COMMERCIAL,
-  NEW,
-  rememberTransporter
+  COMMERCIAL_TRANSPORTER_COUNTRY_NAME,
+  saveTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
@@ -31,7 +30,7 @@ const copy = bundle.commercialTransporterDetails
 
 const guidance = bundle.transporters.guidance
 
-const NORTHERN_IRELAND = 'Northern Ireland'
+const NORTHERN_IRELAND = COMMERCIAL_TRANSPORTER_COUNTRY_NAME
 
 const MANDATORY_MESSAGES = {
   approvalNumber: copy.errors.approvalNumberRequired,
@@ -178,11 +177,11 @@ const commercialTransporterRecord = (values) => ({
 })
 
 const remember = (request, values) =>
-  rememberTransporter(organisationIdOf(request), {
-    ...commercialTransporterParty(values),
-    type: COMMERCIAL,
-    status: NEW
-  })
+  saveTransporter(
+    organisationIdOf(request),
+    commercialTransporterParty(values),
+    'COMMERCIAL'
+  )
 
 const post = saveTransporterDetails({
   trimmedValues,
