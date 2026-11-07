@@ -7,7 +7,10 @@ import { configureRecords } from '../../../../../../engine/persistence/records.j
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../engine/test-support.js'
+import {
+  completeNotification,
+  driveHandler
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -60,5 +63,55 @@ describe('#handler — stored-answer validity demotes the hub tag', () => {
     const row = rowByTitle(result.view.context.groups, ARRIVAL_DETAILS_TITLE)
 
     expect(row.status.tag.text).toBe(COMPLETE)
+  })
+})
+
+describe('#handler — Overview lists the journey in its page order', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should list the six group captions, and under them the task titles, in the order Save and continue visits them', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: completeNotification()
+    })
+
+    expect(
+      result.view.context.groups.map((group) => [
+        group.caption,
+        group.items.map((item) => item.title.text)
+      ])
+    ).toEqual([
+      [
+        copy.groups['about-the-consignment'],
+        [
+          copy.rows.origin.title,
+          copy.rows.commodities.title,
+          copy.rows.importReason.title
+        ]
+      ],
+      [
+        copy.groups['description-of-the-goods'],
+        [
+          copy.rows.consignmentDetails.title,
+          copy.rows.animalIdentification.title,
+          copy.rows.additionalDetails.title
+        ]
+      ],
+      [
+        copy.groups['transport-and-arrival'],
+        [
+          copy.rows.arrivalDetails.title,
+          copy.rows.transitCountries.title,
+          copy.rows.transporter.title
+        ]
+      ],
+      [copy.groups.documents, [copy.rows.documents.title]],
+      [copy.groups['consignment-parties'], [copy.rows.addresses.title]],
+      [copy.groups['contact-address'], [copy.rows.contact.title]]
+    ])
   })
 })

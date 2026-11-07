@@ -23,8 +23,8 @@ import {
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import {
-  itSendsBackToOverview,
-  itSendsBackToOverviewOnRefusal
+  itSendsBackToWhereTheTraderCameFrom,
+  itSendsBackToWhereTheTraderCameFromOnRefusal
 } from '../../../test-support.js'
 import {
   expectRecoverableSaveFailureKeepingValues,
@@ -504,7 +504,12 @@ describe('/transporters with a transporter the organisation added', () => {
 describe('/transporters — Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  itSendsBackToOverview(getHandler)
+  itSendsBackToWhereTheTraderCameFrom(getHandler, {
+    previousPage: 'port-of-entry'
+  })
 
-  itSendsBackToOverviewOnRefusal(postHandler, { transporter: NOT_ON_THE_LIST })
+  itSendsBackToWhereTheTraderCameFromOnRefusal(postHandler, {
+    savedPage: 'port-of-entry',
+    payload: { transporter: NOT_ON_THE_LIST }
+  })
 })

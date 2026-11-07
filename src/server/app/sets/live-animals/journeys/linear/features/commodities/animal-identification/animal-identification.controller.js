@@ -47,16 +47,17 @@ const cardLines = (answers, evaluation) =>
     capAllowsEntry(identifierCapOf(answers, index))
   )
 
-const render = async (
+const render = (
   request,
   h,
   current,
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
   const { journey, answers, evaluation } = current
-  const changeCountHref = kit.withChangeContext(
+  const changeCountHref = kit.pushTrail(
     request,
-    pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+    pagePath(request.params.journeyId, consignmentDetailsPage.slug),
+    page.slug
   )
   const selectedCommodities = buildSelectedCommodities(
     linesOf(answers, evaluation)
@@ -64,8 +65,7 @@ const render = async (
   const addHref = commodityQuestionHref(request, page)
   return h.view(view, {
     ...kit.base(copy.title, {
-      request,
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey,
       page,
       surface: 'display'
@@ -92,8 +92,8 @@ const render = async (
   })
 }
 
-const renderRefused = async (request, h, current, options) =>
-  (await render(request, h, current, options)).code(HTTP_STATUS_BAD_REQUEST)
+const renderRefused = (request, h, current, options) =>
+  render(request, h, current, options).code(HTTP_STATUS_BAD_REQUEST)
 
 const logCapRefusalsAndRender = (request, h, current, options) => {
   for (const { index, cap } of options.cardErrors) {
@@ -118,7 +118,7 @@ const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
     },
     'Animal identification skipped: nothing on the consignment carries an identifier'
   )
-  return kit.nextTarget(request, page, scope)
+  return kit.nextTargetKeepingTrail(request, page, scope)
 }
 
 const get = async (request, h) => {
@@ -179,14 +179,11 @@ const post = async (request, h) => {
 
   if (staysOnIdentification(action, forms, answers)) {
     return h.redirect(
-      kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, page.slug)
-      )
+      kit.carryTrail(request, pagePath(request.params.journeyId, page.slug))
     )
   }
   const { scope: savedScope } = await state.get(request, h)
-  return h.redirect(await kit.nextTarget(request, page, savedScope))
+  return h.redirect(kit.nextTarget(request, page, savedScope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

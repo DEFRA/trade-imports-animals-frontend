@@ -31,7 +31,7 @@ const returnHref = (request, party) => {
     kit.CYA_SLUG,
     CONTACT_PARTY.slug
   ])
-  return kit.withChangeContext(
+  return kit.carryTrail(
     request,
     pagePath(request.params.journeyId, honouredSlug ?? party.returnSlug)
   )
@@ -70,7 +70,7 @@ const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   if (!answers[party.id]) {
     return h.redirect(
-      kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
+      kit.carryTrail(request, pagePath(journey.journeyId, party.slug))
     )
   }
   return render(request, h, journey, party, {
@@ -87,7 +87,7 @@ const post = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   if (!answers[party.id]) {
     return h.redirect(
-      kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
+      kit.carryTrail(request, pagePath(journey.journeyId, party.slug))
     )
   }
 

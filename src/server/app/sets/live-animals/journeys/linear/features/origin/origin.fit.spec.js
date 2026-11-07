@@ -6,8 +6,10 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectPageEndsWithPrimaryAlone,
+  fillOriginDetails,
   journeyIdFromPage,
   openNotificationView,
+  saveAndContinue,
   startNotificationAtOrigin,
   urlUnderBase,
   visitOverviewThenOpen
@@ -59,7 +61,7 @@ const regionCodeOnReview = (page) =>
 const removeRegionCodeCap = (page) =>
   regionCodeField(page).evaluate((input) => input.removeAttribute('maxlength'))
 
-const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
+const hubUrlOf = (originUrl) => originUrl.replace(/\/origin(?:\?.*)?$/, '')
 
 const regionCodePrefix = (page) => page.locator(REGION_CODE_PREFIX)
 
@@ -238,16 +240,15 @@ test.describe('origin feature', () => {
     })
   })
 
-  test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({
+  test('Overview requested for a notification with nothing saved shows the origin page', async ({
     page
   }) => {
-    const hubUrl = hubUrlOf(page.url())
+    const originUrl = page.url().split('?')[0]
 
-    await visitOverviewThenOpen(page, 'origin')
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await page.goto(hubUrlOf(page.url()))
 
-    await expect(page).toHaveURL(hubUrl)
-    await expectOverview(page)
+    await expect(page).toHaveURL(originUrl)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
   test('back link returns to the overview when the page was opened from the overview after an answer is saved', async ({
@@ -265,7 +266,7 @@ test.describe('origin feature', () => {
     await expectOverview(page)
   })
 
-  test('back link returns to the dashboard when origin is reached by going back along the opening run', async ({
+  test('back link opens the dashboard after Save and continue on origin and Back from What are you importing? on a notification started from the dashboard', async ({
     page
   }) => {
     await chooseCountryOfOrigin(page, france.name)
@@ -628,7 +629,8 @@ test.describe('country of origin without JavaScript', () => {
   test('a refused page shows the region code error with no prefix', async ({
     page
   }) => {
-    await answerOriginDetails(page, { regionCode: '' })
+    await fillOriginDetails(page, { regionCode: '' })
+    await saveAndContinue(page).click()
 
     await expect(
       page

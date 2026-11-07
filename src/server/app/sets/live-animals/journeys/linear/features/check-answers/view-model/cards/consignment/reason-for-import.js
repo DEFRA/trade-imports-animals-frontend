@@ -44,6 +44,7 @@ const exitRows = async (answers, scope) => [
 
 export const reasonForImportCard = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -54,6 +55,7 @@ export const reasonForImportCard = async ({
     readOnly,
     actions: cardAction(
       journeyId,
+      changeLinkTrail,
       importReasonPage.slug,
       copy.hidden.cards.reasonForImport
     )

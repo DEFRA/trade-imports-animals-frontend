@@ -49,7 +49,6 @@ const OMITTABLE_SEAMS = REQUIRED_SEAMS.filter(
 const cookieNamesFor = (setId) => ({
   knownJourneys: `${setId}-known`,
   openingRun: `${setId}-run`,
-  openingRunEntry: `${setId}-run-entry`,
   flowOnlyAnswers: `${setId}-flow`,
   addressHandshakeTokens: `${setId}-tokens`,
   addedAddressBanner: `${setId}-banner`,
@@ -60,8 +59,7 @@ const journeyFlowFor = () => ({
   sections: [{ id: 'details', pages: [{ id: 'details', slug: 'details' }] }],
   taskRows: [],
   rowStatus: () => 'notStarted',
-  nextRunTarget: () => null,
-  previousRunTarget: () => null,
+  insTypeQuestionUrl: () => null,
   flowOnlyKeys: [],
   entryGuardTarget: async () => null,
   layout: 'shared/layout.njk'

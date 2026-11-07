@@ -32,7 +32,9 @@ const fillCph = async (page, { county, parish, holding }) => {
 
 const saveAndExpectAddresses = async (page) => {
   await page.locator(SUBMIT_BUTTON).first().click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
+  await expect(page).toHaveURL(
+    /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
+  )
 }
 
 const expectSavedNumberSplit = async (page, cphUrl) => {
@@ -60,7 +62,7 @@ const enterInCountyAndExpectSavedSplit = async (page, number, enterText) => {
 const startAtCphNumber = async (page) => {
   await startNotificationAtOrigin(page)
 
-  const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
+  const commodityUrl = page.url().replace(/\/origin(?:\?.*)?$/, '/commodities')
   await answerOriginEntry(page)
 
   await page.goto(commodityUrl)
@@ -181,7 +183,9 @@ test.describe('cph-number feature', () => {
   }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
+    await expect(page).toHaveURL(
+      /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
+    )
   })
 
   test('joins the parts, saves the nine digits, returns to the consignment addresses page and comes back split', async ({

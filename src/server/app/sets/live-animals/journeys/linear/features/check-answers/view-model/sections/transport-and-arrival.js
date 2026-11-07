@@ -10,6 +10,7 @@ const copy = copyFor({ en, cy })
 
 export const transportAndArrivalSection = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -19,21 +20,41 @@ export const transportAndArrivalSection = async ({
   groups: [
     {
       heading: copy.groups.arrivalDetails,
-      cards: [await arrivalDetailsCard({ journeyId, answers, readOnly })]
+      cards: [
+        await arrivalDetailsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          readOnly
+        })
+      ]
     },
     ...(transitedCountriesApplies(answers, scope)
       ? [
           {
             heading: copy.groups.transitCountries,
             cards: [
-              await transitCountriesCard({ journeyId, answers, readOnly })
+              await transitCountriesCard({
+                journeyId,
+                changeLinkTrail,
+                answers,
+                readOnly
+              })
             ]
           }
         ]
       : []),
     {
       heading: copy.groups.transportDetails,
-      cards: [transportDetailsCard({ journeyId, answers, scope, readOnly })]
+      cards: [
+        transportDetailsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          scope,
+          readOnly
+        })
+      ]
     }
   ]
 })

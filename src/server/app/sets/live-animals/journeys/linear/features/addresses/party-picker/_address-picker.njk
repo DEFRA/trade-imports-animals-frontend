@@ -54,7 +54,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, amend = none) %}
+{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -83,8 +83,7 @@
       hubHref: hubHref,
       primary: { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
       copy: saveActionsCopy,
-      showReturnControls: false,
-      amend: amend
+      showReturnControls: false
     }) }}
   </form>
 {% endmacro %}

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  openingRunAt,
+  trailQuery,
+  expectBackLinkIsPath,
   refusingSaves,
-  expectBackLinkIsPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -17,12 +17,9 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../../test-support.js'
-import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { TRAIL_START, withTrail } from '../../../../../../../shared/kit.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
   transitAppliesSeed,
@@ -54,6 +51,9 @@ const SAVE_ANSWERS = 'save answers'
 const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
 const SELECT_TEXT = 'Select a country'
 const CANARY_ISLANDS = 'Canary Islands (Spain)'
+
+const transportersAfterSaving = (journeyId) =>
+  withTrail(pagePath(journeyId, 'transporters'), ['transit-countries'])
 
 describe('POST transit-countries — adding a country', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -370,8 +370,9 @@ describe('POST transit-countries — continuing', () => {
   it('Should commit an empty list and continue when no country was added, the question being optional', async () => {
     const result = await driveHandler(post, { seed, payload: {} })
     expect(result.after.transitedCountries).toEqual([])
-    expect(result.response.redirect).toBeDefined()
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 
   it('Should deduplicate and commit the added country codes', async () => {
@@ -380,7 +381,9 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: ['FR', 'BE', 'FR'] }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 
   it('Should commit a territory code when continuing', async () => {
@@ -389,7 +392,9 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: ['ES-CN'] }
     })
     expect(result.after.transitedCountries).toEqual(['ES-CN'])
-    expect(result.response.redirect).toBe(hubPath(result.journeyId))
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 
   it('Should re-render at 500 with the recoverable-error flag when the backend is unavailable on save', async () => {
@@ -513,7 +518,9 @@ describe('POST transit-countries — Continue silently drops stored stale codes 
     })
     expect(result.before.transitedCountries).toEqual(['FR', 'BE', 'ZZ'])
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
-    expect(result.response.redirect).toBe(hubPath(result.journeyId))
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 })
 
@@ -568,38 +575,33 @@ describe('transit-countries — the Back link', () => {
   const ARRIVAL_DETAILS_SLUG = 'port-of-entry'
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should go Back to the arrival details while the opening run is on', async () => {
-    const result = await driveHandler(get, {
-      seed,
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
-  })
-
-  it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
+  it('Should keep Back on the arrival details when the page is shown again after adding a country', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'FR' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, ARRIVAL_DETAILS_SLUG) }
+      ]
     })
-    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, ARRIVAL_DETAILS_SLUG), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  itSendsBackToOverview(get, {
+  itSendsBackToWhereTheTraderCameFrom(get, {
     seed,
-    cases: ['when opened from the Overview']
+    previousPage: ARRIVAL_DETAILS_SLUG
   })
-
-  itSendsBackCarryingChangeTo(get, [
-    ['the arrival details', seed, ARRIVAL_DETAILS_SLUG]
-  ])
 })
 
-describe('transit-countries — when the page gate does not pass', () => {
+describe('transit-countries — when the page is out of scope for the means of transport', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const GATE_REDIRECT_MESSAGE =
-    'Redirected to the overview: the transit countries page gate did not pass'
+  const OUT_OF_SCOPE_REDIRECT_MESSAGE =
+    'Redirected to the overview: transit countries is out of scope for the means of transport'
 
   const outOfScopeSeeds = [
     {
@@ -618,33 +620,6 @@ describe('transit-countries — when the page gate does not pass', () => {
       logged: 'none'
     }
   ]
-  const missingEarlierAnswerSeeds = [
-    {
-      name: 'rail and no country of origin',
-      seed: transitAppliesSeedWithout('countryOfOrigin', {
-        meansOfTransport: 'RAILWAY'
-      }),
-      logged: 'RAILWAY'
-    },
-    {
-      name: 'road and no country of origin',
-      seed: transitAppliesSeedWithout('countryOfOrigin'),
-      logged: 'ROAD_VEHICLE'
-    },
-    {
-      name: 'rail and no commodity',
-      seed: transitAppliesSeedWithout('commodityLines', {
-        meansOfTransport: 'RAILWAY'
-      }),
-      logged: 'RAILWAY'
-    },
-    {
-      name: 'road and no commodity',
-      seed: transitAppliesSeedWithout('commodityLines'),
-      logged: 'ROAD_VEHICLE'
-    }
-  ]
-  const gateFailingSeeds = [...outOfScopeSeeds, ...missingEarlierAnswerSeeds]
   const airSeed = outOfScopeSeeds[0].seed
   const submitButtons = [
     {
@@ -665,7 +640,7 @@ describe('transit-countries — when the page gate does not pass', () => {
     }
   ]
 
-  it.each(gateFailingSeeds)(
+  it.each(outOfScopeSeeds)(
     'Should go to the overview, rendering nothing and saving nothing, when the page is opened with $name',
     async ({ seed: gateFailingSeed }) => {
       const result = await driveHandler(get, { seed: gateFailingSeed })
@@ -676,7 +651,7 @@ describe('transit-countries — when the page gate does not pass', () => {
   )
 
   it.each(
-    missingEarlierAnswerSeeds.flatMap((gateFailing) =>
+    outOfScopeSeeds.flatMap((gateFailing) =>
       submitButtons.map((submit) => ({ ...gateFailing, ...submit }))
     )
   )(
@@ -692,14 +667,34 @@ describe('transit-countries — when the page gate does not pass', () => {
     }
   )
 
-  it('Should render the transit countries page, not go to the overview, when the saved means is rail', async () => {
-    const result = await driveHandler(get, {
-      seed: { ...seed, meansOfTransport: 'RAILWAY' }
-    })
+  it.each([
+    ['rail', 'RAILWAY'],
+    ['road', 'ROAD_VEHICLE']
+  ])(
+    'Should show the transit countries page when the means is %s and no commodity or country of origin is saved',
+    async (_name, meansOfTransport) => {
+      const result = await driveHandler(get, { seed: { meansOfTransport } })
 
-    expect(result.response).not.toEqual({ redirect: hubPath(result.journeyId) })
-    expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
-  })
+      expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
+    }
+  )
+
+  it.each([
+    ['rail', 'RAILWAY'],
+    ['road', 'ROAD_VEHICLE']
+  ])(
+    'Should go on to the transporter list when Save and continue is submitted with the means %s and nothing else saved',
+    async (_name, meansOfTransport) => {
+      const result = await driveHandler(post, {
+        seed: { meansOfTransport },
+        payload: { transitedCountries: ['FR'] }
+      })
+
+      expect(result.response).toEqual({
+        redirect: transportersAfterSaving(result.journeyId)
+      })
+    }
+  )
 
   it.each(submitButtons)(
     'Should go to the overview without attempting a save when $button is submitted with Air and saves are refused',
@@ -714,7 +709,7 @@ describe('transit-countries — when the page gate does not pass', () => {
     }
   )
 
-  it.each(gateFailingSeeds)(
+  it.each(outOfScopeSeeds)(
     'Should log the redirect once at info with the journey id, the reason and the saved means when the page is opened with $name',
     async ({ seed: gateFailingSeed, logged }) => {
       const result = await driveHandler(get, { seed: gateFailingSeed })
@@ -723,10 +718,10 @@ describe('transit-countries — when the page gate does not pass', () => {
         level: 'info',
         fields: {
           journeyId: result.journeyId,
-          reason: 'page-gate-not-passed',
+          reason: 'out-of-scope-for-means-of-transport',
           meansOfTransport: logged
         },
-        message: GATE_REDIRECT_MESSAGE
+        message: OUT_OF_SCOPE_REDIRECT_MESSAGE
       })
     }
   )
@@ -741,10 +736,10 @@ describe('transit-countries — when the page gate does not pass', () => {
       level: 'info',
       fields: {
         journeyId: result.journeyId,
-        reason: 'page-gate-not-passed',
+        reason: 'out-of-scope-for-means-of-transport',
         meansOfTransport: 'AIRPLANE'
       },
-      message: GATE_REDIRECT_MESSAGE
+      message: OUT_OF_SCOPE_REDIRECT_MESSAGE
     })
   })
 })

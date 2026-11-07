@@ -7,6 +7,7 @@ const copy = copyFor({ en, cy })
 
 export const documentsSection = ({
   journeyId,
+  changeLinkTrail,
   answers,
   evaluation,
   readOnly
@@ -16,7 +17,15 @@ export const documentsSection = ({
   groups: [
     {
       heading: copy.groups.uploadDocuments,
-      cards: [documentsCard({ journeyId, answers, evaluation, readOnly })]
+      cards: [
+        documentsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          evaluation,
+          readOnly
+        })
+      ]
     }
   ]
 })

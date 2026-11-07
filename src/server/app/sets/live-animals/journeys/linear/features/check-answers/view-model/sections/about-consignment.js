@@ -8,6 +8,7 @@ const copy = copyFor({ en, cy })
 
 export const aboutConsignmentSection = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -17,12 +18,26 @@ export const aboutConsignmentSection = async ({
   groups: [
     {
       heading: copy.groups.whereFrom,
-      cards: [await importDetailsCard({ journeyId, answers, scope, readOnly })]
+      cards: [
+        await importDetailsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          scope,
+          readOnly
+        })
+      ]
     },
     {
       heading: copy.groups.mainImportReason,
       cards: [
-        await reasonForImportCard({ journeyId, answers, scope, readOnly })
+        await reasonForImportCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          scope,
+          readOnly
+        })
       ]
     }
   ]

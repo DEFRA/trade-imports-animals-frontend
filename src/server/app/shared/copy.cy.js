@@ -59,7 +59,6 @@ export const copy = {
     }
   },
   saveActions: {
-    saveAndReturn: 'Cadw a dychwelyd',
     saveAndContinue: 'Cadw a pharhau',
     saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
     cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"

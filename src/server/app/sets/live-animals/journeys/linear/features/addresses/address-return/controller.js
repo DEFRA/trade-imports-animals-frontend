@@ -22,7 +22,7 @@ import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 
 const BACK_WITHOUT_LANDING = 'back'
 
-const partyPageHref = (request, journeyId, party, query = {}) => {
+const partyPageHref = (journeyId, party, query = {}) => {
   const path = pagePath(journeyId, party.slug)
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query)) {
@@ -31,7 +31,7 @@ const partyPageHref = (request, journeyId, party, query = {}) => {
     }
   }
   const search = params.toString()
-  return kit.withChangeContext(request, search ? `${path}?${search}` : path)
+  return search ? `${path}?${search}` : path
 }
 
 const logAndRefuse = (
@@ -114,7 +114,7 @@ const commitCopyOfAddress = (request, h, { journeyId, party, chosen }) =>
     },
     async () =>
       h.redirect(
-        partyPageHref(request, journeyId, party, {
+        partyPageHref(journeyId, party, {
           handshakeError: 'unavailable'
         })
       )
@@ -135,9 +135,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
   }
   setAddedAddressBanner(h, chosen.name)
   logLanding(request, { journeyId, role: party.id, landing, addressId })
-  return h.redirect(
-    kit.withChangeContext(request, pagePath(journeyId, party.returnSlug))
-  )
+  return h.redirect(pagePath(journeyId, party.returnSlug))
 }
 
 const landOnPartyPageWithBanner = (
@@ -147,7 +145,7 @@ const landOnPartyPageWithBanner = (
 ) => {
   setAddedAddressBanner(h, chosen.name)
   logLanding(request, { journeyId, role: party.id, landing, addressId })
-  return h.redirect(partyPageHref(request, journeyId, party))
+  return h.redirect(partyPageHref(journeyId, party))
 }
 
 const get = async (request, h) => {
@@ -173,7 +171,7 @@ const get = async (request, h) => {
   const landing = validLandingOf(request, returnedForRole)
   if (landing === BACK_WITHOUT_LANDING) {
     logLanding(request, { journeyId, role: party.id, landing })
-    return h.redirect(partyPageHref(request, journeyId, party))
+    return h.redirect(partyPageHref(journeyId, party))
   }
 
   consumeHandshakeToken(
@@ -193,9 +191,7 @@ const get = async (request, h) => {
     party
   })
   if (handshakeError) {
-    return h.redirect(
-      partyPageHref(request, journeyId, party, { handshakeError })
-    )
+    return h.redirect(partyPageHref(journeyId, party, { handshakeError }))
   }
 
   const landed = { ...returned, party, landing, chosen }

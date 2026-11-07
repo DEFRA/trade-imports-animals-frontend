@@ -2,7 +2,6 @@ import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie,
-  openingRunEntryCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 import { isObject } from '../../../lib/object.js'
@@ -39,17 +38,6 @@ export const session = {
     h.request.yar.set(openingRunCookie(), {
       ...byJourney,
       [journeyId]: phase
-    })
-  },
-
-  async openingRunEntry(request, journeyId) {
-    return byJourneyFrom(request, openingRunEntryCookie())[journeyId]
-  },
-
-  async setOpeningRunEntry(h, journeyId, entry) {
-    h.request.yar.set(openingRunEntryCookie(), {
-      ...byJourneyFrom(h.request, openingRunEntryCookie()),
-      [journeyId]: entry
     })
   },
 

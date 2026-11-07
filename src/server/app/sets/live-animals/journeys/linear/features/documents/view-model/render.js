@@ -69,7 +69,7 @@ export const render = async ({
   sharedCopy,
   request,
   h,
-  pageState: { journey, documents, scope, answers },
+  pageState: { journey, documents },
   values,
   options: { errors = {}, summaryErrors = [], extra = {} } = {}
 }) => {
@@ -82,13 +82,7 @@ export const render = async ({
   return h
     .view(view, {
       ...kit.base(copy.title, {
-        request,
-        backLink: await kit.runBackLink(
-          request,
-          page.id,
-          { journey, scope, answers },
-          { returnsToReview: true }
-        ),
+        backLink: kit.trailBackLink(request),
         journey,
         page,
         surface: 'display'

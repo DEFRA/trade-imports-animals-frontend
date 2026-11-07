@@ -10,21 +10,49 @@ export const buildSections = async ({
   scope,
   evaluation,
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   readOnly = false,
   parties = answers,
   partyErrors = {}
 }) => {
   const [aboutConsignment, transportAndArrival] = await Promise.all([
-    aboutConsignmentSection({ journeyId, answers, scope, readOnly }),
-    transportAndArrivalSection({ journeyId, answers, scope, readOnly })
+    aboutConsignmentSection({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      scope,
+      readOnly
+    }),
+    transportAndArrivalSection({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      scope,
+      readOnly
+    })
   ])
   return [
     aboutConsignment,
-    descriptionOfGoodsSection({ journeyId, answers, evaluation, readOnly }),
+    descriptionOfGoodsSection({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      evaluation,
+      readOnly
+    }),
     transportAndArrival,
-    documentsSection({ journeyId, answers, evaluation, readOnly }),
+    documentsSection({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      evaluation,
+      readOnly
+    }),
     consignmentPartiesSection({
       journeyId,
+      changeLinkTrail,
+      reviewPageTrail,
       answers,
       readOnly,
       parties,
@@ -32,6 +60,8 @@ export const buildSections = async ({
     }),
     contactAddressSection({
       journeyId,
+      changeLinkTrail,
+      reviewPageTrail,
       answers,
       readOnly,
       parties,

@@ -7,12 +7,14 @@ import {
   MUSTELA_PUTORIUS_FURO_ROW,
   PHONE_VIEWPORT,
   saveAndContinue,
+  saveAndReturnToHub,
   STRUTHIO_ROW,
   numberOfAnimalsFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openCommodityDetails,
+  openOverview,
   signIn,
   withinFullWidthColumn,
   withinTwoThirdsColumn
@@ -53,7 +55,7 @@ const addLines = async (page, speciesWithCounts) => {
 
 const openIdentification = async (page, speciesWithCounts) => {
   await addLines(page, speciesWithCounts)
-  await saveAndContinue(page).click()
+  await saveAndReturnToHub(page).click()
   await page
     .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
     .click()
@@ -439,12 +441,14 @@ test.describe('animal identification', () => {
     page
   }) => {
     await addLines(page, [[STRUTHIO_ROW, '3']])
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, IDENTIFICATION_SLUG))
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Additional details', exact: true })
+    ).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
     ).toHaveCount(0)
@@ -509,6 +513,7 @@ test.describe('animal identification in-card save button', () => {
     await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
     await saveAndContinue(page).click()
 
+    await openOverview(page)
     await page
       .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
       .click()
@@ -839,7 +844,7 @@ test.describe('animal identification records', () => {
     const link = errorLink(page, copy.identification.errors.capReached(2))
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
   })
 
   test('blocks a count drop below saved records and reopens after removal', async ({
@@ -861,9 +866,9 @@ test.describe('animal identification records', () => {
     await expectCompleteCard(page, BOS_TAURUS_ROW, 2)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
 
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page
       .getByRole('link', {
@@ -880,7 +885,7 @@ test.describe('animal identification records', () => {
     )
     await expect(errorLink(page, countDrop)).toBeVisible()
     await errorLink(page, countDrop).click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
     await expect(
       commodityHeading(page, BOS_TAURUS_CODE_HEADING)
         .locator('xpath=following::*[@id="identification-card-0"]')

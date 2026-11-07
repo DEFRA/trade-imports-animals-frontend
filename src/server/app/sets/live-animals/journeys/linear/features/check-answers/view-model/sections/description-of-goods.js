@@ -8,11 +8,18 @@ const copy = copyFor({ en, cy })
 
 export const descriptionOfGoodsSection = ({
   journeyId,
+  changeLinkTrail,
   answers,
   evaluation,
   readOnly
 }) => {
-  const species = speciesCards({ journeyId, answers, evaluation, readOnly })
+  const species = speciesCards({
+    journeyId,
+    changeLinkTrail,
+    answers,
+    evaluation,
+    readOnly
+  })
   return {
     anchor: 'description-of-the-goods',
     heading: copy.sections.descriptionOfTheGoods,
@@ -22,7 +29,14 @@ export const descriptionOfGoodsSection = ({
         : []),
       {
         heading: copy.groups.additionalDetails,
-        cards: [additionalAnimalDetailsCard({ journeyId, answers, readOnly })]
+        cards: [
+          additionalAnimalDetailsCard({
+            journeyId,
+            changeLinkTrail,
+            answers,
+            readOnly
+          })
+        ]
       }
     ]
   }

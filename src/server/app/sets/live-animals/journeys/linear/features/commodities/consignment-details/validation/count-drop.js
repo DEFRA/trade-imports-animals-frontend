@@ -24,7 +24,7 @@ export const countDropIssueFor = (request, { index, entry }, values) => {
     {
       field: animalsField(index),
       text: copy.errors.countDrop(records, speciesLabel(entry), entered),
-      href: `${kit.withChangeContext(
+      href: `${kit.carryTrail(
         request,
         pagePath(request.params.journeyId, animalIdentificationPage.slug)
       )}#${identificationCardAnchor(index)}`

@@ -11,8 +11,7 @@ seam. `configureJourneyFlow()` receives:
 - `sections`
 - `taskRows`
 - `rowStatus`
-- `nextRunTarget`
-- `previousRunTarget`
+- `insTypeQuestionUrl`
 - `flowOnlyKeys`
 - `entryGuardTarget`
 - `layout`
@@ -48,20 +47,23 @@ configured section list through the journey-flow seam.
 
 ## Navigation and status
 
-[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports four.
-`sectionEntry()` finds the first gate-passing page in a section, or the hub when
-no page passes. `nextInSection()` returns the next gate-passing page in the
-section, or the hub when the section is finished. `nextInTaskRow()` is where a
-save outside the opening run goes: the next gate-passing page of the section
-when it belongs to the same task row, otherwise the hub; a page in no task row
-keeps the section order. `kit.nextTarget` uses it after the opening run and the
-explicit exits.
+[`src/server/app/flow/navigation.js`](../flow/navigation.js) owns the journey's
+page order and the next page after one. The order is the set's flow sections
+read in order. A step is a page that belongs to a task row and is not marked as
+a sub-page; a sub-page keeps its section's status and prerequisites but is
+reached only from the page that opens it. `nextStepPath()` answers the next
+step after a page whose scope rule passes (`pageAppliesTo()` in
+[`gates.js`](../flow/gates.js): the page's own gate, else some obligation it
+collects in scope), or nothing past the last step, and throws for a page in no
+section. `kit.nextTarget` uses it after the explicit exits and falls back to
+the review page when it answers nothing. `taskRowsOfSection()` lists a
+section's task rows in the order of their first page, which is how the hub
+derives its groups.
 
-`rowEntry()` differs from `sectionEntry()` and `nextInSection()` in that it
-always answers with a page. A task row is a way into the notification rather
-than a step of a sequence, and a journey is worked in whatever order its user
-chooses, so a row whose pages are all gated out opens at its first page instead
-of turning back to the hub. That page decides for itself what to show someone
+`rowEntry()` always answers with a page. A task row is a way into the
+notification rather than a step of a sequence, and a journey is worked in
+whatever order its user chooses, so a row opens at the first page whose gate
+passes, else its first page. That page decides for itself what to show someone
 who has answered nothing else — the live-animals
 [`consignmentDetails` page](../sets/live-animals/journeys/linear/features/commodities/page.js)
 sends a user to the commodity question when the notification holds no commodity
@@ -82,22 +84,40 @@ ready.
 ## Opening-run state
 
 [`src/server/app/flow/run-state.js`](../flow/run-state.js) stores whether a journey is
-in its opening run, and which entry began it (the start entry or the list's
-create), through the injected session port. `activeOpeningRunBeganAtStartEntry`
-answers whether the active run began at the start entry. The journey supplies
-`nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
-the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
-`previousRunTarget` while the opening run is active. On a draft notification
-whose request carries change context, it answers with `previousRunTarget` with
-change context appended. Otherwise it answers with the overview, or the review
-when `returnsToReview` applies. `previousRunTarget` receives the step id, the
-notification's scope and answers, and the journey id.
+in its opening run, through the injected session port.
 
-A page can declare, through `kit.runBackLink()`'s `returnsToReview` option,
-that it returns to the review rather than the overview. For such a page, a
-request carrying change context or a notification being amended is answered
-with the review; every other state is answered exactly as it is without the
-option.
+## Where Back goes: the trail
 
-For the current section order, task rows, authored review gate and opening run, see
+Back on a journey page goes to the place the trader came from. Where they came from
+travels on the page's links and on its form posts, never in the session, so it
+survives a refresh, a refused save, a round trip through a sub-page and a new browser
+session.
+
+The place is one query parameter, the trail: an ordered list of places, newest last. A
+place is a start place (Overview, the dashboard, the Import Notification Service's
+type question) or the slug of a page in the journey's `sections`. Every journey form
+posts to its own address, so a POST sees the same trail as the GET that showed it.
+
+[`kit.js`](../shared/kit.js) owns three operations on the trail:
+
+- `carryTrail(request, href)` puts the request's trail on a link that brings the trader
+  back to the same place, such as a sub-page round trip or a page's own redirect.
+- `pushTrail(request, href, entry)` puts the request's trail and one more place on a
+  link that moves the trader on. `nextTarget()` pushes the page it is given, so Save
+  and continue lands on the next page with the page saved on top of the trail. A
+  trail past 40 places loses its oldest.
+- `trailBackLink(request, { fallback })` answers the newest place on the trail,
+  carrying the places beneath it. With no trail, or a trail that names a place the
+  journey does not have, it answers the fallback, the overview by default, and for a
+  trail that is not recognised it logs once at info.
+
+The Import Notification Service's type question is set knowledge, so the journey
+supplies it through the `insTypeQuestionUrl` seam. The Back href is always built
+from a recognised slug or start place, never echoed from the request.
+
+A sub-page that returns to the page that opened it keeps that page as its Back and
+its save target, carrying the trail. A page that redirects onward without showing
+itself carries the trail, so Back on the page it lands on skips it.
+
+For the current section order, task rows, authored review gate and the entry guard, see
 the [live-animals journey flow guide](../sets/live-animals/docs/journey-flow-and-gates.md).

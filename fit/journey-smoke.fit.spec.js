@@ -22,16 +22,19 @@ import {
   answerRolesAndAddresses,
   answerTransitCountries,
   answerTransporter,
-  carryOpeningRunToImportReason,
+  saveAndContinueToImportReason,
   chooseCountryOfOrigin,
   completeAnswerSections,
   expectSpeciesSelected,
   journeyUrl,
+  openNotificationView,
+  openOverview,
   openReviewFromHub,
   selectSpecies,
   signIn,
   startNotification,
   startNotificationAtOrigin,
+  urlUnderBase,
   values
 } from './live-animals-journey.js'
 
@@ -41,8 +44,8 @@ const exactHeading = (page, name) =>
 const followBack = (page) =>
   page.getByRole('link', { name: 'Back', exact: true }).click()
 
-const carryOpeningRunToAdditionalDetails = async (page) => {
-  await carryOpeningRunToImportReason(page)
+const saveAndContinueToAdditionalDetails = async (page) => {
+  await saveAndContinueToImportReason(page)
   await answerImportReason(page)
   await answerCommodityCounts(page)
   await answerAnimalIdentification(page)
@@ -115,16 +118,16 @@ test.describe('live-animals journey glue', () => {
     await page.goto(journeyUrl(page, 'origin'))
     await expect(heading(originCopy.title)).toBeVisible()
     await save()
-    await expect(heading(hubCopy.title)).toBeVisible()
+    await expect(heading(commoditiesCopy.search.title)).toBeVisible()
   })
 
-  test('the opening run carries a new notification through to the review page in one pass', async ({
+  test('Save and continue carries a new notification through to the review page in one pass', async ({
     page
   }) => {
     test.slow()
     const heading = (name) => page.getByRole('heading', { name })
 
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
 
     await answerImportReason(page)
     await answerCommodityCounts(page)
@@ -136,24 +139,30 @@ test.describe('live-animals journey glue', () => {
     await answerTransitCountries(page)
     await answerTransporter(page)
 
-    await expect(page).toHaveURL(/\/accompanying-documents$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/accompanying-documents')
+    )
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await answerRolesAndAddresses(page)
-    await expect(page).toHaveURL(/\/consignment\/contact\/select$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/consignment/contact/select')
+    )
     await answerContactAddress(page)
 
-    await expect(page).toHaveURL(/\/notification-view$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
   })
 
-  test('following Back through the opening run and choosing Save and continue carries on to the next step, not the overview', async ({
+  test('following Back and choosing Save and continue carries on to the next step, not the overview', async ({
     page
   }) => {
     const saveAndContinue = () =>
       page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
 
     await followBack(page)
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
@@ -170,25 +179,23 @@ test.describe('live-animals journey glue', () => {
     await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
   })
 
-  test('in the opening run, Back from Commodity details opens What are you importing? with the species still chosen', async ({
+  test('after Save and continue, Back from Commodity details opens Main import reason', async ({
     page
   }) => {
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
     await answerImportReason(page)
     await expect(
       exactHeading(page, commoditiesCopy.consignmentDetails.title)
     ).toBeVisible()
 
     await followBack(page)
-
-    await expect(exactHeading(page, commoditiesCopy.search.title)).toBeVisible()
-    await expectSpeciesSelected(page, BOS_TAURUS_ROW)
+    await expect(exactHeading(page, importReasonCopy.title)).toBeVisible()
   })
 
-  test('in the opening run, Back from Additional details opens Identification details when a chosen species needs identifiers', async ({
+  test('after Save and continue, Back from Additional details opens Identification details when a chosen species needs identifiers', async ({
     page
   }) => {
-    await carryOpeningRunToAdditionalDetails(page)
+    await saveAndContinueToAdditionalDetails(page)
 
     await followBack(page)
 
@@ -197,7 +204,7 @@ test.describe('live-animals journey glue', () => {
     ).toBeVisible()
   })
 
-  test('in the opening run, Back from Additional details opens Commodity details when no chosen species needs identifiers', async ({
+  test('after Save and continue, Back from Additional details opens Commodity details when no chosen species needs identifiers', async ({
     page
   }) => {
     await startNotificationAtOrigin(page)
@@ -216,10 +223,10 @@ test.describe('live-animals journey glue', () => {
     ).toBeVisible()
   })
 
-  test('in the opening run, Back from the transit countries opens the arrival details', async ({
+  test('after Save and continue, Back from the transit countries opens the arrival details', async ({
     page
   }) => {
-    await carryOpeningRunToAdditionalDetails(page)
+    await saveAndContinueToAdditionalDetails(page)
     await answerAdditionalDetails(page)
     await answerArrivalDetails(page)
     await expect(
@@ -233,17 +240,19 @@ test.describe('live-animals journey glue', () => {
     ).toBeVisible()
   })
 
-  test('the opening run ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
+  test('Save and continue ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
     page
   }) => {
     const heading = (name) => page.getByRole('heading', { name })
 
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
 
     await page.goto(journeyUrl(page, 'consignment/contact/select'))
     await answerContactAddress(page)
 
-    await expect(page).toHaveURL(/\/notification-view$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
     const summary = page.getByRole('alert')
     await expect(summary).toContainText('There is a problem')
@@ -273,14 +282,14 @@ test.describe('live-animals journey glue', () => {
     await stranger.close()
   })
 
-  test('collection changes from check answers retain change context until their explicit exits', async ({
+  test('collection changes from check answers keep the trail until their explicit exits', async ({
     page
   }) => {
     test.slow()
-    // The documents page carries query parameters of its own — the refresh
-    // attempt, and the upload session a render reuses — so this asserts the
-    // change context the test is about and lets the rest follow.
-    const documentsInChangeContext = /\/accompanying-documents\?change=1(?:&|$)/
+    const documentsOnTheReviewTrail =
+      /\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view(?:&|$)/
+    const identificationOnTheReviewTrail =
+      /\/identification\?from=(?:[^#]*%2C)?notification-view(?:#identification-card-0)?$/
     await startNotification(page)
     await completeAnswerSections(page)
 
@@ -294,26 +303,24 @@ test.describe('live-animals journey glue', () => {
     ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
+    await openOverview(page)
     await openReviewFromHub(page)
 
     await page.goto(
-      `${journeyUrl(page, 'commodities/identification')}?change=1`
+      `${journeyUrl(page, 'commodities/identification')}?from=notification-view`
     )
-    await expect(page).toHaveURL(
-      /\/identification\?change=1(?:#identification-card-0)?$/
-    )
+    await expect(page).toHaveURL(identificationOnTheReviewTrail)
     await page
       .getByRole('button', { name: 'Remove animal 1', exact: true })
       .click()
-    await expect(page).toHaveURL(
-      /\/identification\?change=1(?:#identification-card-0)?$/
-    )
+    await expect(page).toHaveURL(identificationOnTheReviewTrail)
     await page.getByLabel('Ear tag', { exact: true }).fill('UK000000000002')
     await expect(
       page.getByRole('button', { name: 'Save and add another' })
     ).toHaveCount(0)
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
+    await expect(exactHeading(page, additionalDetailsCopy.title)).toBeVisible()
+    await openNotificationView(page)
     await expect(page.getByText('UK000000000002')).toBeVisible()
 
     const secondDocument = {
@@ -323,17 +330,18 @@ test.describe('live-animals journey glue', () => {
       filename: 'commercial-invoice.pdf'
     }
     await page.getByRole('link', { name: 'Change uploaded documents' }).click()
-    await expect(page).toHaveURL(documentsInChangeContext)
+    await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await addDocument(page, secondDocument)
-    await expect(page).toHaveURL(documentsInChangeContext)
+    await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await expect(
       page.locator('.govuk-table__row', {
         hasText: secondDocument.accompanyingDocumentReference
       })
     ).toContainText('Check completed')
-    await expect(page).toHaveURL(documentsInChangeContext)
+    await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
+    await expect(exactHeading(page, 'Consignment addresses')).toBeVisible()
+    await openNotificationView(page)
     await expect(
       page.getByText(secondDocument.accompanyingDocumentReference)
     ).toBeVisible()

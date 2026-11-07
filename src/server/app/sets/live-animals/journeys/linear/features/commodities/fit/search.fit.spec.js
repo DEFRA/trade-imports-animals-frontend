@@ -7,10 +7,12 @@ import {
   GALLUS_GALLUS_ROW,
   answerOriginEntry,
   saveAndContinue,
+  saveAndReturnToHub,
   expectNoSeriousOrCriticalViolations,
   expectSpeciesSelected,
   expectThreeSaveControls,
   openCommoditySearch,
+  openOverview,
   pressSpeciesRemove,
   searchCommodities,
   selectSpecies,
@@ -46,6 +48,7 @@ const expectSelectedHeading = (page, count) =>
   )
 
 const reopenSelection = async (page) => {
+  await openOverview(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await expect(
     page.getByRole('heading', { name: copy.search.title })
@@ -275,7 +278,7 @@ test.describe('commodity search — choosing and saving species', () => {
       BOS_TAURUS_ROW,
       BISON_BISON_ROW
     ])
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page

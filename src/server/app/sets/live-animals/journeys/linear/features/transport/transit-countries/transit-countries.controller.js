@@ -7,7 +7,7 @@ import {
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
-import { pageGatePasses } from '../../../../../../../flow/gates.js'
+import { pageAppliesTo } from '../../../../../../../flow/gates.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import { transitCountriesPage as page } from '../page.js'
@@ -60,8 +60,7 @@ const render = async (
   const rows = countryRows(offeredLabelled)
   return h.view(view, {
     ...kit.base(copy.pageTitle, {
-      request,
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       page,
       recoverableError
@@ -125,18 +124,18 @@ const logRefusalUnlessUsersOwnInput = (
   }
 }
 
-const redirectToOverviewUnlessApplicable = (request, h, current) => {
-  if (pageGatePasses(page, current.scope)) {
+const redirectToOverviewUnlessInScope = (request, h, current) => {
+  if (pageAppliesTo(page, current.scope)) {
     return null
   }
   const { journeyId } = current.journey
   request.logger.info(
     {
       journeyId,
-      reason: 'page-gate-not-passed',
+      reason: 'out-of-scope-for-means-of-transport',
       meansOfTransport: current.answers.meansOfTransport ?? 'none'
     },
-    'Redirected to the overview: the transit countries page gate did not pass'
+    'Redirected to the overview: transit countries is out of scope for the means of transport'
   )
   return h.redirect(hubPath(journeyId))
 }
@@ -194,16 +193,12 @@ const postContinue = async (request, h, current, payload, selected) => {
     return failure
   }
 
-  return h.redirect(await kit.nextTarget(request, page, committed.scope))
+  return h.redirect(kit.nextTarget(request, page, committed.scope))
 }
 
 const get = async (request, h) => {
   const current = await state.get(request, h)
-  const overviewRedirect = redirectToOverviewUnlessApplicable(
-    request,
-    h,
-    current
-  )
+  const overviewRedirect = redirectToOverviewUnlessInScope(request, h, current)
   if (overviewRedirect) {
     return overviewRedirect
   }
@@ -219,11 +214,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const current = await state.get(request, h)
-  const overviewRedirect = redirectToOverviewUnlessApplicable(
-    request,
-    h,
-    current
-  )
+  const overviewRedirect = redirectToOverviewUnlessInScope(request, h, current)
   if (overviewRedirect) {
     return overviewRedirect
   }

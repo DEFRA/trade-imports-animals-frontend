@@ -13,69 +13,12 @@ import {
   slugOfPage
 } from '../../../../../flow/dispatch.js'
 import {
-  nextInSection,
-  nextInTaskRow,
-  sectionEntry
+  nextStepPath,
+  taskRowsOfSection
 } from '../../../../../flow/navigation.js'
+import { journeySections } from '../../../../../flow/journey-flow.js'
 
 const completeAnswers = completeNotification()
-
-const nextInTaskRowTests = () => {
-  const scope = {
-    inScope: makeScope(completeAnswers).inScope,
-    answered: () => true
-  }
-  const hub = /\/notifications\/journey-1$/
-
-  it('Should return What are you importing? to the hub rather than on to the commodity details', () => {
-    expect(nextInTaskRow('commodities', scope, 'journey-1')).toMatch(hub)
-    expect(nextInSection('commodities', scope, 'journey-1')).toMatch(
-      /\/consignment-details$/
-    )
-  })
-
-  it('Should return the main import reason to the hub rather than on to the additional details', () => {
-    expect(nextInTaskRow('import-reason', scope, 'journey-1')).toMatch(hub)
-    expect(nextInSection('import-reason', scope, 'journey-1')).toMatch(
-      /\/additional-details$/
-    )
-  })
-
-  it('Should return the arrival details to the hub rather than on to the transit countries', () => {
-    expect(nextInTaskRow('port-of-entry', scope, 'journey-1')).toMatch(hub)
-    expect(nextInSection('port-of-entry', scope, 'journey-1')).toMatch(
-      /\/transit-countries$/
-    )
-  })
-
-  it('Should return the transit countries to the hub rather than on to the transporter list', () => {
-    expect(nextInTaskRow('transit-countries', scope, 'journey-1')).toMatch(hub)
-    expect(nextInSection('transit-countries', scope, 'journey-1')).toMatch(
-      /\/transporters$/
-    )
-  })
-
-  it('Should return the roles and addresses to the hub, the last page of its task', () => {
-    expect(nextInTaskRow('addresses', scope, 'journey-1')).toMatch(hub)
-  })
-
-  it('Should hand the CPH number back to roles and addresses, the next page of the same task', () => {
-    expect(nextInTaskRow('cphNumber', scope, 'journey-1')).toMatch(
-      /\/addresses$/
-    )
-  })
-
-  it('Should keep check your answers leading on to the declaration — it belongs to no task row', () => {
-    const ready = { ...scope, readyForCheckYourAnswers: true }
-    expect(nextInTaskRow('notification-view', ready, 'journey-1')).toMatch(
-      /\/declaration$/
-    )
-  })
-
-  it('Should return a page in no section to the hub', () => {
-    expect(nextInTaskRow('not-a-real-page', scope, 'journey-1')).toMatch(hub)
-  })
-}
 
 describe('#buildDispatch', () => {
   beforeAll(() => {
@@ -144,19 +87,6 @@ describe('#buildDispatch', () => {
     }
   })
 
-  it('Should fall back to the hub when the page belongs to no section', () => {
-    expect(
-      nextInSection(
-        'not-a-real-page',
-        {
-          inScope: new Set(),
-          answered: () => true
-        },
-        'journey-1'
-      )
-    ).toMatch(/\/notifications\/journey-1$/)
-  })
-
   it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {
     const withoutCommodities = dispatchPages.filter(
       (page) => page.id !== 'commodities'
@@ -176,48 +106,6 @@ describe('#buildDispatch', () => {
       'commodities'
     )
     expect(pageOfObligation('commodityLines[0]')).toBe('commodities')
-  })
-
-  it('Should end the transport section at the transporter list, whatever type the answers reach', () => {
-    const answered = () => true
-    const scopeNoType = { inScope: makeScope({}).inScope, answered }
-    const scopeCommercial = {
-      inScope: makeScope({ transporterType: 'Commercial' }).inScope,
-      answered
-    }
-    const scopePrivate = {
-      inScope: makeScope({ transporterType: 'Private' }).inScope,
-      answered
-    }
-    for (const scope of [scopeNoType, scopeCommercial, scopePrivate]) {
-      expect(nextInSection('transporters', scope, 'journey-1')).toMatch(
-        /\/notifications\/journey-1$/
-      )
-    }
-  })
-
-  it('Should keep the add spokes off the journey — they belong to no section', () => {
-    const scope = {
-      inScope: makeScope({ transporterType: 'Private' }).inScope,
-      answered: () => true
-    }
-    for (const spoke of ['transporter-add', 'private-transporter-details']) {
-      expect(nextInSection(spoke, scope, 'journey-1')).toMatch(
-        /\/notifications\/journey-1$/
-      )
-    }
-  })
-
-  describe(
-    '#nextInTaskRow — where a save outside the opening run goes',
-    nextInTaskRowTests
-  )
-
-  it('Should enter a section at its first gated-in page', () => {
-    const scope = { inScope: makeScope({}).inScope, answered: () => true }
-    expect(sectionEntry('transport', scope, 'journey-1')).toMatch(
-      /\/port-of-entry$/
-    )
   })
 
   it('Should report ready-to-submit only once every section is complete', () => {
@@ -241,5 +129,126 @@ describe('#buildDispatch', () => {
         evaluateAnswers(incomplete)
       )
     ).toBe(false)
+  })
+})
+
+describe('#nextStepPath — the next page that applies', () => {
+  const JOURNEY_ID = 'journey-1'
+  const scopeFor = (answers) => ({
+    inScope: makeScope(answers).inScope,
+    answered: () => true
+  })
+  const CONTACT_SLUG = 'consignment/contact/select'
+  const ARRIVAL_DETAILS_ID = 'port-of-entry'
+  const TRANSPORTERS_SLUG = 'transporters'
+  const slugOf = (path) => path?.split(`${JOURNEY_ID}/`)[1]
+  const nextSlug = (pageId, answers) =>
+    slugOf(nextStepPath(pageId, scopeFor(answers), JOURNEY_ID))
+
+  const pageIdOfSlug = (slug) =>
+    journeySections()
+      .flatMap((section) => section.pages)
+      .find((page) => page.slug === slug).id
+
+  const walkFrom = (pageId, answers) => {
+    const slugs = []
+    for (
+      let slug = nextSlug(pageId, answers);
+      slug;
+      slug = nextSlug(pageIdOfSlug(slug), answers)
+    ) {
+      slugs.push(slug)
+    }
+    return slugs
+  }
+
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  it('Should go through the journey in the order Overview lists its tasks', () => {
+    expect(walkFrom('origin', completeAnswers)).toEqual([
+      'commodities',
+      'import-reason',
+      'consignment-details',
+      'commodities/identification',
+      'additional-details',
+      'port-of-entry',
+      'transit-countries',
+      TRANSPORTERS_SLUG,
+      'accompanying-documents',
+      'addresses',
+      CONTACT_SLUG
+    ])
+  })
+
+  it.each(['AIRPLANE', 'VESSEL'])(
+    'Should pass over the transit countries when the consignment travels by %s',
+    (meansOfTransport) => {
+      expect(
+        nextSlug(ARRIVAL_DETAILS_ID, { ...completeAnswers, meansOfTransport })
+      ).toBe(TRANSPORTERS_SLUG)
+    }
+  )
+
+  it.each(['ROAD_VEHICLE', 'RAILWAY'])(
+    'Should go from the arrival details to the transit countries by %s with every other answer blank',
+    (meansOfTransport) => {
+      expect(nextSlug(ARRIVAL_DETAILS_ID, { meansOfTransport })).toBe(
+        'transit-countries'
+      )
+    }
+  )
+
+  it('Should go from the main import reason to Commodity details with only the country of origin saved', () => {
+    expect(nextSlug('import-reason', { countryOfOrigin: 'FR' })).toBe(
+      'consignment-details'
+    )
+  })
+
+  it('Should go from Roles and addresses to Contact address even when every other task is complete', () => {
+    expect(nextSlug('addresses', completeAnswers)).toBe(CONTACT_SLUG)
+  })
+
+  it('Should go from the CPH number page on to Roles and addresses', () => {
+    expect(nextSlug('cphNumber', completeAnswers)).toBe('addresses')
+  })
+
+  it('Should go on from Contact address to nothing, the review page being the fallback', () => {
+    expect(
+      nextSlug('consignment-contact-select', completeAnswers)
+    ).toBeUndefined()
+  })
+
+  it('Should refuse a page that belongs to no section', () => {
+    expect(() =>
+      nextStepPath('not-a-real-page', scopeFor({}), JOURNEY_ID)
+    ).toThrow(/not in the journey's sections/)
+  })
+})
+
+describe('#taskRowsOfSection — what Overview lists under a caption', () => {
+  it('Should list the task rows of every section in the order of their first page', () => {
+    expect(
+      journeySections()
+        .filter((section) => taskRowsOfSection(section).length > 0)
+        .map((section) => [
+          section.id,
+          taskRowsOfSection(section).map((row) => row.id)
+        ])
+    ).toEqual([
+      ['about-the-consignment', ['origin', 'commodities', 'importReason']],
+      [
+        'description-of-the-goods',
+        ['consignmentDetails', 'animalIdentification', 'additionalDetails']
+      ],
+      [
+        'transport-and-arrival',
+        ['arrivalDetails', 'transitCountries', 'transporter']
+      ],
+      ['documents', ['documents']],
+      ['consignment-parties', ['addresses']],
+      ['contact-address', ['contact']]
+    ])
   })
 })

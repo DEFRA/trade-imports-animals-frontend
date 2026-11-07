@@ -10,10 +10,10 @@ const commoditiesPagePath = (request) =>
   pagePath(request.params.journeyId, commoditiesPage.slug)
 
 export const commodityQuestionPath = (request) =>
-  kit.withChangeContext(request, commoditiesPagePath(request))
+  kit.carryTrail(request, commoditiesPagePath(request))
 
 export const commodityQuestionHref = (request, opener) =>
-  kit.withChangeContext(
+  kit.carryTrail(
     request,
     kit.withReturnMarker(commoditiesPagePath(request), opener.slug)
   )
@@ -29,7 +29,7 @@ export const commodityQuestionReturn = (request) => {
   )
   if (honouredSlug) {
     return {
-      honouredReturn: kit.withChangeContext(
+      honouredReturn: kit.carryTrail(
         request,
         pagePath(request.params.journeyId, honouredSlug)
       )

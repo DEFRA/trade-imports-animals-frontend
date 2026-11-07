@@ -11,6 +11,7 @@ const copy = copyFor({ en, cy })
 
 export const transitCountriesCard = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   readOnly
 }) => {
@@ -23,6 +24,7 @@ export const transitCountriesCard = async ({
       readOnly,
       actions: cardAction(
         journeyId,
+        changeLinkTrail,
         transitCountriesPage.slug,
         copy.hidden.cards.transitCountries
       )

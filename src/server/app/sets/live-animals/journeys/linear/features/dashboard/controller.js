@@ -3,7 +3,6 @@ import {
   createRoutePath,
   dashboardPath,
   dashboardRoutePath,
-  hubPath,
   pagePath,
   pageRoutePath,
   startRoutePath
@@ -19,17 +18,16 @@ import {
 import {
   routeOptions,
   sharedCopy,
-  surfaceClass
+  surfaceClass,
+  TRAIL_START,
+  withTrail
 } from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
-import {
-  beginOpeningRun,
-  RUN_ENTRY_LIST_CREATE,
-  RUN_ENTRY_START
-} from '../../../../../../flow/run-state.js'
+import { beginOpeningRun } from '../../../../../../flow/run-state.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
+import { notificationViewPage } from '../check-answers/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import {
@@ -45,6 +43,9 @@ import { sortOptions } from './view-model/sort-options.js'
 const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
+
+const organisationIdOf = (request) =>
+  buildActor(request.auth?.credentials)?.organisationId
 
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') {
@@ -127,33 +128,50 @@ const listGet = async (request, h) => renderDashboard(request, h)
 
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return h.redirect(
-    journey ? hubPath(journey.journeyId) : `${dashboardPath()}?amendRefused=1`
-  )
-}
-
-const openNewNotification = async (request, h, { entry }) => {
-  const journey = await startJourney(request, h)
-  await beginOpeningRun(request, h, journey.journeyId, { entry })
+  if (!journey) {
+    return h.redirect(`${dashboardPath()}?amendRefused=1`)
+  }
   request.logger.info(
     {
       journeyId: journey.journeyId,
-      entry,
-      organisationId: buildActor(request.auth?.credentials)?.organisationId
+      organisationId: organisationIdOf(request)
+    },
+    'Amendment started, sent to the review page'
+  )
+  return h.redirect(
+    withTrail(pagePath(journey.journeyId, notificationViewPage.slug), [
+      TRAIL_START.dashboard
+    ])
+  )
+}
+
+const openNewNotification = async (request, h, { startPlace }) => {
+  const journey = await startJourney(request, h)
+  await beginOpeningRun(request, h, journey.journeyId)
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      startPlace,
+      organisationId: organisationIdOf(request)
     },
     'New notification opened'
   )
-  return h.redirect(pagePath(journey.journeyId, originPage.slug))
+  return h.redirect(
+    withTrail(pagePath(journey.journeyId, originPage.slug), [startPlace])
+  )
 }
 
 const createPost = async (request, h) =>
-  openNewNotification(request, h, { entry: RUN_ENTRY_LIST_CREATE })
+  openNewNotification(request, h, {
+    startPlace: TRAIL_START.dashboard
+  })
 
 const startGet = async (request, h) =>
-  (await openNewNotification(request, h, { entry: RUN_ENTRY_START })).header(
-    'Cache-Control',
-    'no-store'
-  )
+  (
+    await openNewNotification(request, h, {
+      startPlace: TRAIL_START.ins
+    })
+  ).header('Cache-Control', 'no-store')
 
 export const routes = [
   {

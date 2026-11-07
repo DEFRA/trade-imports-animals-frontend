@@ -1,4 +1,8 @@
-import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -7,7 +11,9 @@ import {
   errorSummary,
   journeyStrip,
   pageRoutes,
-  runBackLink,
+  trailBackLink,
+  requestTrail,
+  trailPlus,
   sharedCopy
 } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
@@ -39,6 +45,8 @@ const PARTY_KEY_PREFIX = 'party:'
 
 const reviewErrorSummary = (
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   cardErrors,
   partyErrors,
   disableAutoFocus
@@ -59,17 +67,22 @@ const reviewErrorSummary = (
           ? partyEditHref(
               journeyId,
               partyOf(key.slice(PARTY_KEY_PREFIX.length)),
-              CYA_SLUG
+              CYA_SLUG,
+              reviewPageTrail
             )
-          : (cardAnchorHref(key) ?? changeHref(journeyId, key)),
+          : (cardAnchorHref(key) ??
+            changeHref(journeyId, changeLinkTrail, key)),
       disableAutoFocus
     }
   )
 
-const backLinkFor = async (request, current) =>
-  current.journey.status === state.SUBMITTED
-    ? dashboardPath()
-    : runBackLink(request, page.id, current)
+const backLinkFor = (request, journey) =>
+  trailBackLink(request, {
+    fallback:
+      journey.status === state.SUBMITTED
+        ? dashboardPath()
+        : hubPath(journey.journeyId)
+  })
 
 const renderCya = async (
   request,
@@ -88,12 +101,16 @@ const renderCya = async (
     disableAutoFocus = true
   }
 ) => {
+  const changeLinkTrail = trailPlus(request, CYA_SLUG)
+  const reviewPageTrail = requestTrail(request)
   const sections = withCardErrors(
     await buildSections({
       answers,
       scope,
       evaluation,
       journeyId: journey.journeyId,
+      changeLinkTrail,
+      reviewPageTrail,
       readOnly,
       parties,
       partyErrors
@@ -110,6 +127,8 @@ const renderCya = async (
     journeyStrip: journeyStrip(journey),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
+      changeLinkTrail,
+      reviewPageTrail,
       cardErrors,
       partyErrors,
       disableAutoFocus
@@ -128,7 +147,7 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    backLink: await backLinkFor(request, { journey, scope, answers })
+    backLink: backLinkFor(request, journey)
   })
 }
 

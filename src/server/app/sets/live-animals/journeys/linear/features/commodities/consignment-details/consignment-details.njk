@@ -29,6 +29,6 @@
       {{ speciesQuantityGroup(group, copy) }}
     {% endfor %}
 
-    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, amend: amend }) }}
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions }) }}
   </form>
 {% endblock %}

@@ -63,7 +63,7 @@ The generic manifest accessors remain in
 ## L4: journeys
 
 A journey owns page identity, controllers, templates, copy, bindings, section order,
-task rows and opening-run policy. Journeys may use their own set and L2 APIs. They do
+task rows and entry guard. Journeys may use their own set and L2 APIs. They do
 not import another journey or another set.
 
 The live-animals linear journey uses two Nunjucks roots configured in
@@ -116,12 +116,11 @@ way:
 
 - page chrome: `base()`, `setlessBase()`, `journeyStrip()` and `SURFACES`
 - errors: `errorSummary()`, `fieldError()` and `logRefusal()`
-- where a POST goes next: `hubExitTarget()`, `exitTarget()`, `nextTarget()`
-  and `amendReviewTarget()`, which follow the save choice of the request, or
-  one passed to them
+- where a POST goes next: `hubExitTarget()` and `nextTarget()`, which follow
+  the save choice of the request, or one passed to them
 - the save choice a request carries: `requestSaveChoice()`, and for a form the
   upload service returns the browser with, `returnedSaveChoice()`
-- where a page's Back link goes: `runBackLink()`
+- where a page's Back link goes: `trailBackLink()`, with `carryTrail()` and `pushTrail()` for the links that keep the trail
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`
 

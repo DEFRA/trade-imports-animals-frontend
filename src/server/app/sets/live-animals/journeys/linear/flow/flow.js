@@ -29,35 +29,31 @@ export const sections = [
     pages: [dashboardPage]
   },
   {
-    id: 'origin',
-    pages: [originPage]
+    id: 'about-the-consignment',
+    pages: [originPage, commoditiesPage, importReasonPage]
   },
   {
-    id: 'commodities',
-    pages: [commoditiesPage, consignmentDetailsPage]
+    id: 'description-of-the-goods',
+    pages: [
+      consignmentDetailsPage,
+      animalIdentificationPage,
+      additionalDetailsPage
+    ]
   },
   {
-    id: 'animalIdentification',
-    pages: [animalIdentificationPage]
-  },
-  {
-    id: 'consignment',
-    pages: [importReasonPage, additionalDetailsPage]
+    id: 'transport-and-arrival',
+    pages: [portOfEntryPage, transitCountriesPage, transportersPage]
   },
   {
     id: 'documents',
     pages: [documentsPage]
   },
   {
-    id: 'addresses',
+    id: 'consignment-parties',
     pages: [cphNumberPage, addressesPage]
   },
   {
-    id: 'transport',
-    pages: [portOfEntryPage, transitCountriesPage, transportersPage]
-  },
-  {
-    id: 'contact',
+    id: 'contact-address',
     pages: [consignmentContactSelectPage]
   },
   {
