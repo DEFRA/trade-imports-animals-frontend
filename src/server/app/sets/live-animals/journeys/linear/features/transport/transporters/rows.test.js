@@ -13,12 +13,15 @@ import {
   transporterTableRows
 } from './rows.js'
 
+const COMMERCIAL_APPROVAL_NUMBER = 'ES-T2-45001294'
+const NOT_APPLICABLE = 'Not applicable'
+
 const commercial = {
   id: 'garcia-livestock-transport',
   type: COMMERCIAL,
   status: APPROVED,
   name: 'García Livestock Transport SL',
-  approvalNumber: 'ES-T2-45001294',
+  approvalNumber: COMMERCIAL_APPROVAL_NUMBER,
   address: {
     addressLine1: '43 East Hague Extension',
     country: 'Switzerland'
@@ -140,6 +143,18 @@ describe('#matchingTransporters', () => {
       privateRecord.name
     ])
   })
+
+  it('Should match transporters with no approval number by the label shown in that column, and leave a real approval number matching only its own record', () => {
+    const everyRecord = [...records, newPrivateRecord]
+
+    expect(names(matchingTransporters(everyRecord, NOT_APPLICABLE))).toEqual([
+      privateRecord.name,
+      newPrivateRecord.name
+    ])
+    expect(names(matchingTransporters(everyRecord, 'es-t2-45001294'))).toEqual([
+      commercial.name
+    ])
+  })
 })
 
 describe('#transporterRows', () => {
@@ -151,14 +166,24 @@ describe('#transporterRows', () => {
     )
   })
 
-  it('Should leave the approval number out of the search text of a record without one', () => {
+  it('Should carry the Not applicable label in the search text of a record without an approval number', () => {
     const [row] = transporterRows([newPrivateRecord], {
       selectedId: null
     })
 
     expect(row.searchText).toBe(
-      'Dunmore Haulage 3 Mill Lane, Dunmore, Ireland Private New'
+      'Dunmore Haulage 3 Mill Lane, Dunmore, Ireland Not applicable Private New'
     )
+  })
+
+  it('Should show the record’s own approval number in its column, and the Not applicable label for a record with none', () => {
+    const [withNumber] = transporterRows([commercial], { selectedId: null })
+    const [withoutNumber] = transporterRows([newPrivateRecord], {
+      selectedId: null
+    })
+
+    expect(withNumber.approvalNumberText).toBe(COMMERCIAL_APPROVAL_NUMBER)
+    expect(withoutNumber.approvalNumberText).toBe(NOT_APPLICABLE)
   })
 })
 
@@ -181,7 +206,8 @@ describe('#transporterTableRows', () => {
     const [cells] = transporterTableRows(
       transporterRows([commercial], { selectedId: commercial.id })
     )
-    const [selectCell, name, address, approvalNumber, type, statusCell] = cells
+    const [selectCell, name, address, approvalNumberCell, type, statusCell] =
+      cells
 
     expect(selectCell.attributes).toEqual({
       'data-search-text':
@@ -191,10 +217,10 @@ describe('#transporterTableRows', () => {
     expect(selectCell.html).toContain('value="garcia-livestock-transport"')
     expect(selectCell.html).toContain('checked')
     expect(selectCell.html).toContain('Select García Livestock Transport SL')
-    expect([name, address, approvalNumber, type]).toEqual([
+    expect([name, address, approvalNumberCell, type]).toEqual([
       { text: 'García Livestock Transport SL' },
       { text: '43 East Hague Extension, Switzerland' },
-      { text: 'ES-T2-45001294' },
+      { text: COMMERCIAL_APPROVAL_NUMBER },
       { text: 'Commercial' }
     ])
     expect(statusCell.html).toContain('govuk-tag--green')
@@ -207,5 +233,13 @@ describe('#transporterTableRows', () => {
     )
 
     expect(selectCell.html).not.toContain('checked')
+  })
+
+  it('Should show the Not applicable label in the approval-number cell for a record with no approval number', () => {
+    const [[, , , approvalNumberCell]] = transporterTableRows(
+      transporterRows([newPrivateRecord], { selectedId: null })
+    )
+
+    expect(approvalNumberCell).toEqual({ text: NOT_APPLICABLE })
   })
 })

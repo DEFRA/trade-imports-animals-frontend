@@ -523,11 +523,17 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - An empty transit list is a valid answer, because the question is optional. A
   list holding a country not offered is refused: on submit as not from the
   list, on a stored answer as no longer available.
+- The page names the choice once: a heading above the search box and the
+  table, with the fieldset round the table carrying the same words,
+  visually hidden, so a screen-reader user hears the group named and a
+  sighted user reads the words once.
 - The transporter list shows its facts in headed columns, with a status tag:
-  green for approved, magenta for newly added.
+  green for approved, magenta for newly added. A transporter with no
+  approval number reads "Not applicable" in that column.
 - The list search matches name, address, approval number, type and status,
   ignoring case and accents, so a trader typing plain letters finds an
-  accented name.
+  accented name; a transporter with no approval number is matched by the
+  "Not applicable" words its column shows.
 - With JavaScript the list narrows in the page as the trader types, because
   the page already holds the whole list and needs no endpoint. The matching
   letters in each shown cell are bold, and a polite live region says how many

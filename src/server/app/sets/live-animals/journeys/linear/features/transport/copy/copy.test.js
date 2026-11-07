@@ -252,6 +252,11 @@ describe('transport copy module — transporter pages', () => {
     expect(copyCy.transporters.selectRowPrefix).toBe('Dewis')
   })
 
+  test('Should head the transporter list with the same words the fieldset legend carries, in both languages', () => {
+    expect(copy.transporters.resultsHeading).toBe('Select a transporter')
+    expect(copyCy.transporters.resultsHeading).toBe('Dewiswch gludwr')
+  })
+
   test('Should name both approval statuses in both languages', () => {
     expect(copy.transporters.statuses).toEqual({
       Approved: 'Approved',

@@ -3,10 +3,13 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../../shared/copy.cy.js'
 
 const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const NOT_APPLICABLE = copy.notApplicable
+const NOT_APPLICABLE = sharedCopy.notApplicable
 
 export const toArray = (value) => [value ?? []].flat()
 

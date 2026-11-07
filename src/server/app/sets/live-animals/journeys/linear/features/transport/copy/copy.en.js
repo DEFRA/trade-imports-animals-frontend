@@ -96,7 +96,7 @@ export const copy = {
     title: 'Transporter details',
     intro:
       'This is the person or company responsible for transporting the consignment.',
-    legend: 'Select a transporter',
+    resultsHeading: 'Select a transporter',
     guidance: {
       authorisationLead:
         'Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:',
