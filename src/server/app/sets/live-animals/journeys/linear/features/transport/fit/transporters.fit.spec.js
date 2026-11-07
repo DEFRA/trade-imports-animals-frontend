@@ -14,7 +14,10 @@ import {
   signIn,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../../shared/copy.en.js'
 import {
   APPROVED,
   COMMERCIAL,
@@ -74,6 +77,14 @@ const tickAsUnknownTransporter = (radio) =>
     input.value = value
     input.checked = true
   }, INVALID_TRANSPORTER_ID)
+
+const submitTransporterNotOnTheList = async (page) => {
+  await tickAsUnknownTransporter(
+    page.getByRole('radio', { name: commercialRecord.name })
+  )
+  await saveAndContinue(page).click()
+  await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+}
 
 const searchRowLeftHalfOf = (page) =>
   page.locator('.govuk-grid-column-one-half').first()
@@ -284,8 +295,32 @@ test.describe('transporter list page', () => {
     await expect(page.getByText(copy.transporters.intro)).toBeVisible()
     await expectTransporterGuidance(page)
     await expect(
-      page.getByRole('group', { name: copy.transporters.legend })
+      page.getByRole('group', { name: copy.transporters.resultsHeading })
     ).toBeVisible()
+  })
+
+  test('names the choice once: a heading above the search and the table, with the fieldset carrying the same words for screen readers only', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const heading = page.getByRole('heading', {
+      level: 2,
+      name: copy.transporters.resultsHeading
+    })
+    await expect(heading).toBeVisible()
+    const headingBox = await heading.boundingBox()
+    const searchGroupBox = await searchBoxOf(page)
+      .locator(FORM_GROUP_ANCESTOR_XPATH)
+      .boundingBox()
+    const tableBox = await page.locator(TABLE).boundingBox()
+
+    expect(headingBox.y).toBeLessThan(searchGroupBox.y)
+    expect(headingBox.y).toBeLessThan(tableBox.y)
+    await expect(
+      page
+        .locator('legend')
+        .filter({ hasText: copy.transporters.resultsHeading })
+    ).toHaveClass(/govuk-visually-hidden/)
   })
 
   test('lists every transporter the service knows about in headed columns, each row showing its address, approval number and type', async ({
@@ -308,7 +343,7 @@ test.describe('transporter list page', () => {
         addressSummary(record.address)
       )
       await expect(row.getByRole('cell').nth(3)).toHaveText(
-        record.approvalNumber ?? ''
+        record.approvalNumber ?? sharedCopy.notApplicable
       )
       await expect(row.getByRole('cell').nth(4)).toHaveText(
         copy.transporters.types[record.type]
@@ -319,7 +354,7 @@ test.describe('transporter list page', () => {
     }
   })
 
-  test('tags an approved transporter green and a newly added one pink', async ({
+  test('tags an approved transporter green and a newly added one magenta', async ({
     page
   }) => {
     await openTransporterList(page)
@@ -409,10 +444,7 @@ test.describe('transporter list page', () => {
     page
   }) => {
     await openTransporterList(page)
-    await tickAsUnknownTransporter(
-      page.getByRole('radio', { name: commercialRecord.name })
-    )
-    await saveAndContinue(page).click()
+    await submitTransporterNotOnTheList(page)
 
     const link = errorLink(page, copy.transporters.errors.transporterRequired)
     await expect(link).toBeVisible()
@@ -440,14 +472,6 @@ test.describe('the transporter search box', () => {
       search: copy.transporters.search,
       expectedWidth: await contentWidthOf(searchRowLeftHalfOf(page))
     })
-  })
-
-  test('has no serious or critical axe violations when empty', async ({
-    page
-  }) => {
-    await openTransporterList(page)
-
-    await expectNoSeriousOrCriticalViolations(page, 'Transporter list')
   })
 })
 
@@ -535,11 +559,7 @@ test.describe('filtering the transporter list as the trader types', () => {
   }) => {
     await openTransporterList(page)
     await searchBoxOf(page).fill('garcia')
-    await tickAsUnknownTransporter(
-      page.getByRole('radio', { name: commercialRecord.name })
-    )
-    await saveAndContinue(page).click()
-    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+    await submitTransporterNotOnTheList(page)
 
     await expect(
       page.getByRole('radio', { name: commercialRecord.name })
@@ -1092,6 +1112,15 @@ test.describe('transporter pages accessibility', () => {
   }) => {
     await openTransporterList(page)
     await expectNoSeriousOrCriticalViolations(page, 'Transporter list')
+  })
+
+  test('transporter list page has no serious or critical axe violations with a refused pick', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await submitTransporterNotOnTheList(page)
+
+    await expectNoSeriousOrCriticalViolations(page, 'Transporter list, error')
   })
 
   test('transporter type page has no serious or critical axe violations', async ({

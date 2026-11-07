@@ -95,7 +95,7 @@ export const copy = {
   transporters: {
     title: 'Manylion y cludwr',
     intro: 'Dyma’r person neu’r cwmni sy’n gyfrifol am gludo’r llwyth.',
-    legend: 'Dewiswch gludwr',
+    resultsHeading: 'Dewiswch gludwr',
     guidance: {
       authorisationLead:
         'Rhaid i’ch cludwr feddu ar awdurdodiad cludo dilys, a roddwyd gan DAERA neu APHA yn y DU os ydynt yn:',

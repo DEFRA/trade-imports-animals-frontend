@@ -62,7 +62,7 @@ describe('/transporters', () => {
     const aberdeen = rowFor(result.view.context, ABERDEEN_ID)
     expect(garcia.name).toBe(GARCIA_NAME)
     expect(garcia.type).toBe(COMMERCIAL)
-    expect(garcia.approvalNumber).toBe('ES-T2-45001294')
+    expect(garcia.approvalNumberText).toBe('ES-T2-45001294')
     expect(aberdeen.name).toBe(ABERDEEN_NAME)
     expect(aberdeen.type).toBe(PRIVATE)
   })
@@ -74,10 +74,12 @@ describe('/transporters', () => {
     expect(garcia.addressText).toBe(
       '43 East Hague Extension, Delectus sitodio p. Laborum Odio tempor, Quasoccaecat ut ear, 30055, Switzerland'
     )
-    expect(rowFor(result.view.context, ABERDEEN_ID).approvalNumber).toBe('')
+    expect(rowFor(result.view.context, ABERDEEN_ID).approvalNumberText).toBe(
+      'Not applicable'
+    )
   })
 
-  it('Should tag an approved transporter green and a newly added one pink', async () => {
+  it('Should tag an approved transporter green and a newly added one magenta', async () => {
     const result = await driveHandler(getHandler)
 
     expect(rowFor(result.view.context, GARCIA_ID).status).toEqual({
@@ -409,7 +411,7 @@ describe('/transporters with a transporter the organisation added', () => {
     expect(first.name).toBe(HAULIER_NAME)
     expect(first.type).toBe(PRIVATE)
     expect(first.status).toEqual({ text: 'New', classes: 'govuk-tag--magenta' })
-    expect(first.approvalNumber).toBe('')
+    expect(first.approvalNumberText).toBe('Not applicable')
   })
 
   it('Should leave the shipped register on the list behind it', async () => {

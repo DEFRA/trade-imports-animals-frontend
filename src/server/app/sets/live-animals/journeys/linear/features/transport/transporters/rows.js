@@ -8,19 +8,25 @@ import { containsTerm } from '../../../../../../../../../client/common/helpers/s
 import { renderMacro } from '../../../../../../../shared/render-macro.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 const copy = copyFor({ en, cy }).transporters
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const STATUS_CLASSES = {
   [APPROVED]: 'govuk-tag--green',
   [NEW]: 'govuk-tag--magenta'
 }
 
+const approvalNumberTextOf = (record) =>
+  record.approvalNumber ?? sharedCopy.notApplicable
+
 const searchTextOf = (record) =>
   [
     record.name,
     addressSummary(record.address),
-    record.approvalNumber,
+    approvalNumberTextOf(record),
     copy.types[record.type],
     copy.statuses[record.status]
   ]
@@ -43,7 +49,7 @@ export const transporterRows = (records, { selectedId }) =>
     idPrefix: index === 0 ? 'transporter' : `transporter-${index + 1}`,
     name: record.name,
     addressText: addressSummary(record.address),
-    approvalNumber: record.approvalNumber ?? '',
+    approvalNumberText: approvalNumberTextOf(record),
     type: copy.types[record.type],
     status: {
       text: copy.statuses[record.status],
@@ -65,7 +71,7 @@ export const transporterTableRows = (rows) =>
     },
     { text: row.name },
     { text: row.addressText },
-    { text: row.approvalNumber },
+    { text: row.approvalNumberText },
     { text: row.type },
     { html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row) }
   ])

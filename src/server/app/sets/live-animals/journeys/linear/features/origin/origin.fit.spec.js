@@ -321,7 +321,7 @@ test.describe('origin region of origin code and internal reference', () => {
 
     await openNotificationView(page)
     await expect(regionCodeOnReview(page)).toContainText(
-      checkAnswersCopy.notApplicable
+      sharedCopy.notApplicable
     )
 
     await page.goto(originUrl)
