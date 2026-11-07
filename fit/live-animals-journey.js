@@ -28,6 +28,10 @@ import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/li
 import { copy as importReasonCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/import-reason/copy/copy.en.js'
 import { copy as originCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/origin/copy/copy.en.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
+import {
+  COMMERCIAL,
+  PRIVATE
+} from '../src/server/app/services/transporters/index.js'
 
 export { signIn } from './sign-in.js'
 
@@ -974,6 +978,64 @@ export const openTransit = async (page) => {
   ).toBeVisible()
 }
 
+/**
+ * Opens the transporter list from a fresh notification, arriving by air.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const openTransporterList = async (page) => {
+  await saveArrivalByAir(page)
+  await page.getByRole('link', { name: hubCopy.rows.transporter.title }).click()
+  await expect(
+    page.getByRole('heading', { name: transportCopy.transporters.title })
+  ).toBeVisible()
+}
+
+/**
+ * Opens the transporter type question from the transporter list.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const openTransporterType = async (page) => {
+  await openTransporterList(page)
+  await page
+    .getByRole('button', { name: transportCopy.transporters.add })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: transportCopy.transporterAdd.title })
+  ).toBeVisible()
+}
+
+/**
+ * Chooses a transporter type from the type question and reaches that type's
+ * own add form.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} transporterType - `COMMERCIAL` or `PRIVATE`.
+ */
+export const answerTransporterType = async (page, transporterType) => {
+  const optionText = {
+    [COMMERCIAL]: transportCopy.transporterAdd.options.Commercial.text,
+    [PRIVATE]: transportCopy.transporterAdd.options.Private.text
+  }
+  const destinationTitle = {
+    [COMMERCIAL]: transportCopy.commercialTransporterDetails.title,
+    [PRIVATE]: transportCopy.privateTransporterDetails.title
+  }
+  await openTransporterType(page)
+  await page
+    .getByRole('radio', {
+      name: optionText[transporterType]
+    })
+    .check()
+  await continueTransporterType(page).click()
+  await expect(
+    page.getByRole('heading', {
+      name: destinationTitle[transporterType]
+    })
+  ).toBeVisible()
+}
+
 export const answerTransporter = async (page) => {
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
@@ -1049,6 +1111,12 @@ export const saveAndContinue = (page) =>
     exact: true
   })
 
+export const continueTransporterType = (page) =>
+  page.getByRole('button', {
+    name: transportCopy.transporterAdd.continueButton,
+    exact: true
+  })
+
 export const saveAndReturnToHub = (page) =>
   page.getByRole('button', {
     name: sharedAppCopy.saveActions.saveAndReturnToHub,
@@ -1085,20 +1153,25 @@ export const expectThreeSaveControls = async (page) => {
 }
 
 /**
- * Fails unless Save and continue is the journey form's last button, nothing
- * follows it in the form, and Save and return to overview is not offered.
+ * Fails unless the primary named — Save and continue by default — is the
+ * journey form's last button, nothing follows it in the form, and Save and
+ * return to overview is not offered.
  *
  * @param {import('@playwright/test').Page} page
+ * @param {string} [primaryName] - the primary's accessible name.
  */
-export const expectPageEndsWithPrimaryAlone = async (page) => {
+export const expectPageEndsWithPrimaryAlone = async (
+  page,
+  primaryName = sharedAppCopy.saveActions.saveAndContinue
+) => {
   const form = journeyFormOf(page)
   const lastControl = form.getByRole('button').or(form.getByRole('link')).last()
 
-  await expect(lastControl).toHaveText(
-    sharedAppCopy.saveActions.saveAndContinue
-  )
+  await expect(lastControl).toHaveText(primaryName)
   await expect(saveAndReturnToHub(page)).toHaveCount(0)
 
   const lastVisibleChild = form.locator('> *:visible').last()
-  await expect(lastVisibleChild.locator(saveAndContinue(page))).toBeVisible()
+  await expect(
+    lastVisibleChild.getByRole('button', { name: primaryName, exact: true })
+  ).toBeVisible()
 }

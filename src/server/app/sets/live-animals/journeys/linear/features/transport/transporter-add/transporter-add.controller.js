@@ -7,7 +7,7 @@ import {
 } from '../../../../../../../lib/http-status.js'
 import {
   compose,
-  oneOf,
+  requiredOneOf,
   validate
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -28,7 +28,11 @@ const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 const copy = copyFor({ en, cy }).transporterAdd
 
 const fields = compose(
-  oneOf('transporterType', transportReference.transporterTypes())
+  requiredOneOf(
+    'transporterType',
+    transportReference.transporterTypes(),
+    copy.errors.transporterTypeRequired
+  )
 )
 
 const render = (
@@ -46,7 +50,8 @@ const render = (
       ),
       journey,
       page,
-      recoverableError
+      recoverableError,
+      showJourneyStrip: false
     }),
     copy,
     values,
@@ -61,21 +66,30 @@ const get = async (request, h) => {
   })
 }
 
-const nextSlugForTransporterType = (transporterType) => {
-  if (transporterType === COMMERCIAL) {
-    return commercialTransporterDetailsPage.slug
-  }
-  return transporterType === ''
-    ? transportersPage.slug
+const nextSlugForTransporterType = (transporterType) =>
+  transporterType === COMMERCIAL
+    ? commercialTransporterDetailsPage.slug
     : privateTransporterDetailsPage.slug
+
+const logRefusalUnlessUsersOwnInput = (
+  request,
+  { errors, transporterType }
+) => {
+  if (transporterType !== '') {
+    kit.logRefusal(request, { fieldErrors: errors, transporterType })
+  }
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const values = { transporterType: payload.transporterType ?? '' }
-  const { errors } = validate(fields, payload)
+  const { value, errors } = validate(fields, payload)
+  const values = { transporterType: value.transporterType ?? '' }
   if (errors) {
     const { journey } = await state.get(request, h)
+    logRefusalUnlessUsersOwnInput(request, {
+      errors,
+      transporterType: values.transporterType
+    })
     return render(request, h, journey, values, { errors }).code(
       HTTP_STATUS_BAD_REQUEST
     )

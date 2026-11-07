@@ -6,6 +6,7 @@ import {
   openedFromChangeLink,
   refusingSaves,
   expectNoRefusalLogged,
+  expectOneRefusalLogged,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
@@ -17,6 +18,7 @@ import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
+import { copy } from '../copy/copy.en.js'
 
 import * as transporterAdd from './transporter-add.controller.js'
 
@@ -87,11 +89,43 @@ describe('/transporters/add', () => {
     })
   })
 
-  it('Should send an unanswered question back to the list', async () => {
-    const result = await driveHandler(postHandler, { payload: {} })
+  it('Should keep the trader on the page with an error when nothing is chosen, leaving the stored type unchanged', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: {}
+    })
 
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.transporterType).toBe(
+      copy.transporterAdd.errors.transporterTypeRequired
+    )
+    expect(result.view.context.errorSummary.errorList).toHaveLength(1)
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expectNoRefusalLogged(result.logger)
+  })
+
+  it("Should treat a whitespace-only type as the trader's own blank answer, leaving the stored type unchanged and logging nothing", async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: { transporterType: '   ' }
+    })
+
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.transporterType).toBe(
+      copy.transporterAdd.errors.transporterTypeRequired
+    )
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expectNoRefusalLogged(result.logger)
+  })
+
+  it('Should commit an offered type posted with surrounding whitespace trimmed, and reach that type’s own add form', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { transporterType: '  Commercial  ' }
+    })
+
+    expect(result.after.transporterType).toBe(COMMERCIAL)
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, LIST_SLUG)
+      redirect: pagePath(result.journeyId, COMMERCIAL_SLUG)
     })
   })
 
@@ -106,16 +140,22 @@ describe('/transporters/add', () => {
     })
   })
 
-  it('Should reject a transporter type the journey does not offer', async () => {
+  it('Should reject a transporter type the journey does not offer, with the feature’s own message, and log exactly one refusal', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: 'Municipal' }
     })
 
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
-    expect(result.view.context.errors.transporterType).toBeTruthy()
+    expect(result.view.context.errors.transporterType).toBe(
+      copy.transporterAdd.errors.transporterTypeRequired
+    )
     expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
-    expectNoRefusalLogged(result.logger)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['transporterType'],
+      transporterType: 'Municipal'
+    })
   })
 
   it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {

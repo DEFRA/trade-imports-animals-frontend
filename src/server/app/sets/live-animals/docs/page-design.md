@@ -551,9 +551,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - "Add a transporter" sits on the search row, right-aligned, above the table,
   and drops below the search on a phone. The tab order is the search box, the
   search button, "Add a transporter", then the radios.
-- "Choose a transporter type" warns that adding is a last resort. Private
-  comes first and has no hint; Commercial explains the Northern Ireland
-  condition.
+- "Choose a transporter type" warns the trader to check the transporter list
+  before adding a new transporter, to avoid duplicates. Private comes first
+  and has no hint; Commercial explains the Northern Ireland condition. Its one
+  button is a Continue, not a save.
+- Each add form opens only for the transporter type it belongs to; opening or
+  posting it for any other stored type, or none, returns the trader to the
+  type question.
+- The type question and the private form carry no status strip; the list and
+  the commercial form do.
 - A commercial transporter added by hand can only be from Northern Ireland,
   so the country is shown, not asked. It is stored in English, because it is
   an answer, not display text. A posted value other than Northern Ireland has

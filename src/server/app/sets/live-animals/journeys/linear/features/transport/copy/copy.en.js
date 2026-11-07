@@ -147,9 +147,9 @@ export const copy = {
   },
   transporterAdd: {
     title: 'Choose a transporter type',
-    legend: 'What type of transporter will move the animals?',
     warning:
-      'Before you add this transporter, please ensure you have already searched for it first.',
+      'Check the transporter list before adding new transporters to avoid duplicates.',
+    continueButton: 'Continue',
     options: {
       Private: {
         text: 'Private transporter'
@@ -158,6 +158,9 @@ export const copy = {
         text: 'Commercial',
         hint: 'This can only be a commercial transporter from Northern Ireland.'
       }
+    },
+    errors: {
+      transporterTypeRequired: 'Select a transporter type'
     }
   },
   commercialTransporterDetails: {

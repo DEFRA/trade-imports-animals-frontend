@@ -1,7 +1,15 @@
-import { afterEach, beforeEach, expect } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import {
+  driveHandler,
+  expectOneLogged,
+  useStubbedJourney
+} from '../../../../../../engine/test-support.js'
+import {
+  COMMERCIAL,
+  PRIVATE,
   parties,
   partiesFor
 } from '../../../../../../services/transporters/index.js'
@@ -10,6 +18,8 @@ import {
   forgetStubTransporters
 } from '../../../../../../services/transporters/stub/index.js'
 import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
+import { transporterAddPage } from './page.js'
+import { OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE } from './own-transporter-type.js'
 
 export const transitAppliesSeed = Object.freeze({
   countryOfOrigin: 'FR',
@@ -43,6 +53,71 @@ export const seedOrganisationTransporter = (organisationId, wireTransporter) =>
 export const forgetAddedTransportersAroundEachTest = () => {
   beforeEach(forgetStubTransporters)
   afterEach(forgetStubTransporters)
+}
+
+export const expectRedirectToTransporterTypeQuestion = (response, journeyId) =>
+  expect(response).toEqual({
+    redirect: pagePath(journeyId, transporterAddPage.slug)
+  })
+
+const otherTransporterTypeTo = (ownType) =>
+  ownType === COMMERCIAL ? PRIVATE : COMMERCIAL
+
+/** Registers, for a transporter detail form, the GET and POST cases where the
+ * notification's stored transporter type is not `ownType` — the other type,
+ * and none — each asserting the redirect to the type question, nothing
+ * committed, and the one redirect line logged. */
+export const itOpensOnlyForOwnTransporterType = ({
+  setId,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  ownType,
+  answerKey,
+  payload
+}) => {
+  const otherType = otherTransporterTypeTo(ownType)
+  const redirectLoggedWith = (journeyId, storedTransporterType) => ({
+    level: 'info',
+    fields: {
+      journeyId,
+      reason: 'not-own-transporter-type',
+      transporterType: ownType,
+      storedTransporterType
+    },
+    message: OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE
+  })
+
+  describe.each([
+    {
+      label: `the ${otherType} type stored`,
+      seed: { transporterType: otherType }
+    },
+    { label: 'no type stored', seed: {} }
+  ])(`the ${ownType} form opens only for its own type — $label`, ({ seed }) => {
+    useStubbedJourney(setId, dispatchPages)
+
+    it('Should redirect the GET to the type question, logging once', async () => {
+      const result = await driveHandler(getHandler, { seed })
+
+      expectRedirectToTransporterTypeQuestion(result.response, result.journeyId)
+      expectOneLogged(
+        result.logger,
+        redirectLoggedWith(result.journeyId, seed.transporterType ?? 'none')
+      )
+    })
+
+    it('Should redirect the POST to the type question, saving nothing and logging once', async () => {
+      const result = await driveHandler(postHandler, { seed, payload })
+
+      expectRedirectToTransporterTypeQuestion(result.response, result.journeyId)
+      expect(result.after[answerKey]).toBeUndefined()
+      expectOneLogged(
+        result.logger,
+        redirectLoggedWith(result.journeyId, seed.transporterType ?? 'none')
+      )
+    })
+  })
 }
 
 export const expectRecoverableSaveFailureKeepingValues = (

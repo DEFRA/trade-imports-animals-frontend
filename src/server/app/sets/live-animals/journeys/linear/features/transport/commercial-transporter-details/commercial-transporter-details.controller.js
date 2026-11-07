@@ -14,11 +14,13 @@ import {
   transporterAddPage
 } from '../page.js'
 import {
+  COMMERCIAL,
   COMMERCIAL_TRANSPORTER_COUNTRY_NAME,
   saveTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
+import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -61,6 +63,12 @@ const ENTERED_FIELDS = FIELD_ORDER.filter(
   (field) => !FIXED_FIELDS.includes(field)
 )
 
+const RECORD_FIELDS = ['approvalNumber', 'nameOrOrganisationName']
+
+const SAVED_ADDRESS_FIELDS = ENTERED_FIELDS.filter(
+  (field) => !RECORD_FIELDS.includes(field)
+)
+
 const MAX_APPROVAL_NUMBER_LENGTH = 50
 const MAX_NAME_LENGTH = 255
 const MAX_TOWN_LENGTH = 100
@@ -80,9 +88,6 @@ const fields = compose(
   maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
   maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
   maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
-  // The form posts the fixed country back in a hidden field, so a value that
-  // is not Northern Ireland has been tampered with: refuse it rather than
-  // quietly correcting it.
   oneOf('country', [NORTHERN_IRELAND], copy.errors.countryFixed),
   maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
   maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
@@ -125,20 +130,33 @@ const render = (
     errorSummary: kit.errorSummary(errors)
   })
 
+const addressValues = (address) =>
+  Object.fromEntries(
+    SAVED_ADDRESS_FIELDS.map((field) => [field, address?.[field] ?? ''])
+  )
+
+const valuesOfSavedCommercialTransporter = (saved) => ({
+  approvalNumber: saved?.approvalNumber ?? '',
+  nameOrOrganisationName: saved?.name ?? '',
+  ...addressValues(saved?.address)
+})
+
 const get = async (request, h) => {
+  const redirect = await redirectUnlessOwnTransporterType(
+    request,
+    h,
+    COMMERCIAL
+  )
+  if (redirect) {
+    return redirect
+  }
   const { journey, answers } = await state.get(request, h)
-  const saved = answers.commercialTransporter
-  return render(request, h, journey, {
-    approvalNumber: saved?.approvalNumber ?? '',
-    nameOrOrganisationName: saved?.name ?? '',
-    addressLine1: saved?.address?.addressLine1 ?? '',
-    addressLine2: saved?.address?.addressLine2 ?? '',
-    townOrCity: saved?.address?.townOrCity ?? '',
-    county: saved?.address?.county ?? '',
-    postcode: saved?.address?.postcode ?? '',
-    email: saved?.address?.email ?? '',
-    phone: saved?.address?.phone ?? ''
-  })
+  return render(
+    request,
+    h,
+    journey,
+    valuesOfSavedCommercialTransporter(answers.commercialTransporter)
+  )
 }
 
 const trimmedValues = (payload) =>
@@ -184,6 +202,7 @@ const remember = (request, values) =>
   )
 
 const post = saveTransporterDetails({
+  transporterType: COMMERCIAL,
   trimmedValues,
   formErrors,
   recordProvided,

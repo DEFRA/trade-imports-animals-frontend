@@ -147,9 +147,9 @@ export const copy = {
   },
   transporterAdd: {
     title: 'Dewiswch fath o gludwr',
-    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
     warning:
-      'Cyn i chi ychwanegu’r cludwr hwn, gwnewch yn siŵr eich bod wedi chwilio amdano yn gyntaf.',
+      'Gwiriwch restr y cludwyr cyn ychwanegu cludwyr newydd, i osgoi dyblygu.',
+    continueButton: 'Parhau',
     options: {
       Private: {
         text: 'Cludwr preifat'
@@ -158,6 +158,9 @@ export const copy = {
         text: 'Masnachol',
         hint: 'Dim ond cludwr masnachol o Ogledd Iwerddon y gall hwn fod.'
       }
+    },
+    errors: {
+      transporterTypeRequired: 'Rhaid dewis math o gludwr'
     }
   },
   commercialTransporterDetails: {

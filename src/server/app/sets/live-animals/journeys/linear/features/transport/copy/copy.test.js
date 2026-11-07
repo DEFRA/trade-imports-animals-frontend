@@ -287,17 +287,18 @@ describe('transport copy module — transporter pages', () => {
     )
   })
 
-  test('Should head the type question with the choice and leave the private option unhinted', () => {
+  test('Should head the type question with the choice, warn against duplicates and leave the private option unhinted', () => {
     expect(copy.transporterAdd.title).toBe('Choose a transporter type')
     expect(copy.transporterAdd.warning).toBe(
-      'Before you add this transporter, please ensure you have already searched for it first.'
+      'Check the transporter list before adding new transporters to avoid duplicates.'
     )
     for (const deck of [copy, copyCy]) {
       expect(Object.keys(deck.transporterAdd)).toEqual([
         'title',
-        'legend',
         'warning',
-        'options'
+        'continueButton',
+        'options',
+        'errors'
       ])
     }
     expect(copy.transporterAdd.options.Private).toEqual({
@@ -305,6 +306,20 @@ describe('transport copy module — transporter pages', () => {
     })
     expect(copy.transporterAdd.options.Commercial.hint).toBe(
       'This can only be a commercial transporter from Northern Ireland.'
+    )
+  })
+
+  test('Should label the type question’s one button Continue', () => {
+    expect(copy.transporterAdd.continueButton).toBe('Continue')
+    expect(copyCy.transporterAdd.continueButton).toBe('Parhau')
+  })
+
+  test('Should refuse a blank or unoffered transporter type with the same message', () => {
+    expect(copy.transporterAdd.errors.transporterTypeRequired).toBe(
+      'Select a transporter type'
+    )
+    expect(copyCy.transporterAdd.errors.transporterTypeRequired).toBe(
+      'Rhaid dewis math o gludwr'
     )
   })
 

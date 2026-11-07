@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import {
+  answerTransporterType,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   saveAndContinue,
-  saveArrivalByAir,
   signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -16,21 +17,9 @@ const NORTHERN_IRELAND = 'Northern Ireland'
 const BACK_LINK = '.govuk-back-link'
 const approvalNumberInput = '#approvalNumber'
 
-const openCommercialForm = async (page) => {
-  await saveArrivalByAir(page)
-  await page.getByRole('link', { name: 'Transport details' }).click()
-  await page.getByRole('button', { name: copy.transporters.add }).click()
-  await page
-    .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
-    .check()
-  await saveAndContinue(page).click()
-  await expect(page.getByRole('heading', { name: form.title })).toBeVisible()
-}
-
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
-// Not on the transporter list, so it can only have come from this form.
 const validTransporter = {
   approvalNumber: 'UK/BELF/T2/00104115',
   nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
@@ -136,7 +125,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('the commercial branch of the add route opens the form, under the new-transporter caption', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
     await expect(
@@ -150,7 +139,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('opens with the transporter-authorisation guidance the list states', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     const banner = page.locator('.govuk-notification-banner')
     await expect(banner).toContainText(form.guidanceTitle)
@@ -171,7 +160,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('asks for the authorisation number, the name, the address and the contact details', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     for (const label of Object.values(form.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
@@ -187,21 +176,19 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('fixes the country to Northern Ireland and does not let the trader change it', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     const country = page.locator('#country')
     await expect(country).toBeDisabled()
     await expect(country).toHaveValue(NORTHERN_IRELAND)
     await expect(country.locator('option')).toHaveCount(1)
-    // The disabled control posts nothing, so the value reaches the server on
-    // the hidden field beside it.
     await expect(
       page.locator('input[type="hidden"][name="country"]')
     ).toHaveValue(NORTHERN_IRELAND)
   })
 
   test('the form goes back to the type question', async ({ page }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await page.locator(BACK_LINK).click()
 
     await expect(
@@ -212,7 +199,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('ends with the primary alone, being reached from the type question', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     await expectPageEndsWithPrimaryAlone(page)
   })
@@ -220,7 +207,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('saves a hand-entered commercial transporter and persists every value', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page)
     await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -235,20 +222,15 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
     page
   }) => {
-    // Its own name, distinct from the other tests' saved transporters in this
-    // file: the address book keeps every save as its own row, so sharing a
-    // name here would make this test's own radio ambiguous.
     const addedTransporter = {
       ...validTransporter,
       nameOrOrganisationName: 'Quay Road Haulage Ltd'
     }
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page, addedTransporter)
     await saveAndContinue(page).click()
 
     await page.goto(journeyUrl(page, 'transporters'))
-    // The transporter joined the list on the way through, so it is the row the
-    // notification already names and the one that comes back checked.
     await expect(
       page.getByRole('radio', {
         name: addedTransporter.nameOrOrganisationName
@@ -266,7 +248,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('a completely blank commercial transporter record is optional', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await saveAndContinue(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -282,7 +264,7 @@ test.describe('commercial transporter required validations', () => {
     test(`commercial transporter validation: empty ${name} links to and focuses the preserved field`, async ({
       page
     }) => {
-      await openCommercialForm(page)
+      await answerTransporterType(page, COMMERCIAL)
       await fillTransporter(page)
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
@@ -308,7 +290,7 @@ test.describe('commercial transporter format validations', () => {
     test(`commercial transporter validation: ${name} links to and focuses the preserved value`, async ({
       page
     }) => {
-      await openCommercialForm(page)
+      await answerTransporterType(page, COMMERCIAL)
       await fillTransporter(page, { ...validTransporter, [field]: invalid })
       await saveAndContinue(page).click()
 
@@ -332,7 +314,7 @@ test.describe('commercial transporter form accessibility', () => {
   test('the form has no serious or critical axe violations', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -343,7 +325,7 @@ test.describe('commercial transporter form accessibility', () => {
   test('the form in its error state has no serious or critical axe violations', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page)
     await page.locator(approvalNumberInput).fill('')
     await saveAndContinue(page).click()

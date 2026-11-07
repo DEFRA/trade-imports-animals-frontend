@@ -17,7 +17,8 @@ import {
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
-  forgetAddedTransportersAroundEachTest
+  forgetAddedTransportersAroundEachTest,
+  itOpensOnlyForOwnTransporterType
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -105,6 +106,24 @@ describe('/transporters/add/commercial', () => {
     })
 
     expect(result.view.context.values).toEqual(RECORD)
+  })
+
+  it('Should blank every field when the saved record carries none of them', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: COMMERCIAL, commercialTransporter: {} }
+    })
+
+    expect(result.view.context.values).toEqual({
+      approvalNumber: '',
+      nameOrOrganisationName: '',
+      addressLine1: '',
+      addressLine2: '',
+      townOrCity: '',
+      county: '',
+      postcode: '',
+      email: '',
+      phone: ''
+    })
   })
 
   it('Should name the missing mandatory fields on a part-filled record', async () => {
@@ -216,6 +235,16 @@ describe('/transporters/add/commercial', () => {
 
     expectRecoverableSaveFailureKeepingValues(response, RECORD)
   })
+})
+
+itOpensOnlyForOwnTransporterType({
+  setId: SET_ID,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  ownType: COMMERCIAL,
+  answerKey: 'commercialTransporter',
+  payload: { ...RECORD, country: NORTHERN_IRELAND }
 })
 
 describe('/transporters/add/commercial keeps the transporter for the organisation', () => {

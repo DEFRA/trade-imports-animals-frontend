@@ -17,7 +17,8 @@ import {
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
-  forgetAddedTransportersAroundEachTest
+  forgetAddedTransportersAroundEachTest,
+  itOpensOnlyForOwnTransporterType
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -250,6 +251,16 @@ describe('GET /transporters/add/private — a stored country the reader no longe
     expect(result.before.privateTransporter.address.country).toBe(STALE_COUNTRY)
     expect(result.after.privateTransporter.address.country).toBe(STALE_COUNTRY)
   })
+})
+
+itOpensOnlyForOwnTransporterType({
+  setId: SET_ID,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  ownType: PRIVATE,
+  answerKey: 'privateTransporter',
+  payload: RECORD
 })
 
 describe('POST /transporters/add/private — an empty country from a part-filled record is refused, not silently wiped', () => {

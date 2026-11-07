@@ -10,13 +10,17 @@ import {
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
-import { saveTransporter } from '../../../../../../../services/transporters/index.js'
+import {
+  PRIVATE,
+  saveTransporter
+} from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import {
   privateTransporterDetailsPage as page,
   transporterAddPage
 } from '../page.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
+import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -110,7 +114,8 @@ const render = async (
       ),
       journey,
       page,
-      recoverableError
+      recoverableError,
+      showJourneyStrip: false
     }),
     copy,
     values,
@@ -119,15 +124,15 @@ const render = async (
     countryItems: await countryItems(values.country)
   })
 
-const addressValues = (saved) => ({
-  addressLine1: saved?.address?.addressLine1 ?? '',
-  addressLine2: saved?.address?.addressLine2 ?? '',
-  townOrCity: saved?.address?.townOrCity ?? '',
-  county: saved?.address?.county ?? '',
-  postcode: saved?.address?.postcode ?? '',
-  country: saved?.address?.country ?? '',
-  email: saved?.address?.email ?? '',
-  phone: saved?.address?.phone ?? ''
+const addressValues = (address) => ({
+  addressLine1: address?.addressLine1 ?? '',
+  addressLine2: address?.addressLine2 ?? '',
+  townOrCity: address?.townOrCity ?? '',
+  county: address?.county ?? '',
+  postcode: address?.postcode ?? '',
+  country: address?.country ?? '',
+  email: address?.email ?? '',
+  phone: address?.phone ?? ''
 })
 
 const isCountryStale = async (name) => {
@@ -139,9 +144,13 @@ const isCountryStale = async (name) => {
 }
 
 const get = async (request, h) => {
+  const redirect = await redirectUnlessOwnTransporterType(request, h, PRIVATE)
+  if (redirect) {
+    return redirect
+  }
   const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
-  const address = addressValues(saved)
+  const address = addressValues(saved?.address)
   const staleCountry = await isCountryStale(address.country)
   const values = {
     nameOrOrganisationName: saved?.name ?? '',
@@ -197,6 +206,7 @@ const remember = async (request, values) =>
   )
 
 const post = saveTransporterDetails({
+  transporterType: PRIVATE,
   trimmedValues,
   formErrors,
   recordProvided,
