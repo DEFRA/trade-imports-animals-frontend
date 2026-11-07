@@ -120,7 +120,7 @@ GET calls `state.get()` once and prefills from `answers`. POST:
    is not the user's input error logs once through `kit.logRefusal` with the
    journey id)
 4. commits cleaned values with `state.commit()`
-5. redirects through `await kit.nextTarget(request, page, committed.scope)`
+5. redirects through `kit.nextTarget(request, page, committed.scope)`
 
 Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
 failure is logged once by `recoverableSave`; render the same values with

@@ -185,7 +185,7 @@ const post = async (request, h) => {
     )
   }
   const { scope: savedScope } = await state.get(request, h)
-  return h.redirect(await kit.nextTarget(request, page, savedScope))
+  return h.redirect(kit.nextTarget(request, page, savedScope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

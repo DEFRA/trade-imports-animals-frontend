@@ -302,9 +302,7 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
 }
 
 const continueToNextPage = async (request, h, pageState, saveChoice) =>
-  h.redirect(
-    await kit.nextTarget(request, page, pageState.scope, { saveChoice })
-  )
+  h.redirect(kit.nextTarget(request, page, pageState.scope, { saveChoice }))
 
 const renderRejectedDocumentRefusal = async (request, h, pageState) => {
   kit.logRefusal(request, {

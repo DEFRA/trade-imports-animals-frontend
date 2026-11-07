@@ -156,7 +156,7 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
-  return h.redirect(await kit.nextTarget(request, page, scope))
+  return h.redirect(kit.nextTarget(request, page, scope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

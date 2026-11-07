@@ -193,7 +193,7 @@ const postContinue = async (request, h, current, payload, selected) => {
     return failure
   }
 
-  return h.redirect(await kit.nextTarget(request, page, committed.scope))
+  return h.redirect(kit.nextTarget(request, page, committed.scope))
 }
 
 const get = async (request, h) => {
