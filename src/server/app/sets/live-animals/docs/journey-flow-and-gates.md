@@ -97,79 +97,56 @@ the transit countries page
 sends a load or any submit to the overview, saving nothing, when the means of
 transport leaves transit countries out of scope.
 
-## Opening run and entry guard
+## Entry guard and the Back link
 
-[`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports
-`previousRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
-journey's redirect policy before handlers run.
+[`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the journey's redirect
+policy before handlers run and the Import Notification Service's type question
+(`insTypeQuestionUrl`), which the gateway passes to `configureJourneyFlow()`.
 
-`RUN_STEPS` lists the steps the Back link follows during the run: origin, what
-you are importing, the reason for import, the commodity details, animal
-identification, the additional details, the arrival details, the transit
-countries, the transporter, the uploaded documents, roles and addresses, the
-contact address and then the review page. The CPH number page is not a step: it
-opens from the CPH section's add link on Roles and addresses and saves back to it.
-What are you importing? is likewise a detour, not a step, when Commodity details or Identification details opens it:
-it saves back to the page that opened it, carrying any change context, and its Back opens that page.
-Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the next page that applies follows.
+Back on every journey page goes to the place the trader came from. The place travels
+on the page's links and form posts as the trail (see
+[Where Back goes](../../../docs/flow-and-gates.md#where-back-goes-the-trail)):
 
-Three pieces of the sequence carry reasons that are easy to lose. Fish is on none
-of the identifier allowlists, so animal identification has nothing to ask of a
-consignment of fish; the identification page's no-identifiers guard sends that
-request on to the additional details rather than to the hub, so the run carries
-on. The transporter leg is one step, the list: the add spokes behind it are not
-steps, and each hands the run back at the list's step when it saves. A spoke that
-continued from itself would find no step and drop the trader on the hub.
+| The trader came from                  | Back opens                                           |
+| ------------------------------------- | ---------------------------------------------------- |
+| Save and continue on another page     | That page, carrying the places beneath it            |
+| An Overview task row or review button | Overview                                             |
+| A review Change link or error link    | The review                                           |
+| A dashboard card (View or Amend)      | The dashboard                                        |
+| Start a new notification              | The dashboard, from the first page                   |
+| The Import Notification Service       | Its type question for this notification, first page  |
+| Nothing the journey knows             | Overview (the first page: see the entry guard below) |
 
-During the run, a step's Back link opens the previous step rather than the
-overview, and following it does not end the run: a later Save and continue goes
-on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back link
-may open, nearest first, and `previousRunTarget` returns the first whose gate
-passes, so a skipped step is skipped going back too. On a draft notification, a
-page opened from a Change link on the review has the same Back link, carrying
-change context, which carries Back; its save goes on to the next page that applies. While the
-notification is being amended, every page keeps its usual Back link.
-`kit.runBackLink()` falls back to the overview when neither the run nor a draft
-Change link applies, or no named earlier step applies. A
-page that has declared, through the helper's `returnsToReview` option, that it
-returns to the review is answered with the review instead when the request
-carries change context or the notification is being amended; every other page
-is unaffected.
+Following a Back link does not end anything: a later Save and continue goes on to the
+next page that applies, adding the page saved to the trail, so Back steps through the
+visited pages in reverse. Save and return to overview still goes to the overview.
 
-| Step                    | Back opens                                                                            |
-| ----------------------- | ------------------------------------------------------------------------------------- |
-| What are you importing? | Origin, or Commodity details or Identification details when one of them opened it     |
-| Reason for import       | What are you importing?                                                               |
-| Commodity details       | What are you importing?, not the reason between them                                  |
-| Additional details      | Animal identification when a chosen species needs identifiers, else Commodity details |
-| Transit countries       | Arrival details                                                                       |
+Pages that redirect onward without showing themselves carry the trail rather than push
+onto it. The identification page's no-identifiers guard sends the request on to the
+additional details carrying the trail, so Back on the additional details opens Commodity
+details when nothing was identified. What are you importing? opened by Commodity details
+or Identification details saves back to the page that opened it, carrying the trail, and
+its Back opens that page. The CPH number page opened from the CPH section's add link
+saves back to Roles and addresses and goes Back there; opened from a review Change link
+its Back is the review and its Save and continue goes to Roles and addresses. A return
+value that is not one of the pages allowed to open this sub-page is refused, logged and ignored.
 
-Animal identification, arrival details, the transporter, roles and addresses
-and the contact address keep their Back link on the overview, from a review
-Change link as well. Origin keeps the Back link it has without the Change link:
-it goes back to the Import Notification Service's type question, for this
-notification, while the opening run is active and began at the start entry; to
-the dashboard while it is active and began at the list's create; otherwise to
-the overview when the overview would admit the request (see
-[the entry guard](#opening-run-and-entry-guard)), else to the dashboard. The
-identification condition is `identifiesAnAnimal`, the rule that also decides
-whether the identification task row applies.
+A trail that names a place the journey does not have is ignored and logged once, and
+the page goes Back to its fallback. The fallback is the overview, except on the first
+page (the dashboard until an answer is entered, then the overview: `leaveJourneyLink` in
+`entry-guard.js`) and on the review (the overview on a draft or an amendment, the
+dashboard on a submitted notification, including the one shown after an amendment is
+cancelled).
 
-The documents page's Back link opens the review while the notification is
-being amended, or when the page was opened by changing the uploaded documents
-from the review; it opens the overview otherwise.
-
-The review page's Back link follows the notification's status instead. A
-submitted notification, including the one shown after an amendment is cancelled,
-goes back to the notification list; a draft's review and an amendment in
-progress go back to the overview.
+Returning from the Import Notification Service's address book lands on a fixed address
+that carries no trail, so Consignment addresses and Contact address go Back to the
+overview after it; Save and continue still goes on from them.
 
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on the pages that offer it
 ([How a page ends](page-design.md#how-a-page-ends)), or by opening the
-notification from the dashboard — not somewhere the run puts them between
-sections. Rendering the hub, or the review page, completes the run
-([`completeOpeningRun`](../../../flow/run-state.js), called from
+notification from the dashboard. Rendering the hub, or the review page, completes the
+opening run ([`completeOpeningRun`](../../../flow/run-state.js), called from
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
 [`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
 Save and continue goes to the next page that applies in the journey's order
@@ -177,17 +154,15 @@ from every start (a new notification,
 an Overview task, a reopened draft, a copy, a Change link or an amendment), and
 past the last page that applies it goes to the review page. The CPH number page
 is a sub-page: it goes on from the page that opens it to Roles and addresses.
-Nothing marks a page as opened from the hub.
 
-The opening run begins when the notification is created. The dashboard's
-create POST and the start entry (`<set>/start`, which the Import Notification
-Service's type question opens) both create it, through one helper in
+A notification is created by the dashboard's create POST or by the start entry
+(`<set>/start`, which the Import Notification Service's type question opens), through one
+helper in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-that calls `beginOpeningRun` and records which of the two entries began the
-run. The start entry sits outside `/notifications/`, so
-the entry guard never sees it. The origin page is the journey entry.
-Its Back link reads the opening-run record (see the Back link rules above), and
-its save goes on through `kit.nextTarget` like any other page.
+that calls `beginOpeningRun` and redirects to the
+origin page with the dashboard or the Import Notification Service as the first place on
+the trail. The start entry sits outside `/notifications/`, so the entry guard never sees
+it. The origin page is the journey entry.
 
 The guard admits a request when the journey carries an answer the user entered.
 System-populated obligations and flow-only keys such as `declaration` never count
@@ -199,16 +174,16 @@ origin page and its children, and the amend, cancel-amend, copy and delete
 actions, are exempt from the guard, so there is no redirect loop. The guard
 admits a request only when the journey carries an answer the user entered.
 
-A journey the guard bounces to the origin page goes on from that page to What are
-you importing? like any other start. Overview's link is the dashboard until an
-answer is entered, for Back and Cancel alike (`leaveJourneyLink` in `entry-guard.js`).
+A journey the guard bounces to the origin page carries no trail, so the origin page's
+Back is the dashboard until an answer is entered. The guard sends the request on to
+What are you importing? like any other start.
 
 ## Registration wiring
 
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), imports `sections`,
-`taskRows`, `rowStatus`, `previousRunTarget`, `FLOW_ONLY_KEYS` and
+`taskRows`, `rowStatus`, `insTypeQuestionUrl`, `FLOW_ONLY_KEYS` and
 `entryGuardTarget`, then passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from

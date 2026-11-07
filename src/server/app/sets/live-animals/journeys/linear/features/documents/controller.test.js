@@ -20,10 +20,12 @@ import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { addressesPage } from '../addresses/page.js'
+import { documentsPage } from './page.js'
 import {
   CYA_SLUG,
   REFUSAL_LOG_MESSAGE,
-  SURFACES
+  SURFACES,
+  withTrail
 } from '../../../../../../shared/kit.js'
 import { store } from '../../../../../../engine/store.js'
 import { registerJourneyCookie } from '../../../../../../engine/journey.js'
@@ -40,13 +42,12 @@ import { BackendRequestError } from '../../../../../../services/persistence/reco
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
-  amendmentOpened,
   amendmentOpenedFromChangeLink,
   driveHandler,
   getHandlerOf,
   expectBackLinkIsPage,
   expectOneLogged,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   postHandlerOf,
   refusingSaves,
   registerTestRequestLogger,
@@ -63,7 +64,8 @@ import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { ADD_DOCUMENT_ANCHOR } from './contracts/add-document-anchor.js'
-import { itSendsBackToOverview } from '../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
+import { transportersPage } from '../transport/page.js'
 import { addDocumentSubmission, driveReturnFromUpload } from './test-support.js'
 import { copy } from './copy/copy.en.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
@@ -276,7 +278,11 @@ const submittedDocument = (overrides = {}) => ({
   ...overrides
 })
 
-const addressesPath = (journeyId) => pagePath(journeyId, addressesPage.slug)
+const addressesPath = (journeyId, ...trailBeforeDocuments) =>
+  withTrail(pagePath(journeyId, addressesPage.slug), [
+    ...trailBeforeDocuments,
+    documentsPage.slug
+  ])
 const SAVE_AND_CONTINUE = { action: 'continue' }
 const SAVE_AND_CONTINUE_LABEL = 'Save and continue'
 const SAVE_AND_RETURN_TO_OVERVIEW = { action: 'continue', exit: 'hub' }
@@ -461,7 +467,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
       `${SAVE_AND_CONTINUE_LABEL} while amending`,
       SAVE_AND_CONTINUE,
       { startingFrom: amendmentOpenedFromChangeLink() },
-      (journeyId) => addressesPath(journeyId)
+      (journeyId) => addressesPath(journeyId, CYA_SLUG)
     ]
   ])(
     'Should append the returned document once and redirect to where %s leads',
@@ -538,11 +544,11 @@ describe('documents — leaving the page by the save choice a returned upload ca
 
   it('Should send an untouched form returned with Save and continue from a page opened with a Change link on to Roles and addresses', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: addressesPath(result.journeyId)
+      redirect: addressesPath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -552,7 +558,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
 
     expect(result.response).toEqual({
-      redirect: addressesPath(result.journeyId)
+      redirect: addressesPath(result.journeyId, CYA_SLUG)
     })
   })
 
@@ -597,26 +603,20 @@ describe('documents — the Back link', () => {
 
   it('Should go Back to the review when the page was opened by changing an answer from the review', async () => {
     const result = await driveHandler(get, {
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expectBackLinkIsPage(result, CYA_SLUG)
   })
 
-  it('Should go Back to the review while the notification is being amended, with nothing in the address saying where the trader came from', async () => {
-    const result = await driveHandler(get, {
-      startingFrom: [amendmentOpened()]
-    })
-
-    expectBackLinkIsPage(result, CYA_SLUG)
+  itSendsBackToWhereTheTraderCameFrom(get, {
+    previousPage: transportersPage.slug
   })
-
-  itSendsBackToOverview(get, { cases: ['when opened from the Overview'] })
 
   it('Should keep the review back link after the page refuses a part-filled document returned from the upload service', async () => {
     const result = await driveReturnFromUpload({
       submission: validDocument,
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)

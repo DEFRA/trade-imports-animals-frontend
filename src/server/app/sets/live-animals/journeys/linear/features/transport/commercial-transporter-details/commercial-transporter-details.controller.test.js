@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
@@ -17,10 +17,12 @@ import {
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
+  itCarriesTheTrailOnBack,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
 import { documentsPage } from '../../documents/page.js'
 import { dispatchPages } from '../../index.js'
 import { copy } from '../copy/copy.en.js'
@@ -63,15 +65,9 @@ describe('/transporters/add/commercial', () => {
     )
   })
 
-  it('Should keep the change context on Back when the trader is changing an answer', async () => {
-    const result = await driveHandler(getHandler, {
-      seed: { transporterType: COMMERCIAL },
-      startingFrom: [openedFromChangeLink()]
-    })
-
-    expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, ADD_SLUG)}?change=1`
-    )
+  itCarriesTheTrailOnBack(getHandler, {
+    seed: { transporterType: COMMERCIAL },
+    backSlug: ADD_SLUG
   })
 
   it('Should carry the transporter-authorisation guidance and the fixed country', async () => {
@@ -178,19 +174,25 @@ describe('/transporters/add/commercial', () => {
       },
       approvalNumber: RECORD.approvalNumber
     })
-    expect(result.response.redirect).toBeTruthy()
-    expect(result.response.redirect).not.toContain(ADD_SLUG)
+    expect(result.response.redirect).toBe(
+      withTrail(pagePath(result.journeyId, documentsPage.slug), [
+        'transporters'
+      ])
+    )
   })
 
   it('Should hand on from the transporter list after a save made from its Change link', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, documentsPage.slug)
+      redirect: withTrail(pagePath(result.journeyId, documentsPage.slug), [
+        CYA_SLUG,
+        'transporters'
+      ])
     })
   })
 

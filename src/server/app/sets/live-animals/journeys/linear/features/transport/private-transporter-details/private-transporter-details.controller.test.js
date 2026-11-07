@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
-  openedFromChangeLink,
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
@@ -17,10 +16,13 @@ import {
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
+  itCarriesTheTrailOnBack,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
+import { withTrail } from '../../../../../../../shared/kit.js'
+import { documentsPage } from '../../documents/page.js'
 import { dispatchPages } from '../../index.js'
 
 import * as privateTransporterDetails from './private-transporter-details.controller.js'
@@ -78,15 +80,9 @@ describe('/transporters/add/private', () => {
     )
   })
 
-  it('Should keep the change context on Back when the trader is changing an answer', async () => {
-    const result = await driveHandler(getHandler, {
-      seed: { transporterType: PRIVATE },
-      startingFrom: [openedFromChangeLink()]
-    })
-
-    expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, ADD_SLUG)}?change=1`
-    )
+  itCarriesTheTrailOnBack(getHandler, {
+    seed: { transporterType: PRIVATE },
+    backSlug: ADD_SLUG
   })
 
   it('Should flatten the saved record back into the form fields', async () => {
@@ -132,7 +128,7 @@ describe('/transporters/add/private', () => {
     expectNoRefusalLogged(result.logger)
   })
 
-  it('Should hand a saved record on from the transporter list', async () => {
+  it('Should hand a saved record on to Upload documents, with the transporter list on the trail', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: RECORD
@@ -144,8 +140,11 @@ describe('/transporters/add/private', () => {
     expect(result.after.privateTransporter.address.postcode).toBe(
       RECORD.postcode
     )
-    expect(result.response.redirect).toBeTruthy()
-    expect(result.response.redirect).not.toContain(ADD_SLUG)
+    expect(result.response.redirect).toBe(
+      withTrail(pagePath(result.journeyId, documentsPage.slug), [
+        'transporters'
+      ])
+    )
   })
 
   it('Should walk on without saving when the form is left blank', async () => {

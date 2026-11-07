@@ -10,9 +10,7 @@ import {
   unavailableBackendError
 } from '../engine/test-support.js'
 import {
-  appendChangeContext,
   base,
-  changeContext,
   dateField,
   hubExitTarget,
   logRefusal,
@@ -23,7 +21,6 @@ import {
   requestSaveChoice,
   returnedSaveChoice,
   setlessBase,
-  withChangeContext,
   withReturnMarker
 } from './kit.js'
 
@@ -41,8 +38,8 @@ describe('#requestSaveChoice — what a request says about how it was saved', ()
     ).toBe(false)
   })
 
-  it('Should carry nothing from the change context of the query', () => {
-    expect(requestSaveChoice({ params, query: { change: '1' } })).toEqual({
+  it('Should carry nothing from the trail of the query', () => {
+    expect(requestSaveChoice({ params, query: { from: 'overview' } })).toEqual({
       hubExit: false
     })
   })
@@ -71,24 +68,6 @@ describe('#hubExitTarget given a save choice', () => {
 
   it('Should read the request when no save choice is given', () => {
     expect(hubExitTarget(request)).toMatch(/journey-1$/)
-  })
-})
-
-describe('#changeContext — the Change-link marker', () => {
-  const params = { journeyId: 'journey-1' }
-
-  it('Should be true only for a request whose query carries the marker', () => {
-    expect(changeContext({ params, query: { change: '1' } })).toBe(true)
-    expect(changeContext({ params, query: {} })).toBe(false)
-  })
-
-  it('Should append the marker to an href exactly when the request carries it', () => {
-    expect(
-      withChangeContext({ params, query: { change: '1' } }, '/n/j-1/a')
-    ).toBe('/n/j-1/a?change=1')
-    expect(withChangeContext({ params, query: {} }, '/n/j-1/a')).toBe(
-      '/n/j-1/a'
-    )
   })
 })
 
@@ -209,14 +188,17 @@ describe('#pageRoutes — a save refused as stale', () => {
       params: { journeyId: 'journey-1' },
       payload: { concurrencyToken: '3' },
       path: '/notifications/journey-1/origin',
-      url: new URL('http://localhost/notifications/journey-1/origin?change=1')
+      url: new URL(
+        'http://localhost/notifications/journey-1/origin?from=notification-view'
+      )
     }
     const h = { redirect: (to) => ({ redirect: to }) }
 
     const response = await postRoute.handler(request, h)
 
     expect(response).toEqual({
-      redirect: '/notifications/journey-1/origin?change=1&staleAction=1'
+      redirect:
+        '/notifications/journey-1/origin?from=notification-view&staleAction=1'
     })
     expect(logger.entries).toEqual([
       {
@@ -378,16 +360,6 @@ describe('#logRefusal', () => {
       level: 'warn',
       reason: 'unlisted-species'
     })
-  })
-})
-
-describe('#appendChangeContext — the change marker on an href', () => {
-  it('Should start the query string on an href without one', () => {
-    expect(appendChangeContext('/a')).toBe('/a?change=1')
-  })
-
-  it('Should join to the query string an href already has', () => {
-    expect(appendChangeContext('/a?x=1')).toBe('/a?x=1&change=1')
   })
 })
 

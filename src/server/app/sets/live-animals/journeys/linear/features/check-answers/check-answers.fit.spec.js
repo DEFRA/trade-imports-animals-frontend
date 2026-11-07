@@ -197,12 +197,14 @@ test.describe('check-answers feature documents section', () => {
     const changeLink = cardChangeLink(page, copy.hidden.cards.documents)
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/accompanying-documents\?change=1$/
+      /\/notifications\/[^/]+\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
     )
 
     await changeLink.click()
 
-    await expect(page).toHaveURL(/\/accompanying-documents\?change=1$/)
+    await expect(page).toHaveURL(
+      /\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
+    )
   })
 })
 
@@ -255,12 +257,14 @@ test.describe('check-answers feature exit answers', () => {
     const changeLink = cardChangeLink(page, copy.hidden.cards.reasonForImport)
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/import-reason\?change=1$/
+      /\/notifications\/[^/]+\/import-reason\?from=(?:[^#]*%2C)?notification-view$/
     )
 
     await changeLink.click()
 
-    await expect(page).toHaveURL(/\/import-reason\?change=1$/)
+    await expect(page).toHaveURL(
+      /\/import-reason\?from=(?:[^#]*%2C)?notification-view$/
+    )
   })
 
   test('shows the exit date and port of exit a temporary admission collected', async ({
@@ -331,12 +335,14 @@ test.describe('check-answers feature change links', () => {
     const changeLink = cardChangeLink(page, copy.hidden.cards.importDetails)
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/origin\?change=1$/
+      /\/notifications\/[^/]+\/origin\?from=(?:[^#]*%2C)?notification-view$/
     )
 
     await changeLink.click()
 
-    await expect(page).toHaveURL(/\/origin\?change=1$/)
+    await expect(page).toHaveURL(
+      /\/origin\?from=(?:[^#]*%2C)?notification-view$/
+    )
     await page.getByLabel(INTERNAL_REFERENCE_LABEL).clear()
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 

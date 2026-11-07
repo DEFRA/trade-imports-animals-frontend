@@ -5,13 +5,13 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
+import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import {
   driveHandler,
-  openingRunAt,
+  trailQuery,
+  expectBackLinkIsPath,
   refusingSaves,
-  expectBackLinkIsPage,
   expectNoRefusalLogged,
   expectOneSaveFallbackLogged,
   getHandlerOf,
@@ -24,13 +24,10 @@ import {
   FELIS_CATUS_ROW,
   STRUTHIO_ROW
 } from '../commodities/search/test-support.js'
-import { hubPath } from '../../../../../../shared/paths.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../test-support.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { TRAIL_START, withTrail } from '../../../../../../shared/kit.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
-import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { dispatchPages } from '../index.js'
 
 import * as additionalDetails from './controller.js'
@@ -116,52 +113,45 @@ describe('POST additional-details — Save and return to overview', () => {
 describe('additional-details — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const catLine = FELIS_CATUS_ROW
-  const ostrichLine = STRUTHIO_ROW
   const IDENTIFICATION_SLUG = 'commodities/identification'
   const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
 
-  it('Should go Back to identification in the opening run when a chosen species needs identifiers', async () => {
+  it('Should go Back to commodity details when commodity details was the page saved, passing over identification', async () => {
     const result = await driveHandler(get, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      seed: { countryOfOrigin: 'FR', commodityLines: [STRUTHIO_ROW] },
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, CONSIGNMENT_DETAILS_SLUG) }
+      ]
     })
-    expectBackLinkIsPage(result, IDENTIFICATION_SLUG)
+
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, CONSIGNMENT_DETAILS_SLUG), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  it('Should go Back to the consignment details in the opening run when no chosen species needs identifiers', async () => {
-    const result = await driveHandler(get, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, CONSIGNMENT_DETAILS_SLUG)
-  })
-
-  it('Should keep Back on identification when the page is shown again after a refusal in the run', async () => {
+  it('Should keep Back on identification when the page is shown again after a refusal', async () => {
     const result = await driveHandler(post, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
+      seed: { countryOfOrigin: 'FR', commodityLines: [FELIS_CATUS_ROW] },
       payload: { animalsCertifiedFor: 'not-a-real-purpose' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, IDENTIFICATION_SLUG) }
+      ]
     })
+
     expect(result.response.statusCode).toBe(400)
-    expectBackLinkIsPage(result, IDENTIFICATION_SLUG)
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, IDENTIFICATION_SLUG), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  itSendsBackToOverview(get, {
-    seed: { countryOfOrigin: 'FR', commodityLines: [catLine] },
-    cases: ['when opened from the Overview']
+  itSendsBackToWhereTheTraderCameFrom(get, {
+    seed: { countryOfOrigin: 'FR', commodityLines: [FELIS_CATUS_ROW] },
+    previousPage: IDENTIFICATION_SLUG
   })
-
-  itSendsBackCarryingChangeTo(get, [
-    [
-      'identification, when a chosen species needs identifiers',
-      { countryOfOrigin: 'FR', commodityLines: [catLine] },
-      IDENTIFICATION_SLUG
-    ],
-    [
-      'the consignment details, when no chosen species needs identifiers',
-      { countryOfOrigin: 'FR', commodityLines: [ostrichLine] },
-      CONSIGNMENT_DETAILS_SLUG
-    ]
-  ])
 })

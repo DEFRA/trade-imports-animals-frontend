@@ -18,7 +18,7 @@ const startAtContact = async (page) => {
 
   const contactUrl = page
     .url()
-    .replace(/\/origin$/, '/consignment/contact/select')
+    .replace(/\/origin(?:\?.*)?$/, '/consignment/contact/select')
   await answerOriginEntry(page)
 
   await page.goto(contactUrl)

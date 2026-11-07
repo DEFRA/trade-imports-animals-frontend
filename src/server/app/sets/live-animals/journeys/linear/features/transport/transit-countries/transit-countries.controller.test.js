@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  openingRunAt,
+  trailQuery,
+  expectBackLinkIsPath,
   refusingSaves,
-  expectBackLinkIsPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectOneSaveFallbackLogged,
@@ -18,11 +18,8 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../../test-support.js'
-import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
+import { TRAIL_START, withTrail } from '../../../../../../../shared/kit.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
   transitAppliesSeed,
@@ -54,6 +51,9 @@ const SAVE_ANSWERS = 'save answers'
 const NOT_ON_THE_LIST_MESSAGE = 'Select countries from the list'
 const SELECT_TEXT = 'Select a country'
 const CANARY_ISLANDS = 'Canary Islands (Spain)'
+
+const transportersAfterSaving = (journeyId) =>
+  withTrail(pagePath(journeyId, 'transporters'), ['transit-countries'])
 
 describe('POST transit-countries — adding a country', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -370,8 +370,9 @@ describe('POST transit-countries — continuing', () => {
   it('Should commit an empty list and continue when no country was added, the question being optional', async () => {
     const result = await driveHandler(post, { seed, payload: {} })
     expect(result.after.transitedCountries).toEqual([])
-    expect(result.response.redirect).toBeDefined()
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 
   it('Should deduplicate and commit the added country codes', async () => {
@@ -380,7 +381,9 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: ['FR', 'BE', 'FR'] }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).toBe(
+      transportersAfterSaving(result.journeyId)
+    )
   })
 
   it('Should commit a territory code when continuing', async () => {
@@ -390,7 +393,7 @@ describe('POST transit-countries — continuing', () => {
     })
     expect(result.after.transitedCountries).toEqual(['ES-CN'])
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, 'transporters')
+      transportersAfterSaving(result.journeyId)
     )
   })
 
@@ -516,7 +519,7 @@ describe('POST transit-countries — Continue silently drops stored stale codes 
     expect(result.before.transitedCountries).toEqual(['FR', 'BE', 'ZZ'])
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, 'transporters')
+      transportersAfterSaving(result.journeyId)
     )
   })
 })
@@ -572,31 +575,26 @@ describe('transit-countries — the Back link', () => {
   const ARRIVAL_DETAILS_SLUG = 'port-of-entry'
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should go Back to the arrival details while the opening run is on', async () => {
-    const result = await driveHandler(get, {
-      seed,
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
-  })
-
-  it('Should keep Back on the arrival details when the page is shown again after adding a country in the run', async () => {
+  it('Should keep Back on the arrival details when the page is shown again after adding a country', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { action: 'add', transitedCountry: 'FR' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, ARRIVAL_DETAILS_SLUG) }
+      ]
     })
-    expectBackLinkIsPage(result, ARRIVAL_DETAILS_SLUG)
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, ARRIVAL_DETAILS_SLUG), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  itSendsBackToOverview(get, {
+  itSendsBackToWhereTheTraderCameFrom(get, {
     seed,
-    cases: ['when opened from the Overview']
+    previousPage: ARRIVAL_DETAILS_SLUG
   })
-
-  itSendsBackCarryingChangeTo(get, [
-    ['the arrival details', seed, ARRIVAL_DETAILS_SLUG]
-  ])
 })
 
 describe('transit-countries — when the page is out of scope for the means of transport', () => {
@@ -693,7 +691,7 @@ describe('transit-countries — when the page is out of scope for the means of t
       })
 
       expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'transporters')
+        redirect: transportersAfterSaving(result.journeyId)
       })
     }
   )

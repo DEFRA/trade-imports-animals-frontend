@@ -24,7 +24,7 @@ const copy = copyFor({ en, cy })
 
 const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
 
-const render = async (
+const render = (
   request,
   h,
   current,
@@ -33,7 +33,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       page,
       recoverableError
@@ -73,9 +73,9 @@ const post = async (request, h) => {
     { showUnweaned }
   )
   if (hasErrors(errors)) {
-    return (
-      await render(request, h, current, values, { showUnweaned, errors })
-    ).code(HTTP_STATUS_BAD_REQUEST)
+    return render(request, h, current, values, { showUnweaned, errors }).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   let committed
@@ -90,12 +90,10 @@ const post = async (request, h) => {
       })
     },
     async () =>
-      (
-        await render(request, h, current, values, {
-          showUnweaned,
-          recoverableError: true
-        })
-      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      render(request, h, current, values, {
+        showUnweaned,
+        recoverableError: true
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) {
     return failure

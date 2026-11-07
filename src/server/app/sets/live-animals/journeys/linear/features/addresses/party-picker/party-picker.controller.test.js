@@ -1,11 +1,12 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
+import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 
 import { store } from '../../../../../../../engine/store.js'
 import {
   amendmentOpened,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   refusingSaves,
   addressBookAnswering,
   addressBookPage,
@@ -486,45 +487,45 @@ describe('POST /consignors/select — recoverable save failure', () => {
   })
 })
 
-describe('/consignors/select — change context', () => {
+describe('/consignors/select — the trail', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should hand the save back to the hub still changing', async () => {
+  it('Should hand the save back to the hub carrying the trail', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
+      redirect: `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     })
     expect(result.after.consignor).toMatchObject({
       name: ALPINE_DAIRY_NAME
     })
   })
 
-  it('Should point Back at the hub still changing', async () => {
+  it('Should point Back at the hub carrying the trail', async () => {
     const result = await driveHandler(getConsignor, {
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, 'addresses')}?change=1`
+      `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     )
   })
 
-  it('Should keep changing across a paged link, beside the search and the selection', async () => {
+  it('Should carry the trail across a paged link, beside the search and the selection', async () => {
     const result = await driveHandler(getConsignor, {
       query: { page: '2', selected: DANISH_MEAT_ID },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(pickerFrom(result).pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}&change=1`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}&from=${CYA_SLUG}`
     )
   })
 
-  it('Should leave the hub link and the paged links plain when not changing', async () => {
+  it('Should leave the hub link and the paged links plain when the request carries no trail', async () => {
     const result = await driveHandler(getConsignor, {
       query: { page: '2', selected: DANISH_MEAT_ID }
     })
@@ -532,7 +533,9 @@ describe('/consignors/select — change context', () => {
     expect(result.view.context.backLink).toBe(
       pagePath(result.journeyId, 'addresses')
     )
-    expect(pickerFrom(result).pagination.next.href).not.toContain('change')
+    expect(pickerFrom(result).pagination.next.href).toBe(
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
+    )
   })
 })
 
@@ -560,14 +563,14 @@ describe('/consignors/select — Save and continue while amending', () => {
     expect(response).toEqual({ redirect: pagePath(journeyId, 'addresses') })
   })
 
-  it('Should keep a draft going back to the addresses hub still changing', async () => {
+  it('Should keep a draft going back to the addresses hub carrying the trail', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
+      redirect: `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     })
   })
 })

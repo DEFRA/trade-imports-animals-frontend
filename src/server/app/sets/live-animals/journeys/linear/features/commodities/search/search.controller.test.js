@@ -5,10 +5,10 @@ import { store } from '../../../../../../../engine/store.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   driveHandler,
-  openedFromChangeLink,
-  openingRunAt,
+  reviewChangeLinkQuery,
+  trailQuery,
+  expectBackLinkIsPath,
   withFlowOnlyAnswers,
-  expectBackLinkIsPage,
   expectRemovalRefusedLogged,
   journeyRequest,
   postHandlerOf,
@@ -16,18 +16,23 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
 import { originPage } from '../../origin/page.js'
 import { importReasonPage } from '../../import-reason/page.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../../shared/kit.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
-import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
 
-import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
+import {
+  animalIdentificationPage,
+  commoditiesPage,
+  consignmentDetailsPage
+} from '../page.js'
 
 import * as search from './search.controller.js'
 import { lineKey } from './selection/line-key.js'
@@ -535,7 +540,9 @@ describe('commodity search — saving the selection', () => {
       }
     ])
     expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, importReasonPage.slug)
+      withTrail(pagePath(result.journeyId, importReasonPage.slug), [
+        commoditiesPage.slug
+      ])
     )
   })
 
@@ -661,12 +668,14 @@ describe('commodity search — saving when another page opened the question', ()
     expect(keysOf(result.after.commodityLines)).toEqual([BOS_TAURUS_KEY])
   })
 
-  it('Should return to the opener carrying the change context', async () => {
+  it('Should return to the opener carrying the trail', async () => {
     const result = await savedFrom(consignmentDetailsPage.slug, {
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
     expect(result.response.redirect).toBe(
-      `${pagePath(result.journeyId, consignmentDetailsPage.slug)}?change=1`
+      withTrail(pagePath(result.journeyId, consignmentDetailsPage.slug), [
+        CYA_SLUG
+      ])
     )
   })
 
@@ -677,7 +686,9 @@ describe('commodity search — saving when another page opened the question', ()
       startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
     expect(refused.response.redirect).toBe(
-      pagePath(refused.journeyId, importReasonPage.slug)
+      withTrail(pagePath(refused.journeyId, importReasonPage.slug), [
+        commoditiesPage.slug
+      ])
     )
     expect(refused.response.redirect).toBe(
       unmarked.response.redirect.replace(unmarked.journeyId, refused.journeyId)
@@ -750,13 +761,15 @@ describe('commodity search — logging a save when another page opened the quest
 describe('commodity search — the Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
+  const cameFromOverview = { query: trailQuery(TRAIL_START.overview) }
+
   it('Should go Back as an unmarked visit does when the return value names a page not opening the question', async () => {
     const refused = await driveHandler(get, {
       query: { return: UNLISTED_RETURN },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [cameFromOverview]
     })
     const unmarked = await driveHandler(get, {
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [cameFromOverview]
     })
     expect(refused.view.context.backLink).toBe(
       unmarked.view.context.backLink.replace(
@@ -766,50 +779,39 @@ describe('commodity search — the Back link', () => {
     )
   })
 
-  it('Should go Back to the origin of the import while the opening run is on', async () => {
-    const result = await driveHandler(get, {
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, 'origin')
-  })
-
-  it('Should keep Back on the origin of the import when the page is shown again by a search in the run', async () => {
+  it('Should keep Back on the page saved when the page is shown again by a search', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'search', [search.SEARCH_FIELD]: 'cat' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, originPage.slug) }
+      ]
     })
-    expectBackLinkIsPage(result, 'origin')
-  })
-
-  itSendsBackToOverview(get, { cases: ['when opened from the Overview'] })
-
-  it('Should go Back to commodity details when commodity details opened the question', async () => {
-    const result = await driveHandler(get, {
-      query: { return: consignmentDetailsPage.slug },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, consignmentDetailsPage.slug)
-  })
-
-  it('Should go Back to identification details when identification details opened the question', async () => {
-    const result = await driveHandler(get, {
-      query: { return: animalIdentificationPage.slug },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, animalIdentificationPage.slug)
-  })
-
-  it('Should carry the change context on the Back link to the opener', async () => {
-    const result = await driveHandler(get, {
-      query: { return: consignmentDetailsPage.slug, change: '1' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, consignmentDetailsPage.slug)}?change=1`
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, originPage.slug), [
+        TRAIL_START.overview
+      ])
     )
   })
 
-  itSendsBackCarryingChangeTo(get, [
-    ['the origin of the import', undefined, originPage.slug]
-  ])
+  it.each([
+    ['commodity details', consignmentDetailsPage.slug],
+    ['identification details', animalIdentificationPage.slug]
+  ])(
+    'Should go Back to %s, carrying the trail, when it opened the question',
+    async (_opener, openerSlug) => {
+      const result = await driveHandler(get, {
+        query: { return: openerSlug },
+        startingFrom: [cameFromOverview]
+      })
+      expectBackLinkIsPath(
+        result,
+        withTrail(pagePath(result.journeyId, openerSlug), [
+          TRAIL_START.overview
+        ])
+      )
+    }
+  )
+
+  itSendsBackToWhereTheTraderCameFrom(get, { previousPage: originPage.slug })
 })

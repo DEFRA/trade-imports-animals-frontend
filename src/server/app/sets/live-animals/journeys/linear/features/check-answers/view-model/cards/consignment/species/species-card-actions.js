@@ -7,9 +7,10 @@ import { cardAction } from '../../../rows/change-link.js'
 const copy = copyFor({ en, cy })
 
 /** The species card's Change action, linking to the consignment-details page. */
-export const speciesCardActions = (journeyId, index) =>
+export const speciesCardActions = (journeyId, changeLinkTrail, index) =>
   cardAction(
     journeyId,
+    changeLinkTrail,
     consignmentDetailsPage.slug,
     copy.hidden.commodity(index + 1)
   )

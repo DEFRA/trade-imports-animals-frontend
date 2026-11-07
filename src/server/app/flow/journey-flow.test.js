@@ -5,30 +5,26 @@ import { flowOnlyKeys } from '../bridge/flow-only-keys.js'
 import { withSetContext } from '../shared/set-context.js'
 import {
   configureJourneyFlow,
-  journeyPreviousRunTarget,
+  journeyInsTypeQuestionUrl,
   journeySectionCaption
 } from './journey-flow.js'
 
-describe('#journeyPreviousRunTarget', () => {
-  it("Should answer the configured journey's previous run target for the current set", () => {
+describe('#journeyInsTypeQuestionUrl', () => {
+  it("Should answer the configured journey's Import Notification Service question for the current set", () => {
     configureJourneyFlow(SET_ID, {
       sections: [],
       taskRows: [],
-      previousRunTarget: () => '/j-1/reason'
+      insTypeQuestionUrl: (journeyId) => `/ins/${journeyId}`
     })
 
-    expect(
-      withSetContext(SET_ID, () =>
-        journeyPreviousRunTarget('details', { scope: 'S', answers: 'A' }, 'j-1')
-      )
-    ).toBe('/j-1/reason')
+    expect(withSetContext(SET_ID, () => journeyInsTypeQuestionUrl('j-1'))).toBe(
+      '/ins/j-1'
+    )
   })
 
   it('Should report an unconfigured set as not configured', () => {
     expect(() =>
-      withSetContext('unconfigured-set', () =>
-        journeyPreviousRunTarget('details', { scope: 'S', answers: 'A' }, 'j-1')
-      )
+      withSetContext('unconfigured-set', () => journeyInsTypeQuestionUrl('j-1'))
     ).toThrow('journey flow not configured')
   })
 })

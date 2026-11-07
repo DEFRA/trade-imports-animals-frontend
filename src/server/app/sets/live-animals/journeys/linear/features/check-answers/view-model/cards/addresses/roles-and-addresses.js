@@ -19,6 +19,8 @@ const copy = copyFor({ en, cy })
  *
  * @param {object} options
  * @param {string} options.journeyId - the journey the card belongs to.
+ * @param {string[]} options.changeLinkTrail - the trail a link from the review carries.
+ * @param {string[]} options.reviewPageTrail - the trail the review itself carries.
  * @param {object} options.answers - the journey's answers.
  * @param {boolean} options.readOnly - true to omit every Change action and edit link.
  * @param {object} [options.parties] - the stored party copies in display shape; defaults to `answers`.
@@ -27,6 +29,8 @@ const copy = copyFor({ en, cy })
  */
 export const rolesAndAddressesCard = ({
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
@@ -38,6 +42,7 @@ export const rolesAndAddressesCard = ({
     readOnly,
     actions: cardAction(
       journeyId,
+      changeLinkTrail,
       addressesPage.slug,
       copy.hidden.cards.rolesAndAddresses
     )
@@ -48,7 +53,7 @@ export const rolesAndAddressesCard = ({
         errorText: partyErrors[party.id],
         editHref: readOnly
           ? undefined
-          : partyEditHref(journeyId, party, CYA_SLUG)
+          : partyEditHref(journeyId, party, CYA_SLUG, reviewPageTrail)
       })
     ),
     ...(cphApplies(answers)

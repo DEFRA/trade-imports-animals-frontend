@@ -140,7 +140,9 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await openCommercialForm(page)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\/commercial\?from=overview$/
+    )
     await expect(
       page.locator('span.govuk-caption-l + h1.govuk-heading-l')
     ).toHaveText(form.title)

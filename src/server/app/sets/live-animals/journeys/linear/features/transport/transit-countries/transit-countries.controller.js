@@ -60,7 +60,7 @@ const render = async (
   const rows = countryRows(offeredLabelled)
   return h.view(view, {
     ...kit.base(copy.pageTitle, {
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       page,
       recoverableError

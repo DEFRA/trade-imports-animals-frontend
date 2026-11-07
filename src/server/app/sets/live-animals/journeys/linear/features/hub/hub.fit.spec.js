@@ -297,7 +297,7 @@ test.describe('hub feature — the Commodity details row', () => {
     const details = taskRow(page, copy.rows.consignmentDetails.title)
     await expect(
       details.getByRole('link', { name: copy.rows.consignmentDetails.title })
-    ).toHaveAttribute('href', /\/consignment-details$/)
+    ).toHaveAttribute('href', /\/consignment-details\?from=overview$/)
     await expect(details).toContainText(copy.statuses.toDo)
     await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
       copy.statuses.complete
@@ -335,7 +335,10 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await expect(
       page.getByRole('button', { name: copy.reviewAndSubmit })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+    ).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/notification-view\?from=overview$/
+    )
 
     await openReviewFromHub(page)
 

@@ -72,7 +72,6 @@ A feature folder is not automatically a flow section or a hub row.
 - `journeys/linear/flow/flow.js` defines navigation order.
 - `journeys/linear/flow/task-rows.js` groups pages into hub work items.
 - `journeys/linear/features/hub/controller.js` derives its groups from the flow sections, one per section that holds a task row's first page.
-- `journeys/linear/flow/run.js` defines the opening-run sequence.
 
 See [Journey flow and gates](journey-flow-and-gates.md).
 

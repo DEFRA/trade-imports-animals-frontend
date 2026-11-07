@@ -153,13 +153,13 @@ export const expectStackedOnSameRightEdge = async (above, below, subject) => {
 }
 
 /**
- * An anchored matcher for a URL under this set's mount.
+ * An anchored matcher for a URL under this set's mount, with or without a trail.
  *
  * @param {string} pathPattern - the path under the mount, as regex source.
  * @returns {RegExp} the anchored matcher.
  */
 export const urlUnderBase = (pathPattern) =>
-  new RegExp(`^https?://[^/]+${BASE}${pathPattern}$`)
+  new RegExp(`^https?://[^/]+${BASE}${pathPattern}(?:[?&]from=[^#]*)?$`)
 
 const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 
@@ -551,12 +551,12 @@ export const startNotificationAtImportReason = async (page) => {
 }
 
 /**
- * Starts a notification and carries the opening run through the origin and
+ * Starts a notification and presses Save and continue through the origin and
  * commodity pages to the import reason page.
  *
  * @param {import('@playwright/test').Page} page
  */
-export const carryOpeningRunToImportReason = async (page) => {
+export const saveAndContinueToImportReason = async (page) => {
   await startNotificationAtOrigin(page)
 
   await answerOriginDetails(page)

@@ -844,7 +844,7 @@ test.describe('animal identification records', () => {
     const link = errorLink(page, copy.identification.errors.capReached(2))
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
   })
 
   test('blocks a count drop below saved records and reopens after removal', async ({
@@ -885,7 +885,7 @@ test.describe('animal identification records', () => {
     )
     await expect(errorLink(page, countDrop)).toBeVisible()
     await errorLink(page, countDrop).click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
     await expect(
       commodityHeading(page, BOS_TAURUS_CODE_HEADING)
         .locator('xpath=following::*[@id="identification-card-0"]')

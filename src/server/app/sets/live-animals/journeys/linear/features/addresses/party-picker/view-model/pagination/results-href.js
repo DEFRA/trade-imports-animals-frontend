@@ -1,10 +1,10 @@
 import { pagePath } from '../../../../../../../../../shared/paths.js'
-import { appendChangeContext } from '../../../../../../../../../shared/kit.js'
+import { withTrail } from '../../../../../../../../../shared/kit.js'
 
 export const resultsHref = (
   journeyId,
   party,
-  { query, page, selectedId, changing }
+  { query, page, selectedId, trail }
 ) => {
   const params = new URLSearchParams()
   if (query) {
@@ -15,5 +15,5 @@ export const resultsHref = (
     params.set('selected', selectedId)
   }
   const href = `${pagePath(journeyId, party.slug)}?${params.toString()}`
-  return changing ? appendChangeContext(href) : href
+  return withTrail(href, trail)
 }

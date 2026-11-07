@@ -12,6 +12,8 @@ const copy = copyFor({ en, cy })
 
 export const contactAddressCard = ({
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
@@ -23,6 +25,7 @@ export const contactAddressCard = ({
     readOnly,
     actions: cardAction(
       journeyId,
+      changeLinkTrail,
       consignmentContactSelectPage.slug,
       copy.hidden.cards.contactAddress
     )
@@ -32,7 +35,7 @@ export const contactAddressCard = ({
       errorText: partyErrors.contactAddress,
       editHref: readOnly
         ? undefined
-        : partyEditHref(journeyId, CONTACT_PARTY, CYA_SLUG)
+        : partyEditHref(journeyId, CONTACT_PARTY, CYA_SLUG, reviewPageTrail)
     })
   ]
 })

@@ -54,7 +54,7 @@ const selectedCommoditiesContext = (lines) => {
   }
 }
 
-const render = async ({
+const render = ({
   request,
   h,
   current,
@@ -65,7 +65,7 @@ const render = async ({
 }) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       page
     }),
@@ -78,8 +78,8 @@ const render = async ({
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-const renderRefusal = async (renderOptions) =>
-  (await render(renderOptions)).code(HTTP_STATUS_BAD_REQUEST)
+const renderRefusal = (renderOptions) =>
+  render(renderOptions).code(HTTP_STATUS_BAD_REQUEST)
 
 const get = async (request, h) => {
   const current = await state.get(request, h)

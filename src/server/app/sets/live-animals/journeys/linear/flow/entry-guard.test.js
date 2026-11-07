@@ -18,7 +18,6 @@ import {
 import { dispatchPages } from '../features/index.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
 import {
-  entryBackLink,
   entryGuardTarget,
   guardedJourneyPath,
   leaveJourneyLink
@@ -125,19 +124,5 @@ describe('#leaveJourneyLink — Overview, else the dashboard until an answer is 
 
   it('Should be Overview once an answer is entered', () => {
     expect(leaveJourneyLink(JOURNEY, ANSWERED)).toBe(hubPath('j-1'))
-  })
-})
-
-describe('#entryBackLink — with no opening run active', () => {
-  useStubbedJourney(SET_ID, dispatchPages)
-
-  const request = journeyRequest('j-1')
-
-  it('Should be the dashboard for a notification with no entered answer', async () => {
-    expect(await entryBackLink(request, JOURNEY, {})).toBe(dashboardPath())
-  })
-
-  it('Should be Overview once an answer is entered', async () => {
-    expect(await entryBackLink(request, JOURNEY, ANSWERED)).toBe(hubPath('j-1'))
   })
 })

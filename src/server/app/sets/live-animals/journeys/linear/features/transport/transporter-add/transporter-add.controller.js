@@ -40,7 +40,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: kit.withChangeContext(
+      backLink: kit.carryTrail(
         request,
         pagePath(journey.journeyId, transportersPage.slug)
       ),
@@ -98,7 +98,7 @@ const post = async (request, h) => {
   }
 
   return h.redirect(
-    kit.withChangeContext(
+    kit.carryTrail(
       request,
       pagePath(
         request.params.journeyId,

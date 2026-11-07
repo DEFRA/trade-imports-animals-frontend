@@ -61,7 +61,7 @@ const regionCodeOnReview = (page) =>
 const removeRegionCodeCap = (page) =>
   regionCodeField(page).evaluate((input) => input.removeAttribute('maxlength'))
 
-const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
+const hubUrlOf = (originUrl) => originUrl.replace(/\/origin(?:\?.*)?$/, '')
 
 const regionCodePrefix = (page) => page.locator(REGION_CODE_PREFIX)
 
@@ -243,7 +243,7 @@ test.describe('origin feature', () => {
   test('Overview requested for a notification with nothing saved shows the origin page', async ({
     page
   }) => {
-    const originUrl = page.url()
+    const originUrl = page.url().split('?')[0]
 
     await page.goto(hubUrlOf(page.url()))
 
@@ -266,7 +266,7 @@ test.describe('origin feature', () => {
     await expectOverview(page)
   })
 
-  test('back link returns to the dashboard when origin is reached by going back along the opening run', async ({
+  test('back link opens the dashboard after Save and continue on origin and Back from What are you importing? on a notification started from the dashboard', async ({
     page
   }) => {
     await chooseCountryOfOrigin(page, france.name)

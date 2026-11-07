@@ -53,7 +53,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       page,
       recoverableError

@@ -11,13 +11,13 @@ import { session as sessionStub } from '../../../../../services/persistence/sess
 import {
   driveHandler,
   getHandlerOf,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   postHandlerOf,
   withFlowOnlyAnswers
 } from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
-import { withChangeContext } from '../../../../../shared/kit.js'
+import { CYA_SLUG, withTrail } from '../../../../../shared/kit.js'
 
 import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
@@ -28,15 +28,17 @@ import { STORED_SEARCH_ROWS } from './commodities/search/selection/rows.js'
 import { FELIS_CATUS_ROW, lineOf } from './commodities/search/test-support.js'
 import { driveReturnFromUpload } from './documents/test-support.js'
 
-const change = { change: '1' }
-const TEST_JOURNEY_ID = 'journey-1'
 const IMPLICIT_SUBMIT = 'implicit-submit'
+const IDENTIFICATION_SLUG = 'commodities/identification'
+const DOCUMENTS_SLUG = 'accompanying-documents'
 
 const lineSeed = {
   commodityLines: [lineOf(FELIS_CATUS_ROW)]
 }
 
 const savableLineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
+
+const fromReview = (path) => withTrail(path, [CYA_SLUG])
 
 beforeAll(() => {
   configureRecords(SET_ID, recordsStub)
@@ -45,68 +47,57 @@ beforeAll(() => {
 })
 beforeEach(() => store.clear())
 
-describe('change context — kit contracts', () => {
-  it('Should append the change flag to an href only when the request carries change context', () => {
-    expect(
-      withChangeContext(
-        { query: change },
-        pagePath(TEST_JOURNEY_ID, 'commodities')
-      )
-    ).toBe(`${pagePath(TEST_JOURNEY_ID, 'commodities')}?change=1`)
-    expect(
-      withChangeContext({ query: {} }, pagePath(TEST_JOURNEY_ID, 'commodities'))
-    ).toBe(pagePath(TEST_JOURNEY_ID, 'commodities'))
-  })
-})
-
-describe('change context — context survives the internal loop navigation', () => {
-  it('Should go on from the search save to Main import reason when the request carries change context', async () => {
+describe('trail — the trail survives the internal loop navigation', () => {
+  it('Should go on from the search save to Main import reason with the search page on the trail', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
         startingFrom: [
           withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }),
-          openedFromChangeLink()
+          { query: reviewChangeLinkQuery() }
         ],
         payload: { species: [lineKey(FELIS_CATUS_ROW)] }
       }
     )
     expect(response).toEqual({
-      redirect: pagePath(journeyId, 'import-reason')
+      redirect: withTrail(pagePath(journeyId, 'import-reason'), [
+        CYA_SLUG,
+        'commodities'
+      ])
     })
     expect(after.commodityLines).toEqual([
       expect.objectContaining(FELIS_CATUS_ROW)
     ])
   })
 
-  it('Should carry the context and the return marker on the details page Add-another affordance', async () => {
+  it('Should carry the trail and the return marker on the details page Add-another affordance', async () => {
     const { journeyId, view } = await driveHandler(
       getHandlerOf(consignmentDetails),
-      { seed: lineSeed, startingFrom: [openedFromChangeLink()] }
+      { seed: lineSeed, startingFrom: [{ query: reviewChangeLinkQuery() }] }
     )
     const { addHref, groups } = view.context
     expect(addHref).toBe(
-      `${pagePath(journeyId, 'commodities')}?return=consignment-details&change=1`
+      `${pagePath(journeyId, 'commodities')}?return=consignment-details&from=${CYA_SLUG}`
     )
     expect(groups[0].index).toBe(0)
   })
 
-  it('Should carry the context to the commodity question when removing the last line', async () => {
+  it('Should carry the trail to the commodity question when removing the last line', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(consignmentDetails),
       {
         payload: { action: `remove:${FELIS_CATUS_ROW.commodityCode}` },
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         seed: lineSeed
       }
     )
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'commodities')}?change=1`
+      redirect: fromReview(pagePath(journeyId, 'commodities'))
     })
     expect(after.commodityLines ?? []).toHaveLength(0)
   })
 
-  it('Should carry the context through an identifier Save-and-add-another PRG cycle for a two-animal line with the unit committed', async () => {
+  it('Should carry the trail through an identifier Save-and-add-another PRG cycle for a two-animal line with the unit committed', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(animalIdentification),
       {
@@ -114,52 +105,52 @@ describe('change context — context survives the internal loop navigation', () 
           action: 'add:0',
           'animalIdentifierPassport-0': 'UK123456789'
         },
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         seed: seedWithCommodityLineOfAnimals(2)
       }
     )
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'commodities/identification')}?change=1`
+      redirect: fromReview(pagePath(journeyId, IDENTIFICATION_SLUG))
     })
     expect(
       after.commodityLines[0].animalIdentifiers[0].animalIdentifierPassport
     ).toBe('UK123456789')
   })
 
-  it('Should carry the context through a documents upload-return cycle with the entry committed', async () => {
+  it('Should carry the trail through a documents upload-return cycle with the entry committed', async () => {
     const { journeyId, response, after } = await driveReturnFromUpload({
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'accompanying-documents')}?change=1`
+      redirect: fromReview(pagePath(journeyId, DOCUMENTS_SLUG))
     })
     expect(after.documents).toHaveLength(1)
   })
 
-  it('Should carry the context through a documents remove round-trip', async () => {
+  it('Should carry the trail through a documents remove round-trip', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(documents),
       {
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         payload: { action: 'remove:0' },
         seed: { documents: [{ accompanyingDocumentReference: 'GBHC1' }] }
       }
     )
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'accompanying-documents')}?change=1`
+      redirect: fromReview(pagePath(journeyId, DOCUMENTS_SLUG))
     })
     expect(after.documents ?? []).toHaveLength(0)
   })
 })
 
-describe('change context — Save and continue goes on to the next page that applies', () => {
+describe('trail — Save and continue goes on to the next page that applies', () => {
   const withAndWithout = async (handler, options) => ({
-    changed: await driveHandler(handler, {
+    fromReviewLink: await driveHandler(handler, {
       ...options,
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     }),
-    plain: await driveHandler(handler, options)
+    withoutTrail: await driveHandler(handler, options)
   })
 
   it.each([
@@ -167,36 +158,43 @@ describe('change context — Save and continue goes on to the next page that app
       'the consignment details save',
       consignmentDetails,
       { payload: savableLineCountPayload, seed: lineSeed },
-      'commodities/identification'
+      IDENTIFICATION_SLUG,
+      'consignment-details'
     ],
     [
       'the identification Enter post with nothing typed',
       animalIdentification,
       { payload: { action: IMPLICIT_SUBMIT }, seed: lineSeed },
-      'additional-details'
+      'additional-details',
+      IDENTIFICATION_SLUG
     ],
-    ['the documents Continue', documents, {}, 'addresses']
+    ['the documents Continue', documents, {}, 'addresses', DOCUMENTS_SLUG]
   ])(
-    'Should send %s to the same next page with or without change context',
-    async (_name, feature, options, nextSlug) => {
-      const { changed, plain } = await withAndWithout(
+    'Should send %s to the same next page whatever the trail, adding this page to it',
+    async (_name, feature, options, nextSlug, savedSlug) => {
+      const { fromReviewLink, withoutTrail } = await withAndWithout(
         postHandlerOf(feature),
         options
       )
 
-      expect(changed.response).toEqual({
-        redirect: pagePath(changed.journeyId, nextSlug)
+      expect(fromReviewLink.response).toEqual({
+        redirect: withTrail(pagePath(fromReviewLink.journeyId, nextSlug), [
+          CYA_SLUG,
+          savedSlug
+        ])
       })
-      expect(plain.response).toEqual({
-        redirect: pagePath(plain.journeyId, nextSlug)
+      expect(withoutTrail.response).toEqual({
+        redirect: withTrail(pagePath(withoutTrail.journeyId, nextSlug), [
+          savedSlug
+        ])
       })
     }
   )
 
-  it('Should let an explicit hub exit win over the change context', async () => {
+  it('Should let an explicit hub exit win over the trail', async () => {
     const details = await driveHandler(postHandlerOf(consignmentDetails), {
       payload: { ...savableLineCountPayload, exit: 'hub' },
-      startingFrom: [openedFromChangeLink()],
+      startingFrom: [{ query: reviewChangeLinkQuery() }],
       seed: lineSeed
     })
     expect(details.response).toEqual({
@@ -207,7 +205,7 @@ describe('change context — Save and continue goes on to the next page that app
       postHandlerOf(animalIdentification),
       {
         payload: { exit: 'hub', action: IMPLICIT_SUBMIT },
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         seed: lineSeed
       }
     )

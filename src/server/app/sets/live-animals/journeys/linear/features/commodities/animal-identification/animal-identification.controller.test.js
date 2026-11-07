@@ -21,7 +21,12 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { itSendsBackToOverview } from '../../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../../shared/kit.js'
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 import { lineKey } from '../search/selection/line-key.js'
 
@@ -101,6 +106,14 @@ const SUITE =
 
 const additionalDetailsPath = (journeyId) =>
   pagePath(journeyId, additionalDetailsPage.slug)
+
+const additionalDetailsAfterSaving = (journeyId) =>
+  withTrail(additionalDetailsPath(journeyId), [animalIdentificationPage.slug])
+
+const changeCountPath = (journeyId) =>
+  withTrail(pagePath(journeyId, consignmentDetailsPage.slug), [
+    animalIdentificationPage.slug
+  ])
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
@@ -310,7 +323,7 @@ describe(`${SUITE} — the in-card save button`, () => {
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
     expect(
@@ -358,7 +371,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     )
   })
 
-  it('Should point every card at the consignment-details page to change the animal count', async () => {
+  it('Should point every card at the consignment-details page to change the animal count, with identification details on the trail', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [
@@ -373,12 +386,12 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     )
 
     expect(cards.map((card) => card.changeCountHref)).toEqual([
-      pagePath(journey.journeyId, 'consignment-details'),
-      pagePath(journey.journeyId, 'consignment-details')
+      changeCountPath(journey.journeyId),
+      changeCountPath(journey.journeyId)
     ])
   })
 
-  it('Should keep the change context on every card link when the trader arrived from check your answers', async () => {
+  it('Should extend the trail on every card link when the trader arrived from check your answers', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [
@@ -388,14 +401,17 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     })
     const h = stubH()
     await getHandler(
-      journeyRequest(journey.journeyId, { query: { change: '1' } }),
+      journeyRequest(journey.journeyId, { query: { from: CYA_SLUG } }),
       h
     )
     const cards = h.captured.view.context.sections.flatMap(
       (section) => section.cards
     )
 
-    const expected = `${pagePath(journey.journeyId, consignmentDetailsPage.slug)}?change=1`
+    const expected = withTrail(
+      pagePath(journey.journeyId, consignmentDetailsPage.slug),
+      [CYA_SLUG, animalIdentificationPage.slug]
+    )
     expect(cards.map((card) => card.changeCountHref)).toEqual([
       expected,
       expected
@@ -657,7 +673,7 @@ describe(`${SUITE} — Save and continue`, () => {
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
     const [unit] = result.after.commodityLines[0].animalIdentifiers
     expect(unit.animalIdentifierEarTag).toBe('UK1')
@@ -672,7 +688,7 @@ describe(`${SUITE} — Save and continue`, () => {
       payload: {}
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
     expect(result.after).toEqual({
       commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: 1 })]
@@ -706,7 +722,7 @@ describe(`${SUITE} — Save and continue`, () => {
       payload: { 'animalIdentifierEarTag-0': 'x'.repeat(59) }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
   })
 })
@@ -792,7 +808,7 @@ describe(`${SUITE} — Enter in a field`, () => {
       payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: 'UK1' }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
     expect(
       result.after.commodityLines[0].animalIdentifiers.map(
@@ -977,11 +993,14 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
 describe(`${SUITE} — a commodity that carries no identifier of its own`, () => {
   setupIdentificationEngine()
 
-  const requestPage = async (seed) => {
+  const requestPage = async (seed, query = {}) => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, seed)
     const h = stubH()
-    const response = await getHandler(journeyRequest(journey.journeyId), h)
+    const response = await getHandler(
+      journeyRequest(journey.journeyId, { query }),
+      h
+    )
     return { journeyId: journey.journeyId, response, view: h.captured.view }
   }
 
@@ -1030,6 +1049,21 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     })
     expect(view).toBeUndefined()
     expect(response).toEqual({ redirect: additionalDetailsPath(journeyId) })
+  })
+
+  it('Should carry the trail of the request on to the next page when no line carries an identifier', async () => {
+    const { journeyId, response } = await requestPage(
+      {
+        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
+      },
+      { from: `${TRAIL_START.overview},${consignmentDetailsPage.slug}` }
+    )
+    expect(response).toEqual({
+      redirect: withTrail(additionalDetailsPath(journeyId), [
+        TRAIL_START.overview,
+        consignmentDetailsPage.slug
+      ])
+    })
   })
 
   it('Should carry a request for the page on when the notification has no commodities', async () => {
@@ -1084,7 +1118,8 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
 describe(`${SUITE} — the Back link`, () => {
   setupIdentificationEngine()
 
-  itSendsBackToOverview(getHandler, {
+  itSendsBackToWhereTheTraderCameFrom(getHandler, {
+    previousPage: consignmentDetailsPage.slug,
     seed: {
       commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
     }

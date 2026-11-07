@@ -50,11 +50,11 @@ const render = async (
   const found = await addressBook.search(orgId, { query, page })
   const selected = await chosenPartyFor(orgId, selectedId)
   const effectiveSelectedId = selected ? selected.id : ''
-  const changing = kit.changeContext(request)
+  const trail = kit.requestTrail(request)
 
   return h.view(view, {
     ...kit.base(party.title, {
-      backLink: kit.withChangeContext(
+      backLink: kit.carryTrail(
         request,
         pagePath(journey.journeyId, 'addresses')
       ),
@@ -76,7 +76,7 @@ const render = async (
         error,
         found,
         selected,
-        changing
+        trail
       },
       copy
     )
@@ -105,10 +105,7 @@ const get = (party) => async (request, h) => {
 }
 
 const savedTarget = (request) =>
-  kit.withChangeContext(
-    request,
-    pagePath(request.params.journeyId, 'addresses')
-  )
+  kit.carryTrail(request, pagePath(request.params.journeyId, 'addresses'))
 
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(

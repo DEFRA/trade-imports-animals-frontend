@@ -102,14 +102,12 @@ whose root another page already owns.
 Use one `render()` helper for GET and POST errors. Build the common view with
 `kit.base()`. Pass `journey` so the shared reference strip renders. A page that
 shows no status strip still passes `journey`, with `showJourneyStrip: false`.
-Pass `page` so the section caption renders. The normal back link is
-`hubPath(journey.journeyId)`. A page that is a step of the opening run takes its
-back link from `kit.runBackLink()`, which opens the previous run step while the
-run is active, and on a draft opened from a review Change link, where it carries
-change context. It falls back to the overview otherwise, or when no named
-earlier step applies. A page that returns to the review rather than the
-overview says so to the same helper, with its `returnsToReview` option,
-rather than building its own target.
+Pass `page` so the section caption renders. A journey page takes its back link
+from `kit.trailBackLink(request)`, which opens the place the trader came from and
+falls back to the overview when the request names none. A page with a different
+fallback passes it: `kit.trailBackLink(request, { fallback })`. A link that moves the
+trader on pushes the page onto the trail with `kit.pushTrail()`, and a link that
+brings the trader back to the same page carries it with `kit.carryTrail()`.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
 
@@ -219,15 +217,9 @@ If you add a task row, also:
 continue-enforced fields. Add an authored `gate` to the page identity only when
 that rule cannot express the page.
 
-Add the page to [`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) in
-journey order. The run is the whole notification, so every new question page gets
-a `RUN_STEPS` entry unless it is deliberately outside the run (the dashboard,
-declaration and confirmation are the only ones today) — a page left out is jumped
-straight over while the run is active and is reachable only from its hub row. See
-[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Opening run and entry
-guard". Update
-[`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
-do; its coverage invariant fails if you forget.
+A new question page's place in Save and continue's order is its place in `journeySections()`,
+and its Back comes from `kit.trailBackLink()`. See
+[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Entry guard and the Back link".
 
 ## 7. Add check-answers and backend mapping when needed
 
@@ -316,7 +308,7 @@ In `controller.test.js`, cover:
 - unexpected errors throwing
 
 Add or update flow tests for section order, skip behaviour, task-row entry,
-status and opening-run behaviour.
+status and Back from each entry point, through itSendsBackToWhereTheTraderCameFrom.
 
 ## Test support
 
@@ -329,8 +321,8 @@ set-up in the test file:
     before and after, the response, the view, the cookies and the logger; its
     `startingFrom` option takes the states the journey starts in, each from a
     helper: `amendmentOpened`, `openingRunAt` (a phase, `RUN_ACTIVE` or
-    `RUN_COMPLETE`, and optionally the entry that began the run),
-    `withFlowOnlyAnswers`, `openedFromChangeLink`, `amendmentOpenedFromChangeLink` (a list, so
+    `RUN_COMPLETE`),
+    `withFlowOnlyAnswers`, `reviewChangeLinkQuery`, `amendmentOpenedFromChangeLink` (a list, so
     pass it as the whole `startingFrom`) and `refusingSaves` (every save
     the handler makes fails with the error it is given); `driveHandler` throws on
     any other option it does not take
@@ -344,22 +336,19 @@ set-up in the test file:
     request, toolkit and logger
   - `expectBackLinkIsPage` asserts the Back link is a page of the journey, and
     `expectBackLinkIsPath` asserts it is a given path, such as a page carrying
-    change context
-  - `itSendsBackCarryingChangeTo`, from
+    the trail
+  - `{ query: trailQuery(...places) }` and `{ query: reviewChangeLinkQuery() }` start a request that
+    carries a trail, newest place last
+  - `itSendsBackToWhereTheTraderCameFrom`, from
     [`journeys/linear/test-support.js`](../journeys/linear/test-support.js),
-    registers the test that a page opened from a Change link on a draft sends
-    Back to a given page carrying change context; it takes the GET handler and
-    a list of cases, each a description, a seed and the previous page's slug
-  - `itSendsBackToOverview`, from the same file, registers the tests that a
-    page whose Back link is the Overview keeps it while the opening run is
-    active, on a draft opened from a Change link, when opened from the
-    Overview and on an amendment opened from a Change link; it takes the GET
-    handler and an options object with an optional `seed` and an optional
-    `cases` list of the case descriptions to register (all four when omitted)
-  - `itSendsBackToOverviewOnRefusal`, from the same file, registers the test
-    that a page whose Back link is the Overview keeps it on the refused
-    re-render while the opening run is active; it takes the POST handler, the
-    refused payload and an optional seed
+    registers the Back cases of a page: the page Save and continue was pressed on,
+    Overview, the review from a Change link on a draft and while amending, a trail
+    naming a place the journey does not have, and no trail; it takes the GET handler
+    and an options object with an optional `seed` and the `previousPage` slug
+  - `itSendsBackToWhereTheTraderCameFromOnRefusal`, from the same file, registers the
+    test that the page shown again after a refused save keeps its Back; it takes the
+    POST handler and an options object with the refused `payload`, the `savedPage`
+    slug Save and continue was pressed on and an optional `seed`
   - `expectOneRefusalLogged` asserts the logger holds exactly one refusal line
   - `expectOneSaveFallbackLogged` asserts it holds exactly one save fallback line
   - `expectRemovalRefusedLogged` asserts it holds exactly one refused removal line

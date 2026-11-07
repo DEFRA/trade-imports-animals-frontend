@@ -103,7 +103,7 @@ test.describe('cancel-amend feature', () => {
 
     await cancelAmendLink(page).click()
 
-    await expect(page).toHaveURL(/\/cancel-amend$/)
+    await expect(page).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(strip(page).locator(TAG)).toHaveText(
       sharedCopy.journeyStrip.amend
@@ -217,7 +217,7 @@ test.describe('cancel-amend feature without JavaScript', () => {
 
       await noJs.goto(`${BASE}/notifications/${reference}/origin`)
       await cancelAmendLink(noJs).click()
-      await expect(noJs).toHaveURL(/\/cancel-amend$/)
+      await expect(noJs).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)

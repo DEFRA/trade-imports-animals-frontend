@@ -745,7 +745,7 @@ test.describe('adding a transporter that is not on the list', () => {
   }) => {
     await openTransporterType(page)
 
-    await expect(page).toHaveURL(/\/transporters\/add$/)
+    await expect(page).toHaveURL(/\/transporters\/add\?from=overview$/)
     await expectBranchOptions(page)
     await expectPageEndsWithPrimaryAlone(page)
   })
@@ -789,17 +789,19 @@ test.describe('adding a transporter that is not on the list', () => {
     ).toBeVisible()
   })
 
-  test('the add route keeps the change context on its back link', async ({
-    page
-  }) => {
+  test('the add route carries the trail on its back link', async ({ page }) => {
     await openTransporterList(page)
-    await page.goto(`${journeyUrl(page, 'transporters')}?change=1`)
+    await page.goto(
+      `${journeyUrl(page, 'transporters')}?from=notification-view`
+    )
     await page.getByRole('button', { name: copy.transporters.add }).click()
 
-    await expect(page).toHaveURL(/\/transporters\/add\?change=1$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\?from=(?:[^#]*%2C)?notification-view$/
+    )
     await expect(page.locator(BACK_LINK)).toHaveAttribute(
       'href',
-      /\/transporters\?change=1$/
+      /\/transporters\?from=(?:[^#]*%2C)?notification-view$/
     )
   })
 
@@ -831,7 +833,7 @@ test.describe('adding a transporter that is not on the list', () => {
   }) => {
     await openPrivate(page)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/private$/)
+    await expect(page).toHaveURL(/\/transporters\/add\/private\?from=overview$/)
     await page.locator(BACK_LINK).click()
     await expect(
       page.getByRole('radio', {
@@ -845,7 +847,9 @@ test.describe('adding a transporter that is not on the list', () => {
   }) => {
     await openCommercialAdd(page)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\/commercial\?from=overview$/
+    )
   })
 
   test('a transporter added on one notification is on the list of the next one, ready to pick', async ({

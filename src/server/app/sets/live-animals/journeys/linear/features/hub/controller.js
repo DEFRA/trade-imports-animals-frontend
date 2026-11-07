@@ -16,7 +16,12 @@ import { rowStatus } from '../../flow/task-rows.js'
 import { invalidRowIds } from '../../flow/stored-answers.js'
 import { notificationViewPage } from '../check-answers/page.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
-import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
+import {
+  journeyStrip,
+  routeOptions,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -38,7 +43,10 @@ const TO_DO_TAG = {
 const statusTag = (status, invalid) =>
   status === FULFILLED && !invalid ? COMPLETE_TAG : TO_DO_TAG
 
-const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
+const fromOverview = (href) => withTrail(href, [TRAIL_START.overview])
+
+const reviewHref = (journeyId) =>
+  fromOverview(pagePath(journeyId, notificationViewPage.slug))
 
 const somePageOpens = (row, scope) =>
   row.pages.some((page) => pageGatePasses(page, scope))
@@ -48,7 +56,7 @@ const isHiddenRow = (row, status, scope) =>
 
 const rowItem = (base, row, scope, status, journeyId, invalid) => ({
   ...base,
-  href: rowEntry(row, scope, journeyId),
+  href: fromOverview(rowEntry(row, scope, journeyId)),
   status: statusTag(status, invalid)
 })
 

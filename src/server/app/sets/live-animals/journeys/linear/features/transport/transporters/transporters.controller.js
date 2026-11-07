@@ -36,7 +36,7 @@ const availableTransporters = (request) =>
 
 const isSearchAction = (payload) => payload.action === 'search'
 
-const render = async (
+const render = (
   request,
   h,
   current,
@@ -54,7 +54,7 @@ const render = async (
     matchingTransporters(available, query).length === 0
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey,
       page,
       recoverableError
@@ -64,7 +64,7 @@ const render = async (
     errorSummary: kit.errorSummary(errors, {
       href: (field) => (queryMatchesNothing ? '#search' : `#${field}`)
     }),
-    addHref: kit.withChangeContext(
+    addHref: kit.carryTrail(
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
     ),
@@ -129,8 +129,12 @@ const post = async (request, h) => {
   const { errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
-    return (
-      await render(request, h, current, { query, narrowBy: query }, { errors })
+    return render(
+      request,
+      h,
+      current,
+      { query, narrowBy: query },
+      { errors }
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -140,14 +144,12 @@ const post = async (request, h) => {
     () => commitOrSkip(request, h, chosen),
     async () => {
       const current = await state.get(request, h)
-      return (
-        await render(
-          request,
-          h,
-          current,
-          { selectedId: chosen?.id, query, narrowBy: query },
-          { recoverableError: true }
-        )
+      return render(
+        request,
+        h,
+        current,
+        { selectedId: chosen?.id, query, narrowBy: query },
+        { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

@@ -1,4 +1,11 @@
-import { afterEach, beforeEach, expect } from 'vitest'
+import { afterEach, beforeEach, expect, it } from 'vitest'
+
+import {
+  driveHandler,
+  reviewChangeLinkQuery
+} from '../../../../../../engine/test-support.js'
+import { pagePath } from '../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../shared/kit.js'
 
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import {
@@ -64,3 +71,15 @@ export const typedInPrivateTransporterPayload = Object.freeze({
   phone: '+33 3 22 55 01 44',
   email: 'jean.dupont@example.fr'
 })
+
+export const itCarriesTheTrailOnBack = (getHandler, { seed = {}, backSlug }) =>
+  it('Should carry the trail on Back when the trader is changing an answer', async () => {
+    const result = await driveHandler(getHandler, {
+      seed,
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
+    })
+
+    expect(result.view.context.backLink).toBe(
+      withTrail(pagePath(result.journeyId, backSlug), [CYA_SLUG])
+    )
+  })

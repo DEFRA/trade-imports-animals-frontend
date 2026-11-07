@@ -38,7 +38,7 @@ const searchFor = (query) =>
 
 const rowsFor = (keys, rowsByKey) => keys.map((key) => rowsByKey.get(key))
 
-const render = async (
+const render = (
   request,
   h,
   current,
@@ -54,7 +54,7 @@ const render = async (
     ...kit.base(copy.title, {
       backLink:
         commodityQuestionReturn(request).honouredReturn ??
-        (await kit.runBackLink(request, page.id, current)),
+        kit.trailBackLink(request),
       journey: current.journey,
       page
     }),

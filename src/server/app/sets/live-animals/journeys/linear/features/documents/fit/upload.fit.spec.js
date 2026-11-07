@@ -17,6 +17,7 @@ import {
   withinTwoThirdsColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../../../../../../../services/document-uploads/claim-contract.js'
@@ -294,7 +295,9 @@ test.describe('document upload page', () => {
   test('back link opens the review when the page was opened by changing an answer from the review', async ({
     page
   }) => {
-    await page.goto(`${journeyUrl(page, 'accompanying-documents')}?change=1`)
+    await page.goto(
+      withTrail(journeyUrl(page, 'accompanying-documents'), [CYA_SLUG])
+    )
     await page.locator('.govuk-back-link').click()
 
     await expect(

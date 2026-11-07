@@ -5,14 +5,21 @@ import { store } from '../../../../../../engine/store.js'
 import {
   addressBookRefusingAddresses,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
+  trailQuery,
   journeyRequest,
   resetMocksAndConfigAfterTests,
   stubH,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { itSendsBackToOverview } from '../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
+import { addressesPage } from './page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { consignmentContactSelectPage } from '../contact/page.js'
 import {
@@ -232,43 +239,45 @@ describe('GET addresses — frozen parties on submitted notification', () => {
   })
 })
 
-describe('GET addresses — change context', () => {
+describe('GET addresses — the trail', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should carry change context into every party add link', async () => {
-    const result = await driveAddresses({}, [openedFromChangeLink()])
+  it('Should carry the trail into every party add link', async () => {
+    const result = await driveAddresses({}, [
+      { query: reviewChangeLinkQuery() }
+    ])
 
     for (const party of PARTIES) {
       expect(sectionTitled(sectionsOf(result), party.title).addLink.href).toBe(
-        `${pagePath(result.journeyId, party.slug)}?change=1`
+        `${pagePath(result.journeyId, party.slug)}?from=${CYA_SLUG}`
       )
     }
   })
 
-  it('Should carry change context into a chosen party Change and Edit details links', async () => {
+  it('Should carry the trail into a chosen party Change and Edit details links', async () => {
     const result = await driveAddresses({ consignor: { name: ASTRA_NAME } }, [
-      openedFromChangeLink()
+      { query: reviewChangeLinkQuery() }
     ])
 
     expect(
       sectionTitled(sectionsOf(result), CONSIGNOR_TITLE).chosen
     ).toMatchObject({
-      changeHref: `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?change=1`,
-      editDetailsHref: `${pagePath(result.journeyId, 'consignors/edit')}?return=addresses&change=1`
+      changeHref: `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?from=${CYA_SLUG}`,
+      editDetailsHref: `${pagePath(result.journeyId, 'consignors/edit')}?return=addresses&from=${CYA_SLUG}`
     })
   })
 
-  it('Should leave the CPH link alone, its slug already carrying a query string', async () => {
+  it('Should join the trail to the query string the CPH link already has', async () => {
     const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES }, [
-      openedFromChangeLink()
+      { query: reviewChangeLinkQuery() }
     ])
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).addLink.href).toBe(
-      pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
+      `${pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)}&from=${CYA_SLUG}`
     )
   })
 
-  it('Should render plain links when not changing', async () => {
+  it('Should render plain links when the request carries no trail', async () => {
     const result = await driveAddresses({})
 
     expect(
@@ -276,22 +285,35 @@ describe('GET addresses — change context', () => {
     ).toBe(pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG))
   })
 
-  itSendsBackToOverview(getAddresses)
+  itSendsBackToWhereTheTraderCameFrom(getAddresses, {
+    previousPage: 'accompanying-documents'
+  })
 })
 
 describe('POST addresses — where Save and continue goes', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it.each([
-    ['opened from a Change link', [openedFromChangeLink()]],
-    ['opened from the overview', []]
+    [
+      'opened from a Change link',
+      [{ query: reviewChangeLinkQuery() }],
+      [CYA_SLUG]
+    ],
+    [
+      'opened from the overview',
+      [{ query: trailQuery(TRAIL_START.overview) }],
+      [TRAIL_START.overview]
+    ]
   ])(
-    'Should go on to the contact address when continuing %s',
-    async (_start, startingFrom) => {
+    'Should go on to the contact address with the trail extended by this page when continuing %s',
+    async (_start, startingFrom, trailBefore) => {
       const result = await driveHandler(postAddresses, { startingFrom })
 
       expect(result.response.redirect).toBe(
-        pagePath(result.journeyId, consignmentContactSelectPage.slug)
+        withTrail(
+          pagePath(result.journeyId, consignmentContactSelectPage.slug),
+          [...trailBefore, addressesPage.slug]
+        )
       )
     }
   )

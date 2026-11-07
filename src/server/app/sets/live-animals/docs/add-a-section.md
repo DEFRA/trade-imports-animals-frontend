@@ -198,20 +198,10 @@ obligations and earlier continue prerequisites. Add an authored `gate` only for
 a flow fact that those rules cannot express. Add focused navigation and gate
 tests for every conditional page or branch.
 
-Add every new question page to
-[`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) in journey order.
-The run is the whole notification, so each of them gets a `RUN_STEPS` entry unless
-it is deliberately outside the run (the dashboard, declaration and confirmation
-are the only ones today) — a page left out is jumped straight over while the run
-is active and is reachable only from its hub row. See
-[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Opening run and entry
-guard". Update
-[`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
-do; its coverage invariant fails if you forget.
-
-A step that applies only to some notifications also takes `offersBackWhen`, a
-function of the notification's answers that says when the step is a Back
-destination. See [`journey-flow-and-gates.md`](journey-flow-and-gates.md).
+A new question page's place in Save and continue's order is its place in the section's
+`pages` array, and its Back link comes from `kit.trailBackLink()`: no other file lists it.
+See [`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Entry guard and the Back
+link".
 
 ## 6. Add one task row and wire it to the hub
 
@@ -264,7 +254,7 @@ flow section or task row does not add a config entry.
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
-journey's `sections`, `taskRows`, `rowStatus`, `previousRunTarget`,
+journey's `sections`, `taskRows`, `rowStatus`, `insTypeQuestionUrl`,
 `FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no
@@ -276,9 +266,6 @@ Registration work for the feature group is therefore limited to:
 2. add its binding bundle to `featureEvaluationBindings`
 3. add page identities to `sections` and `taskRows`
 4. add task-row ids and copy to the hub
-5. add pages to `run.js` in journey order — the run is the whole notification —
-   and, on a step whose Back link should open an earlier step during the run, name
-   that step in its `backCandidates`
 
 Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
 the journey's template identity, cookie identity or injected policy surface itself

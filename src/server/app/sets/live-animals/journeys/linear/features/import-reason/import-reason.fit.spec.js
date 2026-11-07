@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  carryOpeningRunToImportReason,
+  saveAndContinueToImportReason,
   chooseTypeAheadOption,
   chooseTodayFromDatePicker,
   describeCalendarPosition,
@@ -239,7 +239,7 @@ test.describe('import-reason feature', () => {
   test('back link returns to the overview when the page is opened from the overview', async ({
     page
   }) => {
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
     await visitOverviewThenOpen(page, 'import-reason')
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
@@ -247,10 +247,10 @@ test.describe('import-reason feature', () => {
     await expect(page).toHaveURL(journeyUrl(page))
   })
 
-  test('Save and return to overview inside the opening run saves the answer and shows the overview rather than commodity details', async ({
+  test('Save and return to overview on a new notification saves the answer and shows the overview rather than commodity details', async ({
     page
   }) => {
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
     const reasonUrl = page.url()
 
     await chooseInternalMarketBreeding(page)

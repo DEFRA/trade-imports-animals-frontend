@@ -9,7 +9,10 @@ import {
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../shared/kit.js'
 
+import { addressesPage } from '../addresses/page.js'
+import { cphNumberPage } from './page.js'
 import * as cphNumber from './controller.js'
 
 const postCph = postHandlerOf(cphNumber)
@@ -162,49 +165,54 @@ describe('GET cph-number — the stored number back in its parts', () => {
 describe('cph-number — entry from the addresses page (?return=addresses)', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
+  const fromReview = { from: CYA_SLUG }
+
   describe('GET /cph-number', () => {
-    it('Should back-link to the addresses page when entered from its CPH section add link', async () => {
+    it('Should back-link to the addresses page carrying the trail when entered from its CPH section add link', async () => {
       const result = await driveWithQuery(getCph, {
-        query: { return: 'addresses' }
+        query: { return: addressesPage.slug, ...fromReview }
       })
       expect(result.view.context.backLink).toBe(
-        pagePath(result.journeyId, 'addresses')
+        withTrail(pagePath(result.journeyId, addressesPage.slug), [CYA_SLUG])
       )
     })
 
-    it('Should back-link to the overview when entered other than from the addresses page', async () => {
+    it('Should back-link to the review when entered from a review Change link', async () => {
+      const result = await driveWithQuery(getCph, { query: fromReview })
+      expect(result.view.context.backLink).toBe(
+        pagePath(result.journeyId, CYA_SLUG)
+      )
+    })
+
+    it('Should back-link to the overview when nothing says where the trader came from', async () => {
       const result = await driveWithQuery(getCph)
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     })
   })
 
   describe('POST /cph-number', () => {
-    it('Should save and return to the addresses page when entered from its CPH section add link', async () => {
+    it('Should save and return to the addresses page carrying the trail when entered from its CPH section add link', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
-        query: { return: 'addresses' }
+        query: { return: addressesPage.slug, ...fromReview }
       })
       expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'addresses')
+        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
+          CYA_SLUG
+        ])
       })
     })
 
-    it('Should go to the addresses hub when carrying both return and change', async () => {
+    it('Should go to the consignment addresses page with the CPH page on the trail when entered from a review Change link without return=addresses', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
-        query: { return: 'addresses', change: '1' }
+        query: fromReview
       })
       expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'addresses')
-      })
-    })
-
-    it('Should hand back to the consignment addresses page when entered without return context', async () => {
-      const result = await driveWithQuery(postCph, {
-        payload: VALID_PARTS
-      })
-      expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'addresses')
+        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
+          CYA_SLUG,
+          cphNumberPage.slug
+        ])
       })
     })
   })

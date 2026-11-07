@@ -2,6 +2,7 @@ import { SET_ID } from '../../../set.js'
 import { describe, expect, it } from 'vitest'
 
 import { createRoutePath, pagePath } from '../../../../../shared/paths.js'
+import { CYA_SLUG, TRAIL_START, withTrail } from '../../../../../shared/kit.js'
 import {
   knownJourneysCookie,
   openingRunCookie
@@ -10,7 +11,7 @@ import {
   driveHandler,
   getHandlerOf,
   journeyRequest,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   openingRunAt,
   openingRunCookieFor,
   postHandlerOf,
@@ -64,7 +65,9 @@ describe('the opening run', () => {
   describe('creating a notification opens it', () => {
     it('Should land Start a new notification on origin with the run already begun', async () => {
       const { journeyId, response, cookies } = await createNotification()
-      expect(response.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
+      expect(response.redirect).toBe(
+        withTrail(pagePath(journeyId, ORIGIN_SLUG), [TRAIL_START.dashboard])
+      )
       expect(cookies[openingRunCookie()]).toEqual({ [journeyId]: RUN_ACTIVE })
     })
   })
@@ -92,15 +95,25 @@ describe('the opening run', () => {
       const { journeyId, response, cookies } = await postOrigin({
         startingFrom: [openingRunAt(RUN_COMPLETE)]
       })
-      expect(response.redirect).toBe(pagePath(journeyId, COMMODITIES_SLUG))
+      expect(response.redirect).toBe(
+        withTrail(pagePath(journeyId, COMMODITIES_SLUG), [ORIGIN_SLUG])
+      )
       expect(openingRunCookie() in cookies).toBe(false)
     })
 
     it('Should write no run record when origin is saved from a Change link once the run is complete', async () => {
       const { journeyId, response, cookies } = await postOrigin({
-        startingFrom: [openedFromChangeLink(), openingRunAt(RUN_COMPLETE)]
+        startingFrom: [
+          { query: reviewChangeLinkQuery() },
+          openingRunAt(RUN_COMPLETE)
+        ]
       })
-      expect(response.redirect).toBe(pagePath(journeyId, COMMODITIES_SLUG))
+      expect(response.redirect).toBe(
+        withTrail(pagePath(journeyId, COMMODITIES_SLUG), [
+          CYA_SLUG,
+          ORIGIN_SLUG
+        ])
+      )
       expect(openingRunCookie() in cookies).toBe(false)
     })
   })

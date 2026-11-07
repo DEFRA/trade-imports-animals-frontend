@@ -158,7 +158,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
 - The back link follows the rule in
-  [Opening run and entry guard](journey-flow-and-gates.md#opening-run-and-entry-guard).
+  [Entry guard and the Back link](journey-flow-and-gates.md#entry-guard-and-the-back-link).
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,
   so a country the reference data no longer offers is named on the page.
@@ -210,7 +210,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A species with no number of animals has no card, and a consignment whose
   identified species all lack a count shows the summary and no cards.
 - The card title is the species name, with "Change number of animals" beside
-  it naming the species. The link keeps the change context, so Continue on
+  it naming the species. The link pushes this page onto the trail, so Back on the count page returns here and Continue on
   Commodity details goes on to the next page that applies.
 - While animals remain the card shows the entry form, then the in-card button,
   then the saved-animals table. A finished species shows its saved animals
@@ -315,7 +315,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   The locality, county, postcode and country join into the last line, as in
   "Hull, HU9 5PX, United Kingdom". The country is the name held on the
   notification's copy of the party, so the page never asks the address book.
-- Every party link carries the change context. A trader sent here from check
+- Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
   here, and Save and continue here goes on to the contact address.
   The county parish holding link does not: its route already carries
@@ -494,7 +494,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Searching the transporters list filters it in place: nothing is validated or
   committed, and a picked row stays picked when the search leaves it on the
   list.
-- The add-transporter link keeps the change context, so a trader sent from
+- The add-transporter link carries the trail, so a trader sent from
   check your answers goes on from the transporter list like any other start.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.

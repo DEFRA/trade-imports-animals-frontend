@@ -5,7 +5,7 @@ import {
   addressBookAnswering,
   addressBookPage,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   refusingSaves,
   resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
@@ -16,10 +16,12 @@ import {
 import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
 import {
-  itSendsBackToOverview,
-  itSendsBackToOverviewOnRefusal
+  itSendsBackToWhereTheTraderCameFrom,
+  itSendsBackToWhereTheTraderCameFromOnRefusal
 } from '../../test-support.js'
 import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
+import { CYA_SLUG } from '../../../../../../shared/kit.js'
+import { addressesPage } from '../addresses/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
@@ -116,14 +118,14 @@ describe('GET contact — select an address from the book', () => {
     ).toBe(true)
   })
 
-  it('Should carry the change context onto the current contact edit link', async () => {
+  it('Should carry the trail onto the current contact edit link', async () => {
     const result = await driveHandler(get, {
       seed: { contactAddress: HELD_CONTACT },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.view.context.currentContact.editHref).toBe(
-      `${editHrefOf(result.journeyId)}&change=1`
+      `${editHrefOf(result.journeyId)}&from=${CYA_SLUG}`
     )
   })
 
@@ -256,7 +258,10 @@ describe('POST contact — recoverable save failure', () => {
 describe('contact — Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  itSendsBackToOverview(get)
+  itSendsBackToWhereTheTraderCameFrom(get, { previousPage: addressesPage.slug })
 
-  itSendsBackToOverviewOnRefusal(post, { contactAddress: NOT_IN_THE_BOOK })
+  itSendsBackToWhereTheTraderCameFromOnRefusal(post, {
+    savedPage: addressesPage.slug,
+    payload: { contactAddress: NOT_IN_THE_BOOK }
+  })
 })

@@ -95,8 +95,8 @@ records and session contracts. L1 passes the selected adapters to
 `configureRecords()` and `configureSession()`.
 
 The records adapter owns canonical storage and backend notification projections.
-The session adapter owns known journey ids, opening-run state, the entry that
-began the opening run, flow-only answers and the reviewed token.
+The session adapter owns known journey ids, opening-run state, flow-only
+answers and the reviewed token.
 See [Persistence](persistence.md).
 
 ## Set-owned services

@@ -36,7 +36,7 @@ const hubSection = ({ id, title, hint, add, chosen }) => ({
 
 const partySectionBuilder = (request, journeyId, parties) => (party) => {
   const held = parties[party.id]
-  const href = kit.withChangeContext(request, pagePath(journeyId, party.slug))
+  const href = kit.carryTrail(request, pagePath(journeyId, party.slug))
   return hubSection({
     id: party.id,
     title: party.title,
@@ -46,15 +46,21 @@ const partySectionBuilder = (request, journeyId, parties) => (party) => {
       name: held.name,
       lines: insetAddressLines(held),
       changeHref: href,
-      editDetailsHref: partyEditHref(journeyId, party, 'addresses', {
-        change: kit.changeContext(request)
-      })
+      editDetailsHref: partyEditHref(
+        journeyId,
+        party,
+        'addresses',
+        kit.requestTrail(request)
+      )
     }
   })
 }
 
-const cphSection = (journeyId, answers) => {
-  const href = pagePath(journeyId, 'cph-number?return=addresses')
+const cphSection = (request, journeyId, answers) => {
+  const href = kit.carryTrail(
+    request,
+    pagePath(journeyId, 'cph-number?return=addresses')
+  )
   const cphNumber = answers.countyParishHoldingCph
   return hubSection({
     id: 'cph',
@@ -68,7 +74,7 @@ const cphSection = (journeyId, answers) => {
 const sections = (request, journeyId, answers, scope, parties) => [
   ...PARTIES.map(partySectionBuilder(request, journeyId, parties)),
   ...(scope.has('countyParishHoldingCph')
-    ? [cphSection(journeyId, answers)]
+    ? [cphSection(request, journeyId, answers)]
     : [])
 ]
 
@@ -77,11 +83,7 @@ const get = async (request, h) => {
   const parties = await partiesFromStoredAnswers(answers)
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page.id, {
-        journey,
-        scope,
-        answers
-      }),
+      backLink: kit.trailBackLink(request),
       journey,
       page,
       successBanner: takeAddedAddressBanner(request, h)

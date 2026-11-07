@@ -46,6 +46,7 @@ export const activeTransporterRows = (transporter) =>
 
 export const transportDetailsCard = ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -58,6 +59,7 @@ export const transportDetailsCard = ({
       readOnly,
       actions: cardAction(
         journeyId,
+        changeLinkTrail,
         transportersPage.slug,
         copy.hidden.cards.transportDetails
       )

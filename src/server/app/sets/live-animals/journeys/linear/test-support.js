@@ -1,75 +1,90 @@
-import { it } from 'vitest'
+import { describe, it } from 'vitest'
 import { hubPath, pagePath } from '../../../../shared/paths.js'
-import { RUN_ACTIVE } from '../../../../flow/run-state.js'
-import { appendChangeContext } from '../../../../shared/kit.js'
+import { CYA_SLUG, TRAIL_START, withTrail } from '../../../../shared/kit.js'
 import {
-  amendmentOpenedFromChangeLink,
+  amendmentOpened,
   driveHandler,
   expectBackLinkIsPath,
-  openedFromChangeLink,
-  openingRunAt
+  trailQuery
 } from '../../../../engine/test-support.js'
 
-export const itSendsBackCarryingChangeTo = (get, cases) =>
-  it.each(cases)(
-    'Should send Back to %s carrying the change on a draft opened from a Change link',
-    async (_description, seed, slug) => {
-      const result = await driveHandler(get, {
-        seed,
-        startingFrom: [openedFromChangeLink()]
-      })
-
-      expectBackLinkIsPath(
-        result,
-        appendChangeContext(pagePath(result.journeyId, slug))
-      )
-    }
-  )
-
-export const itSendsBackToOverview = (get, { seed = {}, cases } = {}) => {
-  const overviewCases = [
-    [
-      'while the opening run is active',
-      { startingFrom: [openingRunAt(RUN_ACTIVE)] }
-    ],
-    [
-      'on a draft opened from a Change link',
-      { startingFrom: [openedFromChangeLink()] }
-    ],
-    ['when opened from the Overview', {}],
-    [
-      'on an amendment opened from a Change link',
-      { startingFrom: amendmentOpenedFromChangeLink() }
-    ]
+const backCases = ({ previousPage }) => [
+  ...(previousPage
+    ? [
+        [
+          'the page Save and continue was pressed on',
+          [{ query: trailQuery(TRAIL_START.overview, previousPage) }],
+          (journeyId) =>
+            withTrail(pagePath(journeyId, previousPage), [TRAIL_START.overview])
+        ]
+      ]
+    : []),
+  [
+    'Overview when opened from Overview',
+    [{ query: trailQuery(TRAIL_START.overview) }],
+    (journeyId) => hubPath(journeyId)
+  ],
+  [
+    'the review when opened from a Change link',
+    [{ query: trailQuery(CYA_SLUG) }],
+    (journeyId) => pagePath(journeyId, CYA_SLUG)
+  ],
+  [
+    'the review when opened from a Change link while amending',
+    [amendmentOpened(), { query: trailQuery(CYA_SLUG) }],
+    (journeyId) => pagePath(journeyId, CYA_SLUG)
+  ],
+  [
+    'Overview when the trail names a place the journey does not have',
+    [{ query: trailQuery('not-a-place') }],
+    (journeyId) => hubPath(journeyId)
+  ],
+  [
+    'Overview when nothing says where the trader came from',
+    [],
+    (journeyId) => hubPath(journeyId)
   ]
+]
 
-  const unknownCases = (cases ?? []).filter(
-    (name) => !overviewCases.some(([description]) => description === name)
-  )
-  if (unknownCases.length) {
-    throw new Error(
-      `itSendsBackToOverview: no overview case named ${unknownCases.join(', ')}`
+/**
+ * Registers the Back cases of a page rendered by `get`: one test for each
+ * place the trader can have come from.
+ */
+export const itSendsBackToWhereTheTraderCameFrom = (
+  get,
+  { seed = {}, previousPage } = {}
+) =>
+  describe('Back', () => {
+    it.each(backCases({ previousPage }))(
+      'Should go to %s',
+      async (_entryPoint, startingFrom, backLinkFor) => {
+        const result = await driveHandler(get, { seed, startingFrom })
+
+        expectBackLinkIsPath(result, backLinkFor(result.journeyId))
+      }
     )
-  }
-
-  return it.each(
-    overviewCases.filter(
-      ([description]) => !cases || cases.includes(description)
-    )
-  )('Should send Back to the Overview %s', async (_description, options) => {
-    const result = await driveHandler(get, { seed, ...options })
-
-    expectBackLinkIsPath(result, hubPath(result.journeyId))
   })
-}
 
-export const itSendsBackToOverviewOnRefusal = (post, payload, seed = {}) =>
-  it('Should send Back to the Overview on the refused re-render while the opening run is active', async () => {
+/**
+ * Registers the Back case of a refused save: the page shown again goes Back
+ * to the page Save and continue was pressed on.
+ */
+export const itSendsBackToWhereTheTraderCameFromOnRefusal = (
+  post,
+  { seed = {}, payload, savedPage }
+) =>
+  it(`Should go back to ${savedPage}, the page Save and continue was pressed on, from the page shown again after a refused save`, async () => {
     const result = await driveHandler(post, {
       seed,
       payload,
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [{ query: trailQuery(TRAIL_START.overview, savedPage) }]
     })
 
-    expectBackLinkIsPath(result, hubPath(result.journeyId))
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, savedPage), [TRAIL_START.overview])
+    )
   })
+
+export const pagePathFrom = (startPlace, journeyId, slug) =>
+  withTrail(pagePath(journeyId, slug), [TRAIL_START[startPlace]])

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
@@ -15,8 +15,12 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
 import { dispatchPages } from '../../index.js'
-import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
+import {
+  expectRecoverableSaveFailureKeepingValues,
+  itCarriesTheTrailOnBack
+} from '../test-support.js'
 
 import * as transporterAdd from './transporter-add.controller.js'
 
@@ -41,15 +45,7 @@ describe('/transporters/add', () => {
     )
   })
 
-  it('Should keep the change context on Back when the trader is changing an answer', async () => {
-    const result = await driveHandler(getHandler, {
-      startingFrom: [openedFromChangeLink()]
-    })
-
-    expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, LIST_SLUG)}?change=1`
-    )
-  })
+  itCarriesTheTrailOnBack(getHandler, { backSlug: LIST_SLUG })
 
   it('Should leave the type unanswered before one is chosen', async () => {
     const result = await driveHandler(getHandler)
@@ -95,14 +91,16 @@ describe('/transporters/add', () => {
     })
   })
 
-  it('Should keep the change context on the onward redirect', async () => {
+  it('Should carry the trail on the onward redirect', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: COMMERCIAL },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, COMMERCIAL_SLUG)}?change=1`
+      redirect: withTrail(pagePath(result.journeyId, COMMERCIAL_SLUG), [
+        CYA_SLUG
+      ])
     })
   })
 
