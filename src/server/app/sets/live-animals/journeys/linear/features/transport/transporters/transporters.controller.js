@@ -54,7 +54,6 @@ const render = async (
     matchingTransporters(available, query).length === 0
   return h.view(view, {
     ...kit.base(copy.title, {
-      request,
       backLink: await kit.runBackLink(request, page.id, current),
       journey,
       page,

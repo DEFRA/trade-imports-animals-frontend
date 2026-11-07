@@ -28,6 +28,7 @@ import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
+const NEXT_PAGE_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
@@ -230,7 +231,7 @@ test.describe('import-reason feature', () => {
     await chooseInternalMarketBreeding(page)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expectInternalMarketBreedingChecked(page)
   })
@@ -392,7 +393,7 @@ test.describe('import-reason reveals', () => {
     await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(radioFor(page, 'transit')).toBeChecked()
     await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
@@ -492,7 +493,7 @@ test.describe('import-reason reveal validation', () => {
     await chooseTypeAheadOption(page, TEMPORARY_ADMISSION_PORT)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
     await expect(page.locator(temporaryAdmissionPortHidden)).toHaveValue(
@@ -560,7 +561,7 @@ test.describe('import-reason destination territories', () => {
     })
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(transhipmentCountryHidden)).toHaveValue('ES-CN')
     await expect(page.locator(transhipmentCountryInput)).toHaveValue(
@@ -711,7 +712,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .selectOption(COUNTRY_CODE)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator('select#transitPortOfExit')).toHaveValue(
       PORT_CODE
@@ -727,7 +728,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .locator('select#temporaryAdmissionPortOfExit')
       .selectOption(PORT_CODE)
     await saveAndContinue(page).click()
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
       page.locator('select#temporaryAdmissionPortOfExit')
@@ -739,7 +740,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .locator('select#transhipmentDestinationCountry')
       .selectOption(COUNTRY_CODE)
     await saveAndContinue(page).click()
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
       page.locator('select#transhipmentDestinationCountry')

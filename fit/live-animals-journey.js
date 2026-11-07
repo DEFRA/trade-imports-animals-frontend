@@ -534,8 +534,7 @@ export const documentRowFor = (scope, reference) =>
  */
 export const startNotification = async (page) => {
   await startNotificationWithOriginAnswered(page)
-  await page.goto(journeyUrl(page))
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 /**
@@ -588,7 +587,7 @@ export const answerCountryOfOrigin = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
   await save(page)
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 export const searchCommodities = async (page, query) => {
@@ -640,7 +639,7 @@ export const openCommoditySearch = async (page) => {
 export const openCommodityDetails = async (page, speciesToSelect) => {
   await openCommoditySearch(page)
   await selectSpecies(page, speciesToSelect)
-  await save(page)
+  await saveAndReturnToHub(page).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page
     .getByRole('link', { name: 'Commodity details', exact: true })
@@ -684,7 +683,7 @@ export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill('1')
   await save(page)
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 export const setUploadFile = (
@@ -734,9 +733,16 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = (page) => saveAndContinue(page).click()
+const save = async (page) => {
+  await saveAndContinue(page).click()
+}
 
-export const answerOriginDetails = async (
+export const openOverview = async (page) => {
+  await page.goto(journeyUrl(page))
+  await expectOverview(page)
+}
+
+export const fillOriginDetails = async (
   page,
   {
     countryName,
@@ -754,6 +760,10 @@ export const answerOriginDetails = async (
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(internalReference)
+}
+
+export const answerOriginDetails = async (page, answers) => {
+  await fillOriginDetails(page, answers)
   await save(page)
 }
 
@@ -768,7 +778,7 @@ export const answerWhatYouAreImporting = async (
 export const answerWhatYouAreImportingFromOverview = async (page, chosen) => {
   await page.getByRole('link', { name: hubCopy.rows.commodities.title }).click()
   await answerWhatYouAreImporting(page, chosen)
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 export const answerCommodityCounts = async (page) => {
@@ -929,7 +939,7 @@ export const saveArrivalWithMeans = async (page, meansOfTransport) => {
 const chooseMeansAndSave = async (page, meansOfTransport) => {
   await chooseMeansOfTransport(page, meansOfTransport)
   await save(page)
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 /**
@@ -981,10 +991,13 @@ export const answerTransporter = async (page) => {
   await save(page)
 }
 
-export const answerContactAddress = async (page) => {
-  await page
+const chooseContactAddress = (page) =>
+  page
     .getByRole('radio', { name: partyPickerName(values.contactAddress) })
     .check()
+
+export const answerContactAddress = async (page) => {
+  await chooseContactAddress(page)
   await save(page)
 }
 
@@ -1003,40 +1016,44 @@ export const completeAnswerSections = async (
 
   await task('Where is this consignment coming from?')
   await answerOriginDetails(page)
+  await openOverview(page)
 
   await answerWhatYouAreImportingFromOverview(page)
   await task('Commodity details')
   await answerCommodityCounts(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   if (!skipAnimalIdentification) {
     await task('Identification details')
     await answerAnimalIdentification(page)
-    await expectOverview(page)
+    await openOverview(page)
   }
 
   await task(hubCopy.rows.importReason.title)
   await answerImportReason(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Additional details')
   await answerAdditionalDetails(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
+  await openOverview(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Transit countries')
   await answerTransitCountries(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Transport details')
   await answerTransporter(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   await task('Contact address for this consignment')
-  await answerContactAddress(page)
+  await chooseContactAddress(page)
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
 }
 
 export const openReviewFromHub = async (page) => {

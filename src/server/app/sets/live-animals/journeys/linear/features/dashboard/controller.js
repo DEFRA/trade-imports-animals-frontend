@@ -3,7 +3,6 @@ import {
   createRoutePath,
   dashboardPath,
   dashboardRoutePath,
-  hubPath,
   pagePath,
   pageRoutePath,
   startRoutePath
@@ -30,6 +29,7 @@ import {
 import { copyFor } from '../../../../../../shared/copy.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
+import { notificationViewPage } from '../check-answers/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import {
@@ -45,6 +45,9 @@ import { sortOptions } from './view-model/sort-options.js'
 const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
+
+const organisationIdOf = (request) =>
+  buildActor(request.auth?.credentials)?.organisationId
 
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') {
@@ -127,9 +130,17 @@ const listGet = async (request, h) => renderDashboard(request, h)
 
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return h.redirect(
-    journey ? hubPath(journey.journeyId) : `${dashboardPath()}?amendRefused=1`
+  if (!journey) {
+    return h.redirect(`${dashboardPath()}?amendRefused=1`)
+  }
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      organisationId: organisationIdOf(request)
+    },
+    'Amendment started, sent to the review page'
   )
+  return h.redirect(pagePath(journey.journeyId, notificationViewPage.slug))
 }
 
 const openNewNotification = async (request, h, { entry }) => {
@@ -139,7 +150,7 @@ const openNewNotification = async (request, h, { entry }) => {
     {
       journeyId: journey.journeyId,
       entry,
-      organisationId: buildActor(request.auth?.credentials)?.organisationId
+      organisationId: organisationIdOf(request)
     },
     'New notification opened'
   )

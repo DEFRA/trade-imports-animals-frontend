@@ -82,7 +82,6 @@ export const render = async ({
   return h
     .view(view, {
       ...kit.base(copy.title, {
-        request,
         backLink: await kit.runBackLink(
           request,
           page.id,

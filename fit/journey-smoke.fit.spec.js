@@ -27,6 +27,8 @@ import {
   completeAnswerSections,
   expectSpeciesSelected,
   journeyUrl,
+  openNotificationView,
+  openOverview,
   openReviewFromHub,
   selectSpecies,
   signIn,
@@ -115,7 +117,7 @@ test.describe('live-animals journey glue', () => {
     await page.goto(journeyUrl(page, 'origin'))
     await expect(heading(originCopy.title)).toBeVisible()
     await save()
-    await expect(heading(hubCopy.title)).toBeVisible()
+    await expect(heading(commoditiesCopy.search.title)).toBeVisible()
   })
 
   test('the opening run carries a new notification through to the review page in one pass', async ({
@@ -294,6 +296,7 @@ test.describe('live-animals journey glue', () => {
     ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
+    await openOverview(page)
     await openReviewFromHub(page)
 
     await page.goto(
@@ -313,7 +316,8 @@ test.describe('live-animals journey glue', () => {
       page.getByRole('button', { name: 'Save and add another' })
     ).toHaveCount(0)
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
+    await expect(exactHeading(page, additionalDetailsCopy.title)).toBeVisible()
+    await openNotificationView(page)
     await expect(page.getByText('UK000000000002')).toBeVisible()
 
     const secondDocument = {
@@ -333,7 +337,8 @@ test.describe('live-animals journey glue', () => {
     ).toContainText('Check completed')
     await expect(page).toHaveURL(documentsInChangeContext)
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
+    await expect(exactHeading(page, 'Consignment addresses')).toBeVisible()
+    await openNotificationView(page)
     await expect(
       page.getByText(secondDocument.accompanyingDocumentReference)
     ).toBeVisible()

@@ -6,6 +6,7 @@ import {
   MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO_ROW,
   saveAndContinue,
+  saveAndReturnToHub,
   numberOfAnimalsFor,
   PHONE_VIEWPORT,
   expectNoHorizontalOverflow,
@@ -354,7 +355,7 @@ test.describe('commodity consignment details — persistence and accessibility',
 
   test('saves and persists per-species counts', async ({ page }) => {
     await fillValidQuantities(page)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
@@ -421,7 +422,9 @@ test.describe('commodity consignment details — persistence and accessibility',
     await fillValidQuantities(page)
     await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).press('Enter')
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Identification details', exact: true })
+    ).toBeVisible()
   })
 
   test('removing the last commodity returns to the commodity question, as does reopening the page with nothing selected', async ({

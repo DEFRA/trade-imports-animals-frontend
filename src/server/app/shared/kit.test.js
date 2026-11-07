@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
+import { AMEND, DRAFT } from '../engine/index.js'
 import {
   expectOneLogged,
   expectOneRefusalLogged,
@@ -10,11 +10,11 @@ import {
   unavailableBackendError
 } from '../engine/test-support.js'
 import {
-  amendReviewTarget,
   appendChangeContext,
   base,
+  changeContext,
   dateField,
-  exitTarget,
+  hubExitTarget,
   logRefusal,
   pageRoutes,
   REFUSAL_LOG_MESSAGE,
@@ -23,9 +23,9 @@ import {
   requestSaveChoice,
   returnedSaveChoice,
   setlessBase,
+  withChangeContext,
   withReturnMarker
 } from './kit.js'
-import { AMEND_RETURN_CHOICE } from './amend-form-actions.js'
 
 describe('#requestSaveChoice — what a request says about how it was saved', () => {
   const params = { journeyId: 'journey-1' }
@@ -33,7 +33,7 @@ describe('#requestSaveChoice — what a request says about how it was saved', ()
   it('Should be the hub exit only for the named hub exit', () => {
     expect(
       requestSaveChoice({ payload: { exit: 'hub' }, params, query: {} })
-    ).toEqual({ hubExit: true, change: false })
+    ).toEqual({ hubExit: true })
     expect(requestSaveChoice({ params, query: {} }).hubExit).toBe(false)
     expect(
       requestSaveChoice({ payload: { exit: 'other' }, params, query: {} })
@@ -41,91 +41,54 @@ describe('#requestSaveChoice — what a request says about how it was saved', ()
     ).toBe(false)
   })
 
-  it('Should carry the change context of the query', () => {
-    expect(requestSaveChoice({ params, query: { change: '1' } }).change).toBe(
-      true
-    )
+  it('Should carry nothing from the change context of the query', () => {
+    expect(requestSaveChoice({ params, query: { change: '1' } })).toEqual({
+      hubExit: false
+    })
   })
 })
 
 describe('#returnedSaveChoice — a save choice made on the form the upload service returns', () => {
-  const params = { journeyId: 'journey-1' }
-  const openedWithChange = { params, query: { change: '1' } }
-  const openedWithoutChange = { params, query: {} }
-  const reviewPath = /journey-1\/notification-view$/
-  const fallback = '/next'
-
-  const exitFor = (request, returnedForm, journey) =>
-    exitTarget(request, fallback, {
-      saveChoice: returnedSaveChoice(request, returnedForm, journey)
+  it('Should be the hub exit only for the named hub exit', () => {
+    expect(returnedSaveChoice({ exit: 'hub' })).toEqual({ hubExit: true })
+    expect(returnedSaveChoice({ action: 'continue' })).toEqual({
+      hubExit: false
     })
-
-  it('Should go on, not to the review, for the amend Save and continue from a page opened with change context', () => {
-    expect(
-      exitFor(openedWithChange, { action: 'continue' }, { status: AMEND })
-    ).toBe(fallback)
-  })
-
-  it('Should go to the review for the amend Save and return from a page opened without change context', () => {
-    expect(
-      exitFor(
-        openedWithoutChange,
-        { [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value },
-        { status: AMEND }
-      )
-    ).toMatch(reviewPath)
-  })
-
-  it('Should go on, not to the review, for the amend Save and return choice on a journey that is not being amended', () => {
-    expect(
-      exitFor(
-        openedWithoutChange,
-        { [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value },
-        { status: DRAFT }
-      )
-    ).toBe(fallback)
-  })
-
-  it('Should go on, not to the review, for the amend Save and return choice when no journey is given', () => {
-    expect(
-      exitFor(openedWithoutChange, {
-        [AMEND_RETURN_CHOICE.name]: AMEND_RETURN_CHOICE.value
-      })
-    ).toBe(fallback)
-  })
-
-  it('Should go to the review for a form saved from a page opened with change context when the journey is not being amended', () => {
-    expect(
-      exitFor(openedWithChange, { action: 'continue' }, { status: DRAFT })
-    ).toMatch(reviewPath)
-  })
-
-  it('Should go to the overview for the hub exit, whatever the change context', () => {
-    expect(
-      exitFor(openedWithChange, { exit: 'hub' }, { status: AMEND })
-    ).toMatch(/journey-1$/)
-    expect(
-      exitFor(openedWithChange, { exit: 'hub' }, { status: DRAFT })
-    ).toMatch(/journey-1$/)
   })
 })
 
-describe('#exitTarget given a save choice', () => {
+describe('#hubExitTarget given a save choice', () => {
   const request = {
     params: { journeyId: 'journey-1' },
-    payload: { exit: 'hub' },
-    query: { change: '1' }
+    payload: { exit: 'hub' }
   }
-  const plainSave = { hubExit: false, change: false }
 
-  it('Should follow the given save choice, not the request payload and query', () => {
-    expect(exitTarget(request, '/next', { saveChoice: plainSave })).toBe(
-      '/next'
-    )
+  it('Should follow the given save choice, not the request payload', () => {
+    expect(
+      hubExitTarget(request, { saveChoice: { hubExit: false } })
+    ).toBeNull()
   })
 
   it('Should read the request when no save choice is given', () => {
-    expect(exitTarget(request, '/next')).toMatch(/journey-1$/)
+    expect(hubExitTarget(request)).toMatch(/journey-1$/)
+  })
+})
+
+describe('#changeContext — the Change-link marker', () => {
+  const params = { journeyId: 'journey-1' }
+
+  it('Should be true only for a request whose query carries the marker', () => {
+    expect(changeContext({ params, query: { change: '1' } })).toBe(true)
+    expect(changeContext({ params, query: {} })).toBe(false)
+  })
+
+  it('Should append the marker to an href exactly when the request carries it', () => {
+    expect(
+      withChangeContext({ params, query: { change: '1' } }, '/n/j-1/a')
+    ).toBe('/n/j-1/a?change=1')
+    expect(withChangeContext({ params, query: {} }, '/n/j-1/a')).toBe(
+      '/n/j-1/a'
+    )
   })
 })
 
@@ -179,16 +142,7 @@ describe('#dateField — MoJ date-picker view model', () => {
   })
 })
 
-describe('#base — amending', () => {
-  it('Should be true only for a journey being amended', () => {
-    expect(base('title', { journey: { status: AMEND } }).amending).toBe(true)
-    expect(base('title', { journey: { status: DRAFT } }).amending).toBe(false)
-    expect(base('title', { journey: { status: SUBMITTED } }).amending).toBe(
-      false
-    )
-    expect(base('title').amending).toBe(false)
-  })
-
+describe('#base — journey strip', () => {
   it('Should offer Cancel amend in the strip only for a journey being amended', () => {
     const amending = { journeyId: 'j', status: AMEND }
     expect(base('t', { journey: amending }).journeyStrip.cancelAmend).toEqual({
@@ -219,29 +173,6 @@ describe('#base — amending', () => {
     expect(view.journeyStrip).toBeNull()
     expect(view.concurrencyToken).toBe(7)
   })
-
-  const ORIGIN_PATH = '/n/j-1/origin'
-  const originRequest = {
-    path: ORIGIN_PATH,
-    url: new URL(`http://x${ORIGIN_PATH}?change=1&return=addresses`)
-  }
-
-  it("Should give an amended journey's page the two save-button form actions, keeping its own query", () => {
-    expect(
-      base('t', { journey: { status: AMEND }, request: originRequest }).amend
-    ).toEqual({
-      returnAction: `${ORIGIN_PATH}?change=1&return=addresses`,
-      continueAction: `${ORIGIN_PATH}?return=addresses`,
-      returnChoice: AMEND_RETURN_CHOICE
-    })
-  })
-
-  it('Should give no amend form actions outside an amendment or without the request', () => {
-    expect(
-      base('t', { journey: { status: DRAFT }, request: originRequest }).amend
-    ).toBeNull()
-    expect(base('t', { journey: { status: AMEND } }).amend).toBeNull()
-  })
 })
 
 describe('#base — success banner', () => {
@@ -257,26 +188,6 @@ describe('#base — success banner', () => {
     ).toBeNull()
     expect(base('t').successBanner).toBeNull()
     expect(setlessBase('t').successBanner).toBeNull()
-  })
-})
-
-describe('#amendReviewTarget — where a Change-link save of an amendment goes', () => {
-  const params = { journeyId: 'journey-1' }
-  const fromChangeLink = { params, query: { change: '1' } }
-  const notFromChangeLink = { params, query: {} }
-
-  it('Should be the review for an amendment saved from a Change link', () => {
-    expect(amendReviewTarget(fromChangeLink, { status: AMEND })).toMatch(
-      /journey-1\/notification-view$/
-    )
-  })
-
-  it('Should be null for a draft saved from a Change link', () => {
-    expect(amendReviewTarget(fromChangeLink, { status: DRAFT })).toBeNull()
-  })
-
-  it('Should be null for an amendment saved without a Change link', () => {
-    expect(amendReviewTarget(notFromChangeLink, { status: AMEND })).toBeNull()
   })
 })
 

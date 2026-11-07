@@ -5,6 +5,7 @@ import {
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
+  openNotificationView,
   openReviewFromHub,
   saveAndReturnToHub,
   signIn,
@@ -49,16 +50,17 @@ const amendAndOpenCancel = async (page, reference) => {
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()
   await expectAmendStrip(page)
-  await page
-    .getByRole('link', { name: 'Where is this consignment coming from?' })
-    .click()
+  await page.getByRole('link', { name: 'Change import details' }).click()
   await expectAmendStrip(page)
   await chooseCountryOfOrigin(page, 'France')
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await openReviewFromHub(page)
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await openNotificationView(page)
   await cancelAmendLink(page).click()
 }
 

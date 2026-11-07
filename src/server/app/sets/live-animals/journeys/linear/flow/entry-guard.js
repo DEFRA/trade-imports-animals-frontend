@@ -12,8 +12,7 @@ import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import {
   inOpeningRun,
-  activeOpeningRunBeganAtStartEntry,
-  openingRunStarted
+  activeOpeningRunBeganAtStartEntry
 } from '../../../../../flow/run-state.js'
 import { buildInsFrontendUrl } from '../../../../../../common/helpers/ins-frontend-url.js'
 import { SET_ID } from '../../../set.js'
@@ -46,9 +45,10 @@ export const hasCommittedNotificationAnswers = (answers) =>
     ([key, value]) => userEntered(key) && isAnswered(value)
   )
 
-const overviewAdmitsRequest = async (request, journey, answers) =>
-  (await openingRunStarted(request, journey.journeyId)) ||
+export const leaveJourneyLink = (journey, answers) =>
   hasCommittedNotificationAnswers(answers)
+    ? hubPath(journey.journeyId)
+    : dashboardPath()
 
 const insTypeQuestionUrl = (journeyId) => {
   const query = new URLSearchParams({
@@ -65,20 +65,20 @@ export const entryBackLink = async (request, journey, answers) => {
   if (await inOpeningRun(request, journey.journeyId)) {
     return dashboardPath()
   }
-  return (await overviewAdmitsRequest(request, journey, answers))
-    ? hubPath(journey.journeyId)
-    : dashboardPath()
+  return leaveJourneyLink(journey, answers)
 }
 
-/** The entry page's path for a journey the overview would not admit, or null
- * when the request may proceed. */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null
   }
   const { journey, answers } = await get(request, h)
-  if (await overviewAdmitsRequest(request, journey, answers)) {
+  if (hasCommittedNotificationAnswers(answers)) {
     return null
   }
+  request.logger.info(
+    { journeyId: journey.journeyId, path: request.path },
+    'No answer entered, sent to the first page'
+  )
   return pagePath(request.params.journeyId, originPage.slug)
 }

@@ -3,7 +3,9 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
+  openOverview,
   saveAndContinue,
+  saveAndReturnToHub,
   saveArrivalByAir,
   signIn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
@@ -223,7 +225,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await openCommercialForm(page)
     await fillTransporter(page)
     await saveAndContinue(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await openOverview(page)
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
     for (const [field, value] of Object.entries(validTransporter)) {
@@ -247,7 +249,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
         name: validTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
@@ -262,7 +264,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await openCommercialForm(page)
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await openOverview(page)
   })
 })
 

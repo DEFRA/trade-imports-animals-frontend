@@ -24,8 +24,3 @@ export const inOpeningRun = async (request, journeyId) =>
 export const activeOpeningRunBeganAtStartEntry = async (request, journeyId) =>
   (await inOpeningRun(request, journeyId)) &&
   (await session.openingRunEntry(request, journeyId)) === RUN_ENTRY_START
-
-/** Whether the opening run has ever begun for this journey — active or
- * complete. */
-export const openingRunStarted = async (request, journeyId) =>
-  (await session.openingRun(request, journeyId)) !== undefined

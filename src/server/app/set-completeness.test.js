@@ -60,7 +60,6 @@ const journeyFlowFor = () => ({
   sections: [{ id: 'details', pages: [{ id: 'details', slug: 'details' }] }],
   taskRows: [],
   rowStatus: () => 'notStarted',
-  nextRunTarget: () => null,
   previousRunTarget: () => null,
   flowOnlyKeys: [],
   entryGuardTarget: async () => null,

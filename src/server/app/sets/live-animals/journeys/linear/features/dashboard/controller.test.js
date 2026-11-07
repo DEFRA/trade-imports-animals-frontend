@@ -41,6 +41,7 @@ import { startStubModeServer } from '../../../../../../../common/test-helpers/st
 import { CATTLE_CODE } from '../../../../services/commodities/rules.js'
 
 const hubUrl = (journeyId) => `${SET_BASE}/notifications/${journeyId}`
+const reviewUrl = (journeyId) => pageUrl(journeyId, CYA_SLUG)
 const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
 
 const COPY_AS_NEW_ACTION = 'Copy as new'
@@ -80,7 +81,7 @@ const postAmend = async (journeyId, overrides = {}) => {
   const request = journeyRequest(journeyId, overrides)
   const h = stubH(request)
   const response = await amendPost(request, h)
-  return { response, h }
+  return { response, h, request }
 }
 
 beforeAll(() => {
@@ -301,12 +302,12 @@ describe('dashboard row actions', () => {
     expect(routes.some((route) => route.path.endsWith('/view'))).toBe(false)
   })
 
-  it('Should amend a known submitted journey — unfrozen, re-entered at the hub, writable again', async () => {
+  it('Should amend a known submitted journey — unfrozen, opened at the review page, writable again', async () => {
     const submitted = await startSubmitted()
 
     const { response } = await postAmend(submitted.journeyId)
 
-    expect(response.redirect).toBe(hubUrl(submitted.journeyId))
+    expect(response.redirect).toBe(reviewUrl(submitted.journeyId))
     const amended = await records.load({ journeyId: submitted.journeyId })
     expect(amended.status).toBe(AMEND)
     await records.replaceFulfilment(
@@ -344,20 +345,20 @@ describe('dashboard row actions', () => {
 
     const { response } = await postAmend(submitted.journeyId)
 
-    expect(response.redirect).toBe(hubUrl(submitted.journeyId))
+    expect(response.redirect).toBe(reviewUrl(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(AMEND)
   })
 
-  it('Should open an amend for a submitted journey the session does not know at its hub and leave it amending', async () => {
+  it('Should open an amend for a submitted journey the session does not know at its review page and leave it amending', async () => {
     const submitted = await startSubmitted()
 
     const { response } = await postAmend(submitted.journeyId, {
       knownJourneyIds: []
     })
 
-    expect(response.redirect).toBe(hubUrl(submitted.journeyId))
+    expect(response.redirect).toBe(reviewUrl(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(AMEND)
@@ -499,8 +500,23 @@ describe('dashboard amend', () => {
 
     const { response, h } = await postAmend(submitted.journeyId)
 
-    expect(response.redirect).toBe(hubUrl(submitted.journeyId))
+    expect(response.redirect).toBe(reviewUrl(submitted.journeyId))
     expect(openingRunCookie() in h.cookies).toBe(false)
+  })
+
+  it('Should log the started amendment once with the journey and its organisation', async () => {
+    const submitted = await startSubmitted()
+
+    const { request } = await postAmend(submitted.journeyId)
+
+    expectOneLogged(request.logger, {
+      level: 'info',
+      fields: {
+        journeyId: submitted.journeyId,
+        organisationId: authenticatedActor.organisationId
+      },
+      message: 'Amendment started, sent to the review page'
+    })
   })
 })
 

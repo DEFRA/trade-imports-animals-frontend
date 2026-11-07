@@ -21,7 +21,7 @@ import {
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
-import { CYA_SLUG } from '../../../../../../../shared/kit.js'
+import { documentsPage } from '../../documents/page.js'
 import { dispatchPages } from '../../index.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -182,7 +182,7 @@ describe('/transporters/add/commercial', () => {
     expect(result.response.redirect).not.toContain(ADD_SLUG)
   })
 
-  it('Should return to Check your answers after a save made from its Change link', async () => {
+  it('Should hand on from the transporter list after a save made from its Change link', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
@@ -190,7 +190,7 @@ describe('/transporters/add/commercial', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, CYA_SLUG)
+      redirect: pagePath(result.journeyId, documentsPage.slug)
     })
   })
 

@@ -9,6 +9,7 @@ import {
   openDocuments,
   PHONE_VIEWPORT,
   saveAndContinue,
+  saveAndReturnToHub,
   signIn,
   visitOverviewThenOpen
 } from '../../../../../../../../../../fit/live-animals-journey.js'
@@ -51,7 +52,7 @@ test.describe('document scan-status rendering', () => {
       copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
 
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expectOverview(page)
 
     await visitOverviewThenOpen(page, documentsPage.slug)
@@ -100,7 +101,7 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(row).toHaveCount(0)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 

@@ -318,7 +318,7 @@ test.describe('check-answers feature change links', () => {
     await signIn(page)
   })
 
-  test('Change link threads context and returns to the same review after saving', async ({
+  test('Change link carries the change marker and Save and continue goes on to the next page', async ({
     page
   }) => {
     await startNotification(page)
@@ -341,8 +341,9 @@ test.describe('check-answers feature change links', () => {
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL(
-      urlUnderBase('/notifications/[^/]+/notification-view')
+      urlUnderBase('/notifications/[^/]+/commodities')
     )
+    await openNotificationView(page)
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notApplicable
     )

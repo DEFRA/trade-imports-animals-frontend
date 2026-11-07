@@ -17,7 +17,7 @@ import {
 } from '../../../../../engine/test-support.js'
 import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
-import { exitTarget, withChangeContext } from '../../../../../shared/kit.js'
+import { withChangeContext } from '../../../../../shared/kit.js'
 
 import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
@@ -31,7 +31,6 @@ import { driveReturnFromUpload } from './documents/test-support.js'
 const change = { change: '1' }
 const TEST_JOURNEY_ID = 'journey-1'
 const IMPLICIT_SUBMIT = 'implicit-submit'
-const cya = (journeyId) => pagePath(journeyId, 'notification-view')
 
 const lineSeed = {
   commodityLines: [lineOf(FELIS_CATUS_ROW)]
@@ -58,26 +57,10 @@ describe('change context — kit contracts', () => {
       withChangeContext({ query: {} }, pagePath(TEST_JOURNEY_ID, 'commodities'))
     ).toBe(pagePath(TEST_JOURNEY_ID, 'commodities'))
   })
-
-  it('Should resolve the exit target with hub beating change and change beating the fallback', () => {
-    const request = {
-      payload: { exit: 'hub' },
-      query: change,
-      params: { journeyId: TEST_JOURNEY_ID }
-    }
-    const fallback = pagePath(TEST_JOURNEY_ID, 'commodities')
-    expect(exitTarget(request, fallback)).toBe(hubPath(TEST_JOURNEY_ID))
-    expect(exitTarget({ ...request, payload: {} }, fallback)).toBe(
-      cya(TEST_JOURNEY_ID)
-    )
-    expect(exitTarget({ ...request, payload: {}, query: {} }, fallback)).toBe(
-      fallback
-    )
-  })
 })
 
 describe('change context — context survives the internal loop navigation', () => {
-  it('Should carry the context from the search save into the consignment details page', async () => {
+  it('Should go on from the search save to Main import reason when the request carries change context', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(commoditiesSearch),
       {
@@ -89,7 +72,7 @@ describe('change context — context survives the internal loop navigation', () 
       }
     )
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'consignment-details')}?change=1`
+      redirect: pagePath(journeyId, 'import-reason')
     })
     expect(after.commodityLines).toEqual([
       expect.objectContaining(FELIS_CATUS_ROW)
@@ -170,64 +153,47 @@ describe('change context — context survives the internal loop navigation', () 
   })
 })
 
-describe('change context — only the collection exit repoints to check your answers', () => {
-  it('Should send the consignment details save back to check your answers under change context', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(consignmentDetails),
-      {
-        payload: savableLineCountPayload,
-        startingFrom: [openedFromChangeLink()],
-        seed: lineSeed
-      }
-    )
-    expect(response).toEqual({ redirect: cya(journeyId) })
+describe('change context — Save and continue goes on to the next page that applies', () => {
+  const withAndWithout = async (handler, options) => ({
+    changed: await driveHandler(handler, {
+      ...options,
+      startingFrom: [openedFromChangeLink()]
+    }),
+    plain: await driveHandler(handler, options)
   })
 
-  it('Should send the identification Enter post with nothing typed back to check your answers under change context', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(animalIdentification),
-      {
-        payload: { action: IMPLICIT_SUBMIT },
-        startingFrom: [openedFromChangeLink()],
-        seed: lineSeed
-      }
-    )
-    expect(response).toEqual({ redirect: cya(journeyId) })
-  })
+  it.each([
+    [
+      'the consignment details save',
+      consignmentDetails,
+      { payload: savableLineCountPayload, seed: lineSeed },
+      'commodities/identification'
+    ],
+    [
+      'the identification Enter post with nothing typed',
+      animalIdentification,
+      { payload: { action: IMPLICIT_SUBMIT }, seed: lineSeed },
+      'additional-details'
+    ],
+    ['the documents Continue', documents, {}, 'addresses']
+  ])(
+    'Should send %s to the same next page with or without change context',
+    async (_name, feature, options, nextSlug) => {
+      const { changed, plain } = await withAndWithout(
+        postHandlerOf(feature),
+        options
+      )
 
-  it('Should send the documents Continue back to check your answers under change context', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(documents),
-      {
-        startingFrom: [openedFromChangeLink()]
-      }
-    )
-    expect(response).toEqual({ redirect: cya(journeyId) })
-  })
+      expect(changed.response).toEqual({
+        redirect: pagePath(changed.journeyId, nextSlug)
+      })
+      expect(plain.response).toEqual({
+        redirect: pagePath(plain.journeyId, nextSlug)
+      })
+    }
+  )
 
-  it('Should keep the consignment details save on the flow target without change context', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(consignmentDetails),
-      {
-        payload: savableLineCountPayload,
-        seed: { countryOfOrigin: 'FR', ...lineSeed }
-      }
-    )
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
-  })
-
-  it('Should keep the identification Enter post with nothing typed on the section flow (the hub) without change context', async () => {
-    const { journeyId, response } = await driveHandler(
-      postHandlerOf(animalIdentification),
-      {
-        payload: { action: IMPLICIT_SUBMIT },
-        seed: lineSeed
-      }
-    )
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
-  })
-
-  it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
+  it('Should let an explicit hub exit win over the change context', async () => {
     const details = await driveHandler(postHandlerOf(consignmentDetails), {
       payload: { ...savableLineCountPayload, exit: 'hub' },
       startingFrom: [openedFromChangeLink()],

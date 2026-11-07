@@ -188,9 +188,9 @@ to `sections`:
 }
 ```
 
-The array order is journey order. Outside the opening run, Save and continue
-moves to the first gate-passing later page of the section only when it belongs
-to the same task row, and otherwise returns to the hub. The section's place among
+The array order is journey order and Overview's group order. Save and continue
+goes to the next page that applies, from every start; nothing returns to the hub.
+The section's place among
 other sections also controls strictly-earlier continue prerequisites.
 
 Normal page and section gates are derived from `meta.collects`, in-scope
@@ -229,7 +229,7 @@ cannot express its applicability — it makes the row read Not applicable
 whatever the parts roll up to. See
 [`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
-Add the task-row id to the right object in the hub controller's `GROUPS` list.
+The hub lists a task row under the section that holds its first page, so there is no group list to edit.
 Add the row title to both hub copy bundles. Hub task rows carry no hint:
 Design release 1 keeps the hub to one-line rows and "Roles and addresses" is
 the one hinted row, guarded by
@@ -264,7 +264,7 @@ flow section or task row does not add a config entry.
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
-journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`,
+journey's `sections`, `taskRows`, `rowStatus`, `previousRunTarget`,
 `FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no

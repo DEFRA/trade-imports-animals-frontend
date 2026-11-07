@@ -40,6 +40,7 @@ export const taskRows = [
       }
     ]
   },
+  { id: 'importReason', pages: [importReasonPage] },
   {
     id: 'consignmentDetails',
     pages: [consignmentDetailsPage],
@@ -50,8 +51,6 @@ export const taskRows = [
       }
     ]
   },
-  { id: 'importReason', pages: [importReasonPage] },
-  { id: 'additionalDetails', pages: [additionalDetailsPage] },
   {
     id: 'animalIdentification',
     pages: [animalIdentificationPage],
@@ -59,12 +58,13 @@ export const taskRows = [
     conditional: true,
     applies: identifiesAnAnimal
   },
+  { id: 'additionalDetails', pages: [additionalDetailsPage] },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
   { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
   { id: 'transporter', pages: [transportersPage] },
+  { id: 'documents', pages: [documentsPage] },
   { id: 'addresses', pages: [addressesPage, cphNumberPage] },
-  { id: 'contact', pages: [consignmentContactSelectPage] },
-  { id: 'documents', pages: [documentsPage] }
+  { id: 'contact', pages: [consignmentContactSelectPage] }
 ]
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)

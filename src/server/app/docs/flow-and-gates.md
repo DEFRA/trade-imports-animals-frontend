@@ -11,7 +11,6 @@ seam. `configureJourneyFlow()` receives:
 - `sections`
 - `taskRows`
 - `rowStatus`
-- `nextRunTarget`
 - `previousRunTarget`
 - `flowOnlyKeys`
 - `entryGuardTarget`
@@ -48,20 +47,23 @@ configured section list through the journey-flow seam.
 
 ## Navigation and status
 
-[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports four.
-`sectionEntry()` finds the first gate-passing page in a section, or the hub when
-no page passes. `nextInSection()` returns the next gate-passing page in the
-section, or the hub when the section is finished. `nextInTaskRow()` is where a
-save outside the opening run goes: the next gate-passing page of the section
-when it belongs to the same task row, otherwise the hub; a page in no task row
-keeps the section order. `kit.nextTarget` uses it after the opening run and the
-explicit exits.
+[`src/server/app/flow/navigation.js`](../flow/navigation.js) owns the journey's
+page order and the next page after one. The order is the set's flow sections
+read in order. A step is a page that belongs to a task row and is not marked as
+a sub-page; a sub-page keeps its section's status and prerequisites but is
+reached only from the page that opens it. `nextStepPath()` answers the next
+step after a page whose scope rule passes (`pageAppliesTo()` in
+[`gates.js`](../flow/gates.js): the page's own gate, else some obligation it
+collects in scope), or nothing past the last step, and throws for a page in no
+section. `kit.nextTarget` uses it after the explicit exits and falls back to
+the review page when it answers nothing. `taskRowsOfSection()` lists a
+section's task rows in the order of their first page, which is how the hub
+derives its groups.
 
-`rowEntry()` differs from `sectionEntry()` and `nextInSection()` in that it
-always answers with a page. A task row is a way into the notification rather
-than a step of a sequence, and a journey is worked in whatever order its user
-chooses, so a row whose pages are all gated out opens at its first page instead
-of turning back to the hub. That page decides for itself what to show someone
+`rowEntry()` always answers with a page. A task row is a way into the
+notification rather than a step of a sequence, and a journey is worked in
+whatever order its user chooses, so a row opens at the first page whose gate
+passes, else its first page. That page decides for itself what to show someone
 who has answered nothing else — the live-animals
 [`consignmentDetails` page](../sets/live-animals/journeys/linear/features/commodities/page.js)
 sends a user to the commodity question when the notification holds no commodity
@@ -85,7 +87,7 @@ ready.
 in its opening run, and which entry began it (the start entry or the list's
 create), through the injected session port. `activeOpeningRunBeganAtStartEntry`
 answers whether the active run began at the start entry. The journey supplies
-`nextRunTarget` and `previousRunTarget`; shared controller helpers call them through
+`previousRunTarget`; shared controller helpers call it through
 the journey-flow seam. `kit.runBackLink()` answers a run step's Back link with
 `previousRunTarget` while the opening run is active. On a draft notification
 whose request carries change context, it answers with `previousRunTarget` with

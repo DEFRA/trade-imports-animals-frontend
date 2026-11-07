@@ -42,18 +42,16 @@ const cases = {
       NOT_STARTED,
       NA,
       NOT_STARTED,
+      OPTIONAL,
       NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL
+      NOT_STARTED
     ],
     sections: [
       NA,
       NOT_STARTED,
       NOT_STARTED,
-      NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED
     ],
@@ -71,18 +69,16 @@ const cases = {
       NOT_STARTED,
       NA,
       NOT_STARTED,
+      OPTIONAL,
       NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL
+      NOT_STARTED
     ],
     sections: [
       NA,
       IN_PROGRESS,
       NOT_STARTED,
-      NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED
     ],
@@ -98,23 +94,21 @@ const cases = {
       IN_PROGRESS,
       NOT_STARTED,
       NOT_STARTED,
-      NOT_STARTED,
       FULFILLED,
       NOT_STARTED,
-      NA,
       NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL
-    ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      IN_PROGRESS,
       NA,
       NOT_STARTED,
       OPTIONAL,
       NOT_STARTED,
+      NOT_STARTED
+    ],
+    sections: [
+      NA,
+      IN_PROGRESS,
+      NOT_STARTED,
+      NOT_STARTED,
+      OPTIONAL,
       NOT_STARTED,
       NOT_STARTED
     ],
@@ -134,25 +128,23 @@ const cases = {
     rows: [
       IN_PROGRESS,
       FULFILLED,
+      NOT_STARTED,
+      FULFILLED,
       FULFILLED,
       NOT_STARTED,
       NOT_STARTED,
-      FULFILLED,
-      NOT_STARTED,
-      NA,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL
-    ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      FULFILLED,
       NA,
       NOT_STARTED,
       OPTIONAL,
       NOT_STARTED,
+      NOT_STARTED
+    ],
+    sections: [
+      NA,
+      IN_PROGRESS,
+      NOT_STARTED,
+      NOT_STARTED,
+      OPTIONAL,
       NOT_STARTED,
       NOT_STARTED
     ],
@@ -178,8 +170,6 @@ const cases = {
       NA,
       FULFILLED,
       FULFILLED,
-      NA,
-      FULFILLED,
       FULFILLED,
       FULFILLED,
       FULFILLED,
@@ -192,10 +182,10 @@ const cases = {
     rows: [
       FULFILLED,
       NOT_STARTED,
-      NOT_STARTED,
-      FULFILLED,
       FULFILLED,
       NOT_STARTED,
+      NOT_STARTED,
+      FULFILLED,
       FULFILLED,
       FULFILLED,
       FULFILLED,
@@ -205,9 +195,7 @@ const cases = {
     ],
     sections: [
       NA,
-      FULFILLED,
-      NOT_STARTED,
-      NA,
+      IN_PROGRESS,
       FULFILLED,
       FULFILLED,
       FULFILLED,

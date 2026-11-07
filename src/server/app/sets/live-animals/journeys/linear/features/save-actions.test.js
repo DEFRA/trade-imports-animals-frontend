@@ -28,6 +28,8 @@ import {
   FELIS_CATUS_ROW
 } from './commodities/search/test-support.js'
 
+const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
+
 const reasonPrerequisites = {
   countryOfOrigin: 'FR',
   commodityLines: [FELIS_CATUS_ROW]
@@ -76,7 +78,7 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should send Save and continue to the overview outside the opening run when no exit is named', async () => {
+  it('Should send Save and continue on to Commodity details when no exit is named', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
@@ -84,7 +86,9 @@ describe('save actions — hub exit semantics', () => {
         seed: reasonPrerequisites
       }
     )
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, CONSIGNMENT_DETAILS_SLUG)
+    })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
@@ -130,7 +134,7 @@ describe('save actions — hub exit semantics', () => {
     expect(exit.after.reasonForImport).toBeUndefined()
   })
 
-  it('Should send a change-context Save and continue back to check your answers', async () => {
+  it('Should send a change-context Save and continue on to Commodity details', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(importReason),
       {
@@ -140,7 +144,7 @@ describe('save actions — hub exit semantics', () => {
       }
     )
     expect(response).toEqual({
-      redirect: pagePath(journeyId, 'notification-view')
+      redirect: pagePath(journeyId, CONSIGNMENT_DETAILS_SLUG)
     })
   })
 
@@ -239,35 +243,42 @@ const postAmending = (startingFrom, { payload = internalMarketPayload } = {}) =>
     startingFrom: [amendmentOpened(), ...startingFrom]
   })
 
-describe('save actions — amend endings', () => {
-  it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
-    const saveAndReturn = await postAmending([openedFromChangeLink()])
-    const saveAndContinue = await postAmending([])
+describe('save actions — while amending', () => {
+  it('Should send Save and continue on to the next page that applies, from a Change link or not', async () => {
+    const fromChangeLink = await postAmending([openedFromChangeLink()])
+    const fromOverview = await postAmending([])
 
-    expect(saveAndReturn.response).toEqual({
-      redirect: pagePath(saveAndReturn.journeyId, 'notification-view')
+    expect(fromChangeLink.response).toEqual({
+      redirect: pagePath(fromChangeLink.journeyId, CONSIGNMENT_DETAILS_SLUG)
     })
-    expect(saveAndContinue.response).toEqual({
-      redirect: hubPath(saveAndContinue.journeyId)
+    expect(fromOverview.response).toEqual({
+      redirect: pagePath(fromOverview.journeyId, CONSIGNMENT_DETAILS_SLUG)
     })
   })
 
-  it("Should hold an amend's Save and return to the page's own checks, with the same errors and no commit as outside the amendment", async () => {
-    const partlyAnsweredTransit = {
-      reasonForImport: 'transit',
-      transitPortOfExit: 'GB DVR',
-      transitDestinationCountry: ''
+  it.each([
+    ['Save and continue', {}],
+    ['Save and return to overview', { exit: 'hub' }]
+  ])(
+    "Should hold %s to the page's own checks, with the same errors and no commit as outside the amendment",
+    async (_button, buttonPayload) => {
+      const partlyAnsweredTransit = {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: '',
+        ...buttonPayload
+      }
+      const amending = await postAmending([openedFromChangeLink()], {
+        payload: partlyAnsweredTransit
+      })
+      const outside = await driveHandler(postHandlerOf(importReason), {
+        payload: partlyAnsweredTransit,
+        seed: reasonPrerequisites
+      })
+
+      expect(amending.response.redirect).toBeUndefined()
+      expect(amending.view.context.errors).toEqual(outside.view.context.errors)
+      expect(amending.after).toEqual(amending.before)
     }
-    const amending = await postAmending([openedFromChangeLink()], {
-      payload: partlyAnsweredTransit
-    })
-    const outside = await driveHandler(postHandlerOf(importReason), {
-      payload: partlyAnsweredTransit,
-      seed: reasonPrerequisites
-    })
-
-    expect(amending.response.redirect).toBeUndefined()
-    expect(amending.view.context.errors).toEqual(outside.view.context.errors)
-    expect(amending.after).toEqual(amending.before)
-  })
+  )
 })

@@ -658,7 +658,9 @@ test.describe('document upload continue', () => {
     page
   }) => {
     await submitContinue(page)
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
   })
 })
 

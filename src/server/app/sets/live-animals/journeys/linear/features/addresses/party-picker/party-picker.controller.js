@@ -54,7 +54,6 @@ const render = async (
 
   return h.view(view, {
     ...kit.base(party.title, {
-      request,
       backLink: kit.withChangeContext(
         request,
         pagePath(journey.journeyId, 'addresses')
@@ -105,8 +104,7 @@ const get = (party) => async (request, h) => {
   })
 }
 
-const savedTarget = async (request, h) =>
-  kit.amendReviewTarget(request, (await state.get(request, h)).journey) ??
+const savedTarget = (request) =>
   kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, 'addresses')
@@ -137,7 +135,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
     return failure
   }
 
-  return h.redirect(await savedTarget(request, h))
+  return h.redirect(savedTarget(request))
 }
 
 const post = (party) => async (request, h) => {
@@ -161,7 +159,7 @@ const post = (party) => async (request, h) => {
       { journeyId: request.params.journeyId, role: party.id },
       'Address picker saved with no address chosen, nothing committed'
     )
-    return h.redirect(await savedTarget(request, h))
+    return h.redirect(savedTarget(request))
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)

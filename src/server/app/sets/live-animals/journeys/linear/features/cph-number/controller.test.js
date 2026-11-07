@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  amendmentOpened,
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
@@ -190,18 +189,7 @@ describe('cph-number — entry from the addresses page (?return=addresses)', () 
       })
     })
 
-    it('Should go to the review on Save and return, ahead of the addresses hub, when amending with both return and change', async () => {
-      const result = await driveWithQuery(postCph, {
-        payload: VALID_PARTS,
-        query: { return: 'addresses', change: '1' },
-        startingFrom: [amendmentOpened()]
-      })
-      expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'notification-view')
-      })
-    })
-
-    it('Should go to the addresses hub, not the review, on a draft carrying both return and change', async () => {
+    it('Should go to the addresses hub when carrying both return and change', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
         query: { return: 'addresses', change: '1' }

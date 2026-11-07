@@ -1,9 +1,8 @@
-import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { commodityQuestionReturn } from '../../commodity-question-detour.js'
-import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
+import { commoditiesPage } from '../../page.js'
 import { lineKey } from '../selection/line-key.js'
 import { clearStoredSearchRows } from '../selection/rows.js'
 
@@ -19,12 +18,6 @@ export const seedLine = ({
   numberOfPackages: '',
   numberOfAnimalsQuantity: ''
 })
-
-const detailsPath = (request) =>
-  kit.withChangeContext(
-    request,
-    pagePath(request.params.journeyId, consignmentDetailsPage.slug)
-  )
 
 const logAndResolveDetourReturn = (request) => {
   const { honouredReturn, refusedMarker } = commodityQuestionReturn(request)
@@ -48,12 +41,10 @@ const logAndResolveDetourReturn = (request) => {
   return honouredReturn
 }
 
-const selectionTarget = async (request, scope) =>
+const selectionTarget = (request, scope) =>
   kit.hubExitTarget(request) ??
   logAndResolveDetourReturn(request) ??
-  (kit.changeContext(request)
-    ? detailsPath(request)
-    : await kit.nextTarget(request, commoditiesPage, scope))
+  kit.nextTarget(request, commoditiesPage, scope)
 
 export const commitSelection = async (request, h, rows) => {
   await state.reconcileEntriesAt(
@@ -65,5 +56,5 @@ export const commitSelection = async (request, h, rows) => {
   )
   await clearStoredSearchRows(request, h)
   const { scope } = await state.get(request, h)
-  return h.redirect(await selectionTarget(request, scope))
+  return h.redirect(selectionTarget(request, scope))
 }

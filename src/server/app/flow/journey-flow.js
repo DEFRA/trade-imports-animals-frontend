@@ -11,7 +11,6 @@ const UNCONFIGURED = Object.freeze({
   sections: [],
   taskRows: [],
   rowStatus: unconfigured,
-  nextRunTarget: unconfigured,
   previousRunTarget: unconfigured,
   entryGuardTarget: unconfigured
 })
@@ -29,8 +28,6 @@ export const configureJourneyFlow = (setId, journeyFlow) => {
 export const journeySections = () => configured().sections
 export const journeyTaskRows = () => configured().taskRows
 export const journeyRowStatus = (...args) => configured().rowStatus(...args)
-export const journeyNextRunTarget = (...args) =>
-  configured().nextRunTarget(...args)
 export const journeyPreviousRunTarget = (...args) =>
   configured().previousRunTarget(...args)
 export const journeyEntryGuardTarget = async (...args) =>

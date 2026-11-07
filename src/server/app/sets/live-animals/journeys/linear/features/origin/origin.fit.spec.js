@@ -6,8 +6,10 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectPageEndsWithPrimaryAlone,
+  fillOriginDetails,
   journeyIdFromPage,
   openNotificationView,
+  saveAndContinue,
   startNotificationAtOrigin,
   urlUnderBase,
   visitOverviewThenOpen
@@ -238,16 +240,15 @@ test.describe('origin feature', () => {
     })
   })
 
-  test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({
+  test('Overview requested for a notification with nothing saved shows the origin page', async ({
     page
   }) => {
-    const hubUrl = hubUrlOf(page.url())
+    const originUrl = page.url()
 
-    await visitOverviewThenOpen(page, 'origin')
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await page.goto(hubUrlOf(page.url()))
 
-    await expect(page).toHaveURL(hubUrl)
-    await expectOverview(page)
+    await expect(page).toHaveURL(originUrl)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
   test('back link returns to the overview when the page was opened from the overview after an answer is saved', async ({
@@ -628,7 +629,8 @@ test.describe('country of origin without JavaScript', () => {
   test('a refused page shows the region code error with no prefix', async ({
     page
   }) => {
-    await answerOriginDetails(page, { regionCode: '' })
+    await fillOriginDetails(page, { regionCode: '' })
+    await saveAndContinue(page).click()
 
     await expect(
       page

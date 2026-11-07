@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { pagePath } from '../../../../../shared/paths.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
@@ -61,34 +61,13 @@ export const RUN_STEPS = [
   },
   { id: transportersPage.id, target: flowPageTarget(transportersPage) },
   { id: documentsPage.id, target: flowPageTarget(documentsPage) },
-  {
-    id: addressesPage.id,
-    target: flowPageTarget(addressesPage),
-    endsRunWhenComplete: true
-  },
+  { id: addressesPage.id, target: flowPageTarget(addressesPage) },
   {
     id: consignmentContactSelectPage.id,
     target: flowPageTarget(consignmentContactSelectPage)
   },
   { id: notificationViewPage.id, target: flowPageTarget(notificationViewPage) }
 ]
-
-export const nextRunTarget = (stepId, scope, journeyId) => {
-  const index = RUN_STEPS.findIndex((step) => step.id === stepId)
-  if (index === -1) {
-    return null
-  }
-  if (RUN_STEPS[index].endsRunWhenComplete && scope.readyForCheckYourAnswers) {
-    return hubPath(journeyId)
-  }
-  for (const step of RUN_STEPS.slice(index + 1)) {
-    const target = step.target(scope, journeyId)
-    if (target) {
-      return target
-    }
-  }
-  return hubPath(journeyId)
-}
 
 const backDestinationTarget = (candidateId, { scope, answers }, journeyId) => {
   const candidate = RUN_STEPS.find((step) => step.id === candidateId)

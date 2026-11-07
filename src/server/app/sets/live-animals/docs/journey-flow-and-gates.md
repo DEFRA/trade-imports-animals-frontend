@@ -6,14 +6,14 @@ The platform consumes that policy through `configureJourneyFlow()`.
 
 ## Flow sections
 
-[`flow.js`](../journeys/linear/flow/flow.js) exports ten ordered `sections`. A flow
-section is a navigation sequence. The `review` section has the one authored section
+[`flow.js`](../journeys/linear/flow/flow.js) exports eight ordered `sections`. A flow
+section is a navigation sequence and an Overview group, and the sections together are the journey's page order. The `review` section has the one authored section
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
-The `addresses` section holds the CPH number page and then Roles and addresses, so
-the CPH page saves back to Roles and addresses and Roles and addresses ends the
-section.
+The `consignment-parties` section holds the CPH number page and then Roles and addresses, so
+the CPH page, a sub-page marked `subPage: true` on its page identity, goes on to Roles and addresses and
+Roles and addresses goes on to the contact address.
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`. Both are kept in
 the session's flow-only store rather than canonical obligation fulfilment, and are
@@ -47,9 +47,10 @@ drawn. Reach for `applies` only when a scope condition genuinely cannot carry th
 rule — the transit-countries row needs no `applies`, because its answer leaves
 scope on its own.
 
-The hub's `GROUPS` array in
-[`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
-task-row ids under visible headings and supplies their presentation order.
+The hub derives its groups from the flow sections: each section that holds a task
+row's first page is a group, headed by its caption, and lists its task rows in the
+order of their first page. The sections are also the journey's page order, which
+Save and continue follows from every start.
 
 Design release 1 lets a trader start any task on the notification in any order.
 No row on the hub is ever shut: every row is a link carrying a real status from
@@ -99,25 +100,18 @@ transport leaves transit countries out of scope.
 ## Opening run and entry guard
 
 [`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports
-`nextRunTarget` and `previousRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
+`previousRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
 journey's redirect policy before handlers run.
 
-The run is the whole notification, not its first leg. `RUN_STEPS` runs origin,
-what you are importing, the reason for import, the commodity details, animal
+`RUN_STEPS` lists the steps the Back link follows during the run: origin, what
+you are importing, the reason for import, the commodity details, animal
 identification, the additional details, the arrival details, the transit
 countries, the transporter, the uploaded documents, roles and addresses, the
-contact address and then the review page, so the primary button — "Save and
-continue" on every one of them but the review page, which ends with "Continue" —
-carries a new notification from the entry page to the review page in one pass.
-The CPH number page is not a step: it opens from the CPH section's add link on Roles and addresses
-and saves back to it.
+contact address and then the review page. The CPH number page is not a step: it
+opens from the CPH section's add link on Roles and addresses and saves back to it.
 What are you importing? is likewise a detour, not a step, when Commodity details or Identification details opens it:
 it saves back to the page that opened it, carrying any change context, and its Back opens that page.
-Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the run's next step or the review's change target applies.
-Roles and addresses ends the run on the hub when every
-task row is already ready. The review step carries the review page's derived
-gate, so the run ends on the review page, complete or not, once a commodity has
-been chosen; a run with no open later step still falls through to the hub.
+Save and return to overview still goes to the overview. A return value that names neither page is refused, logged and ignored, so the next page that applies follows.
 
 Three pieces of the sequence carry reasons that are easy to lose. Fish is on none
 of the identifier allowlists, so animal identification has nothing to ask of a
@@ -133,7 +127,7 @@ on to the next step. Each `RUN_STEPS` entry names the earlier steps its Back lin
 may open, nearest first, and `previousRunTarget` returns the first whose gate
 passes, so a skipped step is skipped going back too. On a draft notification, a
 page opened from a Change link on the review has the same Back link, carrying
-change context so that its save still returns to the review. While the
+change context, which carries Back; its save goes on to the next page that applies. While the
 notification is being amended, every page keeps its usual Back link.
 `kit.runBackLink()` falls back to the overview when neither the run nor a draft
 Change link applies, or no named earlier step applies. A
@@ -178,11 +172,12 @@ sections. Rendering the hub, or the review page, completes the run
 ([`completeOpeningRun`](../../../flow/run-state.js), called from
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
 [`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
-After that, saving a page returns to the hub: the save fallback
-(`nextInTaskRow`) moves on only to a later page of the same task row, which in
-this journey is the CPH number page handing back to Roles and addresses. Nothing
-marks a page as opened from the hub, and the run is not re-entered for that
-notification.
+Save and continue goes to the next page that applies in the journey's order
+from every start (a new notification,
+an Overview task, a reopened draft, a copy, a Change link or an amendment), and
+past the last page that applies it goes to the review page. The CPH number page
+is a sub-page: it goes on from the page that opens it to Roles and addresses.
+Nothing marks a page as opened from the hub.
 
 The opening run begins when the notification is created. The dashboard's
 create POST and the start entry (`<set>/start`, which the Import Notification
@@ -194,28 +189,26 @@ the entry guard never sees it. The origin page is the journey entry.
 Its Back link reads the opening-run record (see the Back link rules above), and
 its save goes on through `kit.nextTarget` like any other page.
 
-The guard admits a request when the opening run has begun for that journey in
-this session, or the journey carries committed user answers. System-populated
-obligations and flow-only keys such as `declaration` never count as user
-answers. A journey with
-neither — a deep link to an id this session never created and that holds no
-answers — is sent to the origin page. The origin page and its children are
-exempt from the guard, so there is no redirect loop.
+The guard admits a request when the journey carries an answer the user entered.
+System-populated obligations and flow-only keys such as `declaration` never count
+as user answers. A journey with none — a deep link to an id this session never
+created, or a draft with nothing saved — is sent to the origin page, and a request
+for Overview, the review, the declaration or the confirmation page is sent there
+too. Each redirect is logged once with the journey id and the requested path. The
+origin page and its children, and the amend, cancel-amend, copy and delete
+actions, are exempt from the guard, so there is no redirect loop. The guard
+admits a request only when the journey carries an answer the user entered.
 
-A journey the guard bounces to the origin page does not resume the opening run
-when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so
-`runTarget` is null, and the origin task row holds only the origin page — the
-user continues to the hub rather than into `RUN_STEPS`. That is the accepted
-rule for a returning user without run state: they land on the task list and work
-from there. Only a notification created in this session sequences through
-`RUN_STEPS`.
+A journey the guard bounces to the origin page goes on from that page to What are
+you importing? like any other start. Overview's link is the dashboard until an
+answer is entered, for Back and Cancel alike (`leaveJourneyLink` in `entry-guard.js`).
 
 ## Registration wiring
 
 This set's gateway,
 [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
 [`routes.js`](../../../routes.js) barrel only re-exports it), imports `sections`,
-`taskRows`, `rowStatus`, `nextRunTarget`, `previousRunTarget`, `FLOW_ONLY_KEYS` and
+`taskRows`, `rowStatus`, `previousRunTarget`, `FLOW_ONLY_KEYS` and
 `entryGuardTarget`, then passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from

@@ -536,7 +536,7 @@ describe('/consignors/select — change context', () => {
   })
 })
 
-describe('/consignors/select — save and return while amending', () => {
+describe('/consignors/select — Save and continue while amending', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   const HELD_CONSIGNOR = {
@@ -550,27 +550,6 @@ describe('/consignors/select — save and return while amending', () => {
       payload,
       startingFrom: [amendmentOpened(), ...startingFrom]
     })
-
-  it('Should return a chosen party to the review from a Change link', async () => {
-    const { journeyId, response } = await postAmending(
-      { action: 'save', party: ALPINE_DAIRY_ID },
-      [openedFromChangeLink()]
-    )
-
-    expect(response).toEqual({
-      redirect: pagePath(journeyId, 'notification-view')
-    })
-  })
-
-  it('Should return to the review when saved with nothing chosen and an answer held', async () => {
-    const { journeyId, response } = await postAmending({ action: 'save' }, [
-      openedFromChangeLink()
-    ])
-
-    expect(response).toEqual({
-      redirect: pagePath(journeyId, 'notification-view')
-    })
-  })
 
   it('Should go on to the addresses hub, plain, from Save and continue', async () => {
     const { journeyId, response } = await postAmending({

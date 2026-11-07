@@ -90,7 +90,9 @@ test.describe('contact feature', () => {
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()
 
-    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
     await page.goto(contactUrl)
     const current = page.getByRole('region', { name: copy.current.title })
     await expect(current).toContainText(selected.name)

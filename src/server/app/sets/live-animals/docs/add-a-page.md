@@ -56,9 +56,11 @@ template inside that group, and name the template after the page —
 [`journeys/linear/features/transport/port-of-entry/port-of-entry.njk`](../journeys/linear/features/transport/port-of-entry/port-of-entry.njk).
 Keep the browser spec in that group's `fit/` folder.
 
-`page.js` exports only `{ id, slug }` and imports nothing. The controller and
-flow import the same object. This prevents a module cycle through flow, status
-and the controller.
+`page.js` exports `{ id, slug }`, an authored `gate` where the derived gate
+cannot express the page, and `subPage: true` on a page reached only from the
+page that opens it (the CPH number page), and imports nothing. The controller
+and flow import the same object. This prevents a module cycle through flow,
+status and the controller.
 
 Create both locale bundles and their test as soon as the template exists.
 [`src/server/app/copy-convention.test.js`](../../../copy-convention.test.js) scans feature folders.
@@ -151,23 +153,12 @@ caption size that matches the heading. `journeys/linear/features/additional-deta
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
-Pass `amend: amend` in the object `saveActions` takes on every page listed in a task row's `pages`
-([`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js)) and on
-every role or party picker. `kit.base()` supplies `amend` when the controller passes
-it the request (`request`, or `h.request` where the render has only the toolkit):
-the two form actions the save buttons carry while the notification is being amended,
-and null otherwise. The two amend buttons tell themselves apart by form action.
-On a page whose save buttons post to another service, the Upload documents page,
-neither has a URL of its own, so the amend Save and return also posts the
-submitted value `amendFormActions` returns. While amending, a task-row page shows Save and return, Save and
-continue and Save and return to overview. A page that also passes
-`showReturnControls: false` or `hubExitWhileAmending: false` shows only the first two.
-Do not pass `amend` on an add-another sub-page that returns to its own list page:
-it passes `showReturnControls: false` alone, and the list page carries the amend
-ending. Which pages end each way is set in
+A page ends while the notification is being amended exactly as it does on a
+draft: every page passes `saveActions` the same arguments on a draft and while
+amending. Which pages end each way is set in
 [How a page ends](page-design.md#how-a-page-ends).
 [`amend-endings.test.js`](../journeys/linear/features/amend-endings.test.js) renders
-every task-row page while amending and fails if one loses the ending.
+every task-row page on a draft and while amending, and fails if their endings differ.
 
 Import `TEMPLATES` from
 [`journeys/linear/config.js`](../journeys/linear/config.js) in the controller and
@@ -202,9 +193,9 @@ owner to silence coverage.
 
 Import the page identity into [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js). Put it in the
 right `sections` entry. Its position controls strictly-earlier
-prerequisites and where Save and continue goes outside the opening run
-(`nextInTaskRow()`: the next page of the section only when it is in the same
-task row).
+prerequisites and the journey's page order, which Save and continue follows from every start
+(the next page that applies, skipping a sub-page, which is a page reached only from the page
+that opens it).
 
 Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js). Put it in an
 existing task row when those pages form one user task. Add a task row only when
@@ -218,8 +209,7 @@ The test fails until you do one or the other.
 
 If you add a task row, also:
 
-- add the row id to one `GROUPS` entry in
-  [`journeys/linear/features/hub/controller.js`](../journeys/linear/features/hub/controller.js)
+- the hub lists the row under the section that holds its first page; add a section caption under `groups` in the hub copy only for a new section
 - add matching English and Welsh `rows` copy in the hub feature
 - update [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js),
   [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js) and
@@ -441,8 +431,8 @@ Cover:
 - preservation of entered values on error
 - every error-summary link moving focus to its control
 - back, Save and return to overview, Cancel and Change navigation as applicable
-- while amending, the amend controls the page ends with
-  ([How a page ends](page-design.md#how-a-page-ends)) and where each one goes
+- a page ends while amending exactly as on a draft, which
+  `amend-endings.test.js` proves
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

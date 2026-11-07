@@ -15,10 +15,15 @@ import { sections } from './sets/live-animals/journeys/linear/flow/flow.js'
 import { walkObligations } from './bridge/obligation-source.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
+import {
+  commoditiesPage,
+  consignmentDetailsPage
+} from './sets/live-animals/journeys/linear/features/commodities/page.js'
 
-const commoditiesSection = sections.find(
-  (section) => section.id === 'commodities'
-)
+const commoditiesSection = {
+  id: 'commodities',
+  pages: [commoditiesPage, consignmentDetailsPage]
+}
 const documentsSection = sections.find((section) => section.id === 'documents')
 
 const completeDocument = {

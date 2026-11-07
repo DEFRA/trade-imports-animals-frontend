@@ -64,7 +64,6 @@ const render = async (
   const addHref = commodityQuestionHref(request, page)
   return h.view(view, {
     ...kit.base(copy.title, {
-      request,
       backLink: await kit.runBackLink(request, page.id, current),
       journey,
       page,

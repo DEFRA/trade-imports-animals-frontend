@@ -248,7 +248,7 @@ is taken on: `claimReturnedUpload` reads back what was submitted, refuses it
 by the page's own rules — the field rules, the file, and the collection's cap
 — and otherwise appends it and routes on by `routeAfterClaim`. Save and add
 another is followed by a redirect back to the page's clean path. Save and
-continue, Save and return to overview and the amend buttons go through
+continue and Save and return to overview go through
 `leavePage` on the returned request. A reload adds nothing twice, because
 `isAlreadySaved` stops a second append.
 
@@ -384,8 +384,8 @@ context. Wrap every internal link and redirect — row actions,
 add/remove/save round-trips — in `kit.withChangeContext(request, href)` so the
 context survives the loop. Resolve the loop's exiting Continue with
 `kit.nextTarget(request, page, scope)`, and let a hub exit win first via
-`kit.hubExitTarget(request)`. Only the exit repoints to check-your-answers;
-mid-loop actions must never bounce there early.
+`kit.hubExitTarget(request)`. The exit goes on to the next page that applies;
+mid-loop actions stay on the page.
 
 A collection page's Back link carries the context on like any other internal
 link, unless the page returns to the review itself: such a page declares that

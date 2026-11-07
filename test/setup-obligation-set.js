@@ -16,10 +16,7 @@ import {
   taskRows
 } from '../src/server/app/sets/live-animals/journeys/linear/flow/task-rows.js'
 import { sectionCaptionOf } from '../src/server/app/sets/live-animals/journeys/linear/flow/section-captions/index.js'
-import {
-  nextRunTarget,
-  previousRunTarget
-} from '../src/server/app/sets/live-animals/journeys/linear/flow/run.js'
+import { previousRunTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/run.js'
 import { entryGuardTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js'
 import { LAYOUT } from '../src/server/app/sets/live-animals/journeys/linear/config.js'
 import { registerSetMount } from '../src/server/app/shared/set-context.js'
@@ -35,7 +32,6 @@ configureJourneyFlow(SET_ID, {
   sections,
   taskRows,
   rowStatus,
-  nextRunTarget,
   previousRunTarget,
   flowOnlyKeys: FLOW_ONLY_KEYS,
   entryGuardTarget,

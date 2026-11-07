@@ -19,6 +19,7 @@ import {
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { addressesPage } from '../addresses/page.js'
 import {
   CYA_SLUG,
   REFUSAL_LOG_MESSAGE,
@@ -275,11 +276,11 @@ const submittedDocument = (overrides = {}) => ({
   ...overrides
 })
 
+const addressesPath = (journeyId) => pagePath(journeyId, addressesPage.slug)
 const SAVE_AND_CONTINUE = { action: 'continue' }
 const SAVE_AND_CONTINUE_LABEL = 'Save and continue'
 const SAVE_AND_RETURN_TO_OVERVIEW = { action: 'continue', exit: 'hub' }
 const SAVE_AND_RETURN_TO_OVERVIEW_LABEL = 'Save and return to overview'
-const AMEND_SAVE_AND_RETURN = { amendSave: 'return' }
 
 let nextUploadSession = 0
 const registeredUpload = async (filename) => {
@@ -448,19 +449,19 @@ describe('documents — leaving the page by the save choice a returned upload ca
       SAVE_AND_CONTINUE_LABEL,
       SAVE_AND_CONTINUE,
       {},
+      (journeyId) => addressesPath(journeyId)
+    ],
+    [
+      `${SAVE_AND_RETURN_TO_OVERVIEW_LABEL} while amending`,
+      SAVE_AND_RETURN_TO_OVERVIEW,
+      { startingFrom: amendmentOpenedFromChangeLink() },
       (journeyId) => hubPath(journeyId)
     ],
     [
-      'the amend Save and return',
-      AMEND_SAVE_AND_RETURN,
-      { startingFrom: amendmentOpenedFromChangeLink() },
-      (journeyId) => pagePath(journeyId, CYA_SLUG)
-    ],
-    [
-      'the amend Save and continue',
+      `${SAVE_AND_CONTINUE_LABEL} while amending`,
       SAVE_AND_CONTINUE,
       { startingFrom: amendmentOpenedFromChangeLink() },
-      (journeyId) => hubPath(journeyId)
+      (journeyId) => addressesPath(journeyId)
     ]
   ])(
     'Should append the returned document once and redirect to where %s leads',
@@ -497,17 +498,19 @@ describe('documents — leaving the page by the save choice a returned upload ca
           journeyId: result.journeyId,
           uploadId: result.session.uploadId,
           correlationId: result.session.correlationId,
-          saveChoice: { hubExit: true, change: false }
+          saveChoice: { hubExit: true }
         },
         message: 'Returned upload left unclaimed: no document was started'
       }
     ])
   })
 
-  it('Should append nothing and redirect to the overview for an untouched form returned with Save and continue', async () => {
+  it('Should append nothing and redirect to Roles and addresses for an untouched form returned with Save and continue', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE)
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: addressesPath(result.journeyId)
+    })
     expect(result.after).toEqual(result.before)
   })
 
@@ -533,32 +536,24 @@ describe('documents — leaving the page by the save choice a returned upload ca
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should send an untouched form returned with Save and continue from a page opened with a Change link to the review when the notification is not being amended', async () => {
+  it('Should send an untouched form returned with Save and continue from a page opened with a Change link on to Roles and addresses', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
       startingFrom: [openedFromChangeLink()]
     })
 
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, CYA_SLUG)
+      redirect: addressesPath(result.journeyId)
     })
   })
 
-  it('Should send an untouched form returned with the amend Save and return from a page opened with a Change link to the review', async () => {
-    const result = await driveClaim(AMEND_SAVE_AND_RETURN, {
-      startingFrom: amendmentOpenedFromChangeLink()
-    })
-
-    expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, CYA_SLUG)
-    })
-  })
-
-  it('Should send an untouched form returned with the amend Save and continue from a page opened with a Change link to the overview', async () => {
+  it('Should send an untouched form returned with Save and continue while amending on to Roles and addresses', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
       startingFrom: amendmentOpenedFromChangeLink()
     })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: addressesPath(result.journeyId)
+    })
   })
 
   it('Should ask for the document type when a reference, a date and a file arrive without one, appending nothing', async () => {

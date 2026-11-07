@@ -21,6 +21,7 @@ import {
   itSendsBackToOverview
 } from '../../../test-support.js'
 import { originPage } from '../../origin/page.js'
+import { importReasonPage } from '../../import-reason/page.js'
 import { dispatchPages } from '../../index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -533,7 +534,9 @@ describe('commodity search — saving the selection', () => {
         numberOfAnimalsQuantity: ''
       }
     ])
-    expect(result.response.redirect).toMatch(/\/notifications\/[^/]+$/)
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, importReasonPage.slug)
+    )
   })
 
   it('Should save what is carried alongside what is ticked on screen', async () => {
@@ -673,7 +676,9 @@ describe('commodity search — saving when another page opened the question', ()
       payload: { species: [FELIS_CATUS_KEY] },
       startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
-    expect(refused.response.redirect).toBe(hubPath(refused.journeyId))
+    expect(refused.response.redirect).toBe(
+      pagePath(refused.journeyId, importReasonPage.slug)
+    )
     expect(refused.response.redirect).toBe(
       unmarked.response.redirect.replace(unmarked.journeyId, refused.journeyId)
     )

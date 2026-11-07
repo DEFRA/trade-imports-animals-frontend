@@ -59,7 +59,6 @@ const render = async (
   const questionLabelClasses = 'govuk-label--m'
   return h.view(view, {
     ...kit.base(copy.title, {
-      request,
       backLink: await kit.runBackLink(request, page.id, current),
       journey: current.journey,
       page,

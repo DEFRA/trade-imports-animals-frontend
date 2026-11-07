@@ -194,7 +194,6 @@ export const secondSet = {
           sections,
           taskRows: [],
           rowStatus: () => 'notStarted',
-          nextRunTarget: () => null,
           previousRunTarget: () => null,
           flowOnlyKeys: [],
           entryGuardTarget: async () => null,

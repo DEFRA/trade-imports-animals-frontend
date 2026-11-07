@@ -52,7 +52,6 @@ const render = async (
   const rowsByKey = knownRowsByKey(current)
   return h.view(view, {
     ...kit.base(copy.title, {
-      request,
       backLink:
         commodityQuestionReturn(request).honouredReturn ??
         (await kit.runBackLink(request, page.id, current)),

@@ -13,7 +13,8 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { itSendsBackToOverview } from '../../test-support.js'
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../shared/paths.js'
+import { consignmentContactSelectPage } from '../contact/page.js'
 import {
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW
@@ -42,7 +43,6 @@ const CPH_TITLE = 'County parish holding (CPH) number'
 const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const ASTRA_NAME = 'Astra Rosales'
-const CYA_SLUG = 'notification-view'
 const CPH_ASKED_LINES = [BOS_TAURUS_ROW]
 
 describe('GET addresses — sections for parties not yet chosen', () => {
@@ -279,20 +279,20 @@ describe('GET addresses — change context', () => {
   itSendsBackToOverview(getAddresses)
 })
 
-describe('POST addresses — change context', () => {
+describe('POST addresses — where Save and continue goes', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should exit to check your answers when continuing under change context', async () => {
-    const result = await driveHandler(postAddresses, {
-      startingFrom: [openedFromChangeLink()]
-    })
+  it.each([
+    ['opened from a Change link', [openedFromChangeLink()]],
+    ['opened from the overview', []]
+  ])(
+    'Should go on to the contact address when continuing %s',
+    async (_start, startingFrom) => {
+      const result = await driveHandler(postAddresses, { startingFrom })
 
-    expect(result.response.redirect).toBe(pagePath(result.journeyId, CYA_SLUG))
-  })
-
-  it('Should follow the ordinary flow when continuing without change context', async () => {
-    const result = await driveHandler(postAddresses, {})
-
-    expect(result.response.redirect).toBe(hubPath(result.journeyId))
-  })
+      expect(result.response.redirect).toBe(
+        pagePath(result.journeyId, consignmentContactSelectPage.slug)
+      )
+    }
+  )
 })

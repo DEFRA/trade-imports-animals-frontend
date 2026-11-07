@@ -469,17 +469,23 @@ describe('GET /origin — where Back goes', () => {
     })
   })
 
-  it.each(seeds)(
-    'Should send Back to the overview once the opening run is complete with $name',
-    async ({ seed }) => {
-      const result = await driveHandler(get, {
-        seed,
-        startingFrom: [openingRunAt(RUN_COMPLETE)]
-      })
+  it('Should send Back to the overview once the opening run is complete with a committed answer', async () => {
+    const result = await driveHandler(get, {
+      seed: answer,
+      startingFrom: [openingRunAt(RUN_COMPLETE)]
+    })
 
-      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-    }
-  )
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should send Back to the dashboard once the opening run is complete with no answer', async () => {
+    const result = await driveHandler(get, {
+      seed: {},
+      startingFrom: [openingRunAt(RUN_COMPLETE)]
+    })
+
+    expect(result.view.context.backLink).toBe(dashboardPath())
+  })
 
   it('Should send Back to the overview for a notification with a committed answer and no opening run', async () => {
     const result = await driveHandler(get, { seed: answer })

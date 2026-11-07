@@ -18,7 +18,7 @@ import * as certification from '../../../../../../services/certification-purpose
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
-const SAVED_NOTIFICATION_URL = urlUnderBase('/notifications/[^/]+')
+const NEXT_PAGE_URL = urlUnderBase('/notifications/[^/]+/port-of-entry')
 
 const startAtAdditionalDetails = async (
   page,
@@ -28,7 +28,7 @@ const startAtAdditionalDetails = async (
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, [chosenSpecies])
-  await saveAndContinue(page).click()
+  await saveAndReturnToHub(page).click()
   await expectOverview(page)
   await page.getByRole('link', { name: 'Commodity details' }).click()
   await page.getByLabel('Number of animals').fill('1')
@@ -84,7 +84,7 @@ const saveSlaughterAndUnweanedNoThenReopen = async (page, detailsUrl) => {
   await page.getByRole('radio', { name: copy.unweaned.no }).check()
   await saveAndContinue(page).click()
 
-  await expect(page).toHaveURL(SAVED_NOTIFICATION_URL)
+  await expect(page).toHaveURL(NEXT_PAGE_URL)
   await page.goto(detailsUrl)
 }
 
@@ -190,7 +190,7 @@ test.describe('additional-details feature — the unweaned commodity gate', () =
       await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
       await saveAndContinue(page).click()
 
-      await expect(page).toHaveURL(SAVED_NOTIFICATION_URL)
+      await expect(page).toHaveURL(NEXT_PAGE_URL)
       await page.goto(detailsUrl)
       await expect(
         page.getByRole('radio', { name: 'Slaughter', exact: true })

@@ -10,6 +10,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
+  openOverview,
   partyPickerName,
   searchByPressingEnter,
   signIn,
@@ -167,7 +168,7 @@ test.describe('addresses hub', () => {
     await pickEveryParty(page)
     await saveAndContinue(page)
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await openOverview(page)
     await expect(
       page.locator('.govuk-task-list__item', {
         hasText: ROLES_AND_ADDRESSES

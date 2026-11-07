@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { transitCountriesPage } from '../features/transport/page.js'
+import { commoditiesPage } from '../features/commodities/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { completeNotification } from '../../../../../engine/test-support.js'
@@ -89,26 +90,25 @@ describe('#sectionGatePasses — sections open in mandate order', () => {
   const gatePasses = (id, answers) =>
     sectionGatePasses(sectionById(id), makeScope(answers))
 
-  it('Should always open origin — it owns the first continue obligation, nothing precedes it', () => {
-    expect(gatePasses('origin', {})).toBe(true)
+  it('Should always open the first section — its first page owns the first continue obligation, nothing precedes it', () => {
+    expect(gatePasses('about-the-consignment', {})).toBe(true)
   })
 
-  it('Should gate commodities until countryOfOrigin is answered', () => {
-    expect(gatePasses('commodities', {})).toBe(false)
-    expect(gatePasses('commodities', { countryOfOrigin: 'FR' })).toBe(true)
+  it('Should gate What are you importing? until countryOfOrigin is answered', () => {
+    const scopeFor = (answers) => makeScope(answers)
+    expect(pageGatePasses(commoditiesPage, scopeFor({}))).toBe(false)
+    expect(
+      pageGatePasses(commoditiesPage, scopeFor({ countryOfOrigin: 'FR' }))
+    ).toBe(true)
   })
 
-  it('Should NOT block commodities on its own continue obligation (commodityCode)', () => {
-    expect(gatePasses('commodities', { countryOfOrigin: 'FR' })).toBe(true)
-  })
-
-  it('Should gate every post-commodities section until an item-level commodityCode is answered', () => {
+  it('Should gate every section after What are you importing? until an item-level commodityCode is answered', () => {
     const afterCommodities = [
-      'consignment',
+      'description-of-the-goods',
+      'transport-and-arrival',
       'documents',
-      'addresses',
-      'transport',
-      'contact'
+      'consignment-parties',
+      'contact-address'
     ]
     const originOnly = { countryOfOrigin: 'FR' }
     const blankLine = { countryOfOrigin: 'FR', commodityLines: [{}] }
@@ -123,14 +123,14 @@ describe('#sectionGatePasses — sections open in mandate order', () => {
     }
   })
 
-  it('Should open addresses, transport and contact before any document is answered', () => {
+  it('Should open the transport, parties and contact sections before any document is answered', () => {
     const noDocuments = {
       countryOfOrigin: 'FR',
       commodityLines: [{ commodityCode: '0102' }]
     }
-    expect(gatePasses('addresses', noDocuments)).toBe(true)
-    expect(gatePasses('transport', noDocuments)).toBe(true)
-    expect(gatePasses('contact', noDocuments)).toBe(true)
+    expect(gatePasses('consignment-parties', noDocuments)).toBe(true)
+    expect(gatePasses('transport-and-arrival', noDocuments)).toBe(true)
+    expect(gatePasses('contact-address', noDocuments)).toBe(true)
   })
 })
 

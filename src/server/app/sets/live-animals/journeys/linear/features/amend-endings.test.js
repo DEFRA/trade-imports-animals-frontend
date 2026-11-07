@@ -13,15 +13,18 @@ import {
   amendmentOpened,
   driveHandler
 } from '../../../../../engine/test-support.js'
-import { pagePath } from '../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { copy as sharedEn } from '../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../shared/copy.cy.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { taskRows } from '../flow/task-rows.js'
 import { allRoutes, dispatchPages } from './index.js'
-import { documentsPage } from './documents/page.js'
+import { originPage } from './origin/page.js'
+import { cphNumberPage } from './cph-number/page.js'
+import { additionalDetailsPage } from './additional-details/page.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
-// What the global Nunjucks context adds to every rendered page.
 const requestWideContext = {
   assetPath: '/public/assets',
   getAssetPath: (asset) => `/public/${asset}`,
@@ -33,9 +36,6 @@ const comprehensive = characterisationCorpus.find(
 ).answers
 
 const taskRowPages = taskRows.flatMap((row) => row.pages)
-const pagesPostingToThemselves = taskRowPages.filter(
-  (page) => page.id !== documentsPage.id
-)
 
 const pageGetHandler = (page) =>
   allRoutes.find(
@@ -44,14 +44,14 @@ const pageGetHandler = (page) =>
       route.path.endsWith(`/notifications/{journeyId}/${page.slug}`)
   ).handler
 
-const renderAmending = async (page) => {
+const renderPage = async (page, startingFrom) => {
   const { journeyId, view } = await driveHandler(pageGetHandler(page), {
     seed: comprehensive,
-    startingFrom: [amendmentOpened()],
+    startingFrom,
     pathOf: (id) => pagePath(id, page.slug)
   })
   return {
-    path: pagePath(journeyId, page.slug),
+    journeyId,
     html: environment.render(`${view.view}.njk`, {
       ...requestWideContext,
       ...view.context
@@ -59,7 +59,31 @@ const renderAmending = async (page) => {
   }
 }
 
-describe('amend endings on task-row pages that post to themselves', () => {
+const JOURNEY_PLACEHOLDER = 'JOURNEY'
+const UPLOAD_PLACEHOLDER = '/upload'
+const UPLOAD_PATH = /\/stub-upload-and-scan\/[0-9a-f-]+/g
+
+const SAVE_CONTROLS = new RegExp(
+  '<div class="govuk-button-group">[\\s\\S]*?</div>' +
+    '(\\s*<p class="govuk-body">\\s*<a class="govuk-link"[^>]*>[^<]*</a>\\s*</p>)?',
+  'g'
+)
+
+const saveControlsOf = ({ html, journeyId }) =>
+  [...html.matchAll(SAVE_CONTROLS)]
+    .map(([controls]) =>
+      controls
+        .replaceAll(journeyId, JOURNEY_PLACEHOLDER)
+        .replaceAll(UPLOAD_PATH, UPLOAD_PLACEHOLDER)
+    )
+    .join('\n')
+
+const buttonLabelsOf = (controls) =>
+  [...controls.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].map(([, label]) =>
+    label.trim()
+  )
+
+describe('save controls on task-row pages while amending', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -68,26 +92,50 @@ describe('amend endings on task-row pages that post to themselves', () => {
   })
   beforeEach(() => store.clear())
 
-  it.each(pagesPostingToThemselves.map((page) => [page.id, page]))(
-    'Should end the %s page with Save and return to the review while amending',
+  it.each(taskRowPages.map((page) => [page.id, page]))(
+    'Should end the %s page with exactly the controls it shows on a draft',
     async (_id, page) => {
-      const { path, html } = await renderAmending(page)
+      const draft = await renderPage(page, [])
+      const amending = await renderPage(page, [amendmentOpened()])
 
-      expect(html).toContain(`formaction="${path}?change=1"`)
-      expect(html).toContain(`formaction="${path}"`)
+      expect(saveControlsOf(amending)).toBe(saveControlsOf(draft))
     }
   )
 
-  it('Should end the accompanying-documents page with the amend Save and return posting its choice to the upload service', async () => {
-    const { path, html } = await renderAmending(documentsPage)
+  it('Should offer Save and continue, Save and return to overview and a link to cancel back to the overview', async () => {
+    const amending = await renderPage(additionalDetailsPage, [
+      amendmentOpened()
+    ])
+    const controls = saveControlsOf(amending)
 
-    const saveAndReturn = html
-      .split('<button')
-      .find((fragment) => />\s*Save and return\s*</.test(fragment))
+    expect(buttonLabelsOf(controls)).toEqual([
+      sharedEn.saveActions.saveAndContinue,
+      sharedEn.saveActions.saveAndReturnToHub
+    ])
+    expect(controls).toContain('value="hub" name="exit"')
+    expect(controls).toContain(
+      `<a class="govuk-link" href="${hubPath(JOURNEY_PLACEHOLDER)}">${sharedEn.saveActions.cancelAndReturnToHub}</a>`
+    )
+  })
 
-    expect(saveAndReturn).toContain('name="amendSave"')
-    expect(saveAndReturn).toContain('value="return"')
-    expect(saveAndReturn).toContain('formenctype="multipart/form-data"')
-    expect(saveAndReturn).not.toContain(`formaction="${path}?change=1"`)
+  it.each([originPage, cphNumberPage])(
+    'Should end the $id page with Save and continue alone',
+    async (page) => {
+      const amending = await renderPage(page, [amendmentOpened()])
+      const controls = saveControlsOf(amending)
+
+      expect(buttonLabelsOf(controls)).toEqual([
+        sharedEn.saveActions.saveAndContinue
+      ])
+      expect(controls).not.toContain('<a ')
+    }
+  )
+
+  it('Should label the controls in Welsh', () => {
+    expect(sharedCy.saveActions).toEqual({
+      saveAndContinue: 'Cadw a pharhau',
+      saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
+      cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
+    })
   })
 })

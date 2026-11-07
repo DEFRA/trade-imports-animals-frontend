@@ -1,7 +1,8 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import { additionalDetailsPage } from '../../additional-details/page.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -97,6 +98,9 @@ const firstRemoveCellHtml = (card) => card.savedAnimalsTable.rows[0].at(-1).html
 
 const SUITE =
   '#animalIdentificationController — the single card-per-species surface'
+
+const additionalDetailsPath = (journeyId) =>
+  pagePath(journeyId, additionalDetailsPage.slug)
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
@@ -305,7 +309,9 @@ describe(`${SUITE} — the in-card save button`, () => {
       },
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
     expect(
       result.after.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
@@ -643,7 +649,7 @@ describe(`${SUITE} — Save and add another`, () => {
 describe(`${SUITE} — Save and continue`, () => {
   setupIdentificationEngine()
 
-  it('Should append the held record of a one-animal line then exit along the section flow to the hub', async () => {
+  it('Should append the held record of a one-animal line then go on to Additional details', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
@@ -651,7 +657,7 @@ describe(`${SUITE} — Save and continue`, () => {
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
-      redirect: hubPath(result.journeyId)
+      redirect: additionalDetailsPath(result.journeyId)
     })
     const [unit] = result.after.commodityLines[0].animalIdentifiers
     expect(unit.animalIdentifierEarTag).toBe('UK1')
@@ -666,7 +672,7 @@ describe(`${SUITE} — Save and continue`, () => {
       payload: {}
     })
     expect(result.response).toEqual({
-      redirect: hubPath(result.journeyId)
+      redirect: additionalDetailsPath(result.journeyId)
     })
     expect(result.after).toEqual({
       commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: 1 })]
@@ -699,7 +705,9 @@ describe(`${SUITE} — Save and continue`, () => {
       },
       payload: { 'animalIdentifierEarTag-0': 'x'.repeat(59) }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
   })
 })
 
@@ -776,14 +784,16 @@ describe(`${SUITE} — Enter in a field`, () => {
     ).toEqual(['UK123456789'])
   })
 
-  it('Should save the value typed into a one-animal line and go on to the hub', async () => {
+  it('Should save the value typed into a one-animal line and go on to Additional details', async () => {
     const result = await driveHandler(post, {
       seed: {
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
       },
       payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(
       result.after.commodityLines[0].animalIdentifiers.map(
         (unit) => unit.animalIdentifierEarTag
@@ -1019,7 +1029,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
     })
     expect(view).toBeUndefined()
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({ redirect: additionalDetailsPath(journeyId) })
   })
 
   it('Should carry a request for the page on when the notification has no commodities', async () => {
@@ -1027,7 +1037,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       commodityLines: []
     })
     expect(view).toBeUndefined()
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({ redirect: additionalDetailsPath(journeyId) })
   })
 
   const untouchedStruthioAnswers = {
@@ -1041,7 +1051,9 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(result.view).toBeUndefined()
     expect(result.after).toEqual(untouchedStruthioAnswers)
     expect(result.logger.entries).toEqual([
@@ -1061,7 +1073,9 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       },
       payload: { action: removeUnitAction(STRUTHIO_ROW, 0) }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(result.view).toBeUndefined()
     expect(result.after).toEqual(untouchedStruthioAnswers)
   })

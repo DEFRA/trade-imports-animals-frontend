@@ -36,7 +36,6 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request,
       backLink: hubEntryReturn(request) ?? hubPath(journey.journeyId),
       journey,
       page,
@@ -80,12 +79,10 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
-  const { journey } = await state.get(request, h)
   return h.redirect(
     kit.hubExitTarget(request) ??
-      kit.amendReviewTarget(request, journey) ??
       hubEntryReturn(request) ??
-      (await kit.nextTarget(request, page, scope))
+      kit.nextTarget(request, page, scope)
   )
 }
 
