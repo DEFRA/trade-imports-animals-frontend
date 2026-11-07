@@ -72,10 +72,14 @@ const readLoggedTrail = (request, fallbackHref) => {
  * @returns {string} the href with the trail in its query string, or the href
  * unchanged for an empty trail.
  */
-export const withTrail = (href, entries) =>
-  entries.length === 0
-    ? href
-    : `${href}${href.includes('?') ? '&' : '?'}${TRAIL_PARAMETER}=${encodeURIComponent(entries.join(TRAIL_SEPARATOR))}`
+export const withTrail = (href, entries) => {
+  if (entries.length === 0) {
+    return href
+  }
+  const queryJoiner = href.includes('?') ? '&' : '?'
+  const trail = encodeURIComponent(entries.join(TRAIL_SEPARATOR))
+  return `${href}${queryJoiner}${TRAIL_PARAMETER}=${trail}`
+}
 
 /**
  * The trail a request carries.
