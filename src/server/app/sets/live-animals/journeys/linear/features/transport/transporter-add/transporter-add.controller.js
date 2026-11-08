@@ -22,7 +22,7 @@ import {
 } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { takeRestartedTransporterType } from '../transporter-add-session.js'
+import { takeTransporterTypeRestartFlag } from '../transporter-add-session.js'
 
 const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 
@@ -62,7 +62,7 @@ const render = (
 
 const get = async (request, h) => {
   const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
-  const restarted = await takeRestartedTransporterType(
+  const restarted = await takeTransporterTypeRestartFlag(
     request,
     h,
     flowOnlyAnswers

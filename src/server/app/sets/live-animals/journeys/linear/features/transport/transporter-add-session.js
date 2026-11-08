@@ -80,7 +80,7 @@ export const transporterTypeRestartPatch = () => ({
   [TRANSPORTER_TYPE_RESTART]: true
 })
 
-export const takeRestartedTransporterType = async (
+export const takeTransporterTypeRestartFlag = async (
   request,
   h,
   flowOnlyAnswers
