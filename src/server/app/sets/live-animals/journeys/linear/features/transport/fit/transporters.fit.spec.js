@@ -14,14 +14,17 @@ import {
   expectTransporterListShowsAddedBanner,
   journeyFormOf,
   journeyUrl,
+  openNotificationView,
   openTransporterList,
   openTransporterType,
+  rowFor,
   saveAndContinue,
   searchByPressingEnter,
   signIn,
   signInWithOwnTransporterStore,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { countriesOriginEntries } from '../../../../../../../services/_capture/fixtures.js'
 import { compareLabels } from '../../../../../../../services/countries/country-labels.js'
@@ -1179,6 +1182,11 @@ test.describe('private transporter persistence', () => {
     ).toBeVisible()
     await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await openNotificationView(page)
+    await expect(
+      rowFor(page, checkAnswersCopy.rows.country).getByRole('definition')
+    ).toHaveText(transporter.address.country)
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
     await expect(

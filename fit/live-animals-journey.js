@@ -297,6 +297,12 @@ export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
  */
 export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
 
+export const rowFor = (page, label) =>
+  page
+    .getByRole('term')
+    .filter({ has: page.getByText(label, { exact: true }) })
+    .locator('..')
+
 /**
  * Fails unless the page's search box has its hint and one button,
  * named as the copy says, joined flush to its right edge, together

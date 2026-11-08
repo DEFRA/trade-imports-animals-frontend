@@ -12,6 +12,7 @@ import {
   notificationViewUrl,
   openNotificationView,
   openReviewFromHub,
+  rowFor,
   signIn,
   startNotification,
   urlUnderBase
@@ -32,12 +33,6 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportIdentification,
   copy.rows.transportDocumentReference
 ]
-
-const rowFor = (page, label) =>
-  page
-    .getByRole('term')
-    .filter({ has: page.getByText(label, { exact: true }) })
-    .locator('..')
 
 const answerCellFor = (page, label) =>
   rowFor(page, label).getByRole('definition')

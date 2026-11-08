@@ -178,6 +178,8 @@ const ADDRESS_LINE_1 = '43 East Hague Extension'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const STUB_TELEPHONE = '01632 960000'
+const PRIVATE_TRANSPORTER_TYPE = 'Private'
+const PRIVATE_TRANSPORTER_NAME = 'Jean Dupont'
 
 const copyOf = (id) =>
   answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
@@ -262,6 +264,15 @@ const fullSeed = {
     }
   },
   contactAddress: copyOf('animal-and-plant-health-agency')
+}
+
+const privateTransporterSeed = {
+  ...fullSeed,
+  transporterType: PRIVATE_TRANSPORTER_TYPE,
+  privateTransporter: {
+    name: PRIVATE_TRANSPORTER_NAME,
+    address: { addressLine1: ADDRESS_LINE_1, country: 'Germany' }
+  }
 }
 
 const SUITE = `#${buildSections.name} (check-answers GET)`
@@ -515,6 +526,14 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(card.rows, 'Country')).toBe('Switzerland')
     expect(valueOf(card.rows, 'Approval number')).toBe('ES-T2-45001294')
     expect(valueOf(card.rows, 'Type')).toBe('Commercial')
+  })
+
+  it("Should show a private transporter's saved country on the transport-details card's Country row", async () => {
+    const card = cardByTitle(
+      await sectionsFor(privateTransporterSeed),
+      TRANSPORT_DETAILS_CARD
+    )
+    expect(valueOf(card.rows, 'Country')).toBe('Germany')
   })
 
   it('Should render one species card per commodity line with the design rows', async () => {
@@ -781,8 +800,8 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     reasonForImport: 'transit',
     commodityLines: [{ commodityCode: OSTRICHES_CODE }],
     meansOfTransport: 'AIRPLANE',
-    transporterType: 'Private',
-    privateTransporter: { name: 'Jean Dupont' }
+    transporterType: PRIVATE_TRANSPORTER_TYPE,
+    privateTransporter: { name: PRIVATE_TRANSPORTER_NAME }
   }
 
   it('Should keep the region-of-origin-code row when the requirement is no', async () => {
@@ -837,8 +856,8 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       await sectionsFor(gatedOffSeed),
       TRANSPORT_DETAILS_CARD
     )
-    expect(valueOf(card.rows, 'Name')).toBe('Jean Dupont')
-    expect(valueOf(card.rows, 'Type')).toBe('Private')
+    expect(valueOf(card.rows, 'Name')).toBe(PRIVATE_TRANSPORTER_NAME)
+    expect(valueOf(card.rows, 'Type')).toBe(PRIVATE_TRANSPORTER_TYPE)
     expect(keysOf(card.rows)).not.toContain('Approval number')
   })
 
