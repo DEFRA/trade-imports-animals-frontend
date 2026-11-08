@@ -31,7 +31,10 @@ import {
   forgetAddedTransportersAroundEachTest,
   seedOrganisationTransporter
 } from '../test-support.js'
-import { JUST_ADDED_TRANSPORTER_NAME } from '../transporter-add-session.js'
+import {
+  JUST_ADDED_TRANSPORTER_NAME,
+  TRANSPORTER_ADD_IN_PROGRESS
+} from '../transporter-add-session.js'
 import { copy } from '../copy/copy.en.js'
 
 import * as transporters from './transporters.controller.js'
@@ -539,5 +542,54 @@ describe('GET /transporters — the added-transporter banner', () => {
     const result = await driveHandler(getHandler)
 
     expect(result.view.context.successBanner).toBeNull()
+  })
+})
+
+describe('GET /transporters — an unfinished add', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should clear a transporter type left over from an add that was never saved', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE }
+    })
+
+    expect(result.after.transporterType).toBeFalsy()
+  })
+
+  it('Should keep the transporter type a saved private transporter actually carries', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: PRIVATE,
+        privateTransporter: { name: ABERDEEN_NAME }
+      }
+    })
+
+    expect(result.after.transporterType).toBe(PRIVATE)
+  })
+
+  it('Should keep the transporter type a saved commercial transporter actually carries', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: COMMERCIAL,
+        commercialTransporter: { name: GARCIA_NAME }
+      }
+    })
+
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+  })
+
+  it('Should keep the transporter type a refused save remembered values for', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE },
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { addressLine1: '1 Way' }
+          }
+        })
+      ]
+    })
+
+    expect(result.after.transporterType).toBe(PRIVATE)
   })
 })

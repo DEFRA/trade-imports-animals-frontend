@@ -13,7 +13,10 @@ import { organisationIdOf } from '../../../../../../../../common/helpers/organis
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { takeAddedTransporterBanner } from '../transporter-add-session.js'
+import {
+  storedEnteredTransporter,
+  takeAddedTransporterBanner
+} from '../transporter-add-session.js'
 import { transporterAnswer } from './transporter-record.js'
 import {
   matchingTransporters,
@@ -92,6 +95,35 @@ const selectedIdFor = async (request, answers) => {
   )?.id
 }
 
+const chosenTransporterOfType = (answers, transporterType) =>
+  transporterType === transporters.COMMERCIAL
+    ? answers.commercialTransporter
+    : answers.privateTransporter
+
+const transporterTypeIsResumable = (
+  answers,
+  flowOnlyAnswers,
+  transporterType
+) =>
+  Boolean(chosenTransporterOfType(answers, transporterType)) ||
+  Boolean(storedEnteredTransporter(flowOnlyAnswers, transporterType))
+
+const clearAbandonedTransporterType = async (
+  request,
+  h,
+  answers,
+  flowOnlyAnswers
+) => {
+  const { transporterType } = answers
+  if (
+    !transporterType ||
+    transporterTypeIsResumable(answers, flowOnlyAnswers, transporterType)
+  ) {
+    return
+  }
+  await state.commit(request, h, { transporterType: '' })
+}
+
 const get = async (request, h) => {
   const current = await state.get(request, h)
   const { answers, storedAnswers, flowOnlyAnswers } = current
@@ -99,6 +131,7 @@ const get = async (request, h) => {
     request,
     storedAnswers
   })
+  await clearAbandonedTransporterType(request, h, answers, flowOnlyAnswers)
   const successBanner = await takeAddedTransporterBanner(
     request,
     h,
