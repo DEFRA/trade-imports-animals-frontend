@@ -100,7 +100,7 @@ const chosenTransporterOfType = (answers, transporterType) =>
     ? answers.commercialTransporter
     : answers.privateTransporter
 
-const transporterTypeIsResumable = (
+const transporterTypeHasLinkedAnswer = (
   answers,
   flowOnlyAnswers,
   transporterType
@@ -112,15 +112,20 @@ const clearAbandonedTransporterType = async (
   request,
   h,
   answers,
-  flowOnlyAnswers
+  flowOnlyAnswers,
+  journeyId
 ) => {
   const { transporterType } = answers
   if (
     !transporterType ||
-    transporterTypeIsResumable(answers, flowOnlyAnswers, transporterType)
+    transporterTypeHasLinkedAnswer(answers, flowOnlyAnswers, transporterType)
   ) {
     return
   }
+  request.logger.info(
+    { journeyId, route: request.route?.path, transporterType },
+    'Transporter type cleared: the trader never saved an add for it'
+  )
   await state.commit(request, h, { transporterType: '' })
 }
 
@@ -131,7 +136,13 @@ const get = async (request, h) => {
     request,
     storedAnswers
   })
-  await clearAbandonedTransporterType(request, h, answers, flowOnlyAnswers)
+  await clearAbandonedTransporterType(
+    request,
+    h,
+    answers,
+    flowOnlyAnswers,
+    current.journey.journeyId
+  )
   const successBanner = await takeAddedTransporterBanner(
     request,
     h,

@@ -578,7 +578,7 @@ describe('GET /transporters — an unfinished add', () => {
     expect(result.after.transporterType).toBe(COMMERCIAL)
   })
 
-  it('Should keep the transporter type a refused save remembered values for', async () => {
+  it('Should keep the transporter type an unfinished add has remembered values for', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: PRIVATE },
       startingFrom: [
