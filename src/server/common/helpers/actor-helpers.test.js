@@ -23,7 +23,7 @@ describe('buildActor', () => {
     })
   })
 
-  it('prefers organisationId over currentRelationshipId on credentials', () => {
+  it('Should put credentials.organisationId on the actor when both organisationId and currentRelationshipId are present', () => {
     const actor = buildActor({
       contactId: 2100010101,
       sub: 'entra-oid-001',
