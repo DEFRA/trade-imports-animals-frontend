@@ -75,7 +75,7 @@ export const saveTransporterDetails =
     }
 
     const values = trimmedValues(payload)
-    const allErrors = await formErrors(payload, values)
+    const allErrors = await formErrors(payload)
     if (Object.keys(allErrors).length > 0) {
       const { journey } = await state.get(request, h)
       await rememberWhatWasEntered(request, h, transporterType, values)

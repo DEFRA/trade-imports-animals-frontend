@@ -169,6 +169,7 @@ export const copy = {
   },
   commercialTransporterDetails: {
     title: 'Ychwanegu cludwr masnachol',
+    guidanceBannerTitle: 'Pwysig',
     guidanceTitle: 'Help gydag awdurdodiad cludwr',
     contactHeading: 'Rhowch fanylion cyswllt',
     cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',

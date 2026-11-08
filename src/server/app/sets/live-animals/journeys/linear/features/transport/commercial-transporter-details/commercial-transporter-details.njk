@@ -11,7 +11,8 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {% call govukNotificationBanner({ titleText: copy.guidanceTitle }) %}
+  {% call govukNotificationBanner({ titleText: copy.guidanceBannerTitle }) %}
+    <h2 class="govuk-notification-banner__heading">{{ copy.guidanceTitle }}</h2>
     <p class="govuk-body">{{ guidance.authorisationLead }}</p>
     <ul class="govuk-list govuk-list--bullet">
       {% for condition in guidance.authorisationConditions %}
@@ -87,10 +88,8 @@
       errorMessage: errors.postcode and { text: errors.postcode }
     }) }}
 
-    {# A commercial transporter added by hand can only be a Northern Irish one,
-       so the country is shown and cannot be changed. The
-       disabled control carries no value to the server, so the hidden field
-       beside it posts the one the page fixed. #}
+    {# The disabled control carries no value to the server, so the hidden
+       field beside it posts the one the page fixed. #}
     {{ govukSelect({
       id: "country", name: "country",
       label: { text: copy.fields.country },

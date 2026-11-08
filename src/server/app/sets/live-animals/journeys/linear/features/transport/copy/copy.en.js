@@ -168,7 +168,8 @@ export const copy = {
     }
   },
   commercialTransporterDetails: {
-    title: 'Add commercial transporter',
+    title: 'Add a commercial transporter',
+    guidanceBannerTitle: 'Important',
     guidanceTitle: 'Help with transporter authorisation',
     contactHeading: 'Enter contact details',
     cancelAndReturnToDashboard: 'Cancel and return to dashboard',
@@ -179,7 +180,7 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postcode: 'Postcode or zip code',
+      postcode: 'Postcode or Zip code',
       country: 'Country',
       email: 'Email address',
       phone: 'Phone number'
@@ -187,11 +188,11 @@ export const copy = {
     telephoneHint: 'For international numbers include the country code',
     country: 'Northern Ireland',
     errors: {
-      approvalNumberRequired: 'Enter the transporter authorisation number',
+      approvalNumberRequired: 'Enter a transporter authorisation number',
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postcodeRequired: 'Enter a postcode or zip code',
+      postcodeRequired: 'Enter a postcode or Zip code',
       emailRequired: 'Enter an email address',
       telephoneRequired: 'Enter a phone number',
       approvalNumberMaxLength:
@@ -201,7 +202,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postcodeMaxLength: 'Postcode or zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or Zip code must be 12 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       countryFixed:

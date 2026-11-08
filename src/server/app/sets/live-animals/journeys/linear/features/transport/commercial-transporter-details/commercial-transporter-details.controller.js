@@ -5,6 +5,7 @@ import {
   compose,
   maxText,
   oneOf,
+  requiredMaxText,
   validate
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -34,16 +35,6 @@ const copy = bundle.commercialTransporterDetails
 const guidance = bundle.transporters.guidance
 
 const NORTHERN_IRELAND = COMMERCIAL_TRANSPORTER_COUNTRY_NAME
-
-const MANDATORY_MESSAGES = {
-  approvalNumber: copy.errors.approvalNumberRequired,
-  nameOrOrganisationName: copy.errors.nameRequired,
-  addressLine1: copy.errors.addressLine1Required,
-  townOrCity: copy.errors.townOrCityRequired,
-  postcode: copy.errors.postcodeRequired,
-  email: copy.errors.emailRequired,
-  phone: copy.errors.telephoneRequired
-}
 
 const FIELD_ORDER = [
   'approvalNumber',
@@ -78,33 +69,41 @@ const MAX_PHONE_LENGTH = 20
 const MAX_EMAIL_LENGTH = 254
 
 const fields = compose(
-  maxText(
-    'approvalNumber',
-    MAX_APPROVAL_NUMBER_LENGTH,
-    copy.errors.approvalNumberMaxLength
-  ),
-  maxText('nameOrOrganisationName', MAX_NAME_LENGTH, copy.errors.nameMaxLength),
-  maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
+  requiredMaxText('approvalNumber', MAX_APPROVAL_NUMBER_LENGTH, {
+    required: copy.errors.approvalNumberRequired,
+    maxLength: copy.errors.approvalNumberMaxLength
+  }),
+  requiredMaxText('nameOrOrganisationName', MAX_NAME_LENGTH, {
+    required: copy.errors.nameRequired,
+    maxLength: copy.errors.nameMaxLength
+  }),
+  requiredMaxText('addressLine1', MAX_NAME_LENGTH, {
+    required: copy.errors.addressLine1Required,
+    maxLength: copy.errors.addressLine1MaxLength
+  }),
   maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
-  maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
+  requiredMaxText('townOrCity', MAX_TOWN_LENGTH, {
+    required: copy.errors.townOrCityRequired,
+    maxLength: copy.errors.townOrCityMaxLength
+  }),
   maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-  maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
+  requiredMaxText('postcode', MAX_POSTCODE_LENGTH, {
+    required: copy.errors.postcodeRequired,
+    maxLength: copy.errors.postcodeMaxLength
+  }),
   oneOf('country', [NORTHERN_IRELAND], copy.errors.countryFixed),
-  maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-  maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+  requiredMaxText('email', MAX_EMAIL_LENGTH, {
+    required: copy.errors.emailRequired,
+    maxLength: copy.errors.emailMaxLength
+  }),
+  requiredMaxText('phone', MAX_PHONE_LENGTH, {
+    required: copy.errors.telephoneRequired,
+    maxLength: copy.errors.telephoneMaxLength
+  })
 )
 
 const recordProvided = (values) =>
   ENTERED_FIELDS.some((field) => values[field] !== '')
-
-const missingMandatoryErrors = (values) => {
-  if (!recordProvided(values)) {
-    return {}
-  }
-  return Object.fromEntries(
-    Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
-  )
-}
 
 const render = (
   request,
@@ -163,13 +162,12 @@ const trimmedValues = (payload) =>
     ENTERED_FIELDS.map((field) => [field, (payload[field] ?? '').trim()])
   )
 
-const formErrors = (payload, values) => {
+const formErrors = (payload) => {
   const { errors } = validate(fields, payload)
-  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
-    FIELD_ORDER.filter((field) => merged[field]).map((field) => [
+    FIELD_ORDER.filter((field) => errors?.[field]).map((field) => [
       field,
-      merged[field]
+      errors[field]
     ])
   )
 }

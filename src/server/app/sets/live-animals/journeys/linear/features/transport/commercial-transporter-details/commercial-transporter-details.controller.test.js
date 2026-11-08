@@ -49,12 +49,29 @@ const RECORD = {
   phone: '+44 28 9000 0111'
 }
 
+const REQUIRED_FIELD_ORDER = [
+  'approvalNumber',
+  'nameOrOrganisationName',
+  'addressLine1',
+  'townOrCity',
+  'postcode',
+  'email',
+  'phone'
+]
+
 const handlerFor = (method) =>
   commercialTransporterDetails.routes.find((route) => route.method === method)
     .handler
 
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
+
+const expectRequiredFieldsRefusal = (result) => {
+  expect(Object.keys(result.view.context.errors)).toEqual(REQUIRED_FIELD_ORDER)
+  expect(result.after.commercialTransporter).toBeUndefined()
+  expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+  expectNoRefusalLogged(result.logger)
+}
 
 describe('/transporters/add/commercial', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -207,15 +224,22 @@ describe('/transporters/add/commercial', () => {
     })
   })
 
-  it('Should walk on without saving when the form is left blank', async () => {
+  it('Should refuse a wholly blank form, naming the seven required fields in the page’s field order, and save nothing', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { country: NORTHERN_IRELAND }
     })
 
-    expect(result.view).toBeUndefined()
-    expect(result.after.commercialTransporter).toBeUndefined()
-    expect(result.response.redirect).toBeTruthy()
+    expectRequiredFieldsRefusal(result)
+  })
+
+  it('Should refuse a post carrying no country key with the same seven required-field messages and none for the country', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: {}
+    })
+
+    expectRequiredFieldsRefusal(result)
   })
 
   it('Should re-render the form at 500 with the answers kept after a recoverable save failure', async () => {
@@ -297,7 +321,7 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
     expect(kept.address.countryCode).toBe('GB-NIR')
   })
 
-  it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {
+  it('Should keep nothing when a wholly blank form is refused', async () => {
     await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { country: NORTHERN_IRELAND }
