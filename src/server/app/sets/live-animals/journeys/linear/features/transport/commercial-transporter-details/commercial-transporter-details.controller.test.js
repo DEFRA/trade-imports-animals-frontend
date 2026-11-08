@@ -10,19 +10,23 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   COMMERCIAL,
   NEW
 } from '../../../../../../../services/transporters/index.js'
+import { TRANSPORTER_ADD_IN_PROGRESS } from '../transporter-add-session.js'
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest,
-  itOpensOnlyForOwnTransporterType
+  itCancelsTheAddForEveryStoredType,
+  itKeepsTheChangeContextOnASaveFromAChangeLink,
+  itOpensOnlyForOwnTransporterType,
+  itRemembersAndShowsARefusedSavesValues
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
-import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 import { dispatchPages } from '../../index.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -31,6 +35,7 @@ import * as commercialTransporterDetails from './commercial-transporter-details.
 const ADD_SLUG = 'transporters/add'
 const NORTHERN_IRELAND = 'Northern Ireland'
 const MAX_APPROVAL_NUMBER_LENGTH = 50
+const SAVE_TRANSPORTER_OPERATION = 'save the transporter'
 
 const RECORD = {
   approvalNumber: 'UK/BELF/T2/00104115',
@@ -177,7 +182,7 @@ describe('/transporters/add/commercial', () => {
     expect(result.after.commercialTransporter).toBeUndefined()
   })
 
-  it('Should save a hand-entered transporter in Northern Ireland and hand it on from the list', async () => {
+  it('Should save a hand-entered transporter in Northern Ireland and redirect to the transporter list', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND }
@@ -197,19 +202,8 @@ describe('/transporters/add/commercial', () => {
       },
       approvalNumber: RECORD.approvalNumber
     })
-    expect(result.response.redirect).toBeTruthy()
-    expect(result.response.redirect).not.toContain(ADD_SLUG)
-  })
-
-  it('Should return to Check your answers after a save made from its Change link', async () => {
-    const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
-      payload: { ...RECORD, country: NORTHERN_IRELAND },
-      startingFrom: [openedFromChangeLink()]
-    })
-
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, CYA_SLUG)
+      redirect: pagePath(result.journeyId, 'transporters')
     })
   })
 
@@ -229,11 +223,27 @@ describe('/transporters/add/commercial', () => {
       seed: { transporterType: COMMERCIAL },
       payload: { ...RECORD, country: NORTHERN_IRELAND },
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, RECORD)
+  })
+
+  it('Should remember the entered values when the save is refused recoverably', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: { ...RECORD, country: NORTHERN_IRELAND },
+      startingFrom: [
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+      ]
+    })
+
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        TRANSPORTER_ADD_IN_PROGRESS
+      ][COMMERCIAL]
+    ).toEqual(RECORD)
   })
 })
 
@@ -301,10 +311,43 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
       seed: { transporterType: COMMERCIAL },
       payload: HAULIER,
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
     expect(await added()).toHaveLength(0)
   })
+})
+
+itCancelsTheAddForEveryStoredType({
+  setId: SET_ID,
+  dispatchPages,
+  postHandler,
+  transporterType: COMMERCIAL
+})
+
+itKeepsTheChangeContextOnASaveFromAChangeLink({
+  setId: SET_ID,
+  dispatchPages,
+  postHandler,
+  transporterType: COMMERCIAL,
+  payload: { ...RECORD, country: NORTHERN_IRELAND }
+})
+
+itRemembersAndShowsARefusedSavesValues({
+  setId: SET_ID,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  transporterType: COMMERCIAL,
+  refusedPayload: { ...RECORD, country: NORTHERN_IRELAND, approvalNumber: '' },
+  enteredValues: { ...RECORD, approvalNumber: '' },
+  completePayload: { ...RECORD, country: NORTHERN_IRELAND },
+  savedSeed: {
+    commercialTransporter: {
+      name: RECORD.nameOrOrganisationName,
+      approvalNumber: RECORD.approvalNumber,
+      address: { addressLine1: RECORD.addressLine1 }
+    }
+  }
 })

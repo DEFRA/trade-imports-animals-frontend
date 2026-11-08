@@ -139,6 +139,10 @@ export const copy = {
     shownCount: (count) =>
       `${count} cludwr ${count === 1 ? 'wedi’i ddangos' : 'wedi’u dangos'}`,
     add: 'Ychwanegu cludwr',
+    addedBanner: {
+      title: 'Llwyddiant',
+      text: (name) => `Mae’r cludwr ${name} wedi’i ychwanegu`
+    },
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr',
       transporterNoLongerAvailable:
@@ -167,6 +171,7 @@ export const copy = {
     title: 'Ychwanegu cludwr masnachol',
     guidanceTitle: 'Help gydag awdurdodiad cludwr',
     contactHeading: 'Rhowch fanylion cyswllt',
+    cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',
     fields: {
       approvalNumber: 'Rhif awdurdodiad y cludwr',
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
@@ -211,6 +216,7 @@ export const copy = {
     intro:
       'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
     contactHeading: 'Rhowch fanylion cyswllt',
+    cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',
     fields: {
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
       addressLine1: 'Llinell gyfeiriad 1',

@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import {
+  authenticatedCredentials,
   driveHandler,
   expectOneLogged,
-  useStubbedJourney
+  openedFromChangeLink,
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../engine/persistence/session.js'
 import {
   COMMERCIAL,
   PRIVATE,
@@ -20,6 +24,11 @@ import {
 import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
 import { transporterAddPage } from './page.js'
 import { OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE } from './own-transporter-type.js'
+import {
+  CANCEL_ACTION,
+  CANCEL_LOG_MESSAGE
+} from './transporter-details-save.js'
+import { TRANSPORTER_ADD_IN_PROGRESS } from './transporter-add-session.js'
 
 export const transitAppliesSeed = Object.freeze({
   countryOfOrigin: 'FR',
@@ -40,13 +49,6 @@ export const addedTransportersOf = async (organisationId) => {
   )
 }
 
-/** Seeds a transporter in the organisation's address book, in the wire shape
- * the address book's own API returns — the repo's unit suite runs in stub
- * mode (`vitest.config.js` sets `STUB_MODE`), so this is the store
- * `partiesFor` and `saveTransporter` read and write there.
- *
- * @returns {Promise<object>} the stored transporter, with its assigned id
- */
 export const seedOrganisationTransporter = (organisationId, wireTransporter) =>
   createTransporter(organisationId, wireTransporter)
 
@@ -63,10 +65,6 @@ export const expectRedirectToTransporterTypeQuestion = (response, journeyId) =>
 const otherTransporterTypeTo = (ownType) =>
   ownType === COMMERCIAL ? PRIVATE : COMMERCIAL
 
-/** Registers, for a transporter detail form, the GET and POST cases where the
- * notification's stored transporter type is not `ownType` — the other type,
- * and none — each asserting the redirect to the type question, nothing
- * committed, and the one redirect line logged. */
 export const itOpensOnlyForOwnTransporterType = ({
   setId,
   dispatchPages,
@@ -116,6 +114,133 @@ export const itOpensOnlyForOwnTransporterType = ({
         result.logger,
         redirectLoggedWith(result.journeyId, seed.transporterType ?? 'none')
       )
+    })
+  })
+}
+
+const CANCEL_PAYLOAD = Object.freeze({ action: CANCEL_ACTION })
+
+export const itCancelsTheAddForEveryStoredType = ({
+  setId,
+  dispatchPages,
+  postHandler,
+  transporterType
+}) => {
+  const otherType = otherTransporterTypeTo(transporterType)
+
+  describe.each([
+    { label: 'the form’s own type stored', seed: { transporterType } },
+    { label: 'the other type stored', seed: { transporterType: otherType } },
+    { label: 'no type stored', seed: {} }
+  ])(`cancelling the ${transporterType} form — $label`, ({ seed }) => {
+    useStubbedJourney(setId, dispatchPages)
+    forgetAddedTransportersAroundEachTest()
+
+    it('Should add no transporter, commit nothing, show no error and redirect to the dashboard, logging once', async () => {
+      const result = await driveHandler(postHandler, {
+        seed,
+        payload: CANCEL_PAYLOAD
+      })
+
+      expect(result.view).toBeUndefined()
+      expect(result.response).toEqual({ redirect: dashboardPath() })
+      expect(result.after).toEqual(result.before)
+      expect(
+        await addedTransportersOf(authenticatedCredentials.organisationId)
+      ).toHaveLength(0)
+      expectOneLogged(result.logger, {
+        level: 'info',
+        fields: {
+          journeyId: result.journeyId,
+          reason: 'cancelled',
+          transporterType
+        },
+        message: CANCEL_LOG_MESSAGE
+      })
+    })
+  })
+}
+
+export const itRemembersAndShowsARefusedSavesValues = ({
+  setId,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  transporterType,
+  refusedPayload,
+  enteredValues,
+  completePayload,
+  savedSeed
+}) => {
+  describe(`a refused ${transporterType} save remembers what was entered and shows it again`, () => {
+    useStubbedJourney(setId, dispatchPages)
+
+    it('Should remember the entered values under the form’s own type', async () => {
+      const result = await driveHandler(postHandler, {
+        seed: { transporterType },
+        payload: refusedPayload
+      })
+
+      expect(
+        result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+          TRANSPORTER_ADD_IN_PROGRESS
+        ][transporterType]
+      ).toEqual(enteredValues)
+    })
+
+    it('Should clear the entered transporter once a complete record is saved', async () => {
+      const result = await driveHandler(postHandler, {
+        seed: { transporterType },
+        payload: completePayload,
+        startingFrom: [
+          withFlowOnlyAnswers({
+            [TRANSPORTER_ADD_IN_PROGRESS]: { [transporterType]: enteredValues }
+          })
+        ]
+      })
+
+      expect(
+        result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+          TRANSPORTER_ADD_IN_PROGRESS
+        ]
+      ).toEqual({})
+    })
+
+    it('Should show the entered transporter instead of the saved answer', async () => {
+      const result = await driveHandler(getHandler, {
+        seed: { transporterType, ...savedSeed },
+        startingFrom: [
+          withFlowOnlyAnswers({
+            [TRANSPORTER_ADD_IN_PROGRESS]: { [transporterType]: enteredValues }
+          })
+        ]
+      })
+
+      expect(result.view.context.values).toEqual(enteredValues)
+    })
+  })
+}
+
+export const itKeepsTheChangeContextOnASaveFromAChangeLink = ({
+  setId,
+  dispatchPages,
+  postHandler,
+  transporterType,
+  payload
+}) => {
+  describe(`saving the ${transporterType} form from a Change link`, () => {
+    useStubbedJourney(setId, dispatchPages)
+
+    it('Should keep the change context, so the list’s own save returns to the review', async () => {
+      const result = await driveHandler(postHandler, {
+        seed: { transporterType },
+        payload,
+        startingFrom: [openedFromChangeLink()]
+      })
+
+      expect(result.response).toEqual({
+        redirect: `${pagePath(result.journeyId, 'transporters')}?change=1`
+      })
     })
   })
 }

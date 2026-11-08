@@ -390,6 +390,29 @@ describe('transport copy module — transporter pages', () => {
     )
   })
 
+  test('Should label both add forms’ cancel control the same way in each language', () => {
+    expect(copy.privateTransporterDetails.cancelAndReturnToDashboard).toBe(
+      'Cancel and return to dashboard'
+    )
+    expect(copy.commercialTransporterDetails.cancelAndReturnToDashboard).toBe(
+      copy.privateTransporterDetails.cancelAndReturnToDashboard
+    )
+    expect(copyCy.privateTransporterDetails.cancelAndReturnToDashboard).toBe(
+      copyCy.commercialTransporterDetails.cancelAndReturnToDashboard
+    )
+  })
+
+  test('Should title the added-transporter banner "Success" and word its text from an already-cased name, in both languages', () => {
+    expect(copy.transporters.addedBanner.title).toBe('Success')
+    expect(copy.transporters.addedBanner.text('Hill haulage')).toBe(
+      'Hill haulage transporter added'
+    )
+    expect(copyCy.transporters.addedBanner.title).toBe('Llwyddiant')
+    expect(copyCy.transporters.addedBanner.text('Hill haulage')).toBe(
+      'Mae’r cludwr Hill haulage wedi’i ychwanegu'
+    )
+  })
+
   test('Should link the same guidance section in Welsh as in English', () => {
     expect(copyCy.transporters.guidance.linkHref).toBe(
       copy.transporters.guidance.linkHref

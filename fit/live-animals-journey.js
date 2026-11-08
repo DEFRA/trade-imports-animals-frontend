@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
@@ -33,7 +34,9 @@ import {
   PRIVATE
 } from '../src/server/app/services/transporters/index.js'
 
-export { signIn } from './sign-in.js'
+import { signIn } from './sign-in.js'
+
+export { signIn }
 
 export const BASE = SET_BASE
 
@@ -1173,5 +1176,49 @@ export const expectPageEndsWithPrimaryAlone = async (
   const lastVisibleChild = form.locator('> *:visible').last()
   await expect(
     lastVisibleChild.getByRole('button', { name: primaryName, exact: true })
+  ).toBeVisible()
+}
+
+export const cancelAndReturnToDashboard = (page, cancelName) =>
+  page.getByRole('button', { name: cancelName, exact: true })
+
+export const expectPageEndsWithPrimaryAndCancel = async (
+  page,
+  cancelName,
+  primaryName = sharedAppCopy.saveActions.saveAndContinue
+) => {
+  const form = journeyFormOf(page)
+  const buttons = form.getByRole('button')
+
+  await expect(buttons).toHaveText([primaryName, cancelName])
+  await expect(saveAndReturnToHub(page)).toHaveCount(0)
+  await expect(cancelAndReturnToHub(page)).toHaveCount(0)
+}
+
+/**
+ * Signs a test in as an organisation no other test shares, so a transporter
+ * it adds is the only one newest in its own store.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const signInWithOwnTransporterStore = (page) =>
+  signIn(page, { organisationId: `fit-${randomUUID()}` })
+
+/**
+ * Fails unless the transporter list is showing, under the success banner
+ * naming the given transporter.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} name - the sentence-cased name the banner reads.
+ */
+export const expectTransporterListShowsAddedBanner = async (page, name) => {
+  await expect(
+    page.getByRole('heading', { name: transportCopy.transporters.title })
+  ).toBeVisible()
+  await expect(
+    page.getByText(transportCopy.transporters.addedBanner.title)
+  ).toBeVisible()
+  await expect(
+    page.getByText(transportCopy.transporters.addedBanner.text(name))
   ).toBeVisible()
 }

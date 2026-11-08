@@ -3,21 +3,51 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { continueFromTransporterList } from './continue-from-transporter-list.js'
 import { redirectUnlessOwnTransporterType } from './own-transporter-type.js'
+import { transportersPage } from './page.js'
+import {
+  clearedEnteredTransporterPatch,
+  clearEnteredTransporter,
+  justAddedTransporterNamePatch,
+  storeEnteredTransporter
+} from './transporter-add-session.js'
 
-/**
- * @param {object} details the parts that differ between the commercial and private transporter pages
- * @param {string} details.transporterType the transporter type this form's details belong to
- * @param {Function} details.trimmedValues the entered values, trimmed, from the payload
- * @param {Function} details.formErrors the errors to show, in the order the page asks the fields
- * @param {Function} details.recordProvided whether the trader has begun a record
- * @param {Function} details.record the answer to commit, built from the values
- * @param {Function} details.render the page's own view
- * @param {Function} [details.remember] keeps the saved transporter for the organisation
- * @returns {Function} the POST handler: it redirects to the transporter type question when the stored type is not `transporterType`, otherwise refuses invalid details with status 400 and saves the rest
- */
+export const CANCEL_ACTION = 'cancel'
+
+const isCancelAction = (payload) => payload?.action === CANCEL_ACTION
+
+export const CANCEL_LOG_MESSAGE =
+  'Transporter add cancelled: the trader returned to the notifications list'
+
+const cancelTransporterAdd = async (request, h, transporterType) => {
+  const { journey, flowOnlyAnswers } = await state.get(request, h)
+  await clearEnteredTransporter(request, h, flowOnlyAnswers, transporterType)
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      route: request.route?.path,
+      reason: 'cancelled',
+      transporterType
+    },
+    CANCEL_LOG_MESSAGE
+  )
+  return h.redirect(dashboardPath())
+}
+
+const rememberWhatWasEntered = async (request, h, transporterType, values) => {
+  const { flowOnlyAnswers } = await state.get(request, h)
+  await storeEnteredTransporter(
+    request,
+    h,
+    flowOnlyAnswers,
+    transporterType,
+    values
+  )
+}
+
 export const saveTransporterDetails =
   ({
     transporterType,
@@ -29,6 +59,12 @@ export const saveTransporterDetails =
     remember
   }) =>
   async (request, h) => {
+    const payload = request.payload ?? {}
+
+    if (isCancelAction(payload)) {
+      return cancelTransporterAdd(request, h, transporterType)
+    }
+
     const redirect = await redirectUnlessOwnTransporterType(
       request,
       h,
@@ -38,11 +74,11 @@ export const saveTransporterDetails =
       return redirect
     }
 
-    const payload = request.payload ?? {}
     const values = trimmedValues(payload)
     const allErrors = await formErrors(payload, values)
     if (Object.keys(allErrors).length > 0) {
       const { journey } = await state.get(request, h)
+      await rememberWhatWasEntered(request, h, transporterType, values)
       return (
         await render(request, h, journey, values, { errors: allErrors })
       ).code(HTTP_STATUS_BAD_REQUEST)
@@ -51,15 +87,23 @@ export const saveTransporterDetails =
     const { value: saved, failure } = await kit.recoverableSave(
       request,
       async () => {
-        if (!recordProvided(values)) {
-          return state.get(request, h)
+        const { flowOnlyAnswers } = await state.get(request, h)
+        const saving = recordProvided(values)
+        const committed = await state.commit(request, h, {
+          ...(saving ? await record(values) : {}),
+          ...clearedEnteredTransporterPatch(flowOnlyAnswers, transporterType),
+          ...(saving
+            ? justAddedTransporterNamePatch(values.nameOrOrganisationName)
+            : {})
+        })
+        if (saving) {
+          await remember?.(request, values)
         }
-        const committed = await state.commit(request, h, await record(values))
-        await remember?.(request, values)
         return committed
       },
       async () => {
         const { journey } = await state.get(request, h)
+        await rememberWhatWasEntered(request, h, transporterType, values)
         return (
           await render(request, h, journey, values, {
             recoverableError: true
@@ -71,5 +115,13 @@ export const saveTransporterDetails =
       return failure
     }
 
-    return continueFromTransporterList(request, h, saved.scope)
+    if (!recordProvided(values)) {
+      return continueFromTransporterList(request, h, saved.scope)
+    }
+    return h.redirect(
+      kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, transportersPage.slug)
+      )
+    )
   }

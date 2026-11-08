@@ -21,6 +21,7 @@ import {
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
 import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
+import { storedEnteredTransporter } from '../transporter-add-session.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -150,13 +151,11 @@ const get = async (request, h) => {
   if (redirect) {
     return redirect
   }
-  const { journey, answers } = await state.get(request, h)
-  return render(
-    request,
-    h,
-    journey,
+  const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
+  const values =
+    storedEnteredTransporter(flowOnlyAnswers, COMMERCIAL) ??
     valuesOfSavedCommercialTransporter(answers.commercialTransporter)
-  )
+  return render(request, h, journey, values)
 }
 
 const trimmedValues = (payload) =>

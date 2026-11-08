@@ -21,6 +21,7 @@ import {
 } from '../page.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
 import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
+import { storedEnteredTransporter } from '../transporter-add-session.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -143,19 +144,27 @@ const isCountryStale = async (name) => {
   return !offered.has(name)
 }
 
+const valuesOfSavedPrivateTransporter = (saved) => {
+  const address = addressValues(saved?.address)
+  return {
+    nameOrOrganisationName: saved?.name ?? '',
+    ...address
+  }
+}
+
 const get = async (request, h) => {
   const redirect = await redirectUnlessOwnTransporterType(request, h, PRIVATE)
   if (redirect) {
     return redirect
   }
-  const { journey, answers } = await state.get(request, h)
-  const saved = answers.privateTransporter
-  const address = addressValues(saved?.address)
-  const staleCountry = await isCountryStale(address.country)
+  const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
+  const shownValues =
+    storedEnteredTransporter(flowOnlyAnswers, PRIVATE) ??
+    valuesOfSavedPrivateTransporter(answers.privateTransporter)
+  const staleCountry = await isCountryStale(shownValues.country)
   const values = {
-    nameOrOrganisationName: saved?.name ?? '',
-    ...address,
-    country: staleCountry ? '' : address.country
+    ...shownValues,
+    country: staleCountry ? '' : shownValues.country
   }
   const errors = staleCountry
     ? { country: copy.errors.countryNoLongerAvailable }

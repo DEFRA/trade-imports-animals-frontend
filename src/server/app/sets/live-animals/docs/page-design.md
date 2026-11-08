@@ -52,7 +52,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
   leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter add and details pages.
+  and the transporter type question. The two transporter details forms are
+  the one exception: each ends with the primary and a secondary "Cancel and
+  return to dashboard", because a trader who opened one did not come from the
+  hub and the design gives the add route its own way out of the journey.
 - While a notification is being amended, a page ends with "Save and return"
   (back to the review) and "Save and continue" (on, never back to the review)
   side by side, then a secondary "Save and return to overview" button on its
@@ -63,8 +66,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   value `amendFormActions` returns. A page reached from another page or a
   picker ends with the first two only, and so does the contact address page.
   An add-another sub-page that returns to its own list page (the transporter
-  add, select and details pages) keeps the primary alone, and its list page
-  carries the amend ending.
+  add and select pages) keeps the primary alone, and its list page carries
+  the amend ending. The two transporter details forms keep their own primary
+  and cancel even while amending.
 
 ## Check your answers (review)
 
@@ -502,8 +506,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Searching the transporters list filters it in place: nothing is validated or
   committed, and a picked row stays picked when the search leaves it on the
   list.
-- The add-transporter link keeps the change context, so a trader sent from
-  check your answers returns there and not into the journey.
+- The add-transporter link keeps the change context, carried on through the
+  add form's own save to the transporter list; the list's own save is what
+  returns the trader to the review.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
 - The transit page's browser title is the short task name, "Transit countries",
@@ -572,3 +577,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   approved.
 - A private transporter's country is stored as the display name and the ISO
   code, so neither persistence nor the review needs a lookup.
+- Saving a complete record on either add form returns the trader to the
+  transporter list, where the saved transporter is the first row, already
+  chosen, under a one-time success notification banner titled "Success" and
+  reading the transporter's name — only its first letter capitalised —
+  followed by "transporter added". The banner shows on that one view only;
+  reloading the list, or coming back to it later, shows it with no banner.
+- Values entered on an add form whose save was refused are shown again in
+  its fields the next time the trader opens that form, until the form is
+  saved or cancelled.
+- Each add form's secondary "Cancel and return to dashboard" discards those
+  entered values, commits nothing to the notification and takes the trader to
+  the dashboard, wherever the notifications list lives. When the stored
+  transporter type was not changed on the way into the form, the transporter
+  chosen before the add began is still chosen. A trader who changed the
+  transporter type at the type question on the way in is left with the type
+  they chose and no transporter: the type question's own purge removed the
+  other type's stored transporter before the add form ever opened, and
+  cancelling cannot restore it.

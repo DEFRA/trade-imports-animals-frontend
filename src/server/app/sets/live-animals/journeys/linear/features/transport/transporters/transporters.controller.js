@@ -13,6 +13,7 @@ import { organisationIdOf } from '../../../../../../../../common/helpers/organis
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { takeAddedTransporterBanner } from '../transporter-add-session.js'
 import { transporterAnswer } from './transporter-record.js'
 import {
   matchingTransporters,
@@ -41,7 +42,7 @@ const render = async (
   h,
   current,
   values,
-  { errors = {}, recoverableError = false } = {}
+  { errors = {}, recoverableError = false, successBanner = null } = {}
 ) => {
   const { journey } = current
   const query = String(values.query ?? '')
@@ -58,7 +59,8 @@ const render = async (
       backLink: await kit.runBackLink(request, page.id, current),
       journey,
       page,
-      recoverableError
+      recoverableError,
+      successBanner
     }),
     copy,
     errors,
@@ -92,17 +94,23 @@ const selectedIdFor = async (request, answers) => {
 
 const get = async (request, h) => {
   const current = await state.get(request, h)
-  const { answers, storedAnswers } = current
+  const { answers, storedAnswers, flowOnlyAnswers } = current
   const { errors } = await validation.onStored(answers, {
     request,
     storedAnswers
   })
+  const successBanner = await takeAddedTransporterBanner(
+    request,
+    h,
+    flowOnlyAnswers,
+    copy.addedBanner
+  )
   return render(
     request,
     h,
     current,
     { selectedId: await selectedIdFor(request, answers) },
-    { errors }
+    { errors, successBanner }
   )
 }
 

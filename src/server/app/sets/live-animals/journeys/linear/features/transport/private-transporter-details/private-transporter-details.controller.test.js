@@ -8,17 +8,23 @@ import {
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
-  useStubbedJourney
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   NEW,
   PRIVATE
 } from '../../../../../../../services/transporters/index.js'
+import { TRANSPORTER_ADD_IN_PROGRESS } from '../transporter-add-session.js'
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest,
-  itOpensOnlyForOwnTransporterType
+  itCancelsTheAddForEveryStoredType,
+  itKeepsTheChangeContextOnASaveFromAChangeLink,
+  itOpensOnlyForOwnTransporterType,
+  itRemembersAndShowsARefusedSavesValues
 } from '../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -27,6 +33,7 @@ import { dispatchPages } from '../../index.js'
 import * as privateTransporterDetails from './private-transporter-details.controller.js'
 
 const ADD_SLUG = 'transporters/add'
+const SAVE_TRANSPORTER_OPERATION = 'save the transporter'
 
 const RECORD = {
   nameOrOrganisationName: 'Aberdeen Livestock Ltd',
@@ -133,7 +140,7 @@ describe('/transporters/add/private', () => {
     expectNoRefusalLogged(result.logger)
   })
 
-  it('Should hand a saved record on from the transporter list', async () => {
+  it('Should save the record and redirect to the transporter list', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: RECORD
@@ -145,8 +152,9 @@ describe('/transporters/add/private', () => {
     expect(result.after.privateTransporter.address.postcode).toBe(
       RECORD.postcode
     )
-    expect(result.response.redirect).toBeTruthy()
-    expect(result.response.redirect).not.toContain(ADD_SLUG)
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'transporters')
+    })
   })
 
   it('Should walk on without saving when the form is left blank', async () => {
@@ -165,11 +173,27 @@ describe('/transporters/add/private', () => {
       seed: { transporterType: PRIVATE },
       payload: RECORD,
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
     expectRecoverableSaveFailureKeepingValues(response, RECORD)
+  })
+
+  it('Should remember the entered values when the save is refused recoverably', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: RECORD,
+      startingFrom: [
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+      ]
+    })
+
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        TRANSPORTER_ADD_IN_PROGRESS
+      ][PRIVATE]
+    ).toEqual(RECORD)
   })
 })
 
@@ -215,7 +239,7 @@ describe('/transporters/add/private keeps the transporter for the organisation',
       seed: { transporterType: PRIVATE },
       payload: UNSHIPPED_HAULIER,
       startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter'))
+        refusingSaves(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
       ]
     })
 
@@ -274,5 +298,78 @@ describe('POST /transporters/add/private — an empty country from a part-filled
 
     expect(result.view.context.errors.country).toBeDefined()
     expect(result.after.privateTransporter.address.country).toBe(STALE_COUNTRY)
+  })
+})
+
+itCancelsTheAddForEveryStoredType({
+  setId: SET_ID,
+  dispatchPages,
+  postHandler,
+  transporterType: PRIVATE
+})
+
+itKeepsTheChangeContextOnASaveFromAChangeLink({
+  setId: SET_ID,
+  dispatchPages,
+  postHandler,
+  transporterType: PRIVATE,
+  payload: RECORD
+})
+
+itRemembersAndShowsARefusedSavesValues({
+  setId: SET_ID,
+  dispatchPages,
+  getHandler,
+  postHandler,
+  transporterType: PRIVATE,
+  refusedPayload: { ...RECORD, country: '' },
+  enteredValues: { ...RECORD, country: '' },
+  completePayload: RECORD,
+  savedSeed: { privateTransporter: staleSeed.privateTransporter }
+})
+
+describe('POST /transporters/add/private — a refused save remembers what was entered', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should clear the entered transporter when the form is left blank, there being nothing to keep', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: {},
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { ...RECORD, country: '' }
+          }
+        })
+      ]
+    })
+
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        TRANSPORTER_ADD_IN_PROGRESS
+      ]
+    ).toEqual({})
+  })
+})
+
+describe('GET /transporters/add/private — showing a refused save’s entered values', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should refuse a kept country the reader no longer offers the same way as a saved one', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE },
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { ...RECORD, country: STALE_COUNTRY }
+          }
+        })
+      ]
+    })
+
+    expect(result.view.context.values.country).toBe('')
+    expect(result.view.context.errors.country).toBe(
+      'The saved country is no longer available. Select a country from the list.'
+    )
   })
 })

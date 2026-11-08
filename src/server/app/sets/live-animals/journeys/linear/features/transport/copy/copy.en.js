@@ -139,6 +139,10 @@ export const copy = {
     shownCount: (count) =>
       `${count} ${count === 1 ? 'transporter' : 'transporters'} shown`,
     add: 'Add a transporter',
+    addedBanner: {
+      title: 'Success',
+      text: (name) => `${name} transporter added`
+    },
     errors: {
       transporterRequired: 'Select a transporter from the list',
       transporterNoLongerAvailable:
@@ -167,6 +171,7 @@ export const copy = {
     title: 'Add commercial transporter',
     guidanceTitle: 'Help with transporter authorisation',
     contactHeading: 'Enter contact details',
+    cancelAndReturnToDashboard: 'Cancel and return to dashboard',
     fields: {
       approvalNumber: 'Transporter authorisation number',
       nameOrOrganisationName: 'Name or organisation name',
@@ -208,6 +213,7 @@ export const copy = {
     intro:
       'Enter the name and address of the private transporter moving the animals.',
     contactHeading: 'Enter contact details',
+    cancelAndReturnToDashboard: 'Cancel and return to dashboard',
     fields: {
       nameOrOrganisationName: 'Name or organisation name',
       addressLine1: 'Address line 1',

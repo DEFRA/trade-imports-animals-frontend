@@ -14,6 +14,10 @@ translator must review its singular and plural wording in
 `journeys/linear/features/transport/copy/copy.cy.js`, which is a function of
 the count.
 
+The transporter list's Welsh added-transporter banner text is a machine
+draft as well. A translator must review it in the same file, where it is a
+function of the sentence-cased transporter name.
+
 The address pickers' Welsh results count is a machine draft as well. A
 translator must review it in
 `journeys/linear/features/addresses/copy/copy.cy.js`, where it is a function of

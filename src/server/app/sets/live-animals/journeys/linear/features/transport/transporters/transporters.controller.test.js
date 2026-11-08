@@ -7,8 +7,10 @@ import {
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
-  useStubbedJourney
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -29,6 +31,8 @@ import {
   forgetAddedTransportersAroundEachTest,
   seedOrganisationTransporter
 } from '../test-support.js'
+import { JUST_ADDED_TRANSPORTER_NAME } from '../transporter-add-session.js'
+import { copy } from '../copy/copy.en.js'
 
 import * as transporters from './transporters.controller.js'
 
@@ -491,4 +495,49 @@ describe('/transporters — Back link', () => {
   itSendsBackToOverview(getHandler)
 
   itSendsBackToOverviewOnRefusal(postHandler, { transporter: NOT_ON_THE_LIST })
+})
+
+describe('GET /transporters — the added-transporter banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the banner naming the sentence-cased transporter and clear it from the session', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [JUST_ADDED_TRANSPORTER_NAME]: 'Jean Dupont Transport SARL'
+        })
+      ]
+    })
+
+    expect(result.view.context.successBanner).toEqual({
+      titleText: copy.transporters.addedBanner.title,
+      text: 'Jean dupont transport sarl transporter added'
+    })
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        JUST_ADDED_TRANSPORTER_NAME
+      ]
+    ).toBeNull()
+  })
+
+  it('Should show no banner on a second GET, after the first one cleared it', async () => {
+    const first = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({ [JUST_ADDED_TRANSPORTER_NAME]: 'Hill Haulage' })
+      ]
+    })
+
+    const second = await driveHandler(getHandler, {
+      journeyId: first.journeyId,
+      state: first.cookies
+    })
+
+    expect(second.view.context.successBanner).toBeNull()
+  })
+
+  it('Should show no banner on an ordinary visit', async () => {
+    const result = await driveHandler(getHandler)
+
+    expect(result.view.context.successBanner).toBeNull()
+  })
 })

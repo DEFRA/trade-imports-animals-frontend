@@ -122,8 +122,11 @@
       errorMessage: errors.phone and { text: errors.phone }
     }) }}
 
-    {# The commercial arm of the add route — reached from the type question, not
-       from the hub, so it ends with the primary alone. #}
-    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
+    {{ saveActions({
+      hubHref: hubHref,
+      copy: sharedCopy.saveActions,
+      showReturnControls: false,
+      secondary: { text: copy.cancelAndReturnToDashboard, name: "action", value: "cancel" }
+    }) }}
   </form>
 {% endblock %}

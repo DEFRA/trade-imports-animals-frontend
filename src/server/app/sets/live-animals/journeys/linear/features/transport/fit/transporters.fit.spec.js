@@ -1,13 +1,17 @@
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
   FORM_GROUP_ANCESTOR_XPATH,
   PHONE_VIEWPORT,
   answerTransporterType,
+  cancelAndReturnToDashboard,
   contentWidthOf,
   continueTransporterType,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
+  expectPageEndsWithPrimaryAndCancel,
   expectSearchBoxJoinedToItsButton,
+  expectTransporterListShowsAddedBanner,
   journeyFormOf,
   journeyUrl,
   openTransporterList,
@@ -15,6 +19,7 @@ import {
   saveAndContinue,
   searchByPressingEnter,
   signIn,
+  signInWithOwnTransporterStore,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
@@ -92,6 +97,24 @@ const searchTransporters = async (page, term) => {
 
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
+
+const SOME_TYPED_TRANSPORTER_NAME = 'Some typed transporter name'
+
+const fillsPrivateNameThenCancelsToDashboard = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.privateTransporterDetails.title })
+  ).toBeVisible()
+  await page
+    .locator('#nameOrOrganisationName')
+    .fill(SOME_TYPED_TRANSPORTER_NAME)
+  await cancelAndReturnToDashboard(
+    page,
+    copy.privateTransporterDetails.cancelAndReturnToDashboard
+  ).click()
+
+  await expect(page).toHaveURL(BASE)
+  await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+}
 
 const validPrivateTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
@@ -382,7 +405,9 @@ test.describe('transporter list page', () => {
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
-    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.title })
+    ).toBeVisible()
     await expect(
       page.getByRole('radio', {
         name: handTypedTransporter.nameOrOrganisationName
@@ -887,9 +912,7 @@ test.describe('adding a transporter that is not on the list', () => {
     await answerTransporterType(page, PRIVATE)
     await fillPrivateTransporter(page, reusedTransporter)
     await saveAndContinue(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await openTransporterList(page)
     const row = transporterRow(page, reusedTransporter.nameOrOrganisationName)
     await expect(row).toHaveCount(1)
     await expect(row.getByRole('cell').nth(2)).toHaveText(
@@ -980,12 +1003,15 @@ test.describe('private transporter rendering and optionality', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('private transporter page ends with the primary alone, being reached from the type question', async ({
+  test('private transporter page ends with exactly the primary and the cancel, offering no overview return control', async ({
     page
   }) => {
     await answerTransporterType(page, PRIVATE)
 
-    await expectPageEndsWithPrimaryAlone(page)
+    await expectPageEndsWithPrimaryAndCancel(
+      page,
+      copy.privateTransporterDetails.cancelAndReturnToDashboard
+    )
   })
 })
 
@@ -1096,6 +1122,10 @@ test.describe('private transporter persistence', () => {
       }
     }
     await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.title })
+    ).toBeVisible()
+    await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
@@ -1110,6 +1140,154 @@ test.describe('private transporter persistence', () => {
     await expect(
       page.getByLabel(copy.privateTransporterDetails.fields.email)
     ).toHaveValue(transporter.address.email)
+  })
+})
+
+test.describe('saving an added transporter', () => {
+  test('lands on the transporter list with the new transporter first and checked, under the named success banner', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+
+    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+    const firstRow = page
+      .getByRole('row')
+      .filter({ has: page.getByRole('radio') })
+      .first()
+    await expect(
+      firstRow.getByRole('cell', {
+        name: handTypedTransporter.nameOrOrganisationName,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(firstRow.getByRole('radio')).toBeChecked()
+  })
+
+  test('reloading the list afterwards shows the same rows with no banner', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+
+    await page.reload()
+
+    await expect(
+      page.getByText(copy.transporters.addedBanner.title)
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('radio', {
+        name: handTypedTransporter.nameOrOrganisationName
+      })
+    ).toBeChecked()
+  })
+})
+
+test.describe('cancelling an add form', () => {
+  test('keeping the stored type: leaves the chosen transporter alone and returns to the dashboard with no error', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await openTransporterList(page)
+    await page.getByRole('radio', { name: privateRecord.name }).check()
+    await saveAndContinue(page).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    const transporterListUrl = journeyUrl(page, 'transporters')
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
+    await fillsPrivateNameThenCancelsToDashboard(page)
+
+    await page.goto(transporterListUrl)
+    await expect(
+      page.getByRole('radio', { name: privateRecord.name })
+    ).toBeChecked()
+    await expect(
+      page.getByRole('radio', {
+        name: SOME_TYPED_TRANSPORTER_NAME,
+        exact: true
+      })
+    ).toHaveCount(0)
+  })
+
+  test('changing the type on the way in: the type question’s own purge, not the cancel, leaves no transporter chosen', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await openTransporterList(page)
+    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await saveAndContinue(page).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    const transporterListUrl = journeyUrl(page, 'transporters')
+    await page.goto(journeyUrl(page, 'transporters/add'))
+    await page
+      .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
+      .check()
+    await continueTransporterType(page).click()
+    await fillsPrivateNameThenCancelsToDashboard(page)
+
+    await page.goto(transporterListUrl)
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+  })
+})
+
+test.describe('a refused private add form remembers what was entered', () => {
+  test('shows the entered values again when the trader leaves and comes back', async ({
+    page
+  }) => {
+    await signIn(page)
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, {
+      ...validPrivateTransporter,
+      email: ''
+    })
+    await saveAndContinue(page).click()
+    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+
+    await page.goto(journeyUrl(page, 'transporters'))
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
+
+    await expect(page.locator(addressLine1Input)).toHaveValue(
+      validPrivateTransporter.addressLine1
+    )
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.email)
+    ).toHaveValue('')
+  })
+})
+
+test.describe('saving and cancelling the private form without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signInWithOwnTransporterStore(page)
+  })
+
+  test('a complete save lands on the transporter list under the named banner', async ({
+    page
+  }) => {
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+
+    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+  })
+
+  test('cancel takes the trader to the dashboard', async ({ page }) => {
+    await answerTransporterType(page, PRIVATE)
+    await page
+      .locator('#nameOrOrganisationName')
+      .fill(SOME_TYPED_TRANSPORTER_NAME)
+    await cancelAndReturnToDashboard(
+      page,
+      copy.privateTransporterDetails.cancelAndReturnToDashboard
+    ).click()
+
+    await expect(page).toHaveURL(BASE)
   })
 })
 
