@@ -213,8 +213,6 @@ export const copy = {
   },
   privateTransporterDetails: {
     title: 'Ychwanegu cludwr preifat',
-    intro:
-      'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
     contactHeading: 'Rhowch fanylion cyswllt',
     cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',
     fields: {
@@ -229,7 +227,6 @@ export const copy = {
       phone: 'Rhif ffôn'
     },
     telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
-    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',
       addressLine1Required: 'Rhowch linell gyfeiriad 1',

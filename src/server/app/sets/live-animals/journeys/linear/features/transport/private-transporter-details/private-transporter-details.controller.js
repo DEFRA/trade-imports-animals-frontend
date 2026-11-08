@@ -4,7 +4,8 @@ import * as state from '../../../../../../../engine/index.js'
 import {
   compose,
   maxText,
-  oneOf,
+  requiredMaxText,
+  requiredOneOf,
   validate
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -29,16 +30,6 @@ const view = `${TEMPLATES}/features/transport/private-transporter-details/privat
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
 
-const MANDATORY_MESSAGES = {
-  nameOrOrganisationName: copy.errors.nameRequired,
-  addressLine1: copy.errors.addressLine1Required,
-  townOrCity: copy.errors.townOrCityRequired,
-  postcode: copy.errors.postcodeRequired,
-  country: copy.errors.countryRequired,
-  email: copy.errors.emailRequired,
-  phone: copy.errors.telephoneRequired
-}
-
 const FIELD_ORDER = [
   'nameOrOrganisationName',
   'addressLine1',
@@ -59,46 +50,52 @@ const MAX_EMAIL_LENGTH = 254
 
 const fields = async () =>
   compose(
-    maxText(
-      'nameOrOrganisationName',
-      MAX_NAME_LENGTH,
-      copy.errors.nameMaxLength
-    ),
-    maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
+    requiredMaxText('nameOrOrganisationName', MAX_NAME_LENGTH, {
+      required: copy.errors.nameRequired,
+      maxLength: copy.errors.nameMaxLength
+    }),
+    requiredMaxText('addressLine1', MAX_NAME_LENGTH, {
+      required: copy.errors.addressLine1Required,
+      maxLength: copy.errors.addressLine1MaxLength
+    }),
     maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
-    maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
+    requiredMaxText('townOrCity', MAX_TOWN_LENGTH, {
+      required: copy.errors.townOrCityRequired,
+      maxLength: copy.errors.townOrCityMaxLength
+    }),
     maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-    maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
-    oneOf(
-      'country',
-      await countries.addressCountries(),
-      copy.errors.countryFromList
-    ),
-    maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-    maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+    requiredMaxText('postcode', MAX_POSTCODE_LENGTH, {
+      required: copy.errors.postcodeRequired,
+      maxLength: copy.errors.postcodeMaxLength
+    }),
+    requiredOneOf('country', await countries.addressCountries(), {
+      required: copy.errors.countryRequired,
+      only: copy.errors.countryFromList
+    }),
+    requiredMaxText('email', MAX_EMAIL_LENGTH, {
+      required: copy.errors.emailRequired,
+      maxLength: copy.errors.emailMaxLength
+    }),
+    requiredMaxText('phone', MAX_PHONE_LENGTH, {
+      required: copy.errors.telephoneRequired,
+      maxLength: copy.errors.telephoneMaxLength
+    })
   )
 
 const recordProvided = (values) =>
   FIELD_ORDER.some((field) => values[field] !== '')
 
-const missingMandatoryErrors = (values) => {
-  if (!recordProvided(values)) {
-    return {}
-  }
-  return Object.fromEntries(
-    Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
-  )
-}
-
-const countryItems = async (selected) => [
-  { value: '', text: copy.countrySelectText },
-  { text: '──────────', disabled: true },
-  ...(await countries.addressCountries()).map((name) => ({
+const countryItems = async (heldCountry) => {
+  const offered = await countries.addressCountries()
+  const openCountry = offered.includes(heldCountry)
+    ? heldCountry
+    : countries.UNITED_KINGDOM
+  return offered.map((name) => ({
     value: name,
     text: name,
-    selected: name === selected
+    selected: name === openCountry
   }))
-]
+}
 
 const render = async (
   request,
@@ -177,13 +174,12 @@ const trimmedValues = (payload) =>
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
 
-const formErrors = async (payload, values) => {
+const formErrors = async (payload) => {
   const { errors } = validate(await fields(), payload)
-  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
-    FIELD_ORDER.filter((field) => merged[field]).map((field) => [
+    FIELD_ORDER.filter((field) => errors?.[field]).map((field) => [
       field,
-      merged[field]
+      errors[field]
     ])
   )
 }

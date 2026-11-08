@@ -209,9 +209,7 @@ export const copy = {
     }
   },
   privateTransporterDetails: {
-    title: 'Add private transporter',
-    intro:
-      'Enter the name and address of the private transporter moving the animals.',
+    title: 'Add a private transporter',
     contactHeading: 'Enter contact details',
     cancelAndReturnToDashboard: 'Cancel and return to dashboard',
     fields: {
@@ -226,7 +224,6 @@ export const copy = {
       phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
-    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',

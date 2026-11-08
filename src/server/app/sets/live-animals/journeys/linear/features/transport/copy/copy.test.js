@@ -323,8 +323,10 @@ describe('transport copy module — transporter pages', () => {
     )
   })
 
-  test('Should head the private form as an addition', () => {
-    expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
+  test('Should head the private form as an addition, Welsh carrying no indefinite article', () => {
+    expect(copy.privateTransporterDetails.title).toBe(
+      'Add a private transporter'
+    )
     expect(copyCy.privateTransporterDetails.title).toBe(
       'Ychwanegu cludwr preifat'
     )

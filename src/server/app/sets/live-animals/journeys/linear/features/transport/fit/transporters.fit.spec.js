@@ -23,6 +23,9 @@ import {
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+import { countriesOriginEntries } from '../../../../../../../services/_capture/fixtures.js'
+import { compareLabels } from '../../../../../../../services/countries/country-labels.js'
+import { UNITED_KINGDOM } from '../../../../../../../services/countries/index.js'
 import {
   APPROVED,
   COMMERCIAL,
@@ -152,15 +155,49 @@ const fillPrivateTransporter = async (
   }
 }
 
+const expectTamperedCountryRefusedOnTheUnitedKingdom = async (
+  page,
+  { tamperedValue, errorKey }
+) => {
+  await fillPrivateTransporter(page)
+  await page.locator('#country').evaluate((select, value) => {
+    select.add(new Option(value, value))
+    select.value = value
+  }, tamperedValue)
+  await saveAndContinue(page).click()
+
+  const link = errorLink(page, copy.privateTransporterDetails.errors[errorKey])
+  await expect(link).toBeVisible()
+  await link.click()
+  await expect(page.locator('#country')).toBeFocused()
+  await expect(page.locator('#country')).toHaveValue(UNITED_KINGDOM)
+  await expect(page.locator(addressLine1Input)).toHaveValue(
+    validPrivateTransporter.addressLine1
+  )
+}
+
 const requiredPrivateValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
   ['postcode or Zip code', 'postcode', 'postcodeRequired'],
-  ['country', 'country', 'countryRequired'],
   ['phone number', 'phone', 'telephoneRequired'],
   ['email address', 'email', 'emailRequired']
 ]
+
+const BLANK_PRIVATE_FORM_ERRORS = [
+  'nameRequired',
+  'addressLine1Required',
+  'townOrCityRequired',
+  'postcodeRequired',
+  'emailRequired',
+  'telephoneRequired'
+]
+
+const offeredPrivateCountries = [
+  UNITED_KINGDOM,
+  ...countriesOriginEntries().map(({ name }) => name)
+].sort(compareLabels)
 
 const MAX_NAME_OR_ADDRESS_LINE_LENGTH = 255
 const MAX_TOWN_OR_COUNTY_LENGTH = 100
@@ -774,7 +811,7 @@ test.describe('adding a transporter that is not on the list', () => {
     ).toHaveClass(/govuk-visually-hidden/)
   })
 
-  test('heads the private form as an addition, under the same caption', async ({
+  test('heads the private form as an addition, titles the browser tab to match, under the same caption', async ({
     page
   }) => {
     await answerTransporterType(page, PRIVATE)
@@ -784,6 +821,9 @@ test.describe('adding a transporter that is not on the list', () => {
     ).toHaveText(copy.privateTransporterDetails.title)
     await expect(page.locator('span.govuk-caption-l')).toHaveText(
       sectionCaptionsCopy.sections.newTransporter
+    )
+    await expect(page).toHaveTitle(
+      `${copy.privateTransporterDetails.title} - Import notification service - GOV.UK`
     )
   })
 
@@ -904,10 +944,10 @@ test.describe('adding a transporter that is not on the list', () => {
 
   test('a transporter added on one notification is on the list of the next one, ready to pick', async ({
     page
-  }) => {
+  }, testInfo) => {
     const reusedTransporter = {
       ...handTypedTransporter,
-      nameOrOrganisationName: 'Dupont Transport SARL'
+      nameOrOrganisationName: `Dupont Transport SARL ${testInfo.retry}`
     }
     await answerTransporterType(page, PRIVATE)
     await fillPrivateTransporter(page, reusedTransporter)
@@ -949,21 +989,34 @@ test.describe('adding a transporter that is not on the list', () => {
   })
 })
 
-test.describe('private transporter rendering and optionality', () => {
+test.describe('private transporter rendering', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('private transporter page renders all address fields and explanatory copy', async ({
+  test('private transporter page opens on the name or organisation name field, directly under its heading, and labels every field', async ({
     page
   }) => {
     await answerTransporterType(page, PRIVATE)
+
+    await expect(page.locator('h1 + form')).toBeVisible()
     await expect(
-      page.getByText(copy.privateTransporterDetails.intro)
-    ).toBeVisible()
+      page.locator('h1 + form :is(input:not([type="hidden"]), select)').first()
+    ).toHaveAttribute('id', 'nameOrOrganisationName')
     for (const label of Object.values(copy.privateTransporterDetails.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
     }
+  })
+
+  test('private transporter country select opens on the United Kingdom and offers every country in alphabetical order', async ({
+    page
+  }) => {
+    await answerTransporterType(page, PRIVATE)
+
+    await expect(page.locator('#country option')).toHaveText(
+      offeredPrivateCountries
+    )
+    await expect(page.locator('#country')).toHaveValue(UNITED_KINGDOM)
   })
 
   test('private transporter phone number hints the international dialling code', async ({
@@ -994,13 +1047,20 @@ test.describe('private transporter rendering and optionality', () => {
     expect(orderedIds).toEqual(['country', 'h2', 'email', 'phone'])
   })
 
-  test('a completely blank private transporter record is optional', async ({
+  test('saving a wholly blank private transporter form keeps the trader on it, naming every required field in order', async ({
     page
   }) => {
     await answerTransporterType(page, PRIVATE)
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(page.locator(ERROR_SUMMARY).getByRole('link')).toHaveText(
+      BLANK_PRIVATE_FORM_ERRORS.map(
+        (error) => copy.privateTransporterDetails.errors[error]
+      )
+    )
   })
 
   test('private transporter page ends with exactly the primary and the cancel, offering no overview return control', async ({
@@ -1026,11 +1086,7 @@ test.describe('private transporter required validations', () => {
     }) => {
       await answerTransporterType(page, PRIVATE)
       await fillPrivateTransporter(page)
-      if (field === 'country') {
-        await page.locator('#country').selectOption('')
-      } else {
-        await page.locator(`#${field}`).fill('')
-      }
+      await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
 
       const link = errorLink(page, copy.privateTransporterDetails.errors[error])
@@ -1074,28 +1130,24 @@ test.describe('private transporter format validations', () => {
     })
   }
 
-  test('private transporter validation: out-of-list country focuses the cleared select and preserves other values', async ({
+  test('private transporter validation: out-of-list country is refused, focuses the select reopened on the United Kingdom, and preserves other values', async ({
     page
   }) => {
     await answerTransporterType(page, PRIVATE)
-    await fillPrivateTransporter(page)
-    await page.locator('#country').evaluate((select, outOfList) => {
-      select.add(new Option(outOfList, outOfList))
-      select.value = outOfList
-    }, invalidCountry)
-    await saveAndContinue(page).click()
+    await expectTamperedCountryRefusedOnTheUnitedKingdom(page, {
+      tamperedValue: invalidCountry,
+      errorKey: 'countryFromList'
+    })
+  })
 
-    const link = errorLink(
-      page,
-      copy.privateTransporterDetails.errors.countryFromList
-    )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator('#country')).toBeFocused()
-    await expect(page.locator('#country')).toHaveValue('')
-    await expect(page.locator(addressLine1Input)).toHaveValue(
-      validPrivateTransporter.addressLine1
-    )
+  test('private transporter validation: a blank country tampered onto the select is refused and reopens on the United Kingdom', async ({
+    page
+  }) => {
+    await answerTransporterType(page, PRIVATE)
+    await expectTamperedCountryRefusedOnTheUnitedKingdom(page, {
+      tamperedValue: '',
+      errorKey: 'countryRequired'
+    })
   })
 })
 

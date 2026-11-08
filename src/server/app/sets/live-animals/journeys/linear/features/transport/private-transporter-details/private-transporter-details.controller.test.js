@@ -12,6 +12,7 @@ import {
   withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
+import * as countries from '../../../../../../../services/countries/index.js'
 import {
   NEW,
   PRIVATE
@@ -46,6 +47,10 @@ const RECORD = {
   phone: '+44 1224 000 111',
   email: 'movements@aberdeen-livestock.example.com'
 }
+
+const BLANK_RECORD = Object.fromEntries(
+  Object.keys(RECORD).map((field) => [field, ''])
+)
 
 const STALE_COUNTRY = 'Zedland'
 
@@ -83,6 +88,21 @@ describe('/transporters/add/private', () => {
 
     expect(result.view.context.backLink).toBe(
       pagePath(result.journeyId, ADD_SLUG)
+    )
+  })
+
+  it('Should open a fresh GET’s select on the United Kingdom, offering nothing but the offered countries in order', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE }
+    })
+
+    const offered = await countries.addressCountries()
+    expect(result.view.context.countryItems).toEqual(
+      offered.map((name) => ({
+        value: name,
+        text: name,
+        selected: name === countries.UNITED_KINGDOM
+      }))
     )
   })
 
@@ -157,15 +177,44 @@ describe('/transporters/add/private', () => {
     })
   })
 
-  it('Should walk on without saving when the form is left blank', async () => {
+  it('Should refuse a wholly blank form, naming the six required fields in the page’s field order, and save nothing', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: PRIVATE },
+      payload: { country: countries.UNITED_KINGDOM }
+    })
+
+    const requiredFields = [
+      'nameOrOrganisationName',
+      'addressLine1',
+      'townOrCity',
+      'postcode',
+      'email',
+      'phone'
+    ]
+    expect(Object.keys(result.view.context.errors)).toEqual(requiredFields)
+    expect(result.after.privateTransporter).toBeUndefined()
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectNoRefusalLogged(result.logger)
+  })
+
+  it('Should refuse a form posted blank in every field, naming the country alongside the other required fields, and save nothing', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: {}
     })
 
-    expect(result.view).toBeUndefined()
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'nameOrOrganisationName',
+      'addressLine1',
+      'townOrCity',
+      'postcode',
+      'country',
+      'email',
+      'phone'
+    ])
     expect(result.after.privateTransporter).toBeUndefined()
-    expect(result.response.redirect).toBeTruthy()
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should re-render the form at 500 with the answers kept after a recoverable save failure', async () => {
@@ -250,7 +299,7 @@ describe('/transporters/add/private keeps the transporter for the organisation',
 describe('GET /transporters/add/private — a stored country the reader no longer offers', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should blank the country in values so the select renders unselected, without adding the stale option', async () => {
+  it('Should blank the country in values, offer no option for the stale country, and open the select on the United Kingdom', async () => {
     const result = await driveHandler(getHandler, { seed: staleSeed })
 
     expect(result.view.context.values.country).toBe('')
@@ -259,6 +308,9 @@ describe('GET /transporters/add/private — a stored country the reader no longe
         (item) => item.value === STALE_COUNTRY
       )
     ).toBeUndefined()
+    expect(
+      result.view.context.countryItems.find((item) => item.selected)
+    ).toMatchObject({ value: countries.UNITED_KINGDOM })
   })
 
   it('Should surface a country-no-longer-available error on the country field', async () => {
@@ -331,7 +383,7 @@ itRemembersAndShowsARefusedSavesValues({
 describe('POST /transporters/add/private — a refused save remembers what was entered', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should clear the entered transporter when the form is left blank, there being nothing to keep', async () => {
+  it('Should remember the blank values submitted under the private type, rather than clearing them', async () => {
     const result = await driveHandler(postHandler, {
       seed: { transporterType: PRIVATE },
       payload: {},
@@ -347,8 +399,8 @@ describe('POST /transporters/add/private — a refused save remembers what was e
     expect(
       result.cookies[flowOnlyAnswersCookie()][result.journeyId][
         TRANSPORTER_ADD_IN_PROGRESS
-      ]
-    ).toEqual({})
+      ][PRIVATE]
+    ).toEqual(BLANK_RECORD)
   })
 })
 
