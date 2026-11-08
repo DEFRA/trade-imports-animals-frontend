@@ -15,7 +15,8 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import {
   storedEnteredTransporter,
-  takeAddedTransporterBanner
+  takeAddedTransporterBanner,
+  transporterTypeRestartPatch
 } from '../transporter-add-session.js'
 import { transporterAnswer } from './transporter-record.js'
 import {
@@ -108,7 +109,7 @@ const transporterTypeHasLinkedAnswer = (
   Boolean(chosenTransporterOfType(answers, transporterType)) ||
   Boolean(storedEnteredTransporter(flowOnlyAnswers, transporterType))
 
-const clearAbandonedTransporterType = async (
+const restartTransporterTypeIfAbandoned = async (
   request,
   h,
   answers,
@@ -124,9 +125,9 @@ const clearAbandonedTransporterType = async (
   }
   request.logger.info(
     { journeyId, route: request.route?.path, transporterType },
-    'Transporter type cleared: the trader never saved an add for it'
+    'Transporter type question will restart blank: the trader never saved an add for it'
   )
-  await state.commit(request, h, { transporterType: '' })
+  await state.commit(request, h, transporterTypeRestartPatch())
 }
 
 const get = async (request, h) => {
@@ -136,7 +137,7 @@ const get = async (request, h) => {
     request,
     storedAnswers
   })
-  await clearAbandonedTransporterType(
+  await restartTransporterTypeIfAbandoned(
     request,
     h,
     answers,

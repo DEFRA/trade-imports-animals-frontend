@@ -8,7 +8,9 @@ import {
   addedTransporterBanner,
   clearedEnteredTransporterPatch,
   storedEnteredTransporter,
-  TRANSPORTER_ADD_IN_PROGRESS
+  transporterTypeRestartPatch,
+  TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_RESTART
 } from './transporter-add-session.js'
 
 const SAMPLE_BANNER_COPY = {
@@ -66,5 +68,13 @@ describe('#storedEnteredTransporter and #clearedEnteredTransporterPatch', () => 
         COMMERCIAL
       )
     ).toEqual(commercialValues)
+  })
+})
+
+describe('#transporterTypeRestartPatch', () => {
+  it('Should flag the restart', () => {
+    expect(transporterTypeRestartPatch()).toEqual({
+      [TRANSPORTER_TYPE_RESTART]: true
+    })
   })
 })

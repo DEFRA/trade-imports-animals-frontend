@@ -33,7 +33,8 @@ import {
 } from '../test-support.js'
 import {
   JUST_ADDED_TRANSPORTER_NAME,
-  TRANSPORTER_ADD_IN_PROGRESS
+  TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_RESTART
 } from '../transporter-add-session.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -548,15 +549,21 @@ describe('GET /transporters — the added-transporter banner', () => {
 describe('GET /transporters — an unfinished add', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should clear a transporter type left over from an add that was never saved', async () => {
+  const restartFlagOf = (result) =>
+    result.cookies[flowOnlyAnswersCookie()]?.[result.journeyId]?.[
+      TRANSPORTER_TYPE_RESTART
+    ]
+
+  it('Should flag the type question to restart blank for a type left over from an add that was never saved, without touching the stored type itself', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: PRIVATE }
     })
 
-    expect(result.after.transporterType).toBeFalsy()
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBe(true)
   })
 
-  it('Should keep the transporter type a saved private transporter actually carries', async () => {
+  it('Should leave the restart flag unset for a saved private transporter', async () => {
     const result = await driveHandler(getHandler, {
       seed: {
         transporterType: PRIVATE,
@@ -565,9 +572,10 @@ describe('GET /transporters — an unfinished add', () => {
     })
 
     expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBeFalsy()
   })
 
-  it('Should keep the transporter type a saved commercial transporter actually carries', async () => {
+  it('Should leave the restart flag unset for a saved commercial transporter', async () => {
     const result = await driveHandler(getHandler, {
       seed: {
         transporterType: COMMERCIAL,
@@ -576,9 +584,10 @@ describe('GET /transporters — an unfinished add', () => {
     })
 
     expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(restartFlagOf(result)).toBeFalsy()
   })
 
-  it('Should keep the transporter type an unfinished add has remembered values for', async () => {
+  it('Should leave the restart flag unset for an unfinished add that has remembered values', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: PRIVATE },
       startingFrom: [
@@ -591,5 +600,6 @@ describe('GET /transporters — an unfinished add', () => {
     })
 
     expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBeFalsy()
   })
 })

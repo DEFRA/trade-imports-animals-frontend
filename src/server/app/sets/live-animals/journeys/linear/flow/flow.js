@@ -22,14 +22,16 @@ import { confirmationPage } from '../features/confirmation/page.js'
 import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
 import {
   JUST_ADDED_TRANSPORTER_NAME,
-  TRANSPORTER_ADD_IN_PROGRESS
+  TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_RESTART
 } from '../features/transport/transporter-add-session.js'
 
 export const FLOW_ONLY_KEYS = [
   'declaration',
   STORED_SEARCH_ROWS,
   TRANSPORTER_ADD_IN_PROGRESS,
-  JUST_ADDED_TRANSPORTER_NAME
+  JUST_ADDED_TRANSPORTER_NAME,
+  TRANSPORTER_TYPE_RESTART
 ]
 
 export const sections = [

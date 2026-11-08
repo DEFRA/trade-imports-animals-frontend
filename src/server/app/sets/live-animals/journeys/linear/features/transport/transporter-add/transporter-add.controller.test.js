@@ -8,8 +8,11 @@ import {
   expectNoRefusalLogged,
   expectOneRefusalLogged,
   unavailableBackendError,
-  useStubbedJourney
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
+import { TRANSPORTER_TYPE_RESTART } from '../transporter-add-session.js'
 import {
   COMMERCIAL,
   PRIVATE
@@ -65,6 +68,21 @@ describe('/transporters/add', () => {
     })
 
     expect(result.view.context.values.transporterType).toBe(COMMERCIAL)
+  })
+
+  it('Should render blank and clear the flag when the list has flagged a restart, leaving the stored type itself untouched', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE },
+      startingFrom: [withFlowOnlyAnswers({ [TRANSPORTER_TYPE_RESTART]: true })]
+    })
+
+    expect(result.view.context.values.transporterType).toBe('')
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        TRANSPORTER_TYPE_RESTART
+      ]
+    ).toBeNull()
   })
 
   it('Should send a commercial transporter to the details form', async () => {

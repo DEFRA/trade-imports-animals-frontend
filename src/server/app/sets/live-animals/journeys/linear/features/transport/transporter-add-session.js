@@ -2,6 +2,7 @@ import * as state from '../../../../../../engine/index.js'
 
 export const TRANSPORTER_ADD_IN_PROGRESS = 'transporterAddInProgress'
 export const JUST_ADDED_TRANSPORTER_NAME = 'justAddedTransporterName'
+export const TRANSPORTER_TYPE_RESTART = 'transporterTypeRestart'
 
 export const storedEnteredTransporter = (flowOnlyAnswers, transporterType) =>
   flowOnlyAnswers?.[TRANSPORTER_ADD_IN_PROGRESS]?.[transporterType]
@@ -73,4 +74,21 @@ export const takeAddedTransporterBanner = async (
   }
   await state.commit(request, h, { [JUST_ADDED_TRANSPORTER_NAME]: null })
   return addedTransporterBanner(name, copy)
+}
+
+export const transporterTypeRestartPatch = () => ({
+  [TRANSPORTER_TYPE_RESTART]: true
+})
+
+export const takeRestartedTransporterType = async (
+  request,
+  h,
+  flowOnlyAnswers
+) => {
+  const restarting = Boolean(flowOnlyAnswers?.[TRANSPORTER_TYPE_RESTART])
+  if (!restarting) {
+    return false
+  }
+  await state.commit(request, h, { [TRANSPORTER_TYPE_RESTART]: null })
+  return true
 }
