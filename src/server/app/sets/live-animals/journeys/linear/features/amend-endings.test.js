@@ -15,7 +15,6 @@ import {
 } from '../../../../../engine/test-support.js'
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { copy as sharedEn } from '../../../../../shared/copy.en.js'
-import { copy as sharedCy } from '../../../../../shared/copy.cy.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { taskRows } from '../flow/task-rows.js'
 import { allRoutes, dispatchPages } from './index.js'
@@ -130,12 +129,4 @@ describe('save controls on task-row pages while amending', () => {
       expect(controls).not.toContain('<a ')
     }
   )
-
-  it('Should label the controls in Welsh', () => {
-    expect(sharedCy.saveActions).toEqual({
-      saveAndContinue: 'Cadw a pharhau',
-      saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
-      cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
-    })
-  })
 })

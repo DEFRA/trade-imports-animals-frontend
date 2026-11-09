@@ -3,13 +3,14 @@ import {
   BASE,
   BOS_TAURUS_ROW,
   PHONE_VIEWPORT,
-  answerArrivalDetails,
+  fillArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   openOverview,
   openReviewFromHub,
+  saveAndContinue,
   saveAndReturnToHub,
   selectSpecies,
   signIn,
@@ -186,7 +187,8 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { name: transportCopy.portOfEntry.title })
     ).toBeVisible()
 
-    await answerArrivalDetails(page)
+    await fillArrivalDetails(page)
+    await saveAndContinue(page).click()
 
     await expect(
       page.getByRole('heading', { name: commoditiesCopy.search.title })

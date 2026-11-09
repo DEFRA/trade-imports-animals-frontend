@@ -62,9 +62,9 @@ const pickEveryParty = async (page) => {
   }
 }
 
-const openAddresses = async (page, species) => {
+const openAddresses = async (page, species, unlockOptions) => {
   await startNotification(page)
-  await unlockSections(page, species)
+  await unlockSections(page, species, unlockOptions)
   await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
   await expectBackOnTheAddressesPage(page)
 }
@@ -261,7 +261,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   })
 
   test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, STRUTHIO_ROW)
+    await openAddresses(page, STRUTHIO_ROW, { identificationApplies: false })
 
     const section = addressesSection(page, copy.hub.cph.title)
     await expect(section.locator('.govuk-hint')).toHaveText(copy.hub.cph.hint)

@@ -102,6 +102,14 @@ describe('save-actions copy', () => {
       Object.keys(sharedEn.saveActions)
     )
   })
+
+  it('Should label the controls in Welsh', () => {
+    expect(sharedCy.saveActions).toEqual({
+      saveAndContinue: 'Cadw a pharhau',
+      saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
+      cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
+    })
+  })
 })
 
 describe('shared copy module', () => {

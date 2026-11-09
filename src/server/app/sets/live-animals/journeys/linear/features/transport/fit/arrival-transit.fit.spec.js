@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
   MEANS_OF_TRANSPORT_SELECT,
+  LANDINGS,
   addTransitCountry,
   choosePortOfEntry,
   describeCalendarPosition,
@@ -734,7 +735,8 @@ test.describe('transit countries rendering and validation', () => {
     await saveMeansOfTransportAt(
       page,
       journeyUrl(page, PORT_OF_ENTRY_PAGE),
-      'AIRPLANE'
+      'AIRPLANE',
+      { landing: LANDINGS.transporters }
     )
     await page.goto(journeyUrl(page, TRANSIT_PAGE))
 
@@ -750,7 +752,8 @@ test.describe('transit countries rendering and validation', () => {
     await saveMeansOfTransportAt(
       otherTab,
       journeyUrl(staleTab, PORT_OF_ENTRY_PAGE),
-      'AIRPLANE'
+      'AIRPLANE',
+      { landing: LANDINGS.transporters }
     )
 
     await staleTab
