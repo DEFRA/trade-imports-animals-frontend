@@ -48,7 +48,8 @@
             { text: copy.table.address },
             { text: copy.table.approvalNumber },
             { text: copy.table.type },
-            { text: copy.table.status }
+            { text: copy.table.status },
+            { html: '<span class="govuk-visually-hidden">' + copy.table.actionHidden + '</span>' }
           ],
           rows: transporterTableRows
         }) }}

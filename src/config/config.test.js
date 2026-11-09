@@ -18,6 +18,12 @@ describe('#config', () => {
     )
   })
 
+  test('loads TRADE_IMPORTS_ANIMALS_FRONTEND_URL with the 3000 default', () => {
+    expect(config.get('tradeImportsAnimalsFrontend.baseUrl')).toBe(
+      'http://localhost:3000'
+    )
+  })
+
   describe('stubMode', () => {
     beforeEach(() => {
       vi.resetModules()
@@ -196,10 +202,17 @@ describe('config URL validation', () => {
     'tradeImportsAddressBookApi.baseUrl'
   )
   const originalInsFrontendUrl = config.get('tradeImportsInsFrontend.baseUrl')
+  const originalAnimalsFrontendUrl = config.get(
+    'tradeImportsAnimalsFrontend.baseUrl'
+  )
 
   afterEach(() => {
     config.set('tradeImportsAddressBookApi.baseUrl', originalAddressBookUrl)
     config.set('tradeImportsInsFrontend.baseUrl', originalInsFrontendUrl)
+    config.set(
+      'tradeImportsAnimalsFrontend.baseUrl',
+      originalAnimalsFrontendUrl
+    )
   })
 
   test('rejects a malformed tradeImportsAddressBookApi.baseUrl', () => {
@@ -210,6 +223,12 @@ describe('config URL validation', () => {
 
   test('rejects a malformed tradeImportsInsFrontend.baseUrl', () => {
     config.set('tradeImportsInsFrontend.baseUrl', 'not a valid url')
+
+    expect(() => config.validate({ allowed: 'strict' })).toThrow()
+  })
+
+  test('rejects a malformed tradeImportsAnimalsFrontend.baseUrl', () => {
+    config.set('tradeImportsAnimalsFrontend.baseUrl', 'not a valid url')
 
     expect(() => config.validate({ allowed: 'strict' })).toThrow()
   })

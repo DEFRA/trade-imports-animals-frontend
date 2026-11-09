@@ -127,9 +127,11 @@ export const copy = {
       address: 'Cyfeiriad',
       approvalNumber: 'Rhif cymeradwyo',
       type: 'Math',
-      status: 'Statws'
+      status: 'Statws',
+      actionHidden: 'Gweithred'
     },
     selectRowPrefix: 'Dewis',
+    viewDetails: 'Gweld manylion',
     search: {
       label: 'Chwilio',
       hint: 'Enw, cyfeiriad neu rif cymeradwyo',

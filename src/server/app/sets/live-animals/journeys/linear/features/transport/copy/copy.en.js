@@ -127,9 +127,11 @@ export const copy = {
       address: 'Address',
       approvalNumber: 'Approval number',
       type: 'Type',
-      status: 'Status'
+      status: 'Status',
+      actionHidden: 'Action'
     },
     selectRowPrefix: 'Select',
+    viewDetails: 'View details',
     search: {
       label: 'Search',
       hint: 'Name, address or approval number',

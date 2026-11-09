@@ -238,7 +238,8 @@ describe('transport copy module — transporter pages', () => {
       address: 'Address',
       approvalNumber: 'Approval number',
       type: 'Type',
-      status: 'Status'
+      status: 'Status',
+      actionHidden: 'Action'
     })
     expect(copyCy.transporters.table).toEqual({
       selectHidden: 'Dewis',
@@ -246,10 +247,13 @@ describe('transport copy module — transporter pages', () => {
       address: 'Cyfeiriad',
       approvalNumber: 'Rhif cymeradwyo',
       type: 'Math',
-      status: 'Statws'
+      status: 'Statws',
+      actionHidden: 'Gweithred'
     })
     expect(copy.transporters.selectRowPrefix).toBe('Select')
     expect(copyCy.transporters.selectRowPrefix).toBe('Dewis')
+    expect(copy.transporters.viewDetails).toBe('View details')
+    expect(copyCy.transporters.viewDetails).toBe('Gweld manylion')
   })
 
   test('Should head the transporter list with the same words the fieldset legend carries, in both languages', () => {

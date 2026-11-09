@@ -10,6 +10,7 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import { buildAnimalsFrontendUrl } from '../../../../../../../../common/helpers/frontend-url.js'
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -79,7 +80,11 @@ const render = async (
     selectedId: values.selectedId,
     shownMessages: shownCountMessages(rows.length),
     transporterRows: rows,
-    transporterTableRows: transporterTableRows(rows)
+    transporterTableRows: transporterTableRows(rows, {
+      returnUrl: buildAnimalsFrontendUrl(
+        kit.withChangeContext(request, pagePath(journey.journeyId, page.slug))
+      )
+    })
   })
 }
 

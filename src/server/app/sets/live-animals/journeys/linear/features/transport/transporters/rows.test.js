@@ -55,6 +55,9 @@ const newPrivateRecord = {
 
 const records = [commercial, privateRecord]
 
+const RETURN_URL =
+  'http://animals.example/live-animals/notifications/abc/transporters'
+
 const names = (matches) => matches.map((record) => record.name)
 
 describe('#matchingTransporters', () => {
@@ -204,7 +207,8 @@ describe('#shownCountMessages', () => {
 describe('#transporterTableRows', () => {
   it('Should give each transporter a select radio, its plain facts and a status tag', () => {
     const [cells] = transporterTableRows(
-      transporterRows([commercial], { selectedId: commercial.id })
+      transporterRows([commercial], { selectedId: commercial.id }),
+      { returnUrl: RETURN_URL }
     )
     const [selectCell, name, address, approvalNumberCell, type, statusCell] =
       cells
@@ -218,18 +222,29 @@ describe('#transporterTableRows', () => {
     expect(selectCell.html).toContain('checked')
     expect(selectCell.html).toContain('Select García Livestock Transport SL')
     expect([name, address, approvalNumberCell, type]).toEqual([
-      { text: 'García Livestock Transport SL' },
-      { text: '43 East Hague Extension, Switzerland' },
-      { text: COMMERCIAL_APPROVAL_NUMBER },
-      { text: 'Commercial' }
+      {
+        text: 'García Livestock Transport SL',
+        attributes: { 'data-search-words': '' }
+      },
+      {
+        text: '43 East Hague Extension, Switzerland',
+        attributes: { 'data-search-words': '' }
+      },
+      {
+        text: COMMERCIAL_APPROVAL_NUMBER,
+        attributes: { 'data-search-words': '' }
+      },
+      { text: 'Commercial', attributes: { 'data-search-words': '' } }
     ])
     expect(statusCell.html).toContain('govuk-tag--green')
     expect(statusCell.html).toContain('Approved')
+    expect(statusCell.attributes).toEqual({ 'data-search-words': '' })
   })
 
   it('Should leave the radio unchecked for a transporter that is not the selected one', () => {
     const [[selectCell]] = transporterTableRows(
-      transporterRows([privateRecord], { selectedId: commercial.id })
+      transporterRows([privateRecord], { selectedId: commercial.id }),
+      { returnUrl: RETURN_URL }
     )
 
     expect(selectCell.html).not.toContain('checked')
@@ -237,9 +252,29 @@ describe('#transporterTableRows', () => {
 
   it('Should show the Not applicable label in the approval-number cell for a record with no approval number', () => {
     const [[, , , approvalNumberCell]] = transporterTableRows(
-      transporterRows([newPrivateRecord], { selectedId: null })
+      transporterRows([newPrivateRecord], { selectedId: null }),
+      { returnUrl: RETURN_URL }
     )
 
-    expect(approvalNumberCell).toEqual({ text: NOT_APPLICABLE })
+    expect(approvalNumberCell).toEqual({
+      text: NOT_APPLICABLE,
+      attributes: { 'data-search-words': '' }
+    })
+  })
+
+  it('Should give each row a details link to the address book, carrying the id and the given return URL', () => {
+    const [[, , , , , , detailsCell]] = transporterTableRows(
+      transporterRows([privateRecord], { selectedId: null }),
+      { returnUrl: RETURN_URL }
+    )
+
+    expect(detailsCell.html).toContain(
+      `/address-book/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
+    )
+    expect(detailsCell.html).toContain('View details')
+    expect(detailsCell.html).toContain(
+      `<span class="govuk-visually-hidden"> ${privateRecord.name}</span>`
+    )
+    expect(detailsCell.attributes).toBeUndefined()
   })
 })

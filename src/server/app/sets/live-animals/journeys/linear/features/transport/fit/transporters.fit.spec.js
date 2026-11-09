@@ -38,6 +38,7 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { config } from '../../../../../../../../../config/config.js'
 import {
   addressOverLengthValidations,
   contactOverLengthValidations
@@ -329,6 +330,39 @@ test.describe('transporter list page', () => {
     }
   })
 
+  test('every row ends with a View details link naming its own transporter', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    for (const record of transporterRecords) {
+      await expect(
+        transporterRow(page, record.name).getByRole('link', {
+          name: `${copy.transporters.viewDetails} ${record.name}`,
+          exact: true
+        })
+      ).toBeVisible()
+    }
+  })
+
+  test('points a row’s View details link at that transporter’s address book page, carrying this list as the return', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const listUrl = journeyUrl(page, 'transporters')
+
+    const link = transporterRow(page, commercialRecord.name).getByRole('link', {
+      name: `${copy.transporters.viewDetails} ${commercialRecord.name}`,
+      exact: true
+    })
+
+    const expectedReturnUrl = `${new URL(config.get('tradeImportsAnimalsFrontend.baseUrl')).origin}${listUrl}`
+    await expect(link).toHaveAttribute(
+      'href',
+      `${new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin}/address-book/${commercialRecord.id}?return=${encodeURIComponent(expectedReturnUrl)}`
+    )
+  })
+
   test('tags an approved transporter green and a newly added one magenta', async ({
     page
   }) => {
@@ -431,6 +465,30 @@ test.describe('transporter list page', () => {
     ).toBeFocused()
     await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
       0
+    )
+  })
+})
+
+test.describe('a View details link opened with change context', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('keeps the change context on the return it carries', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    const listUrlWithChangeContext = `${journeyUrl(page, 'transporters')}?change=1`
+    await page.goto(listUrlWithChangeContext)
+
+    const link = transporterRow(page, commercialRecord.name).getByRole('link', {
+      name: `${copy.transporters.viewDetails} ${commercialRecord.name}`,
+      exact: true
+    })
+    const href = await link.getAttribute('href')
+
+    expect(new URL(href).searchParams.get('return')).toBe(
+      `${new URL(config.get('tradeImportsAnimalsFrontend.baseUrl')).origin}${listUrlWithChangeContext}`
     )
   })
 })
