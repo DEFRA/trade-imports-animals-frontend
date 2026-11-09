@@ -269,7 +269,7 @@ describe('#transporterTableRows', () => {
     )
 
     expect(detailsCell.html).toContain(
-      `/address-book/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
+      `/address-book/transporter/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
     )
     expect(detailsCell.html).toContain('View details')
     expect(detailsCell.html).toContain(

@@ -375,7 +375,7 @@ test.describe('transporter list page', () => {
     expect(detailsUrl.origin).toBe(
       new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin
     )
-    expect(detailsUrl.pathname).toMatch(/^\/address-book\/[^/]+$/)
+    expect(detailsUrl.pathname).toMatch(/^\/address-book\/transporter\/[^/]+$/)
     expect(detailsUrl.searchParams.get('return')).toBe(expectedReturnUrl)
   })
 

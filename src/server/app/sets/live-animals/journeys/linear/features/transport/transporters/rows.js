@@ -63,10 +63,12 @@ export const transporterRows = (records, { selectedId }) =>
 const CELLS_TEMPLATE =
   'live-animals/journeys/linear/features/transport/transporters/_cells.njk'
 
+/** Every row of this list is a transporter, so its details link goes to the
+ * address book's transporter page rather than its address page. */
 const detailsHrefFor = (id, returnUrl) => {
   const params = new URLSearchParams({ return: returnUrl })
   return buildInsFrontendUrl(
-    `/address-book/${encodeURIComponent(id)}?${params.toString()}`
+    `/address-book/transporter/${encodeURIComponent(id)}?${params.toString()}`
   )
 }
 
