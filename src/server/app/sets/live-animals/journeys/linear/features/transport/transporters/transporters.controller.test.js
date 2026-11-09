@@ -15,12 +15,12 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import {
   COMMERCIAL,
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import {
   itSendsBackToOverview,
@@ -173,11 +173,23 @@ describe('/transporters', () => {
     expect(result.response.redirect).toBeTruthy()
   })
 
-  it('Should walk on without saving when no transporter is picked', async () => {
+  it('Should save the transporter whose id is submitted with surrounding space', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'save', transporter: `  ${GARCIA_ID}  ` }
+    })
+
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(result.after.commercialTransporter.name).toBe(GARCIA_NAME)
+    expect(result.response.redirect).toBeTruthy()
+  })
+
+  it('Should refuse to save when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, { payload: {} })
 
+    expect(result.view.context.errors.transporter).toBeTruthy()
+    expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
-    expect(result.response.redirect).toBeTruthy()
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should re-render the list at 500 with the pick kept after a recoverable save failure', async () => {
@@ -216,12 +228,13 @@ describe('/transporters', () => {
 describe('/transporters — Save and return to overview', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should go to the overview, not the next page, and commit nothing when no transporter is picked', async () => {
+  it('Should refuse to save and save nothing when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
       payload: { exit: 'hub' }
     })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.after).toEqual(result.before)
   })
 
@@ -233,6 +246,16 @@ describe('/transporters — Save and return to overview', () => {
     expect(result.response.redirect).toBeUndefined()
     expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save the chosen transporter and go to the overview', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { exit: 'hub', transporter: GARCIA_ID }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(result.after.commercialTransporter.name).toBe(GARCIA_NAME)
   })
 })
 

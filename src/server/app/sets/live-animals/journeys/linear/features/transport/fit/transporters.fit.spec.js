@@ -109,6 +109,14 @@ const searchTransporters = async (page, term) => {
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
 
+const expectTransporterErrorLinkFocusesUncheckedFirstOption = async (page) => {
+  const link = errorLink(page, copy.transporters.errors.transporterRequired)
+  await expect(link).toBeVisible()
+  await link.click()
+  await expect(page.locator('input[name="transporter"]').first()).toBeFocused()
+  await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(0)
+}
+
 const SOME_TYPED_TRANSPORTER_NAME = 'Some typed transporter name'
 
 const fillsPrivateNameThenCancelsToDashboard = async (page) => {
@@ -457,15 +465,21 @@ test.describe('transporter list page', () => {
     await openTransporterList(page)
     await submitTransporterNotOnTheList(page)
 
-    const link = errorLink(page, copy.transporters.errors.transporterRequired)
-    await expect(link).toBeVisible()
-    await link.click()
+    await expectTransporterErrorLinkFocusesUncheckedFirstOption(page)
+  })
+
+  test('transporter validation: continuing with nothing chosen shows the message in the summary and inline, and the summary link focuses the first option', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await saveAndContinue(page).click()
+
     await expect(
-      page.locator('input[name="transporter"]').first()
-    ).toBeFocused()
-    await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
-      0
-    )
+      page
+        .locator('.govuk-error-message')
+        .filter({ hasText: copy.transporters.errors.transporterRequired })
+    ).toBeVisible()
+    await expectTransporterErrorLinkFocusesUncheckedFirstOption(page)
   })
 })
 

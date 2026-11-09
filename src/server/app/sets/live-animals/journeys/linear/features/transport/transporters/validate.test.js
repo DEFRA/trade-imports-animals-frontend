@@ -33,14 +33,23 @@ describe('#validation for transporters — onSubmit', () => {
     })
   })
 
-  // The page walks on without saving when a trader has not picked yet, matching
-  // the step it replaced — so an empty pick is silent, not an error.
-  it('Should accept a submission with no pick', async () => {
+  it('Should reject a submission with no pick', async () => {
     const { errors } = await validation.onSubmit(
       {},
       { records: [record(CAMPBELL_ID, CAMPBELL_NAME)] }
     )
+    expect(errors).toMatchObject({
+      transporter: copy.transporters.errors.transporterRequired
+    })
+  })
+
+  it('Should accept a picked id submitted with surrounding space', async () => {
+    const { values, errors } = await validation.onSubmit(
+      { transporter: `  ${CAMPBELL_ID}  ` },
+      { records: [record(CAMPBELL_ID, CAMPBELL_NAME)] }
+    )
     expect(errors).toEqual({})
+    expect(values.transporter).toBe(CAMPBELL_ID)
   })
 })
 

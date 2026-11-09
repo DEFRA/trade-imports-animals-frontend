@@ -1,7 +1,7 @@
 import {
   compose,
-  oneOf,
-  pageValidation
+  pageValidation,
+  requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
@@ -11,11 +11,6 @@ import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).transporters
 
-// Per-org, so per-request. Stored-answers validation runs across every page
-// on every submission, so an address-book outage here must not block an
-// unrelated page's submission the way it blocks this page's own GET — it
-// falls back to the shipped list, the one part of it that never depends on
-// the address book.
 const availableRecordsFor = async (request, organisationId) => {
   try {
     return await transporters.partiesFor(organisationId)
@@ -35,27 +30,17 @@ const registerFor = async (request) => {
   )
 }
 
-// Both readings measure against the same list: submit passes `records` in,
-// stored derives it from `request`.
-const availableIds = async (context) =>
-  context.records
-    ? context.records.map((record) => record.id)
-    : [...(await registerFor(context.request)).values()].map(
-        (record) => record.id
+const fields = (_values, context = {}) =>
+  context.stored
+    ? compose()
+    : compose(
+        requiredOneOf(
+          'transporter',
+          context.records.map((record) => record.id),
+          copy.errors.transporterRequired
+        )
       )
 
-const fields = async (_values, context = {}) =>
-  compose(
-    oneOf(
-      'transporter',
-      await availableIds(context),
-      copy.errors.transporterRequired
-    )
-  )
-
-// Stored answers hold the transporter's name, not the picker's id, so the
-// check is a nameKey membership — the same lookup `selectedIdFor` does at
-// render.
 const checks = async (_values, { stored, storedAnswers, request } = {}) => {
   if (!stored || !request) {
     return {}
@@ -76,6 +61,8 @@ const checks = async (_values, { stored, storedAnswers, request } = {}) => {
 export const validation = pageValidation({
   fields,
   checks,
-  fromPayload: (payload) => ({ transporter: payload.transporter ?? '' }),
+  fromPayload: (payload) => ({
+    transporter: String(payload.transporter ?? '').trim()
+  }),
   fromAnswers: () => ({ transporter: '' })
 })

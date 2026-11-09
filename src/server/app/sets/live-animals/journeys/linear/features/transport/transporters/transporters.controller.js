@@ -164,11 +164,6 @@ const get = async (request, h) => {
   )
 }
 
-const commitOrSkip = (request, h, chosen) =>
-  chosen
-    ? state.commit(request, h, transporterAnswer(chosen))
-    : state.get(request, h)
-
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const query = String(payload.search ?? '')
@@ -186,7 +181,7 @@ const post = async (request, h) => {
   }
 
   const records = await availableTransporters(request)
-  const { errors } = await validation.onSubmit(payload, { records })
+  const { values, errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
     return (
@@ -194,10 +189,10 @@ const post = async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const chosen = records.find((record) => record.id === payload.transporter)
+  const chosen = records.find((record) => record.id === values.transporter)
   const { value: committed, failure } = await kit.recoverableSave(
     request,
-    () => commitOrSkip(request, h, chosen),
+    () => state.commit(request, h, transporterAnswer(chosen)),
     async () => {
       const current = await state.get(request, h)
       return (
