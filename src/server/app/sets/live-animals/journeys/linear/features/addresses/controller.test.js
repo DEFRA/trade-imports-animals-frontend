@@ -12,6 +12,7 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { requiredEarlierAnswers } from '../../../../test-support.js'
 import { dispatchPages } from '../index.js'
 import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
 import {
@@ -307,7 +308,10 @@ describe('POST addresses — where Save and continue goes', () => {
   ])(
     'Should go on to the contact address with the trail extended by this page when continuing %s',
     async (_start, startingFrom, trailBefore) => {
-      const result = await driveHandler(postAddresses, { startingFrom })
+      const result = await driveHandler(postAddresses, {
+        seed: requiredEarlierAnswers(),
+        startingFrom
+      })
 
       expect(result.response.redirect).toBe(
         withTrail(

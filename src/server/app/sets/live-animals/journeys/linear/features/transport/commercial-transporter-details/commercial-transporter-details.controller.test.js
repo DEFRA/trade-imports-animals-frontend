@@ -20,6 +20,7 @@ import {
   itCarriesTheTrailOnBack,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
+import { requiredEarlierAnswers } from '../../../../../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
@@ -45,6 +46,11 @@ const RECORD = {
   phone: '+44 28 9000 0111'
 }
 
+const commercialSeed = () => ({
+  ...requiredEarlierAnswers(),
+  transporterType: COMMERCIAL
+})
+
 const handlerFor = (method) =>
   commercialTransporterDetails.routes.find((route) => route.method === method)
     .handler
@@ -57,7 +63,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should point Back at the type question', async () => {
     const result = await driveHandler(getHandler, {
-      seed: { transporterType: COMMERCIAL }
+      seed: commercialSeed()
     })
 
     expect(result.view.context.backLink).toBe(
@@ -66,13 +72,13 @@ describe('/transporters/add/commercial', () => {
   })
 
   itCarriesTheTrailOnBack(getHandler, {
-    seed: { transporterType: COMMERCIAL },
+    seed: commercialSeed(),
     backSlug: ADD_SLUG
   })
 
   it('Should carry the transporter-authorisation guidance and the fixed country', async () => {
     const result = await driveHandler(getHandler, {
-      seed: { transporterType: COMMERCIAL }
+      seed: commercialSeed()
     })
 
     expect(result.view.context.guidance).toBe(copy.transporters.guidance)
@@ -105,7 +111,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should name the missing mandatory fields on a part-filled record', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: {
         nameOrOrganisationName: RECORD.nameOrOrganisationName,
         country: NORTHERN_IRELAND
@@ -128,7 +134,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should hold the authorisation number to its length', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: {
         ...RECORD,
         approvalNumber: 'A'.repeat(MAX_APPROVAL_NUMBER_LENGTH + 1),
@@ -144,7 +150,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should refuse a country the page did not offer', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { ...RECORD, country: 'Switzerland' }
     })
 
@@ -156,7 +162,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should save a hand-entered transporter in Northern Ireland and hand it on from the list', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { ...RECORD, country: NORTHERN_IRELAND }
     })
 
@@ -183,7 +189,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should hand on from the transporter list after a save made from its Change link', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { ...RECORD, country: NORTHERN_IRELAND },
       startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
@@ -198,7 +204,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should walk on without saving when the form is left blank', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { country: NORTHERN_IRELAND }
     })
 
@@ -209,7 +215,7 @@ describe('/transporters/add/commercial', () => {
 
   it('Should re-render the form at 500 with the answers kept after a recoverable save failure', async () => {
     const { response } = await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { ...RECORD, country: NORTHERN_IRELAND },
       startingFrom: [
         refusingSaves(unavailableBackendError('save the transporter'))
@@ -236,7 +242,7 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
 
   it('Should put a saved transporter on the organisation list, commercial and not yet approved', async () => {
     await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: HAULIER
     })
 
@@ -252,7 +258,7 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
 
   it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {
     await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: { country: NORTHERN_IRELAND }
     })
 
@@ -261,7 +267,7 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
 
   it('Should keep nothing when the notification refuses the save', async () => {
     await driveHandler(postHandler, {
-      seed: { transporterType: COMMERCIAL },
+      seed: commercialSeed(),
       payload: HAULIER,
       startingFrom: [
         refusingSaves(unavailableBackendError('save the transporter'))

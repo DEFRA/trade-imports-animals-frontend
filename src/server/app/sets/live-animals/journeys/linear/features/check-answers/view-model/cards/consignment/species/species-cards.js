@@ -19,7 +19,7 @@ export const speciesCards = ({
       title: speciesCardTitle(entry),
       ...editableActions({
         readOnly,
-        actions: speciesCardActions(journeyId, changeLinkTrail, index)
+        actions: speciesCardActions({ journeyId, changeLinkTrail }, index)
       }),
       rows: speciesCardRows(entry),
       identifierTable: identifierTable(

@@ -1,6 +1,6 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
-import { nextStepPath } from '../flow/navigation.js'
+import { nextStepLanding } from '../flow/navigation.js'
 import { journeyLayout, journeySectionCaption } from '../flow/journey-flow.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
@@ -11,10 +11,12 @@ import { carryTrail, pushTrail } from './trail.js'
 export {
   carryTrail,
   pushTrail,
+  readReturnMarker,
   requestTrail,
   TRAIL_START,
   trailBackLink,
   trailPlus,
+  withReturnMarker,
   withTrail
 } from './trail.js'
 
@@ -178,41 +180,26 @@ export const hubExitTarget = (
   { saveChoice = requestSaveChoice(request) } = {}
 ) => (saveChoice.hubExit ? hubPath(request.params.journeyId) : null)
 
-const RETURN_PARAMETER = 'return'
-
-/** The href with a `return` marker added to its query string. */
-export const withReturnMarker = (href, slug) =>
-  `${href}${href.includes('?') ? '&' : '?'}${RETURN_PARAMETER}=${encodeURIComponent(slug)}`
-
-/**
- * Reads the `return` marker a request carries.
- *
- * @param {object} request - the request being answered.
- * @param {string[]} allowedSlugs - the page slugs the marker may name.
- * @returns {{ honouredSlug?: string, refusedMarker?: string }} `{}` without a
- * marker, `{ honouredSlug }` when the marker is one of `allowedSlugs`, else
- * `{ refusedMarker }` holding the value received.
- */
-export const readReturnMarker = (request, allowedSlugs) => {
-  const marker = request.query?.[RETURN_PARAMETER]
-  if (marker === undefined) {
-    return {}
+const nextPagePath = (request, page, scope) => {
+  const { journeyId } = request.params
+  const landing = nextStepLanding(page.id, scope, journeyId)
+  if (!landing) {
+    return pagePath(journeyId, CYA_SLUG)
   }
-  return allowedSlugs.includes(marker)
-    ? { honouredSlug: marker }
-    : { refusedMarker: marker }
+  if (landing.unopened) {
+    request.logger.info(
+      {
+        journeyId,
+        route: request.route?.path,
+        savedPageId: page.id,
+        unopenedPageId: landing.unopened.pageId,
+        missingAnswerIds: landing.unopened.missingAnswerIds
+      },
+      'Save and continue opened the page that asks for a missing earlier answer'
+    )
+  }
+  return landing.path
 }
-
-/**
- * The next page after a page that applies to the journey.
- *
- * @param {object} page - the page the trader is on.
- * @param {object} scope - the journey's scope.
- * @param {string} journeyId - the journey being worked on.
- * @returns {string} the next page that applies, else the review's path.
- */
-export const nextPagePath = (page, scope, journeyId) =>
-  nextStepPath(page.id, scope, journeyId) ?? pagePath(journeyId, CYA_SLUG)
 
 /**
  * Where a valid save on a page goes next.
@@ -225,15 +212,12 @@ export const nextPagePath = (page, scope, journeyId) =>
  * follow. Defaults to the request's own.
  * @returns {string} the overview's path when Save and return to overview was
  * pressed, else the next page that applies, else the review's path, carrying
- * the request's trail plus the page saved.
+ * the request's trail plus the page saved. A next page that needs a required
+ * earlier answer that is missing gives the page that asks for it, logged once.
  */
 export const nextTarget = (request, page, scope, { saveChoice } = {}) =>
   hubExitTarget(request, { saveChoice }) ??
-  pushTrail(
-    request,
-    nextPagePath(page, scope, request.params.journeyId),
-    page.slug
-  )
+  pushTrail(request, nextPagePath(request, page, scope), page.slug)
 
 /**
  * Where a page that is skipped goes next.
@@ -243,11 +227,12 @@ export const nextTarget = (request, page, scope, { saveChoice } = {}) =>
  * @param {object} scope - the journey's scope.
  * @returns {string} the overview's path when Save and return to overview was
  * pressed, else the next page that applies, else the review's path, carrying
- * the request's trail unchanged.
+ * the request's trail unchanged. A next page that needs a required earlier
+ * answer that is missing gives the page that asks for it, logged once.
  */
 export const nextTargetKeepingTrail = (request, page, scope) =>
   hubExitTarget(request) ??
-  carryTrail(request, nextPagePath(page, scope, request.params.journeyId))
+  carryTrail(request, nextPagePath(request, page, scope))
 
 /**
  * The chrome every journey page shares.

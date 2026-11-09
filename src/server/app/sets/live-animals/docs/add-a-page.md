@@ -120,8 +120,10 @@ GET calls `state.get()` once and prefills from `answers`. POST:
    journey id)
 4. commits cleaned values with `state.commit()`
 5. redirects through `kit.nextTarget(request, page, committed.scope)`, the shared
-   next-page target: the next page in the journey's one page order whose gate
-   passes, ending at check your answers
+   next-page target: the next page in the journey's one page order that applies,
+   ending at check your answers. Save and continue sends the trader to the page
+   that asks for a missing required earlier answer; see
+   [`journey-flow-and-gates.md`](journey-flow-and-gates.md)
 
 Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
 failure is logged once by `recoverableSave`; render the same values with
@@ -205,7 +207,13 @@ its task row and nothing else. Its position controls strictly-earlier
 prerequisites and the journey's page order, which Save and continue follows from every start
 (the next page that applies, skipping a sub-page, which is a page reached only from the page
 that opens it). Its place in that order decides where Save and continue lands on it and
-on the page before it.
+on the page before it. Save and continue never opens a page whose required earlier
+answers (where the consignment is coming from, what is being imported) are missing: it
+opens the page that asks for the first missing one instead, and Overview offers
+exactly the pages this rule opens. A page stays out of the order as a `subPage: true`
+page when only the page that opens it reaches it, in no section when it is a detour
+off a list page, and in no task row when it is the review, declaration or
+confirmation.
 
 Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js). Put it in an
 existing task row when those pages form one user task. Add a task row only when
@@ -243,7 +251,7 @@ labels only the review shows go in the check-answers copy bundles.
 
 Rows carry no Change link — `row(key, value)` is a
 key and a value. If the page's fields go into a NEW card, the card needs one
-`cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
+`cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
 `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf in BOTH
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
 the fit assertion "every Change link sits in a card heading and no summary row

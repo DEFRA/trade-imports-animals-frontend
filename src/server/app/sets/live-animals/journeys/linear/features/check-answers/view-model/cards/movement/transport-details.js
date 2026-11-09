@@ -58,8 +58,7 @@ export const transportDetailsCard = ({
     ...editableActions({
       readOnly,
       actions: cardAction(
-        journeyId,
-        changeLinkTrail,
+        { journeyId, changeLinkTrail },
         transportersPage.slug,
         copy.hidden.cards.transportDetails
       )

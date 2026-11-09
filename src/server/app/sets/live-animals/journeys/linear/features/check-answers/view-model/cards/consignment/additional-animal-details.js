@@ -23,8 +23,7 @@ export const additionalAnimalDetailsCard = ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
-      changeLinkTrail,
+      { journeyId, changeLinkTrail },
       additionalDetailsPage.slug,
       copy.hidden.cards.additionalAnimalDetails
     )

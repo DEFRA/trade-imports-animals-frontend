@@ -23,8 +23,7 @@ export const transitCountriesCard = async ({
     ...editableActions({
       readOnly,
       actions: cardAction(
-        journeyId,
-        changeLinkTrail,
+        { journeyId, changeLinkTrail },
         transitCountriesPage.slug,
         copy.hidden.cards.transitCountries
       )

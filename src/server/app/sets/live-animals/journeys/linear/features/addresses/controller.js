@@ -4,6 +4,7 @@ import * as state from '../../../../../../engine/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { addressesPage as page } from './page.js'
+import { cphNumberPage } from '../cph-number/page.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
 import { partyEditHref } from './party-edit/edit-href.js'
@@ -59,7 +60,7 @@ const partySectionBuilder = (request, journeyId, parties) => (party) => {
 const cphSection = (request, journeyId, answers) => {
   const href = kit.carryTrail(
     request,
-    pagePath(journeyId, 'cph-number?return=addresses')
+    kit.withReturnMarker(pagePath(journeyId, cphNumberPage.slug), page.slug)
   )
   const cphNumber = answers.countyParishHoldingCph
   return hubSection({

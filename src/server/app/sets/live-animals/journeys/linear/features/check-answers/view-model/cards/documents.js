@@ -42,8 +42,7 @@ export const documentsCard = ({
     ...editableActions({
       readOnly,
       actions: cardAction(
-        journeyId,
-        changeLinkTrail,
+        { journeyId, changeLinkTrail },
         documentsPage.slug,
         copy.hidden.cards.documents
       )

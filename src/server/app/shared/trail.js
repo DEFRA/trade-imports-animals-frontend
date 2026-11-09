@@ -6,6 +6,7 @@ import {
 
 export const TRAIL_PARAMETER = 'from'
 export const TRAIL_SEPARATOR = ','
+const RETURN_PARAMETER = 'return'
 export const LONGEST_TRAIL = 40
 
 export const TRAIL_START = Object.freeze({
@@ -35,26 +36,37 @@ const readTrail = (request) => {
     : { entries: [], unrecognised: String(received) }
 }
 
-const logUnrecognisedTrail = (request, unrecognised, fallbackHref) => {
-  const longestLoggedTrail = 200
-  const loggedFlag = 'unrecognisedTrailLogged'
-  const { app } = request
-  if (app?.[loggedFlag]) {
+const loggedWarnings = new WeakMap()
+
+const warnOncePerRequest = (request, loggedFlag, details, message) => {
+  const flags = loggedWarnings.get(request) ?? new Set()
+  if (flags.has(loggedFlag)) {
     return
   }
-  if (app) {
-    app[loggedFlag] = true
-  }
+  flags.add(loggedFlag)
+  loggedWarnings.set(request, flags)
   request.logger.warn(
     {
       journeyId: request.params?.journeyId,
       route: request.route?.path,
-      trail: unrecognised.slice(0, longestLoggedTrail),
+      ...details
+    },
+    message
+  )
+}
+
+const longestLoggedValue = 200
+
+const logUnrecognisedTrail = (request, unrecognised, fallbackHref) =>
+  warnOncePerRequest(
+    request,
+    'unrecognisedTrailLogged',
+    {
+      trail: unrecognised.slice(0, longestLoggedValue),
       fallback: fallbackHref
     },
     'Trail not recognised, trail dropped'
   )
-}
 
 const readLoggedTrail = (request, fallbackHref) => {
   const trail = readTrail(request)
@@ -62,6 +74,41 @@ const readLoggedTrail = (request, fallbackHref) => {
     logUnrecognisedTrail(request, trail.unrecognised, fallbackHref)
   }
   return trail
+}
+
+const withQueryParameter = (href, name, value) =>
+  `${href}${href.includes('?') ? '&' : '?'}${name}=${encodeURIComponent(value)}`
+
+/** The href with a `return` marker added to its query string. */
+export const withReturnMarker = (href, slug) =>
+  withQueryParameter(href, RETURN_PARAMETER, slug)
+
+/**
+ * Reads the `return` marker a request carries.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string[]} allowedSlugs - the page slugs the marker may name.
+ * @returns {{ honouredSlug?: string }} `{ honouredSlug }` when the marker is
+ * one of `allowedSlugs`, else `{}`. A marker that is not one of them is logged
+ * once per request.
+ */
+export const readReturnMarker = (request, allowedSlugs) => {
+  const marker = request.query?.[RETURN_PARAMETER]
+  if (marker === undefined) {
+    return {}
+  }
+  if (allowedSlugs.includes(marker)) {
+    return { honouredSlug: marker }
+  }
+  warnOncePerRequest(
+    request,
+    'refusedReturnMarkerLogged',
+    {
+      received: String(marker).slice(0, longestLoggedValue)
+    },
+    'Return marker not recognised, marker dropped'
+  )
+  return {}
 }
 
 /**
@@ -76,9 +123,11 @@ export const withTrail = (href, entries) => {
   if (entries.length === 0) {
     return href
   }
-  const queryJoiner = href.includes('?') ? '&' : '?'
-  const trail = encodeURIComponent(entries.join(TRAIL_SEPARATOR))
-  return `${href}${queryJoiner}${TRAIL_PARAMETER}=${trail}`
+  return withQueryParameter(
+    href,
+    TRAIL_PARAMETER,
+    entries.join(TRAIL_SEPARATOR)
+  )
 }
 
 /**

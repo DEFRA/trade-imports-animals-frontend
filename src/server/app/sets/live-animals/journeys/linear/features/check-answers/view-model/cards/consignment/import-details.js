@@ -21,8 +21,7 @@ export const importDetailsCard = async ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
-      changeLinkTrail,
+      { journeyId, changeLinkTrail },
       originPage.slug,
       copy.hidden.cards.importDetails
     )

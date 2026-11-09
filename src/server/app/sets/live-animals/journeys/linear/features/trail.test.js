@@ -15,7 +15,12 @@ import {
   postHandlerOf,
   withFlowOnlyAnswers
 } from '../../../../../engine/test-support.js'
-import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
+import {
+  originSaved,
+  requiredEarlierAnswers,
+  seedFromFranceWithCommodityLineOfAnimals,
+  withOriginSaved
+} from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import { CYA_SLUG, withTrail } from '../../../../../shared/kit.js'
 
@@ -32,9 +37,9 @@ const IMPLICIT_SUBMIT = 'implicit-submit'
 const IDENTIFICATION_SLUG = 'commodities/identification'
 const DOCUMENTS_SLUG = 'accompanying-documents'
 
-const lineSeed = {
+const lineSeed = withOriginSaved({
   commodityLines: [lineOf(FELIS_CATUS_ROW)]
-}
+})
 
 const savableLineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
 
@@ -56,6 +61,7 @@ describe('trail — the trail survives the internal loop navigation', () => {
           withFlowOnlyAnswers({ [STORED_SEARCH_ROWS]: [FELIS_CATUS_ROW] }),
           { query: reviewChangeLinkQuery() }
         ],
+        seed: originSaved,
         payload: { species: [lineKey(FELIS_CATUS_ROW)] }
       }
     )
@@ -106,7 +112,7 @@ describe('trail — the trail survives the internal loop navigation', () => {
           'animalIdentifierPassport-0': 'UK123456789'
         },
         startingFrom: [{ query: reviewChangeLinkQuery() }],
-        seed: seedWithCommodityLineOfAnimals(2)
+        seed: seedFromFranceWithCommodityLineOfAnimals(2)
       }
     )
     expect(response).toEqual({
@@ -168,7 +174,13 @@ describe('trail — Save and continue goes on to the next page that applies', ()
       'additional-details',
       IDENTIFICATION_SLUG
     ],
-    ['the documents Continue', documents, {}, 'addresses', DOCUMENTS_SLUG]
+    [
+      'the documents Continue',
+      documents,
+      { seed: requiredEarlierAnswers() },
+      'addresses',
+      DOCUMENTS_SLUG
+    ]
   ])(
     'Should send %s to the same next page whatever the trail, adding this page to it',
     async (_name, feature, options, nextSlug, savedSlug) => {

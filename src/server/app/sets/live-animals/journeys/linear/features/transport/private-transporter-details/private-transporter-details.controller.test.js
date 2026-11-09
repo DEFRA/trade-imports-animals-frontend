@@ -19,6 +19,7 @@ import {
   itCarriesTheTrailOnBack,
   forgetAddedTransportersAroundEachTest
 } from '../test-support.js'
+import { requiredEarlierAnswers } from '../../../../../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { withTrail } from '../../../../../../../shared/kit.js'
@@ -40,6 +41,11 @@ const RECORD = {
   phone: '+44 1224 000 111',
   email: 'movements@aberdeen-livestock.example.com'
 }
+
+const privateSeed = () => ({
+  ...requiredEarlierAnswers(),
+  transporterType: PRIVATE
+})
 
 const STALE_COUNTRY = 'Zedland'
 
@@ -130,7 +136,7 @@ describe('/transporters/add/private', () => {
 
   it('Should hand a saved record on to Upload documents, with the transporter list on the trail', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: PRIVATE },
+      seed: privateSeed(),
       payload: RECORD
     })
 

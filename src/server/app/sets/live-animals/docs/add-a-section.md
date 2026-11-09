@@ -286,7 +286,7 @@ A section id carries a suffix (`documents-section`,
 links to.
 
 Rows carry no Change link — `row(key, value)` is a key and a value. Each new
-card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
+card needs one `cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`,
 wrapped in `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf
 in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that
 leaf the fit assertion "every Change link sits in a card heading and no summary

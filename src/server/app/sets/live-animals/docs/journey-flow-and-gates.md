@@ -9,12 +9,15 @@ The platform consumes that policy through `configureJourneyFlow()`.
 [`flow.js`](../journeys/linear/flow/flow.js) exports eight ordered `sections`. A flow
 section is an Overview group, and the sections together are the journey's one page
 order: the order Overview lists its tasks in. Save and continue goes to the next page
-in that order whose gate passes, and from the last page that applies to check your
+in that order that applies, and from the last page that applies to check your
 answers, however the page was reached (a new notification, a copy, the Overview, a
 reopened draft, a new browser session, a check your answers Change link or an
-amendment). The `review` section has the one authored section
+amendment). When the next page that applies needs a required earlier answer that is
+missing, Save and continue goes to the page that asks for it instead. This journey's
+required earlier answers are where the consignment is coming from and what is being
+imported. The `review` section has the one authored section
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
-from `meta.collects`, scope and earlier continue prerequisites.
+from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page and then Roles and addresses, so
 the CPH page, a sub-page marked `subPage: true` on its page identity, goes on to Roles and addresses and

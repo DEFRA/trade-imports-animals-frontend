@@ -14,7 +14,7 @@ import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
+import { seedFromFranceWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import {
   base,
@@ -189,7 +189,7 @@ describe('save actions — hub exit semantics', () => {
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
-        seed: seedWithCommodityLineOfAnimals(1)
+        seed: seedFromFranceWithCommodityLineOfAnimals(1)
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })

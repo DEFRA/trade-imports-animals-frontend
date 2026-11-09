@@ -19,22 +19,11 @@ export const seedLine = ({
   numberOfAnimalsQuantity: ''
 })
 
-const logAndResolveDetourReturn = (request) => {
-  const { honouredReturn, refusedMarker } = commodityQuestionReturn(request)
-  const { journeyId } = request.params
-  const maxLoggedMarkerLength = 100
-  if (refusedMarker !== undefined) {
-    request.logger.warn(
-      {
-        journeyId,
-        refusedMarker: String(refusedMarker).slice(0, maxLoggedMarkerLength)
-      },
-      'Commodity question return refused: not a page that opens it'
-    )
-  }
+const resolveAndLogHonouredReturn = (request) => {
+  const { honouredReturn } = commodityQuestionReturn(request)
   if (honouredReturn) {
     request.logger.info(
-      { journeyId, honouredReturn },
+      { journeyId: request.params.journeyId, honouredReturn },
       'Commodity question saved: returning to the page that opened it'
     )
   }
@@ -43,7 +32,7 @@ const logAndResolveDetourReturn = (request) => {
 
 const selectionTarget = (request, scope) =>
   kit.hubExitTarget(request) ??
-  logAndResolveDetourReturn(request) ??
+  resolveAndLogHonouredReturn(request) ??
   kit.nextTarget(request, commoditiesPage, scope)
 
 export const commitSelection = async (request, h, rows) => {

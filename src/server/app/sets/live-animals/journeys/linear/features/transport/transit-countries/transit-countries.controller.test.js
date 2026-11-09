@@ -27,7 +27,6 @@ import {
 } from '../test-support.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
-import { copy } from '../copy/copy.en.js'
 import * as transitCountries from './transit-countries.controller.js'
 import {
   COUNTRY_FIELD,
@@ -667,35 +666,6 @@ describe('transit-countries — when the page is out of scope for the means of t
     }
   )
 
-  it.each([
-    ['rail', 'RAILWAY'],
-    ['road', 'ROAD_VEHICLE']
-  ])(
-    'Should show the transit countries page when the means is %s and no commodity or country of origin is saved',
-    async (_name, meansOfTransport) => {
-      const result = await driveHandler(get, { seed: { meansOfTransport } })
-
-      expect(result.view.context.copy.title).toBe(copy.transitCountries.title)
-    }
-  )
-
-  it.each([
-    ['rail', 'RAILWAY'],
-    ['road', 'ROAD_VEHICLE']
-  ])(
-    'Should go on to the transporter list when Save and continue is submitted with the means %s and nothing else saved',
-    async (_name, meansOfTransport) => {
-      const result = await driveHandler(post, {
-        seed: { meansOfTransport },
-        payload: { transitedCountries: ['FR'] }
-      })
-
-      expect(result.response).toEqual({
-        redirect: transportersAfterSaving(result.journeyId)
-      })
-    }
-  )
-
   it.each(submitButtons)(
     'Should go to the overview without attempting a save when $button is submitted with Air and saves are refused',
     async ({ payload }) => {
@@ -742,4 +712,96 @@ describe('transit-countries — when the page is out of scope for the means of t
       message: OUT_OF_SCOPE_REDIRECT_MESSAGE
     })
   })
+})
+
+describe('transit-countries — when a required earlier answer is missing', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const ARRIVAL_DETAILS_SLUG = 'port-of-entry'
+  const MISSING_ANSWER_REDIRECT_MESSAGE =
+    'Redirected to the page that asks for a missing earlier answer: transit countries needs it'
+  const trailFromOverview = {
+    query: trailQuery(TRAIL_START.overview, ARRIVAL_DETAILS_SLUG)
+  }
+  const meansOfTransport = [
+    ['rail', 'RAILWAY'],
+    ['road', 'ROAD_VEHICLE']
+  ]
+  const missingCases = [
+    {
+      name: 'no country of origin',
+      seed: (means) => transitAppliesSeedWithout('countryOfOrigin', means),
+      askingSlug: 'origin',
+      missingAnswerIds: ['countryOfOrigin']
+    },
+    {
+      name: 'no commodity',
+      seed: (means) => transitAppliesSeedWithout('commodityLines', means),
+      askingSlug: 'commodities',
+      missingAnswerIds: ['commodityCode']
+    }
+  ]
+  const cases = missingCases.flatMap((missing) =>
+    meansOfTransport.map(([means, meansValue]) => ({
+      ...missing,
+      means,
+      meansValue
+    }))
+  )
+  const askingPageWithTrail = (journeyId, askingSlug) =>
+    withTrail(pagePath(journeyId, askingSlug), [
+      TRAIL_START.overview,
+      ARRIVAL_DETAILS_SLUG
+    ])
+
+  const ways = [
+    {
+      way: 'the page is opened',
+      drive: (options) => driveHandler(get, options)
+    },
+    {
+      way: 'Save and continue is submitted',
+      drive: (options) =>
+        driveHandler(post, {
+          ...options,
+          payload: { transitedCountries: ['FR'] }
+        })
+    }
+  ]
+
+  it.each(
+    cases.flatMap((missing) => ways.map((way) => ({ ...missing, ...way })))
+  )(
+    'Should send the means $means with $name to the page that asks for it when $way',
+    async ({ seed: seedFor, meansValue, askingSlug, drive }) => {
+      const result = await drive({
+        seed: seedFor({ meansOfTransport: meansValue }),
+        startingFrom: [trailFromOverview]
+      })
+
+      expect(result.response).toEqual({
+        redirect: askingPageWithTrail(result.journeyId, askingSlug)
+      })
+      expect(result.after).toEqual(result.before)
+    }
+  )
+
+  it.each(cases)(
+    'Should log the redirect once at info with the journey id and the missing answers for the means $means with $name',
+    async ({ seed: seedFor, meansValue, missingAnswerIds }) => {
+      const result = await driveHandler(get, {
+        seed: seedFor({ meansOfTransport: meansValue })
+      })
+
+      expectOneLogged(result.logger, {
+        level: 'info',
+        fields: {
+          journeyId: result.journeyId,
+          reason: 'required-earlier-answer-missing',
+          missingAnswerIds
+        },
+        message: MISSING_ANSWER_REDIRECT_MESSAGE
+      })
+    }
+  )
 })

@@ -11,12 +11,16 @@ import {
   carryTrail,
   LONGEST_TRAIL,
   pushTrail,
+  readReturnMarker,
   requestTrail,
   trailBackLink,
+  withReturnMarker,
   withTrail
 } from './trail.js'
 
 const HREF = '/n/j-1/a'
+const ORIGIN_ROUTE_PATH = '/notifications/{journeyId}/origin'
+const REFUSED_RETURN = '//evil.example'
 const OVERVIEW_THEN_ORIGIN = 'overview,origin'
 const UNRECOGNISED_TRAIL_MESSAGE = 'Trail not recognised, trail dropped'
 
@@ -145,7 +149,7 @@ describe('the trail of places the trader came from', () => {
       'Should go to the fallback and log once for %s',
       (_description, trail) => {
         const request = trailRequest(trail, {
-          route: { path: '/notifications/{journeyId}/origin' }
+          route: { path: ORIGIN_ROUTE_PATH }
         })
 
         expect(trailBackLink(request, { fallback: '/fallback' })).toBe(
@@ -155,7 +159,7 @@ describe('the trail of places the trader came from', () => {
           level: 'warn',
           fields: {
             journeyId: 'j-1',
-            route: '/notifications/{journeyId}/origin',
+            route: ORIGIN_ROUTE_PATH,
             trail,
             fallback: '/fallback'
           },
@@ -201,5 +205,98 @@ describe('the trail of places the trader came from', () => {
         )
       ).toBe(hubPath('j-1'))
     })
+  })
+})
+
+describe('#withReturnMarker — the return marker on an href', () => {
+  it('Should start the query string on an href without one', () => {
+    expect(withReturnMarker('/a', 'addresses')).toBe('/a?return=addresses')
+  })
+
+  it('Should join to the query string an href already has', () => {
+    expect(withReturnMarker('/a?x=1', 'addresses')).toBe(
+      '/a?x=1&return=addresses'
+    )
+  })
+
+  it('Should encode a slug that contains a slash', () => {
+    expect(withReturnMarker('/a', 'commodities/identification')).toBe(
+      '/a?return=commodities%2Fidentification'
+    )
+  })
+})
+
+describe('#readReturnMarker — the page a request says it came from', () => {
+  const allowedSlugs = ['addresses', 'notification-view']
+  const REFUSED_MARKER_MESSAGE = 'Return marker not recognised, marker dropped'
+  const markerRequest = (query, overrides = {}) =>
+    journeyRequest('j-1', {
+      query,
+      route: { path: ORIGIN_ROUTE_PATH },
+      ...overrides
+    })
+
+  it('Should be empty and log nothing when the request carries no marker', () => {
+    const request = markerRequest({})
+
+    expect(readReturnMarker(request, allowedSlugs)).toEqual({})
+    expect(request.logger.entries).toEqual([])
+  })
+
+  it('Should honour a marker naming an allowed slug and log nothing', () => {
+    const request = markerRequest({ return: 'addresses' })
+
+    expect(readReturnMarker(request, allowedSlugs)).toEqual({
+      honouredSlug: 'addresses'
+    })
+    expect(request.logger.entries).toEqual([])
+  })
+
+  it('Should refuse a marker naming anything else and log it once at warn', () => {
+    const request = markerRequest({ return: REFUSED_RETURN })
+
+    expect(readReturnMarker(request, allowedSlugs)).toEqual({})
+    expect(readReturnMarker(request, allowedSlugs)).toEqual({})
+    expectOneLogged(request.logger, {
+      level: 'warn',
+      fields: {
+        journeyId: 'j-1',
+        route: ORIGIN_ROUTE_PATH,
+        received: REFUSED_RETURN
+      },
+      message: REFUSED_MARKER_MESSAGE
+    })
+  })
+
+  it('Should log a refused marker once on a request that carries no app', () => {
+    const request = markerRequest({ return: REFUSED_RETURN }, { app: null })
+
+    readReturnMarker(request, allowedSlugs)
+    readReturnMarker(request, allowedSlugs)
+
+    expect(request.logger.entries).toHaveLength(1)
+  })
+
+  it('Should log a refused marker cut to 200 characters', () => {
+    const request = markerRequest({ return: 'x'.repeat(300) })
+
+    readReturnMarker(request, allowedSlugs)
+
+    expect(request.logger.entries[0].fields.received).toBe('x'.repeat(200))
+  })
+
+  it('Should log an unrecognised trail and a refused marker on one request once each', () => {
+    const request = markerRequest({
+      from: 'not-a-place',
+      return: REFUSED_RETURN
+    })
+
+    requestTrail(request)
+    readReturnMarker(request, allowedSlugs)
+
+    expect(request.logger.entries.map(({ message }) => message)).toEqual([
+      UNRECOGNISED_TRAIL_MESSAGE,
+      REFUSED_MARKER_MESSAGE
+    ])
   })
 })

@@ -70,7 +70,7 @@ const reviewErrorSummary = (
               reviewPageTrail
             )
           : (cardAnchorHref(key) ??
-            changeHref(journeyId, changeLinkTrail, key)),
+            changeHref({ journeyId, changeLinkTrail }, key)),
       disableAutoFocus
     }
   )

@@ -41,8 +41,7 @@ export const rolesAndAddressesCard = ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
-      changeLinkTrail,
+      { journeyId, changeLinkTrail },
       addressesPage.slug,
       copy.hidden.cards.rolesAndAddresses
     )

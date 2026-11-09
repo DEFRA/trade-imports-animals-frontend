@@ -127,8 +127,11 @@ way:
 - the save choice a request carries: `requestSaveChoice()`, and for a form the
   upload service returns the browser with, `returnedSaveChoice()`
 - where a page's Back link goes: `trailBackLink()`, with `carryTrail()` and `pushTrail()` for the links that keep the trail
+- the return marker a sub-page round trip carries: `withReturnMarker()` and `readReturnMarker()`
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`
+
+[`shared/trail.js`](../shared/trail.js) owns the trail and return marker operations, and `kit.js` re-exports them.
 
 A helper belongs in `kit.js` only when every journey page could use it and it
 names no feature, set or page. Validation rules go in

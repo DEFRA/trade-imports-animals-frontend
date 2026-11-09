@@ -1,6 +1,9 @@
 import { collectsOf, isDispatchBuilt } from './dispatch.js'
 import { sectionObligationIds } from './section-status.js'
-import { pagePrerequisites, sectionPrerequisites } from './prerequisites.js'
+import {
+  earliestMissingAnswerPage,
+  sectionPrerequisites
+} from './prerequisites.js'
 
 const assertDispatchBuilt = () => {
   if (isDispatchBuilt()) {
@@ -29,7 +32,7 @@ export const pageAppliesTo = (page, scope) => {
 }
 
 const prerequisitesAllowPage = (page, scope) =>
-  Boolean(page.gate) || prerequisitesMet(pagePrerequisites(page.id), scope)
+  Boolean(page.gate) || earliestMissingAnswerPage(page.id, scope) === undefined
 
 export const pageGatePasses = (page, scope) =>
   prerequisitesAllowPage(page, scope) && pageAppliesTo(page, scope)

@@ -328,8 +328,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
   here, and Save and continue here goes on to the contact address.
-  The county parish holding link does not: its route already carries
-  `return=addresses`.
+  The county parish holding link carries the trail and the `return=addresses`
+  marker.
 - Each party picker searches the address book from the submitted search box:
   a medium "Search" label, the hint "Name, address or country", and a square
   GOV.UK blue icon button joined to the box. The button is named "Search" for

@@ -24,8 +24,7 @@ export const contactAddressCard = ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
-      changeLinkTrail,
+      { journeyId, changeLinkTrail },
       consignmentContactSelectPage.slug,
       copy.hidden.cards.contactAddress
     )

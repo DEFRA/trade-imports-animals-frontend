@@ -56,6 +56,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { requiredEarlierAnswers } from '../../../../test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { documentUploadSessions } from '../../../../../../services/cdp-uploader/index.js'
 import { recordSubmittedUpload } from '../../../../../../services/cdp-uploader/stub.js'
@@ -228,6 +229,7 @@ const driveClaim = async (
     : null
   try {
     const result = await driveHandler(get, {
+      seed: requiredEarlierAnswers(),
       ...options,
       journeyId,
       query: { ...options.query, upload: correlationId }

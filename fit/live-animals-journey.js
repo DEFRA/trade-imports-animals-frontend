@@ -955,8 +955,26 @@ export const saveMeansOfTransportAt = async (
   arrivalUrl,
   meansOfTransport
 ) => {
+  await saveMeansOfTransportAndContinueAt(page, arrivalUrl, meansOfTransport)
+  await openOverview(page)
+}
+
+/**
+ * Opens the arrival details page at the given address, chooses the means of
+ * transport and presses Save and continue, staying on the page it lands on.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} arrivalUrl - the address of the arrival details page.
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveMeansOfTransportAndContinueAt = async (
+  page,
+  arrivalUrl,
+  meansOfTransport
+) => {
   await page.goto(arrivalUrl)
-  await chooseMeansAndSave(page, meansOfTransport)
+  await chooseMeansOfTransport(page, meansOfTransport)
+  await save(page)
 }
 
 /**

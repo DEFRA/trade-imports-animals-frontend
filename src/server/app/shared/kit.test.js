@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { AMEND, DRAFT } from '../engine/index.js'
+import { AMEND, DRAFT, makeScope } from '../engine/index.js'
+import { SET_ID } from '../sets/live-animals/set.js'
+import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
+import { buildDispatch } from '../flow/dispatch.js'
+import { pagePath } from './paths.js'
 import {
   expectOneLogged,
   expectOneRefusalLogged,
@@ -14,14 +18,14 @@ import {
   dateField,
   hubExitTarget,
   logRefusal,
+  nextTarget,
   pageRoutes,
   REFUSAL_LOG_MESSAGE,
-  readReturnMarker,
   recoverableSave,
   requestSaveChoice,
   returnedSaveChoice,
   setlessBase,
-  withReturnMarker
+  withTrail
 } from './kit.js'
 
 describe('#requestSaveChoice — what a request says about how it was saved', () => {
@@ -363,40 +367,64 @@ describe('#logRefusal', () => {
   })
 })
 
-describe('#withReturnMarker — the return marker on an href', () => {
-  it('Should start the query string on an href without one', () => {
-    expect(withReturnMarker('/a', 'addresses')).toBe('/a?return=addresses')
+describe('#nextTarget — Save and continue when a required earlier answer is missing', () => {
+  const IMPORT_REASON = 'import-reason'
+  const importReasonPage = { id: IMPORT_REASON, slug: IMPORT_REASON }
+  const PORT_OF_ENTRY = 'port-of-entry'
+
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
   })
 
-  it('Should join to the query string an href already has', () => {
-    expect(withReturnMarker('/a?x=1', 'addresses')).toBe(
-      '/a?x=1&return=addresses'
+  it('Should land on What are you importing? with the page saved on the trail, logging the unopened page', () => {
+    const request = journeyRequest('j-1', {
+      route: { path: `/notifications/{journeyId}/${PORT_OF_ENTRY}` }
+    })
+
+    const target = nextTarget(
+      request,
+      { id: PORT_OF_ENTRY, slug: PORT_OF_ENTRY },
+      makeScope({ countryOfOrigin: 'FR', meansOfTransport: 'ROAD_VEHICLE' })
     )
-  })
 
-  it('Should encode a slug that contains a slash', () => {
-    expect(withReturnMarker('/a', 'commodities/identification')).toBe(
-      '/a?return=commodities%2Fidentification'
+    expect(target).toBe(
+      withTrail(pagePath('j-1', 'commodities'), [PORT_OF_ENTRY])
     )
+    expectOneLogged(request.logger, {
+      level: 'info',
+      fields: {
+        journeyId: 'j-1',
+        route: `/notifications/{journeyId}/${PORT_OF_ENTRY}`,
+        savedPageId: PORT_OF_ENTRY,
+        unopenedPageId: 'transit-countries',
+        missingAnswerIds: ['commodityCode']
+      },
+      message:
+        'Save and continue opened the page that asks for a missing earlier answer'
+    })
   })
-})
 
-describe('#readReturnMarker — the page a request says it came from', () => {
-  const allowedSlugs = ['addresses', 'notification-view']
+  it('Should land on What are you importing? from the main import reason with only the country of origin saved', () => {
+    const request = journeyRequest('j-1')
 
-  it('Should be empty when the request carries no marker', () => {
-    expect(readReturnMarker({ query: {} }, allowedSlugs)).toEqual({})
-  })
-
-  it('Should honour a marker naming an allowed slug', () => {
     expect(
-      readReturnMarker({ query: { return: 'addresses' } }, allowedSlugs)
-    ).toEqual({ honouredSlug: 'addresses' })
+      nextTarget(
+        request,
+        importReasonPage,
+        makeScope({ countryOfOrigin: 'FR' })
+      )
+    ).toBe(withTrail(pagePath('j-1', 'commodities'), [IMPORT_REASON]))
   })
 
-  it('Should refuse a marker naming anything else, holding the value received', () => {
-    expect(
-      readReturnMarker({ query: { return: '//evil.example' } }, allowedSlugs)
-    ).toEqual({ refusedMarker: '//evil.example' })
+  it('Should log nothing when the next page that applies is offered', () => {
+    const request = journeyRequest('j-1')
+
+    nextTarget(
+      request,
+      { id: 'origin', slug: 'origin' },
+      makeScope({ countryOfOrigin: 'FR' })
+    )
+
+    expect(request.logger.entries).toEqual([])
   })
 })

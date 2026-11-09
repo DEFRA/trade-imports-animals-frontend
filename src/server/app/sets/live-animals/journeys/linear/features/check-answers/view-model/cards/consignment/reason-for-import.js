@@ -54,8 +54,7 @@ export const reasonForImportCard = async ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
-      changeLinkTrail,
+      { journeyId, changeLinkTrail },
       importReasonPage.slug,
       copy.hidden.cards.reasonForImport
     )

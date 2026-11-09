@@ -26,7 +26,7 @@ import {
   arrivalWindow,
   DAYS_BEFORE
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
-import { seedWithCommodityLineOfAnimals } from './sets/live-animals/test-support.js'
+import { seedFromFranceWithCommodityLineOfAnimals } from './sets/live-animals/test-support.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
@@ -293,7 +293,7 @@ describe('controller <-> model commit contract', () => {
       'commodities/identification'
     )
     const result = await drive(post, {
-      seed: seedWithCommodityLineOfAnimals(2),
+      seed: seedFromFranceWithCommodityLineOfAnimals(2),
       payload: {
         action: 'add:0',
         'animalIdentifierMicrochip-0': '900123456789012',

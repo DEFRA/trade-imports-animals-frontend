@@ -9,10 +9,12 @@ import {
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openArrival,
+  openOverview,
   openDatePicker,
   openTransit,
   saveAndContinue,
   saveAndReturnToHub,
+  saveMeansOfTransportAndContinueAt,
   saveMeansOfTransportAt,
   signIn,
   startNotification,
@@ -31,6 +33,7 @@ import {
   copy as sharedCopy,
   validatorDefaults
 } from '../../../../../../../shared/copy.en.js'
+import { copy as commoditiesCopy } from '../../commodities/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
@@ -650,6 +653,40 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue('')
+  })
+})
+
+test.describe('arrival save and continue with no commodity saved', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('by road with only the country of origin saved goes to What are you importing? and Overview offers no transit countries row', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await saveMeansOfTransportAndContinueAt(
+      page,
+      journeyUrl(page, PORT_OF_ENTRY_PAGE),
+      'ROAD_VEHICLE'
+    )
+
+    await expect(
+      page.getByRole('heading', { name: commoditiesCopy.search.title })
+    ).toBeVisible()
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/notifications/[^/]+/commodities\\?from=${PORT_OF_ENTRY_PAGE}`
+      )
+    )
+    await openOverview(page)
+    await expect(
+      page.getByRole('link', {
+        name: hubCopy.rows.transitCountries.title,
+        exact: true
+      })
+    ).toHaveCount(0)
   })
 })
 

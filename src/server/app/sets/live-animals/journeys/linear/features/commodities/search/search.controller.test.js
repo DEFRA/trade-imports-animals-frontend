@@ -17,6 +17,7 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
+import { originSaved } from '../../../../../test-support.js'
 import { originPage } from '../../origin/page.js'
 import { importReasonPage } from '../../import-reason/page.js'
 import { dispatchPages } from '../../index.js'
@@ -515,6 +516,7 @@ describe('commodity search — saving the selection', () => {
   it('Should create one line per chosen species in canonical order, with its common name', async () => {
     const result = await driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY, BOS_TAURUS_KEY, BISON_BISON_KEY] },
+      seed: originSaved,
       startingFrom: [
         afterSearchShowed(FELIS_CATUS_ROW, BOS_TAURUS_ROW, BISON_BISON_ROW)
       ]
@@ -631,7 +633,10 @@ describe('commodity search — saving the selection', () => {
 describe('commodity search — saving when another page opened the question', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  const savedFrom = (slug, { payload = {}, seed, startingFrom = [] } = {}) =>
+  const savedFrom = (
+    slug,
+    { payload = {}, seed = originSaved, startingFrom = [] } = {}
+  ) =>
     driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY], ...payload },
       query: { return: slug },
@@ -683,6 +688,7 @@ describe('commodity search — saving when another page opened the question', ()
     const refused = await savedFrom(UNLISTED_RETURN)
     const unmarked = await driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY] },
+      seed: originSaved,
       startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
     expect(refused.response.redirect).toBe(
@@ -709,7 +715,8 @@ describe('commodity search — logging a save when another page opened the quest
   const saveMarked = (marker) =>
     driveHandler(post, {
       payload: { species: [FELIS_CATUS_KEY] },
-      query: marker === undefined ? {} : { return: marker },
+      seed: originSaved,
+      query: marker === null ? {} : { return: marker },
       startingFrom: [afterSearchShowed(FELIS_CATUS_ROW)]
     })
 
@@ -738,22 +745,15 @@ describe('commodity search — logging a save when another page opened the quest
         level: 'warn',
         fields: {
           journeyId: result.journeyId,
-          refusedMarker: UNLISTED_RETURN
+          received: UNLISTED_RETURN
         },
-        message: 'Commodity question return refused: not a page that opens it'
+        message: 'Return marker not recognised, marker dropped'
       }
     ])
   })
 
-  it('Should log a refused marker cut to 100 characters', async () => {
-    const result = await saveMarked('x'.repeat(300))
-    const [entry] = result.logger.entries
-    expect(result.logger.entries).toHaveLength(1)
-    expect(entry.fields.refusedMarker).toBe('x'.repeat(100))
-  })
-
   it('Should log nothing about the question when the save carries no marker', async () => {
-    const result = await saveMarked(undefined)
+    const result = await saveMarked(null)
     expect(result.logger.entries).toEqual([])
   })
 })

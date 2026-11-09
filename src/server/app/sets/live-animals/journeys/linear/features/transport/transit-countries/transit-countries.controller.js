@@ -8,6 +8,8 @@ import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { hubPath } from '../../../../../../../shared/paths.js'
 import { pageAppliesTo } from '../../../../../../../flow/gates.js'
+import { askingPagePath } from '../../../../../../../flow/navigation.js'
+import { earliestMissingAnswerPage } from '../../../../../../../flow/prerequisites.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import { transitCountriesPage as page } from '../page.js'
@@ -124,20 +126,32 @@ const logRefusalUnlessUsersOwnInput = (
   }
 }
 
-const redirectToOverviewUnlessInScope = (request, h, current) => {
-  if (pageAppliesTo(page, current.scope)) {
+const redirectUnlessPageOpens = (request, h, current) => {
+  const { journeyId } = current.journey
+  if (!pageAppliesTo(page, current.scope)) {
+    request.logger.info(
+      {
+        journeyId,
+        reason: 'out-of-scope-for-means-of-transport',
+        meansOfTransport: current.answers.meansOfTransport ?? 'none'
+      },
+      'Redirected to the overview: transit countries is out of scope for the means of transport'
+    )
+    return h.redirect(hubPath(journeyId))
+  }
+  const missing = earliestMissingAnswerPage(page.id, current.scope)
+  if (!missing) {
     return null
   }
-  const { journeyId } = current.journey
   request.logger.info(
     {
       journeyId,
-      reason: 'out-of-scope-for-means-of-transport',
-      meansOfTransport: current.answers.meansOfTransport ?? 'none'
+      reason: 'required-earlier-answer-missing',
+      missingAnswerIds: missing.missingAnswerIds
     },
-    'Redirected to the overview: transit countries is out of scope for the means of transport'
+    'Redirected to the page that asks for a missing earlier answer: transit countries needs it'
   )
-  return h.redirect(hubPath(journeyId))
+  return h.redirect(kit.carryTrail(request, askingPagePath(missing, journeyId)))
 }
 
 const postAdd = async (request, h, current, selected) => {
@@ -198,9 +212,9 @@ const postContinue = async (request, h, current, payload, selected) => {
 
 const get = async (request, h) => {
   const current = await state.get(request, h)
-  const overviewRedirect = redirectToOverviewUnlessInScope(request, h, current)
-  if (overviewRedirect) {
-    return overviewRedirect
+  const unopenedRedirect = redirectUnlessPageOpens(request, h, current)
+  if (unopenedRedirect) {
+    return unopenedRedirect
   }
   const { values, errors, refusal } = await validation.onStored(current.answers)
   if (hasErrors(errors)) {
@@ -214,9 +228,9 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const current = await state.get(request, h)
-  const overviewRedirect = redirectToOverviewUnlessInScope(request, h, current)
-  if (overviewRedirect) {
-    return overviewRedirect
+  const unopenedRedirect = redirectUnlessPageOpens(request, h, current)
+  if (unopenedRedirect) {
+    return unopenedRedirect
   }
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')

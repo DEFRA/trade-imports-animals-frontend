@@ -10,7 +10,7 @@ import { copy as cy } from '../../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-export const changeHref = (journeyId, changeLinkTrail, obligationId) =>
+export const changeHref = ({ journeyId, changeLinkTrail }, obligationId) =>
   withTrail(
     pagePath(journeyId, slugOfPage(pageOfObligation(obligationId))),
     changeLinkTrail
@@ -18,10 +18,14 @@ export const changeHref = (journeyId, changeLinkTrail, obligationId) =>
 
 /**
  * The Change action for a card's heading, linking to the page with `slug`.
+ *
+ * @param {{ journeyId: string, changeLinkTrail: string[] }} changeContext - the
+ * journey and the trail the link carries.
+ * @param {string} slug - the page the link opens.
+ * @param {string} visuallyHiddenText - the text only a screen reader hears.
  */
 export const cardAction = (
-  journeyId,
-  changeLinkTrail,
+  { journeyId, changeLinkTrail },
   slug,
   visuallyHiddenText
 ) => ({

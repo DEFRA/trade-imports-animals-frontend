@@ -77,7 +77,9 @@ for an example. Errors come back keyed by the page's own field names.
 
 [`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
 continue-time gate for configured fields that must be answered before later pages
-open.
+open. See "Navigation and status" in
+[`flow-and-gates.md`](flow-and-gates.md#navigation-and-status) for which pages Overview
+offers and where Save and continue lands.
 
 ## Dates and structured values
 

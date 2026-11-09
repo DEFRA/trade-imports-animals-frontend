@@ -173,7 +173,7 @@ test.describe('hub feature', () => {
     await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 
-  test('saving arrival details with nothing else answered opens the transit countries page', async ({
+  test('saving arrival details with only the country of origin answered opens What are you importing?', async ({
     page
   }) => {
     await startNotification(page)
@@ -189,7 +189,7 @@ test.describe('hub feature', () => {
     await answerArrivalDetails(page)
 
     await expect(
-      page.getByRole('heading', { name: transportCopy.transitCountries.title })
+      page.getByRole('heading', { name: commoditiesCopy.search.title })
     ).toBeVisible()
   })
 
