@@ -2,7 +2,8 @@ import { useInsFrontendBaseUrl } from '../test-helpers/use-ins-frontend-base-url
 import {
   insAddAddressUrl,
   insAddressBookUrl,
-  insViewAddressUrl
+  insViewAddressUrl,
+  insViewTransporterUrl
 } from './ins-address-book-urls.js'
 
 describe('INS address book URLs', () => {
@@ -29,6 +30,16 @@ describe('INS address book URLs', () => {
 
     expect(insViewAddressUrl('a/b', '/picker?q=x&page=1')).toBe(
       'http://ins.example/address-book/a%2Fb?return=%2Fpicker%3Fq%3Dx%26page%3D1'
+    )
+  })
+
+  it('builds the view-transporter URL with an encoded id and its return URL', () => {
+    setInsFrontendBaseUrl('http://ins.example/')
+
+    expect(
+      insViewTransporterUrl('t/1', 'http://animals.example/transporters?q=x')
+    ).toBe(
+      'http://ins.example/address-book/transporter/t%2F1?return=http%3A%2F%2Fanimals.example%2Ftransporters%3Fq%3Dx'
     )
   })
 })
