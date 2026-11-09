@@ -1,10 +1,7 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import {
-  HTTP_STATUS_BAD_REQUEST,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR
-} from '../../../../../../../lib/http-status.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import {
   compose,
   requiredOneOf,
@@ -40,13 +37,7 @@ const fields = compose(
   )
 )
 
-const render = (
-  request,
-  h,
-  journey,
-  values,
-  { errors = {}, recoverableError = false } = {}
-) =>
+const render = (request, h, journey, values, { errors = {} } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: kit.withChangeContext(
@@ -55,7 +46,6 @@ const render = (
       ),
       journey,
       page,
-      recoverableError,
       showJourneyStrip: false
     }),
     copy,
@@ -107,26 +97,11 @@ const post = async (request, h) => {
     )
   }
 
-  const { failure } = await kit.recoverableSave(
+  await state.commit(
     request,
-    async () => {
-      await state.commit(
-        request,
-        h,
-        transporterTypeChosenPatch(values.transporterType)
-      )
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {
-        recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    h,
+    transporterTypeChosenPatch(values.transporterType)
   )
-  if (failure) {
-    return failure
-  }
-
   return h.redirect(
     kit.withChangeContext(
       request,
