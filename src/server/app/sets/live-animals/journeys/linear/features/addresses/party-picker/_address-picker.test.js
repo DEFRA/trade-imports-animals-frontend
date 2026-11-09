@@ -4,6 +4,7 @@ import { nunjucksConfig } from '../../../../../../../../../config/nunjucks/nunju
 import { documentOf } from '../../../../../../../../common/test-helpers/document-of.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as addressesCopy } from '../copy/copy.en.js'
+import { pickerRow } from './test-support.js'
 import { pickerTableRows } from './view-model/table-rows.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
@@ -38,15 +39,7 @@ const renderPicker = () =>
     }
   )
 
-const row = {
-  idPrefix: 'party-astra-rosales',
-  id: 'astra-rosales',
-  name: 'Astra Rosales',
-  checked: false,
-  addressLines: ['Rua da Boavista 100', 'Porto, 4050-113'],
-  country: 'Portugal',
-  viewHref: 'http://localhost:3002/address-book/astra-rosales'
-}
+const row = pickerRow()
 
 describe('addressPickerResults macro', () => {
   it('Should render the accessible name inside a visually-hidden span so the radio circle stays visible', () => {
@@ -62,7 +55,7 @@ describe('addressPickerResults macro', () => {
 
   it('Should escape an address name holding markup characters in the radio label', () => {
     const document = documentOf(
-      renderResults([{ ...row, name: 'Fish & <b>Chips</b> Ltd' }])
+      renderResults([pickerRow({ name: 'Fish & <b>Chips</b> Ltd' })])
     )
 
     const label = document.querySelector('.govuk-radios__label')
