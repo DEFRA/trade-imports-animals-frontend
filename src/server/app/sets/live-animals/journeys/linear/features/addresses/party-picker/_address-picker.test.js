@@ -143,7 +143,7 @@ describe('addressPickerResults macro', () => {
 })
 
 describe('addressPicker macro', () => {
-  it('Should end with the primary alone, since a picker is reached from the consignment addresses page', () => {
+  it('Should offer Save and continue alone, with no return-to-hub or exit action', () => {
     const html = renderPicker()
 
     expect(html).toContain(sharedEn.saveActions.saveAndContinue)
