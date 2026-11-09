@@ -63,9 +63,9 @@ describe('#pickerTableRows', () => {
   })
 
   it("Should end each row with a 'View' link to the address, named for screen readers by the address's name", () => {
-    const [[, , , , viewCell]] = pickerTableRows([pickerRow()], copy)
+    const [row] = pickerTableRows([pickerRow()], copy)
 
-    const cell = fragmentOf(viewCell.html)
+    const cell = fragmentOf(row.at(-1).html)
     const [link] = cell.children
 
     expect([...cell.children].map((element) => element.tagName)).toEqual(['A'])
