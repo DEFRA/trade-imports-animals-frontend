@@ -67,8 +67,7 @@ export const copy = {
       actionsHidden: 'Camau gweithredu'
     },
     selectRowPrefix: 'Dewis',
-    viewDetails: 'Gweld manylion',
-    viewDetailsFor: 'ar gyfer',
+    view: 'Gweld',
     addNewAddress: sharedCopy.addressHandshake.addNewAddress,
     handshakeErrors: sharedCopy.addressHandshake.errors
   }

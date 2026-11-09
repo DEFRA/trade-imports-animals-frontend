@@ -15,7 +15,8 @@ import {
   signIn,
   startNotification,
   unlockSections,
-  values
+  values,
+  withinFullWidthColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -553,17 +554,28 @@ test.describe('party picker details and pagination', () => {
     await openPartyPicker(page, CONSIGNOR)
   })
 
-  test('picker expands an address to show its full details', async ({
+  test('picker spans the full content column and shows an address on separate lines with town and postcode together, ending each row at its country with no View link in stub mode', async ({
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
       copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
     )
-    const detailedRow = page.getByRole('row', {
-      name: /Tech Imports Ltd/
-    })
-    await detailedRow.getByText(copy.picker.viewDetails).click()
-    await expect(detailedRow).toContainText('London')
+    await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
+    const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
+
+    const addressCell = addressRow.getByRole('cell').nth(2)
+    await expect
+      .poll(() => addressCell.evaluate((cell) => cell.innerText))
+      .toBe('18 Dockside Road\nLondon, E14 9GE')
+    await expect(page.getByRole('columnheader')).toHaveText([
+      copy.picker.table.selectHidden,
+      copy.picker.table.name,
+      copy.picker.table.address,
+      copy.picker.table.country
+    ])
+    await expect(addressRow.getByRole('cell').last()).toHaveText(
+      'United Kingdom'
+    )
   })
 
   test('picker carries a later-page selection and keeps it selected off-page', async ({
