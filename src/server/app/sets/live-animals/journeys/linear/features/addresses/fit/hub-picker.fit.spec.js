@@ -18,7 +18,7 @@ import {
   values,
   withinFullWidthColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { config } from '../../../../../../../../../config/config.js'
+import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -576,7 +576,7 @@ test.describe('party picker details and pagination', () => {
       })
     ).toHaveAttribute(
       'href',
-      `${config.get('tradeImportsInsFrontend.baseUrl')}/address-book/tech-imports-ltd?${new URLSearchParams({ return: pickerReturn })}`
+      insViewAddressUrl('tech-imports-ltd', pickerReturn)
     )
   })
 

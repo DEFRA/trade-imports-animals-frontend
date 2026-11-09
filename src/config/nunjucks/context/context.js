@@ -13,7 +13,7 @@ import {
   withSetContext
 } from '../../../server/app/shared/set-context.js'
 import { countSessionResolution } from '../../../server/common/helpers/call-counts/call-counts.js'
-import { buildInsFrontendUrl } from '../../../server/common/helpers/ins-frontend-url.js'
+import { insAddressBookUrl } from '../../../server/common/helpers/ins-address-book-urls.js'
 import { pageMaturityContext } from '../../../server/app/page-maturity/page-maturity.js'
 
 const logger = createLogger()
@@ -45,8 +45,6 @@ const resolveSession = (request, sessionId) => {
   countSessionResolution(request)
   return request.server.app.cache.get(sessionId)
 }
-
-const insAddressBookUrl = () => buildInsFrontendUrl('/address-book')
 
 async function context(request) {
   if (!webpackManifest) {

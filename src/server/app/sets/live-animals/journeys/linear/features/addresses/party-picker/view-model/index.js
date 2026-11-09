@@ -1,13 +1,8 @@
-import { buildInsFrontendUrl } from '../../../../../../../../../common/helpers/ins-frontend-url.js'
+import { insViewAddressUrl } from '../../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { pickerAddressLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
 import { resultsHref } from './results-href.js'
 import { pickerTableRows } from './table-rows.js'
-
-const insAddressHref = (addressId, returnPath) =>
-  buildInsFrontendUrl(
-    `/address-book/${encodeURIComponent(addressId)}?${new URLSearchParams({ return: returnPath })}`
-  )
 
 const resultRows = (found, selectedId, returnPath) => {
   const from = (found.page - 1) * found.pageSize
@@ -17,7 +12,7 @@ const resultRows = (found, selectedId, returnPath) => {
     name: record.name,
     addressLines: pickerAddressLines(record.address),
     country: record.address.country,
-    viewHref: insAddressHref(record.id, returnPath),
+    viewHref: insViewAddressUrl(record.id, returnPath),
     checked: record.id === selectedId
   }))
 }

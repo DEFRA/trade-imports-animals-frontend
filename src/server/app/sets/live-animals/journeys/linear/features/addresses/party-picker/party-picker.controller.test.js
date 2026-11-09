@@ -18,6 +18,7 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
+import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
@@ -473,9 +474,6 @@ describe('View link to the INS address book', () => {
   resetMocksAndConfigAfterTests()
   const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
-  const insAddressHrefReturningTo = (addressId, returnPath) =>
-    `http://ins.example/address-book/${addressId}?${new URLSearchParams({ return: returnPath })}`
-
   const firstViewHrefOf = (result) => pickerFrom(result).rows[0].viewHref
 
   it('Should link each row to its INS address page, returning to this picker with its search and selection', async () => {
@@ -488,8 +486,8 @@ describe('View link to the INS address book', () => {
     const pickerReturn = `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
 
     expect(pickerFrom(result).rows.map((row) => row.viewHref)).toEqual([
-      insAddressHrefReturningTo(DANISH_MEAT_ID, pickerReturn),
-      insAddressHrefReturningTo('jutland-swine-aps', pickerReturn)
+      insViewAddressUrl(DANISH_MEAT_ID, pickerReturn),
+      insViewAddressUrl('jutland-swine-aps', pickerReturn)
     ])
   })
 
@@ -502,7 +500,7 @@ describe('View link to the INS address book', () => {
     })
 
     expect(firstViewHrefOf(result)).toBe(
-      insAddressHrefReturningTo(
+      insViewAddressUrl(
         pickerFrom(result).rows[0].id,
         `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&change=1`
       )
