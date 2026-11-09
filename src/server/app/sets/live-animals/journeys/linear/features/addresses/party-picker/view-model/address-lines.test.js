@@ -32,7 +32,7 @@ describe('#pickerAddressLines', () => {
     ])
   })
 
-  it('Should leave out a blank street line and a blank county', () => {
+  it('Should give only the filled street line, then town or city and postcode on one line', () => {
     expect(pickerAddressLines(shortAddress)).toEqual([
       SHORT_STREET_LINE,
       'Bristol, BS11 9DQ'
@@ -48,7 +48,7 @@ describe('#insetAddressLines', () => {
     ])
   })
 
-  it('Should leave out a blank street line and a blank county', () => {
+  it('Should give only the filled street line, then town or city, postcode and country on one line', () => {
     expect(insetAddressLines({ address: shortAddress })).toEqual([
       SHORT_STREET_LINE,
       'Bristol, BS11 9DQ, United Kingdom'
