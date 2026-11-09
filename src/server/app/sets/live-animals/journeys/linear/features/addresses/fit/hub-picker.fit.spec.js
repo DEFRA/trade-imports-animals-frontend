@@ -563,7 +563,7 @@ test.describe('party picker details and pagination', () => {
     )
     await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
     const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
-    const pickerReturn = `${config.get('tradeImportsAnimalsFrontend.baseUrl')}${new URL(page.url()).pathname}?page=1`
+    const pickerReturn = `${new URL(page.url()).pathname}?page=1`
 
     await expect(addressRow.getByRole('cell').nth(2)).toHaveText(
       '18 Dockside Road\nLondon, E14 9GE',

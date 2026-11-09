@@ -17,7 +17,6 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
-import { useAnimalsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-animals-frontend-base-url.js'
 import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -470,16 +469,14 @@ describe('View link to the INS address book', () => {
   useStubbedJourney(SET_ID, dispatchPages)
   resetMocksAndConfigAfterTests()
   const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
-  const setAnimalsFrontendBaseUrl = useAnimalsFrontendBaseUrl()
 
-  const insAddressHrefReturningTo = (addressId, returnUrl) =>
-    `http://ins.example/address-book/${addressId}?${new URLSearchParams({ return: returnUrl })}`
+  const insAddressHrefReturningTo = (addressId, returnPath) =>
+    `http://ins.example/address-book/${addressId}?${new URLSearchParams({ return: returnPath })}`
 
   const firstViewHrefOf = (result) => pickerFrom(result).rows[0].viewHref
 
   it('Should link each row to its INS address page, returning to this picker with its search and selection', async () => {
     setInsFrontendBaseUrl('http://ins.example/')
-    setAnimalsFrontendBaseUrl('http://animals.example/')
 
     const result = await driveHandler(getConsignor, {
       query: { q: 'denmark', selected: ALPINE_DAIRY_ID }
@@ -488,14 +485,13 @@ describe('View link to the INS address book', () => {
     expect(firstViewHrefOf(result)).toBe(
       insAddressHrefReturningTo(
         DANISH_MEAT_ID,
-        `http://animals.example${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
+        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
       )
     )
   })
 
   it('Should return to the page being shown and keep changing when the picker was opened to change an answer', async () => {
     setInsFrontendBaseUrl('http://ins.example')
-    setAnimalsFrontendBaseUrl('http://animals.example')
 
     const result = await driveHandler(getConsignor, {
       query: { page: '2' },
@@ -505,7 +501,7 @@ describe('View link to the INS address book', () => {
     expect(firstViewHrefOf(result)).toBe(
       insAddressHrefReturningTo(
         pickerFrom(result).rows[0].id,
-        `http://animals.example${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&change=1`
+        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&change=1`
       )
     )
   })

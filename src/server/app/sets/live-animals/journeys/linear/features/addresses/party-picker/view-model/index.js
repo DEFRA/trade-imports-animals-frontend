@@ -1,16 +1,15 @@
-import { buildAnimalsFrontendUrl } from '../../../../../../../../../common/helpers/animals-frontend-url.js'
 import { buildInsFrontendUrl } from '../../../../../../../../../common/helpers/ins-frontend-url.js'
 import { pickerAddressLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
 import { resultsHref } from './pagination/results-href.js'
 import { pickerTableRows } from './table-rows.js'
 
-const insAddressHref = (addressId, returnUrl) =>
+const insAddressHref = (addressId, returnPath) =>
   buildInsFrontendUrl(
-    `/address-book/${encodeURIComponent(addressId)}?${new URLSearchParams({ return: returnUrl })}`
+    `/address-book/${encodeURIComponent(addressId)}?${new URLSearchParams({ return: returnPath })}`
   )
 
-const resultRows = (found, selectedId, returnUrl) => {
+const resultRows = (found, selectedId, returnPath) => {
   const from = (found.page - 1) * found.pageSize
   return found.results.map((record, index) => ({
     id: record.id,
@@ -18,7 +17,7 @@ const resultRows = (found, selectedId, returnUrl) => {
     name: record.name,
     addressLines: pickerAddressLines(record.address),
     country: record.address.country,
-    viewHref: insAddressHref(record.id, returnUrl),
+    viewHref: insAddressHref(record.id, returnPath),
     checked: record.id === selectedId
   }))
 }
@@ -29,15 +28,13 @@ export const pickerViewModel = (
   { query, selectedId, error, found, selected, changing },
   copy
 ) => {
-  const returnUrl = buildAnimalsFrontendUrl(
-    resultsHref(journey.journeyId, party, {
-      query,
-      page: found.page,
-      selectedId,
-      changing
-    })
-  )
-  const rows = resultRows(found, selectedId, returnUrl)
+  const returnPath = resultsHref(journey.journeyId, party, {
+    query,
+    page: found.page,
+    selectedId,
+    changing
+  })
+  const rows = resultRows(found, selectedId, returnPath)
 
   return {
     query,
