@@ -24,7 +24,7 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
-import { addressSummary } from '../transporters/transporter-record.js'
+import { addressSummary } from '../../addresses/address-summary.js'
 
 const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'

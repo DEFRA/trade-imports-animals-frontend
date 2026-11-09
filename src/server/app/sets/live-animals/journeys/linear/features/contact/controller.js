@@ -10,7 +10,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
-import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
+import { addressSummary } from '../addresses/address-summary.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
 import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
@@ -40,9 +40,6 @@ const handshakeErrorSummary = (error) =>
 
 const resolveErrorSummary = (errors, handshakeError) =>
   kit.errorSummary(errors) ?? handshakeErrorSummary(handshakeError)
-
-const addressSummary = (address) =>
-  [addressText(address), address.country].filter(Boolean).join(', ')
 
 const currentContactOf = async (request, journeyId, answers) => {
   const display = await toDisplayParty(answers.contactAddress)

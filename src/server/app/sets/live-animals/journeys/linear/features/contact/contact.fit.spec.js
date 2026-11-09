@@ -7,7 +7,7 @@ import {
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
-import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
+import { addressSummary } from '../addresses/address-summary.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -24,10 +24,6 @@ const startAtContact = async (page) => {
   await page.goto(contactUrl)
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
-
-/** Mirrors the contact controller's radio hint (addressText + country). */
-const addressSummary = (address) =>
-  [addressText(address), address.country].filter(Boolean).join(', ')
 
 test.describe('contact feature', () => {
   test.beforeEach(async ({ page }) => {
