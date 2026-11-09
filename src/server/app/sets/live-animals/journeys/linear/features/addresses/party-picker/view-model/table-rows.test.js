@@ -26,7 +26,8 @@ describe('#pickerTableRows', () => {
   it('Should give each address a checked radio, its name, its address lines with a break between each, and its country', () => {
     const [[selectCell, name, addressCell, country]] = pickerTableRows(
       [pickerRow({ checked: true })],
-      copy
+      copy,
+      { withViewLinks: true }
     )
 
     const radio = fragmentOf(selectCell.html).querySelector('input')
@@ -52,7 +53,8 @@ describe('#pickerTableRows', () => {
       [
         pickerRow({ addressLines: ['<b>Unit 1</b>', PICKER_ROW_LOCALITY_LINE] })
       ],
-      copy
+      copy,
+      { withViewLinks: true }
     )
 
     expect(textLinesOf(addressCell.html)).toEqual([
@@ -62,8 +64,8 @@ describe('#pickerTableRows', () => {
     expect(fragmentOf(addressCell.html).querySelector('b')).toBeNull()
   })
 
-  it("Should end each row with a 'View' link to the address, named for screen readers by the address's name", () => {
-    const [row] = pickerTableRows([pickerRow()], copy)
+  it("Should end each row with a 'View' link to the address, named for screen readers by the address's name, when linking to the address book", () => {
+    const [row] = pickerTableRows([pickerRow()], copy, { withViewLinks: true })
 
     const cell = fragmentOf(row.at(-1).html)
     const [link] = cell.children
@@ -76,8 +78,19 @@ describe('#pickerTableRows', () => {
     )
   })
 
+  it('Should end each row with its country when not linking to the address book', () => {
+    const [row] = pickerTableRows([pickerRow()], copy, {
+      withViewLinks: false
+    })
+
+    expect(row).toHaveLength(4)
+    expect(row.at(-1)).toEqual({ text: 'Portugal' })
+  })
+
   it('Should leave the radio unchecked for an address that is not the selected one', () => {
-    const [[selectCell]] = pickerTableRows([pickerRow()], copy)
+    const [[selectCell]] = pickerTableRows([pickerRow()], copy, {
+      withViewLinks: true
+    })
 
     expect(fragmentOf(selectCell.html).querySelector('input').checked).toBe(
       false

@@ -31,6 +31,8 @@ const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+const linksToInsAddressBook = () => !isStubMode()
+
 const render = async (
   request,
   h,
@@ -78,7 +80,8 @@ const render = async (
         error,
         found,
         selected,
-        changing
+        changing,
+        withViewLinks: linksToInsAddressBook()
       },
       copy
     )
@@ -86,7 +89,8 @@ const render = async (
 }
 
 const issueAddAddressLink = (request, h, journey, party) =>
-  !isStubMode() && issueInsAddAddressUrl(request, h, journey.journeyId, party)
+  linksToInsAddressBook() &&
+  issueInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)

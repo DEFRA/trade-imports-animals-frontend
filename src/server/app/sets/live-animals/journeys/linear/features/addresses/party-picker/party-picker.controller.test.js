@@ -33,6 +33,7 @@ const ALPINE_DAIRY_ID = 'alpine-dairy'
 const ALPINE_DAIRY_NAME = 'Alpine Dairy GmbH'
 const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
+const JUTLAND_SWINE_ID = 'jutland-swine-aps'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
@@ -131,7 +132,7 @@ describe('GET /consignors/select', () => {
     )
 
     expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
-    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, 'jutland-swine-aps'])
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
     expect(picker.pagination).toBeNull()
   })
 
@@ -476,8 +477,27 @@ describe('View link to the INS address book', () => {
 
   const firstViewHrefOf = (result) => pickerFrom(result).rows[0].viewHref
 
+  const addressBookListing = (items) =>
+    addressBookAnswering((request) =>
+      request.url.includes(`/addresses/${ALPINE_DAIRY_ID}`)
+        ? {
+            body: JSON.stringify(
+              listedAddress(ALPINE_DAIRY_ID, ALPINE_DAIRY_NAME)
+            )
+          }
+        : addressBookPage(items)
+    )
+
+  const twoPagesOfTraders = Array.from({ length: 7 }, (_, index) =>
+    listedAddress(`trader-${index + 1}`, `Trader ${index + 1}`)
+  )
+
   it('Should link each row to its INS address page, returning to this picker with its search and selection', async () => {
     setInsFrontendBaseUrl('http://ins.example/')
+    addressBookListing([
+      listedAddress(DANISH_MEAT_ID, DANISH_MEAT_NAME),
+      listedAddress(JUTLAND_SWINE_ID, 'Jutland Swine ApS')
+    ])
 
     const result = await driveHandler(getConsignor, {
       query: { q: 'denmark', selected: ALPINE_DAIRY_ID }
@@ -487,12 +507,13 @@ describe('View link to the INS address book', () => {
 
     expect(pickerFrom(result).rows.map((row) => row.viewHref)).toEqual([
       insViewAddressUrl(DANISH_MEAT_ID, pickerReturn),
-      insViewAddressUrl('jutland-swine-aps', pickerReturn)
+      insViewAddressUrl(JUTLAND_SWINE_ID, pickerReturn)
     ])
   })
 
   it('Should return to the page being shown with its chosen address, still changing, when the picker was opened to change an answer', async () => {
     setInsFrontendBaseUrl('http://ins.example')
+    addressBookListing(twoPagesOfTraders)
 
     const result = await driveHandler(getConsignor, {
       query: { page: '2', selected: ALPINE_DAIRY_ID },
@@ -501,10 +522,29 @@ describe('View link to the INS address book', () => {
 
     expect(firstViewHrefOf(result)).toBe(
       insViewAddressUrl(
-        pickerFrom(result).rows[0].id,
+        'trader-6',
         `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&selected=${ALPINE_DAIRY_ID}&change=1`
       )
     )
+  })
+
+  it('Should end each row at its country, with no View link, in stub mode', async () => {
+    const result = await driveHandler(getConsignor)
+
+    const picker = pickerFrom(result)
+
+    expect(picker.withViewLinks).toBe(false)
+    expect(picker.rows[0]).toEqual({
+      id: picker.rows[0].id,
+      idPrefix: 'party',
+      name: picker.rows[0].name,
+      addressLines: picker.rows[0].addressLines,
+      country: picker.rows[0].country,
+      checked: false
+    })
+    expect(picker.tableRows[0].at(-1)).toEqual({
+      text: picker.rows[0].country
+    })
   })
 })
 

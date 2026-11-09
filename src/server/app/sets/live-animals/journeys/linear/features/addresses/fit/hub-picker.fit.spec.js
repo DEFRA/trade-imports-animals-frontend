@@ -18,7 +18,6 @@ import {
   values,
   withinFullWidthColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -555,7 +554,7 @@ test.describe('party picker details and pagination', () => {
     await openPartyPicker(page, CONSIGNOR)
   })
 
-  test('picker spans the full content column and shows an address on separate lines with town and postcode together, with a View link to it in the INS address book returning to this picker', async ({
+  test('picker spans the full content column and shows an address on separate lines with town and postcode together, ending each row at its country with no View link in stub mode', async ({
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
@@ -563,20 +562,19 @@ test.describe('party picker details and pagination', () => {
     )
     await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
     const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
-    const pickerReturn = `${new URL(page.url()).pathname}?page=1`
 
     const addressCell = addressRow.getByRole('cell').nth(2)
     await expect
       .poll(() => addressCell.evaluate((cell) => cell.innerText))
       .toBe('18 Dockside Road\nLondon, E14 9GE')
-    await expect(
-      addressRow.getByRole('link', {
-        name: `${copy.picker.view} Tech Imports Ltd`,
-        exact: true
-      })
-    ).toHaveAttribute(
-      'href',
-      insViewAddressUrl('tech-imports-ltd', pickerReturn)
+    await expect(page.getByRole('columnheader')).toHaveText([
+      copy.picker.table.selectHidden,
+      copy.picker.table.name,
+      copy.picker.table.address,
+      copy.picker.table.country
+    ])
+    await expect(addressRow.getByRole('cell').last()).toHaveText(
+      'United Kingdom'
     )
   })
 
