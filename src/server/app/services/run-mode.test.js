@@ -124,7 +124,20 @@ describe('countries service — real mode', () => {
     expect(
       await countries.countryAndSubdivisionOptionsNamedWithCountry()
     ).toEqual([{ value: 'ZZ', text: 'Zedland' }])
+  })
+
+  it('Should order the United Kingdom among the served countries by label, not at the front', async () => {
+    switchToRealMode()
+    stubFetch(
+      okOnlyForBlock('GBNAG_SPS_EX', [
+        { code: 'AA', name: 'Aland' },
+        { code: 'ZZ', name: 'Zedland' }
+      ])
+    )
+    const countries = await import('./countries/index.js')
+
     expect(await countries.addressCountries()).toEqual([
+      'Aland',
       'United Kingdom',
       'Zedland'
     ])

@@ -6,21 +6,28 @@ import { addressSummary } from '../../addresses/address-summary.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { containsTerm } from '../../../../../../../../../client/common/helpers/search-fold.js'
 import { renderMacro } from '../../../../../../../shared/render-macro.js'
+import { buildInsFrontendUrl } from '../../../../../../../../common/helpers/frontend-url.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 const copy = copyFor({ en, cy }).transporters
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const STATUS_CLASSES = {
   [APPROVED]: 'govuk-tag--green',
   [NEW]: 'govuk-tag--magenta'
 }
 
+const approvalNumberTextOf = (record) =>
+  record.approvalNumber ?? sharedCopy.notApplicable
+
 const searchTextOf = (record) =>
   [
     record.name,
     addressSummary(record.address),
-    record.approvalNumber,
+    approvalNumberTextOf(record),
     copy.types[record.type],
     copy.statuses[record.status]
   ]
@@ -43,7 +50,7 @@ export const transporterRows = (records, { selectedId }) =>
     idPrefix: index === 0 ? 'transporter' : `transporter-${index + 1}`,
     name: record.name,
     addressText: addressSummary(record.address),
-    approvalNumber: record.approvalNumber ?? '',
+    approvalNumberText: approvalNumberTextOf(record),
     type: copy.types[record.type],
     status: {
       text: copy.statuses[record.status],
@@ -56,16 +63,36 @@ export const transporterRows = (records, { selectedId }) =>
 const CELLS_TEMPLATE =
   'live-animals/journeys/linear/features/transport/transporters/_cells.njk'
 
+/** Every row of this list is a transporter, so its details link goes to the
+ * address book's transporter page rather than its address page. */
+const detailsHrefFor = (id, returnUrl) => {
+  const params = new URLSearchParams({ return: returnUrl })
+  return buildInsFrontendUrl(
+    `/address-book/transporter/${encodeURIComponent(id)}?${params.toString()}`
+  )
+}
+
 /** One table row of cells per transporter row, searchable by its search text. */
-export const transporterTableRows = (rows) =>
+export const transporterTableRows = (rows, { returnUrl }) =>
   rows.map((row) => [
     {
       html: renderMacro(CELLS_TEMPLATE, 'transporterSelectCell', row, copy),
       attributes: { 'data-search-text': row.searchText }
     },
-    { text: row.name },
-    { text: row.addressText },
-    { text: row.approvalNumber },
-    { text: row.type },
-    { html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row) }
+    { text: row.name, attributes: { 'data-search-words': '' } },
+    { text: row.addressText, attributes: { 'data-search-words': '' } },
+    { text: row.approvalNumberText, attributes: { 'data-search-words': '' } },
+    { text: row.type, attributes: { 'data-search-words': '' } },
+    {
+      html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row),
+      attributes: { 'data-search-words': '' }
+    },
+    {
+      html: renderMacro(
+        CELLS_TEMPLATE,
+        'transporterDetailsCell',
+        { ...row, detailsHref: detailsHrefFor(row.id, returnUrl) },
+        copy
+      )
+    }
   ])

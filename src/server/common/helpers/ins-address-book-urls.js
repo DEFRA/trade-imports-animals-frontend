@@ -1,4 +1,4 @@
-import { buildInsFrontendUrl } from './ins-frontend-url.js'
+import { buildInsFrontendUrl } from './frontend-url.js'
 
 const ADDRESS_BOOK_PATH = '/address-book'
 

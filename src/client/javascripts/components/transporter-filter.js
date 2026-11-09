@@ -5,7 +5,7 @@ const rowOf = (searchTextCell) => searchTextCell.closest('tr')
 
 const wordsTargetOf = (cell) => cell.querySelector('.govuk-tag') ?? cell
 
-const wordCellsOf = (row) => [...row.cells].slice(1)
+const wordCellsOf = (row) => [...row.querySelectorAll('[data-search-words]')]
 
 const readRows = ($module) =>
   [...$module.querySelectorAll('[data-search-text]')].map((searchTextCell) => {

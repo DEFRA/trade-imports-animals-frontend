@@ -10,8 +10,6 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  <p class="govuk-body">{{ copy.intro }}</p>
-
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -95,8 +93,11 @@
       errorMessage: errors.phone and { text: errors.phone }
     }) }}
 
-    {# The private arm of the add route — reached from the type chooser, not
-       from the hub, so it ends with the primary alone. #}
-    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
+    {{ saveActions({
+      hubHref: hubHref,
+      copy: sharedCopy.saveActions,
+      showReturnControls: false,
+      secondary: { text: copy.cancelAndReturnToDashboard, name: "action", value: "cancel" }
+    }) }}
   </form>
 {% endblock %}

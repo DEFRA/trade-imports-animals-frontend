@@ -77,16 +77,23 @@ The `address-book` client keeps three facts out of its code:
 
 [`transporters`](../services/transporters/index.js) holds the transporters the
 service ships and the ones an organisation adds for itself. The address book
-has no field for a transporter's approval number, so neither list lives there.
+is the store for an organisation's own transporters: `partiesFor` reads them
+from it through a client and stub in the shape `services/address-book/` sets,
+ahead of the shipped list; `saveTransporter` writes a journey form's save to
+it. The address book carries a transporter's approval number; the journey's
+own record never persists it outside that write.
 
-- The shipped list is a local fixture, read synchronously.
-- An organisation's added transporters are held in process memory, keyed on
-  the organisation and never on the user or session. They do not survive a
-  restart and are not shared between instances until a transporter register
-  service exists; the pages only call `partiesFor` and `rememberTransporter`,
-  so that service can replace the module without changing them.
+- The shipped list is the only local fixture left, read synchronously.
+- A transporter the organisation added carries no approval status: the
+  address book stores none, so the journey list's Status tag reads the
+  not-yet-approved word for every added transporter.
 - The two commercial fixtures carry status `APPROVED` as a placeholder: no
-  register has said what status they hold.
+  ruling has said what status they hold.
+- A commercial transporter's country is fixed to Northern Ireland; its stored
+  code and its display word live together in
+  [`services/transporters/commercial-country.js`](../services/transporters/commercial-country.js),
+  read by the commercial form's refusal, its record and the mapping that
+  sends a transporter to the address book.
 
 ## Persistence adapters
 
@@ -107,15 +114,16 @@ The live-animals commodities service is documented in the
 
 ## Configuration
 
-| Convict key                             | Env var                             | Default                                                       |
-| --------------------------------------- | ----------------------------------- | ------------------------------------------------------------- |
-| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://localhost:8085`                                       |
-| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`  | `http://localhost:8086`                                       |
-| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`    | `http://localhost:8089`                                       |
-| `cdpUploader.baseUrl`                   | `CDP_UPLOADER_BASE_URL`             | `http://localhost:7337`                                       |
-| `cdpUploader.scanResultCallbackUrl`     | `CDP_UPLOADER_CALLBACK_URL`         | `http://localhost:8085/document-uploads/pending/scan-results` |
-| `cdpUploader.documentsBucket`           | `CDP_UPLOADER_DOCUMENTS_BUCKET`     | `trade-imports-animals-documents`                             |
-| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002`                                       |
+| Convict key                             | Env var                              | Default                                                       |
+| --------------------------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL`  | `http://localhost:8085`                                       |
+| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`   | `http://localhost:8086`                                       |
+| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`     | `http://localhost:8089`                                       |
+| `cdpUploader.baseUrl`                   | `CDP_UPLOADER_BASE_URL`              | `http://localhost:7337`                                       |
+| `cdpUploader.scanResultCallbackUrl`     | `CDP_UPLOADER_CALLBACK_URL`          | `http://localhost:8085/document-uploads/pending/scan-results` |
+| `cdpUploader.documentsBucket`           | `CDP_UPLOADER_DOCUMENTS_BUCKET`      | `trade-imports-animals-documents`                             |
+| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`     | `http://localhost:3002`                                       |
+| `tradeImportsAnimalsFrontend.baseUrl`   | `TRADE_IMPORTS_ANIMALS_FRONTEND_URL` | `http://localhost:3000`                                       |
 
 `tradeImportsInsFrontend.baseUrl` is browser-visible (the service navigation's
 Address book link, the address handshake, the party pickers' 'View' links, which
@@ -124,7 +132,14 @@ against its animals frontend URL, and the origin page's Back link to the
 INS type question, which carries the notification's reference as
 `notification-id` and its type as `current-notification-type`), so under the
 workspace stack it stays `localhost` while the backend, reference-data and address-book URLs use
-`host.docker.internal`.
+`host.docker.internal`. `tradeImportsAnimalsFrontend.baseUrl` is likewise browser-visible: it
+is this service's own origin, used to build the `return` value the INS address
+book is handed when a trader opens a transporter's details from the
+transporter list. INS honours that return only when its origin matches the one
+INS is configured with for this frontend, so the key has to be set per
+environment to the origin the trader's browser uses — left at its localhost
+default in a deployed environment, the return is refused and Back lands on the
+address book list instead of the transporter list.
 
 `cdpUploader.scanResultCallbackUrl` is resolved by cdp-uploader itself, not by
 this service or the browser, so it has to name the backend from inside the

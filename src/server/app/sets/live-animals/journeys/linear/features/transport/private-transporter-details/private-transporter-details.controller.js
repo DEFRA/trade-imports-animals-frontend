@@ -4,39 +4,32 @@ import * as state from '../../../../../../../engine/index.js'
 import {
   compose,
   maxText,
-  oneOf,
+  requiredMaxText,
+  requiredOneOf,
   validate
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import {
-  NEW,
   PRIVATE,
-  rememberTransporter
+  saveTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import { WIRE_PRIVATE } from '../../../../../../../services/transporters/wire-types.js'
 import {
   privateTransporterDetailsPage as page,
   transporterAddPage
 } from '../page.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
+import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
+import { storedEnteredTransporter } from '../transporter-add-session.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
 const view = `${TEMPLATES}/features/transport/private-transporter-details/private-transporter-details`
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
-
-const MANDATORY_MESSAGES = {
-  nameOrOrganisationName: copy.errors.nameRequired,
-  addressLine1: copy.errors.addressLine1Required,
-  townOrCity: copy.errors.townOrCityRequired,
-  postcode: copy.errors.postcodeRequired,
-  country: copy.errors.countryRequired,
-  email: copy.errors.emailRequired,
-  phone: copy.errors.telephoneRequired
-}
 
 const FIELD_ORDER = [
   'nameOrOrganisationName',
@@ -58,46 +51,49 @@ const MAX_EMAIL_LENGTH = 254
 
 const fields = async () =>
   compose(
-    maxText(
-      'nameOrOrganisationName',
-      MAX_NAME_LENGTH,
-      copy.errors.nameMaxLength
-    ),
-    maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
+    requiredMaxText('nameOrOrganisationName', MAX_NAME_LENGTH, {
+      required: copy.errors.nameRequired,
+      maxLength: copy.errors.nameMaxLength
+    }),
+    requiredMaxText('addressLine1', MAX_NAME_LENGTH, {
+      required: copy.errors.addressLine1Required,
+      maxLength: copy.errors.addressLine1MaxLength
+    }),
     maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
-    maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
+    requiredMaxText('townOrCity', MAX_TOWN_LENGTH, {
+      required: copy.errors.townOrCityRequired,
+      maxLength: copy.errors.townOrCityMaxLength
+    }),
     maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-    maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
-    oneOf(
-      'country',
-      await countries.addressCountries(),
-      copy.errors.countryFromList
-    ),
-    maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-    maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+    requiredMaxText('postcode', MAX_POSTCODE_LENGTH, {
+      required: copy.errors.postcodeRequired,
+      maxLength: copy.errors.postcodeMaxLength
+    }),
+    requiredOneOf('country', await countries.addressCountries(), {
+      required: copy.errors.countryRequired,
+      only: copy.errors.countryFromList
+    }),
+    requiredMaxText('email', MAX_EMAIL_LENGTH, {
+      required: copy.errors.emailRequired,
+      maxLength: copy.errors.emailMaxLength
+    }),
+    requiredMaxText('phone', MAX_PHONE_LENGTH, {
+      required: copy.errors.telephoneRequired,
+      maxLength: copy.errors.telephoneMaxLength
+    })
   )
 
-const recordProvided = (values) =>
-  FIELD_ORDER.some((field) => values[field] !== '')
-
-const missingMandatoryErrors = (values) => {
-  if (!recordProvided(values)) {
-    return {}
-  }
-  return Object.fromEntries(
-    Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
-  )
-}
-
-const countryItems = async (selected) => [
-  { value: '', text: copy.countrySelectText },
-  { text: '──────────', disabled: true },
-  ...(await countries.addressCountries()).map((name) => ({
+const countryItems = async (heldCountry) => {
+  const offered = await countries.addressCountries()
+  const openCountry = offered.includes(heldCountry)
+    ? heldCountry
+    : countries.UNITED_KINGDOM
+  return offered.map((name) => ({
     value: name,
     text: name,
-    selected: name === selected
+    selected: name === openCountry
   }))
-]
+}
 
 const render = async (
   request,
@@ -114,7 +110,8 @@ const render = async (
       ),
       journey,
       page,
-      recoverableError
+      recoverableError,
+      showJourneyStrip: false
     }),
     copy,
     values,
@@ -123,15 +120,15 @@ const render = async (
     countryItems: await countryItems(values.country)
   })
 
-const addressValues = (saved) => ({
-  addressLine1: saved?.address?.addressLine1 ?? '',
-  addressLine2: saved?.address?.addressLine2 ?? '',
-  townOrCity: saved?.address?.townOrCity ?? '',
-  county: saved?.address?.county ?? '',
-  postcode: saved?.address?.postcode ?? '',
-  country: saved?.address?.country ?? '',
-  email: saved?.address?.email ?? '',
-  phone: saved?.address?.phone ?? ''
+const addressValues = (address) => ({
+  addressLine1: address?.addressLine1 ?? '',
+  addressLine2: address?.addressLine2 ?? '',
+  townOrCity: address?.townOrCity ?? '',
+  county: address?.county ?? '',
+  postcode: address?.postcode ?? '',
+  country: address?.country ?? '',
+  email: address?.email ?? '',
+  phone: address?.phone ?? ''
 })
 
 const isCountryStale = async (name) => {
@@ -142,15 +139,27 @@ const isCountryStale = async (name) => {
   return !offered.has(name)
 }
 
-const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const saved = answers.privateTransporter
-  const address = addressValues(saved)
-  const staleCountry = await isCountryStale(address.country)
-  const values = {
+const valuesOfSavedPrivateTransporter = (saved) => {
+  const address = addressValues(saved?.address)
+  return {
     nameOrOrganisationName: saved?.name ?? '',
-    ...address,
-    country: staleCountry ? '' : address.country
+    ...address
+  }
+}
+
+const get = async (request, h) => {
+  const redirect = await redirectUnlessOwnTransporterType(request, h, PRIVATE)
+  if (redirect) {
+    return redirect
+  }
+  const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
+  const shownValues =
+    storedEnteredTransporter(flowOnlyAnswers, PRIVATE) ??
+    valuesOfSavedPrivateTransporter(answers.privateTransporter)
+  const staleCountry = await isCountryStale(shownValues.country)
+  const values = {
+    ...shownValues,
+    country: staleCountry ? '' : shownValues.country
   }
   const errors = staleCountry
     ? { country: copy.errors.countryNoLongerAvailable }
@@ -163,13 +172,12 @@ const trimmedValues = (payload) =>
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
 
-const formErrors = async (payload, values) => {
+const formErrors = async (payload) => {
   const { errors } = validate(await fields(), payload)
-  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
-    FIELD_ORDER.filter((field) => merged[field]).map((field) => [
+    FIELD_ORDER.filter((field) => errors?.[field]).map((field) => [
       field,
-      merged[field]
+      errors[field]
     ])
   )
 }
@@ -193,20 +201,20 @@ const privateTransporterRecord = async (values) => ({
   privateTransporter: await privateTransporter(values)
 })
 
-const remember = async (request, values) =>
-  rememberTransporter(organisationIdOf(request), {
-    ...(await privateTransporter(values)),
-    type: PRIVATE,
-    status: NEW
-  })
+const saveTransporterToAddressBook = async (request, values) =>
+  saveTransporter(
+    organisationIdOf(request),
+    await privateTransporter(values),
+    WIRE_PRIVATE
+  )
 
 const post = saveTransporterDetails({
+  transporterType: PRIVATE,
   trimmedValues,
   formErrors,
-  recordProvided,
   record: privateTransporterRecord,
   render,
-  remember
+  saveTransporterToAddressBook
 })
 
 export const routes = kit.pageRoutes(page, { get, post })

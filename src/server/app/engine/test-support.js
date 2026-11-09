@@ -464,10 +464,10 @@ export const useReferenceDataServing = () => {
 }
 
 /** Puts the address book on the network boundary: every request to its
- * `/addresses` paths gets `addressResponse` (or, for a function, what it
- * returns for the request) and the country list gets the United Kingdom,
- * Switzerland and the United States. Call it inside a test; pair it with
- * `resetMocksAndConfigAfterTests()` in the describe. */
+ * `/addresses` or `/transporters` paths gets `addressResponse` (or, for a
+ * function, what it returns for the request) and the country list gets the
+ * United Kingdom, Switzerland and the United States. Call it inside a test;
+ * pair it with `resetMocksAndConfigAfterTests()` in the describe. */
 export const addressBookAnswering = (addressResponse) => {
   const countryList = JSON.stringify([
     { code: 'GB', name: 'United Kingdom' },
@@ -478,10 +478,12 @@ export const addressBookAnswering = (addressResponse) => {
     typeof addressResponse === 'function'
       ? addressResponse(request)
       : addressResponse
+  const isAddressBookResource = (url) =>
+    url.includes('/addresses') || url.includes('/transporters')
   fetchMock.enableMocks()
   config.set('stubMode', false)
   fetchMock.mockResponse(async (request) =>
-    request.url.includes('/addresses')
+    isAddressBookResource(request.url)
       ? answerAddresses(request)
       : { body: countryList }
   )

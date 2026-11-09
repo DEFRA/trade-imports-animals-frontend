@@ -17,3 +17,7 @@
 {% macro transporterStatusCell(row) %}
   {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
 {% endmacro %}
+
+{% macro transporterDetailsCell(row, copy) %}
+  <a class="govuk-link" href="{{ row.detailsHref }}">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ row.name }}</span></a>
+{% endmacro %}

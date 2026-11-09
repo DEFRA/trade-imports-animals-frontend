@@ -13,12 +13,15 @@ import {
   transporterTableRows
 } from './rows.js'
 
+const COMMERCIAL_APPROVAL_NUMBER = 'ES-T2-45001294'
+const NOT_APPLICABLE = 'Not applicable'
+
 const commercial = {
   id: 'garcia-livestock-transport',
   type: COMMERCIAL,
   status: APPROVED,
   name: 'García Livestock Transport SL',
-  approvalNumber: 'ES-T2-45001294',
+  approvalNumber: COMMERCIAL_APPROVAL_NUMBER,
   address: {
     addressLine1: '43 East Hague Extension',
     country: 'Switzerland'
@@ -51,6 +54,9 @@ const newPrivateRecord = {
 }
 
 const records = [commercial, privateRecord]
+
+const RETURN_URL =
+  'http://animals.example/live-animals/notifications/abc/transporters'
 
 const names = (matches) => matches.map((record) => record.name)
 
@@ -109,7 +115,7 @@ describe('#matchingTransporters', () => {
     ])
   })
 
-  it('Should keep every match, in the order the register lists them', () => {
+  it('Should keep every match, in the order the list holds them', () => {
     expect(names(matchingTransporters(records, 'livestock'))).toEqual([
       commercial.name,
       privateRecord.name
@@ -140,6 +146,18 @@ describe('#matchingTransporters', () => {
       privateRecord.name
     ])
   })
+
+  it('Should match transporters with no approval number by the label shown in that column, and leave a real approval number matching only its own record', () => {
+    const everyRecord = [...records, newPrivateRecord]
+
+    expect(names(matchingTransporters(everyRecord, NOT_APPLICABLE))).toEqual([
+      privateRecord.name,
+      newPrivateRecord.name
+    ])
+    expect(names(matchingTransporters(everyRecord, 'es-t2-45001294'))).toEqual([
+      commercial.name
+    ])
+  })
 })
 
 describe('#transporterRows', () => {
@@ -151,14 +169,24 @@ describe('#transporterRows', () => {
     )
   })
 
-  it('Should leave the approval number out of the search text of a record without one', () => {
+  it('Should carry the Not applicable label in the search text of a record without an approval number', () => {
     const [row] = transporterRows([newPrivateRecord], {
       selectedId: null
     })
 
     expect(row.searchText).toBe(
-      'Dunmore Haulage 3 Mill Lane, Dunmore, Ireland Private New'
+      'Dunmore Haulage 3 Mill Lane, Dunmore, Ireland Not applicable Private New'
     )
+  })
+
+  it('Should show the record’s own approval number in its column, and the Not applicable label for a record with none', () => {
+    const [withNumber] = transporterRows([commercial], { selectedId: null })
+    const [withoutNumber] = transporterRows([newPrivateRecord], {
+      selectedId: null
+    })
+
+    expect(withNumber.approvalNumberText).toBe(COMMERCIAL_APPROVAL_NUMBER)
+    expect(withoutNumber.approvalNumberText).toBe(NOT_APPLICABLE)
   })
 })
 
@@ -179,9 +207,11 @@ describe('#shownCountMessages', () => {
 describe('#transporterTableRows', () => {
   it('Should give each transporter a select radio, its plain facts and a status tag', () => {
     const [cells] = transporterTableRows(
-      transporterRows([commercial], { selectedId: commercial.id })
+      transporterRows([commercial], { selectedId: commercial.id }),
+      { returnUrl: RETURN_URL }
     )
-    const [selectCell, name, address, approvalNumber, type, statusCell] = cells
+    const [selectCell, name, address, approvalNumberCell, type, statusCell] =
+      cells
 
     expect(selectCell.attributes).toEqual({
       'data-search-text':
@@ -191,21 +221,60 @@ describe('#transporterTableRows', () => {
     expect(selectCell.html).toContain('value="garcia-livestock-transport"')
     expect(selectCell.html).toContain('checked')
     expect(selectCell.html).toContain('Select García Livestock Transport SL')
-    expect([name, address, approvalNumber, type]).toEqual([
-      { text: 'García Livestock Transport SL' },
-      { text: '43 East Hague Extension, Switzerland' },
-      { text: 'ES-T2-45001294' },
-      { text: 'Commercial' }
+    expect([name, address, approvalNumberCell, type]).toEqual([
+      {
+        text: 'García Livestock Transport SL',
+        attributes: { 'data-search-words': '' }
+      },
+      {
+        text: '43 East Hague Extension, Switzerland',
+        attributes: { 'data-search-words': '' }
+      },
+      {
+        text: COMMERCIAL_APPROVAL_NUMBER,
+        attributes: { 'data-search-words': '' }
+      },
+      { text: 'Commercial', attributes: { 'data-search-words': '' } }
     ])
     expect(statusCell.html).toContain('govuk-tag--green')
     expect(statusCell.html).toContain('Approved')
+    expect(statusCell.attributes).toEqual({ 'data-search-words': '' })
   })
 
   it('Should leave the radio unchecked for a transporter that is not the selected one', () => {
     const [[selectCell]] = transporterTableRows(
-      transporterRows([privateRecord], { selectedId: commercial.id })
+      transporterRows([privateRecord], { selectedId: commercial.id }),
+      { returnUrl: RETURN_URL }
     )
 
     expect(selectCell.html).not.toContain('checked')
+  })
+
+  it('Should show the Not applicable label in the approval-number cell for a record with no approval number', () => {
+    const [[, , , approvalNumberCell]] = transporterTableRows(
+      transporterRows([newPrivateRecord], { selectedId: null }),
+      { returnUrl: RETURN_URL }
+    )
+
+    expect(approvalNumberCell).toEqual({
+      text: NOT_APPLICABLE,
+      attributes: { 'data-search-words': '' }
+    })
+  })
+
+  it('Should give each row a details link to the address book, carrying the id and the given return URL', () => {
+    const [[, , , , , , detailsCell]] = transporterTableRows(
+      transporterRows([privateRecord], { selectedId: null }),
+      { returnUrl: RETURN_URL }
+    )
+
+    expect(detailsCell.html).toContain(
+      `/address-book/transporter/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
+    )
+    expect(detailsCell.html).toContain('View details')
+    expect(detailsCell.html).toContain(
+      `<span class="govuk-visually-hidden"> ${privateRecord.name}</span>`
+    )
+    expect(detailsCell.attributes).toBeUndefined()
   })
 })

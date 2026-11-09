@@ -96,7 +96,7 @@ export const copy = {
     title: 'Transporter details',
     intro:
       'This is the person or company responsible for transporting the consignment.',
-    legend: 'Select a transporter',
+    resultsHeading: 'Select a transporter',
     guidance: {
       authorisationLead:
         'Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:',
@@ -127,9 +127,11 @@ export const copy = {
       address: 'Address',
       approvalNumber: 'Approval number',
       type: 'Type',
-      status: 'Status'
+      status: 'Status',
+      actionHidden: 'Action'
     },
     selectRowPrefix: 'Select',
+    viewDetails: 'View details',
     search: {
       label: 'Search',
       hint: 'Name, address or approval number',
@@ -139,6 +141,10 @@ export const copy = {
     shownCount: (count) =>
       `${count} ${count === 1 ? 'transporter' : 'transporters'} shown`,
     add: 'Add a transporter',
+    addedBanner: {
+      title: 'Success',
+      text: (name) => `${name} transporter added`
+    },
     errors: {
       transporterRequired: 'Select a transporter from the list',
       transporterNoLongerAvailable:
@@ -147,9 +153,9 @@ export const copy = {
   },
   transporterAdd: {
     title: 'Choose a transporter type',
-    legend: 'What type of transporter will move the animals?',
     warning:
-      'Before you add this transporter, please ensure you have already searched for it first.',
+      'Check the transporter list before adding new transporters to avoid duplicates.',
+    continueButton: 'Continue',
     options: {
       Private: {
         text: 'Private transporter'
@@ -158,12 +164,17 @@ export const copy = {
         text: 'Commercial',
         hint: 'This can only be a commercial transporter from Northern Ireland.'
       }
+    },
+    errors: {
+      transporterTypeRequired: 'Select a transporter type'
     }
   },
   commercialTransporterDetails: {
-    title: 'Add commercial transporter',
+    title: 'Add a commercial transporter',
+    guidanceBannerTitle: 'Important',
     guidanceTitle: 'Help with transporter authorisation',
     contactHeading: 'Enter contact details',
+    cancelAndReturnToDashboard: 'Cancel and return to dashboard',
     fields: {
       approvalNumber: 'Transporter authorisation number',
       nameOrOrganisationName: 'Name or organisation name',
@@ -171,7 +182,7 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postcode: 'Postcode or zip code',
+      postcode: 'Postcode or Zip code',
       country: 'Country',
       email: 'Email address',
       phone: 'Phone number'
@@ -179,11 +190,11 @@ export const copy = {
     telephoneHint: 'For international numbers include the country code',
     country: 'Northern Ireland',
     errors: {
-      approvalNumberRequired: 'Enter the transporter authorisation number',
+      approvalNumberRequired: 'Enter a transporter authorisation number',
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postcodeRequired: 'Enter a postcode or zip code',
+      postcodeRequired: 'Enter a postcode or Zip code',
       emailRequired: 'Enter an email address',
       telephoneRequired: 'Enter a phone number',
       approvalNumberMaxLength:
@@ -193,7 +204,7 @@ export const copy = {
       addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
-      postcodeMaxLength: 'Postcode or zip code must be 12 characters or less',
+      postcodeMaxLength: 'Postcode or Zip code must be 12 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       countryFixed:
@@ -201,10 +212,9 @@ export const copy = {
     }
   },
   privateTransporterDetails: {
-    title: 'Add private transporter',
-    intro:
-      'Enter the name and address of the private transporter moving the animals.',
+    title: 'Add a private transporter',
     contactHeading: 'Enter contact details',
+    cancelAndReturnToDashboard: 'Cancel and return to dashboard',
     fields: {
       nameOrOrganisationName: 'Name or organisation name',
       addressLine1: 'Address line 1',
@@ -217,7 +227,6 @@ export const copy = {
       phone: 'Phone number'
     },
     telephoneHint: 'For international numbers include the country code',
-    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',

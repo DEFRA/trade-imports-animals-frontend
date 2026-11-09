@@ -1,32 +1,18 @@
-import { config } from '../../../../config/config.js'
 import { addressBookCountryName } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
-import { traceHeaders } from '../http/trace-headers.js'
-import { BackendRequestError } from '../persistence/records/errors.js'
-
-const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
-
-const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
+import {
+  addressBookHeaders,
+  addressBookResourceUrl,
+  throwOnAddressBookError
+} from '../address-book-request.js'
 
 /** The page size the address book serves when the request names none. */
 export const API_PAGE_SIZE = 25
 
-const addressesUrl = (orgId, addressId) => {
-  if (!orgId) {
-    throw new Error(
-      'Cannot reach the address book without an organisation: the signed-in session carries none'
-    )
-  }
-  const base = `${addressBookUrl()}/organisation/${encodeURIComponent(orgId)}/addresses`
-  return addressId ? `${base}/${encodeURIComponent(addressId)}` : base
-}
+const addressesUrl = (orgId, addressId) =>
+  addressBookResourceUrl('addresses', orgId, addressId)
 
-const headers = (orgId) => ({
-  ...traceHeaders('application/json'),
-  [ORGANISATION_ID_HEADER]: orgId
-})
-
-const failed = (what, response) => new BackendRequestError(what, response)
+const headers = addressBookHeaders
 
 const toRecord = async (operator) => ({
   id: operator.id,
@@ -58,9 +44,7 @@ export const listAddresses = async (orgId, { page = 1, query } = {}) => {
     headers: headers(orgId)
   })
 
-  if (!response.ok) {
-    throw failed('list addresses', response)
-  }
+  throwOnAddressBookError('list addresses', response)
 
   const body = await response.json()
   return {
@@ -82,9 +66,7 @@ export const getAddress = async (orgId, addressId) => {
   if (response.status === HTTP_STATUS_NOT_FOUND) {
     return undefined
   }
-  if (!response.ok) {
-    throw failed('get address', response)
-  }
+  throwOnAddressBookError('get address', response)
 
   return toRecord(await response.json())
 }

@@ -21,6 +21,7 @@
     hubHref                (string)  where Cancel and return to overview goes
     copy                   (object)  the shared save-actions copy
     primary                (object)  optional govukButton params for the primary button
+    secondary              (object)  optional { text, name, value } for a secondary submit beside the primary
     showReturnControls     (boolean) offer the return controls; default true
     amend                  (object)  the amend actions, when amending
     hubExitWhileAmending   (boolean) keep Save and return to overview while amending; default true
@@ -29,12 +30,19 @@
 {% macro saveActions(params) %}
   {% set copy = params.copy %}
   {% set primary = params.primary %}
+  {% set secondary = params.secondary %}
   {% set amend = params.amend %}
   {% set uploadPath = params.uploadPath %}
   {% set showReturnControls = params.showReturnControls if params.showReturnControls is defined else true %}
   {% set hubExitWhileAmending = params.hubExitWhileAmending if params.hubExitWhileAmending is defined else true %}
   {% set fileAttributes = { formaction: uploadPath, formenctype: "multipart/form-data" } if uploadPath else {} %}
   {% set primaryButton = withAttributes(primary or { text: copy.saveAndContinue }, fileAttributes) %}
+  {% set secondaryButton = {
+    text: secondary.text,
+    classes: "govuk-button--secondary",
+    name: secondary.name,
+    value: secondary.value
+  } if secondary %}
   {% set amendReturnButton = withAttributes({
     text: copy.saveAndReturn,
     name: amend.returnChoice.name,
@@ -62,6 +70,9 @@
       {{ govukButton(primaryButton) }}
       {% if showReturnControls %}
         {{ govukButton(hubExitButton) }}
+      {% endif %}
+      {% if secondary %}
+        {{ govukButton(secondaryButton) }}
       {% endif %}
     {% endif %}
   </div>
