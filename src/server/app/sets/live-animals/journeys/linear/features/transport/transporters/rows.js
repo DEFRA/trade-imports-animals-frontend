@@ -2,7 +2,7 @@ import {
   APPROVED,
   NEW
 } from '../../../../../../../services/transporters/index.js'
-import { addressSummary } from './transporter-record.js'
+import { addressSummary } from '../../addresses/address-summary.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { containsTerm } from '../../../../../../../../../client/common/helpers/search-fold.js'
 import { renderMacro } from '../../../../../../../shared/render-macro.js'

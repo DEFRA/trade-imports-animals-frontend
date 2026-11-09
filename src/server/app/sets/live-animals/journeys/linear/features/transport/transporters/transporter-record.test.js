@@ -4,7 +4,7 @@ import {
   COMMERCIAL,
   PRIVATE
 } from '../../../../../../../services/transporters/index.js'
-import { addressSummary, transporterAnswer } from './transporter-record.js'
+import { transporterAnswer } from './transporter-record.js'
 
 const privateAddress = {
   addressLine1: '12 Harbour Road',
@@ -21,31 +21,6 @@ const commercialAddress = {
   addressLine3: 'Quasoccaecat ut ear, 30055',
   country: 'Switzerland'
 }
-
-describe('#addressSummary', () => {
-  it('Should read a private address as street, town, county, postcode, country', () => {
-    expect(addressSummary(privateAddress)).toBe(
-      '12 Harbour Road, Aberdeen, Aberdeenshire, AB11 5DQ, United Kingdom'
-    )
-  })
-
-  it('Should drop every blank part rather than leaving an empty slot', () => {
-    expect(addressSummary({ ...privateAddress, county: '' })).toBe(
-      '12 Harbour Road, Aberdeen, AB11 5DQ, United Kingdom'
-    )
-  })
-
-  it('Should read a commercial address as its numbered lines then the country', () => {
-    expect(addressSummary(commercialAddress)).toBe(
-      '43 East Hague Extension, Delectus sitodio p. Laborum Odio tempor, Quasoccaecat ut ear, 30055, Switzerland'
-    )
-  })
-
-  it('Should summarise a missing or empty address as an empty string', () => {
-    expect(addressSummary()).toBe('')
-    expect(addressSummary({})).toBe('')
-  })
-})
 
 describe('#transporterAnswer', () => {
   it('Should answer a private pick with the private transporter alone', () => {

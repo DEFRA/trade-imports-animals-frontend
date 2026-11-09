@@ -4,19 +4,21 @@ import { nunjucksConfig } from '../../../../../../../../../config/nunjucks/nunju
 import { documentOf } from '../../../../../../../../common/test-helpers/document-of.js'
 import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as addressesCopy } from '../copy/copy.en.js'
+import { pickerRow } from './test-support.js'
 import { pickerTableRows } from './view-model/table-rows.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker
 
-const renderResults = (rows, { error, query } = {}) =>
+const renderResults = (rows, { error, query, withViewLinks = true } = {}) =>
   environment.renderString(
     `{% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPickerResults %}
      {{ addressPickerResults(picker, copy) }}`,
     {
       picker: {
         rows,
-        tableRows: pickerTableRows(rows, pickerCopy),
+        withViewLinks,
+        tableRows: pickerTableRows(rows, pickerCopy, { withViewLinks }),
         error,
         query,
         resultsCount: pickerCopy.resultsCount(rows.length, rows.length)
@@ -38,21 +40,7 @@ const renderPicker = () =>
     }
   )
 
-const row = {
-  idPrefix: 'party-astra-rosales',
-  id: 'astra-rosales',
-  name: 'Astra Rosales',
-  checked: false,
-  addressText: 'Rua da Boavista 100, Porto, 4050-113',
-  country: 'Portugal',
-  detailLines: [
-    'Astra Rosales',
-    'Rua da Boavista 100',
-    'Porto',
-    '4050-113',
-    'Portugal'
-  ]
-}
+const row = pickerRow()
 
 describe('addressPickerResults macro', () => {
   it('Should render the accessible name inside a visually-hidden span so the radio circle stays visible', () => {
@@ -68,7 +56,7 @@ describe('addressPickerResults macro', () => {
 
   it('Should escape an address name holding markup characters in the radio label', () => {
     const document = documentOf(
-      renderResults([{ ...row, name: 'Fish & <b>Chips</b> Ltd' }])
+      renderResults([pickerRow({ name: 'Fish & <b>Chips</b> Ltd' })])
     )
 
     const label = document.querySelector('.govuk-radios__label')
@@ -99,6 +87,43 @@ describe('addressPickerResults macro', () => {
     expect(legend.classList.contains('govuk-visually-hidden')).toBe(true)
     expect(fieldset.querySelector('table').firstElementChild.tagName).toBe(
       'THEAD'
+    )
+  })
+
+  it('Should head the table with select, name, address, country and actions columns, matching each row, when linking to the address book', () => {
+    const document = documentOf(renderResults([row]))
+
+    const headings = [...document.querySelectorAll('thead th')].map((heading) =>
+      heading.textContent.trim()
+    )
+
+    expect(headings).toEqual([
+      pickerCopy.table.selectHidden,
+      pickerCopy.table.name,
+      pickerCopy.table.address,
+      pickerCopy.table.country,
+      pickerCopy.table.actionsHidden
+    ])
+    expect(document.querySelectorAll('tbody tr:first-child td')).toHaveLength(
+      headings.length
+    )
+  })
+
+  it('Should head the table with select, name, address and country columns, matching each row, when not linking to the address book', () => {
+    const document = documentOf(renderResults([row], { withViewLinks: false }))
+
+    const headings = [...document.querySelectorAll('thead th')].map((heading) =>
+      heading.textContent.trim()
+    )
+
+    expect(headings).toEqual([
+      pickerCopy.table.selectHidden,
+      pickerCopy.table.name,
+      pickerCopy.table.address,
+      pickerCopy.table.country
+    ])
+    expect(document.querySelectorAll('tbody tr:first-child td')).toHaveLength(
+      headings.length
     )
   })
 
@@ -156,7 +181,7 @@ describe('addressPickerResults macro', () => {
 })
 
 describe('addressPicker macro', () => {
-  it('Should end with the primary alone, since a picker is reached from the consignment addresses page', () => {
+  it('Should offer Save and continue alone, with no return-to-hub or exit action', () => {
     const html = renderPicker()
 
     expect(html).toContain(sharedEn.saveActions.saveAndContinue)

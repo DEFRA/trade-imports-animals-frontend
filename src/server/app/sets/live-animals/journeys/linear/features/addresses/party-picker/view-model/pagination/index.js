@@ -1,5 +1,5 @@
 import { paginationItems } from './page-numbers.js'
-import { resultsHref } from './results-href.js'
+import { resultsHref } from '../results-href.js'
 
 const MINIMUM_PAGES_TO_PAGINATE = 2
 

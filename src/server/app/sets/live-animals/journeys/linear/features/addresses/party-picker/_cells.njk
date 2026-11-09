@@ -16,17 +16,12 @@
   }) }}
 {% endmacro %}
 
-{% macro pickerDetailsCell(row, copy) %}
-  <details class="govuk-details">
-    <summary class="govuk-details__summary">
-      <span class="govuk-details__summary-text">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ copy.viewDetailsFor }} {{ row.name }}</span></span>
-    </summary>
-    <div class="govuk-details__text">
-      <ul class="govuk-list">
-        {% for line in row.detailLines %}
-          <li>{{ line }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </details>
+{% macro pickerAddressCell(row) %}
+  {%- for line in row.addressLines -%}
+    {{ line }}{% if not loop.last %}<br>{% endif %}
+  {%- endfor -%}
+{% endmacro %}
+
+{% macro pickerViewCell(row, copy) %}
+  <a class="govuk-link" href="{{ row.viewHref }}">{{ copy.view }}<span class="govuk-visually-hidden"> {{ row.name }}</span></a>
 {% endmacro %}

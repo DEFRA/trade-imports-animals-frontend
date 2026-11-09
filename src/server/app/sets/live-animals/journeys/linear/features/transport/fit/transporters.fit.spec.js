@@ -45,7 +45,7 @@ import {
   addressOverLengthValidations,
   contactOverLengthValidations
 } from './test-support.js'
-import { addressSummary } from '../transporters/transporter-record.js'
+import { addressSummary } from '../../addresses/address-summary.js'
 
 const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'

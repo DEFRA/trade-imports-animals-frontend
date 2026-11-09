@@ -1,16 +1,20 @@
-import { addressText, detailLines } from './address-lines.js'
+import { insViewAddressUrl } from '../../../../../../../../../common/helpers/ins-address-book-urls.js'
+import { pickerAddressLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
+import { resultsHref } from './results-href.js'
 import { pickerTableRows } from './table-rows.js'
 
-const resultRows = (found, selectedId) => {
+const resultRows = (found, selectedId, viewReturnPath) => {
   const from = (found.page - 1) * found.pageSize
   return found.results.map((record, index) => ({
     id: record.id,
     idPrefix: index === 0 ? 'party' : `party-${from + index + 1}`,
     name: record.name,
-    addressText: addressText(record.address),
+    addressLines: pickerAddressLines(record.address),
     country: record.address.country,
-    detailLines: detailLines(record),
+    ...(viewReturnPath && {
+      viewHref: insViewAddressUrl(record.id, viewReturnPath)
+    }),
     checked: record.id === selectedId
   }))
 }
@@ -18,10 +22,18 @@ const resultRows = (found, selectedId) => {
 export const pickerViewModel = (
   journey,
   party,
-  { query, selectedId, error, found, selected, trail },
+  { query, selectedId, error, found, selected, trail, withViewLinks },
   copy
 ) => {
-  const rows = resultRows(found, selectedId)
+  const viewReturnPath =
+    withViewLinks &&
+    resultsHref(journey.journeyId, party, {
+      query,
+      page: found.page,
+      selectedId,
+      trail
+    })
+  const rows = resultRows(found, selectedId, viewReturnPath)
 
   return {
     query,
@@ -30,7 +42,8 @@ export const pickerViewModel = (
     selected,
     resultsCount: copy.resultsCount(found.results.length, found.total),
     rows,
-    tableRows: pickerTableRows(rows, copy),
+    withViewLinks,
+    tableRows: pickerTableRows(rows, copy, { withViewLinks }),
     pagination: pagination(journey.journeyId, party, {
       query,
       page: found.page,

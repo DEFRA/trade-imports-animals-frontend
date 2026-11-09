@@ -21,14 +21,19 @@
       {% if picker.error %}
         {{ pickerError(picker, copy) }}
       {% endif %}
-      {{ govukTable({
-        head: [
-          { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
-          { text: copy.table.name },
-          { text: copy.table.address },
-          { text: copy.table.country },
+      {% set head = [
+        { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+        { text: copy.table.name },
+        { text: copy.table.address },
+        { text: copy.table.country }
+      ] %}
+      {% if picker.withViewLinks %}
+        {% set head = head.concat([
           { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
-        ],
+        ]) %}
+      {% endif %}
+      {{ govukTable({
+        head: head,
         rows: picker.tableRows
       }) }}
     {% endset %}

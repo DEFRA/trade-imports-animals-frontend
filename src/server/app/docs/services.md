@@ -126,7 +126,9 @@ The live-animals commodities service is documented in the
 | `tradeImportsAnimalsFrontend.baseUrl`   | `TRADE_IMPORTS_ANIMALS_FRONTEND_URL` | `http://localhost:3000`                                       |
 
 `tradeImportsInsFrontend.baseUrl` is browser-visible (the service navigation's
-Address book link, the address handshake, and the origin page's Back link to the
+Address book link, the address handshake, the party pickers' 'View' links, which
+carry the picker's own `/live-animals` path for the INS address book to resolve
+against its animals frontend URL, and the origin page's Back link to the
 INS type question, which carries the notification's reference as
 `notification-id` and its type as `current-notification-type`), so under the
 workspace stack it stays `localhost` while the backend, reference-data and address-book URLs use
