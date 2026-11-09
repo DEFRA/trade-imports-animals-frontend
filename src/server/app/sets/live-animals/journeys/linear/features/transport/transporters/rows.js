@@ -64,7 +64,7 @@ const CELLS_TEMPLATE =
   'live-animals/journeys/linear/features/transport/transporters/_cells.njk'
 
 /** One table row of cells per transporter row, searchable by its search text. */
-export const transporterTableRows = (rows, { returnUrl }) =>
+export const transporterTableRows = (rows, { returnPath }) =>
   rows.map((row) => [
     {
       html: renderMacro(CELLS_TEMPLATE, 'transporterSelectCell', row, copy),
@@ -82,7 +82,7 @@ export const transporterTableRows = (rows, { returnUrl }) =>
       html: renderMacro(
         CELLS_TEMPLATE,
         'transporterDetailsCell',
-        { ...row, detailsHref: insViewTransporterUrl(row.id, returnUrl) },
+        { ...row, detailsHref: insViewTransporterUrl(row.id, returnPath) },
         copy
       )
     }

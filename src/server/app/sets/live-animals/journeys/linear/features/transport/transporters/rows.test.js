@@ -55,8 +55,7 @@ const newPrivateRecord = {
 
 const records = [commercial, privateRecord]
 
-const RETURN_URL =
-  'http://animals.example/live-animals/notifications/abc/transporters'
+const RETURN_PATH = '/live-animals/notifications/abc/transporters'
 
 const names = (matches) => matches.map((record) => record.name)
 
@@ -208,7 +207,7 @@ describe('#transporterTableRows', () => {
   it('Should give each transporter a select radio, its plain facts and a status tag', () => {
     const [cells] = transporterTableRows(
       transporterRows([commercial], { selectedId: commercial.id }),
-      { returnUrl: RETURN_URL }
+      { returnPath: RETURN_PATH }
     )
     const [selectCell, name, address, approvalNumberCell, type, statusCell] =
       cells
@@ -244,7 +243,7 @@ describe('#transporterTableRows', () => {
   it('Should leave the radio unchecked for a transporter that is not the selected one', () => {
     const [[selectCell]] = transporterTableRows(
       transporterRows([privateRecord], { selectedId: commercial.id }),
-      { returnUrl: RETURN_URL }
+      { returnPath: RETURN_PATH }
     )
 
     expect(selectCell.html).not.toContain('checked')
@@ -253,7 +252,7 @@ describe('#transporterTableRows', () => {
   it('Should show the Not applicable label in the approval-number cell for a record with no approval number', () => {
     const [[, , , approvalNumberCell]] = transporterTableRows(
       transporterRows([newPrivateRecord], { selectedId: null }),
-      { returnUrl: RETURN_URL }
+      { returnPath: RETURN_PATH }
     )
 
     expect(approvalNumberCell).toEqual({
@@ -262,14 +261,14 @@ describe('#transporterTableRows', () => {
     })
   })
 
-  it('Should give each row a details link to the address book, carrying the id and the given return URL', () => {
+  it('Should give each row a details link to the address book, carrying the id and the given return path', () => {
     const [[, , , , , , detailsCell]] = transporterTableRows(
       transporterRows([privateRecord], { selectedId: null }),
-      { returnUrl: RETURN_URL }
+      { returnPath: RETURN_PATH }
     )
 
     expect(detailsCell.html).toContain(
-      `/address-book/transporter/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
+      `/address-book/transporter/${privateRecord.id}?return=${encodeURIComponent(RETURN_PATH)}`
     )
     expect(detailsCell.html).toContain('View details')
     expect(detailsCell.html).toContain(

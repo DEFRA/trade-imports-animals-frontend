@@ -34,10 +34,10 @@ export const insViewAddressUrl = (addressId, returnPath) =>
  * The INS address book's page for one transporter.
  *
  * @param {string} transporterId - the address book record's id
- * @param {string} returnUrl - where the page's back link returns to
+ * @param {string} returnPath - where the page's back link returns to
  * @returns {string} the browser-facing URL of that transporter's page
  */
-export const insViewTransporterUrl = (transporterId, returnUrl) =>
+export const insViewTransporterUrl = (transporterId, returnPath) =>
   buildInsFrontendUrl(
-    `${ADDRESS_BOOK_PATH}/transporter/${encodeURIComponent(transporterId)}?${new URLSearchParams({ return: returnUrl })}`
+    `${ADDRESS_BOOK_PATH}/transporter/${encodeURIComponent(transporterId)}?${new URLSearchParams({ return: returnPath })}`
   )
