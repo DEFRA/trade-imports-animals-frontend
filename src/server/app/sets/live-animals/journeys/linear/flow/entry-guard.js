@@ -15,7 +15,7 @@ import {
   activeOpeningRunBeganAtStartEntry,
   openingRunStarted
 } from '../../../../../flow/run-state.js'
-import { buildInsFrontendUrl } from '../../../../../../common/helpers/ins-frontend-url.js'
+import { buildInsFrontendUrl } from '../../../../../../common/helpers/frontend-url.js'
 import { SET_ID } from '../../../set.js'
 
 const journeyPrefix = () => `${setBase()}/notifications/`

@@ -1,7 +1,6 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Adolygu eich hysbysiad',
-  notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   change: 'Newid',

@@ -36,11 +36,14 @@ A nested group's node is derived from the parent's instances rather than its own
 fulfilment indexes, so a parent instance whose nested group is empty still
 contributes its node key.
 
-The flow-only keys are the obligations the notification model does not carry,
-such as the submit-time declaration step. The evaluator omits them, so without
-this layer their pages would be unreachable. They are unconditional top-level
-obligations. `rawInScope` stays the evaluator scope alone, and
-`readyForCheckYourAnswers` is unaffected because no task row covers them. The
+The flow-only keys are keys the notification does not hold: some are
+unconditional top-level obligations the model does not carry, such as the
+submit-time declaration step, and some are per-journey page state with no
+obligation at all, such as the commodity search's stored rows and the
+transporter add forms' entered values and just-added name. The evaluator omits
+them, so without this layer their pages would be unreachable. `rawInScope`
+stays the evaluator scope alone, and `readyForCheckYourAnswers` is
+unaffected because no task row covers them. The
 same list drives answer-key recognition in
 [`bridge/obligation-source.js`](../bridge/obligation-source.js).
 

@@ -47,7 +47,7 @@ export const ensureLoaded = async () => {
   }
 }
 
-const UNITED_KINGDOM = 'United Kingdom'
+export const UNITED_KINGDOM = 'United Kingdom'
 const UNITED_KINGDOM_CODE = 'GB'
 
 export const isSubdivisionCode = (code) =>
@@ -110,7 +110,7 @@ export const countryAndSubdivisionOptionsNamedWithCountry = async () => {
 
 export const addressCountries = async () => {
   await ensureLoaded()
-  return [UNITED_KINGDOM, ...Object.values(labels)]
+  return [UNITED_KINGDOM, ...Object.values(labels)].sort(compareLabels)
 }
 
 const ensureAddressBookCountriesLoaded = async () => {

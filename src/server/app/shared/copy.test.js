@@ -105,6 +105,13 @@ describe('save-actions copy', () => {
   })
 })
 
+describe('not-applicable copy', () => {
+  it('Should carry the Not applicable label in English and Welsh', () => {
+    expect(sharedEn.notApplicable).toBe('Not applicable')
+    expect(sharedCy.notApplicable).toBe('Amherthnasol')
+  })
+})
+
 describe('shared copy module', () => {
   it('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {

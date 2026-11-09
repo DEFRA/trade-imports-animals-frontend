@@ -75,6 +75,10 @@ trader has answered. See
 [`import-reason/validate.js`](../sets/live-animals/journeys/linear/features/import-reason/validate.js)
 for an example. Errors come back keyed by the page's own field names.
 
+The stored reading runs for every page on every submission, so a page whose stored
+check needs a service falls back to the shipped list rather than failing an
+unrelated page's submission.
+
 [`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
 continue-time gate for configured fields that must be answered before later pages
 open.

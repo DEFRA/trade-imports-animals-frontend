@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 
-import { buildInsFrontendUrl } from '../../../../../../../common/helpers/ins-frontend-url.js'
+import { buildInsFrontendUrl } from '../../../../../../../common/helpers/frontend-url.js'
 import {
   addedAddressBannerCookie,
   addressHandshakeTokensCookie

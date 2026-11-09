@@ -1,36 +1,35 @@
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
+  answerTransporterType,
+  cancelAndReturnToDashboard,
   expectNoSeriousOrCriticalViolations,
-  expectPageEndsWithPrimaryAlone,
+  expectPageEndsWithPrimaryAndCancel,
+  expectTransporterListShowsAddedBanner,
   journeyUrl,
   saveAndContinue,
-  saveArrivalByAir,
-  signIn
+  signIn,
+  signInWithOwnTransporterStore
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import {
+  addressOverLengthValidations,
+  contactOverLengthValidations
+} from './test-support.js'
 
 const form = copy.commercialTransporterDetails
 const COMMERCIAL_SLUG = 'transporters/add/commercial'
 const NORTHERN_IRELAND = 'Northern Ireland'
 const BACK_LINK = '.govuk-back-link'
+const ERROR_SUMMARY = '.govuk-error-summary'
 const approvalNumberInput = '#approvalNumber'
 
-const openCommercialForm = async (page) => {
-  await saveArrivalByAir(page)
-  await page.getByRole('link', { name: 'Transport details' }).click()
-  await page.getByRole('button', { name: copy.transporters.add }).click()
-  await page
-    .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
-    .check()
-  await saveAndContinue(page).click()
-  await expect(page.getByRole('heading', { name: form.title })).toBeVisible()
-}
-
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
 
-// Not on the transporter list, so it can only have come from this form.
 const validTransporter = {
   approvalNumber: 'UK/BELF/T2/00104115',
   nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
@@ -58,18 +57,22 @@ const requiredValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postcode or zip code', 'postcode', 'postcodeRequired'],
+  ['postcode or Zip code', 'postcode', 'postcodeRequired'],
   ['email address', 'email', 'emailRequired'],
   ['phone number', 'phone', 'telephoneRequired']
 ]
 
+const BLANK_COMMERCIAL_FORM_ERRORS = [
+  'approvalNumberRequired',
+  'nameRequired',
+  'addressLine1Required',
+  'townOrCityRequired',
+  'postcodeRequired',
+  'emailRequired',
+  'telephoneRequired'
+]
+
 const MAX_APPROVAL_NUMBER_LENGTH = 50
-const MAX_NAME_OR_ADDRESS_LINE_LENGTH = 255
-const MAX_TOWN_OR_COUNTY_LENGTH = 100
-const MAX_POSTAL_OR_ZIP_CODE_LENGTH = 12
-const MAX_TELEPHONE_LENGTH = 20
-const MAX_EMAIL_LENGTH = 254
-const exampleEmailDomain = '@example.com'
 
 const formatValidations = [
   [
@@ -78,54 +81,8 @@ const formatValidations = [
     'A'.repeat(MAX_APPROVAL_NUMBER_LENGTH + 1),
     'approvalNumberMaxLength'
   ],
-  [
-    'name or organisation name over 255 characters',
-    'nameOrOrganisationName',
-    'N'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
-    'nameMaxLength'
-  ],
-  [
-    'address line 1 over 255 characters',
-    'addressLine1',
-    'A'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
-    'addressLine1MaxLength'
-  ],
-  [
-    'address line 2 over 255 characters',
-    'addressLine2',
-    'B'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
-    'addressLine2MaxLength'
-  ],
-  [
-    'town or city over 100 characters',
-    'townOrCity',
-    'T'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1),
-    'townOrCityMaxLength'
-  ],
-  [
-    'county over 100 characters',
-    'county',
-    'C'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1),
-    'countyMaxLength'
-  ],
-  [
-    'postcode or zip code over 12 characters',
-    'postcode',
-    'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
-    'postcodeMaxLength'
-  ],
-  [
-    'email address over 254 characters',
-    'email',
-    `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - exampleEmailDomain.length)}${exampleEmailDomain}`,
-    'emailMaxLength'
-  ],
-  [
-    'phone number over 20 characters',
-    'phone',
-    '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
-    'telephoneMaxLength'
-  ]
+  ...addressOverLengthValidations,
+  ...contactOverLengthValidations
 ]
 
 test.describe('adding a commercial transporter that is not on the list', () => {
@@ -133,10 +90,10 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await signIn(page)
   })
 
-  test('the commercial branch of the add route opens the form, under the new-transporter caption', async ({
+  test('the commercial branch of the add route opens the form, under the new-transporter caption, and titles the browser tab to match', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
     await expect(
@@ -145,15 +102,31 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await expect(page.locator('span.govuk-caption-l')).toHaveText(
       sectionCaptionsCopy.sections.newTransporter
     )
+    await expect(page).toHaveTitle(
+      `${form.title} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+    )
   })
 
-  test('opens with the transporter-authorisation guidance the list states', async ({
+  test('opens with the transporter-authorisation guidance the list states, in a banner titled "Important" headed by the guidance at level 2', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     const banner = page.locator('.govuk-notification-banner')
-    await expect(banner).toContainText(form.guidanceTitle)
+    await expect(
+      banner.getByRole('heading', { level: 2, name: form.guidanceBannerTitle })
+    ).toBeVisible()
+    await expect(
+      banner.getByRole('heading', { level: 2, name: form.guidanceTitle })
+    ).toBeVisible()
+    const bannerOpening = await banner
+      .locator('.govuk-notification-banner__content > *')
+      .first()
+      .evaluate((node) => ({
+        tag: node.tagName.toLowerCase(),
+        text: node.textContent.trim()
+      }))
+    expect(bannerOpening).toEqual({ tag: 'h2', text: form.guidanceTitle })
     await expect(banner).toContainText(
       copy.transporters.guidance.authorisationLead
     )
@@ -171,7 +144,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('asks for the authorisation number, the name, the address and the contact details', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     for (const label of Object.values(form.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
@@ -187,21 +160,19 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   test('fixes the country to Northern Ireland and does not let the trader change it', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
     const country = page.locator('#country')
     await expect(country).toBeDisabled()
     await expect(country).toHaveValue(NORTHERN_IRELAND)
     await expect(country.locator('option')).toHaveCount(1)
-    // The disabled control posts nothing, so the value reaches the server on
-    // the hidden field beside it.
     await expect(
       page.locator('input[type="hidden"][name="country"]')
     ).toHaveValue(NORTHERN_IRELAND)
   })
 
   test('the form goes back to the type question', async ({ page }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await page.locator(BACK_LINK).click()
 
     await expect(
@@ -209,19 +180,41 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     ).toBeVisible()
   })
 
-  test('ends with the primary alone, being reached from the type question', async ({
+  test('ends with exactly the primary and the cancel, offering no overview return control', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
-    await expectPageEndsWithPrimaryAlone(page)
+    await expectPageEndsWithPrimaryAndCancel(
+      page,
+      copy.commercialTransporterDetails.cancelAndReturnToDashboard
+    )
   })
 
-  test('saves a hand-entered commercial transporter and persists every value', async ({
+  test('saves a hand-entered commercial transporter, lands on the transporter list first and checked under the named banner, and persists every value', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page)
+    await saveAndContinue(page).click()
+
+    await expectTransporterListShowsAddedBanner(
+      page,
+      'Lough neagh livestock ltd'
+    )
+    const firstRow = page
+      .getByRole('row')
+      .filter({ has: page.getByRole('radio') })
+      .first()
+    await expect(
+      firstRow.getByRole('cell', {
+        name: validTransporter.approvalNumber,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(firstRow.getByRole('radio')).toBeChecked()
+
     await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
@@ -232,19 +225,56 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await expect(page.locator('#country')).toHaveValue(NORTHERN_IRELAND)
   })
 
-  test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
+  test('cancelling leaves the commercial transporter already chosen still checked, adds no row and returns to the dashboard with no error', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page)
     await saveAndContinue(page).click()
+    await saveAndContinue(page).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await page.goto(journeyUrl(page, 'transporters'))
-    // The transporter joined the list on the way through, so it is the row the
-    // notification already names and the one that comes back checked.
+    const transporterListUrl = journeyUrl(page, 'transporters')
+    await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
+    await page.locator(approvalNumberInput).fill('Some typed approval number')
+    await cancelAndReturnToDashboard(
+      page,
+      copy.commercialTransporterDetails.cancelAndReturnToDashboard
+    ).click()
+
+    await expect(page).toHaveURL(BASE)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+
+    await page.goto(transporterListUrl)
     await expect(
       page.getByRole('radio', {
         name: validTransporter.nameOrOrganisationName
+      })
+    ).toBeChecked()
+    await expect(
+      page.getByRole('cell', {
+        name: 'Some typed approval number',
+        exact: true
+      })
+    ).toHaveCount(0)
+  })
+
+  test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    const addedTransporter = {
+      ...validTransporter,
+      nameOrOrganisationName: 'Quay Road Haulage Ltd'
+    }
+    await answerTransporterType(page, COMMERCIAL)
+    await fillTransporter(page, addedTransporter)
+    await saveAndContinue(page).click()
+
+    await expect(
+      page.getByRole('radio', {
+        name: addedTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
     await saveAndContinue(page).click()
@@ -252,17 +282,22 @@ test.describe('adding a commercial transporter that is not on the list', () => {
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
     await expect(page.locator(approvalNumberInput)).toHaveValue(
-      validTransporter.approvalNumber
+      addedTransporter.approvalNumber
     )
   })
 
-  test('a completely blank commercial transporter record is optional', async ({
+  test('saving a wholly blank commercial transporter form keeps the trader on it, naming every required field in order', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(page.locator(ERROR_SUMMARY).getByRole('link')).toHaveText(
+      BLANK_COMMERCIAL_FORM_ERRORS.map((error) => form.errors[error])
+    )
   })
 })
 
@@ -275,7 +310,7 @@ test.describe('commercial transporter required validations', () => {
     test(`commercial transporter validation: empty ${name} links to and focuses the preserved field`, async ({
       page
     }) => {
-      await openCommercialForm(page)
+      await answerTransporterType(page, COMMERCIAL)
       await fillTransporter(page)
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
@@ -301,7 +336,7 @@ test.describe('commercial transporter format validations', () => {
     test(`commercial transporter validation: ${name} links to and focuses the preserved value`, async ({
       page
     }) => {
-      await openCommercialForm(page)
+      await answerTransporterType(page, COMMERCIAL)
       await fillTransporter(page, { ...validTransporter, [field]: invalid })
       await saveAndContinue(page).click()
 
@@ -325,26 +360,20 @@ test.describe('commercial transporter form accessibility', () => {
   test('the form has no serious or critical axe violations', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
 
-    await expectNoSeriousOrCriticalViolations(
-      page,
-      'Add commercial transporter'
-    )
+    await expectNoSeriousOrCriticalViolations(page, form.title)
   })
 
   test('the form in its error state has no serious or critical axe violations', async ({
     page
   }) => {
-    await openCommercialForm(page)
+    await answerTransporterType(page, COMMERCIAL)
     await fillTransporter(page)
     await page.locator(approvalNumberInput).fill('')
     await saveAndContinue(page).click()
 
-    await expect(page.locator('.govuk-error-summary')).toBeVisible()
-    await expectNoSeriousOrCriticalViolations(
-      page,
-      'Add commercial transporter in error'
-    )
+    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(page, `${form.title} in error`)
   })
 })

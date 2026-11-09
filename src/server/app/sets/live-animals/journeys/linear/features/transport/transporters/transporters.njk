@@ -48,7 +48,8 @@
             { text: copy.table.address },
             { text: copy.table.approvalNumber },
             { text: copy.table.type },
-            { text: copy.table.status }
+            { text: copy.table.status },
+            { html: '<span class="govuk-visually-hidden">' + copy.table.actionHidden + '</span>' }
           ],
           rows: transporterTableRows
         }) }}
@@ -61,6 +62,8 @@
       data-shown-messages="{{ shownMessages | dump }}"
       data-no-matches="{{ copy.noMatches }}"
     >
+      <h2 class="govuk-heading-m">{{ copy.resultsHeading }}</h2>
+
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
           {{ appSubmittedSearch({
@@ -86,8 +89,8 @@
       <div class="govuk-form-group{{ ' govuk-form-group--error' if errors.transporter }}">
         {{ govukFieldset({
           legend: {
-            text: copy.legend,
-            classes: "govuk-fieldset__legend--m"
+            text: copy.resultsHeading,
+            classes: "govuk-visually-hidden"
           },
           describedBy: "transporter-error" if errors.transporter else "",
           html: transporterListHtml

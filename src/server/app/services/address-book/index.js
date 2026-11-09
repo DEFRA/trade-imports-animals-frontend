@@ -11,9 +11,11 @@ export const PAGE_SIZE = 5
  * searches one book, and no function here takes a role. What a picker does
  * with the record it gets back is the page's business, not the book's. */
 
-/** This service reads and never writes. The notification journey selects from
- * the organisation's book; adding, changing and removing the records in it
- * belongs to the INS frontend, which is the only writer. */
+/** Addresses are read-only here: the notification journey selects from the
+ * organisation's book, and adding, changing and removing an address belongs
+ * to the INS frontend. A transporter the journey adds is written here
+ * instead, through `services/transporters`, because the journey is where it
+ * is entered. */
 
 const haystack = (record) =>
   [record.name, ...Object.values(record.address ?? {})]

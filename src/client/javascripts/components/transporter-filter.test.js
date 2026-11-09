@@ -60,6 +60,9 @@ const records = [
 const TRANSPORTERS_TEMPLATE =
   'live-animals/journeys/linear/features/transport/transporters/transporters.njk'
 
+const RETURN_URL =
+  'http://animals.example/live-animals/notifications/abc/transporters'
+
 const environment = nunjucksConfig.options.compileOptions.environment
 
 const filterModuleHtml = ({ rows, term }) => {
@@ -74,7 +77,9 @@ const filterModuleHtml = ({ rows, term }) => {
     query: term,
     shownMessages: shownCountMessages(rows.length),
     transporterRows: rows,
-    transporterTableRows: transporterTableRows(rows)
+    transporterTableRows: transporterTableRows(rows, {
+      returnUrl: RETURN_URL
+    })
   })
   return page.querySelector('[data-module="app-transporter-filter"]').outerHTML
 }
@@ -134,6 +139,25 @@ describe('TransporterFilter', () => {
 
     expect(shownNames(rows)).toEqual(['García Livestock Transport SL'])
     expect(rows[0].querySelectorAll(`.${BOLD_CLASS}`)).toHaveLength(0)
+  })
+
+  it('Should leave the View details link intact when the search term matches the transporter name', () => {
+    const { searchBox, rows } = mountFilter()
+
+    type(searchBox, 'garcia')
+
+    const detailsLink = [...rows[0].cells].at(-1).querySelector('a')
+    expect(detailsLink).not.toBeNull()
+    expect(detailsLink.textContent).toContain(records[0].name)
+  })
+
+  it('Should leave the select cell intact when the search term matches the transporter name', () => {
+    const { searchBox, rows } = mountFilter()
+
+    type(searchBox, 'garcia')
+
+    const selectCell = [...rows[0].cells][0]
+    expect(selectCell.querySelector('input[type="radio"]')).not.toBeNull()
   })
 
   it('Should bold the status word inside its tag', () => {

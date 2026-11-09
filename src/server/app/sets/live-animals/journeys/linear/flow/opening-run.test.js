@@ -40,7 +40,7 @@ import {
 import { STUB_BOOK } from '../../../../../services/address-book/stub/index.js'
 import { dispatchPages } from '../features/index.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
-import { documentsPage } from '../features/documents/page.js'
+import { transportersPage } from '../features/transport/page.js'
 import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 
 import * as origin from '../features/origin/controller.js'
@@ -253,7 +253,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       startingFrom: [openingRunAt(RUN_ACTIVE)]
     })
 
-  it('Should carry a hand-entered commercial transporter on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+  it('Should return a hand-entered commercial transporter to the transporter list mid-run, not on past the list', async () => {
     const { journeyId, response } = await driveAddSpoke(
       commercialTransporterDetails,
       {
@@ -262,11 +262,11 @@ const saveAndContinueFollowsTheRunSequence = () => {
       }
     )
 
-    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(response.redirect).toBe(pagePath(journeyId, transportersPage.slug))
     expect(response.redirect).not.toBe(hubPath(journeyId))
   })
 
-  it('Should carry a private add-spoke save on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+  it('Should return a private add-spoke save to the transporter list mid-run, not on past the list', async () => {
     const { journeyId, response } = await driveAddSpoke(
       privateTransporterDetails,
       {
@@ -275,7 +275,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       }
     )
 
-    expect(response.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(response.redirect).toBe(pagePath(journeyId, transportersPage.slug))
     expect(response.redirect).not.toBe(hubPath(journeyId))
   })
 }

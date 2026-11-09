@@ -13,7 +13,7 @@ import {
   withSetContext
 } from '../../../server/app/shared/set-context.js'
 import { countSessionResolution } from '../../../server/common/helpers/call-counts/call-counts.js'
-import { buildInsFrontendUrl } from '../../../server/common/helpers/ins-frontend-url.js'
+import { buildInsFrontendUrl } from '../../../server/common/helpers/frontend-url.js'
 import { pageMaturityContext } from '../../../server/app/page-maturity/page-maturity.js'
 
 const logger = createLogger()

@@ -401,8 +401,16 @@ set-up in the test file:
   `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
   `expectThreeSaveControls` proves, by role inside the journey form, that the
   primary, Save and return to overview and Cancel and return to overview
-  appear in that order, and `expectPageEndsWithPrimaryAlone` proves a page
-  ends with the primary alone; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
+  appear in that order, `expectPageEndsWithPrimaryAlone` proves a page
+  ends with the primary alone, and `expectPageEndsWithPrimaryAndCancel`
+  proves a page ends with exactly the primary and the secondary "Cancel and
+  return to dashboard", offering no overview return control;
+  `signInWithOwnTransporterStore` signs a test in as an organisation no
+  other test shares, so a test asserting the transporter list's row order
+  reads only what it added itself; `expectTransporterListShowsAddedBanner`
+  proves the transporter list is showing under the success banner naming a
+  given transporter, so the two add forms' fit specs share one assertion
+  rather than each repeating it; `PHONE_VIEWPORT` is the narrow screen every overflow check uses;
   `answerOriginDetails` takes the country, region code and internal reference
   to type, each defaulting to the happy-path fixture; `urlUnderBase` anchors a
   URL matcher at the origin and the mount, because `toHaveURL` matches the whole

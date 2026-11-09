@@ -25,11 +25,19 @@ import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js
 import { dispatchPages } from './index.js'
 import { journeyStrip } from '../../../../../shared/kit.js'
 import { declarationRoutesFromReview } from './declaration/test-support.js'
+import {
+  COMMERCIAL,
+  PRIVATE
+} from '../../../../../services/transporters/index.js'
 
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as dashboardRoutes } from './dashboard/controller.js'
 import { routes as originRoutes } from './origin/controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
+import { routes as transportersRoutes } from './transport/transporters/transporters.controller.js'
+import { routes as transporterAddRoutes } from './transport/transporter-add/transporter-add.controller.js'
+import { routes as privateTransporterDetailsRoutes } from './transport/private-transporter-details/private-transporter-details.controller.js'
+import { routes as commercialTransporterDetailsRoutes } from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
@@ -204,6 +212,44 @@ describe('journey reference strip', () => {
         startingFrom: [amendmentOpened()]
       })
       expect(view.context.journeyStrip).toBeNull()
+    })
+  })
+
+  describe('on the transporter pages', () => {
+    it('Should render the strip on the transporter list', async () => {
+      const { journey, context } = await renderWith(
+        getHandlerOf({ routes: transportersRoutes })
+      )
+      expect(context.journeyStrip).toEqual({
+        reference: journey.journeyId,
+        status: DRAFT_TAG
+      })
+    })
+
+    it('Should render no strip on the transporter type question', async () => {
+      const { context } = await renderWith(
+        getHandlerOf({ routes: transporterAddRoutes })
+      )
+      expect(context.journeyStrip).toBeNull()
+    })
+
+    it('Should render no strip on the private transporter form', async () => {
+      const { context } = await renderWith(
+        getHandlerOf({ routes: privateTransporterDetailsRoutes }),
+        { transporterType: PRIVATE }
+      )
+      expect(context.journeyStrip).toBeNull()
+    })
+
+    it('Should render the strip on the commercial transporter form', async () => {
+      const { journey, context } = await renderWith(
+        getHandlerOf({ routes: commercialTransporterDetailsRoutes }),
+        { transporterType: COMMERCIAL }
+      )
+      expect(context.journeyStrip).toEqual({
+        reference: journey.journeyId,
+        status: DRAFT_TAG
+      })
     })
   })
 })
