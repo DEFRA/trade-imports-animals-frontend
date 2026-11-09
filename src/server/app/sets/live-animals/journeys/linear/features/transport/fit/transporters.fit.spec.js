@@ -370,14 +370,13 @@ test.describe('transporter list page', () => {
       exact: true
     })
 
-    const expectedReturnUrl = `${new URL(config.get('tradeImportsAnimalsFrontend.baseUrl')).origin}${listUrl}`
     const href = await link.getAttribute('href')
     const detailsUrl = new URL(href)
     expect(detailsUrl.origin).toBe(
       new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin
     )
     expect(detailsUrl.pathname).toMatch(/^\/address-book\/transporter\/[^/]+$/)
-    expect(detailsUrl.searchParams.get('return')).toBe(expectedReturnUrl)
+    expect(detailsUrl.searchParams.get('return')).toBe(listUrl)
   })
 
   test('tags an approved transporter green and a newly added one magenta', async ({
@@ -515,9 +514,7 @@ test.describe('a View details link on a list opened from the review', () => {
     })
     const href = await link.getAttribute('href')
 
-    expect(new URL(href).searchParams.get('return')).toBe(
-      `${new URL(config.get('tradeImportsAnimalsFrontend.baseUrl')).origin}${listUrlFromReview}`
-    )
+    expect(new URL(href).searchParams.get('return')).toBe(listUrlFromReview)
   })
 })
 

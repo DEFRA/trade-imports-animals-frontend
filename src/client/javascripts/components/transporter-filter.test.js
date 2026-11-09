@@ -60,8 +60,7 @@ const records = [
 const TRANSPORTERS_TEMPLATE =
   'live-animals/journeys/linear/features/transport/transporters/transporters.njk'
 
-const RETURN_URL =
-  'http://animals.example/live-animals/notifications/abc/transporters'
+const RETURN_PATH = '/live-animals/notifications/abc/transporters'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
@@ -78,7 +77,7 @@ const filterModuleHtml = ({ rows, term }) => {
     shownMessages: shownCountMessages(rows.length),
     transporterRows: rows,
     transporterTableRows: transporterTableRows(rows, {
-      returnUrl: RETURN_URL
+      returnPath: RETURN_PATH
     })
   })
   return page.querySelector('[data-module="app-transporter-filter"]').outerHTML
