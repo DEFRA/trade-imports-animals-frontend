@@ -1,44 +1,45 @@
-import { config } from '../../../../config/config.js'
-import { traceHeaders } from '../http/trace-headers.js'
-import { BackendRequestError } from '../persistence/records/errors.js'
+import {
+  addressBookHeaders,
+  addressBookResourceUrl,
+  throwOnAddressBookError
+} from '../address-book-request.js'
 
-const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
+const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
 
-const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
+const headers = addressBookHeaders
 
-const transportersUrl = (orgId) => {
-  if (!orgId) {
-    throw new Error(
-      'Cannot reach the address book without an organisation: the signed-in session carries none'
-    )
-  }
-  return `${addressBookUrl()}/organisation/${encodeURIComponent(orgId)}/transporters`
-}
+const MAX_PAGE_SIZE = 100
 
-const headers = (orgId) => ({
-  ...traceHeaders('application/json'),
-  [ORGANISATION_ID_HEADER]: orgId
-})
-
-const failed = (what, response) => new BackendRequestError(what, response)
-
-/** Every live transporter the address book holds for the organisation,
- * newest first. */
-export const listTransporters = async (orgId) => {
+const transportersPage = async (orgId, page) => {
   const url = new URL(transportersUrl(orgId))
-  url.searchParams.set('pageSize', '100')
+  url.searchParams.set('pageSize', String(MAX_PAGE_SIZE))
+  url.searchParams.set('page', String(page))
 
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: headers(orgId)
   })
 
-  if (!response.ok) {
-    throw failed('list transporters', response)
-  }
+  throwOnAddressBookError('list transporters', response)
 
-  const body = await response.json()
-  return body.items
+  return response.json()
+}
+
+/** Every live transporter the address book holds for the organisation,
+ * newest first, read a page at a time until every page the address book
+ * reports has been fetched. */
+export const listTransporters = async (orgId) => {
+  const items = []
+  let page = 1
+  let totalPages = 1
+  do {
+    const body = await transportersPage(orgId, page)
+    items.push(...body.items)
+    totalPages = body.totalPages
+    page += 1
+  } while (page <= totalPages)
+
+  return items
 }
 
 /** Creates a transporter in the organisation's address book. */
@@ -49,9 +50,7 @@ export const createTransporter = async (orgId, transporter) => {
     body: JSON.stringify(transporter)
   })
 
-  if (!response.ok) {
-    throw failed('create transporter', response)
-  }
+  throwOnAddressBookError('create transporter', response)
 
   return response.json()
 }

@@ -4,15 +4,16 @@ import { describe, expect, it } from 'vitest'
 import {
   driveHandler,
   openedFromChangeLink,
-  refusingSaves,
   expectNoRefusalLogged,
   expectOneRefusalLogged,
-  unavailableBackendError,
   useStubbedJourney,
   withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
-import { TRANSPORTER_TYPE_RESTART } from '../transporter-add-session.js'
+import {
+  TRANSPORTER_TYPE_CHOSEN,
+  TRANSPORTER_TYPE_RESTART
+} from '../transporter-add-session.js'
 import {
   COMMERCIAL,
   PRIVATE
@@ -20,7 +21,6 @@ import {
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
-import { expectRecoverableSaveFailureKeepingValues } from '../test-support.js'
 import { copy } from '../copy/copy.en.js'
 
 import * as transporterAdd from './transporter-add.controller.js'
@@ -34,6 +34,11 @@ const handlerFor = (method) =>
 
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
+
+const chosenTypeOf = (result) =>
+  result.cookies[flowOnlyAnswersCookie()]?.[result.journeyId]?.[
+    TRANSPORTER_TYPE_CHOSEN
+  ]
 
 describe('/transporters/add', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -85,23 +90,25 @@ describe('/transporters/add', () => {
     ).toBeNull()
   })
 
-  it('Should send a commercial transporter to the details form', async () => {
+  it('Should hold a commercial choice as flow-only state, leaving the stored type untouched, and send the trader to its details form', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: COMMERCIAL }
     })
 
-    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(result.after.transporterType).toBeUndefined()
+    expect(chosenTypeOf(result)).toBe(COMMERCIAL)
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, COMMERCIAL_SLUG)
     })
   })
 
-  it('Should send a private transporter to the details form', async () => {
+  it('Should hold a private choice as flow-only state, leaving the stored type untouched, and send the trader to its details form', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: PRIVATE }
     })
 
-    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(result.after.transporterType).toBeUndefined()
+    expect(chosenTypeOf(result)).toBe(PRIVATE)
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, PRIVATE_SLUG)
     })
@@ -136,12 +143,12 @@ describe('/transporters/add', () => {
     expectNoRefusalLogged(result.logger)
   })
 
-  it('Should commit an offered type posted with surrounding whitespace trimmed, and reach that type’s own add form', async () => {
+  it('Should hold an offered type posted with surrounding whitespace trimmed, and reach that type’s own add form', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: '  Commercial  ' }
     })
 
-    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(chosenTypeOf(result)).toBe(COMMERCIAL)
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, COMMERCIAL_SLUG)
     })
@@ -173,19 +180,6 @@ describe('/transporters/add', () => {
       journeyId: result.journeyId,
       errorCodes: ['transporterType'],
       transporterType: 'Municipal'
-    })
-  })
-
-  it('Should re-render the question at 500 with the answer kept after a recoverable save failure', async () => {
-    const { response } = await driveHandler(postHandler, {
-      payload: { transporterType: COMMERCIAL },
-      startingFrom: [
-        refusingSaves(unavailableBackendError('save the transporter type'))
-      ]
-    })
-
-    expectRecoverableSaveFailureKeepingValues(response, {
-      transporterType: COMMERCIAL
     })
   })
 })

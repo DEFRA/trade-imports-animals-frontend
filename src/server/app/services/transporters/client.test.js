@@ -7,6 +7,7 @@ import {
   resetMocksAndConfigAfterTests
 } from '../../engine/test-support.js'
 import { createTransporter, listTransporters } from './client.js'
+import { WIRE_PRIVATE } from './wire-types.js'
 
 const ORGANISATION_ID = 'org-42'
 const ORGANISATION_ID_HEADER = 'trade-imports-organisation-id'
@@ -15,7 +16,7 @@ const TRANSPORTER_NAME = 'Aberdeen Livestock Ltd'
 const WIRE_TRANSPORTER = {
   id: '665f1c2ab3e4d51a2c9d0e77',
   name: TRANSPORTER_NAME,
-  type: 'PRIVATE',
+  type: WIRE_PRIVATE,
   countryCode: 'GB'
 }
 
@@ -70,6 +71,39 @@ describe('#listTransporters', () => {
 
     expect(refusal.message).toContain('without an organisation')
     expect(transporterRequests()).toEqual([])
+  })
+
+  test('Should page through every page the address book reports, concatenating the items', async () => {
+    const pageOfItems = (pageNumber, count) =>
+      Array.from({ length: count }, (_, index) => ({
+        ...WIRE_TRANSPORTER,
+        id: `page${pageNumber}-${index}`
+      }))
+    const pages = {
+      1: pageOfItems(1, 100),
+      2: pageOfItems(2, 50)
+    }
+    addressBookAnswering((request) => {
+      const page = new URL(request.url).searchParams.get('page')
+      return {
+        body: JSON.stringify({
+          items: pages[page],
+          page: Number(page),
+          pageSize: 100,
+          totalItems: 150,
+          totalPages: 2
+        })
+      }
+    })
+
+    const result = await listTransporters(ORGANISATION_ID)
+
+    expect(result).toHaveLength(150)
+    expect(
+      transporterRequests().map((request) =>
+        new URL(request.url).searchParams.get('page')
+      )
+    ).toEqual(['1', '2'])
   })
 
   test('Should refuse a list the address book would not give, naming the operation', async () => {

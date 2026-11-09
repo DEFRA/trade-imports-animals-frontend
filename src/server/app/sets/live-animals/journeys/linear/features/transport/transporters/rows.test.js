@@ -53,6 +53,19 @@ const newPrivateRecord = {
   }
 }
 
+const addedRecord = {
+  id: '64b2f1a9c3d4e5f6a7b8c9d0',
+  type: PRIVATE,
+  status: NEW,
+  fromAddressBook: true,
+  name: 'Jean Dupont',
+  address: {
+    addressLine1: '10 Rue de la Ferme',
+    townOrCity: 'Calais',
+    country: 'France'
+  }
+}
+
 const records = [commercial, privateRecord]
 
 const RETURN_URL =
@@ -115,7 +128,7 @@ describe('#matchingTransporters', () => {
     ])
   })
 
-  it('Should keep every match, in the order the register lists them', () => {
+  it('Should keep every match, in the order the list holds them', () => {
     expect(names(matchingTransporters(records, 'livestock'))).toEqual([
       commercial.name,
       privateRecord.name
@@ -262,19 +275,28 @@ describe('#transporterTableRows', () => {
     })
   })
 
-  it('Should give each row a details link to the address book, carrying the id and the given return URL', () => {
+  it('Should give an added record’s row a details link to the address book, carrying the id and the given return URL', () => {
+    const [[, , , , , , detailsCell]] = transporterTableRows(
+      transporterRows([addedRecord], { selectedId: null }),
+      { returnUrl: RETURN_URL }
+    )
+
+    expect(detailsCell.html).toContain(
+      `/address-book/${addedRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
+    )
+    expect(detailsCell.html).toContain('View details')
+    expect(detailsCell.html).toContain(
+      `<span class="govuk-visually-hidden"> ${addedRecord.name}</span>`
+    )
+    expect(detailsCell.attributes).toBeUndefined()
+  })
+
+  it('Should leave the details cell empty for a shipped record the address book holds no document for', () => {
     const [[, , , , , , detailsCell]] = transporterTableRows(
       transporterRows([privateRecord], { selectedId: null }),
       { returnUrl: RETURN_URL }
     )
 
-    expect(detailsCell.html).toContain(
-      `/address-book/${privateRecord.id}?return=${encodeURIComponent(RETURN_URL)}`
-    )
-    expect(detailsCell.html).toContain('View details')
-    expect(detailsCell.html).toContain(
-      `<span class="govuk-visually-hidden"> ${privateRecord.name}</span>`
-    )
-    expect(detailsCell.attributes).toBeUndefined()
+    expect(detailsCell).toEqual({})
   })
 })

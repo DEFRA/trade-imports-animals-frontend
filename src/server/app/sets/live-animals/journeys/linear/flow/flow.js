@@ -23,6 +23,7 @@ import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/row
 import {
   JUST_ADDED_TRANSPORTER_NAME,
   TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_CHOSEN,
   TRANSPORTER_TYPE_RESTART
 } from '../features/transport/transporter-add-session.js'
 
@@ -31,7 +32,8 @@ export const FLOW_ONLY_KEYS = [
   STORED_SEARCH_ROWS,
   TRANSPORTER_ADD_IN_PROGRESS,
   JUST_ADDED_TRANSPORTER_NAME,
-  TRANSPORTER_TYPE_RESTART
+  TRANSPORTER_TYPE_RESTART,
+  TRANSPORTER_TYPE_CHOSEN
 ]
 
 export const sections = [

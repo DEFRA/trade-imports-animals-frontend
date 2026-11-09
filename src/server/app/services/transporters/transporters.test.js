@@ -5,6 +5,7 @@ import { createTransporter, forgetStubTransporters } from './stub/index.js'
 import * as addressBook from '../address-book/index.js'
 import { addressCountries } from '../countries/index.js'
 import * as transportReference from '../transport-reference/index.js'
+import { WIRE_PRIVATE } from './wire-types.js'
 
 const partiesOfType = (type) =>
   transporters.parties().filter((record) => record.type === type)
@@ -111,7 +112,7 @@ describe('separation from the address book', () => {
 
   test('Should carry no roles and no address type on a transporter the organisation added', async () => {
     const kept = await createTransporter('5900001', {
-      type: 'PRIVATE',
+      type: WIRE_PRIVATE,
       name: 'Separation Haulage Ltd',
       addressLine1: '1 Test Street',
       townOrCity: 'Testville',
@@ -138,7 +139,7 @@ describe('the transporters an organisation has added for itself', () => {
   const HAULIER_NAME = 'Jean Dupont'
 
   const haulierWire = (overrides = {}) => ({
-    type: 'PRIVATE',
+    type: WIRE_PRIVATE,
     name: HAULIER_NAME,
     addressLine1: '10 Rue de la Ferme',
     addressLine2: '',
@@ -154,7 +155,7 @@ describe('the transporters an organisation has added for itself', () => {
   beforeEach(forgetStubTransporters)
   afterEach(forgetStubTransporters)
 
-  test('Should offer only the shipped register to an organisation that has added nothing', async () => {
+  test('Should offer only the transporters the service ships to an organisation that has added nothing', async () => {
     expect(await transporters.partiesFor(ORG)).toEqual(transporters.parties())
   })
 
@@ -190,6 +191,23 @@ describe('the transporters an organisation has added for itself', () => {
       'Marie Leclerc',
       HAULIER_NAME
     ])
+  })
+
+  test('Should keep only the newest record when the organisation has added the same name twice', async () => {
+    await createTransporter(
+      ORG,
+      haulierWire({ addressLine1: '10 Rue de la Ferme' })
+    )
+    const newest = await createTransporter(
+      ORG,
+      haulierWire({ addressLine1: '22 Avenue des Fermes' })
+    )
+
+    const list = await transporters.partiesFor(ORG)
+    const matches = list.filter((record) => record.name === HAULIER_NAME)
+    expect(matches).toHaveLength(1)
+    expect(matches[0].id).toBe(newest.id)
+    expect(matches[0].address.addressLine1).toBe('22 Avenue des Fermes')
   })
 
   // The address book holds "Jean Dupont" and "Aberdeen Livestock Ltd" as

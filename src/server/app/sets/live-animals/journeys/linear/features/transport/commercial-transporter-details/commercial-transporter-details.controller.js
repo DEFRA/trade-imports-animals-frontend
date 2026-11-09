@@ -20,6 +20,7 @@ import {
   saveTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import { WIRE_COMMERCIAL } from '../../../../../../../services/transporters/wire-types.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
 import { redirectUnlessOwnTransporterType } from '../own-transporter-type.js'
 import { storedEnteredTransporter } from '../transporter-add-session.js'
@@ -101,9 +102,6 @@ const fields = compose(
     maxLength: copy.errors.telephoneMaxLength
   })
 )
-
-const recordProvided = (values) =>
-  ENTERED_FIELDS.some((field) => values[field] !== '')
 
 const render = (
   request,
@@ -191,21 +189,20 @@ const commercialTransporterRecord = (values) => ({
   commercialTransporter: commercialTransporterParty(values)
 })
 
-const remember = (request, values) =>
+const saveTransporterToAddressBook = (request, values) =>
   saveTransporter(
     organisationIdOf(request),
     commercialTransporterParty(values),
-    'COMMERCIAL'
+    WIRE_COMMERCIAL
   )
 
 const post = saveTransporterDetails({
   transporterType: COMMERCIAL,
   trimmedValues,
   formErrors,
-  recordProvided,
   record: commercialTransporterRecord,
   render,
-  remember
+  saveTransporterToAddressBook
 })
 
 export const routes = kit.pageRoutes(page, { get, post })

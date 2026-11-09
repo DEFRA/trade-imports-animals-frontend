@@ -10,6 +10,7 @@ import {
 } from './commercial-country.js'
 import { COMMERCIAL, NEW, PRIVATE } from './records.js'
 import { transporterRowOf, wireTransporterOf } from './to-wire-transporter.js'
+import { WIRE_COMMERCIAL, WIRE_PRIVATE } from './wire-types.js'
 
 const COUNTRY_LIST_ANSWER = { body: JSON.stringify([]) }
 const TRANSPORTER_NAME = 'Aberdeen Livestock Ltd'
@@ -18,7 +19,7 @@ const ADDRESS_LINE_ONE = '1 Drovers Road'
 const wireTransporter = (overrides = {}) => ({
   id: '665f1c2ab3e4d51a2c9d0e77',
   name: TRANSPORTER_NAME,
-  type: 'PRIVATE',
+  type: WIRE_PRIVATE,
   addressLine1: ADDRESS_LINE_ONE,
   townOrCity: 'Aberdeen',
   postcode: 'AB10 1AA',
@@ -47,7 +48,9 @@ describe('#transporterRowOf', () => {
   test('Should read a commercial transporter as commercial, under the one country it can be in', async () => {
     addressBookAnswering(COUNTRY_LIST_ANSWER)
 
-    const row = await transporterRowOf(wireTransporter({ type: 'COMMERCIAL' }))
+    const row = await transporterRowOf(
+      wireTransporter({ type: WIRE_COMMERCIAL })
+    )
 
     expect({ type: row.type, country: row.address.country }).toEqual({
       type: COMMERCIAL,
@@ -79,20 +82,20 @@ describe('#wireTransporterOf', () => {
   test('Should store a commercial transporter under the fixed country code, whatever its address holds', () => {
     const wire = wireTransporterOf(
       party({ address: { ...party().address, countryCode: 'GB' } }),
-      'COMMERCIAL'
+      WIRE_COMMERCIAL
     )
 
     expect(wire.countryCode).toBe(COMMERCIAL_TRANSPORTER_COUNTRY_CODE)
   })
 
   test('Should store a private transporter under the country code its address holds', () => {
-    expect(wireTransporterOf(party(), 'PRIVATE').countryCode).toBe('GB')
+    expect(wireTransporterOf(party(), WIRE_PRIVATE).countryCode).toBe('GB')
   })
 
   test('Should send every address field the address book expects, blank where the form left one out', () => {
     const wire = wireTransporterOf(
       { name: TRANSPORTER_NAME, address: { addressLine1: ADDRESS_LINE_ONE } },
-      'PRIVATE'
+      WIRE_PRIVATE
     )
 
     expect(wire).toEqual({
@@ -105,12 +108,12 @@ describe('#wireTransporterOf', () => {
       phone: '',
       email: '',
       countryCode: '',
-      type: 'PRIVATE'
+      type: WIRE_PRIVATE
     })
   })
 
   test('Should send blank address fields and no country when the party carries no address at all', () => {
-    const wire = wireTransporterOf({ name: TRANSPORTER_NAME }, 'PRIVATE')
+    const wire = wireTransporterOf({ name: TRANSPORTER_NAME }, WIRE_PRIVATE)
 
     expect({ postcode: wire.postcode, countryCode: wire.countryCode }).toEqual({
       postcode: '',
@@ -120,12 +123,12 @@ describe('#wireTransporterOf', () => {
 
   test('Should send an approval number only when the transporter has one', () => {
     expect(
-      Object.hasOwn(wireTransporterOf(party(), 'PRIVATE'), 'approvalNumber')
+      Object.hasOwn(wireTransporterOf(party(), WIRE_PRIVATE), 'approvalNumber')
     ).toBe(false)
     expect(
       wireTransporterOf(
         party({ approvalNumber: 'UK/BELF/T2/00104115' }),
-        'COMMERCIAL'
+        WIRE_COMMERCIAL
       ).approvalNumber
     ).toBe('UK/BELF/T2/00104115')
   })

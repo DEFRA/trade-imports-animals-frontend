@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../../set.js'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   authenticatedCredentials,
@@ -11,11 +11,13 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
+import * as transporters from '../../../../../../../services/transporters/index.js'
 import {
   COMMERCIAL,
   NEW
 } from '../../../../../../../services/transporters/index.js'
 import { TRANSPORTER_ADD_IN_PROGRESS } from '../transporter-add-session.js'
+import { routes as transportersListRoutes } from '../transporters/transporters.controller.js'
 import {
   addedTransportersOf,
   expectRecoverableSaveFailureKeepingValues,
@@ -65,6 +67,9 @@ const handlerFor = (method) =>
 
 const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
+const transportersListGetHandler = transportersListRoutes.find(
+  (route) => route.method === 'GET'
+).handler
 
 const expectRequiredFieldsRefusal = (result) => {
   expect(Object.keys(result.view.context.errors)).toEqual(REQUIRED_FIELD_ORDER)
@@ -268,6 +273,36 @@ describe('/transporters/add/commercial', () => {
         TRANSPORTER_ADD_IN_PROGRESS
       ][COMMERCIAL]
     ).toEqual(RECORD)
+  })
+
+  it('Should show no success banner and no chosen transporter on the list when only the address-book write fails', async () => {
+    const UNSAVED_RECORD = {
+      ...RECORD,
+      nameOrOrganisationName: 'Not Actually Saved Haulage Ltd'
+    }
+    const saveTransporter = vi
+      .spyOn(transporters, 'saveTransporter')
+      .mockRejectedValue(unavailableBackendError(SAVE_TRANSPORTER_OPERATION))
+
+    try {
+      const result = await driveHandler(postHandler, {
+        seed: { transporterType: COMMERCIAL },
+        payload: { ...UNSAVED_RECORD, country: NORTHERN_IRELAND }
+      })
+
+      expectRecoverableSaveFailureKeepingValues(result.response, UNSAVED_RECORD)
+
+      const listResult = await driveHandler(transportersListGetHandler, {
+        journeyId: result.journeyId,
+        seed: result.after,
+        state: result.cookies
+      })
+
+      expect(listResult.view.context.successBanner).toBeNull()
+      expect(listResult.view.context.selectedId).toBeUndefined()
+    } finally {
+      saveTransporter.mockRestore()
+    }
   })
 })
 

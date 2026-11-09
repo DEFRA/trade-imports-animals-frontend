@@ -17,6 +17,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import {
   storedEnteredTransporter,
   takeAddedTransporterBanner,
+  TRANSPORTER_TYPE_RESTART,
   transporterTypeRestartPatch
 } from '../transporter-add-session.js'
 import { transporterAnswer } from './transporter-record.js'
@@ -124,6 +125,7 @@ const restartTransporterTypeIfAbandoned = async (
   const { transporterType } = answers
   if (
     !transporterType ||
+    flowOnlyAnswers?.[TRANSPORTER_TYPE_RESTART] ||
     transporterTypeHasLinkedAnswer(answers, flowOnlyAnswers, transporterType)
   ) {
     return

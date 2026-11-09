@@ -25,6 +25,7 @@ import {
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { countriesOriginEntries } from '../../../../../../../services/_capture/fixtures.js'
 import { compareLabels } from '../../../../../../../services/countries/country-labels.js'
@@ -243,7 +244,7 @@ const expectTransporterGuidance = async (page) => {
   ).toBeVisible()
 }
 
-const expectBranchOptions = async (page) => {
+const expectTransporterTypeOptions = async (page) => {
   const options = page.getByRole('radio')
   await expect(options).toHaveCount(2)
   await expect(options.nth(0)).toHaveValue(PRIVATE)
@@ -338,9 +339,10 @@ test.describe('transporter list page', () => {
     }
   })
 
-  test('every row ends with a View details link naming its own transporter', async ({
+  test('every shipped row’s action cell is empty, and an added transporter’s row carries a View details link naming it', async ({
     page
   }) => {
+    await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
 
     for (const record of transporterRecords) {
@@ -349,26 +351,47 @@ test.describe('transporter list page', () => {
           name: `${copy.transporters.viewDetails} ${record.name}`,
           exact: true
         })
-      ).toBeVisible()
+      ).toHaveCount(0)
     }
+
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page)
+    await saveAndContinue(page).click()
+
+    await expect(
+      transporterRow(
+        page,
+        validPrivateTransporter.nameOrOrganisationName
+      ).getByRole('link', {
+        name: `${copy.transporters.viewDetails} ${validPrivateTransporter.nameOrOrganisationName}`,
+        exact: true
+      })
+    ).toBeVisible()
   })
 
-  test('points a row’s View details link at that transporter’s address book page, carrying this list as the return', async ({
+  test('points an added row’s View details link at that transporter’s address book page, carrying this list as the return', async ({
     page
   }) => {
-    await openTransporterList(page)
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page)
+    await saveAndContinue(page).click()
     const listUrl = journeyUrl(page, 'transporters')
 
-    const link = transporterRow(page, commercialRecord.name).getByRole('link', {
-      name: `${copy.transporters.viewDetails} ${commercialRecord.name}`,
+    const addedName = validPrivateTransporter.nameOrOrganisationName
+    const link = transporterRow(page, addedName).getByRole('link', {
+      name: `${copy.transporters.viewDetails} ${addedName}`,
       exact: true
     })
 
     const expectedReturnUrl = `${new URL(config.get('tradeImportsAnimalsFrontend.baseUrl')).origin}${listUrl}`
-    await expect(link).toHaveAttribute(
-      'href',
-      `${new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin}/address-book/${commercialRecord.id}?return=${encodeURIComponent(expectedReturnUrl)}`
+    const href = await link.getAttribute('href')
+    const detailsUrl = new URL(href)
+    expect(detailsUrl.origin).toBe(
+      new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin
     )
+    expect(detailsUrl.pathname).toMatch(/^\/address-book\/[^/]+$/)
+    expect(detailsUrl.searchParams.get('return')).toBe(expectedReturnUrl)
   })
 
   test('tags an approved transporter green and a newly added one magenta', async ({
@@ -392,6 +415,12 @@ test.describe('transporter list page', () => {
     await expect(
       page.getByRole('heading', { name: copy.transporterAdd.title })
     ).toHaveCount(0)
+  })
+})
+
+test.describe('picking a transporter on the list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
   })
 
   test('picking a commercial transporter saves it with its type and persists', async ({
@@ -484,19 +513,20 @@ test.describe('transporter list page', () => {
 })
 
 test.describe('a View details link opened with change context', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-  })
-
   test('keeps the change context on the return it carries', async ({
     page
   }) => {
-    await openTransporterList(page)
+    await signInWithOwnTransporterStore(page)
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page)
+    await saveAndContinue(page).click()
+
     const listUrlWithChangeContext = `${journeyUrl(page, 'transporters')}?change=1`
     await page.goto(listUrlWithChangeContext)
 
-    const link = transporterRow(page, commercialRecord.name).getByRole('link', {
-      name: `${copy.transporters.viewDetails} ${commercialRecord.name}`,
+    const addedName = validPrivateTransporter.nameOrOrganisationName
+    const link = transporterRow(page, addedName).getByRole('link', {
+      name: `${copy.transporters.viewDetails} ${addedName}`,
       exact: true
     })
     const href = await link.getAttribute('href')
@@ -813,7 +843,7 @@ test.describe('adding a transporter that is not on the list', () => {
     await openTransporterType(page)
 
     await expect(page).toHaveURL(/\/transporters\/add$/)
-    await expectBranchOptions(page)
+    await expectTransporterTypeOptions(page)
     await expectPageEndsWithPrimaryAlone(
       page,
       copy.transporterAdd.continueButton
@@ -1296,16 +1326,23 @@ test.describe('cancelling an add form', () => {
     ).toHaveCount(0)
   })
 
-  test('changing the type on the way in: the type question’s own purge, not the cancel, leaves no transporter chosen', async ({
+  test('changing the type on the way in and cancelling leaves the previously chosen transporter selected and the transport task complete', async ({
     page
   }) => {
+    const transportTaskRow = () =>
+      page.getByRole('listitem').filter({
+        has: page.getByText(hubCopy.rows.transporter.title, { exact: true })
+      })
+
     await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
     await saveAndContinue(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(transportTaskRow()).toContainText(hubCopy.statuses.complete)
 
     const transporterListUrl = journeyUrl(page, 'transporters')
+    const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, 'transporters/add'))
     await page
       .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
@@ -1314,7 +1351,18 @@ test.describe('cancelling an add form', () => {
     await fillsPrivateNameThenCancelsToDashboard(page)
 
     await page.goto(transporterListUrl)
-    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+    await expect(
+      page.getByRole('radio', {
+        name: SOME_TYPED_TRANSPORTER_NAME,
+        exact: true
+      })
+    ).toHaveCount(0)
+
+    await page.goto(hubUrl)
+    await expect(transportTaskRow()).toContainText(hubCopy.statuses.complete)
   })
 })
 

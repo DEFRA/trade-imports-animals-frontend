@@ -65,7 +65,7 @@ describe('#validation for transporters — onStored', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should accept a stored transporter whose name still matches the register', async () => {
+  it('Should accept a stored transporter whose name still matches the list', async () => {
     const stored = {
       commercialTransporter: { name: CAMPBELL_NAME }
     }
@@ -76,7 +76,7 @@ describe('#validation for transporters — onStored', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should reject a stored transporter that no longer appears in the register', async () => {
+  it('Should reject a stored transporter that no longer appears in the list', async () => {
     const stored = {
       commercialTransporter: { name: 'Ghost Transport Ltd' }
     }

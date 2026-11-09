@@ -23,7 +23,7 @@ const availableRecordsFor = async (request, organisationId) => {
   }
 }
 
-const registerFor = async (request) => {
+const transportersByNameKey = async (request) => {
   const records = await availableRecordsFor(request, organisationIdOf(request))
   return new Map(
     records.map((record) => [transporters.nameKey(record.name), record])
@@ -52,8 +52,8 @@ const checks = async (_values, { stored, storedAnswers, request } = {}) => {
     return {}
   }
   const chosenKey = transporters.nameKey(chosenName)
-  const register = await registerFor(request)
-  return register.has(chosenKey)
+  const byNameKey = await transportersByNameKey(request)
+  return byNameKey.has(chosenKey)
     ? {}
     : { transporter: copy.errors.transporterNoLongerAvailable }
 }

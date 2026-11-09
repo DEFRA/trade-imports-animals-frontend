@@ -4,7 +4,7 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 
 /** Address lines in reading order, whichever of the two shapes a record has:
- * the register's numbered lines, or the private form's town, county and
+ * the shipped list's numbered lines, or the private form's town, county and
  * postal code. Blank parts drop out. */
 const ADDRESS_ORDER = [
   'addressLine1',

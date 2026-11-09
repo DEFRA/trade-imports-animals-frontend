@@ -57,7 +57,8 @@ export const transporterRows = (records, { selectedId }) =>
       classes: STATUS_CLASSES[record.status]
     },
     searchText: searchTextOf(record),
-    checked: record.id === selectedId
+    checked: record.id === selectedId,
+    fromAddressBook: Boolean(record.fromAddressBook)
   }))
 
 const CELLS_TEMPLATE =
@@ -85,12 +86,14 @@ export const transporterTableRows = (rows, { returnUrl }) =>
       html: renderMacro(CELLS_TEMPLATE, 'transporterStatusCell', row),
       attributes: { 'data-search-words': '' }
     },
-    {
-      html: renderMacro(
-        CELLS_TEMPLATE,
-        'transporterDetailsCell',
-        { ...row, detailsHref: detailsHrefFor(row.id, returnUrl) },
-        copy
-      )
-    }
+    row.fromAddressBook
+      ? {
+          html: renderMacro(
+            CELLS_TEMPLATE,
+            'transporterDetailsCell',
+            { ...row, detailsHref: detailsHrefFor(row.id, returnUrl) },
+            copy
+          )
+        }
+      : {}
   ])

@@ -22,7 +22,11 @@ import {
 } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { takeTransporterTypeRestartFlag } from '../transporter-add-session.js'
+import {
+  chosenTransporterType,
+  takeTransporterTypeRestartFlag,
+  transporterTypeChosenPatch
+} from '../transporter-add-session.js'
 
 const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 
@@ -67,8 +71,10 @@ const get = async (request, h) => {
     h,
     flowOnlyAnswers
   )
+  const storedTransporterType =
+    chosenTransporterType(flowOnlyAnswers) ?? answers.transporterType ?? ''
   return render(request, h, journey, {
-    transporterType: restarted ? '' : (answers.transporterType ?? '')
+    transporterType: restarted ? '' : storedTransporterType
   })
 }
 
@@ -77,7 +83,7 @@ const nextSlugForTransporterType = (transporterType) =>
     ? commercialTransporterDetailsPage.slug
     : privateTransporterDetailsPage.slug
 
-const logRefusalUnlessUsersOwnInput = (
+const logRefusalUnlessNothingWasChosen = (
   request,
   { errors, transporterType }
 ) => {
@@ -92,7 +98,7 @@ const post = async (request, h) => {
   const values = { transporterType: value.transporterType ?? '' }
   if (errors) {
     const { journey } = await state.get(request, h)
-    logRefusalUnlessUsersOwnInput(request, {
+    logRefusalUnlessNothingWasChosen(request, {
       errors,
       transporterType: values.transporterType
     })
@@ -104,7 +110,11 @@ const post = async (request, h) => {
   const { failure } = await kit.recoverableSave(
     request,
     async () => {
-      await state.commit(request, h, values)
+      await state.commit(
+        request,
+        h,
+        transporterTypeChosenPatch(values.transporterType)
+      )
     },
     async () => {
       const { journey } = await state.get(request, h)

@@ -2,6 +2,7 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import * as state from '../../../../../../engine/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { transporterAddPage } from './page.js'
+import { chosenTransporterType } from './transporter-add-session.js'
 
 export const OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE =
   'Redirected to the transporter type question: the stored transporter type does not match'
@@ -11,8 +12,10 @@ export const redirectUnlessOwnTransporterType = async (
   h,
   transporterType
 ) => {
-  const { journey, answers } = await state.get(request, h)
-  if (answers.transporterType === transporterType) {
+  const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
+  const intendedTransporterType =
+    chosenTransporterType(flowOnlyAnswers) ?? answers.transporterType
+  if (intendedTransporterType === transporterType) {
     return undefined
   }
   request.logger.info(
@@ -21,7 +24,7 @@ export const redirectUnlessOwnTransporterType = async (
       route: request.route?.path,
       reason: 'not-own-transporter-type',
       transporterType,
-      storedTransporterType: answers.transporterType ?? 'none'
+      storedTransporterType: intendedTransporterType ?? 'none'
     },
     OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE
   )

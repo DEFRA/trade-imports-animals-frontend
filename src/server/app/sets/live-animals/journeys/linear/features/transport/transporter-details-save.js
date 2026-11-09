@@ -5,7 +5,6 @@ import {
 } from '../../../../../../lib/http-status.js'
 import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import * as kit from '../../../../../../shared/kit.js'
-import { continueFromTransporterList } from './continue-from-transporter-list.js'
 import { redirectUnlessOwnTransporterType } from './own-transporter-type.js'
 import { transportersPage } from './page.js'
 import {
@@ -53,10 +52,9 @@ export const saveTransporterDetails =
     transporterType,
     trimmedValues,
     formErrors,
-    recordProvided,
     record,
     render,
-    remember
+    saveTransporterToAddressBook
   }) =>
   async (request, h) => {
     const payload = request.payload ?? {}
@@ -84,24 +82,20 @@ export const saveTransporterDetails =
       ).code(HTTP_STATUS_BAD_REQUEST)
     }
 
-    const { value: saved, failure } = await kit.recoverableSave(
+    const { failure } = await kit.recoverableSave(
       request,
       async () => {
         const { flowOnlyAnswers } = await state.get(request, h)
-        const saving = recordProvided(values)
-        const committed = await state.commit(request, h, {
-          ...(saving ? await record(values) : {}),
+        await state.commit(request, h, {
+          transporterType,
+          ...(await record(values)),
           ...clearedEnteredTransporterPatch(flowOnlyAnswers, transporterType),
-          ...(saving
-            ? justAddedTransporterNamePatch(values.nameOrOrganisationName)
-            : {})
+          ...justAddedTransporterNamePatch(values.nameOrOrganisationName)
         })
-        if (saving) {
-          await remember?.(request, values)
-        }
-        return committed
+        await saveTransporterToAddressBook(request, values)
       },
       async () => {
+        await state.commit(request, h, justAddedTransporterNamePatch(null))
         const { journey } = await state.get(request, h)
         await rememberWhatWasEntered(request, h, transporterType, values)
         return (
@@ -115,9 +109,6 @@ export const saveTransporterDetails =
       return failure
     }
 
-    if (!recordProvided(values)) {
-      return continueFromTransporterList(request, h, saved.scope)
-    }
     return h.redirect(
       kit.withChangeContext(
         request,

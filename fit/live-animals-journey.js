@@ -1199,6 +1199,14 @@ export const expectPageEndsWithPrimaryAndCancel = async (
   await expect(buttons).toHaveText([primaryName, cancelName])
   await expect(saveAndReturnToHub(page)).toHaveCount(0)
   await expect(cancelAndReturnToHub(page)).toHaveCount(0)
+
+  const lastVisibleChild = form.locator('> *:visible').last()
+  await expect(
+    lastVisibleChild.getByRole('button', { name: primaryName, exact: true })
+  ).toBeVisible()
+  await expect(
+    lastVisibleChild.getByRole('button', { name: cancelName, exact: true })
+  ).toBeVisible()
 }
 
 /**

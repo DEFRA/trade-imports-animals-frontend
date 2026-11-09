@@ -4,18 +4,20 @@ import {
   COMMERCIAL_TRANSPORTER_COUNTRY_CODE,
   COMMERCIAL_TRANSPORTER_COUNTRY_NAME
 } from './commercial-country.js'
+import { WIRE_COMMERCIAL } from './wire-types.js'
 
-const isCommercial = (wireType) => wireType === 'COMMERCIAL'
+const isCommercial = (wireType) => wireType === WIRE_COMMERCIAL
 
 /** The list row a transporter the address book returned renders as. A
  * commercial transporter's country is the fixed display word; a private
  * one's is resolved the way the address book's own records are. Every
  * address-book transporter is not yet approved: the address book carries no
- * approval status (ruling decision 5). */
+ * approval status. */
 export const transporterRowOf = async (wireTransporter) => ({
   id: wireTransporter.id,
   type: isCommercial(wireTransporter.type) ? COMMERCIAL : PRIVATE,
   status: NEW,
+  fromAddressBook: true,
   name: wireTransporter.name,
   approvalNumber: wireTransporter.approvalNumber,
   address: {

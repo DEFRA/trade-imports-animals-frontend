@@ -27,16 +27,32 @@ export const nameKey = (name) => name.trim().replace(/\s+/gu, ' ').toLowerCase()
 /** Every transporter the service ships, commercial and private together. */
 export const parties = () => TRANSPORTER_OPTIONS
 
+const firstOfEachName = (records) => {
+  const seenNames = new Set()
+  return records.filter((record) => {
+    const key = nameKey(record.name)
+    if (seenNames.has(key)) {
+      return false
+    }
+    seenNames.add(key)
+    return true
+  })
+}
+
 /** Every transporter this organisation can pick: the ones it has added for
  * itself in the address book, then the ones the service ships.
  *
  * An added record replaces a shipped one of the same name rather than sitting
  * beside it: the list's "one name means one row" holds across the join too,
  * so a trader who adds a transporter the service already ships sees the one
- * row they added, not two rows a pick cannot tell apart. */
+ * row they added, not two rows a pick cannot tell apart. The same rule holds
+ * between two added records: the newest of the name wins, the address book's
+ * own listing order. */
 export const partiesFor = async (orgId) => {
   const wireTransporters = await transporterStore().listTransporters(orgId)
-  const added = await Promise.all(wireTransporters.map(transporterRowOf))
+  const added = firstOfEachName(
+    await Promise.all(wireTransporters.map(transporterRowOf))
+  )
   const addedNames = new Set(added.map((record) => nameKey(record.name)))
   return [
     ...added,
@@ -50,7 +66,8 @@ export const partiesFor = async (orgId) => {
  *
  * @param {string} orgId the organisation the signed-in user is acting for
  * @param {object} party the transporter, in the journey's own record shape
- * @param {'PRIVATE'|'COMMERCIAL'} wireType which kind of transporter it is
+ * @param {string} wireType which kind of transporter it is: `WIRE_PRIVATE`
+ *   or `WIRE_COMMERCIAL` from `./wire-types.js`
  * @returns {Promise<object>} the created transporter, as the address book
  *   returned it
  */

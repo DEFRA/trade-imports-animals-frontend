@@ -16,6 +16,7 @@ import {
   saveTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import { WIRE_PRIVATE } from '../../../../../../../services/transporters/wire-types.js'
 import {
   privateTransporterDetailsPage as page,
   transporterAddPage
@@ -81,9 +82,6 @@ const fields = async () =>
       maxLength: copy.errors.telephoneMaxLength
     })
   )
-
-const recordProvided = (values) =>
-  FIELD_ORDER.some((field) => values[field] !== '')
 
 const countryItems = async (heldCountry) => {
   const offered = await countries.addressCountries()
@@ -203,21 +201,20 @@ const privateTransporterRecord = async (values) => ({
   privateTransporter: await privateTransporter(values)
 })
 
-const remember = async (request, values) =>
+const saveTransporterToAddressBook = async (request, values) =>
   saveTransporter(
     organisationIdOf(request),
     await privateTransporter(values),
-    'PRIVATE'
+    WIRE_PRIVATE
   )
 
 const post = saveTransporterDetails({
   transporterType: PRIVATE,
   trimmedValues,
   formErrors,
-  recordProvided,
   record: privateTransporterRecord,
   render,
-  remember
+  saveTransporterToAddressBook
 })
 
 export const routes = kit.pageRoutes(page, { get, post })

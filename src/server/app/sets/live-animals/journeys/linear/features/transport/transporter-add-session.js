@@ -3,6 +3,14 @@ import * as state from '../../../../../../engine/index.js'
 export const TRANSPORTER_ADD_IN_PROGRESS = 'transporterAddInProgress'
 export const JUST_ADDED_TRANSPORTER_NAME = 'justAddedTransporterName'
 export const TRANSPORTER_TYPE_RESTART = 'transporterTypeRestart'
+export const TRANSPORTER_TYPE_CHOSEN = 'transporterTypeChosen'
+
+export const chosenTransporterType = (flowOnlyAnswers) =>
+  flowOnlyAnswers?.[TRANSPORTER_TYPE_CHOSEN]
+
+export const transporterTypeChosenPatch = (transporterType) => ({
+  [TRANSPORTER_TYPE_CHOSEN]: transporterType
+})
 
 export const storedEnteredTransporter = (flowOnlyAnswers, transporterType) =>
   flowOnlyAnswers?.[TRANSPORTER_ADD_IN_PROGRESS]?.[transporterType]
@@ -35,7 +43,8 @@ export const clearedEnteredTransporterPatch = (
   [TRANSPORTER_ADD_IN_PROGRESS]: enteredTransportersOfOtherTypes(
     flowOnlyAnswers,
     transporterType
-  )
+  ),
+  [TRANSPORTER_TYPE_CHOSEN]: null
 })
 
 export const clearEnteredTransporter = (

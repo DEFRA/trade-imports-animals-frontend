@@ -37,6 +37,7 @@ import {
   TRANSPORTER_TYPE_RESTART
 } from '../transporter-add-session.js'
 import { copy } from '../copy/copy.en.js'
+import { WIRE_PRIVATE } from '../../../../../../../services/transporters/wire-types.js'
 
 import * as transporters from './transporters.controller.js'
 
@@ -413,7 +414,7 @@ describe('/transporters with a transporter the organisation added', () => {
   const HAULIER_NAME = 'Dupont Transport SARL'
 
   const haulierWire = () => ({
-    type: 'PRIVATE',
+    type: WIRE_PRIVATE,
     name: HAULIER_NAME,
     addressLine1: '10 Rue de la Ferme',
     addressLine2: '',
@@ -441,7 +442,7 @@ describe('/transporters with a transporter the organisation added', () => {
     expect(first.approvalNumberText).toBe('Not applicable')
   })
 
-  it('Should leave the shipped register on the list behind it', async () => {
+  it('Should leave the shipped list behind it', async () => {
     await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
@@ -624,5 +625,28 @@ describe('GET /transporters — an unfinished add', () => {
 
     expect(result.after.transporterType).toBe(PRIVATE)
     expect(restartFlagOf(result)).toBeFalsy()
+  })
+
+  const RESTART_LOG_MESSAGE =
+    'Transporter type question will restart blank: the trader never saved an add for it'
+  const restartLogEntries = (logger) =>
+    logger.entries.filter(({ message }) => message === RESTART_LOG_MESSAGE)
+
+  it('Should log the abandonment and commit the restart flag once, not again on a second GET of the same abandoned state', async () => {
+    const first = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE }
+    })
+
+    expect(restartFlagOf(first)).toBe(true)
+    expect(restartLogEntries(first.logger)).toHaveLength(1)
+
+    const second = await driveHandler(getHandler, {
+      journeyId: first.journeyId,
+      seed: { transporterType: PRIVATE },
+      state: first.cookies
+    })
+
+    expect(restartLogEntries(second.logger)).toHaveLength(0)
+    expect(second.cookies[flowOnlyAnswersCookie()]).toBeUndefined()
   })
 })
