@@ -491,18 +491,18 @@ describe('View link to the INS address book', () => {
     ])
   })
 
-  it('Should return to the page being shown and keep changing when the picker was opened to change an answer', async () => {
+  it('Should return to the page being shown with its chosen address, still changing, when the picker was opened to change an answer', async () => {
     setInsFrontendBaseUrl('http://ins.example')
 
     const result = await driveHandler(getConsignor, {
-      query: { page: '2' },
+      query: { page: '2', selected: ALPINE_DAIRY_ID },
       startingFrom: [openedFromChangeLink()]
     })
 
     expect(firstViewHrefOf(result)).toBe(
       insViewAddressUrl(
         pickerFrom(result).rows[0].id,
-        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&change=1`
+        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&selected=${ALPINE_DAIRY_ID}&change=1`
       )
     )
   })
