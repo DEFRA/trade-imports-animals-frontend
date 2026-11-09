@@ -565,10 +565,10 @@ test.describe('party picker details and pagination', () => {
     const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
     const pickerReturn = `${new URL(page.url()).pathname}?page=1`
 
-    await expect(addressRow.getByRole('cell').nth(2)).toHaveText(
-      '18 Dockside Road\nLondon, E14 9GE',
-      { useInnerText: true }
-    )
+    const addressCell = addressRow.getByRole('cell').nth(2)
+    await expect
+      .poll(() => addressCell.evaluate((cell) => cell.innerText))
+      .toBe('18 Dockside Road\nLondon, E14 9GE')
     await expect(
       addressRow.getByRole('link', {
         name: `${copy.picker.view} Tech Imports Ltd`,
