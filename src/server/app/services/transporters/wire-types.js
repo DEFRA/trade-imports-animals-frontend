@@ -1,0 +1,2 @@
+export const WIRE_COMMERCIAL = 'COMMERCIAL'
+export const WIRE_PRIVATE = 'PRIVATE'

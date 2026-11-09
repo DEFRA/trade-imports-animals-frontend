@@ -1,13 +1,10 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import {
-  HTTP_STATUS_BAD_REQUEST,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR
-} from '../../../../../../../lib/http-status.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import {
   compose,
-  oneOf,
+  requiredOneOf,
   validate
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -22,22 +19,25 @@ import {
 } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import {
+  chosenTransporterType,
+  takeTransporterTypeRestartFlag,
+  transporterTypeChosenPatch
+} from '../transporter-add-session.js'
 
 const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 
 const copy = copyFor({ en, cy }).transporterAdd
 
 const fields = compose(
-  oneOf('transporterType', transportReference.transporterTypes())
+  requiredOneOf(
+    'transporterType',
+    transportReference.transporterTypes(),
+    copy.errors.transporterTypeRequired
+  )
 )
 
-const render = (
-  request,
-  h,
-  journey,
-  values,
-  { errors = {}, recoverableError = false } = {}
-) =>
+const render = (request, h, journey, values, { errors = {} } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: kit.carryTrail(
@@ -46,7 +46,7 @@ const render = (
       ),
       journey,
       page,
-      recoverableError
+      showJourneyStrip: false
     }),
     copy,
     values,
@@ -55,48 +55,53 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, flowOnlyAnswers } = await state.get(request, h)
+  const restarted = await takeTransporterTypeRestartFlag(
+    request,
+    h,
+    flowOnlyAnswers
+  )
+  const storedTransporterType =
+    chosenTransporterType(flowOnlyAnswers) ?? answers.transporterType ?? ''
   return render(request, h, journey, {
-    transporterType: answers.transporterType ?? ''
+    transporterType: restarted ? '' : storedTransporterType
   })
 }
 
-const nextSlugForTransporterType = (transporterType) => {
-  if (transporterType === COMMERCIAL) {
-    return commercialTransporterDetailsPage.slug
-  }
-  return transporterType === ''
-    ? transportersPage.slug
+const nextSlugForTransporterType = (transporterType) =>
+  transporterType === COMMERCIAL
+    ? commercialTransporterDetailsPage.slug
     : privateTransporterDetailsPage.slug
+
+const logRefusalUnlessNothingWasChosen = (
+  request,
+  { errors, transporterType }
+) => {
+  if (transporterType !== '') {
+    kit.logRefusal(request, { fieldErrors: errors, transporterType })
+  }
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const values = { transporterType: payload.transporterType ?? '' }
-  const { errors } = validate(fields, payload)
+  const { value, errors } = validate(fields, payload)
+  const values = { transporterType: value.transporterType ?? '' }
   if (errors) {
     const { journey } = await state.get(request, h)
+    logRefusalUnlessNothingWasChosen(request, {
+      errors,
+      transporterType: values.transporterType
+    })
     return render(request, h, journey, values, { errors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  const { failure } = await kit.recoverableSave(
+  await state.commit(
     request,
-    async () => {
-      await state.commit(request, h, values)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {
-        recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
+    h,
+    transporterTypeChosenPatch(values.transporterType)
   )
-  if (failure) {
-    return failure
-  }
-
   return h.redirect(
     kit.carryTrail(
       request,

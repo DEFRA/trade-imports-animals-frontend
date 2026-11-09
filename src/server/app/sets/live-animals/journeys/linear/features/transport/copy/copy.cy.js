@@ -95,7 +95,7 @@ export const copy = {
   transporters: {
     title: 'Manylion y cludwr',
     intro: 'Dyma’r person neu’r cwmni sy’n gyfrifol am gludo’r llwyth.',
-    legend: 'Dewiswch gludwr',
+    resultsHeading: 'Dewiswch gludwr',
     guidance: {
       authorisationLead:
         'Rhaid i’ch cludwr feddu ar awdurdodiad cludo dilys, a roddwyd gan DAERA neu APHA yn y DU os ydynt yn:',
@@ -127,9 +127,11 @@ export const copy = {
       address: 'Cyfeiriad',
       approvalNumber: 'Rhif cymeradwyo',
       type: 'Math',
-      status: 'Statws'
+      status: 'Statws',
+      actionHidden: 'Gweithred'
     },
     selectRowPrefix: 'Dewis',
+    viewDetails: 'Gweld manylion',
     search: {
       label: 'Chwilio',
       hint: 'Enw, cyfeiriad neu rif cymeradwyo',
@@ -139,6 +141,10 @@ export const copy = {
     shownCount: (count) =>
       `${count} cludwr ${count === 1 ? 'wedi’i ddangos' : 'wedi’u dangos'}`,
     add: 'Ychwanegu cludwr',
+    addedBanner: {
+      title: 'Llwyddiant',
+      text: (name) => `Mae’r cludwr ${name} wedi’i ychwanegu`
+    },
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr',
       transporterNoLongerAvailable:
@@ -147,9 +153,9 @@ export const copy = {
   },
   transporterAdd: {
     title: 'Dewiswch fath o gludwr',
-    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
     warning:
-      'Cyn i chi ychwanegu’r cludwr hwn, gwnewch yn siŵr eich bod wedi chwilio amdano yn gyntaf.',
+      'Gwiriwch restr y cludwyr cyn ychwanegu cludwyr newydd, i osgoi dyblygu.',
+    continueButton: 'Parhau',
     options: {
       Private: {
         text: 'Cludwr preifat'
@@ -158,12 +164,17 @@ export const copy = {
         text: 'Masnachol',
         hint: 'Dim ond cludwr masnachol o Ogledd Iwerddon y gall hwn fod.'
       }
+    },
+    errors: {
+      transporterTypeRequired: 'Rhaid dewis math o gludwr'
     }
   },
   commercialTransporterDetails: {
     title: 'Ychwanegu cludwr masnachol',
+    guidanceBannerTitle: 'Pwysig',
     guidanceTitle: 'Help gydag awdurdodiad cludwr',
     contactHeading: 'Rhowch fanylion cyswllt',
+    cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',
     fields: {
       approvalNumber: 'Rhif awdurdodiad y cludwr',
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
@@ -205,9 +216,8 @@ export const copy = {
   },
   privateTransporterDetails: {
     title: 'Ychwanegu cludwr preifat',
-    intro:
-      'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
     contactHeading: 'Rhowch fanylion cyswllt',
+    cancelAndReturnToDashboard: 'Canslo a dychwelyd i’r dangosfwrdd',
     fields: {
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
       addressLine1: 'Llinell gyfeiriad 1',
@@ -220,7 +230,6 @@ export const copy = {
       phone: 'Rhif ffôn'
     },
     telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
-    countrySelectText: SELECT_A_COUNTRY,
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',
       addressLine1Required: 'Rhowch linell gyfeiriad 1',

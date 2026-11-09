@@ -9,6 +9,7 @@ import {
   fillOriginDetails,
   journeyIdFromPage,
   openNotificationView,
+  rowFor,
   saveAndContinue,
   startNotificationAtOrigin,
   urlUnderBase,
@@ -51,12 +52,7 @@ const regionCodeField = (page) =>
   page.getByLabel(copy.regionCode.label, { exact: true })
 
 const regionCodeOnReview = (page) =>
-  page
-    .getByRole('term')
-    .filter({
-      has: page.getByText(checkAnswersCopy.rows.regionCode, { exact: true })
-    })
-    .locator('..')
+  rowFor(page, checkAnswersCopy.rows.regionCode)
 
 const removeRegionCodeCap = (page) =>
   regionCodeField(page).evaluate((input) => input.removeAttribute('maxlength'))
@@ -322,7 +318,7 @@ test.describe('origin region of origin code and internal reference', () => {
 
     await openNotificationView(page)
     await expect(regionCodeOnReview(page)).toContainText(
-      checkAnswersCopy.notApplicable
+      sharedCopy.notApplicable
     )
 
     await page.goto(originUrl)

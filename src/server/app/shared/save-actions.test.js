@@ -18,6 +18,7 @@ const withoutReturnControls =
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
 const HUB_VALUE_ATTRIBUTE = 'value="hub"'
 const ACTION_NAME_ATTRIBUTE = 'name="action"'
+const SECONDARY_BUTTON = 'govuk-button--secondary'
 const BUTTON_GROUP = 'class="govuk-button-group"'
 
 describe('#saveActions', () => {
@@ -87,6 +88,33 @@ describe('#saveActions', () => {
     expect(html).toContain(sharedEn.saveActions.saveAndReturnToHub)
     expect(html).toContain(sharedEn.saveActions.cancelAndReturnToHub)
     expect(html).toContain(EXIT_NAME_ATTRIBUTE)
+  })
+})
+
+describe('#saveActions with a secondary control', () => {
+  const secondary =
+    '{ text: "Cancel and return to dashboard", name: "action", value: "cancel" }'
+  const withSecondary = `{ hubHref: hubHref, copy: copy, showReturnControls: false, secondary: ${secondary} }`
+
+  it('Should end the page with exactly the primary and the secondary, in that order, and no overview return control', () => {
+    const html = renderActions(withSecondary)
+    const buttons = html.split('<button').slice(1)
+
+    expect(buttons).toHaveLength(2)
+    expect(buttons[0]).toMatch(/>\s*Save and continue\s*</)
+    expect(buttons[1]).toMatch(/>\s*Cancel and return to dashboard\s*</)
+    expect(buttons[1]).toContain(SECONDARY_BUTTON)
+    expect(buttons[1]).toContain('name="action"')
+    expect(buttons[1]).toContain('value="cancel"')
+    expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
+  })
+
+  it('Should still end a page given no secondary with the primary alone', () => {
+    const html = renderActions(withoutReturnControls)
+
+    expect(html.split('<button')).toHaveLength(2)
   })
 })
 

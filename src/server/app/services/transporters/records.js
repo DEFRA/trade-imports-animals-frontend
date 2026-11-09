@@ -38,7 +38,7 @@ const privateRecord = ({
  *
  * `type` is what a pick means: a Commercial record answers
  * `commercialTransporter`, a Private one answers `privateTransporter`. A
- * commercial record carries register address lines and an approval number; a
+ * commercial record carries fixed address lines and an approval number; a
  * private one carries the address the private-transporter form collects.
  *
  * `status` is whether the transporter has been approved yet. */

@@ -10,7 +10,7 @@ import { get } from '../../../../../engine/read.js'
 import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
 import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
-import { buildInsFrontendUrl } from '../../../../../../common/helpers/ins-frontend-url.js'
+import { buildInsFrontendUrl } from '../../../../../../common/helpers/frontend-url.js'
 import { SET_ID } from '../../../set.js'
 
 const journeyPrefix = () => `${setBase()}/notifications/`

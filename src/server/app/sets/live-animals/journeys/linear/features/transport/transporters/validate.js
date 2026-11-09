@@ -1,7 +1,7 @@
 import {
   compose,
-  oneOf,
-  pageValidation
+  pageValidation,
+  requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
@@ -11,29 +11,37 @@ import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy }).transporters
 
-const registerFor = (request) =>
-  new Map(
-    transporters
-      .partiesFor(organisationIdOf(request))
-      .map((record) => [transporters.nameKey(record.name), record])
-  )
+const availableRecordsFor = async (request, organisationId) => {
+  try {
+    return await transporters.partiesFor(organisationId)
+  } catch (err) {
+    request.logger.warn(
+      { err, organisationId },
+      'Address book unavailable while checking a stored transporter pick is still on the list; falling back to the shipped list'
+    )
+    return transporters.parties()
+  }
+}
 
-// Both readings measure against the same list: submit passes `records` in,
-// stored derives it from `request`. Per-org, so per-request.
-const availableIds = (context) =>
-  context.records
-    ? context.records.map((record) => record.id)
-    : [...registerFor(context.request).values()].map((record) => record.id)
+const transportersByNameKey = async (request) => {
+  const records = await availableRecordsFor(request, organisationIdOf(request))
+  return new Map(
+    records.map((record) => [transporters.nameKey(record.name), record])
+  )
+}
 
 const fields = (_values, context = {}) =>
-  compose(
-    oneOf('transporter', availableIds(context), copy.errors.transporterRequired)
-  )
+  context.stored
+    ? compose()
+    : compose(
+        requiredOneOf(
+          'transporter',
+          context.records.map((record) => record.id),
+          copy.errors.transporterRequired
+        )
+      )
 
-// Stored answers hold the transporter's name, not the picker's id, so the
-// check is a nameKey membership — the same lookup `selectedIdFor` does at
-// render.
-const checks = (_values, { stored, storedAnswers, request } = {}) => {
+const checks = async (_values, { stored, storedAnswers, request } = {}) => {
   if (!stored || !request) {
     return {}
   }
@@ -44,7 +52,8 @@ const checks = (_values, { stored, storedAnswers, request } = {}) => {
     return {}
   }
   const chosenKey = transporters.nameKey(chosenName)
-  return registerFor(request).has(chosenKey)
+  const byNameKey = await transportersByNameKey(request)
+  return byNameKey.has(chosenKey)
     ? {}
     : { transporter: copy.errors.transporterNoLongerAvailable }
 }
@@ -52,6 +61,8 @@ const checks = (_values, { stored, storedAnswers, request } = {}) => {
 export const validation = pageValidation({
   fields,
   checks,
-  fromPayload: (payload) => ({ transporter: payload.transporter ?? '' }),
+  fromPayload: (payload) => ({
+    transporter: String(payload.transporter ?? '').trim()
+  }),
   fromAnswers: () => ({ transporter: '' })
 })

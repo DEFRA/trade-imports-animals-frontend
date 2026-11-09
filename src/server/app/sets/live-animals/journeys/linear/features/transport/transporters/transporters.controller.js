@@ -10,9 +10,17 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import { buildAnimalsFrontendUrl } from '../../../../../../../../common/helpers/frontend-url.js'
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import {
+  chosenTransporterType,
+  storedEnteredTransporter,
+  takeAddedTransporterBanner,
+  TRANSPORTER_TYPE_RESTART,
+  transporterTypeRestartPatch
+} from '../transporter-add-session.js'
 import { transporterAnswer } from './transporter-record.js'
 import {
   matchingTransporters,
@@ -31,21 +39,21 @@ const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 
-const availableTransporters = (request) =>
+const availableTransporters = async (request) =>
   transporters.partiesFor(organisationIdOf(request))
 
 const isSearchAction = (payload) => payload.action === 'search'
 
-const render = (
+const render = async (
   request,
   h,
   current,
   values,
-  { errors = {}, recoverableError = false } = {}
+  { errors = {}, recoverableError = false, successBanner = null } = {}
 ) => {
   const { journey } = current
   const query = String(values.query ?? '')
-  const available = availableTransporters(request)
+  const available = await availableTransporters(request)
   const rows = transporterRows(
     matchingTransporters(available, String(values.narrowBy ?? '')),
     { selectedId: values.selectedId }
@@ -57,7 +65,8 @@ const render = (
       backLink: kit.trailBackLink(request),
       journey,
       page,
-      recoverableError
+      recoverableError,
+      successBanner
     }),
     copy,
     errors,
@@ -72,42 +81,91 @@ const render = (
     selectedId: values.selectedId,
     shownMessages: shownCountMessages(rows.length),
     transporterRows: rows,
-    transporterTableRows: transporterTableRows(rows)
+    transporterTableRows: transporterTableRows(rows, {
+      returnUrl: buildAnimalsFrontendUrl(
+        kit.carryTrail(request, pagePath(journey.journeyId, page.slug))
+      )
+    })
   })
 }
 
-const selectedIdFor = (request, answers) => {
+const selectedIdFor = async (request, answers) => {
   const chosenName =
     answers.commercialTransporter?.name ?? answers.privateTransporter?.name
   if (!chosenName) {
     return undefined
   }
   const chosenKey = transporters.nameKey(chosenName)
-  return availableTransporters(request).find(
+  const available = await availableTransporters(request)
+  return available.find(
     (option) => transporters.nameKey(option.name) === chosenKey
   )?.id
 }
 
+const chosenTransporterOfType = (answers, transporterType) =>
+  transporterType === transporters.COMMERCIAL
+    ? answers.commercialTransporter
+    : answers.privateTransporter
+
+const transporterTypeHasLinkedAnswer = (
+  answers,
+  flowOnlyAnswers,
+  transporterType
+) =>
+  Boolean(chosenTransporterOfType(answers, transporterType)) ||
+  Boolean(storedEnteredTransporter(flowOnlyAnswers, transporterType))
+
+const restartTransporterTypeIfAbandoned = async (
+  request,
+  h,
+  answers,
+  flowOnlyAnswers,
+  journeyId
+) => {
+  const transporterType =
+    chosenTransporterType(flowOnlyAnswers) ?? answers.transporterType
+  if (
+    !transporterType ||
+    flowOnlyAnswers?.[TRANSPORTER_TYPE_RESTART] ||
+    transporterTypeHasLinkedAnswer(answers, flowOnlyAnswers, transporterType)
+  ) {
+    return
+  }
+  request.logger.info(
+    { journeyId, route: request.route?.path, transporterType },
+    'Transporter type question will restart blank: the trader never saved an add for it'
+  )
+  await state.commit(request, h, transporterTypeRestartPatch())
+}
+
 const get = async (request, h) => {
   const current = await state.get(request, h)
-  const { answers, storedAnswers } = current
+  const { answers, storedAnswers, flowOnlyAnswers } = current
   const { errors } = await validation.onStored(answers, {
     request,
     storedAnswers
   })
+  await restartTransporterTypeIfAbandoned(
+    request,
+    h,
+    answers,
+    flowOnlyAnswers,
+    current.journey.journeyId
+  )
+  const successBanner = await takeAddedTransporterBanner(
+    request,
+    h,
+    flowOnlyAnswers,
+    copy.addedBanner
+  )
   return render(
     request,
     h,
     current,
-    { selectedId: selectedIdFor(request, answers) },
-    { errors }
+    { selectedId: await selectedIdFor(request, answers) },
+    { errors, successBanner }
   )
 }
-
-const commitOrSkip = (request, h, chosen) =>
-  chosen
-    ? state.commit(request, h, transporterAnswer(chosen))
-    : state.get(request, h)
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
@@ -121,35 +179,33 @@ const post = async (request, h) => {
       selectedId:
         payload.transporter ||
         payload.selected ||
-        selectedIdFor(request, current.answers)
+        (await selectedIdFor(request, current.answers))
     })
   }
 
-  const records = availableTransporters(request)
-  const { errors } = await validation.onSubmit(payload, { records })
+  const records = await availableTransporters(request)
+  const { values, errors } = await validation.onSubmit(payload, { records })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
-    return render(
-      request,
-      h,
-      current,
-      { query, narrowBy: query },
-      { errors }
+    return (
+      await render(request, h, current, { query, narrowBy: query }, { errors })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const chosen = records.find((record) => record.id === payload.transporter)
+  const chosen = records.find((record) => record.id === values.transporter)
   const { value: committed, failure } = await kit.recoverableSave(
     request,
-    () => commitOrSkip(request, h, chosen),
+    () => state.commit(request, h, transporterAnswer(chosen)),
     async () => {
       const current = await state.get(request, h)
-      return render(
-        request,
-        h,
-        current,
-        { selectedId: chosen?.id, query, narrowBy: query },
-        { recoverableError: true }
+      return (
+        await render(
+          request,
+          h,
+          current,
+          { selectedId: chosen?.id, query, narrowBy: query },
+          { recoverableError: true }
+        )
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

@@ -422,7 +422,7 @@ describe('transporter commit contract — the list and its add spokes', () => {
     const chooser = await drive(postHandlerOf(transporterAdd), {
       payload: { transporterType: 'Private' }
     })
-    expect(committedIds(chooser)).toEqual(['transporterType'])
+    expect(committedIds(chooser)).toEqual([])
 
     const typedInCommercial = await drive(
       postHandlerOf(commercialTransporterDetails),

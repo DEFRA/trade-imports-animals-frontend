@@ -7,20 +7,20 @@ import {
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
-  useStubbedJourney
+  useStubbedJourney,
+  withFlowOnlyAnswers
 } from '../../../../../../../engine/test-support.js'
+import { flowOnlyAnswersCookie } from '../../../../../../../engine/persistence/session.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import {
   COMMERCIAL,
-  NEW,
   PRIVATE,
-  parties,
-  rememberTransporter
+  parties
 } from '../../../../../../../services/transporters/index.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import {
   itSendsBackToWhereTheTraderCameFrom,
@@ -28,8 +28,17 @@ import {
 } from '../../../test-support.js'
 import {
   expectRecoverableSaveFailureKeepingValues,
-  forgetAddedTransportersAroundEachTest
+  forgetAddedTransportersAroundEachTest,
+  seedOrganisationTransporter
 } from '../test-support.js'
+import {
+  JUST_ADDED_TRANSPORTER_NAME,
+  TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_CHOSEN,
+  TRANSPORTER_TYPE_RESTART
+} from '../transporter-add-session.js'
+import { copy } from '../copy/copy.en.js'
+import { WIRE_PRIVATE } from '../../../../../../../services/transporters/wire-types.js'
 
 import * as transporters from './transporters.controller.js'
 
@@ -62,7 +71,7 @@ describe('/transporters', () => {
     const aberdeen = rowFor(result.view.context, ABERDEEN_ID)
     expect(garcia.name).toBe(GARCIA_NAME)
     expect(garcia.type).toBe(COMMERCIAL)
-    expect(garcia.approvalNumber).toBe('ES-T2-45001294')
+    expect(garcia.approvalNumberText).toBe('ES-T2-45001294')
     expect(aberdeen.name).toBe(ABERDEEN_NAME)
     expect(aberdeen.type).toBe(PRIVATE)
   })
@@ -74,10 +83,12 @@ describe('/transporters', () => {
     expect(garcia.addressText).toBe(
       '43 East Hague Extension, Delectus sitodio p. Laborum Odio tempor, Quasoccaecat ut ear, 30055, Switzerland'
     )
-    expect(rowFor(result.view.context, ABERDEEN_ID).approvalNumber).toBe('')
+    expect(rowFor(result.view.context, ABERDEEN_ID).approvalNumberText).toBe(
+      'Not applicable'
+    )
   })
 
-  it('Should tag an approved transporter green and a newly added one pink', async () => {
+  it('Should tag an approved transporter green and a newly added one magenta', async () => {
     const result = await driveHandler(getHandler)
 
     expect(rowFor(result.view.context, GARCIA_ID).status).toEqual({
@@ -164,11 +175,23 @@ describe('/transporters', () => {
     expect(result.response.redirect).toBeTruthy()
   })
 
-  it('Should walk on without saving when no transporter is picked', async () => {
+  it('Should save the transporter whose id is submitted with surrounding space', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'save', transporter: `  ${GARCIA_ID}  ` }
+    })
+
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(result.after.commercialTransporter.name).toBe(GARCIA_NAME)
+    expect(result.response.redirect).toBeTruthy()
+  })
+
+  it('Should refuse to save when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, { payload: {} })
 
+    expect(result.view.context.errors.transporter).toBeTruthy()
+    expect(result.view.context.errorSummary.errorList).toHaveLength(1)
     expect(result.after.transporterType).toBeUndefined()
-    expect(result.response.redirect).toBeTruthy()
+    expectNoRefusalLogged(result.logger)
   })
 
   it('Should re-render the list at 500 with the pick kept after a recoverable save failure', async () => {
@@ -207,12 +230,13 @@ describe('/transporters', () => {
 describe('/transporters — Save and return to overview', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should go to the overview, not the next page, and commit nothing when no transporter is picked', async () => {
+  it('Should refuse to save and save nothing when no transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
       payload: { exit: 'hub' }
     })
 
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.after).toEqual(result.before)
   })
 
@@ -224,6 +248,16 @@ describe('/transporters — Save and return to overview', () => {
     expect(result.response.redirect).toBeUndefined()
     expect(result.view.context.errors.transporter).toBeTruthy()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save the chosen transporter and go to the overview', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { exit: 'hub', transporter: GARCIA_ID }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(result.after.commercialTransporter.name).toBe(GARCIA_NAME)
   })
 })
 
@@ -380,27 +414,24 @@ describe('/transporters with a transporter the organisation added', () => {
   const ANOTHER_ORG = '5900002'
   const HAULIER_NAME = 'Dupont Transport SARL'
 
-  const haulier = () => ({
-    type: PRIVATE,
-    status: NEW,
+  const haulierWire = () => ({
+    type: WIRE_PRIVATE,
     name: HAULIER_NAME,
-    address: {
-      addressLine1: '10 Rue de la Ferme',
-      addressLine2: '',
-      townOrCity: 'Calais',
-      county: 'Pas-de-Calais',
-      postcode: '62100',
-      country: 'France',
-      phone: '+33 3 21 00 00 00',
-      email: 'transport@dupont.example.fr'
-    }
+    addressLine1: '10 Rue de la Ferme',
+    addressLine2: '',
+    townOrCity: 'Calais',
+    county: 'Pas-de-Calais',
+    postcode: '62100',
+    countryCode: 'FR',
+    phone: '+33 3 21 00 00 00',
+    email: 'transport@dupont.example.fr'
   })
 
   useStubbedJourney(SET_ID, dispatchPages)
   forgetAddedTransportersAroundEachTest()
 
   it('Should show it at the top of the list, typed and tagged like any other row', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -409,11 +440,11 @@ describe('/transporters with a transporter the organisation added', () => {
     expect(first.name).toBe(HAULIER_NAME)
     expect(first.type).toBe(PRIVATE)
     expect(first.status).toEqual({ text: 'New', classes: 'govuk-tag--magenta' })
-    expect(first.approvalNumber).toBe('')
+    expect(first.approvalNumberText).toBe('Not applicable')
   })
 
-  it('Should leave the shipped register on the list behind it', async () => {
-    rememberTransporter(ORG, haulier())
+  it('Should leave the shipped list behind it', async () => {
+    await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -422,7 +453,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should accept a pick of it and save it the way it saves any private transporter', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'save', transporter: kept.id }
@@ -436,7 +467,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should re-check it on a notification that already names it', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(getHandler, {
       seed: {
@@ -449,7 +480,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should find it by name when the list is searched', async () => {
-    const kept = rememberTransporter(ORG, haulier())
+    const kept = await seedOrganisationTransporter(ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'search', search: 'dupont' }
@@ -461,7 +492,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should refuse a pick of a transporter another organisation added', async () => {
-    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+    const kept = await seedOrganisationTransporter(ANOTHER_ORG, haulierWire())
 
     const result = await driveHandler(postHandler, {
       payload: { action: 'save', transporter: kept.id }
@@ -473,7 +504,7 @@ describe('/transporters with a transporter the organisation added', () => {
   })
 
   it('Should keep another organisation’s transporter off the list entirely', async () => {
-    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+    const kept = await seedOrganisationTransporter(ANOTHER_ORG, haulierWire())
 
     const result = await driveHandler(getHandler)
 
@@ -484,20 +515,6 @@ describe('/transporters with a transporter the organisation added', () => {
       )
     ).toBe(false)
     expect(result.view.context.transporterRows).toHaveLength(parties().length)
-  })
-
-  it('Should re-check it on an earlier notification after a later one corrected its spelling', async () => {
-    const kept = rememberTransporter(ORG, haulier())
-    rememberTransporter(ORG, { ...haulier(), name: HAULIER_NAME.toUpperCase() })
-
-    const result = await driveHandler(getHandler, {
-      seed: {
-        transporterType: PRIVATE,
-        privateTransporter: { name: HAULIER_NAME }
-      }
-    })
-
-    expect(rowFor(result.view.context, kept.id).checked).toBe(true)
   })
 })
 
@@ -511,5 +528,156 @@ describe('/transporters — Back link', () => {
   itSendsBackToWhereTheTraderCameFromOnRefusal(postHandler, {
     savedPage: 'port-of-entry',
     payload: { transporter: NOT_ON_THE_LIST }
+  })
+})
+
+describe('GET /transporters — the added-transporter banner', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should show the banner naming the sentence-cased transporter and clear it from the session', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [JUST_ADDED_TRANSPORTER_NAME]: 'Jean Dupont Transport SARL'
+        })
+      ]
+    })
+
+    expect(result.view.context.successBanner).toEqual({
+      titleText: copy.transporters.addedBanner.title,
+      text: 'Jean dupont transport sarl transporter added'
+    })
+    expect(
+      result.cookies[flowOnlyAnswersCookie()][result.journeyId][
+        JUST_ADDED_TRANSPORTER_NAME
+      ]
+    ).toBeNull()
+  })
+
+  it('Should show no banner on a second GET, after the first one cleared it', async () => {
+    const first = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({ [JUST_ADDED_TRANSPORTER_NAME]: 'Hill Haulage' })
+      ]
+    })
+
+    const second = await driveHandler(getHandler, {
+      journeyId: first.journeyId,
+      state: first.cookies
+    })
+
+    expect(second.view.context.successBanner).toBeNull()
+  })
+
+  it('Should show no banner on an ordinary visit', async () => {
+    const result = await driveHandler(getHandler)
+
+    expect(result.view.context.successBanner).toBeNull()
+  })
+})
+
+describe('GET /transporters — an unfinished add', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const restartFlagOf = (result) =>
+    result.cookies[flowOnlyAnswersCookie()]?.[result.journeyId]?.[
+      TRANSPORTER_TYPE_RESTART
+    ]
+
+  it('Should flag the type question to restart blank for a type left over from an add that was never saved, without touching the stored type itself', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE }
+    })
+
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBe(true)
+  })
+
+  it('Should flag the type question to restart blank for a type chosen on the question but never saved', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({ [TRANSPORTER_TYPE_CHOSEN]: PRIVATE })
+      ]
+    })
+
+    expect(restartFlagOf(result)).toBe(true)
+  })
+
+  it('Should leave the restart flag unset for a type chosen on the question whose details were entered', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_TYPE_CHOSEN]: PRIVATE,
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { addressLine1: '1 Way' }
+          }
+        })
+      ]
+    })
+
+    expect(restartFlagOf(result)).toBeFalsy()
+  })
+
+  it('Should leave the restart flag unset for a saved private transporter', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: PRIVATE,
+        privateTransporter: { name: ABERDEEN_NAME }
+      }
+    })
+
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBeFalsy()
+  })
+
+  it('Should leave the restart flag unset for a saved commercial transporter', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: COMMERCIAL,
+        commercialTransporter: { name: GARCIA_NAME }
+      }
+    })
+
+    expect(result.after.transporterType).toBe(COMMERCIAL)
+    expect(restartFlagOf(result)).toBeFalsy()
+  })
+
+  it('Should leave the restart flag unset for an unfinished add that has remembered values', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE },
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { addressLine1: '1 Way' }
+          }
+        })
+      ]
+    })
+
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(restartFlagOf(result)).toBeFalsy()
+  })
+
+  const RESTART_LOG_MESSAGE =
+    'Transporter type question will restart blank: the trader never saved an add for it'
+  const restartLogEntries = (logger) =>
+    logger.entries.filter(({ message }) => message === RESTART_LOG_MESSAGE)
+
+  it('Should log the abandonment and commit the restart flag once, not again on a second GET of the same abandoned state', async () => {
+    const first = await driveHandler(getHandler, {
+      seed: { transporterType: PRIVATE }
+    })
+
+    expect(restartFlagOf(first)).toBe(true)
+    expect(restartLogEntries(first.logger)).toHaveLength(1)
+
+    const second = await driveHandler(getHandler, {
+      journeyId: first.journeyId,
+      seed: { transporterType: PRIVATE },
+      state: first.cookies
+    })
+
+    expect(restartLogEntries(second.logger)).toHaveLength(0)
+    expect(second.cookies[flowOnlyAnswersCookie()]).toBeUndefined()
   })
 })

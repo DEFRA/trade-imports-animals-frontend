@@ -12,6 +12,7 @@ import {
   notificationViewUrl,
   openNotificationView,
   openReviewFromHub,
+  rowFor,
   signIn,
   startNotification,
   urlUnderBase
@@ -32,12 +33,6 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportIdentification,
   copy.rows.transportDocumentReference
 ]
-
-const rowFor = (page, label) =>
-  page
-    .getByRole('term')
-    .filter({ has: page.getByText(label, { exact: true }) })
-    .locator('..')
 
 const answerCellFor = (page, label) =>
   rowFor(page, label).getByRole('definition')
@@ -103,11 +98,11 @@ test.describe('check-answers feature summary rows', () => {
     await openNotificationView(page)
 
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
-      copy.notApplicable
+      sharedCopy.notApplicable
     )
     await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
     await expect(rowFor(page, copy.rows.arrivalDate)).not.toContainText(
-      copy.notApplicable
+      sharedCopy.notApplicable
     )
   })
 })
@@ -351,7 +346,7 @@ test.describe('check-answers feature change links', () => {
     )
     await openNotificationView(page)
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
-      copy.notApplicable
+      sharedCopy.notApplicable
     )
   })
 
@@ -426,7 +421,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     const card = page.locator(ARRIVAL_DETAILS_ANCHOR)
 
-    await expect(card.getByText(copy.notApplicable)).toHaveCount(0)
+    await expect(card.getByText(sharedCopy.notApplicable)).toHaveCount(0)
     for (const label of ARRIVAL_DETAILS_ROW_LABELS) {
       await expectOnlyHiddenMissing(answerCellFor(page, label))
     }

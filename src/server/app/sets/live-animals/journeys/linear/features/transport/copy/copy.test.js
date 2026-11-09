@@ -238,7 +238,8 @@ describe('transport copy module — transporter pages', () => {
       address: 'Address',
       approvalNumber: 'Approval number',
       type: 'Type',
-      status: 'Status'
+      status: 'Status',
+      actionHidden: 'Action'
     })
     expect(copyCy.transporters.table).toEqual({
       selectHidden: 'Dewis',
@@ -246,10 +247,18 @@ describe('transport copy module — transporter pages', () => {
       address: 'Cyfeiriad',
       approvalNumber: 'Rhif cymeradwyo',
       type: 'Math',
-      status: 'Statws'
+      status: 'Statws',
+      actionHidden: 'Gweithred'
     })
     expect(copy.transporters.selectRowPrefix).toBe('Select')
     expect(copyCy.transporters.selectRowPrefix).toBe('Dewis')
+    expect(copy.transporters.viewDetails).toBe('View details')
+    expect(copyCy.transporters.viewDetails).toBe('Gweld manylion')
+  })
+
+  test('Should head the transporter list with the same words the fieldset legend carries, in both languages', () => {
+    expect(copy.transporters.resultsHeading).toBe('Select a transporter')
+    expect(copyCy.transporters.resultsHeading).toBe('Dewiswch gludwr')
   })
 
   test('Should name both approval statuses in both languages', () => {
@@ -282,17 +291,18 @@ describe('transport copy module — transporter pages', () => {
     )
   })
 
-  test('Should head the type question with the choice and leave the private option unhinted', () => {
+  test('Should head the type question with the choice, warn against duplicates and leave the private option unhinted', () => {
     expect(copy.transporterAdd.title).toBe('Choose a transporter type')
     expect(copy.transporterAdd.warning).toBe(
-      'Before you add this transporter, please ensure you have already searched for it first.'
+      'Check the transporter list before adding new transporters to avoid duplicates.'
     )
     for (const deck of [copy, copyCy]) {
       expect(Object.keys(deck.transporterAdd)).toEqual([
         'title',
-        'legend',
         'warning',
-        'options'
+        'continueButton',
+        'options',
+        'errors'
       ])
     }
     expect(copy.transporterAdd.options.Private).toEqual({
@@ -303,8 +313,26 @@ describe('transport copy module — transporter pages', () => {
     )
   })
 
-  test('Should head the private form as an addition', () => {
-    expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
+  test('Should label the type question’s one button Continue', () => {
+    expect(copy.transporterAdd.continueButton).toBe('Continue')
+    expect(copyCy.transporterAdd.continueButton).toBe('Parhau')
+  })
+
+  test('Should refuse a blank or unoffered transporter type with the same message', () => {
+    expect(copy.transporterAdd.errors.transporterTypeRequired).toBe(
+      'Select a transporter type'
+    )
+    expect(copyCy.transporterAdd.errors.transporterTypeRequired).toBe(
+      'Rhaid dewis math o gludwr'
+    )
+  })
+})
+
+describe('transport copy module — transporter add forms', () => {
+  test('Should head the private form as an addition, Welsh carrying no indefinite article', () => {
+    expect(copy.privateTransporterDetails.title).toBe(
+      'Add a private transporter'
+    )
     expect(copyCy.privateTransporterDetails.title).toBe(
       'Ychwanegu cludwr preifat'
     )
@@ -346,7 +374,7 @@ describe('transport copy module — transporter pages', () => {
 
   test('Should head the commercial form as an addition and fix its country', () => {
     expect(copy.commercialTransporterDetails.title).toBe(
-      'Add commercial transporter'
+      'Add a commercial transporter'
     )
     expect(copyCy.commercialTransporterDetails.title).toBe(
       'Ychwanegu cludwr masnachol'
@@ -358,15 +386,74 @@ describe('transport copy module — transporter pages', () => {
     expect(copyCy.commercialTransporterDetails.country).toBe('Gogledd Iwerddon')
   })
 
-  test('Should head the commercial form guidance banner and hint the phone number', () => {
+  test('Should refuse a blank commercial authorisation number with the indefinite article the design source sets', () => {
+    expect(
+      copy.commercialTransporterDetails.errors.approvalNumberRequired
+    ).toBe('Enter a transporter authorisation number')
+  })
+
+  test('Should title the commercial form’s guidance banner "Important" and head its content with the authorisation guidance, in both languages', () => {
+    expect(copy.commercialTransporterDetails.guidanceBannerTitle).toBe(
+      'Important'
+    )
+    expect(copyCy.commercialTransporterDetails.guidanceBannerTitle).toBe(
+      'Pwysig'
+    )
     expect(copy.commercialTransporterDetails.guidanceTitle).toBe(
       'Help with transporter authorisation'
+    )
+    expect(copyCy.commercialTransporterDetails.guidanceTitle).toBe(
+      'Help gydag awdurdodiad cludwr'
     )
     expect(copy.commercialTransporterDetails.contactHeading).toBe(
       'Enter contact details'
     )
     expect(copy.commercialTransporterDetails.telephoneHint).toBe(
       'For international numbers include the country code'
+    )
+  })
+
+  test('Should word the two add forms’ postcode field and both its messages identically, in each language', () => {
+    expect(copy.commercialTransporterDetails.fields.postcode).toBe(
+      copy.privateTransporterDetails.fields.postcode
+    )
+    expect(copy.commercialTransporterDetails.errors.postcodeRequired).toBe(
+      copy.privateTransporterDetails.errors.postcodeRequired
+    )
+    expect(copy.commercialTransporterDetails.errors.postcodeMaxLength).toBe(
+      copy.privateTransporterDetails.errors.postcodeMaxLength
+    )
+    expect(copyCy.commercialTransporterDetails.fields.postcode).toBe(
+      copyCy.privateTransporterDetails.fields.postcode
+    )
+    expect(copyCy.commercialTransporterDetails.errors.postcodeRequired).toBe(
+      copyCy.privateTransporterDetails.errors.postcodeRequired
+    )
+    expect(copyCy.commercialTransporterDetails.errors.postcodeMaxLength).toBe(
+      copyCy.privateTransporterDetails.errors.postcodeMaxLength
+    )
+  })
+
+  test('Should label both add forms’ cancel control the same way in each language', () => {
+    expect(copy.privateTransporterDetails.cancelAndReturnToDashboard).toBe(
+      'Cancel and return to dashboard'
+    )
+    expect(copy.commercialTransporterDetails.cancelAndReturnToDashboard).toBe(
+      copy.privateTransporterDetails.cancelAndReturnToDashboard
+    )
+    expect(copyCy.privateTransporterDetails.cancelAndReturnToDashboard).toBe(
+      copyCy.commercialTransporterDetails.cancelAndReturnToDashboard
+    )
+  })
+
+  test('Should title the added-transporter banner "Success" and word its text from an already-cased name, in both languages', () => {
+    expect(copy.transporters.addedBanner.title).toBe('Success')
+    expect(copy.transporters.addedBanner.text('Hill haulage')).toBe(
+      'Hill haulage transporter added'
+    )
+    expect(copyCy.transporters.addedBanner.title).toBe('Llwyddiant')
+    expect(copyCy.transporters.addedBanner.text('Hill haulage')).toBe(
+      'Mae’r cludwr Hill haulage wedi’i ychwanegu'
     )
   })
 

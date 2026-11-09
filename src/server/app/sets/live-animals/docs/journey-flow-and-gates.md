@@ -23,9 +23,13 @@ The `consignment-parties` section holds the CPH number page and then Roles and a
 the CPH page, a sub-page marked `subPage: true` on its page identity, goes on to Roles and addresses and
 Roles and addresses goes on to the contact address.
 
-`FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`. Both are kept in
-the session's flow-only store rather than canonical obligation fulfilment, and are
-never sent to the backend.
+`FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
+keys the transport feature's own add-session module owns: the values an
+add-transporter form is keeping after a refused save, held per transporter
+type, and the name of the transporter a save has just added, read once by
+the transporter list for its success banner. All four are kept in the
+session's flow-only store rather than canonical obligation fulfilment, and
+are never sent to the backend.
 
 The transport section lists one transporter step, the transporter list. The pages
 that add a transporter are detours off that list and belong to no section.

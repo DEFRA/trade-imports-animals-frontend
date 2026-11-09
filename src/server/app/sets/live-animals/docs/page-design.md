@@ -50,18 +50,22 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page and the role address
-  pickers.
-- The transporter add pages end with the primary alone too, and Back goes where
-  the trader came from. The transporter add form's Save and continue goes on
-  through the transporter list to Upload documents.
+  leaves the way they came in: the CPH number page, the role address pickers
+  and the transporter type question. The two transporter details forms are
+  the one exception: each ends with the primary and a secondary "Cancel and
+  return to dashboard", because a trader who opened one did not come from the
+  hub and the design gives the add route its own way out of the journey.
+  Saving either form returns to the transporter list with the new transporter
+  chosen, and Back goes where the trader came from.
 - While a notification is being amended, a page ends exactly as it does on a
   draft: Save and continue, then Save and return to overview, then Cancel and
   return to overview wherever the draft page shows it. Save and continue goes on
   through the journey to check your answers, Save and return to overview goes to
   the Overview, and Cancel and return to overview goes to the Overview without
   saving the page. Upload documents posts its own form from both buttons. The
-  status strip shows the Amend status and its Cancel amend link.
+  status strip shows the Amend status and its Cancel amend link. The two
+  transporter details forms keep their own primary and cancel even
+  while amending.
 
 ## Check your answers (review)
 
@@ -504,7 +508,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Searching the transporters list filters it in place: nothing is validated or
   committed, and a picked row stays picked when the search leaves it on the
   list.
-- The add-transporter link carries the trail, so a trader sent from
+- The add-transporter link carries the trail, and the add form's own save
+  carries it on to the transporter list, so a trader sent from
   check your answers goes on from the transporter list like any other start.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
@@ -525,11 +530,17 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - An empty transit list is a valid answer, because the question is optional. A
   list holding a country not offered is refused: on submit as not from the
   list, on a stored answer as no longer available.
+- The page names the choice once: a heading above the search box and the
+  table, with the fieldset round the table carrying the same words,
+  visually hidden, so a screen-reader user hears the group named and a
+  sighted user reads the words once.
 - The transporter list shows its facts in headed columns, with a status tag:
-  green for approved, magenta for newly added.
+  green for approved, magenta for newly added. A transporter with no
+  approval number reads "Not applicable" in that column.
 - The list search matches name, address, approval number, type and status,
   ignoring case and accents, so a trader typing plain letters finds an
-  accented name.
+  accented name; a transporter with no approval number is matched by the
+  "Not applicable" words its column shows.
 - With JavaScript the list narrows in the page as the trader types, because
   the page already holds the whole list and needs no endpoint. The matching
   letters in each shown cell are bold, and a polite live region says how many
@@ -547,9 +558,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - "Add a transporter" sits on the search row, right-aligned, above the table,
   and drops below the search on a phone. The tab order is the search box, the
   search button, "Add a transporter", then the radios.
-- "Choose a transporter type" warns that adding is a last resort. Private
-  comes first and has no hint; Commercial explains the Northern Ireland
-  condition.
+- "Choose a transporter type" warns the trader to check the transporter list
+  before adding a new transporter, to avoid duplicates. Private comes first
+  and has no hint; Commercial explains the Northern Ireland condition. Its one
+  button is a Continue, not a save.
+- Each add form opens only for the transporter type it belongs to; opening or
+  posting it for any other stored type, or none, returns the trader to the
+  type question.
+- The type question and the private form carry no status strip; the list and
+  the commercial form do.
 - A commercial transporter added by hand can only be from Northern Ireland,
   so the country is shown, not asked. It is stored in English, because it is
   an answer, not display text. A posted value other than Northern Ireland has
@@ -562,3 +579,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   approved.
 - A private transporter's country is stored as the display name and the ISO
   code, so neither persistence nor the review needs a lookup.
+- Saving a complete record on either add form returns the trader to the
+  transporter list, where the saved transporter is the first row, already
+  chosen, under a one-time success notification banner titled "Success" and
+  reading the transporter's name — only its first letter capitalised —
+  followed by "transporter added". The banner shows on that one view only;
+  reloading the list, or coming back to it later, shows it with no banner.
+- Values entered on an add form whose save was refused are shown again in
+  its fields the next time the trader opens that form, until the form is
+  saved or cancelled.
+- Each add form's secondary "Cancel and return to dashboard" discards those
+  entered values, commits nothing to the notification and takes the trader to
+  the dashboard, wherever the notifications list lives. When the stored
+  transporter type was not changed on the way into the form, the transporter
+  chosen before the add began is still chosen. A trader who changed the
+  transporter type at the type question on the way in is left with the type
+  they chose and no transporter: the type question's own purge removed the
+  other type's stored transporter before the add form ever opened, and
+  cancelling cannot restore it.

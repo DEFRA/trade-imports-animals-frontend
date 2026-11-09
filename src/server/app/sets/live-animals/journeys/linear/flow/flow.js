@@ -20,8 +20,21 @@ import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
 import { STORED_SEARCH_ROWS } from '../features/commodities/search/selection/rows.js'
+import {
+  JUST_ADDED_TRANSPORTER_NAME,
+  TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_CHOSEN,
+  TRANSPORTER_TYPE_RESTART
+} from '../features/transport/transporter-add-session.js'
 
-export const FLOW_ONLY_KEYS = ['declaration', STORED_SEARCH_ROWS]
+export const FLOW_ONLY_KEYS = [
+  'declaration',
+  STORED_SEARCH_ROWS,
+  TRANSPORTER_ADD_IN_PROGRESS,
+  JUST_ADDED_TRANSPORTER_NAME,
+  TRANSPORTER_TYPE_RESTART,
+  TRANSPORTER_TYPE_CHOSEN
+]
 
 export const sections = [
   {
