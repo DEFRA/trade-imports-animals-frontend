@@ -555,7 +555,7 @@ test.describe('party picker details and pagination', () => {
     await openPartyPicker(page, CONSIGNOR)
   })
 
-  test('picker spans the full content column and shows each address on its own lines, with a View link to it in the INS address book returning to this picker', async ({
+  test('picker spans the full content column and shows an address on separate lines with town and postcode together, with a View link to it in the INS address book returning to this picker', async ({
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
