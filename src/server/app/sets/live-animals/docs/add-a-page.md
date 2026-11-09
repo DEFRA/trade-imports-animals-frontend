@@ -103,9 +103,10 @@ Use one `render()` helper for GET and POST errors. Build the common view with
 `kit.base()`. Pass `journey` so the shared reference strip renders. A page that
 shows no status strip still passes `journey`, with `showJourneyStrip: false`.
 Pass `page` so the section caption renders. A journey page takes its back link
-from `kit.trailBackLink(request)`, which opens the place the trader came from and
-falls back to the overview when the request names none. A page with a different
-fallback passes it: `kit.trailBackLink(request, { fallback })`. A link that moves the
+from the shared Back rule, `kit.trailBackLink(request)`, which reads where the trader
+came from off the link or form and falls back to the overview when the request names
+none. A page names no fixed Back target and no list of earlier pages its Back may
+open. A page with a different fallback passes it: `kit.trailBackLink(request, { fallback })`. A link that moves the
 trader on pushes the page onto the trail with `kit.pushTrail()`, and a link that
 brings the trader back to the same page carries it with `kit.carryTrail()`.
 
@@ -118,7 +119,9 @@ GET calls `state.get()` once and prefills from `answers`. POST:
    is not the user's input error logs once through `kit.logRefusal` with the
    journey id)
 4. commits cleaned values with `state.commit()`
-5. redirects through `kit.nextTarget(request, page, committed.scope)`
+5. redirects through `kit.nextTarget(request, page, committed.scope)`, the shared
+   next-page target: the next page in the journey's one page order whose gate
+   passes, ending at check your answers
 
 Wrap the write in `kit.recoverableSave(request, …)`. A marked persistence
 failure is logged once by `recoverableSave`; render the same values with
@@ -156,7 +159,9 @@ draft: every page passes `saveActions` the same arguments on a draft and while
 amending. Which pages end each way is set in
 [How a page ends](page-design.md#how-a-page-ends).
 [`amend-endings.test.js`](../journeys/linear/features/amend-endings.test.js) renders
-every task-row page on a draft and while amending, and fails if their endings differ.
+every task-row page on a draft and while amending, checks each one for the same save
+controls, and fails if their endings differ. A page shows the same save controls
+while a notification is being amended as on a draft.
 
 Import `TEMPLATES` from
 [`journeys/linear/config.js`](../journeys/linear/config.js) in the controller and
@@ -180,8 +185,13 @@ Import the controller namespace in
 
 `src/server/app/routes-live-animals.js` — this set's gateway, re-exported by the
 `routes.js` barrel — wraps `allRoutes` in its set context and passes them to
-Hapi. `buildDispatch(SET_ID, dispatchPages)` rejects
-an unsafe obligation name, two page owners and an uncovered obligation.
+Hapi.
+
+Its wiring passes the journey flow its sections, task rows and policy and no
+routing targets: where Save and continue goes comes only from the page order.
+
+`buildDispatch(SET_ID, dispatchPages)` rejects an unsafe obligation name, two
+page owners and an uncovered obligation.
 
 Run `npm run test:live-animals`. Dispatch should now build. If it does not,
 correct `meta.collects` or the `dispatchPages` registration. Do not add a second
@@ -190,15 +200,17 @@ owner to silence coverage.
 ## 6. Place the page in the journey and hub task row
 
 Import the page identity into [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js). Put it in the
-right `sections` entry. Its position controls strictly-earlier
+right `sections` entry. A new question page goes into the journey's one page order and
+its task row and nothing else. Its position controls strictly-earlier
 prerequisites and the journey's page order, which Save and continue follows from every start
 (the next page that applies, skipping a sub-page, which is a page reached only from the page
-that opens it).
+that opens it). Its place in that order decides where Save and continue lands on it and
+on the page before it.
 
 Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js). Put it in an
 existing task row when those pages form one user task. Add a task row only when
-the page needs its own entry on the hub. A task row is the hub entry; a flow
-section is the navigation sequence.
+the page needs its own entry on the hub. A task row places pages on Overview and
+decides readiness; it does not change where Save and continue goes.
 
 Decide the page's caption in
 [`journeys/linear/flow/section-captions/index.js`](../journeys/linear/flow/section-captions/index.js):
@@ -320,8 +332,7 @@ set-up in the test file:
   - `driveHandler` seeds a journey, runs one handler and returns the answers
     before and after, the response, the view, the cookies and the logger; its
     `startingFrom` option takes the states the journey starts in, each from a
-    helper: `amendmentOpened`, `openingRunAt` (a phase, `RUN_ACTIVE` or
-    `RUN_COMPLETE`),
+    helper: `amendmentOpened`,
     `withFlowOnlyAnswers`, `reviewChangeLinkQuery`, `amendmentOpenedFromChangeLink` (a list, so
     pass it as the whole `startingFrom`) and `refusingSaves` (every save
     the handler makes fails with the error it is given); `driveHandler` throws on
@@ -339,6 +350,12 @@ set-up in the test file:
     the trail
   - `{ query: trailQuery(...places) }` and `{ query: reviewChangeLinkQuery() }` start a request that
     carries a trail, newest place last
+  - these drive a page from every start: a new notification (a trail of
+    `TRAIL_START.dashboard`), a copy and a reopened draft (a seeded journey with no
+    trail), the Overview (a trail of the Overview place), a new browser session
+    (`driveHandler` with no session state, the default), a check your answers Change
+    link (`reviewChangeLinkQuery`) and an amendment (`amendmentOpened`,
+    `amendmentOpenedFromChangeLink`)
   - `itSendsBackToWhereTheTraderCameFrom`, from
     [`journeys/linear/test-support.js`](../journeys/linear/test-support.js),
     registers the Back cases of a page: the page Save and continue was pressed on,
@@ -414,14 +431,16 @@ locator. Never use a sleep.
 Cover:
 
 - initial render, heading, copy, hints, controls and service-backed options
-- happy-path save and the correct next-page or hub redirect
+- happy-path Save and continue landing on the next page in the journey order, or on
+  check your answers from the last page
 - reload and persistence of every entered value
 - each validation rule in its own test
 - preservation of entered values on error
 - every error-summary link moving focus to its control
-- back, Save and return to overview, Cancel and Change navigation as applicable
-- a page ends while amending exactly as on a draft, which
-  `amend-endings.test.js` proves
+- Back returning to the page the trader came from, Save and return to overview,
+  Cancel and Change navigation as applicable
+- the same controls while amending as on a draft, which `amend-endings.test.js`
+  proves
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

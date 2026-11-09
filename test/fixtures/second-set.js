@@ -43,7 +43,6 @@ export const FEATURE_NAME = 'sundry-details'
 
 export const SESSION_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'sundryGoodsKnownJourneys',
-  openingRun: 'sundryGoodsOpeningRun',
   flowOnlyAnswers: 'sundryGoodsFlowOnlyAnswers',
   addressHandshakeTokens: 'sundryGoodsAddressHandshakeTokens',
   addedAddressBanner: 'sundryGoodsAddedAddressBanner',

@@ -493,7 +493,7 @@ test.describe('commodity search — emphasis', () => {
   })
 })
 
-test.describe('commodity search reached through the opening sequence', () => {
+test.describe('commodity search reached by Save and continue from origin', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startNotificationAtOrigin(page)

@@ -23,7 +23,6 @@ import {
   withTrail
 } from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
-import { beginOpeningRun } from '../../../../../../flow/run-state.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
@@ -147,7 +146,6 @@ const amendPost = async (request, h) => {
 
 const openNewNotification = async (request, h, { startPlace }) => {
   const journey = await startJourney(request, h)
-  await beginOpeningRun(request, h, journey.journeyId)
   request.logger.info(
     {
       journeyId: journey.journeyId,

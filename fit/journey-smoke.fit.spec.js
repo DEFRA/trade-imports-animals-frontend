@@ -57,7 +57,7 @@ test.describe('live-animals journey glue', () => {
     await signIn(page)
   })
 
-  test('entry guards and the page-owned opening spine carry a fresh notification on past the additional details', async ({
+  test('Save and continue carries a fresh notification through the entry guard on past the additional details', async ({
     page
   }) => {
     const heading = (name) => page.getByRole('heading', { name })
@@ -156,7 +156,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
   })
 
-  test('following Back and choosing Save and continue carries on to the next step, not the overview', async ({
+  test('following Back and choosing Save and continue carries on to the next step', async ({
     page
   }) => {
     const saveAndContinue = () =>

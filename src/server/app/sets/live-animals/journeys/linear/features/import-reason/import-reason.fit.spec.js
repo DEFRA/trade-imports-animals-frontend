@@ -247,7 +247,7 @@ test.describe('import-reason feature', () => {
     await expect(page).toHaveURL(journeyUrl(page))
   })
 
-  test('Save and return to overview on a new notification saves the answer and shows the overview rather than commodity details', async ({
+  test('Save and return to overview on a new notification saves the answer and shows the overview', async ({
     page
   }) => {
     await saveAndContinueToImportReason(page)

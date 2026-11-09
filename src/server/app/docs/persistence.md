@@ -24,7 +24,7 @@ state is not stored.
 ## Session port
 
 [`src/server/app/engine/persistence/session.js`](../engine/persistence/session.js)
-delegates known journey ids, opening-run state, flow-only answers and the
+delegates known journey ids, flow-only answers and the
 reviewed token — the concurrency token this browser last rendered an editable
 review at, which the declaration requires before it will show or submit. It also
 holds the configured cookie names used by `registerJourneyCookie()`.
@@ -35,7 +35,6 @@ The live-animals journey supplies these names in its
 ```js
 {
   knownJourneys: 'liveAnimalsKnownJourneys',
-  openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
   addedAddressBanner: 'liveAnimalsAddedAddressBanner',
@@ -43,8 +42,10 @@ The live-animals journey supplies these names in its
 }
 ```
 
-Session-port state (known journeys, opening run,
-flow-only answers and reviewed tokens) is keyed by journey id. It does not replace the canonical record.
+Session-port state (known journeys, flow-only answers and reviewed tokens) is
+keyed by journey id. It does not replace the canonical record, and it holds no
+record of how a notification was started or of the trader's progress through the
+journey.
 
 The address handshake's two cookies bypass the session port and are set with
 `h.state` in both modes. The token cookie holds a map keyed by fulfilment id.

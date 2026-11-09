@@ -46,20 +46,30 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   leave from where the overview sent them.
 - Origin of the import is the one overview-linked page without the return
   controls, because the design gives it "Save and continue" as its only way to
-  save and move on. On a draft and while amending, a page ends with Save and
-  continue and Save and return to overview.
+  save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter add and details pages.
+  leaves the way they came in: the CPH number page and the role address
+  pickers.
+- The transporter add pages end with the primary alone too, and Back goes where
+  the trader came from. The transporter add form's Save and continue goes on
+  through the transporter list to Upload documents.
 - While a notification is being amended, a page ends exactly as it does on a
-  draft: the same buttons, in the same layout, going to the same places. Upload
-  documents posts its own form from both buttons. The status strip shows
-  the Amend status and its Cancel amend link.
+  draft: Save and continue, then Save and return to overview, then Cancel and
+  return to overview wherever the draft page shows it. Save and continue goes on
+  through the journey to check your answers, Save and return to overview goes to
+  the Overview, and Cancel and return to overview goes to the Overview without
+  saving the page. Upload documents posts its own form from both buttons. The
+  status strip shows the Amend status and its Cancel amend link.
 
 ## Check your answers (review)
 
+- The review's Back link goes to where the trader came from: the last journey
+  page, the Overview or the dashboard, on a draft, an amendment and a submitted
+  notification alike. Reached any other way it goes to the Overview on a draft or
+  an amendment and to the dashboard on a submitted notification. See
+  [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
 - The review has the same six numbered sections as the hub, with a
   subsection heading over every card.
 - Each card has one Change link, in its heading. Rows carry none, except

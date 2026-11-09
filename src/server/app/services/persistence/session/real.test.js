@@ -35,26 +35,6 @@ const buildServer = async () => {
     },
     {
       method: 'POST',
-      path: '/run/{journeyId}',
-      handler: async (request, h) => {
-        await session.setOpeningRun(
-          h,
-          request.params.journeyId,
-          request.payload.phase
-        )
-        return { ok: true }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/run/{journeyId}',
-      handler: async (request) => ({
-        phase:
-          (await session.openingRun(request, request.params.journeyId)) ?? null
-      })
-    },
-    {
-      method: 'POST',
       path: '/flow/{journeyId}',
       handler: async (request, h) => {
         await session.setFlowOnlyAnswers(
@@ -160,41 +140,6 @@ describe('#session.reviewedConcurrencyToken (real, yar)', () => {
 
     expect(await tokenAt(server, '/reviewed/J-1', cookie)).toBe(4)
     expect(await tokenAt(server, '/reviewed/J-2', cookie)).toBe(7)
-  })
-})
-
-describe('#session.openingRun (real, yar)', () => {
-  it('Should retain journey-keyed phases without leaking across journeys', async () => {
-    const server = await buildServer()
-    const first = await server.inject({
-      method: 'POST',
-      url: '/run/J-1',
-      payload: { phase: 'active' }
-    })
-    const second = await server.inject({
-      method: 'POST',
-      url: '/run/J-2',
-      payload: { phase: 'complete' },
-      headers: { cookie: cookieOf(first) }
-    })
-    const getOne = await server.inject({
-      method: 'GET',
-      url: '/run/J-1',
-      headers: { cookie: cookieOf(second) }
-    })
-    const getTwo = await server.inject({
-      method: 'GET',
-      url: '/run/J-2',
-      headers: { cookie: cookieOf(second) }
-    })
-    expect(getOne.result.phase).toBe('active')
-    expect(getTwo.result.phase).toBe('complete')
-  })
-
-  it('Should report no opening run for a fresh session', async () => {
-    const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: '/run/J-1' })
-    expect(get.result.phase).toBeNull()
   })
 })
 

@@ -5,7 +5,6 @@ import {
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
-import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
   CYA_SLUG,
   errorSummary,
@@ -208,7 +207,6 @@ export const renderNotificationView = async (
 }
 
 const get = async (request, h) => {
-  await completeOpeningRun(request, h, request.params.journeyId)
   const response = await renderNotificationView(request, h)
   const { journey } = await state.get(request, h)
   if (journey.status !== state.SUBMITTED) {

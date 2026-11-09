@@ -69,8 +69,11 @@ passes `allRoutes` to Hapi.
 
 A feature folder is not automatically a flow section or a hub row.
 
-- `journeys/linear/flow/flow.js` defines navigation order.
-- `journeys/linear/flow/task-rows.js` groups pages into hub work items.
+- `journeys/linear/flow/flow.js` defines the journey's one page order, the order
+  Overview lists its tasks in, which Save and continue follows.
+- `journeys/linear/flow/task-rows.js` groups pages into hub work items and decides
+  when a notification is ready to submit. It decides nothing about where Save and
+  continue goes.
 - `journeys/linear/features/hub/controller.js` derives its groups from the flow sections, one per section that holds a task row's first page.
 
 See [Journey flow and gates](journey-flow-and-gates.md).

@@ -1,7 +1,9 @@
 # Flow machinery and gates
 
-The platform owns the algorithms in `src/server/app/flow/`. A journey owns the page
-order and task-row policy that those algorithms consume.
+The platform owns the algorithms in `src/server/app/flow/`. A journey owns its one
+page order, the order Overview lists its tasks in, and its task rows, which those
+algorithms consume. Task rows group pages on Overview and decide when a notification
+is ready to submit. They decide nothing about where Save and continue goes.
 
 ## Journey-flow configuration
 
@@ -56,7 +58,16 @@ step after a page whose scope rule passes (`pageAppliesTo()` in
 [`gates.js`](../flow/gates.js): the page's own gate, else some obligation it
 collects in scope), or nothing past the last step, and throws for a page in no
 section. `kit.nextTarget` uses it after the explicit exits and falls back to
-the review page when it answers nothing. `taskRowsOfSection()` lists a
+the review page when it answers nothing.
+
+A valid Save and continue therefore goes to the next page in the journey's one page
+order whose gate passes, and from the last page that applies to check your answers,
+however the page was reached: a new notification, a copy, the Overview, a reopened
+draft, a new browser session, a check your answers Change link or an amendment. Nothing
+about how the notification was started or how far the trader has got is held in the
+session.
+
+`taskRowsOfSection()` lists a
 section's task rows in the order of their first page, which is how the hub
 derives its groups.
 
@@ -80,11 +91,6 @@ transit countries page's own redirect.
 section status from dispatch ownership. Submit readiness is the conjunction of the
 configured task-row statuses: fulfilled, not applicable and optional rows are
 ready.
-
-## Opening-run state
-
-[`src/server/app/flow/run-state.js`](../flow/run-state.js) stores whether a journey is
-in its opening run, through the injected session port.
 
 ## Where Back goes: the trail
 
@@ -118,6 +124,13 @@ from a recognised slug or start place, never echoed from the request.
 A sub-page that returns to the page that opened it keeps that page as its Back and
 its save target, carrying the trail. A page that redirects onward without showing
 itself carries the trail, so Back on the page it lands on skips it.
+
+Back is the same on a draft and while amending. After several Save and continues from
+one page, Back steps back through those pages in reverse. A check your answers Change
+link or error-summary link carries where check your answers' own Back link went, so
+Back from the page it opens returns to check your answers with that Back link
+unchanged. A journey page names no fixed Back target and no list of earlier pages its
+Back may open: it takes its Back link from `trailBackLink`.
 
 For the current section order, task rows, authored review gate and the entry guard, see
 the [live-animals journey flow guide](../sets/live-animals/docs/journey-flow-and-gates.md).

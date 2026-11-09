@@ -19,7 +19,11 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
-import { CYA_SLUG, TRAIL_START } from '../../../../../../shared/kit.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
 import * as countries from '../../../../../../services/countries/index.js'
 
 import * as origin from './controller.js'
@@ -147,6 +151,32 @@ describe('POST /origin — preserved field values when save is refused', () => {
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
     expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST /origin — where Save and continue goes', () => {
+  const payload = {
+    countryOfOrigin: 'FR',
+    regionOfOriginCodeRequirement: 'no'
+  }
+
+  it('Should go on to the commodities page carrying origin on the trail', async () => {
+    const { journeyId, response } = await driveHandler(post, { payload })
+
+    expect(response.redirect).toBe(
+      withTrail(pagePath(journeyId, 'commodities'), ['origin'])
+    )
+  })
+
+  it('Should go on to the commodities page carrying the review and origin on the trail when opened from a Change link', async () => {
+    const { journeyId, response } = await driveHandler(post, {
+      payload,
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
+    })
+
+    expect(response.redirect).toBe(
+      withTrail(pagePath(journeyId, 'commodities'), [CYA_SLUG, 'origin'])
+    )
   })
 })
 

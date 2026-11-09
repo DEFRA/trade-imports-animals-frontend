@@ -7,10 +7,11 @@ The code uses three separate terms:
 
 - a **feature group** is a nested folder under `journeys/linear/features/` that owns related
   pages, copy and persistence bindings
-- a **flow section** is an entry in `journeys/linear/flow/flow.js`; it controls page order and, within
-  one task row, where Save and continue goes
+- a **flow section** is an entry in `journeys/linear/flow/flow.js`; it places its pages
+  in the journey's one page order, which is where Save and continue goes
 - a **task row** is an entry in `journeys/linear/flow/task-rows.js`; it is the item shown on the
-  hub and it drives submit readiness
+  hub and it drives submit readiness. It decides nothing about where Save and
+  continue goes
 
 This recipe creates all three. Do not call the hub entry a section in code.
 
@@ -374,13 +375,17 @@ Do not sleep.
 Cover the complete task:
 
 - the hub row, initial status and first-page link
-- happy-path movement through every page and back to the hub
+- the Overview row reaching the group's first page
+- Save and continue carrying on through every page of the group into the next page
+  of the journey
 - each page's persisted values after reload
 - each validation rule in its own test
 - preservation of all entered values on error
 - every error-summary link moving focus to the right control
 - each conditional branch, skipped page and out-of-scope value purge
-- Back, Save and return to overview, Cancel and Change navigation
+- Back returning to where the trader came from, Save and return to overview, Cancel
+  and Change navigation
+- the same controls while amending as on a draft
 - the completed hub-row status
 - all check-answers values and Change targets
 

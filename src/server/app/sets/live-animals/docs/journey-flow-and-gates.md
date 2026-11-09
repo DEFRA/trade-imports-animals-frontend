@@ -7,7 +7,12 @@ The platform consumes that policy through `configureJourneyFlow()`.
 ## Flow sections
 
 [`flow.js`](../journeys/linear/flow/flow.js) exports eight ordered `sections`. A flow
-section is a navigation sequence and an Overview group, and the sections together are the journey's page order. The `review` section has the one authored section
+section is an Overview group, and the sections together are the journey's one page
+order: the order Overview lists its tasks in. Save and continue goes to the next page
+in that order whose gate passes, and from the last page that applies to check your
+answers, however the page was reached (a new notification, a copy, the Overview, a
+reopened draft, a new browser session, a check your answers Change link or an
+amendment). The `review` section has the one authored section
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
@@ -25,7 +30,8 @@ that add a transporter are detours off that list and belong to no section.
 ## Task rows
 
 [`task-rows.js`](../journeys/linear/flow/task-rows.js) exports twelve `taskRows`. A
-task row is a hub item and a submit-readiness unit; it is not a flow section.
+task row groups pages on Overview and is a submit-readiness unit; it is not a flow
+section, and it decides nothing about where Save and continue goes.
 
 Most row status comes from the union of each page's `collects`. `parts` narrows a
 row to a collection facet. The commodity line is split three ways — the selection
@@ -50,7 +56,8 @@ scope on its own.
 The hub derives its groups from the flow sections: each section that holds a task
 row's first page is a group, headed by its caption, and lists its task rows in the
 order of their first page. The sections are also the journey's page order, which
-Save and continue follows from every start.
+Save and continue follows from every start. The session holds no record of how a
+notification was started.
 
 Design release 1 lets a trader start any task on the notification in any order.
 No row on the hub is ever shut: every row is a link carrying a real status from
@@ -120,6 +127,16 @@ on the page's links and form posts as the trail (see
 Following a Back link does not end anything: a later Save and continue goes on to the
 next page that applies, adding the page saved to the trail, so Back steps through the
 visited pages in reverse. Save and return to overview still goes to the overview.
+Back is the same on a draft and while amending, and a page names no fixed Back target
+and no list of earlier pages its Back may open.
+
+A check your answers Change link or error-summary link carries where check your
+answers' own Back link went, so Back from the page it opens returns to check your
+answers with that Back link unchanged.
+
+A round trip to a sub-page keeps where the trader came from, so the page that opened
+it still goes Back where it did before: the CPH number page, the permanent address
+page, add transporter and a picker's View link each carry the trail out and back.
 
 Pages that redirect onward without showing themselves carry the trail rather than push
 onto it. The identification page's no-identifiers guard sends the request on to the
@@ -139,44 +156,65 @@ dashboard on a submitted notification, including the one shown after an amendmen
 cancelled).
 
 Returning from the Import Notification Service's address book lands on a fixed address
-that carries no trail, so Consignment addresses and Contact address go Back to the
-overview after it; Save and continue still goes on from them.
+that carries no trail. Roles and addresses (the Overview task "Roles and addresses",
+Consignment addresses) and Contact address for consignment (the task "Contact address
+for this consignment") are the only pages whose Back goes to the Overview whatever the
+trail, after that return; Save and continue still goes on from them.
 
-The hub is somewhere the user chooses to go — through the secondary "Save and
+The hub is somewhere the user chooses to go: through the secondary "Save and
 return to overview" button on the pages that offer it
-([How a page ends](page-design.md#how-a-page-ends)), or by opening the
-notification from the dashboard. Rendering the hub, or the review page, completes the
-opening run ([`completeOpeningRun`](../../../flow/run-state.js), called from
-[`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
-[`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
-Save and continue goes to the next page that applies in the journey's order
-from every start (a new notification,
-an Overview task, a reopened draft, a copy, a Change link or an amendment), and
-past the last page that applies it goes to the review page. The CPH number page
-is a sub-page: it goes on from the page that opens it to Roles and addresses.
+([How a page ends](page-design.md#how-a-page-ends)), from Overview's address, from an
+Overview task, or by opening the notification from the dashboard. Save and continue
+goes to the next page that applies in the journey's one page order from every start
+(a new notification, an Overview task, a reopened draft, a copy, a Change link, an
+amendment or a new browser session), and past the last page that applies it goes to
+the review page. The CPH number page is a sub-page: it goes on from the page that
+opens it to Roles and addresses.
 
 A notification is created by the dashboard's create POST or by the start entry
 (`<set>/start`, which the Import Notification Service's type question opens), through one
 helper in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-that calls `beginOpeningRun` and redirects to the
-origin page with the dashboard or the Import Notification Service as the first place on
-the trail. The start entry sits outside `/notifications/`, so the entry guard never sees
-it. The origin page is the journey entry.
+that redirects to the origin page with the dashboard or the Import Notification Service
+as the first place on the trail. The start entry sits outside `/notifications/`, so the
+entry guard never sees it. The origin page is the journey entry.
 
 The guard admits a request when the journey carries an answer the user entered.
 System-populated obligations and flow-only keys such as `declaration` never count
-as user answers. A journey with none — a deep link to an id this session never
-created, or a draft with nothing saved — is sent to the origin page, and a request
+as user answers. A journey with none (a deep link to an id this session never
+created, or a draft with nothing saved) is sent to the origin page, and a request
 for Overview, the review, the declaration or the confirmation page is sent there
 too. Each redirect is logged once with the journey id and the requested path. The
 origin page and its children, and the amend, cancel-amend, copy and delete
-actions, are exempt from the guard, so there is no redirect loop. The guard
-admits a request only when the journey carries an answer the user entered.
+actions, are exempt from the guard, so there is no redirect loop.
 
 A journey the guard bounces to the origin page carries no trail, so the origin page's
 Back is the dashboard until an answer is entered. The guard sends the request on to
 What are you importing? like any other start.
+
+## Back on check your answers
+
+Check your answers' Back link goes to where the trader came from, on a draft, an
+amendment and a submitted notification alike:
+
+- the last journey page, when check your answers was reached by Save and continue
+  from it
+- the Overview, when it was opened from the Overview
+- the dashboard, when it was opened from the dashboard
+
+Coming back by Back from a page a check your answers Change link or error-summary link
+opened, Back goes where it went before. After an amendment is cancelled, Back goes to
+the dashboard.
+
+Check your answers reached any other way goes Back to the Overview on a draft or an
+amendment and to the dashboard on a submitted notification. The other ways are: from
+the declaration, including a refusal that comes back through it; from the confirmation
+page; by a typed address; in a new browser session; or by a link whose marker is
+missing or not allowed.
+
+The review's Continue and the declaration are described under
+[Task rows](#task-rows). The confirmation page has a link to the dashboard and a
+button that posts to the create path, which starts a new notification.
 
 ## Registration wiring
 

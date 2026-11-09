@@ -379,15 +379,18 @@ state.collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
 
 ### Thread the trail through the loop
 
-A collection reached from a Change link on check-your-answers carries a trail. Wrap
-every internal link and redirect — row actions, add/remove/save round-trips — in
-`kit.carryTrail(request, href)` so the trail survives the loop. Resolve the loop's
-exiting Continue with `kit.nextTarget(request, page, scope)`, and let a hub exit win
-first via `kit.hubExitTarget(request)`. The exit goes on to the next page that
-applies, adding the collection page to the trail; mid-loop actions stay on the page.
+A collection page carries where the trader came from, whether it was reached from a
+Change link on check-your-answers, the Overview, the dashboard or the page before it.
+Wrap every internal link and redirect (row actions, Back, add, remove and save round
+trips) in `kit.carryTrail(request, href)` so the trail survives the loop. Every
+mid-loop action keeps the trader in the loop, on the page. The loop moves on only from
+its exiting Continue, which goes to the next page in the journey's one page order
+through `kit.nextTarget(request, page, scope)`, adding the collection page to the
+trail. Save and return to overview goes to the Overview: a hub exit wins first via
+`kit.hubExitTarget(request)`.
 
-A collection page's Back link comes from `kit.trailBackLink(request)`, like any other
-journey page.
+A collection page's Back link comes from the shared Back rule, `kit.trailBackLink(request)`,
+like any other journey page.
 
 ## 5. Cap the count where the model demands it
 

@@ -27,8 +27,7 @@ import { configureRecords, records } from './persistence/records.js'
 import {
   configureSession,
   flowOnlyAnswersCookie,
-  knownJourneysCookie,
-  openingRunCookie
+  knownJourneysCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 
@@ -213,11 +212,6 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
-/** The cookie that records `phase` of the opening run for `journeyId`. */
-export const openingRunCookieFor = (journeyId, phase) => ({
-  [openingRunCookie()]: { [journeyId]: phase }
-})
-
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
   new BackendRequestError(operation, {
@@ -239,12 +233,6 @@ export const amendmentOpened = () => ({
     await store.submit(journeyId)
     await records.amend(journeyId)
   }
-})
-
-/** A starting state for `driveHandler`: the journey is at `phase` of the
- * opening run (`RUN_ACTIVE` or `RUN_COMPLETE`). */
-export const openingRunAt = (phase) => ({
-  cookies: (journeyId) => openingRunCookieFor(journeyId, phase)
 })
 
 /** A starting state for `driveHandler`: the journey holds `answers` in the
@@ -322,7 +310,7 @@ const callHandlerWithStartingRecords = async (
  * and after, alongside the cookies the handler set, the names of the cookies it
  * unstated and the lines it logged.
  * `startingFrom` lists the states the journey and request start in, each from
- * a helper: `amendmentOpened`, `openingRunAt`, `withFlowOnlyAnswers`,
+ * a helper: `amendmentOpened`, `withFlowOnlyAnswers`,
  * `reviewChangeLinkQuery` and `refusingSaves`. `journeyId` drives an existing
  * journey rather than creating one; `pathOf(journeyId)` gives the request the
  * path it was made to. `query` and `state` win over what a starting state

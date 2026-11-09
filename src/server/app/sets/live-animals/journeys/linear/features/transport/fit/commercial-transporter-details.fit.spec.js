@@ -11,6 +11,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as documentsCopy } from '../../documents/copy/copy.en.js'
 
 const form = copy.commercialTransporterDetails
 const COMMERCIAL_SLUG = 'transporters/add/commercial'
@@ -227,6 +228,9 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await openCommercialForm(page)
     await fillTransporter(page)
     await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: documentsCopy.title })
+    ).toBeVisible()
     await openOverview(page)
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
@@ -244,8 +248,6 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await saveAndContinue(page).click()
 
     await page.goto(journeyUrl(page, 'transporters'))
-    // The transporter joined the list on the way through, so it is the row the
-    // notification already names and the one that comes back checked.
     await expect(
       page.getByRole('radio', {
         name: validTransporter.nameOrOrganisationName

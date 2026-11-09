@@ -1,7 +1,6 @@
 import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 import { isObject } from '../../../lib/object.js'
@@ -27,18 +26,6 @@ export const session = {
       return
     }
     h.state(knownJourneysCookie(), [...known, journeyId])
-  },
-
-  async openingRun(request, journeyId) {
-    return byJourneyFrom(request, openingRunCookie())[journeyId]
-  },
-
-  async setOpeningRun(h, journeyId, phase, request) {
-    const byJourney = byJourneyFrom(request ?? h?.request, openingRunCookie())
-    h.state(openingRunCookie(), {
-      ...byJourney,
-      [journeyId]: phase
-    })
   },
 
   async flowOnlyAnswers(request, journeyId) {

@@ -196,7 +196,6 @@ the kebab-case `<set-id>` from step 1, so `live-animals` gives
 ```js
 export const SESSION_COOKIE_NAMES = {
   knownJourneys: 'liveAnimalsKnownJourneys',
-  openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
   addedAddressBanner: 'liveAnimalsAddedAddressBanner',

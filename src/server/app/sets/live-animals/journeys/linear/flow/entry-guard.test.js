@@ -10,13 +10,10 @@ import {
 import {
   driveHandler,
   journeyRequest,
-  openingRunAt,
-  openingRunCookieFor,
   stubH,
   useStubbedJourney
 } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
-import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
 import {
   entryGuardTarget,
   guardedJourneyPath,
@@ -90,23 +87,6 @@ describe('entry guard', () => {
   it('Should treat a journey whose only answer is a flow-only key as having none', async () => {
     const { journeyId, response } = await guardFor({
       seed: { declaration: 'confirmed' }
-    })
-    expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
-  })
-
-  it.each([RUN_ACTIVE, RUN_COMPLETE])(
-    'Should send a journey with no entered answer to the entry page while the run is %s',
-    async (phase) => {
-      const { journeyId, response } = await guardFor({
-        startingFrom: [openingRunAt(phase)]
-      })
-      expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
-    }
-  )
-
-  it('Should not let another journey entry vouch for a journey with no entered answer', async () => {
-    const { journeyId, response } = await guardFor({
-      state: openingRunCookieFor('some-other-journey', RUN_ACTIVE)
     })
     expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })

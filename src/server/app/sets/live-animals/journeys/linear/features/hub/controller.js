@@ -15,7 +15,6 @@ import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus } from '../../flow/task-rows.js'
 import { invalidRowIds } from '../../flow/stored-answers.js'
 import { notificationViewPage } from '../check-answers/page.js'
-import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
   journeyStrip,
   routeOptions,
@@ -112,7 +111,6 @@ const buildCommodityTotals = (answers, evaluation) => {
 
 const handler = async (request, h) => {
   const { journeyId } = request.params
-  await completeOpeningRun(request, h, journeyId)
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
 

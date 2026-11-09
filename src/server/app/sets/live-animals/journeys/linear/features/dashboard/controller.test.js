@@ -10,8 +10,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  knownJourneysCookie,
-  openingRunCookie
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
@@ -28,7 +27,6 @@ import {
   TRAIL_START,
   withTrail
 } from '../../../../../../shared/kit.js'
-import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 
 import { routes } from './controller.js'
@@ -465,38 +463,19 @@ describe.each([
       expect(response.redirect).toBe(
         withTrail(pageUrl(newJourneyId, ORIGIN_SLUG), [startPlace])
       )
-      expect(h.cookies[openingRunCookie()]).toEqual({
-        [newJourneyId]: RUN_ACTIVE
-      })
-    })
-
-    it('Should leave an earlier notification run record intact', async () => {
-      const request = journeyRequest(undefined, {
-        state: { [openingRunCookie()]: { 'an-earlier-journey': RUN_ACTIVE } }
-      })
-      const h = stubH(request)
-
-      await open(request, h)
-
-      const newJourneyId = h.cookies[knownJourneysCookie()].at(-1)
-      expect(h.cookies[openingRunCookie()]).toEqual({
-        'an-earlier-journey': RUN_ACTIVE,
-        [newJourneyId]: RUN_ACTIVE
-      })
     })
   }
 )
 
 describe('dashboard amend', () => {
-  it('Should NOT begin a run when an existing notification is amended', async () => {
+  it('Should open the review page when an existing notification is amended', async () => {
     const submitted = await startSubmitted()
 
-    const { response, h } = await postAmend(submitted.journeyId)
+    const { response } = await postAmend(submitted.journeyId)
 
     expect(response.redirect).toBe(
       pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
     )
-    expect(openingRunCookie() in h.cookies).toBe(false)
   })
 
   it('Should log the started amendment once with the journey and its organisation', async () => {

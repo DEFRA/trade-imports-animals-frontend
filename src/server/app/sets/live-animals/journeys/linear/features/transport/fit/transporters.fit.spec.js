@@ -26,6 +26,7 @@ import {
 } from '../../../../../../../services/transporters/index.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as documentsCopy } from '../../documents/copy/copy.en.js'
 import { addressSummary } from '../transporters/transporter-record.js'
 
 const addressLine1Input = '#addressLine1'
@@ -1071,6 +1072,9 @@ test.describe('private transporter persistence', () => {
       }
     }
     await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: documentsCopy.title })
+    ).toBeVisible()
     await openOverview(page)
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
