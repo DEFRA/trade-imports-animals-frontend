@@ -15,6 +15,7 @@ import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import {
+  chosenTransporterType,
   storedEnteredTransporter,
   takeAddedTransporterBanner,
   TRANSPORTER_TYPE_RESTART,
@@ -122,7 +123,8 @@ const restartTransporterTypeIfAbandoned = async (
   flowOnlyAnswers,
   journeyId
 ) => {
-  const { transporterType } = answers
+  const transporterType =
+    chosenTransporterType(flowOnlyAnswers) ?? answers.transporterType
   if (
     !transporterType ||
     flowOnlyAnswers?.[TRANSPORTER_TYPE_RESTART] ||

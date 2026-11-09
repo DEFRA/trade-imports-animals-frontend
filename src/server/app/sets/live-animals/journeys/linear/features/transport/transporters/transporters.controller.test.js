@@ -34,6 +34,7 @@ import {
 import {
   JUST_ADDED_TRANSPORTER_NAME,
   TRANSPORTER_ADD_IN_PROGRESS,
+  TRANSPORTER_TYPE_CHOSEN,
   TRANSPORTER_TYPE_RESTART
 } from '../transporter-add-session.js'
 import { copy } from '../copy/copy.en.js'
@@ -585,6 +586,31 @@ describe('GET /transporters — an unfinished add', () => {
 
     expect(result.after.transporterType).toBe(PRIVATE)
     expect(restartFlagOf(result)).toBe(true)
+  })
+
+  it('Should flag the type question to restart blank for a type chosen on the question but never saved', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({ [TRANSPORTER_TYPE_CHOSEN]: PRIVATE })
+      ]
+    })
+
+    expect(restartFlagOf(result)).toBe(true)
+  })
+
+  it('Should leave the restart flag unset for a type chosen on the question whose details were entered', async () => {
+    const result = await driveHandler(getHandler, {
+      startingFrom: [
+        withFlowOnlyAnswers({
+          [TRANSPORTER_TYPE_CHOSEN]: PRIVATE,
+          [TRANSPORTER_ADD_IN_PROGRESS]: {
+            [PRIVATE]: { addressLine1: '1 Way' }
+          }
+        })
+      ]
+    })
+
+    expect(restartFlagOf(result)).toBeFalsy()
   })
 
   it('Should leave the restart flag unset for a saved private transporter', async () => {

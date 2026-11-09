@@ -25,7 +25,6 @@ const records = [
     id: 'garcia-livestock-transport',
     type: COMMERCIAL,
     status: APPROVED,
-    fromAddressBook: true,
     name: 'García Livestock Transport SL',
     approvalNumber: 'ES-T2-45001294',
     address: {

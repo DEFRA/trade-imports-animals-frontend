@@ -339,10 +339,9 @@ test.describe('transporter list page', () => {
     }
   })
 
-  test('every shipped row’s action cell is empty, and an added transporter’s row carries a View details link naming it', async ({
+  test('every row ends with a View details link naming its own transporter', async ({
     page
   }) => {
-    await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
 
     for (const record of transporterRecords) {
@@ -351,22 +350,8 @@ test.describe('transporter list page', () => {
           name: `${copy.transporters.viewDetails} ${record.name}`,
           exact: true
         })
-      ).toHaveCount(0)
+      ).toBeVisible()
     }
-
-    await answerTransporterType(page, PRIVATE)
-    await fillPrivateTransporter(page)
-    await saveAndContinue(page).click()
-
-    await expect(
-      transporterRow(
-        page,
-        validPrivateTransporter.nameOrOrganisationName
-      ).getByRole('link', {
-        name: `${copy.transporters.viewDetails} ${validPrivateTransporter.nameOrOrganisationName}`,
-        exact: true
-      })
-    ).toBeVisible()
   })
 
   test('points an added row’s View details link at that transporter’s address book page, carrying this list as the return', async ({

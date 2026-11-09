@@ -17,7 +17,6 @@ export const transporterRowOf = async (wireTransporter) => ({
   id: wireTransporter.id,
   type: isCommercial(wireTransporter.type) ? COMMERCIAL : PRIVATE,
   status: NEW,
-  fromAddressBook: true,
   name: wireTransporter.name,
   approvalNumber: wireTransporter.approvalNumber,
   address: {
