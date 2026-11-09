@@ -76,6 +76,18 @@ describe('/transporters', () => {
     expect(aberdeen.type).toBe(PRIVATE)
   })
 
+  it("Should hand each row's details link this list's own path as its return, for the INS address book to resolve", async () => {
+    const result = await driveHandler(getHandler)
+
+    const detailsCellHtml =
+      result.view.context.transporterTableRows[0].at(-1).html
+    const [, href] = detailsCellHtml.match(/href="([^"]+)"/)
+
+    expect(
+      new URL(href.replaceAll('&amp;', '&')).searchParams.get('return')
+    ).toBe(`${hubPath(result.journeyId)}/transporters`)
+  })
+
   it('Should give every row a column for each fact the list shows', async () => {
     const result = await driveHandler(getHandler)
 
