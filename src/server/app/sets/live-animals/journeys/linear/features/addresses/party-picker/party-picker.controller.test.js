@@ -90,9 +90,12 @@ describe('GET /consignors/select', () => {
   it('Should give each row its street lines and then its town and postcode on one line', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
-    expect(picker.rows[3].addressLines).toEqual([
-      '10 Market Street',
-      'Leeds, LS1 6HB'
+    expect(picker.rows.map((row) => row.addressLines)).toEqual([
+      ['43 East Hague Extension', 'Bern, 30055'],
+      ['18 Dockside Road', 'London, E14 9GE'],
+      ['1 Farm Lane', 'Ennis, V95 X7P2'],
+      ['10 Market Street', 'Leeds, LS1 6HB'],
+      ['20 Trade Road', 'London, EC1A 1BB']
     ])
   })
 
@@ -482,12 +485,12 @@ describe('View link to the INS address book', () => {
       query: { q: 'denmark', selected: ALPINE_DAIRY_ID }
     })
 
-    expect(firstViewHrefOf(result)).toBe(
-      insAddressHrefReturningTo(
-        DANISH_MEAT_ID,
-        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
-      )
-    )
+    const pickerReturn = `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
+
+    expect(pickerFrom(result).rows.map((row) => row.viewHref)).toEqual([
+      insAddressHrefReturningTo(DANISH_MEAT_ID, pickerReturn),
+      insAddressHrefReturningTo('jutland-swine-aps', pickerReturn)
+    ])
   })
 
   it('Should return to the page being shown and keep changing when the picker was opened to change an answer', async () => {
