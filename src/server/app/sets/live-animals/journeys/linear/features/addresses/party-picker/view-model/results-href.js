@@ -1,5 +1,5 @@
-import { pagePath } from '../../../../../../../../../shared/paths.js'
-import { appendChangeContext } from '../../../../../../../../../shared/kit.js'
+import { pagePath } from '../../../../../../../../shared/paths.js'
+import { appendChangeContext } from '../../../../../../../../shared/kit.js'
 
 export const resultsHref = (
   journeyId,

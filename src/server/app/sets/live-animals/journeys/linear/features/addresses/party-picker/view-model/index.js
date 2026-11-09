@@ -1,7 +1,7 @@
 import { buildInsFrontendUrl } from '../../../../../../../../../common/helpers/ins-frontend-url.js'
 import { pickerAddressLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
-import { resultsHref } from './pagination/results-href.js'
+import { resultsHref } from './results-href.js'
 import { pickerTableRows } from './table-rows.js'
 
 const insAddressHref = (addressId, returnPath) =>
