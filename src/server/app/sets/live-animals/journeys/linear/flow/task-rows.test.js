@@ -203,8 +203,7 @@ describe('#rowStatus — the commodities/details/identification facet split of c
     const answers = {
       commodityLines: [
         {
-          ...BOS_TAURUS_ROW,
-          commodityType: '16'
+          ...BOS_TAURUS_ROW
         }
       ]
     }
@@ -231,12 +230,10 @@ describe('#rowStatus — the commodities/details/identification facet split of c
       commodityLines: [
         {
           ...BOS_TAURUS_ROW,
-          commodityType: '16',
           numberOfAnimalsQuantity: '25'
         },
         {
-          ...EQUUS_CABALUS_ROW,
-          commodityType: '2'
+          ...EQUUS_CABALUS_ROW
         }
       ]
     }
@@ -249,7 +246,6 @@ describe('#rowStatus — the commodities/details/identification facet split of c
       commodityLines: [
         {
           ...BOS_TAURUS_ROW,
-          commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         }
@@ -265,13 +261,11 @@ describe('#rowStatus — the commodities/details/identification facet split of c
       commodityLines: [
         {
           ...BOS_TAURUS_ROW,
-          commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         },
         {
           ...EQUUS_CABALUS_ROW,
-          commodityType: '2',
           numberOfPackages: '3',
           numberOfAnimalsQuantity: '4'
         }
@@ -456,7 +450,6 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
 
   const horseLine = {
     ...EQUUS_CABALUS_ROW,
-    commodityType: '2',
     numberOfPackages: '3',
     numberOfAnimalsQuantity: '4'
   }

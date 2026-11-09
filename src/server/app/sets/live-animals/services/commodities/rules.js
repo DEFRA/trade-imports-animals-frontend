@@ -86,30 +86,6 @@ export const UNWEANED_CODES = [
 
 export const CPH_EXEMPT_CODES = [HORSES_CODE, OTHER_LIVE_MAMMALS_CODE]
 
-const DOMESTIC = { id: '16', text: 'Domestic' }
-const GAME = { id: '24', text: 'Game' }
-const SINGLE_TYPE = { id: '2', text: '' }
-
-const GAME_SPECIES = new Set(['Bos sp.'])
-
-const TYPES_BY_CODE = {
-  [CATTLE_CODE]: {
-    types: [DOMESTIC, GAME],
-    typeOf: (latinName) => (GAME_SPECIES.has(latinName) ? GAME : DOMESTIC)
-  }
-}
-
-const SINGLE_TYPE_CODE_TYPES = {
-  types: [SINGLE_TYPE],
-  typeOf: () => SINGLE_TYPE
-}
-
-const codeTypes = (code) => TYPES_BY_CODE[code] ?? SINGLE_TYPE_CODE_TYPES
-
-export const typeFor = (code, latinName) => codeTypes(code).typeOf(latinName)
-
-export const typesFor = (code) => codeTypes(code).types
-
 export const PER_SPECIES_CODE = OTHER_LIVE_MAMMALS_CODE
 
 export const COMMODITY_DESCRIPTIONS = {

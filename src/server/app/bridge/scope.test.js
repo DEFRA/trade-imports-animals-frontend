@@ -124,7 +124,7 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
   it('Should carry the system field and nested commodity field the raw projection owns', () => {
     const raw = rawInScope(evaluateAnswers(happyPath))
     expect(raw.has('poApprovedReferenceNumber')).toBe(true)
-    expect(raw.has('commodityLines[0].commodityType')).toBe(true)
+    expect(raw.has('commodityLines[0].speciesLatinName')).toBe(true)
   })
 
   it('Should carry the documents collection', () => {

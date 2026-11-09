@@ -1,7 +1,6 @@
 import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
 import { commodityQuestionReturn } from '../../commodity-question-detour.js'
 import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { lineKey } from '../selection/line-key.js'
@@ -15,7 +14,6 @@ export const seedLine = ({
   commodityCode,
   speciesLatinName,
   ...(speciesCommonName ? { speciesCommonName } : {}),
-  commodityType: commodities.typeIdFor(commodityCode, speciesLatinName),
   numberOfPackages: '',
   numberOfAnimalsQuantity: ''
 })

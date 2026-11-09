@@ -93,9 +93,7 @@ A commodity line is one CN code with one species and its own counts and nested
 identifier records. The backend commodity is one complement per CN code, holding
 a species array. The mapper groups the lines by CN code and sums the counts up
 to the complement totals as numbers, as the backend's own lodash sum does. The
-per-species counts stay the raw string answers. A complement's `typeOfCommodity`
-is the text of the line's stored commodity type, and is left out when that text is
-blank.
+per-species counts stay the raw string answers.
 
 The backend stores parties as they are and hands them back the same way, so the
 records adapter never sends the reader's organisation to it. The organisation is

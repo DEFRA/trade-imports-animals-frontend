@@ -216,7 +216,6 @@ const fullSeed = {
   commodityLines: [
     {
       ...BOS_TAURUS_ROW,
-      commodityType: '16',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
       animalIdentifiers: [

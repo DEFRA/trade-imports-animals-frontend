@@ -110,10 +110,6 @@
         "line0": "0102",
         "line1": "0102"
       },
-      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-        "line0": "16",
-        "line1": "16"
-      },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
         "line0": "Bos taurus",
         "line1": "Bison bison"
@@ -280,10 +276,6 @@
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "line0": "0102",
           "line1": "0102"
-        },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "line0": "16",
-          "line1": "16"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Bos taurus",
@@ -486,11 +478,6 @@
           "fulfilmentIndexes": ["line0", "line1"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "inScope": true,
-          "status": "mandatory",
-          "fulfilmentIndexes": ["line0", "line1"]
-        },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
           "status": "mandatory",
           "fulfilmentIndexes": ["line0", "line1"]
@@ -714,7 +701,6 @@
       "commodityLines": [
         {
           "commodityCode": "0102",
-          "commodityType": "16",
           "speciesLatinName": "Bos taurus",
           "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 2,
@@ -741,7 +727,6 @@
         },
         {
           "commodityCode": "0102",
-          "commodityType": "16",
           "speciesLatinName": "Bison bison",
           "speciesCommonName": "American Bison",
           "numberOfAnimalsQuantity": 1,
@@ -878,7 +863,6 @@
           "name": "Cow",
           "commodityCode": "0102",
           "description": "Live bovine animals",
-          "typeOfCommodity": "Domestic",
           "totalNoOfAnimals": 3,
           "totalNoOfPackages": 2,
           "species": [
@@ -1077,11 +1061,6 @@
           "fulfilmentIndexes": ["line0"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
-          "inScope": true,
-          "status": "mandatory",
-          "fulfilmentIndexes": ["line0"]
-        },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
@@ -1326,11 +1305,6 @@
           "status": "mandatory",
           "fulfilmentIndexes": []
         },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "inScope": true,
-          "status": "mandatory",
-          "fulfilmentIndexes": []
-        },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
           "status": "mandatory",
@@ -1420,9 +1394,6 @@
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
         "line0": "0102"
       },
-      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-        "line0": "16"
-      },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
         "line0": "Bos taurus"
       },
@@ -1445,9 +1416,6 @@
         "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "line0": "0102"
-        },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "line0": "16"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Bos taurus"
@@ -1593,11 +1561,6 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
         },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "inScope": true,
-          "status": "mandatory",
-          "fulfilmentIndexes": ["line0"]
-        },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
           "status": "mandatory",
@@ -1714,7 +1677,6 @@
       "commodityLines": [
         {
           "commodityCode": "0102",
-          "commodityType": "16",
           "speciesLatinName": "Bos taurus",
           "speciesCommonName": "Domestic Cattle",
           "numberOfAnimalsQuantity": 1,
@@ -1735,7 +1697,6 @@
           "name": "Cow",
           "commodityCode": "0102",
           "description": "Live bovine animals",
-          "typeOfCommodity": "Domestic",
           "totalNoOfAnimals": 1,
           "totalNoOfPackages": 1,
           "species": [
@@ -1764,9 +1725,6 @@
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
         "line0": "01063300"
       },
-      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-        "line0": "2"
-      },
       "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
         "line0": "Struthio spp."
       },
@@ -1788,9 +1746,6 @@
         "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "transit",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "line0": "01063300"
-        },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "line0": "2"
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "line0": "Struthio spp."
@@ -1930,11 +1885,6 @@
           "status": "mandatory",
           "fulfilmentIndexes": ["line0"]
         },
-        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
-          "inScope": true,
-          "status": "mandatory",
-          "fulfilmentIndexes": ["line0"]
-        },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
           "status": "mandatory",
@@ -2027,7 +1977,6 @@
       "commodityLines": [
         {
           "commodityCode": "01063300",
-          "commodityType": "2",
           "speciesLatinName": "Struthio spp.",
           "speciesCommonName": "Ostriches",
           "numberOfAnimalsQuantity": 1,

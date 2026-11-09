@@ -126,7 +126,6 @@ const cases = {
       commodityLines: [
         {
           ...BOS_TAURUS_ROW,
-          commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
       ]
@@ -288,7 +287,6 @@ describe('statusOf — the commodities/identification facet split', () => {
         commodityLines: [
           {
             ...BOS_TAURUS_ROW,
-            commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
         ]

@@ -92,8 +92,7 @@ const owingExitQuestionsSeed = {
 }
 const cattleLine = {
   commodityCode: '0102',
-  speciesLatinName: 'Bos taurus',
-  commodityType: '16'
+  speciesLatinName: 'Bos taurus'
 }
 const twoIdentifiedSpeciesSeed = {
   countryOfOrigin: 'FR',
@@ -106,7 +105,6 @@ const twoIdentifiedSpeciesSeed = {
     {
       commodityCode: '0101',
       speciesLatinName: 'Equus cabalus',
-      commodityType: '2',
       numberOfPackages: '3',
       numberOfAnimalsQuantity: '4'
     }
