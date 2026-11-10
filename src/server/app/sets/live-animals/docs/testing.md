@@ -56,6 +56,10 @@ live-animals helper uses
 - Country of origin, port of entry and the other type-aheads enhance a native
   `<select>`. The drivers ask the element what it is after `DOMContentLoaded`,
   so they work with or without JavaScript.
+- The commodity search drivers work with or without JavaScript too. The results
+  the script swaps in are the server's own, so every tick box, group and Remove
+  keeps its accessible name. `tickSpecies` ticks a result that is already on
+  screen, for a spec that types rather than pressing Search.
 - The driver for the arrival date computes a date inside the moving arrival
   window, and spells the display format out rather than calling
   `formatDisplayDate`, so a format regression fails the assertion instead of

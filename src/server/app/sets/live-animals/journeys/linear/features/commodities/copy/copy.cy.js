@@ -16,6 +16,8 @@ export const copy = {
       'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
+    resultsAvailable: (count) =>
+      `${plural(count, count === 1 ? 'canlyniad' : 'o ganlyniadau')} ar gael`,
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan',

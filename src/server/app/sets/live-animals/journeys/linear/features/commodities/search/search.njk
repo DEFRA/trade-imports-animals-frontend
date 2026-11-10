@@ -1,11 +1,10 @@
 {% extends "shared/layout.njk" %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
-{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "multi-select-search/macro.njk" import appMultiSelectSearch %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
+{% from "live-animals/journeys/linear/features/commodities/search/_results.njk" import commoditySearchResults %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
@@ -21,68 +20,28 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {% for key in carriedKeys %}
-      <input type="hidden" name="selection" value="{{ key }}" />
-    {% endfor %}
-
-    {{ govukInput({
-      id: "commoditySearch",
-      name: "commoditySearch",
-      type: "search",
-      label: { text: copy.searchLabel, classes: "govuk-label--m" },
-      hint: { text: copy.searchHint },
-      classes: "govuk-!-width-three-quarters",
-      value: query,
-      errorMessage: errors.commoditySearch and { text: errors.commoditySearch }
-    }) }}
-
-    {{ govukButton({
-      text: copy.searchButton,
-      classes: "govuk-button--secondary",
-      name: "action",
-      value: "search"
-    }) }}
-
-    {% if commodityGroups.length %}
-      <div>
-        {% for group in commodityGroups %}
-          {{ govukCheckboxes({
-            idPrefix: "species" if loop.first else "species-group-" + loop.index,
-            name: "species",
-            classes: "govuk-checkboxes--small",
-            fieldset: { legend: { html: group.legendHtml, classes: "govuk-fieldset__legend--s" } },
-            items: group.items
-          }) }}
-        {% endfor %}
-      </div>
-    {% elif noResults %}
-      <p class="govuk-body">{{ copy.noResults }}</p>
-    {% endif %}
-
-    {% if selectedSummary.count %}
-      <div id="commodity-selection">
-        <h2 class="govuk-heading-s">{{ selectedSummary.heading }}</h2>
-        {% for group in selectedSummary.groups %}
-          <div class="govuk-!-margin-bottom-4">
-            <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ group.legend }}:</p>
-            <ul class="govuk-list">
-              {% for item in group.items %}
-                <li>
-                  {{ item.label }}
-                  <button type="submit" class="govuk-link app-link-button" name="action" value="{{ item.removeAction }}">{{ copy.selected.remove }}<span class="govuk-visually-hidden"> {{ item.label }}</span></button>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endfor %}
-        {{ govukButton({
-          text: copy.selected.clearAll,
-          classes: "govuk-button--secondary",
-          name: "action",
-          value: "clear"
-        }) }}
-      </div>
-    {% endif %}
+    {% call appMultiSelectSearch({
+      search: {
+        id: "commoditySearch",
+        name: "commoditySearch",
+        value: query,
+        label: { text: copy.searchLabel },
+        hint: { text: copy.searchHint },
+        errorMessage: errors.commoditySearch and { text: errors.commoditySearch },
+        button: { text: copy.searchButton },
+        wrapperClasses: "govuk-!-width-three-quarters"
+      },
+      resultsId: "commodity-search-results",
+      resultsUrl: resultsUrl
+    }) %}
+      {{ commoditySearchResults({
+        copy: copy,
+        commodityGroups: commodityGroups,
+        noResults: noResults,
+        carriedKeys: carriedKeys,
+        selectedSummary: selectedSummary
+      }) }}
+    {% endcall %}
 
     {% set helpHtml %}
       <p class="govuk-body">{{ copy.help.reference }}</p>

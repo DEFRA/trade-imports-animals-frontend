@@ -1,0 +1,49 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+
+{% macro commoditySearchResults(params) %}
+  {% for key in params.carriedKeys %}
+    <input type="hidden" name="selection" value="{{ key }}" />
+  {% endfor %}
+
+  {% if params.commodityGroups.length %}
+    <div>
+      {% for group in params.commodityGroups %}
+        {{ govukCheckboxes({
+          idPrefix: "species" if loop.first else "species-group-" + loop.index,
+          name: "species",
+          classes: "govuk-checkboxes--small",
+          fieldset: { legend: { html: group.legendHtml, classes: "govuk-fieldset__legend--s" } },
+          items: group.items
+        }) }}
+      {% endfor %}
+    </div>
+  {% elif params.noResults %}
+    <p class="govuk-body">{{ params.copy.noResults }}</p>
+  {% endif %}
+
+  {% if params.selectedSummary.count %}
+    <div id="commodity-selection">
+      <h2 class="govuk-heading-s">{{ params.selectedSummary.heading }}</h2>
+      {% for group in params.selectedSummary.groups %}
+        <div class="govuk-!-margin-bottom-4">
+          <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ group.legend }}:</p>
+          <ul class="govuk-list">
+            {% for item in group.items %}
+              <li>
+                {{ item.label }}
+                <button type="submit" class="govuk-link app-link-button" name="action" value="{{ item.removeAction }}">{{ params.copy.selected.remove }}<span class="govuk-visually-hidden"> {{ item.label }}</span></button>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+      {{ govukButton({
+        text: params.copy.selected.clearAll,
+        classes: "govuk-button--secondary",
+        name: "action",
+        value: "clear"
+      }) }}
+    </div>
+  {% endif %}
+{% endmacro %}
