@@ -489,14 +489,15 @@ export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
 
 /**
- * Opens the notification's overview, then the page at `slug`.
+ * Opens the notification's overview, then follows the link in the row titled
+ * `rowTitle`.
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} slug - the page's slug within the notification.
+ * @param {string} rowTitle - the title of the overview row to open.
  */
-export const visitOverviewThenOpen = async (page, slug) => {
-  await page.goto(journeyUrl(page))
-  await page.goto(journeyUrl(page, slug))
+export const openFromOverviewRow = async (page, rowTitle) => {
+  await openOverview(page)
+  await page.getByRole('link', { name: rowTitle }).click()
 }
 
 /**

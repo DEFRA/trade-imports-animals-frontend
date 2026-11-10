@@ -402,7 +402,7 @@ set-up in the test file:
   [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js)
   — journey steps such as `startNotification`, `answerOriginEntry`,
   `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
-  `visitOverviewThenOpen`, `openNotificationView` and `documentRowFor`;
+  `openFromOverviewRow`, `openNotificationView` and `documentRowFor`;
   `expectThreeSaveControls` proves, by role inside the journey form, that the
   primary, Save and return to overview and Cancel and return to overview
   appear in that order, `expectPageEndsWithPrimaryAlone` proves a page

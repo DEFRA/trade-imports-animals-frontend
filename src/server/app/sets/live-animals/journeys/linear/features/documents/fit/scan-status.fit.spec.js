@@ -11,10 +11,10 @@ import {
   saveAndContinue,
   saveAndReturnToHub,
   signIn,
-  visitOverviewThenOpen
+  openFromOverviewRow
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
-import { documentsPage } from '../page.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
 const errorSummaryLink = (page, name) =>
@@ -55,7 +55,7 @@ test.describe('document scan-status rendering', () => {
     await saveAndReturnToHub(page).click()
     await expectOverview(page)
 
-    await visitOverviewThenOpen(page, documentsPage.slug)
+    await openFromOverviewRow(page, hubCopy.rows.documents.title)
     const reopenedRow = documentRowFor(
       page,
       document.accompanyingDocumentReference

@@ -3,9 +3,8 @@ import {
   answerWhatYouAreImportingFromOverview,
   signIn,
   startNotification,
-  visitOverviewThenOpen
+  openFromOverviewRow
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { documentsPage } from '../page.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
@@ -27,7 +26,7 @@ test.describe('upload documents entry', () => {
   }) => {
     await startNotification(page)
     await answerWhatYouAreImportingFromOverview(page)
-    await visitOverviewThenOpen(page, documentsPage.slug)
+    await openFromOverviewRow(page, hubCopy.rows.documents.title)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 })

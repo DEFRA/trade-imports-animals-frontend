@@ -8,7 +8,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   journeyUrl,
-  visitOverviewThenOpen,
+  openFromOverviewRow,
   openDatePicker,
   saveAndContinue,
   saveAndReturnToHub,
@@ -25,6 +25,7 @@ import {
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
@@ -240,7 +241,7 @@ test.describe('import-reason feature', () => {
     page
   }) => {
     await saveAndContinueToImportReason(page)
-    await visitOverviewThenOpen(page, 'import-reason')
+    await openFromOverviewRow(page, hubCopy.rows.importReason.title)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
