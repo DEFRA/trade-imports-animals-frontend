@@ -15,6 +15,10 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
   margin-bottom: 0;
 }
 
+.app-multi-select-search input[type='search']::-webkit-search-cancel-button {
+  appearance: none;
+}
+
 .app-multi-select-search__dropdown {
   box-sizing: border-box;
   max-height: $app-multi-select-search-dropdown-height;
@@ -35,14 +39,17 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
 
   .govuk-checkboxes__item {
     min-height: $app-multi-select-search-row-height;
-    margin-left: $app-multi-select-search-species-indent;
+    padding-left: $app-multi-select-search-species-indent;
     border-bottom: $app-multi-select-search-row-border;
+  }
+
+  .govuk-checkboxes__label::before,
+  .govuk-checkboxes__label::after {
+    margin-left: $app-multi-select-search-species-indent;
   }
 
   .govuk-checkboxes__item:nth-child(even) {
     background-color: $app-multi-select-search-stripe;
-    box-shadow: (-$app-multi-select-search-species-indent) 0 0 0
-      $app-multi-select-search-stripe;
   }
 }
 
