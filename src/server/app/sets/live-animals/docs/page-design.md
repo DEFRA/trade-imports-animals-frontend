@@ -269,6 +269,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   announced, because the box and the summary already show it.
 - After a Remove or Clear all, the button pressed has gone, so focus moves to
   the search box. After a tick, focus stays on the tick box.
+- The results are a list joined to the bottom of the search box, as the
+  design draws it: one heading row per commodity, its species beneath, striped
+  rows, and a scroll once the list is taller than about six rows. Each
+  commodity stays a fieldset with its code as the legend, so a screen reader
+  hears the species grouped by commodity.
+- With JavaScript, Escape in the search box or a click outside the search hides
+  the list, keeping the term and every choice, and focusing or clicking the
+  search box shows it again. The list hides once the click has landed, so a
+  click on a button below the list is not moved out from under the pointer.
+- What has been chosen shows as a chip per species, under its commodity code,
+  as the design draws it: the species' Latin name and a cross named "Remove"
+  and that Latin name. Clear all sits beside the count, as a link.
 - If the results cannot be fetched, the page is posted as it is without
   JavaScript, so the trader still gets the results.
 - One result is announced as "1 result available". The design announces
@@ -277,9 +289,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   heading, and each group's species by the label they are offered under, over
   the page of results the search returned.
 - A species reads as its Latin name with its common name in round
-  brackets wherever it is listed or named — the search results, the selected
-  panel, Commodity details, the Selected commodities tables and
-  Identification details — and as its Latin name alone where the
+  brackets wherever it is listed or named — the search results, Commodity
+  details, the Selected commodities tables and Identification details, but
+  not the chips of what has been chosen, which the design gives the Latin name
+  alone — and as its Latin name alone where the
   reference data holds no common name for it. The permanent-address rule and
   the identifier-column rule read the line's stored Latin name rather
   than that label, so a species whose common name changes what it reads as

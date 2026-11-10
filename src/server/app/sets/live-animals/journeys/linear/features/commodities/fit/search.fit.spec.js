@@ -11,6 +11,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectSpeciesSelected,
+  expectStyle,
   expectThreeSaveControls,
   openCommoditySearch,
   openOverview,
@@ -332,7 +333,7 @@ test.describe('commodity search — choosing and saving species', () => {
     ).not.toBeChecked()
   })
 
-  test('shows a Remove control named for each chosen species', async ({
+  test('shows each chosen species as a chip of its Latin name with a Remove control named for it', async ({
     page
   }) => {
     await selectSpecies(page, [BOS_TAURUS_ROW, FELIS_CATUS_ROW])
@@ -341,13 +342,13 @@ test.describe('commodity search — choosing and saving species', () => {
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
     await expect(
       selectedSummary(page).getByRole('button', {
-        name: `Remove ${labelFor(BOS_TAURUS_ROW.speciesLatinName)}`,
+        name: `Remove ${BOS_TAURUS_ROW.speciesLatinName}`,
         exact: true
       })
     ).toBeVisible()
     await expect(
       selectedSummary(page).getByRole('button', {
-        name: `Remove ${labelFor(FELIS_CATUS_ROW.speciesLatinName)}`,
+        name: `Remove ${FELIS_CATUS_ROW.speciesLatinName}`,
         exact: true
       })
     ).toBeVisible()
@@ -555,6 +556,58 @@ test.describe('commodity search as the trader types', () => {
     await expectOverview(page)
     await reopenSelection(page)
     await expectSelectedHeading(page, 2)
+  })
+
+  test('lists the results in a scrolling box joined to the bottom of the search box', async ({
+    page
+  }) => {
+    await searchBox(page).fill(CATTLE_CODE)
+    const dropdown = searchResults(page).locator(
+      '[data-multi-select-search-dropdown]'
+    )
+    await expect(dropdown.getByRole('checkbox')).toHaveCount(15)
+
+    await expectStyle(dropdown, {
+      'max-height': '270px',
+      'overflow-y': 'auto',
+      'border-top-width': '0px'
+    })
+    const gap = await page.evaluate(() => {
+      const box = document.getElementById('commoditySearch')
+      const list = document.querySelector('[data-multi-select-search-dropdown]')
+      return (
+        list.getBoundingClientRect().top - box.getBoundingClientRect().bottom
+      )
+    })
+    expect(gap).toBe(0)
+  })
+
+  test('hides the results on Escape, keeping the term, and shows them again when the search box is clicked', async ({
+    page
+  }) => {
+    await searchBox(page).fill('buffalo')
+    const group = page.getByRole('group', { name: CATTLE_CODE })
+    await expect(group).toBeVisible()
+
+    await searchBox(page).press('Escape')
+    await expect(group).toBeHidden()
+    await expect(searchBox(page)).toHaveValue('buffalo')
+
+    await searchBox(page).click()
+    await expect(group).toBeVisible()
+  })
+
+  test('hides the results on a click outside the search, keeping what is chosen', async ({
+    page
+  }) => {
+    await searchBox(page).fill(BOS_TAURUS_ROW.speciesLatinName)
+    await tickSpecies(page, BOS_TAURUS_ROW)
+    await expectSelectedHeading(page, 1)
+
+    await page.getByRole('heading', { name: copy.search.title }).click()
+
+    await expect(page.getByRole('group', { name: CATTLE_CODE })).toBeHidden()
+    await expectSpeciesSelected(page, BOS_TAURUS_ROW)
   })
 
   test('drops an unticked species from what is chosen, keeping focus on its tick box', async ({

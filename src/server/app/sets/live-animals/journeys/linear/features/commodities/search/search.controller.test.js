@@ -45,8 +45,7 @@ import {
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS,
   FELIS_CATUS_ROW,
-  MUSTELA_PUTORIUS_FURO_ROW,
-  labelFor
+  MUSTELA_PUTORIUS_FURO_ROW
 } from './test-support.js'
 
 const get = search.routes.find((route) => route.method === 'GET').handler
@@ -333,7 +332,7 @@ describe('commodity search — carried and stored search rows', () => {
 describe('commodity search — what has been chosen so far', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should summarise the stored selection, counted and grouped by code', async () => {
+  it('Should summarise the stored selection, counted, grouped by code and each named by its Latin name', async () => {
     const result = await driveHandler(get, {
       seed: {
         commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
@@ -347,11 +346,11 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '0102',
           items: [
             {
-              label: labelFor(BISON_BISON_ROW.speciesLatinName),
+              label: BISON_BISON_ROW.speciesLatinName,
               removeAction: removeActionFor(BISON_BISON_KEY)
             },
             {
-              label: labelFor(BOS_TAURUS_ROW.speciesLatinName),
+              label: BOS_TAURUS_ROW.speciesLatinName,
               removeAction: removeActionFor(BOS_TAURUS_KEY)
             }
           ]
@@ -360,7 +359,7 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '01061900',
           items: [
             {
-              label: labelFor(FELIS_CATUS_ROW.speciesLatinName),
+              label: FELIS_CATUS_ROW.speciesLatinName,
               removeAction: removeActionFor(FELIS_CATUS_KEY)
             }
           ]

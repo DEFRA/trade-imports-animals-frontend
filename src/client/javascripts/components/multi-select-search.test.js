@@ -10,7 +10,7 @@ const RESULTS_URL = '/notifications/abc/things/results'
 const environment = nunjucksConfig.options.compileOptions.environment
 
 const resultsBodyHtml = ({ ticked = false, chosen = [] } = {}) => `
-  <div class="govuk-checkboxes">
+  <div class="govuk-checkboxes" data-multi-select-search-dropdown>
     <input class="govuk-checkboxes__input" id="thing-a" name="thing" type="checkbox" value="a"${ticked ? ' checked' : ''}>
     <label for="thing-a">Thing A</label>
   </div>
@@ -244,6 +244,45 @@ describe('#MultiSelectSearch', () => {
     answerRefresh(answering(responseHtml('', resultsBodyHtml())))
     await settle()
     expect(nativeSubmits).toEqual([{ submitter: saveButton, chosen: [] }])
+  })
+
+  it('Should hide the results on Escape in the search box, keeping the term, and show them again when the box is focused', () => {
+    const { searchBox, results } = mount()
+    const dropdown = () =>
+      results().querySelector('[data-multi-select-search-dropdown]')
+    searchBox.value = 'thing'
+
+    const escape = new globalThis.KeyboardEvent('keydown', {
+      key: 'Escape',
+      cancelable: true
+    })
+    searchBox.dispatchEvent(escape)
+
+    expect(dropdown().hidden).toBe(true)
+    expect(escape.defaultPrevented).toBe(true)
+    expect(searchBox.value).toBe('thing')
+
+    searchBox.dispatchEvent(new Event('focus'))
+    expect(dropdown().hidden).toBe(false)
+  })
+
+  it('Should hide the results only once a click outside the search has landed, and keep them for a click inside it', () => {
+    const { results, saveButton } = mount()
+    const dropdown = () =>
+      results().querySelector('[data-multi-select-search-dropdown]')
+    const outside = document.createElement('p')
+    document.body.append(outside)
+
+    results()
+      .querySelector('#thing-a')
+      .dispatchEvent(new Event('click', { bubbles: true }))
+    expect(dropdown().hidden).toBe(false)
+
+    saveButton.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    expect(dropdown().hidden).toBe(false)
+
+    outside.click()
+    expect(dropdown().hidden).toBe(true)
   })
 
   it('Should leave a save outside the search to submit the form, and post nothing for it', async () => {

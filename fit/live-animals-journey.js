@@ -665,21 +665,24 @@ export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) => {
+  const commodityLine = page.getByText(`${commodityCode}:`, { exact: true })
   const group = selectedSummary(page)
-    .locator('div')
-    .filter({ hasText: `${commodityCode}:` })
+    .getByRole('listitem')
+    .filter({ has: commodityLine })
   await expect(
     group.getByText(`${commodityCode}:`, { exact: true })
   ).toBeVisible()
   await expect(
-    group.getByRole('listitem').filter({ hasText: labelFor(speciesLatinName) })
+    group
+      .getByRole('listitem')
+      .filter({ has: page.getByText(speciesLatinName, { exact: true }) })
   ).toBeVisible()
 }
 
 export const pressSpeciesRemove = (page, { speciesLatinName }) =>
   selectedSummary(page)
     .getByRole('button', {
-      name: `Remove ${labelFor(speciesLatinName)}`,
+      name: `Remove ${speciesLatinName}`,
       exact: true
     })
     .click()

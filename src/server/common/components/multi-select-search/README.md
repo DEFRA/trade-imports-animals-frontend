@@ -47,6 +47,25 @@ results element follows them.
 `appMultiSelectSearchResults` takes `announcement` and wraps the results for
 the response.
 
+## Styles
+
+`multi-select-search.scss` beside the macro draws the design's dropdown and
+chips. The page puts its results in the classes it styles, and the macro's
+comment block lists them:
+
+- `__dropdown` is the results list, joined to the bottom of the search box. It
+  scrolls past 270px. Mark it `data-multi-select-search-dropdown` so the script
+  can hide and show it.
+- `__group` and `__group-heading` style a `govukCheckboxes` fieldset and its
+  legend as a heading row, with the options indented and striped beneath it.
+- `__message` is a row of text in the list, such as no results.
+- `__selected` and the classes inside it draw what has been chosen: the count
+  with Clear all beside it, then a chip per choice under its group, each with a
+  cross to remove it.
+
+The styles sit on the page's own markup, so the look is the same with
+JavaScript on or off.
+
 ## How the script works
 
 - It enhances the element carrying `data-module="app-multi-select-search"`.
@@ -72,6 +91,11 @@ the response.
 - When the results route fails or cannot be reached, the script submits the
   form with the button that started the refresh, so the trader gets the page
   without JavaScript.
+- Escape in the search box hides the dropdown and keeps the term, because the
+  browser's own Escape would clear a search box. A click outside the component
+  hides it too. It hides on the click, not the press, so the layout does not
+  move under a button the trader is clicking. Focusing or clicking the search
+  box shows it again, and each refresh shows the new results.
 
 ## Tests
 
