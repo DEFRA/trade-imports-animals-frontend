@@ -45,108 +45,122 @@ const partsOf = ($module) => {
   return Object.values(parts).every(Boolean) ? parts : null
 }
 
+const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
+  let refreshQueue = Promise.resolve()
+  let refreshesWaiting = 0
+  let submittingNatively = false
+
+  const submitNatively = (submitter) => {
+    submittingNatively = true
+    form.requestSubmit(submitter)
+  }
+
+  const showResults = (fresh, { trigger, announce }) => {
+    results.replaceChildren(...fresh.childNodes)
+    focusReplacementOf(trigger, searchBox)
+    if (announce) {
+      status.textContent = fresh.dataset.announcement ?? ''
+    }
+  }
+
+  const fetchAndShowResults = async (refreshRequest) => {
+    if (submittingNatively) {
+      return
+    }
+    const fresh = await fetchResults(
+      resultsUrl,
+      formBodyFor(form, refreshRequest.submitter)
+    )
+    if (fresh) {
+      showResults(fresh, refreshRequest)
+    } else {
+      submitNatively(refreshRequest.submitter)
+    }
+  }
+
+  return {
+    isSubmittingNatively: () => submittingNatively,
+    hasRefreshesWaiting: () => refreshesWaiting > 0,
+    refresh: (refreshRequest) => {
+      refreshesWaiting += 1
+      refreshQueue = refreshQueue
+        .then(() => fetchAndShowResults(refreshRequest))
+        .catch(() => submitNatively(refreshRequest.submitter))
+        .finally(() => {
+          refreshesWaiting -= 1
+        })
+    },
+    submitOnceRefreshesLand: (submitter) => {
+      refreshQueue = refreshQueue.then(() => {
+        if (!submittingNatively) {
+          submitNatively(submitter)
+        }
+      })
+    }
+  }
+}
+
+const refreshOnEachChange = ($module, parts, refresher) => {
+  const { form, results, searchBox, searchButton } = parts
+  const typingDelayMs = 250
+  let typingTimer
+
+  const refreshNow = (refreshRequest) => {
+    clearTimeout(typingTimer)
+    refresher.refresh(refreshRequest)
+  }
+
+  searchBox.addEventListener('input', () => {
+    clearTimeout(typingTimer)
+    typingTimer = setTimeout(
+      () =>
+        refreshNow({
+          submitter: searchButton,
+          trigger: searchBox,
+          announce: true
+        }),
+      typingDelayMs
+    )
+  })
+
+  results.addEventListener('change', (event) =>
+    refreshNow({
+      submitter: searchButton,
+      trigger: event.target,
+      announce: false
+    })
+  )
+
+  form.addEventListener('submit', (event) => {
+    if (refresher.isSubmittingNatively()) {
+      return
+    }
+    const { submitter } = event
+    if (!submitter || !$module.contains(submitter)) {
+      clearTimeout(typingTimer)
+      if (refresher.hasRefreshesWaiting()) {
+        event.preventDefault()
+        refresher.submitOnceRefreshesLand(submitter)
+      }
+      return
+    }
+    event.preventDefault()
+    refreshNow({
+      submitter,
+      trigger: submitter,
+      announce: submitter === searchButton
+    })
+  })
+}
+
 class MultiSelectSearch {
   static moduleName = 'app-multi-select-search'
 
   constructor($module) {
     const parts = $module ? partsOf($module) : null
-    if (!parts) {
-      return
+    if (parts) {
+      refreshOnEachChange($module, parts, resultsRefresher(parts))
     }
-    const { form, results, status, searchBox, searchButton, resultsUrl } = parts
-    const typingDelayMs = 250
-    let refreshQueue = Promise.resolve()
-    let refreshesWaiting = 0
-    let typingTimer
-    let submittingNatively = false
-
-    const submitNatively = (submitter) => {
-      submittingNatively = true
-      form.requestSubmit(submitter)
-    }
-
-    const showResults = (fresh, { trigger, announce }) => {
-      results.replaceChildren(...fresh.childNodes)
-      focusReplacementOf(trigger, searchBox)
-      if (announce) {
-        status.textContent = fresh.dataset.announcement ?? ''
-      }
-    }
-
-    const fetchAndShowResults = async (refreshRequest) => {
-      if (submittingNatively) {
-        return
-      }
-      const fresh = await fetchResults(
-        resultsUrl,
-        formBodyFor(form, refreshRequest.submitter)
-      )
-      if (fresh) {
-        showResults(fresh, refreshRequest)
-      } else {
-        submitNatively(refreshRequest.submitter)
-      }
-    }
-
-    const refresh = (refreshRequest) => {
-      clearTimeout(typingTimer)
-      refreshesWaiting += 1
-      refreshQueue = refreshQueue
-        .then(() => fetchAndShowResults(refreshRequest))
-        .finally(() => {
-          refreshesWaiting -= 1
-        })
-      return refreshQueue
-    }
-
-    const submitOnceRefreshesLand = (submitter) =>
-      refreshQueue.then(() => {
-        if (!submittingNatively) {
-          submitNatively(submitter)
-        }
-      })
-
-    searchBox.addEventListener('input', () => {
-      clearTimeout(typingTimer)
-      typingTimer = setTimeout(
-        () =>
-          refresh({
-            submitter: searchButton,
-            trigger: searchBox,
-            announce: true
-          }),
-        typingDelayMs
-      )
-    })
-
-    results.addEventListener('change', (event) =>
-      refresh({
-        submitter: searchButton,
-        trigger: event.target,
-        announce: false
-      })
-    )
-
-    form.addEventListener('submit', (event) => {
-      if (submittingNatively) {
-        return
-      }
-      const { submitter } = event
-      if (!submitter || !$module.contains(submitter)) {
-        clearTimeout(typingTimer)
-        if (refreshesWaiting > 0) {
-          event.preventDefault()
-          submitOnceRefreshesLand(submitter)
-        }
-        return
-      }
-      event.preventDefault()
-      refresh({
-        submitter,
-        trigger: submitter,
-        announce: submitter === searchButton
-      })
-    })
   }
 }
 
