@@ -31,7 +31,10 @@ import {
   openingRunEntryCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { bindOrganisationId } from '../../common/helpers/organisation-id.js'
+import {
+  organisationIdOf,
+  withOrganisationId
+} from '../../common/helpers/organisation-id.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -157,11 +160,13 @@ export const recordingLogger = () => {
   }
 }
 
+export const actWithSessionOrganisation = (request, fn) =>
+  withOrganisationId(organisationIdOf(request), fn)
+
 export const journeyRequest = (
   journeyId,
   { knownJourneyIds, ...overrides } = {}
 ) => {
-  bindOrganisationId(authenticatedCredentials.organisationId)
   return {
     app: {},
     payload: {},
@@ -360,11 +365,8 @@ export const driveHandler = async (handler, options = {}) => {
     ...requestLocation(pathOf, journey.journeyId, requestQuery)
   })
   const h = stubH(request)
-  const response = await callHandlerWithStartingRecords(
-    handler,
-    request,
-    h,
-    startingFrom
+  const response = await actWithSessionOrganisation(request, () =>
+    callHandlerWithStartingRecords(handler, request, h, startingFrom)
   )
   const after = (await store.get(journey.journeyId)).answers
   return {

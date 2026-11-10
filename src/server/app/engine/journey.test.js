@@ -26,14 +26,15 @@ import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { encodeEvaluatorFulfilments } from '../services/persistence/records/fulfilment-codec/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import {
+  actWithSessionOrganisation,
   authenticatedActor,
+  authenticatedCredentials,
   backendJourneyId,
   backendNotification,
   journeyRequest,
   recordingH
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
-import { bindOrganisationId } from '../../common/helpers/organisation-id.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -227,14 +228,15 @@ describe('#amendJourney against the backend', () => {
     configureRecords(SET_ID, recordsReal)
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
-    bindOrganisationId('5900001')
   })
 
   it('Should refuse an id the backend does not hold, log it and send no amend request', async () => {
     fetchMocker.mockResponse('Not Found', { status: 404 })
     const request = journeyRequest(backendJourneyId, { knownJourneyIds: [] })
 
-    const editable = await amendJourney(request, recordingH(), backendJourneyId)
+    const editable = await actWithSessionOrganisation(request, async () =>
+      amendJourney(request, recordingH(), backendJourneyId)
+    )
 
     expect(editable).toBeUndefined()
     expect(
@@ -351,10 +353,10 @@ describe('#listKnownJourneys against the backend', () => {
   beforeEach(() => {
     configureRecords(SET_ID, recordsReal)
     fetchMocker.resetMocks()
-    bindOrganisationId('5900001')
   })
 
-  it('Should request the page asked for with the organisation header', async () => {
+  it('Should send the signed-in organisation on the list request', async () => {
+    const sessionOrg = '5900077'
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 2,
@@ -365,14 +367,25 @@ describe('#listKnownJourneys against the backend', () => {
       })
     )
 
-    await listKnownJourneys(
-      journeyRequest(backendJourneyId, { knownJourneyIds: [backendJourneyId] }),
-      { page: 2 }
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId],
+      auth: {
+        isAuthenticated: true,
+        credentials: { ...authenticatedCredentials, organisationId: sessionOrg }
+      }
+    })
+
+    await actWithSessionOrganisation(request, async () =>
+      listKnownJourneys(request, { page: 2 })
     )
 
-    const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationsUrl}?page=2&sort=arrivalDate,desc`)
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900001')
+    const [backendRequest] = fetchMocker.requests()
+    expect(backendRequest.url).toBe(
+      `${notificationsUrl}?page=2&sort=arrivalDate,desc`
+    )
+    expect(backendRequest.headers.get('Trade-Imports-Organisation-Id')).toBe(
+      sessionOrg
+    )
   })
 })
 
@@ -382,13 +395,12 @@ describe('backend requests carry the authenticated actor', () => {
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
     fetchMocker.mockResponse(backendNotification({ status: 'SUBMITTED' }))
-    bindOrganisationId('5900001')
   })
 
   it('Should send the authenticated actor as the body of the create request', async () => {
-    await startJourney(
-      journeyRequest(undefined, { knownJourneyIds: [] }),
-      recordingH()
+    const request = journeyRequest(undefined, { knownJourneyIds: [] })
+    await actWithSessionOrganisation(request, async () =>
+      startJourney(request, recordingH())
     )
 
     expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
@@ -421,11 +433,11 @@ describe('backend requests carry the authenticated actor', () => {
   ])(
     'Should send the authenticated actor as the body of the %s request',
     async (_name, act, expectedUrl) => {
-      await act(
-        journeyRequest(backendJourneyId, {
-          knownJourneyIds: [backendJourneyId]
-        }),
-        recordingH()
+      const request = journeyRequest(backendJourneyId, {
+        knownJourneyIds: [backendJourneyId]
+      })
+      await actWithSessionOrganisation(request, async () =>
+        act(request, recordingH())
       )
 
       const lastRequest = fetchMocker.requests().at(-1)
@@ -440,7 +452,6 @@ describe('#replaceJourneyFulfilment', () => {
     configureRecords(SET_ID, recordsReal)
     configureSession(SET_ID, sessionStub)
     fetchMocker.resetMocks()
-    bindOrganisationId('5900001')
   })
 
   it('Should send the concurrencyToken the first save returned on a second save in the same request', async () => {
@@ -468,8 +479,10 @@ describe('#replaceJourneyFulfilment', () => {
     })
     request.payload = { concurrencyToken: '4' }
 
-    await replaceJourneyFulfilment(request, backendJourneyId, first)
-    await replaceJourneyFulfilment(request, backendJourneyId, second)
+    await actWithSessionOrganisation(request, async () => {
+      await replaceJourneyFulfilment(request, backendJourneyId, first)
+      await replaceJourneyFulfilment(request, backendJourneyId, second)
+    })
 
     const puts = fetchMocker.requests().filter(({ method }) => method === 'PUT')
     const tokensSent = await Promise.all(

@@ -4,9 +4,7 @@ import { traceHeaders } from '../../../../http/trace-headers.js'
 export const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 
 export const headers = () => {
-  const organisationId =
-    currentOrganisationId() ??
-    (process.env.NODE_ENV === 'test' ? '5900001' : undefined)
+  const organisationId = currentOrganisationId()
   if (!organisationId) {
     throw new Error(
       'Cannot reach the notifications backend without an organisation from the signed-in session'

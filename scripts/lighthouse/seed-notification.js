@@ -208,7 +208,7 @@ const TRANSPORTER_STEPS = new Map([
   ]
 ])
 
-/** The notification shapes the audit seeds, keyed by the name the URL list uses. */
+/** The notification shapes the audit seeds, by shape name. */
 export const SEED_SHAPES = {
   draft: {
     reasonForImport: values.reasonForImport,

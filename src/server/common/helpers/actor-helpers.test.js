@@ -8,7 +8,7 @@ describe('buildActor', () => {
     contactId: 2100010101,
     sub: entraOid,
     name: userDisplayName,
-    currentRelationshipId: 'org-001'
+    organisationId: 'org-001'
   }
 
   it('builds a B2C actor when contactId is present', () => {
@@ -25,9 +25,7 @@ describe('buildActor', () => {
 
   it('Should put credentials.organisationId on the actor when both organisationId and currentRelationshipId are present', () => {
     const actor = buildActor({
-      contactId: 2100010101,
-      sub: 'entra-oid-001',
-      name: userDisplayName,
+      ...baseCredentials,
       organisationId: '5900001',
       currentRelationshipId: '5900002'
     })
@@ -43,7 +41,7 @@ describe('buildActor', () => {
     const credentials = {
       sub: entraOid,
       name: userDisplayName,
-      currentRelationshipId: 'org-001'
+      organisationId: 'org-001'
     }
 
     const actor = buildActor(credentials)

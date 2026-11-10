@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  bindOrganisationId,
   currentOrganisationId,
   organisationIdOf,
   withOrganisationId
@@ -16,12 +15,12 @@ describe('organisationIdOf', () => {
     ).toBe('5900001')
   })
 
-  it('Should read currentRelationshipId when organisationId is absent', () => {
+  it('Should return undefined when organisationId is absent', () => {
     expect(
       organisationIdOf({
         auth: { credentials: { currentRelationshipId: '5900002' } }
       })
-    ).toBe('5900002')
+    ).toBeUndefined()
   })
 
   it('Should return undefined when the request is unauthenticated', () => {
@@ -31,16 +30,16 @@ describe('organisationIdOf', () => {
   })
 })
 
-describe('organisation id binding', () => {
-  it('Should expose the value bound for this request', () => {
-    bindOrganisationId('5900001')
+describe('withOrganisationId', () => {
+  it('Should scope currentOrganisationId to the callback and return its result', () => {
+    expect(currentOrganisationId()).toBeUndefined()
 
-    expect(currentOrganisationId()).toBe('5900001')
-  })
-
-  it('Should scope currentOrganisationId to withOrganisationId', () => {
-    withOrganisationId('org-scoped', () => {
+    const returned = withOrganisationId('org-scoped', () => {
       expect(currentOrganisationId()).toBe('org-scoped')
+      return 'done'
     })
+
+    expect(returned).toBe('done')
+    expect(currentOrganisationId()).toBeUndefined()
   })
 })

@@ -77,6 +77,9 @@ export const withSetContext = (setId, fn) => storage.run({ setId }, fn)
 
 export const enterSetContext = (setId) => storage.enterWith({ setId })
 
+export const runInRequestContext = (request, setId, fn) =>
+  withOrganisationId(organisationIdOf(request), () => withSetContext(setId, fn))
+
 /**
  * Server-wide set context, registered once by the composition root.
  *
@@ -100,9 +103,7 @@ export const setContextExtension = {
 const contextualMethod = (setId, method) =>
   typeof method === 'function'
     ? (request, h) =>
-        withOrganisationId(organisationIdOf(request), () =>
-          withSetContext(setId, () => method(request, h))
-        )
+        runInRequestContext(request, setId, () => method(request, h))
     : method
 
 /**
