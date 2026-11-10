@@ -55,8 +55,8 @@ class MultiSelectSearch {
     }
     const { form, results, status, searchBox, searchButton, resultsUrl } = parts
     const typingDelayMs = 250
-    let refreshCount = 0
-    let refreshInFlight = null
+    let refreshQueue = Promise.resolve()
+    let refreshesWaiting = 0
     let typingTimer
     let submittingNatively = false
 
@@ -73,29 +73,34 @@ class MultiSelectSearch {
       }
     }
 
-    const refresh = (refreshRequest) => {
-      clearTimeout(typingTimer)
-      refreshCount += 1
-      const thisRefresh = refreshCount
-      refreshInFlight = fetchResults(
+    const fetchAndShowResults = async (refreshRequest) => {
+      if (submittingNatively) {
+        return
+      }
+      const fresh = await fetchResults(
         resultsUrl,
         formBodyFor(form, refreshRequest.submitter)
-      ).then((fresh) => {
-        if (thisRefresh !== refreshCount) {
-          return
-        }
-        refreshInFlight = null
-        if (fresh) {
-          showResults(fresh, refreshRequest)
-        } else {
-          submitNatively(refreshRequest.submitter)
-        }
-      })
-      return refreshInFlight
+      )
+      if (fresh) {
+        showResults(fresh, refreshRequest)
+      } else {
+        submitNatively(refreshRequest.submitter)
+      }
     }
 
-    const submitOnceRefreshLands = (submitter) =>
-      refreshInFlight.then(() => {
+    const refresh = (refreshRequest) => {
+      clearTimeout(typingTimer)
+      refreshesWaiting += 1
+      refreshQueue = refreshQueue
+        .then(() => fetchAndShowResults(refreshRequest))
+        .finally(() => {
+          refreshesWaiting -= 1
+        })
+      return refreshQueue
+    }
+
+    const submitOnceRefreshesLand = (submitter) =>
+      refreshQueue.then(() => {
         if (!submittingNatively) {
           submitNatively(submitter)
         }
@@ -129,9 +134,9 @@ class MultiSelectSearch {
       const { submitter } = event
       if (!submitter || !$module.contains(submitter)) {
         clearTimeout(typingTimer)
-        if (refreshInFlight) {
+        if (refreshesWaiting > 0) {
           event.preventDefault()
-          submitOnceRefreshLands(submitter)
+          submitOnceRefreshesLand(submitter)
         }
         return
       }

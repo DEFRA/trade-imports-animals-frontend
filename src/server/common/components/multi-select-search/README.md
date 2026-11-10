@@ -57,11 +57,14 @@ the response.
   before the form submits. The button's own name and value are posted, so the
   route can tell a Remove from Clear all.
 - A button outside the component, such as Save and continue, submits the form as
-  usual. If a refresh is still on its way, the submit waits for it to land, so
-  a save pressed straight after Clear all or a Remove saves what the trader sees.
-  A typed search still waiting for the trader to pause is dropped.
-- Each response replaces the results. When responses arrive out of order, only
-  the latest request's response is shown.
+  usual. If refreshes are still on their way, the submit waits for them to land,
+  so a save pressed straight after Clear all or a Remove saves what the trader
+  sees. A typed search still waiting for the trader to pause is dropped.
+- Refreshes run one at a time. Each is posted only once the one before it has
+  landed, from the form that one left, so a search pressed straight after Clear
+  all does not post the cleared choices again. Two refreshes never reach the
+  server at once, so neither can overwrite the search rows the other stored.
+- Each response replaces the results.
 - After a swap, focus goes back to the element with the same id. If that element
   has gone, such as a Remove button, focus moves to the search box.
 - After a typed search or a Search press, the live region reads the response's

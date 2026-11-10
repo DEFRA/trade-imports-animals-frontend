@@ -166,29 +166,35 @@ describe('#MultiSelectSearch', () => {
     expect(status.textContent).toBe('1 result available')
   })
 
-  it('Should show only the latest results when an earlier request answers last', async () => {
-    const { searchBox, searchButton, results } = mount('')
-    let answerEarlier
+  it('Should send a search pressed while Clear all is refreshing only once it lands, from the form it left', async () => {
+    const { searchBox, searchButton, results } = mount(
+      resultsBodyHtml({ ticked: true, chosen: ['a'] })
+    )
+    let answerClear
     fetchMock
       .mockReturnValueOnce(
         new Promise((resolve) => {
-          answerEarlier = resolve
+          answerClear = resolve
         })
       )
       .mockResolvedValueOnce(
-        answering(responseHtml('later', '<p id="later">Later</p>'))
+        answering(responseHtml('', '<p id="searched">Searched</p>'))
       )
 
-    searchBox.value = 'ear'
-    searchButton.click()
-    searchBox.value = 'later'
+    results().querySelector('button[value="clear"]').click()
+    searchBox.value = 'other'
     searchButton.click()
     await settle()
-    answerEarlier(answering(responseHtml('earlier', '<p id="earlier">E</p>')))
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    answerClear(answering(responseHtml('', resultsBodyHtml())))
     await settle()
 
-    expect(results().querySelector('#later')).not.toBeNull()
-    expect(results().querySelector('#earlier')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const searchBody = postedBody(fetchMock.mock.calls[1])
+    expect(searchBody.getAll('chosen')).toEqual([])
+    expect(searchBody.get('q')).toBe('other')
+    expect(results().querySelector('#searched')).not.toBeNull()
   })
 
   it('Should submit the form itself with the pressed action when the results request fails', async () => {

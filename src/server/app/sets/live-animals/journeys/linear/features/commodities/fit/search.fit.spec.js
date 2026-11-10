@@ -499,6 +499,16 @@ test.describe('commodity search as the trader types', () => {
 
   const resultsStatus = (page) => page.getByRole('status')
 
+  const chooseCatThenSlowTheResults = async (page) => {
+    await searchBox(page).fill(FELIS_CATUS_ROW.speciesLatinName)
+    await tickSpecies(page, FELIS_CATUS_ROW)
+    await expectSelectedHeading(page, 1)
+    await page.route('**/commodities/results', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      await route.continue()
+    })
+  }
+
   test('lists the matching species without pressing Search or leaving the page', async ({
     page
   }) => {
@@ -590,13 +600,7 @@ test.describe('commodity search as the trader types', () => {
   test('a save pressed straight after Clear all saves nothing chosen and refuses', async ({
     page
   }) => {
-    await searchBox(page).fill(FELIS_CATUS_ROW.speciesLatinName)
-    await tickSpecies(page, FELIS_CATUS_ROW)
-    await expectSelectedHeading(page, 1)
-    await page.route('**/commodities/results', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      await route.continue()
-    })
+    await chooseCatThenSlowTheResults(page)
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
@@ -607,6 +611,24 @@ test.describe('commodity search as the trader types', () => {
       errorLink(page, copy.search.errors.selectCommodity)
     ).toBeVisible()
     await expect(selectedSummary(page)).toHaveCount(0)
+  })
+
+  test('a search pressed straight after Clear all keeps the selection cleared', async ({
+    page
+  }) => {
+    await chooseCatThenSlowTheResults(page)
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await searchCommodities(page, BOS_TAURUS_ROW.speciesLatinName)
+    await tickSpecies(page, BOS_TAURUS_ROW)
+    await saveAndContinue(page).click()
+
+    await expectOverview(page)
+    await reopenSelection(page)
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, BOS_TAURUS_ROW)
   })
 
   test('falls back to submitting the page when the results cannot be fetched', async ({
