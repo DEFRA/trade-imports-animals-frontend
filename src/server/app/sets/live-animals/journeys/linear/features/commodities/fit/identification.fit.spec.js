@@ -7,12 +7,16 @@ import {
   MUSTELA_PUTORIUS_FURO_ROW,
   PHONE_VIEWPORT,
   saveAndContinue,
+  saveAndReturnToHub,
   STRUTHIO_ROW,
   numberOfAnimalsFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
+  LANDINGS,
   openCommodityDetails,
+  openOverview,
+  selectSpecies,
   signIn,
   withinFullWidthColumn,
   withinTwoThirdsColumn
@@ -53,7 +57,7 @@ const addLines = async (page, speciesWithCounts) => {
 
 const openIdentification = async (page, speciesWithCounts) => {
   await addLines(page, speciesWithCounts)
-  await saveAndContinue(page).click()
+  await saveAndReturnToHub(page).click()
   await page
     .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
     .click()
@@ -323,7 +327,17 @@ test.describe('animal identification', () => {
 
     for (const field of Object.keys(validPermanentAddress)) {
       await expect(page.locator(`#${field}-0`)).toBeVisible()
+      await expect(page.locator(`#${field}-0`)).toHaveAccessibleName(
+        copy.identification.address[field]
+      )
     }
+    await expect(page.getByText('(optional)')).toHaveCount(2)
+    await expect(page.locator('#addressLine2-0')).toHaveAccessibleName(
+      'Address line 2 (optional)'
+    )
+    await expect(page.locator('#county-0')).toHaveAccessibleName(
+      'County (optional)'
+    )
     await expect(page.locator('#country-0')).toHaveCount(0)
     await expect(page.locator('select')).toHaveCount(0)
   })
@@ -439,12 +453,14 @@ test.describe('animal identification', () => {
     page
   }) => {
     await addLines(page, [[STRUTHIO_ROW, '3']])
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, IDENTIFICATION_SLUG))
 
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Additional details', exact: true })
+    ).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
     ).toHaveCount(0)
@@ -509,6 +525,7 @@ test.describe('animal identification in-card save button', () => {
     await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
     await saveAndContinue(page).click()
 
+    await openOverview(page)
     await page
       .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
       .click()
@@ -596,7 +613,7 @@ test.describe('animal identification selected commodities summary', () => {
     ).toBeVisible()
   })
 
-  test('offers Add another commodity while there are commodities to identify', async ({
+  test('Add another commodity opens What are you importing?, and saving a further species returns to identification details', async ({
     page
   }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW, '2']])
@@ -606,6 +623,19 @@ test.describe('animal identification selected commodities summary', () => {
 
     await expect(
       page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+
+    await selectSpecies(page, [FELIS_CATUS_ROW])
+    await saveAndContinue(page).click()
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.animalIdentification.slug}`)
+    )
+    await expect(
+      page.getByRole('heading', {
+        name: LANDINGS.animalIdentification.title,
+        exact: true
+      })
     ).toBeVisible()
   })
 })
@@ -839,7 +869,7 @@ test.describe('animal identification records', () => {
     const link = errorLink(page, copy.identification.errors.capReached(2))
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
   })
 
   test('blocks a count drop below saved records and reopens after removal', async ({
@@ -861,9 +891,9 @@ test.describe('animal identification records', () => {
     await expectCompleteCard(page, BOS_TAURUS_ROW, 2)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
 
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page
       .getByRole('link', {
@@ -880,7 +910,7 @@ test.describe('animal identification records', () => {
     )
     await expect(errorLink(page, countDrop)).toBeVisible()
     await errorLink(page, countDrop).click()
-    await expect(page).toHaveURL(/#identification-card-0$/)
+    await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
     await expect(
       commodityHeading(page, BOS_TAURUS_CODE_HEADING)
         .locator('xpath=following::*[@id="identification-card-0"]')

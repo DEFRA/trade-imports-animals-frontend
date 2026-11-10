@@ -2,11 +2,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../shared/kit.js'
 import {
   authenticatedCredentials,
   driveHandler,
   expectOneLogged,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   useStubbedJourney,
   withFlowOnlyAnswers
 } from '../../../../../../engine/test-support.js'
@@ -221,7 +222,7 @@ export const itRemembersAndShowsARefusedSavesValues = ({
   })
 }
 
-export const itKeepsTheChangeContextOnASaveFromAChangeLink = ({
+export const itCarriesTheTrailOnASaveFromAChangeLink = ({
   setId,
   dispatchPages,
   postHandler,
@@ -231,15 +232,17 @@ export const itKeepsTheChangeContextOnASaveFromAChangeLink = ({
   describe(`saving the ${transporterType} form from a Change link`, () => {
     useStubbedJourney(setId, dispatchPages)
 
-    it('Should keep the change context, so the list’s own save returns to the review', async () => {
+    it('Should go to the transporter list carrying the trail', async () => {
       const result = await driveHandler(postHandler, {
         seed: { transporterType },
         payload,
-        startingFrom: [openedFromChangeLink()]
+        startingFrom: [{ query: reviewChangeLinkQuery() }]
       })
 
       expect(result.response).toEqual({
-        redirect: `${pagePath(result.journeyId, 'transporters')}?change=1`
+        redirect: withTrail(pagePath(result.journeyId, 'transporters'), [
+          CYA_SLUG
+        ])
       })
     })
   })
@@ -279,3 +282,15 @@ export const typedInPrivateTransporterPayload = Object.freeze({
   phone: '+33 3 22 55 01 44',
   email: 'jean.dupont@example.fr'
 })
+
+export const itCarriesTheTrailOnBack = (getHandler, { seed = {}, backSlug }) =>
+  it('Should carry the trail on Back when the trader is changing an answer', async () => {
+    const result = await driveHandler(getHandler, {
+      seed,
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
+    })
+
+    expect(result.view.context.backLink).toBe(
+      withTrail(pagePath(result.journeyId, backSlug), [CYA_SLUG])
+    )
+  })

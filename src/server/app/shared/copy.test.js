@@ -91,7 +91,6 @@ describe('error-page copy', () => {
 describe('save-actions copy', () => {
   it('Should carry the save control labels', () => {
     expect(sharedEn.saveActions).toEqual({
-      saveAndReturn: 'Save and return',
       saveAndContinue: 'Save and continue',
       saveAndReturnToHub: 'Save and return to overview',
       cancelAndReturnToHub: 'Cancel and return to overview'
@@ -102,6 +101,14 @@ describe('save-actions copy', () => {
     expect(Object.keys(sharedCy.saveActions)).toEqual(
       Object.keys(sharedEn.saveActions)
     )
+  })
+
+  it('Should label the controls in Welsh', () => {
+    expect(sharedCy.saveActions).toEqual({
+      saveAndContinue: 'Cadw a pharhau',
+      saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
+      cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
+    })
   })
 })
 

@@ -21,14 +21,17 @@ context:
   [`configureObligationSet()`](../model/obligations/manifest.js)
 - gives feature bindings to
   [`configureFulfilmentRegistry()`](../bridge/fulfilment-registry.js)
-- gives journey sections, task rows, navigation and layout policy to
-  [`configureJourneyFlow()`](../flow/journey-flow.js)
+- gives journey sections, task rows, row status, flow-only keys, the entry guard
+  target, the Import Notification Service type question address, layout and
+  section captions to [`configureJourneyFlow()`](../flow/journey-flow.js)
 - builds the obligation-to-page dispatch index with
   [`buildDispatch()`](../flow/dispatch.js)
 - injects records and session adapters through
   [`configureRecords()`](../engine/persistence/records.js) and
   [`configureSession()`](../engine/persistence/session.js)
-- registers the journey cookies, entry guard and Hapi routes
+- registers the journey cookies `journeyCookieNames()` lists (see
+  [`session.js`](../engine/persistence/session.js)), the entry guard and
+  the Hapi routes
 
 The purity and binding-coverage assertions run after those registrations and before
 routes are added to the server.
@@ -62,9 +65,12 @@ The generic manifest accessors remain in
 
 ## L4: journeys
 
-A journey owns page identity, controllers, templates, copy, bindings, section order,
-task rows and opening-run policy. Journeys may use their own set and L2 APIs. They do
-not import another journey or another set.
+A journey owns page identity, controllers, templates, copy, bindings, its one page
+order, task rows and entry guard. The session holds no record of how a notification
+was started. The entry guard admits a notification that holds a committed user answer
+and sends any other notification on a guarded path to the journey's entry page.
+Journeys may use their own set and L2 APIs. They do not import another journey or
+another set.
 
 The live-animals linear journey uses two Nunjucks roots configured in
 [`src/config/nunjucks/nunjucks.js`](../../../config/nunjucks/nunjucks.js):
@@ -116,14 +122,16 @@ way:
 
 - page chrome: `base()`, `setlessBase()`, `journeyStrip()` and `SURFACES`
 - errors: `errorSummary()`, `fieldError()` and `logRefusal()`
-- where a POST goes next: `hubExitTarget()`, `exitTarget()`, `nextTarget()`
-  and `amendReviewTarget()`, which follow the save choice of the request, or
-  one passed to them
+- where a POST goes next: `hubExitTarget()` and `nextTarget()`, which follow
+  the save choice of the request, or one passed to them
 - the save choice a request carries: `requestSaveChoice()`, and for a form the
   upload service returns the browser with, `returnedSaveChoice()`
-- where a page's Back link goes: `runBackLink()`
+- where a page's Back link goes: `trailBackLink()`, with `carryTrail()` and `pushTrail()` for the links that keep the trail
+- the return marker a sub-page round trip carries: `withReturnMarker()` and `readReturnMarker()`
 - saving: `recoverableSave()` and `pageRoutes()`
 - date fields: `readDate()`, `dateTextOf()` and `dateField()`
+
+[`shared/trail.js`](../shared/trail.js) owns the trail and return marker operations, and `kit.js` re-exports them.
 
 A helper belongs in `kit.js` only when every journey page could use it and it
 names no feature, set or page. Validation rules go in

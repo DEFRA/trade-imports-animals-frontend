@@ -10,8 +10,8 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import {
-  itSendsBackToOverview,
-  itSendsBackToOverviewOnRefusal
+  itSendsBackToWhereTheTraderCameFrom,
+  itSendsBackToWhereTheTraderCameFromOnRefusal
 } from '../../../test-support.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import {
@@ -371,7 +371,12 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
 describe('port-of-entry — Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  itSendsBackToOverview(get)
+  itSendsBackToWhereTheTraderCameFrom(get, {
+    previousPage: 'additional-details'
+  })
 
-  itSendsBackToOverviewOnRefusal(post, { portOfEntry: 'XX NOPE' })
+  itSendsBackToWhereTheTraderCameFromOnRefusal(post, {
+    savedPage: 'additional-details',
+    payload: { portOfEntry: 'XX NOPE' }
+  })
 })

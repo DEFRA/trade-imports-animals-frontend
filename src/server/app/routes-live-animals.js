@@ -18,10 +18,9 @@ import {
 } from './sets/live-animals/journeys/linear/flow/task-rows.js'
 import { sectionCaptionOf } from './sets/live-animals/journeys/linear/flow/section-captions/index.js'
 import {
-  nextRunTarget,
-  previousRunTarget
-} from './sets/live-animals/journeys/linear/flow/run.js'
-import { entryGuardTarget } from './sets/live-animals/journeys/linear/flow/entry-guard.js'
+  entryGuardTarget,
+  insTypeQuestionUrl
+} from './sets/live-animals/journeys/linear/flow/entry-guard.js'
 import {
   LAYOUT,
   SESSION_COOKIE_NAMES
@@ -75,8 +74,7 @@ export const liveAnimals = {
           sections,
           taskRows,
           rowStatus,
-          nextRunTarget,
-          previousRunTarget,
+          insTypeQuestionUrl,
           flowOnlyKeys: FLOW_ONLY_KEYS,
           entryGuardTarget,
           layout: LAYOUT,

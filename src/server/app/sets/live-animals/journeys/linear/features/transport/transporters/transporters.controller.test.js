@@ -5,6 +5,7 @@ import {
   authenticatedCredentials,
   driveHandler,
   refusingSaves,
+  reviewChangeLinkQuery,
   expectNoRefusalLogged,
   unavailableBackendError,
   useStubbedJourney,
@@ -15,16 +16,18 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
 import {
   COMMERCIAL,
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
 import { dispatchPages } from '../../index.js'
+import { transporterAddPage } from '../page.js'
 import {
-  itSendsBackToOverview,
-  itSendsBackToOverviewOnRefusal
+  itSendsBackToWhereTheTraderCameFrom,
+  itSendsBackToWhereTheTraderCameFromOnRefusal
 } from '../../../test-support.js'
 import {
   expectRecoverableSaveFailureKeepingValues,
@@ -533,9 +536,28 @@ describe('/transporters with a transporter the organisation added', () => {
 describe('/transporters — Back link', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  itSendsBackToOverview(getHandler)
+  itSendsBackToWhereTheTraderCameFrom(getHandler, {
+    previousPage: 'port-of-entry'
+  })
 
-  itSendsBackToOverviewOnRefusal(postHandler, { transporter: NOT_ON_THE_LIST })
+  itSendsBackToWhereTheTraderCameFromOnRefusal(postHandler, {
+    savedPage: 'port-of-entry',
+    payload: { transporter: NOT_ON_THE_LIST }
+  })
+})
+
+describe('GET /transporters — the Add a transporter link', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should open the type question carrying the review on the trail when opened from a review Change link', async () => {
+    const result = await driveHandler(getHandler, {
+      query: reviewChangeLinkQuery()
+    })
+
+    expect(result.view.context.addHref).toBe(
+      withTrail(pagePath(result.journeyId, transporterAddPage.slug), [CYA_SLUG])
+    )
+  })
 })
 
 describe('GET /transporters — the added-transporter banner', () => {

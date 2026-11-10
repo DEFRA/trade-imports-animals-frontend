@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  carryOpeningRunToImportReason,
+  saveAndContinueToImportReason,
   chooseTypeAheadOption,
   chooseTodayFromDatePicker,
   describeCalendarPosition,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   journeyUrl,
-  visitOverviewThenOpen,
+  openFromOverviewRow,
   openDatePicker,
   saveAndContinue,
   saveAndReturnToHub,
@@ -25,9 +25,11 @@ import {
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
+const NEXT_PAGE_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
@@ -159,6 +161,14 @@ const expectInternalMarketBreedingChecked = async (page) => {
   ).toBeChecked()
 }
 
+const saveInternalMarketBreedingAndReopen = async (page) => {
+  const reasonUrl = page.url()
+  await chooseInternalMarketBreeding(page)
+  await saveAndContinue(page).click()
+  await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
+  await page.goto(reasonUrl)
+}
+
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -225,31 +235,26 @@ test.describe('import-reason feature', () => {
   test('saves a valid reason, redirects and persists the answer', async ({
     page
   }) => {
-    const reasonUrl = page.url()
+    await saveInternalMarketBreedingAndReopen(page)
 
-    await chooseInternalMarketBreeding(page)
-    await saveAndContinue(page).click()
-
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
-    await page.goto(reasonUrl)
     await expectInternalMarketBreedingChecked(page)
   })
 
   test('back link returns to the overview when the page is opened from the overview', async ({
     page
   }) => {
-    await carryOpeningRunToImportReason(page)
-    await visitOverviewThenOpen(page, 'import-reason')
+    await saveAndContinueToImportReason(page)
+    await openFromOverviewRow(page, hubCopy.rows.importReason.title)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(journeyUrl(page))
   })
 
-  test('Save and return to overview inside the opening run saves the answer and shows the overview rather than commodity details', async ({
+  test('Save and return to overview on a new notification saves the answer and shows the overview', async ({
     page
   }) => {
-    await carryOpeningRunToImportReason(page)
+    await saveAndContinueToImportReason(page)
     const reasonUrl = page.url()
 
     await chooseInternalMarketBreeding(page)
@@ -392,13 +397,49 @@ test.describe('import-reason reveals', () => {
     await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(radioFor(page, 'transit')).toBeChecked()
     await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
     await expect(page.locator(transitPortInput)).toHaveValue(EXIT_PORT_LABEL)
     await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
     await expect(page.locator(transitCountryInput)).toHaveValue(IRELAND.name)
+  })
+
+  test('saves Re-entry with nothing more asked, goes on to the next page and offers Re-entry back', async ({
+    page
+  }) => {
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'reEntry').check()
+    await saveAndContinue(page).click()
+
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(radioFor(page, 'reEntry')).toBeChecked()
+  })
+
+  test('offers no purpose ticked when Internal market is chosen again after a transit reason was saved over it', async ({
+    page
+  }) => {
+    await saveInternalMarketBreedingAndReopen(page)
+    const reasonUrl = page.url()
+    await radioFor(page, 'transit').check()
+    await chooseTypeAheadOption(page, TRANSIT_PORT)
+    await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
+    await saveAndReturnToHub(page).click()
+    await expectOverview(page)
+
+    await page.goto(reasonUrl)
+    await radioFor(page, 'internalMarket').check()
+
+    const purposes = importReasonPurpose.purposes()
+    expect(purposes.length).toBeGreaterThan(0)
+    for (const { text } of purposes) {
+      await expect(
+        page.getByRole('radio', { name: text, exact: true })
+      ).not.toBeChecked()
+    }
   })
 })
 
@@ -492,7 +533,7 @@ test.describe('import-reason reveal validation', () => {
     await chooseTypeAheadOption(page, TEMPORARY_ADMISSION_PORT)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
     await expect(page.locator(temporaryAdmissionPortHidden)).toHaveValue(
@@ -560,7 +601,7 @@ test.describe('import-reason destination territories', () => {
     })
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(transhipmentCountryHidden)).toHaveValue('ES-CN')
     await expect(page.locator(transhipmentCountryInput)).toHaveValue(
@@ -711,7 +752,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .selectOption(COUNTRY_CODE)
     await saveAndContinue(page).click()
 
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator('select#transitPortOfExit')).toHaveValue(
       PORT_CODE
@@ -727,7 +768,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .locator('select#temporaryAdmissionPortOfExit')
       .selectOption(PORT_CODE)
     await saveAndContinue(page).click()
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
       page.locator('select#temporaryAdmissionPortOfExit')
@@ -739,7 +780,7 @@ test.describe('import-reason port and country without JavaScript', () => {
       .locator('select#transhipmentDestinationCountry')
       .selectOption(COUNTRY_CODE)
     await saveAndContinue(page).click()
-    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
       page.locator('select#transhipmentDestinationCountry')

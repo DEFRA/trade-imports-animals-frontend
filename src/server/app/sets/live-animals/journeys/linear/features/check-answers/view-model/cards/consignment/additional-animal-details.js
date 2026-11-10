@@ -14,6 +14,7 @@ const copy = copyFor({ en, cy })
  */
 export const additionalAnimalDetailsCard = ({
   journeyId,
+  changeLinkTrail,
   answers,
   readOnly
 }) => ({
@@ -22,7 +23,7 @@ export const additionalAnimalDetailsCard = ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
+      { journeyId, changeLinkTrail },
       additionalDetailsPage.slug,
       copy.hidden.cards.additionalAnimalDetails
     )

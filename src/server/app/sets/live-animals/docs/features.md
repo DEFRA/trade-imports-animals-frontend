@@ -6,7 +6,7 @@ vertical slice of page identity, controllers, copy, templates, bindings and test
 
 ## Page identity
 
-A `page.js` exports `{ id, slug }` and imports nothing. The controller spreads the
+A `page.js` exports `{ id, slug }` (plus an authored `gate` where needed and `subPage: true` on a page reached only from the page that opens it) and imports nothing. The controller spreads the
 same object into `meta`, while
 [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js) uses it in section
 order. Keeping the identity leaf import-free avoids a controller–flow module cycle.
@@ -69,10 +69,12 @@ passes `allRoutes` to Hapi.
 
 A feature folder is not automatically a flow section or a hub row.
 
-- `journeys/linear/flow/flow.js` defines navigation order.
-- `journeys/linear/flow/task-rows.js` groups pages into hub work items.
-- `journeys/linear/features/hub/controller.js` groups task-row ids for presentation.
-- `journeys/linear/flow/run.js` defines the opening-run sequence.
+- `journeys/linear/flow/flow.js` defines the journey's one page order, the order
+  Overview lists its tasks in, which Save and continue follows.
+- `journeys/linear/flow/task-rows.js` groups pages into hub work items and decides
+  when a notification is ready to submit. It decides nothing about where Save and
+  continue goes.
+- `journeys/linear/features/hub/controller.js` derives its groups from the flow sections, one per section that holds a task row's first page.
 
 See [Journey flow and gates](journey-flow-and-gates.md).
 

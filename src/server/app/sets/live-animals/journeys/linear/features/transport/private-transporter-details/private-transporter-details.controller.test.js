@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 import {
   authenticatedCredentials,
   driveHandler,
-  openedFromChangeLink,
   refusingSaves,
   expectNoRefusalLogged,
   unavailableBackendError,
@@ -23,10 +22,12 @@ import {
   expectRecoverableSaveFailureKeepingValues,
   forgetAddedTransportersAroundEachTest,
   itCancelsTheAddForEveryStoredType,
-  itKeepsTheChangeContextOnASaveFromAChangeLink,
+  itCarriesTheTrailOnASaveFromAChangeLink,
+  itCarriesTheTrailOnBack,
   itOpensOnlyForOwnTransporterType,
   itRemembersAndShowsARefusedSavesValues
 } from '../test-support.js'
+import { requiredEarlierAnswers } from '../../../../../test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
@@ -47,6 +48,11 @@ const RECORD = {
   phone: '+44 1224 000 111',
   email: 'movements@aberdeen-livestock.example.com'
 }
+
+const privateSeed = () => ({
+  ...requiredEarlierAnswers(),
+  transporterType: PRIVATE
+})
 
 const BLANK_RECORD = Object.fromEntries(
   Object.keys(RECORD).map((field) => [field, ''])
@@ -91,6 +97,11 @@ describe('/transporters/add/private', () => {
     )
   })
 
+  itCarriesTheTrailOnBack(getHandler, {
+    seed: { transporterType: PRIVATE },
+    backSlug: ADD_SLUG
+  })
+
   it('Should open a fresh GET’s select on the United Kingdom, offering nothing but the offered countries in order', async () => {
     const result = await driveHandler(getHandler, {
       seed: { transporterType: PRIVATE }
@@ -103,17 +114,6 @@ describe('/transporters/add/private', () => {
         text: name,
         selected: name === countries.UNITED_KINGDOM
       }))
-    )
-  })
-
-  it('Should keep the change context on Back when the trader is changing an answer', async () => {
-    const result = await driveHandler(getHandler, {
-      seed: { transporterType: PRIVATE },
-      startingFrom: [openedFromChangeLink()]
-    })
-
-    expect(result.view.context.backLink).toBe(
-      `${pagePath(result.journeyId, ADD_SLUG)}?change=1`
     )
   })
 
@@ -162,7 +162,7 @@ describe('/transporters/add/private', () => {
 
   it('Should save the record and redirect to the transporter list', async () => {
     const result = await driveHandler(postHandler, {
-      seed: { transporterType: PRIVATE },
+      seed: privateSeed(),
       payload: RECORD
     })
 
@@ -360,7 +360,7 @@ itCancelsTheAddForEveryStoredType({
   transporterType: PRIVATE
 })
 
-itKeepsTheChangeContextOnASaveFromAChangeLink({
+itCarriesTheTrailOnASaveFromAChangeLink({
   setId: SET_ID,
   dispatchPages,
   postHandler,

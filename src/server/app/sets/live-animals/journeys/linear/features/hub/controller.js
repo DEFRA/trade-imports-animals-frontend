@@ -4,15 +4,23 @@ import {
   pagePath
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
-import { rowEntry } from '../../../../../../flow/navigation.js'
+import {
+  rowEntry,
+  taskRowsOfSection
+} from '../../../../../../flow/navigation.js'
+import { journeySections } from '../../../../../../flow/journey-flow.js'
 import { pageGatePasses } from '../../../../../../flow/gates.js'
 import * as state from '../../../../../../engine/index.js'
 import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
-import { rowStatus, taskRowById } from '../../flow/task-rows.js'
+import { rowStatus } from '../../flow/task-rows.js'
 import { invalidRowIds } from '../../flow/stored-answers.js'
 import { notificationViewPage } from '../check-answers/page.js'
-import { completeOpeningRun } from '../../../../../../flow/run-state.js'
-import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
+import {
+  journeyStrip,
+  routeOptions,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -24,24 +32,6 @@ const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const GROUPS = [
-  {
-    id: 'about-the-consignment',
-    rows: ['origin', 'commodities', 'importReason']
-  },
-  {
-    id: 'description-of-the-goods',
-    rows: ['consignmentDetails', 'animalIdentification', 'additionalDetails']
-  },
-  {
-    id: 'transport-and-arrival',
-    rows: ['arrivalDetails', 'transitCountries', 'transporter']
-  },
-  { id: 'documents', rows: ['documents'] },
-  { id: 'consignment-parties', rows: ['addresses'] },
-  { id: 'contact-address', rows: ['contact'] }
-]
-
 const COMPLETE_TAG = {
   tag: { text: copy.statuses.complete, classes: 'govuk-tag--green' }
 }
@@ -52,7 +42,10 @@ const TO_DO_TAG = {
 const statusTag = (status, invalid) =>
   status === FULFILLED && !invalid ? COMPLETE_TAG : TO_DO_TAG
 
-const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
+const fromOverview = (href) => withTrail(href, [TRAIL_START.overview])
+
+const reviewHref = (journeyId) =>
+  fromOverview(pagePath(journeyId, notificationViewPage.slug))
 
 const somePageOpens = (row, scope) =>
   row.pages.some((page) => pageGatePasses(page, scope))
@@ -62,20 +55,19 @@ const isHiddenRow = (row, status, scope) =>
 
 const rowItem = (base, row, scope, status, journeyId, invalid) => ({
   ...base,
-  href: rowEntry(row, scope, journeyId),
+  href: fromOverview(rowEntry(row, scope, journeyId)),
   status: statusTag(status, invalid)
 })
 
 const buildRowItem = (
-  id,
+  row,
   answers,
   scope,
   evaluation,
   journeyId,
   invalidRows
 ) => {
-  const { title, hint } = copy.rows[id]
-  const row = taskRowById(id)
+  const { title, hint } = copy.rows[row.id]
   const status = rowStatus(row, answers, scope.inScope, evaluation)
   if (isHiddenRow(row, status, scope)) {
     return null
@@ -84,19 +76,22 @@ const buildRowItem = (
     title: { text: title },
     ...(hint ? { hint: { text: hint } } : {})
   }
-  return rowItem(base, row, scope, status, journeyId, invalidRows.has(id))
+  return rowItem(base, row, scope, status, journeyId, invalidRows.has(row.id))
 }
 
 const buildGroups = (answers, scope, evaluation, journeyId, invalidRows) =>
-  GROUPS.map((group) => ({
-    id: group.id,
-    caption: copy.groups[group.id],
-    items: group.rows
-      .map((id) =>
-        buildRowItem(id, answers, scope, evaluation, journeyId, invalidRows)
-      )
-      .filter(Boolean)
-  }))
+  journeySections()
+    .map((section) => ({ section, rows: taskRowsOfSection(section) }))
+    .filter(({ rows }) => rows.length > 0)
+    .map(({ section, rows }) => ({
+      id: section.id,
+      caption: copy.groups[section.id],
+      items: rows
+        .map((row) =>
+          buildRowItem(row, answers, scope, evaluation, journeyId, invalidRows)
+        )
+        .filter(Boolean)
+    }))
 
 const toCount = (value) => {
   const count = Number((value ?? '').toString().trim())
@@ -116,7 +111,6 @@ const buildCommodityTotals = (answers, evaluation) => {
 
 const handler = async (request, h) => {
   const { journeyId } = request.params
-  await completeOpeningRun(request, h, journeyId)
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
 

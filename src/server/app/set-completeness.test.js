@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import { describe, expect, it } from 'vitest'
 
 import { assertSetConfigured } from './set-completeness.js'
+import { liveAnimals } from './routes-live-animals.js'
+import { SET_BASE as LIVE_ANIMALS_BASE } from './sets/live-animals/set.js'
 import { feature, scalar } from './bridge/fulfilment-bindings.js'
 import { configureFulfilmentRegistry } from './bridge/fulfilment-registry.js'
 import { configureReadyForCheckYourAnswers } from './bridge/readiness-config.js'
@@ -27,10 +26,11 @@ import {
   groups,
   obligations,
   records as recordsStub,
+  secondSet,
+  SET_BASE as SECOND_SET_BASE,
+  SET_ID as SECOND_SET_ID,
   shipmentReference
 } from '../../../test/fixtures/second-set.js'
-
-const APP_DIR = path.dirname(fileURLToPath(import.meta.url))
 
 const REQUIRED_SEAMS = [
   'Obligation set',
@@ -48,8 +48,6 @@ const OMITTABLE_SEAMS = REQUIRED_SEAMS.filter(
 
 const cookieNamesFor = (setId) => ({
   knownJourneys: `${setId}-known`,
-  openingRun: `${setId}-run`,
-  openingRunEntry: `${setId}-run-entry`,
   flowOnlyAnswers: `${setId}-flow`,
   addressHandshakeTokens: `${setId}-tokens`,
   addedAddressBanner: `${setId}-banner`,
@@ -60,8 +58,7 @@ const journeyFlowFor = () => ({
   sections: [{ id: 'details', pages: [{ id: 'details', slug: 'details' }] }],
   taskRows: [],
   rowStatus: () => 'notStarted',
-  nextRunTarget: () => null,
-  previousRunTarget: () => null,
+  insTypeQuestionUrl: () => null,
   flowOnlyKeys: [],
   entryGuardTarget: async () => null,
   layout: 'shared/layout.njk'
@@ -241,20 +238,27 @@ describe('set completeness — journey cookies come after the session seam', () 
   })
 })
 
+describe('set completeness — the real gateway and a second set mount side by side', () => {
+  it('Should mount the real gateway and the second set on one server', async () => {
+    const server = Hapi.server()
+    server.auth.scheme('probe', () => ({
+      authenticate: (_request, h) => h.authenticated({ credentials: {} })
+    }))
+    server.auth.strategy('session', 'probe')
+
+    await server.register(liveAnimals, {
+      routes: { prefix: LIVE_ANIMALS_BASE }
+    })
+    await server.register(secondSet, { routes: { prefix: SECOND_SET_BASE } })
+
+    expect(mountedSetIds()).toEqual(
+      expect.arrayContaining([liveAnimals.plugin.name, SECOND_SET_ID])
+    )
+  })
+})
+
 describe('set completeness — the seam list is the one the seams declare', () => {
   it('Should require exactly the seams with no safe default', () => {
     expect(requiredSeamLabels().toSorted()).toEqual(REQUIRED_SEAMS.toSorted())
-  })
-
-  it.each([
-    ['routes-live-animals.js', path.join(APP_DIR, 'routes-live-animals.js')],
-    [
-      'the second-set fixture',
-      path.resolve(APP_DIR, '../../../test/fixtures/second-set.js')
-    ]
-  ])('Should have %s call the gate', (_label, file) => {
-    expect(readFileSync(file, 'utf8')).toContain(
-      'assertSetConfigured(server, SET_ID)'
-    )
   })
 })

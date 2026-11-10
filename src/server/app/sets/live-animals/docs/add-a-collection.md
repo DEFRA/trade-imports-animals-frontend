@@ -248,7 +248,7 @@ is taken on: `claimReturnedUpload` reads back what was submitted, refuses it
 by the page's own rules — the field rules, the file, and the collection's cap
 — and otherwise appends it and routes on by `routeAfterClaim`. Save and add
 another is followed by a redirect back to the page's clean path. Save and
-continue, Save and return to overview and the amend buttons go through
+continue and Save and return to overview go through
 `leavePage` on the returned request. A reload adds nothing twice, because
 `isAlreadySaved` stops a second append.
 
@@ -377,20 +377,20 @@ and reads its instances with the same `collectionView` call, deeper:
 state.collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
 ```
 
-### Thread the change context through the loop
+### Thread the trail through the loop
 
-A collection reached from a Change link on check-your-answers carries a change
-context. Wrap every internal link and redirect — row actions,
-add/remove/save round-trips — in `kit.withChangeContext(request, href)` so the
-context survives the loop. Resolve the loop's exiting Continue with
-`kit.nextTarget(request, page, scope)`, and let a hub exit win first via
-`kit.hubExitTarget(request)`. Only the exit repoints to check-your-answers;
-mid-loop actions must never bounce there early.
+A collection page carries where the trader came from, whether it was reached from a
+Change link on check-your-answers, the Overview, the dashboard or the page before it.
+Wrap every internal link and redirect (row actions, Back, add, remove and save round
+trips) in `kit.carryTrail(request, href)` so the trail survives the loop. Every
+mid-loop action keeps the trader in the loop, on the page. The loop moves on only from
+its exiting Continue, which goes to the next page in the journey's one page order
+through `kit.nextTarget(request, page, scope)`, adding the collection page to the
+trail. Save and return to overview goes to the Overview: a hub exit wins first via
+`kit.hubExitTarget(request)`.
 
-A collection page's Back link carries the context on like any other internal
-link, unless the page returns to the review itself: such a page declares that
-to `kit.runBackLink()` through its `returnsToReview` option and takes its back
-link from there instead of wrapping it in `kit.withChangeContext()`.
+A collection page's Back link comes from the shared Back rule, `kit.trailBackLink(request)`,
+like any other journey page.
 
 ## 5. Cap the count where the model demands it
 

@@ -21,15 +21,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   never reaches Not applicable for it; the row carries its own applicability
   test, the same one the identification page uses.
 - The commodity details task comes first in the second section, then
-  identification, then additional details: the order the opening run visits
-  them.
+  identification, then additional details: the journey's page order, which
+  Save and continue follows.
 - Only "Roles and addresses" carries a hint. A row with no hint gets no hint
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
 - With no commodity chosen, the commodity details task is still a link: the
   consignment details page asks the commodity question rather than drawing an
-  empty table, and a task opened from the overview returns to the overview
+  empty table, and a task opened from the overview goes on to the next page that applies
   when saved.
 - Each hub group renders a task list of its own, and `govukTaskList` stamps
   the group id on the status of every item in it.
@@ -46,8 +46,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   leave from where the overview sent them.
 - Origin of the import is the one overview-linked page without the return
   controls, because the design gives it "Save and continue" as its only way to
-  save and move on. While amending it ends with "Save and return" and "Save and
-  continue" only.
+  save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
@@ -56,22 +55,25 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the one exception: each ends with the primary and a secondary "Cancel and
   return to dashboard", because a trader who opened one did not come from the
   hub and the design gives the add route its own way out of the journey.
-- While a notification is being amended, a page ends with "Save and return"
-  (back to the review) and "Save and continue" (on, never back to the review)
-  side by side, then a secondary "Save and return to overview" button on its
-  own line below them, with no cancel link. The two amend buttons tell
-  themselves apart by form action, so no new field is posted. The exception is
-  a page whose save buttons post to another service (Upload documents while its
-  add form is open): there the amend "Save and return" also posts the submitted
-  value `amendFormActions` returns. A page reached from another page or a
-  picker ends with the first two only, and so does the contact address page.
-  An add-another sub-page that returns to its own list page (the transporter
-  add and select pages) keeps the primary alone, and its list page carries
-  the amend ending. The two transporter details forms keep their own primary
-  and cancel even while amending.
+  Saving either form returns to the transporter list with the new transporter
+  chosen, and Back goes where the trader came from.
+- While a notification is being amended, a page ends exactly as it does on a
+  draft: Save and continue, then Save and return to overview, then Cancel and
+  return to overview wherever the draft page shows it. Save and continue goes on
+  through the journey to check your answers, Save and return to overview goes to
+  the Overview, and Cancel and return to overview goes to the Overview without
+  saving the page. Upload documents posts its own form from both buttons. The
+  status strip shows the Amend status and its Cancel amend link. The two
+  transporter details forms keep their own primary and cancel even
+  while amending.
 
 ## Check your answers (review)
 
+- The review's Back link goes to where the trader came from: the last journey
+  page, the Overview or the dashboard, on a draft, an amendment and a submitted
+  notification alike. Reached any other way it goes to the Overview on a draft or
+  an amendment and to the dashboard on a submitted notification. See
+  [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
 - The review has the same six numbered sections as the hub, with a
   subsection heading over every card.
 - Each card has one Change link, in its heading. Rows carry none, except
@@ -170,7 +172,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The internal reference is checked for length only. It is the trader's own
   and keeps their punctuation.
 - The back link follows the rule in
-  [Opening run and entry guard](journey-flow-and-gates.md#opening-run-and-entry-guard).
+  [Entry guard and the Back link](journey-flow-and-gates.md#entry-guard-and-the-back-link).
 - The status strip shows from the first request.
 - Stored answers are re-checked against the page's rules when the page opens,
   so a country the reference data no longer offers is named on the page.
@@ -222,8 +224,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A species with no number of animals has no card, and a consignment whose
   identified species all lack a count shows the summary and no cards.
 - The card title is the species name, with "Change number of animals" beside
-  it naming the species. The link keeps the change context, so Continue on
-  Commodity details returns to where the trader came from.
+  it naming the species. The link pushes this page onto the trail, so Back on the count page returns here and Continue on
+  Commodity details goes on to the next page that applies.
 - While animals remain the card shows the entry form, then the in-card button,
   then the saved-animals table. A finished species shows its saved animals
   alone, with no form, no button and no completion message. A count lowered
@@ -233,7 +235,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   and it is a primary button. It saves only its own species' current animal
   and reloads with that form empty. A line of one animal has no in-card
   button.
-- "Save and continue", "Save and return to overview" and the amend buttons
+- "Save and continue" and "Save and return to overview"
   save only the forms of species with one animal. Values typed into the form
   of a species with more animals are neither validated nor saved by them.
 - Pressing Enter in any field presses the page's hidden default button. It
@@ -327,11 +329,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   The locality, county, postcode and country join into the last line, as in
   "Hull, HU9 5PX, United Kingdom". The country is the name held on the
   notification's copy of the party, so the page never asks the address book.
-- Every party link carries the change context. A trader sent here from check
+- Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
-  here, and this page's Continue then returns them to check your answers.
-  The county parish holding link does not: its route already carries
-  `return=addresses`.
+  here, and Save and continue here goes on to the contact address.
+  The county parish holding link carries the trail and the `return=addresses`
+  marker.
 - Each party picker searches the address book from the submitted search box:
   a medium "Search" label, the hint "Name, address or country", and a square
   GOV.UK blue icon button joined to the box. The button is named "Search" for
@@ -439,7 +441,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   that list states.
 - A document saved by "Save and add another" or "Save and return to overview"
   is followed by a redirect, so a reload cannot replay the save. One saved by
-  "Save and continue" or an amend button is answered on the returned request
+  "Save and continue" is answered on the returned request
   by the save choice, exactly as any other save: a reload of that response
   saves nothing twice, because a document already listed is not added again.
   Nothing holds the trader for a scan still running.
@@ -506,9 +508,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Searching the transporters list filters it in place: nothing is validated or
   committed, and a picked row stays picked when the search leaves it on the
   list.
-- The add-transporter link keeps the change context, carried on through the
-  add form's own save to the transporter list; the list's own save is what
-  returns the trader to the review.
+- The add-transporter link carries the trail, and the add form's own save
+  carries it on to the transporter list, so a trader sent from
+  check your answers goes on from the transporter list like any other start.
 - The transit countries cap is not stated up front. The search goes when the
   last country is added, and the status message says why.
 - The transit page's browser title is the short task name, "Transit countries",

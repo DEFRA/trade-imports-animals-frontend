@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 
 import {
   OPEN_SESSION_KEY,
@@ -15,7 +16,7 @@ const HANDLE = '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
 const PAGE_PATH = `/live-animals/notifications/${JOURNEY_ID}/accompanying-documents`
 
 const request = (query = {}) => ({ query })
-const changing = () => ({ query: { change: '1' } })
+const fromReview = () => request({ from: CYA_SLUG })
 
 describe('#newCorrelationId', () => {
   it('Should mint a handle of the shape the returning request is recognised by', () => {
@@ -34,28 +35,23 @@ describe('#returnPath', () => {
     )
   })
 
-  /**
-   * A trader who reached the page from the review page has to land back on the same errand, so
-   * the change context survives the round trip — and the handle joins a query that already has
-   * one rather than starting a second.
-   */
-  it('Should keep the change context and add the handle to it', () => {
-    expect(returnPath(changing(), JOURNEY_ID, HANDLE)).toBe(
-      `${PAGE_PATH}?change=1&${RETURNED_HANDLE_QUERY}=${HANDLE}`
+  it('Should keep the trail and add the handle to it', () => {
+    expect(returnPath(fromReview(), JOURNEY_ID, HANDLE)).toBe(
+      `${PAGE_PATH}?from=${CYA_SLUG}&${RETURNED_HANDLE_QUERY}=${HANDLE}`
     )
   })
 
   it('Should return a relative path, which is all the upload service accepts', () => {
     expect(returnPath(request(), JOURNEY_ID, HANDLE)).toMatch(/^\//)
-    expect(returnPath(changing(), JOURNEY_ID, HANDLE)).toMatch(/^\//)
+    expect(returnPath(fromReview(), JOURNEY_ID, HANDLE)).toMatch(/^\//)
   })
 })
 
 describe('#documentsPageHref', () => {
-  it('Should answer the page path, with the change context when the request carries one', () => {
+  it('Should answer the page path, carrying the trail when the request carries one', () => {
     expect(documentsPageHref(request(), JOURNEY_ID)).toBe(PAGE_PATH)
-    expect(documentsPageHref(changing(), JOURNEY_ID)).toBe(
-      `${PAGE_PATH}?change=1`
+    expect(documentsPageHref(fromReview(), JOURNEY_ID)).toBe(
+      `${PAGE_PATH}?from=${CYA_SLUG}`
     )
   })
 })

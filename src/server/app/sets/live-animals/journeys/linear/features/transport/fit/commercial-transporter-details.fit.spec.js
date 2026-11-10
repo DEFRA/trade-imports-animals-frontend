@@ -8,6 +8,7 @@ import {
   expectTransporterListShowsAddedBanner,
   journeyUrl,
   saveAndContinue,
+  saveAndReturnToHub,
   signIn,
   signInWithOwnTransporterStore
 } from '../../../../../../../../../../fit/live-animals-journey.js'
@@ -15,9 +16,12 @@ import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { sentenceCasedTransporterName } from '../transporter-add-session.js'
 import {
   addressOverLengthValidations,
-  contactOverLengthValidations
+  contactOverLengthValidations,
+  fillCommercialTransporter,
+  validCommercialTransporter
 } from './test-support.js'
 
 const form = copy.commercialTransporterDetails
@@ -26,27 +30,10 @@ const NORTHERN_IRELAND = 'Northern Ireland'
 const BACK_LINK = '.govuk-back-link'
 const ERROR_SUMMARY = '.govuk-error-summary'
 const approvalNumberInput = '#approvalNumber'
+const SOME_TYPED_APPROVAL_NUMBER = 'Some typed approval number'
 
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
-
-const validTransporter = {
-  approvalNumber: 'UK/BELF/T2/00104115',
-  nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
-  addressLine1: '4 Quay Road',
-  addressLine2: 'Unit 3',
-  townOrCity: 'Belfast',
-  county: 'County Antrim',
-  postcode: 'BT1 3LG',
-  email: 'movements@lough-neagh.example.com',
-  phone: '+44 28 9000 0111'
-}
-
-const fillTransporter = async (page, transporter = validTransporter) => {
-  for (const [field, value] of Object.entries(transporter)) {
-    await page.locator(`#${field}`).fill(value)
-  }
-}
 
 const requiredValidations = [
   [
@@ -95,7 +82,9 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await answerTransporterType(page, COMMERCIAL)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\/commercial\?from=overview$/
+    )
     await expect(
       page.locator('span.govuk-caption-l + h1.govuk-heading-l')
     ).toHaveText(form.title)
@@ -196,12 +185,14 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await signInWithOwnTransporterStore(page)
     await answerTransporterType(page, COMMERCIAL)
-    await fillTransporter(page)
+    await fillCommercialTransporter(page)
     await saveAndContinue(page).click()
 
     await expectTransporterListShowsAddedBanner(
       page,
-      'Lough neagh livestock ltd'
+      sentenceCasedTransporterName(
+        validCommercialTransporter.nameOrOrganisationName
+      )
     )
     const firstRow = page
       .getByRole('row')
@@ -209,17 +200,17 @@ test.describe('adding a commercial transporter that is not on the list', () => {
       .first()
     await expect(
       firstRow.getByRole('cell', {
-        name: validTransporter.approvalNumber,
+        name: validCommercialTransporter.approvalNumber,
         exact: true
       })
     ).toBeVisible()
     await expect(firstRow.getByRole('radio')).toBeChecked()
 
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
-    for (const [field, value] of Object.entries(validTransporter)) {
+    for (const [field, value] of Object.entries(validCommercialTransporter)) {
       await expect(page.locator(`#${field}`)).toHaveValue(value)
     }
     await expect(page.locator('#country')).toHaveValue(NORTHERN_IRELAND)
@@ -230,14 +221,14 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await signInWithOwnTransporterStore(page)
     await answerTransporterType(page, COMMERCIAL)
-    await fillTransporter(page)
+    await fillCommercialTransporter(page)
     await saveAndContinue(page).click()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     const transporterListUrl = journeyUrl(page, 'transporters')
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
-    await page.locator(approvalNumberInput).fill('Some typed approval number')
+    await page.locator(approvalNumberInput).fill(SOME_TYPED_APPROVAL_NUMBER)
     await cancelAndReturnToDashboard(
       page,
       copy.commercialTransporterDetails.cancelAndReturnToDashboard
@@ -249,12 +240,12 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await page.goto(transporterListUrl)
     await expect(
       page.getByRole('radio', {
-        name: validTransporter.nameOrOrganisationName
+        name: validCommercialTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
     await expect(
       page.getByRole('cell', {
-        name: 'Some typed approval number',
+        name: SOME_TYPED_APPROVAL_NUMBER,
         exact: true
       })
     ).toHaveCount(0)
@@ -265,11 +256,11 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await signInWithOwnTransporterStore(page)
     const addedTransporter = {
-      ...validTransporter,
+      ...validCommercialTransporter,
       nameOrOrganisationName: 'Quay Road Haulage Ltd'
     }
     await answerTransporterType(page, COMMERCIAL)
-    await fillTransporter(page, addedTransporter)
+    await fillCommercialTransporter(page, addedTransporter)
     await saveAndContinue(page).click()
 
     await expect(
@@ -277,7 +268,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
         name: addedTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, COMMERCIAL_SLUG))
@@ -311,7 +302,7 @@ test.describe('commercial transporter required validations', () => {
       page
     }) => {
       await answerTransporterType(page, COMMERCIAL)
-      await fillTransporter(page)
+      await fillCommercialTransporter(page)
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
 
@@ -321,7 +312,9 @@ test.describe('commercial transporter required validations', () => {
       await expect(page.locator(`#${field}`)).toBeFocused()
       await expect(page.locator(`#${field}`)).toHaveValue('')
       await expect(page.locator(approvalNumberInput)).toHaveValue(
-        field === 'approvalNumber' ? '' : validTransporter.approvalNumber
+        field === 'approvalNumber'
+          ? ''
+          : validCommercialTransporter.approvalNumber
       )
     })
   }
@@ -337,7 +330,10 @@ test.describe('commercial transporter format validations', () => {
       page
     }) => {
       await answerTransporterType(page, COMMERCIAL)
-      await fillTransporter(page, { ...validTransporter, [field]: invalid })
+      await fillCommercialTransporter(page, {
+        ...validCommercialTransporter,
+        [field]: invalid
+      })
       await saveAndContinue(page).click()
 
       const link = errorLink(page, form.errors[error])
@@ -346,7 +342,9 @@ test.describe('commercial transporter format validations', () => {
       await expect(page.locator(`#${field}`)).toBeFocused()
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
       await expect(page.locator(approvalNumberInput)).toHaveValue(
-        field === 'approvalNumber' ? invalid : validTransporter.approvalNumber
+        field === 'approvalNumber'
+          ? invalid
+          : validCommercialTransporter.approvalNumber
       )
     })
   }
@@ -369,7 +367,7 @@ test.describe('commercial transporter form accessibility', () => {
     page
   }) => {
     await answerTransporterType(page, COMMERCIAL)
-    await fillTransporter(page)
+    await fillCommercialTransporter(page)
     await page.locator(approvalNumberInput).fill('')
     await saveAndContinue(page).click()
 

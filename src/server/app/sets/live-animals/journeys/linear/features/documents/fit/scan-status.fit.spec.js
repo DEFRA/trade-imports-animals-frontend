@@ -9,11 +9,12 @@ import {
   openDocuments,
   PHONE_VIEWPORT,
   saveAndContinue,
+  saveAndReturnToHub,
   signIn,
-  visitOverviewThenOpen
+  openFromOverviewRow
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
-import { documentsPage } from '../page.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
 const errorSummaryLink = (page, name) =>
@@ -51,10 +52,10 @@ test.describe('document scan-status rendering', () => {
       copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
 
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expectOverview(page)
 
-    await visitOverviewThenOpen(page, documentsPage.slug)
+    await openFromOverviewRow(page, hubCopy.rows.documents.title)
     const reopenedRow = documentRowFor(
       page,
       document.accompanyingDocumentReference
@@ -100,7 +101,7 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(row).toHaveCount(0)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 

@@ -110,7 +110,7 @@ export const saveTransporterDetails =
     }
 
     return h.redirect(
-      kit.withChangeContext(
+      kit.carryTrail(
         request,
         pagePath(request.params.journeyId, transportersPage.slug)
       )

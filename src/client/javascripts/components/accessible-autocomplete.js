@@ -14,6 +14,7 @@
 import accessibleAutocomplete from 'accessible-autocomplete'
 import { escapeAndBoldMatches } from '../../common/helpers/bold-matches.js'
 import { containsTerm } from '../../common/helpers/search-fold.js'
+import { ENGLISH_ASSISTIVE_HINT } from './autocomplete-text.js'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 const CONTAINER_CLASS = 'app-autocomplete'
@@ -99,6 +100,7 @@ const buildConfig = (selectElement, selectOptions) => {
     minLength: dataset.minLength || undefined,
     source,
     templates: { suggestion: suggestionTemplate },
+    tAssistiveHint: () => ENGLISH_ASSISTIVE_HINT,
     onConfirm: onConfirmFor(selectElement, selectOptions, inputId)
   }
   if (placeholder) {

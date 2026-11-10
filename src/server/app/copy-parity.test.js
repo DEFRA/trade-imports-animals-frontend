@@ -41,7 +41,10 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 //   likewise.
 // - layout.govukSuffix is the GOV.UK brand word that closes every page title;
 //   the Welsh GOV.UK carries the same name.
+// - confirmation.help.importsEmail is an email address, identical in both
+//   locales.
 const IDENTICAL_ALLOWLIST = new Set([
+  'confirmation:help.importsEmail',
   'shared:layout.govukSuffix',
   'documents:guidance.additional.linkHref',
   'transport:transporters.guidance.linkHref',

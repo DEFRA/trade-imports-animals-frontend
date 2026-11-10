@@ -47,9 +47,6 @@ export const postRemove = async (request, h, action) => {
     unit
   )
   return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
+    kit.carryTrail(request, pagePath(request.params.journeyId, page.slug))
   )
 }

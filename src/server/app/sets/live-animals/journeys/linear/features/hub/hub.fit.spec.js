@@ -3,12 +3,15 @@ import {
   BASE,
   BOS_TAURUS_ROW,
   PHONE_VIEWPORT,
-  answerArrivalDetails,
+  fillArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  openOverview,
   openReviewFromHub,
+  saveAndContinue,
+  saveAndReturnToHub,
   selectSpecies,
   signIn,
   startNotification
@@ -45,7 +48,7 @@ const selectCommodityAndOpenDetails = async (page) => {
   await page.getByRole('link', { name: copy.rows.commodities.title }).click()
   await selectSpecies(page, [BOS_TAURUS_ROW])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  await expectHub(page)
+  await openOverview(page)
   await page
     .getByRole('link', {
       name: copy.rows.consignmentDetails.title,
@@ -66,7 +69,7 @@ const openHubWithCommodityTotals = async (page) => {
   await selectCommodityAndOpenDetails(page)
   await page.getByLabel('Number of animals').fill(ANIMALS)
   await page.getByLabel('Number of packages (when required)').fill(PACKAGES)
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await saveAndReturnToHub(page).click()
   await expectHub(page)
 }
 
@@ -171,7 +174,7 @@ test.describe('hub feature', () => {
     await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 
-  test('a task with nothing before it opens and saves before a commodity is chosen', async ({
+  test('saving arrival details with only the country of origin answered opens What are you importing?', async ({
     page
   }) => {
     await startNotification(page)
@@ -184,9 +187,12 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { name: transportCopy.portOfEntry.title })
     ).toBeVisible()
 
-    await answerArrivalDetails(page)
+    await fillArrivalDetails(page)
+    await saveAndContinue(page).click()
 
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: commoditiesCopy.search.title })
+    ).toBeVisible()
   })
 
   test('the commodity details task opens the commodity question while nothing is chosen', async ({
@@ -293,7 +299,7 @@ test.describe('hub feature — the Commodity details row', () => {
     const details = taskRow(page, copy.rows.consignmentDetails.title)
     await expect(
       details.getByRole('link', { name: copy.rows.consignmentDetails.title })
-    ).toHaveAttribute('href', /\/consignment-details$/)
+    ).toHaveAttribute('href', /\/consignment-details\?from=overview$/)
     await expect(details).toContainText(copy.statuses.toDo)
     await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
       copy.statuses.complete
@@ -331,7 +337,10 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await expect(
       page.getByRole('button', { name: copy.reviewAndSubmit })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+    ).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/notification-view\?from=overview$/
+    )
 
     await openReviewFromHub(page)
 

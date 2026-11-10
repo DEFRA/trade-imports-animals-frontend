@@ -12,9 +12,10 @@ import {
   journeyRequest
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { pagePathFrom } from '../../../test-support.js'
 import { transitAppliesSeedWithout } from '../../transport/test-support.js'
 import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
-import { dashboardPath, pagePath } from '../../../../../../../shared/paths.js'
+import { dashboardPath } from '../../../../../../../shared/paths.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
@@ -241,7 +242,9 @@ describe('#hubHandler', () => {
   it('Should render the always-open origin row as a blue "To do" tag with a link', async () => {
     const context = await renderHub()
     const originRow = rowByTitle(context, ORIGIN_ROW_TITLE)
-    expect(originRow.href).toBe(pagePath(context.journeyId, 'origin'))
+    expect(originRow.href).toBe(
+      pagePathFrom('overview', context.journeyId, 'origin')
+    )
     expect(originRow.status).toEqual(TO_DO_STATUS)
   })
 
@@ -275,17 +278,19 @@ describe('#hubHandler', () => {
     const context = await renderHub()
 
     expect(rowByTitle(context, COMMODITIES_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'commodities')
+      pagePathFrom('overview', context.journeyId, 'commodities')
     )
     expect(rowByTitle(context, CONSIGNMENT_DETAILS_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'consignment-details')
+      pagePathFrom('overview', context.journeyId, 'consignment-details')
     )
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'port-of-entry')
+      pagePathFrom('overview', context.journeyId, 'port-of-entry')
     )
     expect(
       rowByTitle(context, 'Contact address for this consignment').href
-    ).toBe(pagePath(context.journeyId, 'consignment/contact/select'))
+    ).toBe(
+      pagePathFrom('overview', context.journeyId, 'consignment/contact/select')
+    )
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
@@ -296,7 +301,7 @@ describe('#hubHandler', () => {
     const identificationRow = rowByTitle(context, IDENTIFICATION_ROW_TITLE)
     expect(identificationRow.status).toEqual(TO_DO_STATUS)
     expect(identificationRow.href).toBe(
-      pagePath(context.journeyId, 'commodities/identification')
+      pagePathFrom('overview', context.journeyId, 'commodities/identification')
     )
   })
 
@@ -313,7 +318,7 @@ describe('#hubHandler', () => {
     const byRoad = await renderHub(roadSeedShowingEveryRow)
     const transitRow = rowByTitle(byRoad, TRANSIT_ROW_TITLE)
     expect(transitRow.href).toBe(
-      pagePath(byRoad.journeyId, 'transit-countries')
+      pagePathFrom('overview', byRoad.journeyId, 'transit-countries')
     )
     expect(transitRow.status).toEqual(TO_DO_STATUS)
   })
@@ -353,13 +358,13 @@ describe('#hubHandler', () => {
   it('Should enter each movement row at its first page', async () => {
     const context = await renderHub(unlockedSeed)
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'port-of-entry')
+      pagePathFrom('overview', context.journeyId, 'port-of-entry')
     )
     expect(rowByTitle(context, 'Transport details').href).toBe(
-      pagePath(context.journeyId, 'transporters')
+      pagePathFrom('overview', context.journeyId, 'transporters')
     )
     expect(rowByTitle(context, ADDRESSES_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'addresses')
+      pagePathFrom('overview', context.journeyId, 'addresses')
     )
   })
 
@@ -367,7 +372,7 @@ describe('#hubHandler', () => {
     const context = await renderHub(unlockedSeed)
 
     expect(context.reviewHref).toBe(
-      pagePath(context.journeyId, 'notification-view')
+      pagePathFrom('overview', context.journeyId, 'notification-view')
     )
     expect(copy.reviewAndSubmit).toBe('Review and submit')
   })
@@ -376,7 +381,7 @@ describe('#hubHandler', () => {
     const context = await renderHub(unlockedSeed)
 
     expect(context.reviewHref).toBe(
-      pagePath(context.journeyId, 'notification-view')
+      pagePathFrom('overview', context.journeyId, 'notification-view')
     )
   })
 })
@@ -454,7 +459,7 @@ describe('#hubHandler — the Commodity details row', () => {
 
     expect(firstItem.title.text).toBe(CONSIGNMENT_DETAILS_ROW_TITLE)
     expect(firstItem.href).toBe(
-      pagePath(context.journeyId, 'consignment-details')
+      pagePathFrom('overview', context.journeyId, 'consignment-details')
     )
     expect(firstItem.status).toEqual(TO_DO_STATUS)
   })
@@ -502,7 +507,7 @@ describe('#hubHandler — the way back to the exit questions', () => {
     const context = await renderHub(owingExitQuestionsSeed)
 
     expect(rowByTitle(context, IMPORT_REASON_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'import-reason')
+      pagePathFrom('overview', context.journeyId, 'import-reason')
     )
   })
 
@@ -513,7 +518,7 @@ describe('#hubHandler — the way back to the exit questions', () => {
     })
 
     expect(rowByTitle(context, IMPORT_REASON_ROW_TITLE).href).toBe(
-      pagePath(context.journeyId, 'import-reason')
+      pagePathFrom('overview', context.journeyId, 'import-reason')
     )
   })
 

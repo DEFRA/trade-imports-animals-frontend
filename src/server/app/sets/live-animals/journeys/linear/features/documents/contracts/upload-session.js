@@ -13,14 +13,14 @@ const CORRELATION_ID_PATTERN =
 export const newCorrelationId = () => randomUUID()
 
 /**
- * The documents page for a notification, keeping the change context where the request carries one.
+ * The documents page for a notification, carrying the trail the request carries.
  *
  * @param {object} request - the request being handled
  * @param {string} journeyId - the notification being worked on
  * @returns {string} the page's path
  */
 export const documentsPageHref = (request, journeyId) =>
-  kit.withChangeContext(request, pagePath(journeyId, page.slug))
+  kit.carryTrail(request, pagePath(journeyId, page.slug))
 
 /**
  * Where the upload service returns the browser once it has the file.

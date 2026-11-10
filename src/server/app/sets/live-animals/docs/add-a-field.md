@@ -94,7 +94,14 @@ Keep the controller in this order:
    [`src/server/app/lib/validate/index.js`](../../../lib/validate/index.js).
 4. An invalid POST renders the user's raw values and returns 400.
 5. A valid POST commits the cleaned values with `state.commit()`.
-6. The redirect uses `await kit.nextTarget(request, page, committed.scope)`.
+6. The redirect uses `kit.nextTarget(request, page, committed.scope)`, the shared
+   next-page target: the next page in the journey's one page order that applies,
+   ending at check your answers. Save and continue sends the trader to the page
+   that asks for a missing required earlier answer; see
+   [`journey-flow-and-gates.md`](journey-flow-and-gates.md). A field added to an existing page changes no
+   routing. The page's Back link comes from the shared Back rule,
+   `kit.trailBackLink(request)`, which reads where the trader came from off the link
+   or form.
 
 Build service-backed membership rules inside POST, or through a function that
 POST calls. This uses the values primed at boot. Do not freeze a service list in

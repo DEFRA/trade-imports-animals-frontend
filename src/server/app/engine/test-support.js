@@ -15,6 +15,7 @@ import { records as recordsStub } from '../services/persistence/records/stub/ind
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
 import {
+  CYA_SLUG,
   REFUSAL_LOG_MESSAGE,
   SAVE_FALLBACK_LOG_MESSAGE
 } from '../shared/kit.js'
@@ -26,9 +27,7 @@ import { configureRecords, records } from './persistence/records.js'
 import {
   configureSession,
   flowOnlyAnswersCookie,
-  knownJourneysCookie,
-  openingRunCookie,
-  openingRunEntryCookie
+  knownJourneysCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import {
@@ -223,11 +222,6 @@ const requestLocation = (pathOf, journeyId, query) => {
   return { path, url }
 }
 
-/** The cookie that records `phase` of the opening run for `journeyId`. */
-export const openingRunCookieFor = (journeyId, phase) => ({
-  [openingRunCookie()]: { [journeyId]: phase }
-})
-
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
   new BackendRequestError(operation, {
@@ -251,16 +245,6 @@ export const amendmentOpened = () => ({
   }
 })
 
-/** A starting state for `driveHandler`: the journey is at `phase` of the
- * opening run (`RUN_ACTIVE` or `RUN_COMPLETE`), begun from `entry`
- * (`RUN_ENTRY_START` or `RUN_ENTRY_LIST_CREATE`) when one is given. */
-export const openingRunAt = (phase, { entry } = {}) => ({
-  cookies: (journeyId) => ({
-    ...openingRunCookieFor(journeyId, phase),
-    ...(entry ? { [openingRunEntryCookie()]: { [journeyId]: entry } } : {})
-  })
-})
-
 /** A starting state for `driveHandler`: the journey holds `answers` in the
  * session only, never in the records store. */
 export const withFlowOnlyAnswers = (answers) => ({
@@ -269,8 +253,12 @@ export const withFlowOnlyAnswers = (answers) => ({
   })
 })
 
-/** A starting state for `driveHandler`: the page is opened from a Change link. */
-export const openedFromChangeLink = () => ({ query: { change: '1' } })
+export const trailQuery = (...entries) => ({ from: entries.join(',') })
+
+export const reviewChangeLinkQuery = () => trailQuery(CYA_SLUG)
+
+export const trailRequestOf = (entries) =>
+  journeyRequest('j-1', { query: trailQuery(...entries) })
 
 /** A starting state for `driveHandler`: the records store refuses every save
  * the handler makes, with `failure`. */
@@ -281,7 +269,7 @@ export const refusingSaves = (failure) => ({
 /** Starting states for `driveHandler`: an amendment of a submitted notification, opened from a Change link. */
 export const amendmentOpenedFromChangeLink = () => [
   amendmentOpened(),
-  openedFromChangeLink()
+  { query: reviewChangeLinkQuery() }
 ]
 
 const refuseUnknownOptions = (unknownOptions) => {
@@ -332,8 +320,8 @@ const callHandlerWithStartingRecords = async (
  * and after, alongside the cookies the handler set, the names of the cookies it
  * unstated and the lines it logged.
  * `startingFrom` lists the states the journey and request start in, each from
- * a helper: `amendmentOpened`, `openingRunAt`, `withFlowOnlyAnswers`,
- * `openedFromChangeLink` and `refusingSaves`. `journeyId` drives an existing
+ * a helper: `amendmentOpened`, `withFlowOnlyAnswers`,
+ * `reviewChangeLinkQuery` and `refusingSaves`. `journeyId` drives an existing
  * journey rather than creating one; `pathOf(journeyId)` gives the request the
  * path it was made to. `query` and `state` win over what a starting state
  * adds. It throws on any other option. */

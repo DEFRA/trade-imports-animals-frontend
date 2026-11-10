@@ -44,7 +44,6 @@ export const FEATURE_NAME = 'sundry-details'
 
 export const SESSION_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'sundryGoodsKnownJourneys',
-  openingRun: 'sundryGoodsOpeningRun',
   flowOnlyAnswers: 'sundryGoodsFlowOnlyAnswers',
   addressHandshakeTokens: 'sundryGoodsAddressHandshakeTokens',
   addedAddressBanner: 'sundryGoodsAddedAddressBanner',
@@ -195,8 +194,7 @@ export const secondSet = {
           sections,
           taskRows: [],
           rowStatus: () => 'notStarted',
-          nextRunTarget: () => null,
-          previousRunTarget: () => null,
+          insTypeQuestionUrl: () => null,
           flowOnlyKeys: [],
           entryGuardTarget: async () => null,
           layout: 'shared/layout.njk'

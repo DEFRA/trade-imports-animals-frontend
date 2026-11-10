@@ -13,13 +13,18 @@ const copy = copyFor({ en, cy })
 /**
  * Where and when the consignment lands, and what it arrives on.
  */
-export const arrivalDetailsCard = async ({ journeyId, answers, readOnly }) => ({
+export const arrivalDetailsCard = async ({
+  journeyId,
+  changeLinkTrail,
+  answers,
+  readOnly
+}) => ({
   id: 'arrivalDetails',
   title: copy.cards.arrivalDetails,
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
+      { journeyId, changeLinkTrail },
       portOfEntryPage.slug,
       copy.hidden.cards.arrivalDetails
     )

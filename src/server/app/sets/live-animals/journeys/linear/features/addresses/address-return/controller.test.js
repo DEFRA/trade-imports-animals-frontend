@@ -9,12 +9,14 @@ import {
   expectOneLogged,
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
+  trailQuery,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { consignor, contactAddress } from '../../../../../obligations/index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { TRAIL_START } from '../../../../../../../shared/kit.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
 import { ADDRESS_LANDING } from '../ins-handshake.js'
 import { addedAddressBannerState } from '../test-support.js'
@@ -154,6 +156,22 @@ describe('GET /address-return', () => {
           landing: 'select',
           addressId: newAddressId
         })
+      )
+    })
+
+    it('Should land on the Consignment addresses page carrying no trail, even when the request carries one', async () => {
+      addressBookAnswering({ body: newAddressBody() })
+
+      const result = await driveHandler(handler, {
+        query: {
+          ...returnedQuery(ADDRESS_LANDING.SELECT),
+          ...trailQuery(TRAIL_START.overview)
+        },
+        state: handshakeState()
+      })
+
+      expect(result.response.redirect).toBe(
+        consignmentAddressesPage(result.journeyId)
       )
     })
 
