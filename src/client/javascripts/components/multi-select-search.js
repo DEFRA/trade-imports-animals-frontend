@@ -153,6 +153,42 @@ const refreshOnEachChange = ($module, parts, refresher) => {
   })
 }
 
+const dropdownIn = (results) =>
+  results.querySelector('[data-multi-select-search-dropdown]')
+
+const showDropdown = (results) => {
+  const dropdown = dropdownIn(results)
+  if (dropdown) {
+    dropdown.hidden = false
+  }
+}
+
+const hideDropdown = (results) => {
+  const dropdown = dropdownIn(results)
+  if (dropdown) {
+    dropdown.hidden = true
+  }
+}
+
+const showDropdownOnFocusAndHideOnEscapeOrClickAway = (
+  $module,
+  { results, searchBox }
+) => {
+  searchBox.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      hideDropdown(results)
+    }
+  })
+  searchBox.addEventListener('focus', () => showDropdown(results))
+  searchBox.addEventListener('click', () => showDropdown(results))
+  document.addEventListener('click', (event) => {
+    if (!$module.contains(event.target)) {
+      hideDropdown(results)
+    }
+  })
+}
+
 class MultiSelectSearch {
   static moduleName = 'app-multi-select-search'
 
@@ -160,6 +196,7 @@ class MultiSelectSearch {
     const parts = $module ? partsOf($module) : null
     if (parts) {
       refreshOnEachChange($module, parts, resultsRefresher(parts))
+      showDropdownOnFocusAndHideOnEscapeOrClickAway($module, parts)
     }
   }
 }
