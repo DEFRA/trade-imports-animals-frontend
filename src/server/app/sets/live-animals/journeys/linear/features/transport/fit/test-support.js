@@ -59,3 +59,48 @@ export const contactOverLengthValidations = [
     'telephoneMaxLength'
   ]
 ]
+
+export const validCommercialTransporter = {
+  approvalNumber: 'UK/BELF/T2/00104115',
+  nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
+  addressLine1: '4 Quay Road',
+  addressLine2: 'Unit 3',
+  townOrCity: 'Belfast',
+  county: 'County Antrim',
+  postcode: 'BT1 3LG',
+  email: 'movements@lough-neagh.example.com',
+  phone: '+44 28 9000 0111'
+}
+
+const fillTransporterForm = async (page, fields) => {
+  for (const [field, value] of Object.entries(fields)) {
+    const control = page.locator(`#${field}`)
+    if (field === 'country') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
+  }
+}
+
+export const fillCommercialTransporter = (
+  page,
+  transporter = validCommercialTransporter
+) => fillTransporterForm(page, transporter)
+
+export const validPrivateTransporter = {
+  nameOrOrganisationName: 'Jean Dupont',
+  addressLine1: '10 Rue de la Ferme',
+  addressLine2: 'Bâtiment 2',
+  townOrCity: 'Calais',
+  county: 'Pas-de-Calais',
+  postcode: '62100',
+  country: 'France',
+  phone: '+33 3 21 00 00 00',
+  email: 'jean.dupont@example.fr'
+}
+
+export const fillPrivateTransporter = (
+  page,
+  transporter = validPrivateTransporter
+) => fillTransporterForm(page, transporter)

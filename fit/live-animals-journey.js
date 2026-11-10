@@ -1114,6 +1114,18 @@ export const openTransporterType = async (page) => {
  * @param {string} transporterType - `COMMERCIAL` or `PRIVATE`.
  */
 export const answerTransporterType = async (page, transporterType) => {
+  await openTransporterType(page)
+  await chooseTransporterType(page, transporterType)
+}
+
+/**
+ * Chooses a transporter type on the type question and continues to that
+ * type's own add form.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} transporterType - `COMMERCIAL` or `PRIVATE`.
+ */
+export const chooseTransporterType = async (page, transporterType) => {
   const optionText = {
     [COMMERCIAL]: transportCopy.transporterAdd.options.Commercial.text,
     [PRIVATE]: transportCopy.transporterAdd.options.Private.text
@@ -1122,7 +1134,6 @@ export const answerTransporterType = async (page, transporterType) => {
     [COMMERCIAL]: transportCopy.commercialTransporterDetails.title,
     [PRIVATE]: transportCopy.privateTransporterDetails.title
   }
-  await openTransporterType(page)
   await page
     .getByRole('radio', {
       name: optionText[transporterType]

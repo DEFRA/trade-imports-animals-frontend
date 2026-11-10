@@ -5,6 +5,7 @@ import {
   PHONE_VIEWPORT,
   answerTransporterType,
   cancelAndReturnToDashboard,
+  chooseTransporterType,
   contentWidthOf,
   continueTransporterType,
   expectNoSeriousOrCriticalViolations,
@@ -44,7 +45,10 @@ import { copy } from '../copy/copy.en.js'
 import { config } from '../../../../../../../../../config/config.js'
 import {
   addressOverLengthValidations,
-  contactOverLengthValidations
+  contactOverLengthValidations,
+  fillCommercialTransporter,
+  fillPrivateTransporter,
+  validPrivateTransporter
 } from './test-support.js'
 import { addressSummary } from '../../addresses/address-summary.js'
 
@@ -138,18 +142,6 @@ const fillsPrivateNameThenCancelsToDashboard = async (page) => {
   await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 }
 
-const validPrivateTransporter = {
-  nameOrOrganisationName: 'Jean Dupont',
-  addressLine1: '10 Rue de la Ferme',
-  addressLine2: 'Bâtiment 2',
-  townOrCity: 'Calais',
-  county: 'Pas-de-Calais',
-  postcode: '62100',
-  country: 'France',
-  phone: '+33 3 21 00 00 00',
-  email: 'jean.dupont@example.fr'
-}
-
 const handTypedTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
   addressLine1: '12 Rue des Fermes',
@@ -160,18 +152,9 @@ const handTypedTransporter = {
   email: 'jean.dupont@example.fr'
 }
 
-const fillPrivateTransporter = async (
-  page,
-  transporter = validPrivateTransporter
-) => {
-  for (const [field, value] of Object.entries(transporter)) {
-    const control = page.locator(`#${field}`)
-    if (field === 'country') {
-      await control.selectOption(value)
-    } else {
-      await control.fill(value)
-    }
-  }
+const addTransporterOfTypeFromList = async (page, transporterType) => {
+  await addTransporterOf(page).click()
+  await chooseTransporterType(page, transporterType)
 }
 
 const expectTamperedCountryRefusedOnTheUnitedKingdom = async (
@@ -251,6 +234,8 @@ const expectTransporterTypeOptions = async (page) => {
   await expect(options).toHaveCount(2)
   await expect(options.nth(0)).toHaveValue(PRIVATE)
   await expect(options.nth(1)).toHaveValue(COMMERCIAL)
+  await expect(options.nth(0)).not.toBeChecked()
+  await expect(options.nth(1)).not.toBeChecked()
 
   const privateOption = page.getByRole('radio', {
     name: copy.transporterAdd.options.Private.text
@@ -730,9 +715,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     await openTransporterList(page)
     await searchTransporters(page, privateRecord.name)
 
-    await expect(
-      page.getByLabel(copy.transporters.search.label, { exact: true })
-    ).toHaveValue(privateRecord.name)
+    await expect(searchBoxOf(page)).toHaveValue(privateRecord.name)
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
     ).toBeVisible()
@@ -743,7 +726,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, 'no such transporter')
+    await searchTransporters(page, NO_MATCH_TERM)
 
     await expect(page.getByText(copy.transporters.noMatches)).toBeVisible()
     await expect(page.locator(TABLE)).toBeHidden()
@@ -819,7 +802,7 @@ test.describe('adding a transporter that is not on the list', () => {
     await signIn(page)
   })
 
-  test('reaches the type question from the list, not before it', async ({
+  test('reaches the type question from the list, not before it, with neither type chosen', async ({
     page
   }) => {
     await openTransporterType(page)
@@ -830,6 +813,33 @@ test.describe('adding a transporter that is not on the list', () => {
       page,
       copy.transporterAdd.continueButton
     )
+  })
+
+  test('adding a private transporter after saving private and commercial ones opens a blank form with country on the United Kingdom', async ({
+    page
+  }) => {
+    const fields = copy.privateTransporterDetails.fields
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+    await addTransporterOfTypeFromList(page, COMMERCIAL)
+    await fillCommercialTransporter(page)
+    await saveAndContinue(page).click()
+    await addTransporterOfTypeFromList(page, PRIVATE)
+
+    for (const label of [
+      fields.nameOrOrganisationName,
+      fields.addressLine1,
+      fields.addressLine2,
+      fields.townOrCity,
+      fields.county,
+      fields.postcode,
+      fields.phone,
+      fields.email
+    ]) {
+      await expect(page.getByLabel(label)).toHaveValue('')
+    }
+    await expect(page.getByLabel(fields.country)).toHaveValue(UNITED_KINGDOM)
   })
 
   test('heads the type question with the choice it asks for, under the new-transporter caption, and warns the trader to check the list for duplicates', async ({
@@ -879,7 +889,7 @@ test.describe('adding a transporter that is not on the list', () => {
     await page.goto(
       `${journeyUrl(page, 'transporters')}?from=notification-view`
     )
-    await page.getByRole('button', { name: copy.transporters.add }).click()
+    await addTransporterOf(page).click()
 
     await expect(page).toHaveURL(
       /\/transporters\/add\?from=(?:[^#]*%2C)?notification-view$/
@@ -888,6 +898,12 @@ test.describe('adding a transporter that is not on the list', () => {
       'href',
       /\/transporters\?from=(?:[^#]*%2C)?notification-view$/
     )
+  })
+})
+
+test.describe('choosing the type of a transporter that is not on the list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
   })
 
   test('opening the private form before a type is chosen lands on the type question', async ({
@@ -1207,14 +1223,7 @@ test.describe('private transporter persistence', () => {
       nameOrOrganisationName: transporter.name,
       ...transporter.address
     }
-    for (const [field, value] of Object.entries(fields)) {
-      const control = page.locator(`#${field}`)
-      if (field === 'country') {
-        await control.selectOption(value)
-      } else {
-        await control.fill(value)
-      }
-    }
+    await fillPrivateTransporter(page, fields)
     await saveAndContinue(page).click()
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
@@ -1251,13 +1260,7 @@ test.describe('saving an added transporter', () => {
     await page.goto(
       `${journeyUrl(page, 'transporters')}?from=notification-view`
     )
-    await page.getByRole('button', { name: copy.transporters.add }).click()
-    await page
-      .getByRole('radio', {
-        name: copy.transporterAdd.options.Private.text
-      })
-      .check()
-    await continueTransporterType(page).click()
+    await addTransporterOfTypeFromList(page, PRIVATE)
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
@@ -1365,10 +1368,7 @@ test.describe('cancelling an add form', () => {
     const transporterListUrl = journeyUrl(page, 'transporters')
     const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, 'transporters/add'))
-    await page
-      .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
-      .check()
-    await continueTransporterType(page).click()
+    await chooseTransporterType(page, PRIVATE)
     await fillsPrivateNameThenCancelsToDashboard(page)
 
     await page.goto(transporterListUrl)
