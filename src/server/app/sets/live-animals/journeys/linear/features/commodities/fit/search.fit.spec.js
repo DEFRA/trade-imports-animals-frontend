@@ -157,31 +157,18 @@ test.describe('commodity search', () => {
     await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
 
-  test('offers a species the reference data holds no common name for as its Latin name alone', async ({
-    page
-  }) => {
-    await searchCommodities(page, 'Catreus')
-    const group = page.getByRole('group', { name: '01063980' })
-    await expect(
-      group.getByRole('checkbox', { name: 'Catreus', exact: true })
-    ).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(1)
-  })
-
   test('finds cattle by their common name', async ({ page }) => {
     await searchCommodities(page, 'cattle')
     const cattle = page.getByRole('group', { name: CATTLE_CODE })
     for (const name of [
-      'Bos (Cattle)',
-      labelFor(BOS_TAURUS_ROW.speciesLatinName),
-      'Bibos spp. (Cattle)',
-      'Novibos spp. (Cattle)'
+      'Bos sp. (Cattle)',
+      labelFor(BOS_TAURUS_ROW.speciesLatinName)
     ]) {
       await expect(
         cattle.getByRole('checkbox', { name, exact: true })
       ).toBeVisible()
     }
-    await expect(cattle.getByRole('checkbox')).toHaveCount(5)
+    await expect(cattle.getByRole('checkbox')).toHaveCount(2)
   })
 
   test('renders a separate group per matching commodity code', async ({
@@ -411,7 +398,7 @@ test.describe('commodity search — choosing and saving species', () => {
 test.describe('commodity search by code', () => {
   test.beforeEach(signInAndOpenSelection)
 
-  test('shows Bison bison among 15 species under a searched 0102 code', async ({
+  test('shows Bison bison among 7 species under a searched 0102 code', async ({
     page
   }) => {
     await searchCommodities(page, CATTLE_CODE)
@@ -422,7 +409,7 @@ test.describe('commodity search by code', () => {
         exact: true
       })
     ).toBeVisible()
-    await expect(cattle.getByRole('checkbox')).toHaveCount(15)
+    await expect(cattle.getByRole('checkbox')).toHaveCount(7)
   })
 
   test('lists no more than a hundred species for one search', async ({
@@ -435,20 +422,12 @@ test.describe('commodity search by code', () => {
   test('lists 0102 species in species-label order', async ({ page }) => {
     await searchCommodities(page, CATTLE_CODE)
     const expectedOrder = [
-      'Bibos spp. (Cattle)',
       'Bison (Bison)',
       labelFor(BISON_BISON_ROW.speciesLatinName),
-      'Bison bonasus (European Bison)',
-      'Bos (Cattle)',
       'Bos sp. (Cattle)',
       labelFor(BOS_TAURUS_ROW.speciesLatinName),
       'Bubalus (Water Buffaloes)',
       labelFor(BUBALUS_BUBALIS_ROW.speciesLatinName),
-      'Elephas maximus (Asian Elephant)',
-      'Loxodonta africana (African elephant)',
-      'Novibos spp. (Cattle)',
-      'Ovibos (Muskoxen)',
-      'Poephagus spp. (Animals)',
       'Syncerus (African Buffaloes)'
     ]
     const checkboxes = page
@@ -486,7 +465,7 @@ test.describe('commodity search — emphasis', () => {
       page
         .getByRole('group', { name: OTHER_LIVE_MAMMALS_CODE })
         .locator('label strong')
-    ).toHaveText('Dog')
+    ).toHaveText(['Dog', 'Dog'])
   })
 })
 

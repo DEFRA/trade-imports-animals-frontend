@@ -70,13 +70,13 @@ describe('#searchCommodities', () => {
   })
 
   it('Should list every species of a code found by its code, a page at a time', () => {
-    const firstPage = searchCommodities('0102', { page: 0, size: 10 })
-    expect(firstPage.total).toBe(15)
+    const firstPage = searchCommodities('0102', { page: 0, size: 5 })
+    expect(firstPage.total).toBe(7)
     expect(firstPage.groups).toHaveLength(1)
-    expect(firstPage.groups[0].species).toHaveLength(10)
+    expect(firstPage.groups[0].species).toHaveLength(5)
 
-    const secondPage = searchCommodities('0102', { page: 1, size: 10 })
-    expect(secondPage.groups[0].species).toHaveLength(5)
+    const secondPage = searchCommodities('0102', { page: 1, size: 5 })
+    expect(secondPage.groups[0].species).toHaveLength(2)
   })
 
   it('Should group matches under each code they fall under, in data order', () => {

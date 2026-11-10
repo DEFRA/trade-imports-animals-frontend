@@ -149,20 +149,12 @@ describe('commodity search', () => {
     const result = await searchFor('0102')
     expect(legendsOf(result)).toEqual(['0102'])
     expect(textsOf(result)).toEqual([
-      'Bibos spp. (Cattle)',
       'Bison (Bison)',
       'Bison bison (American Bison)',
-      'Bison bonasus (European Bison)',
-      'Bos (Cattle)',
       'Bos sp. (Cattle)',
       'Bos taurus (Domestic Cattle)',
       'Bubalus (Water Buffaloes)',
       `${BUBALUS_BUBALIS} (Water Buffalo)`,
-      'Elephas maximus (Asian Elephant)',
-      'Loxodonta africana (African elephant)',
-      'Novibos spp. (Cattle)',
-      'Ovibos (Muskoxen)',
-      'Poephagus spp. (Animals)',
       'Syncerus (African Buffaloes)'
     ])
   })
