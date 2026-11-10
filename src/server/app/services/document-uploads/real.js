@@ -1,7 +1,7 @@
 import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { failedResponse } from '../http/trace-headers.js'
-import { headers } from '../persistence/records/real/http/headers.js'
+import { notificationBackendHeaders as headers } from '../http/organisation-headers.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
