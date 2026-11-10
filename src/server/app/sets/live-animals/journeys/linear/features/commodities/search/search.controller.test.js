@@ -44,6 +44,7 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS,
+  CATTLE_HEADING,
   FELIS_CATUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW
 } from './test-support.js'
@@ -127,7 +128,7 @@ describe('commodity search', () => {
     const result = await searchFor('buffalo')
     expect(groupsOf(result)).toEqual([
       {
-        legendHtml: '0102',
+        legendHtml: CATTLE_HEADING,
         items: [
           {
             value: '0102|Bubalus',
@@ -154,7 +155,7 @@ describe('commodity search', () => {
 
   it('Should list every species under a code searched for, in species-label order', async () => {
     const result = await searchFor('0102')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(textsOf(result)).toEqual([
       'Bibos spp. (Cattle)',
       'Bison (Bison)',
@@ -177,7 +178,7 @@ describe('commodity search', () => {
   it('Should bold the matched text in the commodity heading and in a species label', async () => {
     const headingResult = await searchFor('0102')
     expect(groupsOf(headingResult)[0].legendHtml).toBe(
-      '<strong class="govuk-!-font-weight-bold">0102</strong>'
+      'Cow (<strong class="govuk-!-font-weight-bold">0102</strong>)'
     )
 
     const labelResult = await searchFor('taurus')
@@ -379,7 +380,7 @@ describe('commodity search — what has been chosen so far', () => {
     })
     expect(result.view.context.selectedSummary.count).toBe(0)
     expect(result.view.context.query).toBe('buffalo')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(result.after).toEqual(result.before)
   })
 })
@@ -537,7 +538,7 @@ describe('commodity search — results refreshed in place', () => {
       [afterSearchShowed(BOS_TAURUS_ROW)]
     )
     expect(result.view.context.selectedSummary.count).toBe(0)
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
   })
 
   it('Should refuse a remove naming a key the stored search rows never held, and log one refusal', async () => {
@@ -631,7 +632,7 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.view.context.query).toBe('buffalo')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(result.after).toEqual(result.before)
   })
 

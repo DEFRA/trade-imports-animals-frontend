@@ -24,7 +24,7 @@ import {
   tickSpecies
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
-import { labelFor } from '../search/test-support.js'
+import { CATTLE_HEADING, labelFor } from '../search/test-support.js'
 import {
   CATTLE_CODE,
   OTHER_LIVE_MAMMALS_CODE
@@ -46,6 +46,9 @@ const errorLink = (page, message) =>
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
 const searchResults = (page) => page.locator('#commodity-search-results')
+
+const resultsDropdown = (page) =>
+  searchResults(page).locator('[data-multi-select-search-dropdown]')
 
 const expectSelectedHeading = (page, count) =>
   expect(selectedSummary(page)).toContainText(
@@ -562,9 +565,7 @@ test.describe('commodity search as the trader types', () => {
     page
   }) => {
     await searchBox(page).fill(CATTLE_CODE)
-    const dropdown = searchResults(page).locator(
-      '[data-multi-select-search-dropdown]'
-    )
+    const dropdown = resultsDropdown(page)
     await expect(dropdown.getByRole('checkbox')).toHaveCount(15)
 
     await expectStyle(dropdown, {
@@ -572,14 +573,26 @@ test.describe('commodity search as the trader types', () => {
       'overflow-y': 'auto',
       'border-top-width': '0px'
     })
-    const gap = await page.evaluate(() => {
-      const box = document.getElementById('commoditySearch')
-      const list = document.querySelector('[data-multi-select-search-dropdown]')
-      return (
-        list.getBoundingClientRect().top - box.getBoundingClientRect().bottom
-      )
-    })
-    expect(gap).toBe(0)
+    const box = await searchBox(page).boundingBox()
+    const list = await dropdown.boundingBox()
+    expect(list.y).toBe(box.y + box.height)
+  })
+
+  test('heads each commodity with its name and code, and rules each species row the full width of the list', async ({
+    page
+  }) => {
+    await searchBox(page).fill(CATTLE_CODE)
+    await expect(
+      page.getByRole('group', { name: CATTLE_HEADING, exact: true })
+    ).toBeVisible()
+
+    const dropdown = resultsDropdown(page)
+    const heading = await dropdown.locator('legend').first().boundingBox()
+    const row = await dropdown
+      .locator('.govuk-checkboxes__item')
+      .first()
+      .boundingBox()
+    expect(row.x).toBe(heading.x)
   })
 
   test('hides the results on Escape, keeping the term, and shows them again when the search box is clicked', async ({

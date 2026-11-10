@@ -271,9 +271,14 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the search box. After a tick, focus stays on the tick box.
 - The results are a list joined to the bottom of the search box, as the
   design draws it: one heading row per commodity, its species beneath, striped
-  rows, and a scroll once the list is taller than about six rows. Each
-  commodity stays a fieldset with its code as the legend, so a screen reader
-  hears the species grouped by commodity.
+  rows ruled the full width of the list, and a scroll once the list is taller
+  than about six rows. Each commodity stays a fieldset whose legend is its
+  heading, so a screen reader hears the species grouped by commodity.
+- A commodity's heading in the results reads as its name with its code in
+  round brackets, such as "Cow (0102)", where the service knows a name for the
+  code, and as the code alone where it does not. The names come from
+  `commodityNameFor` in the set's commodities service; the chips and the
+  Commodity details page still name a commodity by its code.
 - With JavaScript, Escape in the search box or a click outside the search hides
   the list, keeping the term and every choice, and focusing or clicking the
   search box shows it again. The list hides once the click has landed, so a
@@ -286,7 +291,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - One result is announced as "1 result available". The design announces
   "1 results available"; the singular is open with the designer.
 - A search's results are listed in order: the commodity groups by their
-  heading, and each group's species by the label they are offered under, over
+  code, and each group's species by the label they are offered under, over
   the page of results the search returned.
 - A species reads as its Latin name with its common name in round
   brackets wherever it is listed or named — the search results, Commodity

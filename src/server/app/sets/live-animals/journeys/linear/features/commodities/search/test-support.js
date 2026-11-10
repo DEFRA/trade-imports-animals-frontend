@@ -14,6 +14,7 @@ export const GALLUS_GALLUS = 'Gallus gallus'
 export const MUSTELA_PUTORIUS_FURO = 'Mustela putorius furo'
 export const STRUTHIO = 'Struthio spp.'
 export const OSTRICHES_CODE = '01063300'
+export const CATTLE_HEADING = `Cow (${CATTLE_CODE})`
 
 export const BISON_BISON_ROW = {
   commodityCode: CATTLE_CODE,
