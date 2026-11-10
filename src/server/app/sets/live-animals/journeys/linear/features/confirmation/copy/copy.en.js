@@ -30,6 +30,7 @@ export const copy = {
     heading: 'Getting help',
     importsEmailPrefix:
       'To get help with import notifications for live animals or germinal products, email',
+    importsEmail: 'importsriskmanagement@apha.gov.uk',
     technicalHelp:
       'Contact the Animal and Plant Health Agency (APHA) if you need technical help with this service:',
     telephone: 'Telephone: 0330 041 6999',

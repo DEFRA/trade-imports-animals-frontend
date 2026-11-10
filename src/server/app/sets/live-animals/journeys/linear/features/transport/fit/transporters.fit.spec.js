@@ -27,6 +27,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
+import { sentenceCasedTransporterName } from '../transporter-add-session.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { countriesOriginEntries } from '../../../../../../../services/_capture/fixtures.js'
 import { compareLabels } from '../../../../../../../services/countries/country-labels.js'
@@ -1242,6 +1243,38 @@ test.describe('private transporter persistence', () => {
 })
 
 test.describe('saving an added transporter', () => {
+  test('lands on the transporter list opened from the review, whose Back link opens the review', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await openTransporterList(page)
+    await page.goto(
+      `${journeyUrl(page, 'transporters')}?from=notification-view`
+    )
+    await page.getByRole('button', { name: copy.transporters.add }).click()
+    await page
+      .getByRole('radio', {
+        name: copy.transporterAdd.options.Private.text
+      })
+      .check()
+    await continueTransporterType(page).click()
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
+    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/notification-view$/
+    )
+    await page.locator(BACK_LINK).click()
+    await expect(
+      page.getByRole('heading', { level: 1, name: checkAnswersCopy.title })
+    ).toBeVisible()
+  })
+
   test('lands on the transporter list with the new transporter first and checked, under the named success banner', async ({
     page
   }) => {
@@ -1250,7 +1283,10 @@ test.describe('saving an added transporter', () => {
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
-    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
     const firstRow = page
       .getByRole('row')
       .filter({ has: page.getByRole('radio') })
@@ -1390,7 +1426,10 @@ test.describe('saving and cancelling the private form without JavaScript', () =>
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
-    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
   })
 
   test('cancel takes the trader to the dashboard', async ({ page }) => {

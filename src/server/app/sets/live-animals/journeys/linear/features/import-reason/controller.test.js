@@ -17,6 +17,7 @@ import { TRAIL_START, withTrail } from '../../../../../../shared/kit.js'
 import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
 import { commoditiesPage } from '../commodities/page.js'
 
+import * as portOfEntry from '../transport/port-of-entry/port-of-entry.controller.js'
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -293,6 +294,49 @@ describe('POST import-reason — the reveal the reason opens', () => {
     expect(result.response.redirect).toBeDefined()
     expect(result.after.destinationCountry).toBe('FR')
     expect(result.after.portOfExit).toBeUndefined()
+  })
+})
+
+describe('GET import-reason — the port of exit and the purpose', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const portChoicesAfterPrompt = (items) =>
+    items.slice(1).map(({ value, text }) => ({ value, text }))
+
+  it('Should offer the ports of exit that Arrival details offers as ports of entry, in the same order', async () => {
+    const importReasonPage = await driveHandler(get)
+    const arrivalDetailsPage = await driveHandler(
+      portOfEntry.routes.find((route) => route.method === 'GET').handler
+    )
+
+    expect(
+      portChoicesAfterPrompt(importReasonPage.view.context.portItems)
+    ).toEqual(portChoicesAfterPrompt(arrivalDetailsPage.view.context.portItems))
+    expect(importReasonPage.view.context.portItems.length).toBeGreaterThan(1)
+  })
+
+  it('Should leave every purpose unchecked when Internal market is chosen again after another reason was saved', async () => {
+    const saved = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: 'FR',
+        exit: 'hub'
+      }
+    })
+
+    const reopened = await driveHandler(get, {
+      seed: { ...saved.after, reasonForImport: 'internalMarket' }
+    })
+
+    expect(reopened.view.context.purposeOptions.length).toBeGreaterThan(0)
+    expect(
+      reopened.view.context.purposeOptions.map(({ checked }) => checked)
+    ).toEqual(reopened.view.context.purposeOptions.map(() => false))
   })
 })
 

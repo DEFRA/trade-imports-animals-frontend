@@ -1940,6 +1940,18 @@ describe('documents — the session the add form posts to', () => {
     return registered.uploadId
   }
 
+  const refreshedAfterASessionTookAFile = async () => {
+    const opened = await driveHandler(get)
+    const spentSession = opened.view.context.uploadSession
+    await uploadAFileInto(opened.journeyId, spentSession)
+
+    const refreshed = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { attempt: 1, uploadSession: spentSession }
+    })
+    return { opened, spentSession, refreshed }
+  }
+
   it('Should reuse the session it is already showing when the refresh link brings its handle back', async () => {
     const opened = await driveHandler(get)
 
@@ -2045,14 +2057,8 @@ describe('documents — the session the add form posts to', () => {
   })
 
   it('Should open a session of its own when the session the request names has already taken a file', async () => {
-    const opened = await driveHandler(get)
-    const spentSession = opened.view.context.uploadSession
-    await uploadAFileInto(opened.journeyId, spentSession)
-
-    const refreshed = await driveHandler(get, {
-      journeyId: opened.journeyId,
-      query: { attempt: 1, uploadSession: spentSession }
-    })
+    const { opened, spentSession, refreshed } =
+      await refreshedAfterASessionTookAFile()
 
     expect(refreshed.view.context.uploadSession).not.toBe(spentSession)
     expect(refreshed.view.context.uploadPath).toBeDefined()
@@ -2063,6 +2069,37 @@ describe('documents — the session the add form posts to', () => {
       correlationId: refreshed.view.context.uploadSession,
       claimed: false
     })
+  })
+
+  it('Should list the document saved through the session opened after the named one had taken a file', async () => {
+    const { opened, refreshed } = await refreshedAfterASessionTookAFile()
+    const freshSession = refreshed.view.context.uploadSession
+    const { uploadId } = await documentUploads.findByCorrelationId({
+      journeyId: opened.journeyId,
+      correlationId: freshSession
+    })
+    recordSubmittedUpload(uploadId, {
+      ...validDocument,
+      action: 'add',
+      file: uploadedPart({ filename: PDF_FILENAME, bytes: 8 })
+    })
+    const saved = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      query: { upload: freshSession }
+    })
+
+    expect(saved.response.redirect).toBe(
+      pagePath(opened.journeyId, DOCUMENTS_SLUG)
+    )
+    const stored = await store.get(opened.journeyId)
+    const reopened = await driveHandler(get, {
+      journeyId: opened.journeyId,
+      seed: { documents: stored.answers.documents }
+    })
+
+    expect(
+      reopened.view.context.rows.map(([reference]) => reference.text)
+    ).toEqual([validDocument.accompanyingDocumentReference])
   })
 
   it('Should say which session had already taken a file, and that another was opened', async () => {

@@ -63,7 +63,7 @@ export const justAddedTransporterNamePatch = (name) => ({
   [JUST_ADDED_TRANSPORTER_NAME]: name
 })
 
-const sentenceCasedTransporterName = (name) =>
+export const sentenceCasedTransporterName = (name) =>
   name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
 
 export const addedTransporterBanner = (name, copy) => ({

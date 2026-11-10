@@ -22,7 +22,10 @@ const HREF = '/n/j-1/a'
 const ORIGIN_ROUTE_PATH = '/notifications/{journeyId}/origin'
 const REFUSED_RETURN = '//evil.example'
 const OVERVIEW_THEN_ORIGIN = 'overview,origin'
+const IMPORT_REASON_SLUG = 'import-reason'
 const UNRECOGNISED_TRAIL_MESSAGE = 'Trail not recognised, trail dropped'
+const PLACES_BENEATH_TOP_OF_LONGEST_TRAIL =
+  'overview,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason,consignment-details,origin,import-reason'
 
 describe('the trail of places the trader came from', () => {
   const trailRequest = (trail, overrides = {}) =>
@@ -43,7 +46,7 @@ describe('the trail of places the trader came from', () => {
         pushTrail(
           trailRequest(OVERVIEW_THEN_ORIGIN),
           `${HREF}?x=1`,
-          'import-reason'
+          IMPORT_REASON_SLUG
         )
       ).toBe(`${HREF}?x=1&from=overview%2Corigin%2Cimport-reason`)
     })
@@ -111,6 +114,34 @@ describe('the trail of places the trader came from', () => {
       expect(trailBackLink(trailRequest(OVERVIEW_THEN_ORIGIN))).toBe(
         withTrail(pagePath('j-1', 'origin'), ['overview'])
       )
+    })
+
+    it('Should step back from a trail of the longest length to the place on top of it', () => {
+      const placesBeneathTop = PLACES_BENEATH_TOP_OF_LONGEST_TRAIL.split(',')
+      const trailOfLongestLength = [...placesBeneathTop, 'consignment-details']
+
+      expect(trailOfLongestLength).toHaveLength(LONGEST_TRAIL)
+      expect(trailBackLink(trailRequestOf(trailOfLongestLength))).toBe(
+        withTrail(pagePath('j-1', 'consignment-details'), placesBeneathTop)
+      )
+    })
+
+    it('Should step back one place at a time, then end at Overview', () => {
+      expect([
+        trailBackLink(
+          trailRequestOf(['overview', 'origin', IMPORT_REASON_SLUG])
+        ),
+        trailBackLink(trailRequestOf(['overview', 'origin'])),
+        trailBackLink(trailRequestOf(['overview']))
+      ]).toEqual([
+        withTrail(pagePath('j-1', IMPORT_REASON_SLUG), ['overview', 'origin']),
+        withTrail(pagePath('j-1', 'origin'), ['overview']),
+        hubPath('j-1')
+      ])
+    })
+
+    it('Should go to Overview for an empty trail', () => {
+      expect(trailBackLink(trailRequestOf([]))).toBe(hubPath('j-1'))
     })
 
     it('Should go to Overview for a trail of Overview', () => {

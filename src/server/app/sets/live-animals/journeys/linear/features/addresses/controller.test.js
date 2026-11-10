@@ -304,7 +304,8 @@ describe('POST addresses — where Save and continue goes', () => {
       'opened from the overview',
       [{ query: trailQuery(TRAIL_START.overview) }],
       [TRAIL_START.overview]
-    ]
+    ],
+    ['opened with no trail, as an address book return leaves it', [], []]
   ])(
     'Should go on to the contact address with the trail extended by this page when continuing %s',
     async (_start, startingFrom, trailBefore) => {

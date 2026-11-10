@@ -791,12 +791,16 @@ export const LANDINGS = {
   }
 }
 
-const saveAndExpectLanding = async (page, { slug, title }) => {
-  await save(page)
+export const expectLanding = async (page, { slug, title }) => {
   await expect(page).toHaveURL(urlUnderBase(`/notifications/[^/]+/${slug}`))
   await expect(
     page.getByRole('heading', { name: title, exact: true })
   ).toBeVisible()
+}
+
+export const saveAndExpectLanding = async (page, landing) => {
+  await save(page)
+  await expectLanding(page, landing)
 }
 
 export const openOverview = async (page) => {

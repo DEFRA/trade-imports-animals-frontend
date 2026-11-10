@@ -29,6 +29,13 @@ const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
+const SECOND_PACKAGES_FIELD = 'numberOfPackages-1'
+const QUANTITY_FIELDS = [
+  FIRST_ANIMALS_QUANTITY_FIELD,
+  FIRST_PACKAGES_FIELD,
+  SECOND_ANIMALS_QUANTITY_FIELD,
+  SECOND_PACKAGES_FIELD
+]
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
 const REMOVE_BOS_TAURUS = `Remove ${BOS_TAURUS_ROW.commodityCode} ${labelFor(BOS_TAURUS_ROW.speciesLatinName)}`
 const REMOVE_FELIS_CATUS = `Remove ${FELIS_CATUS_ROW.commodityCode} ${labelFor(FELIS_CATUS_ROW.speciesLatinName)}`
@@ -44,17 +51,18 @@ const quantityFields = [
   ['number of animals for Bos taurus', FIRST_ANIMALS_QUANTITY_FIELD, '2.5'],
   ['number of packages for Bos taurus', FIRST_PACKAGES_FIELD, 'boxes'],
   ['number of animals for Felis catus', SECOND_ANIMALS_QUANTITY_FIELD, '0'],
-  ['number of packages for Felis catus', 'numberOfPackages-1', '-1']
+  ['number of packages for Felis catus', SECOND_PACKAGES_FIELD, '-1']
 ]
 
 const fillValidQuantities = async (page) => {
-  for (const [index, field] of [
-    FIRST_ANIMALS_QUANTITY_FIELD,
-    FIRST_PACKAGES_FIELD,
-    SECOND_ANIMALS_QUANTITY_FIELD,
-    'numberOfPackages-1'
-  ].entries()) {
+  for (const [index, field] of QUANTITY_FIELDS.entries()) {
     await page.locator(`#${field}`).fill(validQuantities[index])
+  }
+}
+
+const expectEveryQuantityEmpty = async (page) => {
+  for (const field of QUANTITY_FIELDS) {
+    await expect(page.locator(`#${field}`)).toHaveValue('')
   }
 }
 
@@ -121,6 +129,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(
       page.locator(FIRST_PACKAGES_INPUT)
     ).toHaveAccessibleDescription(copy.consignmentDetails.packages.hint)
+    await expectEveryQuantityEmpty(page)
   })
 
   test('steps the type down from commodity heading to species heading to quantity labels', async ({
@@ -266,7 +275,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     await page.locator(FIRST_PACKAGES_INPUT).fill('abc')
-    await page.locator('#numberOfPackages-1').fill('abc')
+    await page.locator(`#${SECOND_PACKAGES_FIELD}`).fill('abc')
     await saveAndContinue(page).click()
 
     await expect(page.getByRole('alert').getByRole('link')).toHaveText([
@@ -362,7 +371,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
-    await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
+    await expect(page.locator(`#${SECOND_PACKAGES_FIELD}`)).toHaveValue('1')
   })
 
   test('removes one species row without changing another quantity', async ({
@@ -471,6 +480,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).toHaveValue(
       '2'
     )
+    await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
   })
 
   test('ends with Save and continue and Save and return to overview in the button group, then Cancel and return to overview', async ({

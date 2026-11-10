@@ -17,12 +17,14 @@ import {
   countriesOrigin,
   portsOfEntry
 } from '../../../../../services/_capture/fixtures.js'
+import { ENGLISH_ASSISTIVE_HINT } from '../../../../../../../client/javascripts/components/autocomplete-text.js'
 import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as transportCopy } from './transport/copy/copy.en.js'
 
 const AUTOCOMPLETE_CONTAINER =
   'xpath=ancestor::*[contains(@class,"app-autocomplete")][1]'
+const SEARCH_BUTTON = '.app-autocomplete__button'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 
 const inputFor = (page, inputId) => page.locator(`input#${inputId}`)
@@ -180,7 +182,7 @@ for (const typeAhead of [...typeAheads, ...revealedTypeAheads]) {
       const input = inputFor(page, inputId)
       const button = input
         .locator(AUTOCOMPLETE_CONTAINER)
-        .locator('.app-autocomplete__button')
+        .locator(SEARCH_BUTTON)
       const urlBeforeClick = page.url()
 
       await expect(button).toHaveAttribute('aria-hidden', 'true')
@@ -339,6 +341,52 @@ test.describe('country of origin change announcement', () => {
   })
 })
 
+test.describe('country of origin type-ahead announcements', () => {
+  const iceland = countriesOrigin.find(({ name }) => name === 'Iceland')
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotificationAtOrigin(page)
+  })
+
+  const statusRegion = (page, text) =>
+    page
+      .locator('#countryOfOrigin__status--A, #countryOfOrigin__status--B')
+      .filter({ hasText: new RegExp(`^${text}\\s*$`) })
+
+  test('describes the search box by the assistive hint', async ({ page }) => {
+    await expect(inputFor(page, 'countryOfOrigin')).toHaveAccessibleDescription(
+      ENGLISH_ASSISTIVE_HINT
+    )
+  })
+
+  test('announces how many results are available after typing', async ({
+    page
+  }) => {
+    await inputFor(page, 'countryOfOrigin').fill(iceland.name)
+
+    await expect(page.getByRole('option')).toHaveCount(1)
+    await expect(statusRegion(page, '1 result is available\\.')).toHaveCount(1)
+  })
+
+  test('announces the highlighted country with its place among the results', async ({
+    page
+  }) => {
+    const input = inputFor(page, 'countryOfOrigin')
+    await input.fill(iceland.name)
+    await expect(page.getByRole('option')).toHaveCount(1)
+
+    await input.press('ArrowDown')
+
+    await expect(
+      statusRegion(
+        page,
+        `1 result is available\\. ${iceland.name} 1 of 1 is highlighted`
+      )
+    ).toHaveCount(1)
+  })
+})
+
 test.describe('country of origin type-ahead styles', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -360,6 +408,21 @@ test.describe('country of origin type-ahead styles', () => {
     for (const element of [input, option]) {
       await expectStyle(element, govukInputFont)
     }
+  })
+
+  test('draws the search button GOV.UK blue with a white magnifying glass', async ({
+    page
+  }) => {
+    const button = page.locator(SEARCH_BUTTON)
+
+    await expect(button).toHaveCSS('background-color', 'rgb(29, 112, 184)')
+    await expect
+      .poll(() =>
+        button.evaluate(
+          (element) => getComputedStyle(element, '::before').backgroundColor
+        )
+      )
+      .toBe('rgb(255, 255, 255)')
   })
 
   test('gives the enhanced input the GOV.UK input focus outline and inset shadow', async ({

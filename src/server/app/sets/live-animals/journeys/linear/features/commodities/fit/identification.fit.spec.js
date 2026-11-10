@@ -327,7 +327,17 @@ test.describe('animal identification', () => {
 
     for (const field of Object.keys(validPermanentAddress)) {
       await expect(page.locator(`#${field}-0`)).toBeVisible()
+      await expect(page.locator(`#${field}-0`)).toHaveAccessibleName(
+        copy.identification.address[field]
+      )
     }
+    await expect(page.getByText('(optional)')).toHaveCount(2)
+    await expect(page.locator('#addressLine2-0')).toHaveAccessibleName(
+      'Address line 2 (optional)'
+    )
+    await expect(page.locator('#county-0')).toHaveAccessibleName(
+      'County (optional)'
+    )
     await expect(page.locator('#country-0')).toHaveCount(0)
     await expect(page.locator('select')).toHaveCount(0)
   })

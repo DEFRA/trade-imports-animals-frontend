@@ -31,6 +31,7 @@ export const copy = {
     heading: 'Cael help',
     importsEmailPrefix:
       'I gael help gyda hysbysiadau mewnforio ar gyfer anifeiliaid byw neu gynhyrchion cenhedlol, e-bostiwch',
+    importsEmail: 'importsriskmanagement@apha.gov.uk',
     technicalHelp:
       'Cysylltwch â’r Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA) os oes angen help technegol arnoch gyda’r gwasanaeth hwn:',
     telephone: 'Ffôn: 0330 041 6999',

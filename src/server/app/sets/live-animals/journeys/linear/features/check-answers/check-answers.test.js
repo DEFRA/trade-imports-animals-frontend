@@ -1644,6 +1644,18 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     ])
   })
 
+  it('Should show the declaration on Continue of an amendment holding a species not listed under its code', async () => {
+    const { view } = await driveHandler(
+      declarationRoutesFromReview[0].handler,
+      {
+        seed: withUnlistedSpecies(),
+        startingFrom: [amendmentOpened()]
+      }
+    )
+
+    expect(view.view).toMatch(/\/declaration\/template$/)
+  })
+
   it('Should not name a species not listed under its code until Continue is refused', async () => {
     const { view } = await driveHandler(getHandler, {
       seed: withUnlistedSpecies()

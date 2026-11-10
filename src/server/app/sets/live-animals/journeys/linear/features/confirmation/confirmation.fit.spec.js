@@ -67,6 +67,10 @@ const expectHelpCopy = async (page) => {
   await expect(
     page.getByRole('heading', { name: copy.help.heading })
   ).toBeVisible()
+  await expect(page.getByText(copy.help.importsEmailPrefix)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: copy.help.importsEmail, exact: true })
+  ).toHaveAttribute('href', `mailto:${copy.help.importsEmail}`)
   await expect(page.getByText(copy.help.technicalHelp)).toBeVisible()
   await expect(page.getByText(copy.help.telephone)).toBeVisible()
   await expect(page.getByText(copy.help.openingHours)).toBeVisible()

@@ -161,6 +161,14 @@ const expectInternalMarketBreedingChecked = async (page) => {
   ).toBeChecked()
 }
 
+const saveInternalMarketBreedingAndReopen = async (page) => {
+  const reasonUrl = page.url()
+  await chooseInternalMarketBreeding(page)
+  await saveAndContinue(page).click()
+  await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
+  await page.goto(reasonUrl)
+}
+
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -227,13 +235,8 @@ test.describe('import-reason feature', () => {
   test('saves a valid reason, redirects and persists the answer', async ({
     page
   }) => {
-    const reasonUrl = page.url()
+    await saveInternalMarketBreedingAndReopen(page)
 
-    await chooseInternalMarketBreeding(page)
-    await saveAndContinue(page).click()
-
-    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
-    await page.goto(reasonUrl)
     await expectInternalMarketBreedingChecked(page)
   })
 
@@ -401,6 +404,42 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitPortInput)).toHaveValue(EXIT_PORT_LABEL)
     await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
     await expect(page.locator(transitCountryInput)).toHaveValue(IRELAND.name)
+  })
+
+  test('saves Re-entry with nothing more asked, goes on to the next page and offers Re-entry back', async ({
+    page
+  }) => {
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'reEntry').check()
+    await saveAndContinue(page).click()
+
+    await expect(page).toHaveURL(urlUnderBase(NEXT_PAGE_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(radioFor(page, 'reEntry')).toBeChecked()
+  })
+
+  test('offers no purpose ticked when Internal market is chosen again after a transit reason was saved over it', async ({
+    page
+  }) => {
+    await saveInternalMarketBreedingAndReopen(page)
+    const reasonUrl = page.url()
+    await radioFor(page, 'transit').check()
+    await chooseTypeAheadOption(page, TRANSIT_PORT)
+    await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
+    await saveAndReturnToHub(page).click()
+    await expectOverview(page)
+
+    await page.goto(reasonUrl)
+    await radioFor(page, 'internalMarket').check()
+
+    const purposes = importReasonPurpose.purposes()
+    expect(purposes.length).toBeGreaterThan(0)
+    for (const { text } of purposes) {
+      await expect(
+        page.getByRole('radio', { name: text, exact: true })
+      ).not.toBeChecked()
+    }
   })
 })
 

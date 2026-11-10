@@ -25,11 +25,14 @@ import {
   saveAndContinueToImportReason,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  expectLanding,
   expectSpeciesSelected,
   journeyUrl,
+  LANDINGS,
   openNotificationView,
   openOverview,
   openReviewFromHub,
+  saveAndExpectLanding,
   selectSpecies,
   signIn,
   startNotification,
@@ -280,6 +283,41 @@ test.describe('live-animals journey glue', () => {
       strangerPage.getByRole('heading', { name: originCopy.title })
     ).toBeVisible()
     await stranger.close()
+  })
+
+  test('Back steps through the pages Save and continue visited in reverse, ending on Overview', async ({
+    page
+  }) => {
+    test.slow()
+    const review = { slug: 'notification-view', title: checkAnswersCopy.title }
+    const pagesVisited = [
+      LANDINGS.transitCountries,
+      LANDINGS.transporters,
+      LANDINGS.documents,
+      LANDINGS.addresses,
+      LANDINGS.contactAddress,
+      review
+    ]
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await page.getByRole('link', { name: 'Arrival details' }).click()
+    await expectLanding(page, LANDINGS.arrivalDetails)
+
+    for (const landing of pagesVisited) {
+      await saveAndExpectLanding(page, landing)
+    }
+
+    const pagesBackThrough = [
+      ...pagesVisited.slice(0, -1).reverse(),
+      LANDINGS.arrivalDetails
+    ]
+    for (const landing of pagesBackThrough) {
+      await followBack(page)
+      await expectLanding(page, landing)
+    }
+    await followBack(page)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
+    await expect(exactHeading(page, hubCopy.title)).toBeVisible()
   })
 
   test('collection changes from check answers keep the trail until their explicit exits', async ({
