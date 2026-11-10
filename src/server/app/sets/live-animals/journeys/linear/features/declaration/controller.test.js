@@ -18,6 +18,7 @@ import {
   recordingLogger,
   resetMocksAndConfigAfterTests,
   stubH,
+  actWithSessionOrganisation,
   expectOneSaveFallbackLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -61,20 +62,20 @@ const drivePost = async ({
   await afterReview(journeyId)
   const h = stubH()
   const logger = recordingLogger()
-  const response = await post(
-    journeyRequest(journeyId, {
-      logger,
-      payload: {
-        step,
-        concurrencyToken: `${reviewedConcurrencyToken}`,
-        ...payload
-      },
-      state: reviewedState(
-        journeyId,
-        sessionConcurrencyToken(reviewedConcurrencyToken)
-      )
-    }),
-    h
+  const request = journeyRequest(journeyId, {
+    logger,
+    payload: {
+      step,
+      concurrencyToken: `${reviewedConcurrencyToken}`,
+      ...payload
+    },
+    state: reviewedState(
+      journeyId,
+      sessionConcurrencyToken(reviewedConcurrencyToken)
+    )
+  })
+  const response = await actWithSessionOrganisation(request, () =>
+    post(request, h)
   )
   return {
     journeyId,
@@ -407,15 +408,13 @@ describe('#declaration submit against the real records adapter', () => {
       const { concurrencyToken } = await store.get(refused.journeyId)
       const h = stubH()
 
-      await post(
-        continueRequest(
-          journeyRequest(refused.journeyId, {
-            state: { [flowOnlyAnswersCookie()]: sessionAfterRefusal }
-          }),
-          concurrencyToken
-        ),
-        h
+      const request = continueRequest(
+        journeyRequest(refused.journeyId, {
+          state: { [flowOnlyAnswersCookie()]: sessionAfterRefusal }
+        }),
+        concurrencyToken
       )
+      await actWithSessionOrganisation(request, () => post(request, h))
 
       expect(h.captured.view.context.values).toEqual({ declaration: '' })
     })

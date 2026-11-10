@@ -5,6 +5,7 @@ import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import { records } from '../../../../../../engine/persistence/records.js'
 import { knownJourneysCookie } from '../../../../../../engine/persistence/session.js'
 import {
+  actWithSessionOrganisation,
   backendJourneyId,
   backendNotification,
   expectOneLogged,
@@ -14,6 +15,9 @@ import {
   useBackendRecords,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+
+const copyWithOrganisation = (request, h) =>
+  actWithSessionOrganisation(request, () => copyPost(request, h))
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
@@ -121,10 +125,8 @@ describe('copy notification action', () => {
         statusText: 'Service Unavailable'
       }))
 
-      const response = await copyPost(
-        journeyRequest(backendJourneyId, { payload: copyPayload }),
-        stubH()
-      )
+      const request = journeyRequest(backendJourneyId, { payload: copyPayload })
+      const response = await copyWithOrganisation(request, stubH())
 
       expect(response.statusCode).toBe(500)
       expect(response.view).toBe(
@@ -143,7 +145,7 @@ describe('copy notification action', () => {
         payload: copyPayload
       })
 
-      const response = await copyPost(request, stubH())
+      const response = await copyWithOrganisation(request, stubH())
 
       expect(response.redirect).toBe(`${dashboardPath()}?staleAction=1`)
       expectOneLogged(request.logger, {
@@ -161,12 +163,10 @@ describe('copy notification action', () => {
         throw new TypeError('network down')
       })
 
-      await expect(
-        copyPost(
-          journeyRequest(backendJourneyId, { payload: copyPayload }),
-          stubH()
-        )
-      ).rejects.toThrow('network down')
+      const request = journeyRequest(backendJourneyId, { payload: copyPayload })
+      await expect(copyWithOrganisation(request, stubH())).rejects.toThrow(
+        'network down'
+      )
     })
   })
 })

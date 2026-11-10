@@ -1,10 +1,13 @@
 import { config } from '../../../config/config.js'
-import { traceHeaders } from './http/trace-headers.js'
+import {
+  ORGANISATION_ID_HEADER,
+  organisationScopedHeaders
+} from './http/organisation-headers.js'
 import { BackendRequestError } from './persistence/records/errors.js'
 
 const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
-const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
+export { ORGANISATION_ID_HEADER }
 
 /**
  * The absolute URL of a resource under the caller's organisation in the
@@ -36,10 +39,8 @@ export const addressBookResourceUrl = (
  * @param {string} organisationId the caller's organisation id
  * @returns {Record<string, string>} the request headers
  */
-export const addressBookHeaders = (organisationId) => ({
-  ...traceHeaders('application/json'),
-  [ORGANISATION_ID_HEADER]: organisationId
-})
+export const addressBookHeaders = (organisationId) =>
+  organisationScopedHeaders(organisationId)
 
 /**
  * Raises the backend's failure for an address-book response that was not ok.

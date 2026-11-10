@@ -1,3 +1,5 @@
+import { sessionOrganisationId } from './organisation-id.js'
+
 export function buildActor(credentials) {
   if (!credentials) {
     return undefined
@@ -9,7 +11,7 @@ export function buildActor(credentials) {
     source: isB2C ? 'dynamics-contact' : 'entra-oid',
     userType: isB2C ? 'B2C' : 'B2B',
     displayName: credentials.name,
-    organisationId: credentials.currentRelationshipId
+    organisationId: sessionOrganisationId(credentials)
   }
   if (credentials.onBehalfOfOrganisationId) {
     actor.onBehalfOfOrganisationId = credentials.onBehalfOfOrganisationId

@@ -22,6 +22,7 @@ import {
   enterSetContext,
   registerSetMount,
   routeWithSetContext,
+  runInRequestContext,
   withSetContext
 } from '../../src/server/app/shared/set-context.js'
 import {
@@ -205,7 +206,7 @@ export const secondSet = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            const target = await withSetContext(SET_ID, () =>
+            const target = await runInRequestContext(request, SET_ID, () =>
               journeyEntryGuardTarget(request, h)
             )
             return target ? h.redirect(target).takeover() : h.continue

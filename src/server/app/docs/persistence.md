@@ -96,9 +96,10 @@ per-species counts stay the raw string answers. A complement's `typeOfCommodity`
 is the text of the line's stored commodity type, and is left out when that text is
 blank.
 
-The backend stores parties as they are and hands them back the same way, so the
-records adapter never sends the reader's organisation to it. The organisation is
-the address book's business, not the backend's.
+Every records call carries the signed-in organisation in
+`Trade-Imports-Organisation-Id`. The backend stores it as the owner on create and
+answers another organisation's notification as not found (403 on the fulfilments
+read, which the adapter treats as not found).
 
 GBN-AG's `TradeCountry` carries an ISO 3166-1 alpha-2 code, so a territory the
 destination and transit selects offer must leave as its country. The identification
