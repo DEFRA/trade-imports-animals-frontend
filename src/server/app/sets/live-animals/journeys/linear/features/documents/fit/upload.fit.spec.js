@@ -160,6 +160,16 @@ const uploadDocument = async (page, document = validDocument) => {
   await submitAdd(page)
 }
 
+const uploadDocumentsToCapacity = async (page) => {
+  for (let index = 1; index <= MAX_DOCUMENTS; index++) {
+    await uploadDocument(page, {
+      ...validDocument,
+      accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
+      filename: `itahc-capacity-${index}.pdf`
+    })
+  }
+}
+
 const expectPreservedMetadata = async (page) => {
   await expect(page.getByLabel(copy.reference.label)).toHaveValue(
     validDocument.accompanyingDocumentReference
@@ -843,13 +853,7 @@ test.describe('document upload capacity and accessibility', () => {
     page
   }) => {
     test.slow()
-    for (let index = 1; index <= MAX_DOCUMENTS; index++) {
-      await uploadDocument(page, {
-        ...validDocument,
-        accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
-        filename: `itahc-capacity-${index}.pdf`
-      })
-    }
+    await uploadDocumentsToCapacity(page)
 
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
     await expect(page.getByText(message)).toBeVisible()
@@ -858,6 +862,49 @@ test.describe('document upload capacity and accessibility', () => {
     await expect(addButton).toHaveAttribute('aria-disabled', 'true')
     await expect(addButton).not.toHaveAttribute('formaction', /./)
     await expect(addButton).toHaveAccessibleDescription(new RegExp(message))
+  })
+
+  test('refuses a further document past the maximum with the limit message in the summary linked to the added documents, shown beside the disabled add button and on no field, and keeps every added document', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocumentsToCapacity(page)
+    await fillMetadata(page)
+    await submitContinue(page)
+
+    const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
+    const messageWithPrefix = `${copy.errors.hiddenPrefix} ${message}`
+    const summaryLinks = page
+      .locator('.govuk-error-summary__list')
+      .getByRole('link')
+    await expect(summaryLinks).toHaveText([message])
+    await expect(summaryLinks).toHaveAttribute('href', '#documents-added')
+    await expect(page.locator('.govuk-error-message')).toHaveText([
+      messageWithPrefix
+    ])
+    const errorGroup = page.locator('.govuk-form-group--error')
+    await expect(errorGroup).toHaveCount(1)
+    await expect(errorGroup.locator('#add-document-error')).toHaveText(
+      messageWithPrefix
+    )
+    await expect(errorGroup.getByRole('button')).toHaveText(copy.addAnother)
+    await expect(errorGroup.getByRole('button')).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    )
+    for (const label of [
+      copy.reference.label,
+      copy.documentType.label,
+      copy.dateOfIssue.label
+    ]) {
+      await expect(page.getByLabel(label)).not.toHaveAttribute(
+        'aria-invalid',
+        'true'
+      )
+    }
+    await expect(addedDocumentsTable(page).getByRole('row')).toHaveCount(
+      MAX_DOCUMENTS + 1
+    )
   })
 
   test('empty upload state has no serious or critical axe violations', async ({

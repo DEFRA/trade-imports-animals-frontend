@@ -72,12 +72,14 @@ const expectNoRegionCodePrefix = async (page) => {
   await expect(regionCodePrefix(page)).toBeHidden()
 }
 
+const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
+
 const saveOriginAnswerAndGoBackFromCommodities = async (page) => {
   await chooseCountryOfOrigin(page, france.name)
   await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
   await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
   await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
-  await page.getByRole('link', { name: 'Back', exact: true }).click()
+  await backLink(page).click()
 }
 
 const reopenOriginAfterSaving = async (page, details = {}) => {
@@ -216,7 +218,7 @@ test.describe('origin feature', () => {
   test('back link returns to the dashboard when the page was opened from the dashboard', async ({
     page
   }) => {
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await backLink(page).click()
 
     await expect(page).toHaveURL(BASE)
   })
@@ -228,9 +230,7 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
     const reference = journeyIdFromPage(page)
 
-    const href = await page
-      .getByRole('link', { name: 'Back', exact: true })
-      .getAttribute('href')
+    const href = await backLink(page).getAttribute('href')
     const url = new URL(href)
     expect({
       origin: url.origin,
@@ -245,7 +245,7 @@ test.describe('origin feature', () => {
     })
   })
 
-  test('Overview requested for a notification with nothing saved shows the origin page', async ({
+  test('Overview requested for a notification with nothing saved shows the origin page, whose Back link opens the dashboard', async ({
     page
   }) => {
     const originUrl = page.url().split('?')[0]
@@ -254,6 +254,10 @@ test.describe('origin feature', () => {
 
     await expect(page).toHaveURL(originUrl)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await backLink(page).click()
+
+    await expect(page).toHaveURL(BASE)
   })
 
   test('back link returns to the overview when the page was opened from the overview after an answer is saved', async ({
@@ -265,7 +269,7 @@ test.describe('origin feature', () => {
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await openFromOverviewRow(page, hubCopy.rows.origin.title)
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await backLink(page).click()
 
     await expect(page).toHaveURL(hubUrl)
     await expectOverview(page)
@@ -275,7 +279,7 @@ test.describe('origin feature', () => {
     page
   }) => {
     await saveOriginAnswerAndGoBackFromCommodities(page)
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await backLink(page).click()
 
     await expect(page).toHaveURL(BASE)
   })
@@ -286,9 +290,7 @@ test.describe('origin feature', () => {
     await page.goto(`${BASE}/start`)
     await saveOriginAnswerAndGoBackFromCommodities(page)
 
-    const href = await page
-      .getByRole('link', { name: 'Back', exact: true })
-      .getAttribute('href')
+    const href = await backLink(page).getAttribute('href')
     const url = new URL(href)
     expect({ origin: url.origin, pathname: url.pathname }).toEqual({
       origin: new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin,
