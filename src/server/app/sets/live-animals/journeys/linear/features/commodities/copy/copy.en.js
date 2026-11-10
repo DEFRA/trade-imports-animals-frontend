@@ -12,6 +12,7 @@ export const copy = {
       'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).',
     searchButton: 'Search',
     noResults: 'No results found',
+    resultsAvailable: (count) => `${plural(count, 'result')} available`,
     selected: {
       heading: (count) => `${count} selected`,
       clearAll: 'Clear all',

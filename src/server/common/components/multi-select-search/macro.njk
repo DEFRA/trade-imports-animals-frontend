@@ -1,0 +1,65 @@
+{#
+  appMultiSelectSearch — a submitted search whose results the trader ticks,
+  refreshed in place when JavaScript runs. The caller body is the results:
+  whatever the page lists under the box, such as tick boxes, a summary of
+  what is chosen and hidden fields.
+
+  Params:
+    search         (object)  the appSubmittedSearch params for the box
+    resultsId      (string)  the id of the element holding the results
+    resultsUrl     (string)  where the enhancement posts the form for fresh
+                             results
+
+  Usage:
+  {% from "multi-select-search/macro.njk" import appMultiSelectSearch %}
+  {% call appMultiSelectSearch({
+    search: { id: "q", name: "q", value: query, label: { text: "Search" },
+              button: { text: "Search" } },
+    resultsId: "q-results",
+    resultsUrl: resultsUrl
+  }) %}
+    {{ resultsHtml }}
+  {% endcall %}
+
+  appMultiSelectSearchResults — the response a results URL answers with: the
+  results again, carrying the message to announce.
+
+  Params:
+    announcement   (string)  what a screen reader is told about the results
+
+  Usage:
+  {% call appMultiSelectSearchResults({ announcement: announcement }) %}
+    {{ resultsHtml }}
+  {% endcall %}
+#}
+{% from "submitted-search/macro.njk" import appSubmittedSearch %}
+
+{% macro appMultiSelectSearch(params) %}
+  <div data-module="app-multi-select-search" data-results-url="{{ params.resultsUrl }}">
+    {{ appSubmittedSearch({
+      id: params.search.id,
+      name: params.search.name,
+      value: params.search.value,
+      type: "search",
+      label: params.search.label,
+      hint: params.search.hint,
+      errorMessage: params.search.errorMessage,
+      attributes: {
+        "aria-controls": params.resultsId,
+        "autocomplete": "off"
+      },
+      button: params.search.button,
+      wrapperClasses: params.search.wrapperClasses
+    }) }}
+    <div class="govuk-visually-hidden" role="status" data-multi-select-search-status></div>
+    <div id="{{ params.resultsId }}" data-multi-select-search-results>
+      {{ caller() }}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro appMultiSelectSearchResults(params) %}
+  <div data-multi-select-search-results data-announcement="{{ params.announcement }}">
+    {{ caller() }}
+  </div>
+{% endmacro %}

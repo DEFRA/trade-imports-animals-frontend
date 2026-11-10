@@ -261,6 +261,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - A choice made under an earlier search has no tick box on screen, so it is
   sent back with the form as a hidden value.
+- With JavaScript the results refresh in place as the trader types, ticks,
+  removes or clears, through the shared multi-select search. The results are
+  the ones the page renders without JavaScript, so every rule below holds on
+  both paths. A polite status message gives the number of species a typed
+  search lists, or "No results found". A tick, a Remove or Clear all is not
+  announced, because the box and the summary already show it.
+- After a Remove or Clear all, the button pressed has gone, so focus moves to
+  the search box. After a tick, focus stays on the tick box.
+- If the results cannot be fetched, the page is posted as it is without
+  JavaScript, so the trader still gets the results.
+- One result is announced as "1 result available". The design announces
+  "1 results available"; the singular is open with the designer.
 - A search's results are listed in order: the commodity groups by their
   heading, and each group's species by the label they are offered under, over
   the page of results the search returned.

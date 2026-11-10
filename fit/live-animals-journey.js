@@ -605,7 +605,7 @@ export const searchCommodities = async (page, query) => {
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
+export const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
   page
     .getByRole('group', { name: commodityCode })
     .getByRole('checkbox', { name: labelFor(speciesLatinName), exact: true })

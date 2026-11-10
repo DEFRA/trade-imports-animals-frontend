@@ -11,6 +11,7 @@ import {
   withFlowOnlyAnswers,
   expectRemovalRefusedLogged,
   journeyRequest,
+  postHandlerEndingWith,
   postHandlerOf,
   errorViewContextFor,
   stubH,
@@ -437,6 +438,128 @@ describe('commodity search — removing one chosen species', () => {
       reason: 'no-species-for-key',
       key: tamperedKey
     })
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('commodity search — results refreshed in place', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const postResults = postHandlerEndingWith(search, `/${search.RESULTS_SLUG}`)
+
+  const refreshResults = (payload, startingFrom = []) =>
+    driveHandler(postResults, { payload, startingFrom })
+
+  it('Should point the page at its results route', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.resultsUrl).toBe(
+      pagePath(result.journeyId, search.RESULTS_SLUG)
+    )
+  })
+
+  it('Should render only the results for a search, ticking what is chosen and carrying the rest', async () => {
+    const result = await refreshResults(
+      {
+        action: 'search',
+        [search.SEARCH_FIELD]: 'felis',
+        selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
+    )
+    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(legendsOf(result)).toEqual(['01061900'])
+    expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
+    expect(result.view.context.selectedSummary.count).toBe(2)
+    expect(result.view.context.pageTitle).toBeUndefined()
+  })
+
+  it("Should store this search's rows beside the rows already shown", async () => {
+    const result = await refreshResults(
+      { action: 'search', [search.SEARCH_FIELD]: 'furo' },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(keysOf(storedSearchRowsOf(result))).toEqual([
+      BOS_TAURUS_KEY,
+      lineKey(MUSTELA_PUTORIUS_FURO_ROW)
+    ])
+  })
+
+  it('Should announce how many species a search lists', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'buffalo'
+    })
+    expect(result.view.context.announcement).toBe('3 results available')
+  })
+
+  it('Should announce a search that lists one species in the singular', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'furo'
+    })
+    expect(result.view.context.announcement).toBe('1 result available')
+  })
+
+  it('Should announce a long-enough search that matches nothing', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'zzzzzz'
+    })
+    expect(result.view.context.announcement).toBe('No results found')
+  })
+
+  it('Should announce nothing for a query shorter than three characters', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'Bo'
+    })
+    expect(result.view.context.announcement).toBe('')
+  })
+
+  it('Should honour a remove, leaving the other choice in the summary', async () => {
+    const result = await refreshResults(
+      {
+        action: removeActionFor(BOS_TAURUS_KEY),
+        selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
+    )
+    expect(result.view.context.carriedKeys).toEqual([FELIS_CATUS_KEY])
+    expect(result.view.context.selectedSummary.count).toBe(1)
+  })
+
+  it('Should empty the summary on Clear all, keeping the results', async () => {
+    const result = await refreshResults(
+      {
+        action: 'clear',
+        [search.SEARCH_FIELD]: 'buffalo',
+        selection: [BOS_TAURUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(result.view.context.selectedSummary.count).toBe(0)
+    expect(legendsOf(result)).toEqual(['0102'])
+  })
+
+  it('Should refuse a remove naming a key the stored search rows never held, and log one refusal', async () => {
+    const tamperedKey = '0102|Not a species'
+    const result = await refreshResults(
+      { action: removeActionFor(tamperedKey), species: BOS_TAURUS_KEY },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      reason: 'no-species-for-key',
+      key: tamperedKey
+    })
+  })
+
+  it('Should save no commodity lines, even when posted ticks and no action', async () => {
+    const result = await refreshResults({ species: BOS_TAURUS_KEY }, [
+      afterSearchShowed(BOS_TAURUS_ROW)
+    ])
+    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(result.view.context.selectedSummary.count).toBe(1)
     expect(result.after).toEqual(result.before)
   })
 })
