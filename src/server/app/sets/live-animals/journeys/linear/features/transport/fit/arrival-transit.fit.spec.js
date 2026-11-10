@@ -4,6 +4,9 @@ import {
   MEANS_OF_TRANSPORT_SELECT,
   LANDINGS,
   addTransitCountry,
+  answerArrivalDetails,
+  answerTransitCountries,
+  answerTransporter,
   choosePortOfEntry,
   describeCalendarPosition,
   expectOverview,
@@ -1042,6 +1045,33 @@ test.describe('transit countries list, limits and persistence', () => {
 
     const removeCell = page.getByRole('cell', { name: 'Remove France' })
     await expect(removeCell).toHaveCSS('text-align', 'right')
+  })
+})
+
+test.describe('transport pages Save and continue order', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('arrival details lead to transit countries, then the transporter list, then Upload documents', async ({
+    page
+  }) => {
+    await openArrival(page)
+
+    await answerArrivalDetails(page)
+    await answerTransitCountries(page)
+    await answerTransporter(page)
+  })
+
+  test('countries added on transit countries are saved in the order they were added', async ({
+    page
+  }) => {
+    await openTransit(page)
+
+    await answerTransitCountries(page)
+
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(listedCountryNames(page)).toHaveText(['France', 'Belgium'])
   })
 })
 

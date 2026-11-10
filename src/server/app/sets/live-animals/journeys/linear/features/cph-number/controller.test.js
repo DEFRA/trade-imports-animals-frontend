@@ -4,12 +4,14 @@ import {
   driveHandler,
   expectNoRefusalLogged,
   postHandlerOf,
+  trailQuery,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { CYA_SLUG, withTrail } from '../../../../../../shared/kit.js'
+import { TRAIL_START } from '../../../../../../shared/trail.js'
 
 import { addressesPage } from '../addresses/page.js'
 import { cphNumberPage } from './page.js'
@@ -162,7 +164,7 @@ describe('GET cph-number — the stored number back in its parts', () => {
   })
 })
 
-describe('cph-number — entry from the addresses page (?return=addresses)', () => {
+describe("cph-number — Back and the save's next page by where the trader came from", () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   const fromReview = { from: CYA_SLUG }
@@ -199,6 +201,19 @@ describe('cph-number — entry from the addresses page (?return=addresses)', () 
       expect(result.response).toEqual({
         redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
           CYA_SLUG
+        ])
+      })
+    })
+
+    it('Should go to the consignment addresses page with the CPH page after the overview on the trail when entered from the overview', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: trailQuery(TRAIL_START.overview)
+      })
+      expect(result.response).toEqual({
+        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
+          TRAIL_START.overview,
+          cphNumberPage.slug
         ])
       })
     })

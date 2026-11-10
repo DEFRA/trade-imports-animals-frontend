@@ -13,8 +13,10 @@ import {
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
+  LANDINGS,
   openCommodityDetails,
   openOverview,
+  selectSpecies,
   signIn,
   withinFullWidthColumn,
   withinTwoThirdsColumn
@@ -601,7 +603,7 @@ test.describe('animal identification selected commodities summary', () => {
     ).toBeVisible()
   })
 
-  test('offers Add another commodity while there are commodities to identify', async ({
+  test('Add another commodity opens What are you importing?, and saving a further species returns to identification details', async ({
     page
   }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW, '2']])
@@ -611,6 +613,19 @@ test.describe('animal identification selected commodities summary', () => {
 
     await expect(
       page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+
+    await selectSpecies(page, [FELIS_CATUS_ROW])
+    await saveAndContinue(page).click()
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.animalIdentification.slug}`)
+    )
+    await expect(
+      page.getByRole('heading', {
+        name: LANDINGS.animalIdentification.title,
+        exact: true
+      })
     ).toBeVisible()
   })
 })

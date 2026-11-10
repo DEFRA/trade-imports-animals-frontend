@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectStackedOnSameRightEdge,
   journeyUrl,
+  LANDINGS,
   openDatePicker,
   openDocuments,
   PHONE_VIEWPORT,
@@ -696,6 +697,30 @@ test.describe('document upload saved rows', () => {
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(page.getByLabel(copy.reference.label)).toHaveValue('')
     await expect(row).toContainText(copy.scanTags.complete)
+  })
+
+  test('Save and add another stays on Upload documents with the row listed, and Save and continue then opens Roles and addresses', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page)
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.documents.slug}`)
+    )
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      documentRowFor(page, validDocument.accompanyingDocumentReference)
+    ).toContainText(copy.types.ITAHC)
+
+    await submitContinue(page)
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.addresses.slug}`)
+    )
+    await expect(
+      page.getByRole('heading', { name: LANDINGS.addresses.title, exact: true })
+    ).toBeVisible()
   })
 
   test('keeps the saved row inside the file upload group and the page actions outside it', async ({
