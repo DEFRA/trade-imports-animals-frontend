@@ -10,7 +10,11 @@ import {
 } from './engine/persistence/session.js'
 import { records as realRecords } from './services/persistence/records/real/index.js'
 import { session as sessionStub } from './services/persistence/session/stub.js'
-import { recordingH } from './engine/test-support.js'
+import {
+  actWithSessionOrganisation,
+  authenticatedCredentials,
+  recordingH
+} from './engine/test-support.js'
 import { obligationSet } from './model/obligations/manifest.js'
 
 const { countryOfOrigin } = obligationSet()
@@ -43,8 +47,15 @@ const buildRequest = () => ({
   params: { journeyId: ref },
   state: { [knownJourneysCookie()]: [ref] },
   app: {},
-  headers: {}
+  headers: {},
+  auth: {
+    isAuthenticated: true,
+    credentials: authenticatedCredentials
+  },
+  logger: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} }
 })
+
+const actOnRequest = (request, run) => actWithSessionOrganisation(request, run)
 
 const getsFor = (url) =>
   fetchMocker
@@ -102,8 +113,10 @@ describe('one load per request — real records adapter GET count', () => {
   test('Should issue exactly one GET for a read-then-write request, plus one PUT to the notifications endpoint', async () => {
     const request = buildRequest()
 
-    const before = await get(request, recordingH())
-    await commit(request, recordingH(), { countryOfOrigin: 'FR' })
+    const before = await actOnRequest(request, () => get(request, recordingH()))
+    await actOnRequest(request, () =>
+      commit(request, recordingH(), { countryOfOrigin: 'FR' })
+    )
 
     expect(before.fulfilment).toEqual({})
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
@@ -115,9 +128,11 @@ describe('one load per request — real records adapter GET count', () => {
   test('Should serve a post-write read from the request without a stale value or extra GET', async () => {
     const request = buildRequest()
 
-    await get(request, recordingH())
-    await commit(request, recordingH(), { countryOfOrigin: 'FR' })
-    const after = await get(request, recordingH())
+    await actOnRequest(request, () => get(request, recordingH()))
+    await actOnRequest(request, () =>
+      commit(request, recordingH(), { countryOfOrigin: 'FR' })
+    )
+    const after = await actOnRequest(request, () => get(request, recordingH()))
 
     expect(after.answers.countryOfOrigin).toBe('FR')
     expect(after.fulfilment).toEqual({ [countryOfOrigin.id]: 'FR' })
@@ -125,8 +140,10 @@ describe('one load per request — real records adapter GET count', () => {
   })
 
   test('Should not leak the load across requests — a fresh request re-fetches', async () => {
-    await get(buildRequest(), recordingH())
-    await get(buildRequest(), recordingH())
+    const first = buildRequest()
+    const second = buildRequest()
+    await actOnRequest(first, () => get(first, recordingH()))
+    await actOnRequest(second, () => get(second, recordingH()))
 
     expect(getsFor(fulfilmentUrl)).toHaveLength(2)
   })

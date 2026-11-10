@@ -23,7 +23,11 @@ import {
   knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { store } from '../../../../../../engine/store.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  actWithSessionOrganisation,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
@@ -160,7 +164,10 @@ describe('cancel amendment routes', () => {
     const journeyId = await startAmend()
     const h = stubH()
 
-    const response = await post(journeyRequest(journeyId), h)
+    const request = journeyRequest(journeyId)
+    const response = await actWithSessionOrganisation(request, () =>
+      post(request, h)
+    )
 
     expect(response.statusCode).toBe(500)
     expect(response.context.recoverableError).toBe(true)

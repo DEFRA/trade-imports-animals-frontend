@@ -26,7 +26,9 @@ import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { encodeEvaluatorFulfilments } from '../services/persistence/records/fulfilment-codec/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import {
+  actWithSessionOrganisation,
   authenticatedActor,
+  authenticatedCredentials,
   backendJourneyId,
   backendNotification,
   journeyRequest,
@@ -232,7 +234,9 @@ describe('#amendJourney against the backend', () => {
     fetchMocker.mockResponse('Not Found', { status: 404 })
     const request = journeyRequest(backendJourneyId, { knownJourneyIds: [] })
 
-    const editable = await amendJourney(request, recordingH(), backendJourneyId)
+    const editable = await actWithSessionOrganisation(request, async () =>
+      amendJourney(request, recordingH(), backendJourneyId)
+    )
 
     expect(editable).toBeUndefined()
     expect(
@@ -351,7 +355,8 @@ describe('#listKnownJourneys against the backend', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should request the page asked for without the organisation', async () => {
+  it('Should send the signed-in organisation on the list request', async () => {
+    const sessionOrg = '5900077'
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 2,
@@ -362,14 +367,25 @@ describe('#listKnownJourneys against the backend', () => {
       })
     )
 
-    await listKnownJourneys(
-      journeyRequest(backendJourneyId, { knownJourneyIds: [backendJourneyId] }),
-      { page: 2 }
+    const request = journeyRequest(backendJourneyId, {
+      knownJourneyIds: [backendJourneyId],
+      auth: {
+        isAuthenticated: true,
+        credentials: { ...authenticatedCredentials, organisationId: sessionOrg }
+      }
+    })
+
+    await actWithSessionOrganisation(request, async () =>
+      listKnownJourneys(request, { page: 2 })
     )
 
-    const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationsUrl}?page=2&sort=arrivalDate,desc`)
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
+    const [backendRequest] = fetchMocker.requests()
+    expect(backendRequest.url).toBe(
+      `${notificationsUrl}?page=2&sort=arrivalDate,desc`
+    )
+    expect(backendRequest.headers.get('Trade-Imports-Organisation-Id')).toBe(
+      sessionOrg
+    )
   })
 })
 
@@ -382,9 +398,9 @@ describe('backend requests carry the authenticated actor', () => {
   })
 
   it('Should send the authenticated actor as the body of the create request', async () => {
-    await startJourney(
-      journeyRequest(undefined, { knownJourneyIds: [] }),
-      recordingH()
+    const request = journeyRequest(undefined, { knownJourneyIds: [] })
+    await actWithSessionOrganisation(request, async () =>
+      startJourney(request, recordingH())
     )
 
     expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
@@ -417,11 +433,11 @@ describe('backend requests carry the authenticated actor', () => {
   ])(
     'Should send the authenticated actor as the body of the %s request',
     async (_name, act, expectedUrl) => {
-      await act(
-        journeyRequest(backendJourneyId, {
-          knownJourneyIds: [backendJourneyId]
-        }),
-        recordingH()
+      const request = journeyRequest(backendJourneyId, {
+        knownJourneyIds: [backendJourneyId]
+      })
+      await actWithSessionOrganisation(request, async () =>
+        act(request, recordingH())
       )
 
       const lastRequest = fetchMocker.requests().at(-1)
@@ -463,8 +479,10 @@ describe('#replaceJourneyFulfilment', () => {
     })
     request.payload = { concurrencyToken: '4' }
 
-    await replaceJourneyFulfilment(request, backendJourneyId, first)
-    await replaceJourneyFulfilment(request, backendJourneyId, second)
+    await actWithSessionOrganisation(request, async () => {
+      await replaceJourneyFulfilment(request, backendJourneyId, first)
+      await replaceJourneyFulfilment(request, backendJourneyId, second)
+    })
 
     const puts = fetchMocker.requests().filter(({ method }) => method === 'PUT')
     const tokensSent = await Promise.all(

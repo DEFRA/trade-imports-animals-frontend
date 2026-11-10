@@ -1,3 +1,2 @@
-import { traceHeaders } from '../../../../http/trace-headers.js'
-
-export const headers = () => traceHeaders('application/json')
+export { ORGANISATION_ID_HEADER } from '../../../../http/organisation-headers.js'
+export { notificationBackendHeaders as headers } from '../../../../http/organisation-headers.js'

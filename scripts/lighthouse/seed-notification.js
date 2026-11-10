@@ -208,7 +208,7 @@ const TRANSPORTER_STEPS = new Map([
   ]
 ])
 
-/** The notification shapes the audit seeds, keyed by the name the URL list uses. */
+/** The notification shapes the audit seeds, by shape name. */
 export const SEED_SHAPES = {
   draft: {
     reasonForImport: values.reasonForImport,
@@ -265,6 +265,11 @@ export const journeyIdIn = (location) => {
 
 export const createNotification = async (client) => {
   const dashboard = await client.document(dashboardPath())
+  if (dashboard.status !== HTTP_OK) {
+    throw new Error(
+      `Dashboard did not render (${dashboard.status}) before creating a notification`
+    )
+  }
   const created = await client.submit(createPath(), {}, dashboard.crumb)
   const journeyId = journeyIdIn(created.location)
   if (created.status !== HTTP_FOUND || !journeyId) {

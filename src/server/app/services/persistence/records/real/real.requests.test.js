@@ -14,7 +14,16 @@ import {
 } from '../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
+import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import { mapStatus, records } from './index.js'
+
+const DEFAULT_TEST_ORG = '5900001'
+const LIST_TEST_ORG = '5900042'
+
+const asOrganisation = (organisationId, run) =>
+  withOrganisationId(organisationId, run)
+
+const asDefaultOrganisation = (run) => asOrganisation(DEFAULT_TEST_ORG, run)
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -68,7 +77,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
   it('Should create a notification via POST /notifications with an empty fulfilments payload', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical()), { status: 200 })
 
-    const created = await records.create()
+    const created = await asDefaultOrganisation(() => records.create())
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -90,7 +99,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
   it('Should include actor in the create request body when provided', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical()), { status: 200 })
 
-    await records.create(actor)
+    await asDefaultOrganisation(() => records.create(actor))
 
     expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
       notification: { fulfilments: [] },
@@ -106,7 +115,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
     let surfaced
     try {
-      await records.create()
+      await asDefaultOrganisation(() => records.create())
     } catch (error) {
       surfaced = error
     }
@@ -136,7 +145,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       JSON.stringify(canonical({ fulfilments: encoded }))
     )
 
-    const loaded = await records.load({ journeyId })
+    const loaded = await asDefaultOrganisation(() =>
+      records.load({ journeyId })
+    )
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
@@ -145,16 +156,24 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(fetchMocker.requests()).toHaveLength(1)
   })
 
-  it('Should return undefined when the fulfilment GET returns 404', async () => {
-    fetchMocker.mockResponse('Not Found', { status: 404 })
+  it.each([
+    [404, 'Not Found'],
+    [403, 'Forbidden']
+  ])(
+    'Should return undefined when the fulfilment GET returns %s',
+    async (status, body) => {
+      fetchMocker.mockResponse(body, { status })
 
-    const loaded = await records.load({ journeyId })
+      const loaded = await asDefaultOrganisation(() =>
+        records.load({ journeyId })
+      )
 
-    const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
-    expect(request.method).toBe('GET')
-    expect(loaded).toBeUndefined()
-  })
+      const [request] = fetchMocker.requests()
+      expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
+      expect(request.method).toBe('GET')
+      expect(loaded).toBeUndefined()
+    }
+  )
 })
 
 describe('real records adapter — fulfilment writes', () => {
@@ -180,9 +199,11 @@ describe('real records adapter — fulfilment writes', () => {
       { status: 200 }
     )
 
-    const saved = await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: DRAFT, concurrencyToken: 3 }
-    })
+    const saved = await asDefaultOrganisation(() =>
+      records.replaceFulfilment(journeyId, snapshot, {
+        known: { journeyId, status: DRAFT, concurrencyToken: 3 }
+      })
+    )
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -210,10 +231,12 @@ describe('real records adapter — fulfilment writes', () => {
     })
 
     await expect(
-      records.replaceFulfilment(
-        journeyId,
-        assembleFulfilments({ countryOfOrigin: 'FR' }),
-        { known: { journeyId, status: DRAFT, concurrencyToken: 0 } }
+      asDefaultOrganisation(() =>
+        records.replaceFulfilment(
+          journeyId,
+          assembleFulfilments({ countryOfOrigin: 'FR' }),
+          { known: { journeyId, status: DRAFT, concurrencyToken: 0 } }
+        )
       )
     ).rejects.toMatchObject({
       name: 'BackendRequestError',
@@ -229,10 +252,12 @@ describe('real records adapter — fulfilment writes', () => {
       { status: 200 }
     )
 
-    await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: DRAFT },
-      actor
-    })
+    await asDefaultOrganisation(() =>
+      records.replaceFulfilment(journeyId, snapshot, {
+        known: { journeyId, status: DRAFT },
+        actor
+      })
+    )
 
     expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
       notification: {
@@ -289,9 +314,13 @@ describe('real records adapter — lifecycle and list', () => {
       ]
     )
 
-    const submitted = await records.finalise(journeyId, actor, 4)
-    const amended = await records.amend(journeyId, actor)
-    const restored = await records.cancelAmend(journeyId, actor)
+    const { submitted, amended, restored } = await asDefaultOrganisation(
+      async () => ({
+        submitted: await records.finalise(journeyId, actor, 4),
+        amended: await records.amend(journeyId, actor),
+        restored: await records.cancelAmend(journeyId, actor)
+      })
+    )
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -331,7 +360,9 @@ describe('real records adapter — lifecycle and list', () => {
       { status: 409 }
     )
 
-    await expect(records.finalise(journeyId, actor, 4)).rejects.toMatchObject({
+    await expect(
+      asDefaultOrganisation(() => records.finalise(journeyId, actor, 4))
+    ).rejects.toMatchObject({
       code: 'STALE_CONCURRENCY_TOKEN',
       status: 409
     })
@@ -349,7 +380,9 @@ describe('real records adapter — lifecycle and list', () => {
       { status: 201 }
     )
 
-    const copied = await records.copy(journeyId, 7, actor)
+    const copied = await asDefaultOrganisation(() =>
+      records.copy(journeyId, 7, actor)
+    )
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(
@@ -369,7 +402,9 @@ describe('real records adapter — lifecycle and list', () => {
       status: 200
     })
 
-    const deleted = await records.softDelete(journeyId, actor)
+    const deleted = await asDefaultOrganisation(() =>
+      records.softDelete(journeyId, actor)
+    )
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -387,7 +422,9 @@ describe('real records adapter — lifecycle and list', () => {
     })
 
     await expect(
-      records.list({ page: 1, sort: 'createdAt,asc' })
+      asDefaultOrganisation(() =>
+        records.list({ page: 1, sort: 'createdAt,asc' })
+      )
     ).rejects.toMatchObject({
       name: 'BackendRequestError',
       status: 500
@@ -405,11 +442,13 @@ describe('real records adapter — lifecycle and list', () => {
       })
     )
 
-    await records.list({
-      page: 1,
-      sort: 'createdAt,asc',
-      referenceNumber: journeyId
-    })
+    await asDefaultOrganisation(() =>
+      records.list({
+        page: 1,
+        sort: 'createdAt,asc',
+        referenceNumber: journeyId
+      })
+    )
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(
@@ -418,7 +457,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(request.method).toBe('GET')
   })
 
-  it("Should not send the reader's organisation to the backend", async () => {
+  it("Should send the reader's organisation to the backend", async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -429,9 +468,11 @@ describe('real records adapter — lifecycle and list', () => {
       })
     )
 
-    await records.list({ page: 1 })
+    await asOrganisation(LIST_TEST_ORG, () => records.list({ page: 1 }))
 
     const [request] = fetchMocker.requests()
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe(
+      LIST_TEST_ORG
+    )
   })
 })
