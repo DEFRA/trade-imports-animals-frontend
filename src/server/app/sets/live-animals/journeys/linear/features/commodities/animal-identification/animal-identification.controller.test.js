@@ -1,7 +1,7 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { additionalDetailsPage } from '../../additional-details/page.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
@@ -57,6 +57,7 @@ const getHandler = animalIdentification.routes.find(
 ).handler
 
 const MICROCHIP_FIELD_0 = 'animalIdentifierMicrochip-0'
+const MICROCHIP_FIELD_1 = 'animalIdentifierMicrochip-1'
 const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
@@ -66,8 +67,11 @@ const removeUnitAction = (line, unitIndex) =>
   `remove:${lineKey(line)}:${unitIndex}`
 const BOS_TAURUS_1 = `${labelFor(BOS_TAURUS)} 1`
 const SAVE_AND_ADD_ANOTHER = 'Save and add another'
+const SAVE_AND_FINISH = 'Save and finish'
 const IMPLICIT_SUBMIT = 'implicit-submit'
 const EAR_TAG_REFUSED = 'Ear tag must be 58 characters or less'
+const AT_LEAST_ONE_IDENTIFIER_REFUSED =
+  'Enter at least one identifier for this animal'
 
 const felisCatusLine = (extra = {}) => lineOf(FELIS_CATUS_ROW, extra)
 
@@ -563,11 +567,71 @@ describe(`${SUITE} — Save and add another`, () => {
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
-      'Enter at least one identifier for this animal'
+      AT_LEAST_ONE_IDENTIFIER_REFUSED
     )
     expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
     expectNoRefusalLogged(result.logger)
+  })
+
+  it("Should reject a blank card's own Save and add another beside a filled sibling, reading neither card's value", async () => {
+    const result = await driveHandler(post, {
+      seed: withOriginSaved({
+        commodityLines: [
+          bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
+          felisCatusLine({ numberOfAnimalsQuantity: '2' })
+        ]
+      }),
+      payload: { action: 'add:1', [EAR_TAG_FIELD_0]: 'UK1' }
+    })
+    expect(result.view.context.errors[MICROCHIP_FIELD_1]).toBe(
+      AT_LEAST_ONE_IDENTIFIER_REFUSED
+    )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
+    expect(result.after.commodityLines[1].animalIdentifiers).toBeUndefined()
+    expectNoRefusalLogged(result.logger)
+  })
+
+  it("Should reject a blank Save and finish on a line's last animal without appending it", async () => {
+    const result = await driveHandler(post, {
+      seed: withOriginSaved({
+        commodityLines: [
+          lineOf(BOS_TAURUS_ROW, {
+            numberOfAnimalsQuantity: '2',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+          })
+        ]
+      }),
+      payload: { action: 'add:0' }
+    })
+    expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
+      AT_LEAST_ONE_IDENTIFIER_REFUSED
+    )
+    expect(result.view.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    const [card] = result.view.context.sections.flatMap(
+      (section) => section.cards
+    )
+    expect(card.saveButtonText).toBe(SAVE_AND_FINISH)
+    expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
+    expectNoRefusalLogged(result.logger)
+  })
+
+  it('Should save one typed identifier with the rest blank and list it in the saved-animals table', async () => {
+    const result = await driveHandler(post, {
+      seed: withOriginSaved({
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
+      }),
+      payload: { action: 'add:0', [EAR_TAG_FIELD_0]: 'UK1' }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
+    })
+
+    const [card] = await viewCards(result.after)
+    expect(savedIdentifierColumns(card)).toEqual(['Ear tag', 'Passport'])
+    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', ''])
   })
 
   it('Should surface the engine cap rejection as a card-level error when a stale form posts once every animal is entered, and log the refusal', async () => {
@@ -723,6 +787,21 @@ describe(`${SUITE} — Save and continue`, () => {
     expect(result.response).toEqual({
       redirect: additionalDetailsAfterSaving(result.journeyId)
     })
+  })
+})
+
+describe(`${SUITE} — Save and return to overview`, () => {
+  setupIdentificationEngine()
+
+  it('Should exit to the overview without appending when every identifier is blank', async () => {
+    const result = await driveHandler(post, {
+      seed: withOriginSaved({
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
+      }),
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
   })
 })
 

@@ -12,6 +12,7 @@ import {
   numberOfAnimalsFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectOverview,
   journeyUrl,
   LANDINGS,
   openCommodityDetails,
@@ -31,6 +32,7 @@ const PASSPORT_FIELD = '#animalIdentifierPassport-0'
 const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
 const SECOND_EAR_TAG_FIELD = '#animalIdentifierEarTag-1'
+const ERROR_SUMMARY_SELECTOR = '.govuk-error-summary'
 const BOS_TAURUS_CODE_HEADING = BOS_TAURUS_ROW.commodityCode
 const GOVUK_GREEN = 'rgb(15, 122, 82)'
 const REGULAR_FONT_WEIGHT = '400'
@@ -73,13 +75,13 @@ const entryLabelsOf = (fields) =>
   fields.map((field) => copy.identification.identifierLabels[field])
 
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.locator(ERROR_SUMMARY_SELECTOR).getByRole('link', { name: message })
 
-const expectErrorFocus = async (page, message, selector) => {
+const expectErrorFocus = async (page, message, field) => {
   const link = errorLink(page, message)
   await expect(link).toBeVisible()
   await link.click()
-  await expect(page.locator(selector)).toBeFocused()
+  await expect(field).toBeFocused()
 }
 
 const validPermanentAddress = {
@@ -654,9 +656,49 @@ test.describe('animal identification identifier validation', () => {
     await expectErrorFocus(
       page,
       copy.identification.errors.atLeastOneIdentifier,
-      MICROCHIP_FIELD
+      page.locator(MICROCHIP_FIELD)
     )
     await expect(page.locator(MICROCHIP_FIELD)).toHaveValue('')
+  })
+
+  test('validation: a blank card is refused on its own Save and add another, beside a filled sibling card, saving neither', async ({
+    page
+  }) => {
+    await openIdentification(page, [
+      [BOS_TAURUS_ROW, '2'],
+      [BISON_BISON_ROW, '2']
+    ])
+    const bosTaurusCard = speciesCard(page, BOS_TAURUS_ROW)
+    const bisonBisonCard = speciesCard(page, BISON_BISON_ROW)
+    const earTagLabel =
+      copy.identification.identifierLabels.animalIdentifierEarTag
+    const bosTaurusEarTag = bosTaurusCard.getByLabel(earTagLabel, {
+      exact: true
+    })
+    const bisonEarTag = bisonBisonCard.getByLabel(earTagLabel, { exact: true })
+    await bosTaurusEarTag.fill('UK000000000001')
+    await bisonBisonCard
+      .getByRole('button', { name: copy.identification.saveAndAddAnother })
+      .click()
+
+    await expectErrorFocus(
+      page,
+      copy.identification.errors.atLeastOneIdentifier,
+      bisonEarTag
+    )
+    await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toHaveCount(0)
+    await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 1)).toHaveCount(0)
+    await expect(bosTaurusEarTag).toHaveValue('')
+  })
+
+  test('validation: Save and return to overview with every identifier blank shows no error and goes to the overview', async ({
+    page
+  }) => {
+    await openIdentification(page, [[BOS_TAURUS_ROW]])
+    await saveAndReturnToHub(page).click()
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(0)
   })
 
   for (const [species, field, label] of identifierValidations) {
@@ -671,7 +713,7 @@ test.describe('animal identification identifier validation', () => {
       await expectErrorFocus(
         page,
         copy.identification.errors.identifierMax[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
     })
@@ -712,7 +754,7 @@ test.describe('animal identification address validation', () => {
       await expectErrorFocus(
         page,
         copy.identification.errors.addressMandatory[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue('')
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
@@ -733,7 +775,7 @@ test.describe('animal identification address validation', () => {
       await expectErrorFocus(
         page,
         copy.identification.errors.addressFormat[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
@@ -1111,7 +1153,7 @@ test.describe('animal identification without JavaScript', () => {
       .getByRole('button', { name: copy.identification.saveAndAddAnother })
       .click()
 
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(0)
     await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toBeVisible()
     await expect(page.locator(EAR_TAG_FIELD)).toHaveValue('')
     await expect(page.locator(SECOND_EAR_TAG_FIELD)).toHaveValue('')
