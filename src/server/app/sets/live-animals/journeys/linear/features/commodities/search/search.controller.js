@@ -209,7 +209,7 @@ export const routes = [
   {
     method: 'POST',
     path: pageRoutePath(RESULTS_SLUG),
-    options: kit.routeOptions,
+    options: kit.pageRouteOptions(page),
     handler: postResults
   }
 ]
