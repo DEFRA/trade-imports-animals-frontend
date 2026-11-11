@@ -116,6 +116,30 @@ jobs:
       - name: Security audit
         run: npm run security-audit
 
+  # Not a required check: it flags a change for a person to decide and never
+  # blocks the merge.
+  signed-off-pages:
+    name: Signed-off pages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: List changed tests of signed-off pages
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          set -o pipefail
+          npm run --silent check:signed-off-tests -- "$BASE_REF" | tee -a "$GITHUB_STEP_SUMMARY"
+
   playwright-version:
     name: Playwright version
     runs-on: ubuntu-latest
