@@ -9,13 +9,14 @@ import {
   saveAndContinue,
   saveAndReturnToHub,
   expectNoSeriousOrCriticalViolations,
-  expectOverview,
+  LANDINGS,
   expectSpeciesSelected,
   expectStyle,
   expectThreeSaveControls,
   openCommoditySearch,
   openOverview,
   pressSpeciesRemove,
+  saveAndExpectLanding,
   searchCommodities,
   selectSpecies,
   selectedSummary,
@@ -75,7 +76,7 @@ const signInAndOpenSelection = async ({ page }) => {
 
 const saveGallusGallusUnderItsFirstCodeThenSearchGallus = async (page) => {
   await selectSpecies(page, [GALLUS_GALLUS_ROW])
-  await saveAndContinue(page).click()
+  await saveAndExpectLanding(page, LANDINGS.importReason)
   await reopenSelection(page)
   await searchCommodities(page, 'gallus')
 }
@@ -560,8 +561,7 @@ test.describe('commodity search as the trader types', () => {
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
     await expectSpeciesSelected(page, BOS_TAURUS_ROW)
 
-    await saveAndContinue(page).click()
-    await expectOverview(page)
+    await saveAndExpectLanding(page, LANDINGS.importReason)
     await reopenSelection(page)
     await expectSelectedHeading(page, 2)
   })
@@ -660,9 +660,8 @@ test.describe('commodity search as the trader types', () => {
       .click()
     await searchCommodities(page, BOS_TAURUS_ROW.speciesLatinName)
     await tickSpecies(page, BOS_TAURUS_ROW)
-    await saveAndContinue(page).click()
+    await saveAndExpectLanding(page, LANDINGS.importReason)
 
-    await expectOverview(page)
     await reopenSelection(page)
     await expectSelectedHeading(page, 1)
     await expectSpeciesSelected(page, BOS_TAURUS_ROW)
