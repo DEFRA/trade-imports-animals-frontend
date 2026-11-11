@@ -28,6 +28,13 @@ import { validation } from './validate.js'
 export const meta = { ...page, collects: ['contactAddress'], validation }
 const view = `${TEMPLATES}/features/contact/template`
 
+const loadContactOptions = (orgId) => {
+  const LARGEST_PAGE_THE_ADDRESS_BOOK_SERVES = 100
+  return addressBook.all(orgId, {
+    pageSize: LARGEST_PAGE_THE_ADDRESS_BOOK_SERVES
+  })
+}
+
 const copy = copyFor({ en, cy })
 
 const handshakeErrorSummary = (error) =>
@@ -101,7 +108,7 @@ const get = async (request, h) => {
   const current = await state.get(request, h)
   const { journey, answers } = current
   const orgId = organisationIdOf(request)
-  const options = [...(await addressBook.all(orgId))]
+  const options = [...(await loadContactOptions(orgId))]
   const { errors } = await validation.onStored(answers, {
     addressOptions: options
   })
@@ -158,7 +165,7 @@ const post = async (request, h) => {
       h,
       current,
       {},
-      await addressBook.all(orgId),
+      await loadContactOptions(orgId),
       issueAddAddressLink(request, h, journey),
       {
         errors,
@@ -187,7 +194,7 @@ const post = async (request, h) => {
         h,
         current,
         { selectedId: chosen?.id },
-        await addressBook.all(orgId),
+        await loadContactOptions(orgId),
         issueAddAddressLink(request, h, journey),
         {
           recoverableError: true,

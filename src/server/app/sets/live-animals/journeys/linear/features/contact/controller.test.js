@@ -231,6 +231,17 @@ describe('GET contact — INS add-address link', () => {
     )
     expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
   })
+
+  it('Should read the address book in pages of a hundred', async () => {
+    addressBookAnswering(addressBookPage())
+
+    await driveHandler(get)
+
+    const pageSizes = addressBookRequestUrls().map((url) =>
+      new URL(url).searchParams.get('pageSize')
+    )
+    expect(pageSizes).toEqual(['100'])
+  })
 })
 
 describe('POST contact — against the address book', () => {

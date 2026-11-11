@@ -101,17 +101,16 @@ export const search = async (orgId, { query = '', page = 1 } = {}) => {
 const pageNumbersFrom = (first, last) =>
   Array.from({ length: last - first + 1 }, (_, index) => first + index)
 
-/** Every address the organisation has saved, unpaginated — for the contact
- * picker, which renders a flat radio list rather than a searchable table.
- * Reads the book in its largest pages, a few requests at a time. */
-export const all = async (orgId) => {
+/** Every address the organisation has saved, unpaginated, read from the
+ * address book in pages of `pageSize` (its own default when not given), a
+ * few requests at a time. */
+export const all = async (orgId, { pageSize } = {}) => {
   if (isStubMode()) {
     return [...STUB_BOOK]
   }
 
   const PAGES_READ_AT_ONCE = 4
-  const readPage = (page) =>
-    client.listAddresses(orgId, { page, pageSize: client.MAX_API_PAGE_SIZE })
+  const readPage = (page) => client.listAddresses(orgId, { page, pageSize })
   const first = await readPage(1)
   const records = [...first.records]
   for (
