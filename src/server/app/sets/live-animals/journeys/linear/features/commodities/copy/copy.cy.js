@@ -23,6 +23,7 @@ export const copy = {
       clearAll: 'Clirio’r cyfan',
       remove: 'Tynnu'
     },
+    updateSelected: 'Diweddaru’r dewis',
     help: {
       summary: 'Help gyda chodau nwyddau',
       reference:

@@ -1,4 +1,5 @@
 const RESULTS_SELECTOR = '[data-multi-select-search-results]'
+const ENHANCED_CLASS = 'app-multi-select-search--enhanced'
 
 const formBodyFor = (form, submitter) => {
   const body = new URLSearchParams(new FormData(form))
@@ -197,6 +198,7 @@ class MultiSelectSearch {
     if (parts) {
       refreshOnEachChange($module, parts, resultsRefresher(parts))
       showDropdownOnFocusAndHideOnEscapeOrClickAway($module, parts)
+      $module.classList.add(ENHANCED_CLASS)
     }
   }
 }

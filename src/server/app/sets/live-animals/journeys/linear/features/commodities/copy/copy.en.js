@@ -18,6 +18,7 @@ export const copy = {
       clearAll: 'Clear all',
       remove: 'Remove'
     },
+    updateSelected: 'Update selected',
     help: {
       summary: 'Help with commodity codes',
       reference:

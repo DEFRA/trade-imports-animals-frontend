@@ -1,3 +1,4 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 
 {% macro commoditySearchResults(params) %}
@@ -21,6 +22,15 @@
         <p class="app-multi-select-search__message">{{ params.copy.noResults }}</p>
       {% endif %}
     </div>
+  {% endif %}
+
+  {% if params.commodityGroups.length %}
+    {{ govukButton({
+      text: params.copy.updateSelected,
+      classes: "govuk-button--secondary app-multi-select-search__update",
+      name: "action",
+      value: "search"
+    }) }}
   {% endif %}
 
   {% if params.selectedSummary.count %}

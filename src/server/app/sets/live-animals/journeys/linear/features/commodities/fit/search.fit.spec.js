@@ -49,6 +49,9 @@ const searchResults = (page) => page.locator('#commodity-search-results')
 
 const TRANSPARENT = 'rgba(0, 0, 0, 0)'
 
+const updateSelectedButton = (page) =>
+  page.getByRole('button', { name: copy.search.updateSelected })
+
 const resultsDropdown = (page) =>
   searchResults(page).locator('[data-multi-select-search-dropdown]')
 
@@ -736,6 +739,12 @@ test.describe('commodity search results list', () => {
     expect(shaded).toEqual([true, false, true])
   })
 
+  test('offers no Update selected button, as a tick updates what is chosen straight away', async ({
+    page
+  }) => {
+    await expect(updateSelectedButton(page)).toBeHidden()
+  })
+
   test('draws no ring round a hovered tick box', async ({ page }) => {
     const tickBox = speciesRows(page).nth(1).getByRole('checkbox')
     await tickBox.hover()
@@ -768,6 +777,23 @@ test.describe('commodity search without JavaScript', () => {
       .getByRole('button', { name: copy.search.selected.clearAll })
       .click()
     await expect(selectedSummary(page)).toHaveCount(0)
+  })
+
+  test('updates what is chosen when Update selected is pressed, keeping the search and its results', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'buffalo')
+    await tickSpecies(page, BUBALUS_BUBALIS_ROW)
+    await expect(selectedSummary(page)).toHaveCount(0)
+
+    await updateSelectedButton(page).click()
+
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, BUBALUS_BUBALIS_ROW)
+    await expect(searchBox(page)).toHaveValue('buffalo')
+    await expect(
+      page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox')
+    ).toHaveCount(3)
   })
 
   test('unticking a shown species then pressing its Remove leaves it unchosen and the other chosen', async ({

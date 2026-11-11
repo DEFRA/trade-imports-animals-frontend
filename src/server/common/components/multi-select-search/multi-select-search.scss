@@ -66,6 +66,15 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
   }
 }
 
+.app-multi-select-search__update {
+  margin-top: govuk-spacing(3);
+  margin-bottom: 0;
+}
+
+.app-multi-select-search--enhanced .app-multi-select-search__update {
+  display: none;
+}
+
 .app-multi-select-search__group-heading,
 .app-multi-select-search__message {
   @include govuk-font($size: 19);

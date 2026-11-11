@@ -269,6 +269,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   announced, because the box and the summary already show it.
 - After a Remove or Clear all, the button pressed has gone, so focus moves to
   the search box. After a tick, focus stays on the tick box.
+- Without JavaScript a tick cannot refresh the summary, so an "Update selected"
+  secondary button sits under the results. It runs the search again, keeping
+  the term and the ticks, and the summary and chips catch up. With JavaScript
+  the button is hidden, because a tick refreshes them itself.
 - The results are a list joined to the bottom of the search box, as the
   design draws it: one heading row per commodity, its species beneath, striped
   rows ruled the full width of the list (the first species under each heading

@@ -63,6 +63,12 @@ comment block lists them:
 - `__selected` and the classes inside it draw what has been chosen: the count
   with Clear all beside it, then a chip per choice under its group, each with a
   cross to remove it.
+- `__update` is a button under the results for use without JavaScript, such as
+  "Update selected" posting `action=search`. A tick cannot post the form
+  without a script, so this is how the chips catch up. The script adds
+  `app-multi-select-search--enhanced` to the component once it is wired, and
+  that class hides the button, because with JavaScript a tick refreshes the
+  chips itself.
 
 The styles sit on the page's own markup, so the look is the same with
 JavaScript on or off.
