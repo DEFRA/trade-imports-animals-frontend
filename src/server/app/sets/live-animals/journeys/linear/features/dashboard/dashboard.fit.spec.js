@@ -14,6 +14,7 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 
 const FEEDBACK_MAILTO = 'mailto:APHAServiceDesk@apha.gov.uk'
 
@@ -174,6 +175,21 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toHaveCount(0)
     await expect(actionFor(page, 'button', 'Amend', reference)).toHaveCount(0)
+  })
+
+  test('Resume on a draft notification opens its Overview', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reference = journeyIdFromPage(page)
+    await page.goto(BASE)
+
+    await actionFor(page, 'link', 'Resume', reference).click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: hubCopy.title })
+    ).toBeVisible()
+    expect(journeyIdFromPage(page)).toBe(reference)
   })
 
   test('copy as new renders in the same typeface as its neighbouring link actions', async ({
