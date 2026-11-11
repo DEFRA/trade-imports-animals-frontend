@@ -126,48 +126,6 @@ describe('#copy', () => {
     )
   })
 
-  it('Should warn that a false permanent address is fraud and say APHA can check it', () => {
-    expect(copy.identification.permanentAddress.warning).toBe(
-      'Providing a false address is an act of fraud'
-    )
-    expect(copy.identification.permanentAddress.definitionLeadIn).toBe(
-      'A permanent address is where an animal:'
-    )
-    expect(copy.identification.permanentAddress.definitionItems).toEqual([
-      'will permanently reside',
-      'can be checked by the Animal and Plant Health Agency (APHA)'
-    ])
-    expect(copy.identification.permanentAddress.question).toBe(
-      'Where will their permanent address be?'
-    )
-    expect(copyCy.identification.permanentAddress.definitionItems[1]).toContain(
-      'APHA'
-    )
-  })
-
-  it('Should label the permanent address postcode and phone fields, hint the country code and name both fields the same way in their errors', () => {
-    expect(copy.identification.address.postcode).toBe('Postcode or Zip code')
-    expect(copy.identification.address.phone).toBe('Phone number')
-    expect(copy.identification.addressHints.phone).toBe(
-      'For international numbers include the country code'
-    )
-    expect(copyCy.identification.addressHints.phone).toBe(
-      'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
-    )
-    expect(copy.identification.errors.addressMandatory.phone).toBe(
-      'Enter a phone number'
-    )
-    expect(copy.identification.errors.addressFormat.postcode).toBe(
-      'Postcode or Zip code must be 12 characters or less'
-    )
-    expect(copy.identification.errors.addressMandatory.postcode).toBe(
-      'Enter a postcode or Zip code'
-    )
-    expect(copy.identification.errors.addressFormat.phone).toBe(
-      'Phone number must be 20 characters or less'
-    )
-  })
-
   it('Should interpolate capReached', () => {
     expect(copy.identification.errors.capReached(2)).toBe(
       'You have already entered details for all 2 animals — remove a record before adding another'

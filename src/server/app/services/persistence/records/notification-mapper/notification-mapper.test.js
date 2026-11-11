@@ -110,14 +110,15 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
+          permanentAddressOrigin: 'newAddress',
           permanentAddress: {
             name: 'Owner',
+            phone: '01234 567890',
+            email: 'owner@example.com',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
               postcode: 'AB1 2CD',
-              countryCode: 'FR',
-              phone: '01234 567890',
-              email: 'owner@example.com'
+              countryCode: 'FR'
             }
           }
         },
@@ -469,6 +470,16 @@ describe('Mapper A — per-unit animal identifiers', () => {
         }
       ]
     })
+  })
+
+  test('Should carry no record of which option the trader chose for a permanent address', () => {
+    const notification = currentNotificationFrom(answersWithGaps())
+    const [firstUnit] = notification.commodities[0].species[0].animalIdentifiers
+
+    expect(firstUnit.permanentAddress).not.toHaveProperty(
+      'permanentAddressOrigin'
+    )
+    expect(firstUnit).not.toHaveProperty('permanentAddressOrigin')
   })
 
   test('Should carry a unit identified only by its microchip onto the species entry', () => {

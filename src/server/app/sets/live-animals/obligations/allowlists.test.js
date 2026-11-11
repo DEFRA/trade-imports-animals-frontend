@@ -12,6 +12,7 @@ import {
   earTag,
   horseName,
   permanentAddress,
+  permanentAddressOrigin,
   speciesLatinName
 } from './index.js'
 import {
@@ -28,6 +29,19 @@ import {
 import { COMMODITY_GROUPS } from '../services/commodities/stub.js'
 
 const UNLISTED_VALUE = 'Unicorn'
+
+const PERMANENT_ADDRESS_REASONS = {
+  permanentAddress: {
+    code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
+    explanation:
+      'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
+  },
+  permanentAddressOrigin: {
+    code: 'obligation.permanentAddressOrigin.applicable.becausePermanentAddressLine',
+    explanation:
+      'permanentAddressOrigin applies on units of lines whose commodityCode and species pair is in the permanent-address list'
+  }
+}
 
 let evaluate
 beforeAll(() => {
@@ -197,28 +211,39 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
   })
 }
 
-describe('permanent-address list → permanentAddress (unit-record-scoped)', () => {
-  const permanentAddressIndexesFor = (code, latinName) =>
+describe.each([
+  ['permanentAddress', permanentAddress],
+  ['permanentAddressOrigin', permanentAddressOrigin]
+])('permanent-address list → %s (unit-record-scoped)', (_name, obligation) => {
+  const decisionFor = (code, latinName) =>
     evaluate({
       [commodityCode.id]: { line1: code },
       [speciesLatinName.id]: { line1: latinName },
-      [permanentAddress.id]: { 'line1.unit1': '' }
-    }).obligations[permanentAddress.id].fulfilmentIndexes ?? []
+      [obligation.id]: { 'line1.unit1': '' }
+    }).obligations[obligation.id]
+
+  const indexesFor = (code, latinName) =>
+    decisionFor(code, latinName).fulfilmentIndexes ?? []
 
   for (const [code, latinName] of permanentAddressCodeSpecies()) {
-    it(`Should put permanentAddress in scope for a unit of ${latinName} under ${code}`, () => {
-      expect(permanentAddressIndexesFor(code, latinName)).toContain(
-        'line1.unit1'
-      )
+    it(`Should put ${obligation.name} in scope for a unit of ${latinName} under ${code}`, () => {
+      expect(indexesFor(code, latinName)).toContain('line1.unit1')
+      expect(decisionFor(code, latinName).reasons).toEqual([
+        PERMANENT_ADDRESS_REASONS[obligation.name]
+      ])
     })
   }
 
-  it('Should not put permanentAddress in scope for the genus Felis under 01061900', () => {
-    expect(permanentAddressIndexesFor('01061900', 'Felis')).toEqual([])
+  it(`Should not put ${obligation.name} in scope for the genus Felis under 01061900`, () => {
+    expect(indexesFor('01061900', 'Felis')).toEqual([])
   })
 
-  it('Should not put permanentAddress in scope for a listed species under another code', () => {
-    expect(permanentAddressIndexesFor('0102', 'Felis catus')).toEqual([])
+  it(`Should not put ${obligation.name} in scope for a listed species under another code`, () => {
+    expect(indexesFor('0102', 'Felis catus')).toEqual([])
+  })
+
+  it(`Should not put ${obligation.name} in scope for a species that is not listed`, () => {
+    expect(indexesFor('01061900', 'Mustela nigripes')).toEqual([])
   })
 })
 

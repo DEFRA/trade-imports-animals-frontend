@@ -27,6 +27,7 @@ import {
   DAYS_BEFORE
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { seedFromFranceWithCommodityLineOfAnimals } from './sets/live-animals/test-support.js'
+import { petConsignmentSeed } from './sets/live-animals/journeys/linear/test-support.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 import * as transportersService from './services/transporters/index.js'
@@ -42,6 +43,8 @@ import * as documents from './sets/live-animals/journeys/linear/features/documen
 import * as addresses from './sets/live-animals/journeys/linear/features/addresses/controller.js'
 import * as partyPicker from './sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.js'
 import * as cphNumber from './sets/live-animals/journeys/linear/features/cph-number/controller.js'
+import * as permanentAddress from './sets/live-animals/journeys/linear/features/permanent-address/controller.js'
+import { cardKeyFor } from './sets/live-animals/journeys/linear/features/permanent-address/cards.js'
 import * as portOfEntry from './sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from './sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.js'
@@ -286,7 +289,7 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  it('Should append an animal identifier unit at depth-2 via the identification surface for a two-animal line, writing only the commodity-gated fields', async () => {
+  it('Should append an animal identifier unit at depth-2 via the identification surface for a two-animal line, writing only the commodity-gated identifier fields', async () => {
     expect(animalIdentification.meta.collects).toEqual([])
     const post = postHandlerEndingWith(
       animalIdentification,
@@ -298,20 +301,42 @@ describe('controller <-> model commit contract', () => {
         action: 'add:0',
         'animalIdentifierMicrochip-0': '900123456789012',
         'animalIdentifierPassport-0': 'UK123456789',
-        'animalIdentifierEarTag-0': 'UK999',
-        'nameOrOrganisationName-0': 'Pet Owner',
-        'addressLine1-0': '1 Farm Lane',
-        'townOrCity-0': 'Skipton',
-        'postcode-0': 'BD23 1UD',
-        'phone-0': '+44 1756 555 0192',
-        'email-0': 'owner@example.co.uk'
+        'animalIdentifierEarTag-0': 'UK999'
       }
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]
-    expect(unit.animalIdentifierMicrochip).toBe('900123456789012')
-    expect(unit.animalIdentifierPassport).toBe('UK123456789')
+    expect(unit).toEqual({
+      animalIdentifierMicrochip: '900123456789012',
+      animalIdentifierPassport: 'UK123456789',
+      animalIdentifierTattoo: ''
+    })
     expect('animalIdentifierEarTag' in unit).toBe(false)
+    expect('permanentAddress' in unit).toBe(false)
+  })
+
+  it('Should write the permanent address and the choice onto the named animal record', async () => {
+    expect(permanentAddress.meta.collects).toEqual([])
+    const post = postHandlerOf(permanentAddress)
+    const key = cardKeyFor(0, 0)
+    const result = await drive(post, {
+      seed: petConsignmentSeed({
+        row: FELIS_CATUS_ROW,
+        units: [{ animalIdentifierMicrochip: '900123456789012' }]
+      }),
+      payload: {
+        [`option-${key}`]: 'newAddress',
+        [`nameOrOrganisationName-${key}`]: 'Pet Owner',
+        [`addressLine1-${key}`]: '1 Farm Lane',
+        [`townOrCity-${key}`]: 'Skipton',
+        [`postcode-${key}`]: 'BD23 1UD',
+        [`phone-${key}`]: '+44 1756 555 0192',
+        [`email-${key}`]: 'owner@example.co.uk'
+      }
+    })
+    const unit = result.after.commodityLines[0].animalIdentifiers[0]
+    expect(unit.permanentAddressOrigin).toBe('newAddress')
     expect(unit.permanentAddress.name).toBe('Pet Owner')
+    expect(unit.animalIdentifierMicrochip).toBe('900123456789012')
   })
 
   it('Should commit each party via its select (copy) spoke, covering the landing collects', async () => {

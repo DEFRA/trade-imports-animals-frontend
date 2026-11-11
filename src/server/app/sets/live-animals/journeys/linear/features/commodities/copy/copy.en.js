@@ -93,30 +93,8 @@ export const copy = {
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Remove',
     removeRowAria: (number) => `animal ${number}`,
-    permanentAddress: {
-      warning: 'Providing a false address is an act of fraud',
-      definitionLeadIn: 'A permanent address is where an animal:',
-      definitionItems: [
-        'will permanently reside',
-        'can be checked by the Animal and Plant Health Agency (APHA)'
-      ],
-      question: 'Where will their permanent address be?'
-    },
     saveAndAddAnother: 'Save and add another',
     saveAndFinish: 'Save and finish',
-    address: {
-      nameOrOrganisationName: 'Name or organisation name',
-      addressLine1: 'Address line 1',
-      addressLine2: 'Address line 2 (optional)',
-      townOrCity: 'Town or city',
-      county: 'County (optional)',
-      postcode: 'Postcode or Zip code',
-      phone: 'Phone number',
-      email: 'Email address'
-    },
-    addressHints: {
-      phone: 'For international numbers include the country code'
-    },
     errors: {
       identifierMax: {
         animalIdentifierMicrochip: 'Microchip must be 58 characters or less',
@@ -124,25 +102,6 @@ export const copy = {
         animalIdentifierTattoo: 'Tattoo must be 58 characters or less',
         animalIdentifierEarTag: 'Ear tag must be 58 characters or less',
         horseName: 'Horse name must be 58 characters or less'
-      },
-      addressMandatory: {
-        nameOrOrganisationName: 'Enter a name or organisation name',
-        addressLine1: 'Enter address line 1',
-        townOrCity: 'Enter a town or city',
-        postcode: 'Enter a postcode or Zip code',
-        phone: 'Enter a phone number',
-        email: 'Enter an email address'
-      },
-      addressFormat: {
-        nameOrOrganisationName:
-          'Name or organisation name must be 255 characters or less',
-        addressLine1: 'Address line 1 must be 255 characters or less',
-        addressLine2: 'Address line 2 must be 255 characters or less',
-        townOrCity: 'Town or city must be 100 characters or less',
-        county: 'County must be 100 characters or less',
-        postcode: 'Postcode or Zip code must be 12 characters or less',
-        phone: 'Phone number must be 20 characters or less',
-        email: 'Email address must be 254 characters or less'
       },
       atLeastOneIdentifier: 'Enter at least one identifier for this animal',
       capReached: (cap) =>

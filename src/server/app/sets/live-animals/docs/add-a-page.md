@@ -58,7 +58,8 @@ Keep the browser spec in that group's `fit/` folder.
 
 `page.js` exports `{ id, slug }`, an authored `gate` where the derived gate
 cannot express the page, and `subPage: true` on a page reached only from the
-page that opens it (the CPH number page), and imports nothing. The controller
+page that opens it (the CPH number page, the permanent address page), and
+imports nothing. The controller
 and flow import the same object. This prevents a module cycle through flow,
 status and the controller.
 

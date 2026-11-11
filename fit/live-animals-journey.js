@@ -899,10 +899,19 @@ export const answerAdditionalDetails = async (page) => {
 export const addressesSection = (page, heading) =>
   page.getByRole('region', { name: heading, exact: true })
 
+export const addPlaceOfDestination = async (page) => {
+  await page
+    .getByRole('link', { name: 'Add a place of destination', exact: true })
+    .click()
+  await page
+    .getByRole('radio', { name: partyPickerName(values.placeOfDestination) })
+    .check()
+  await saveAndExpectLanding(page, LANDINGS.addresses)
+}
+
 export const answerRolesAndAddresses = async (page) => {
   const parties = [
     ['Add a consignor', partyPickerName(values.consignor)],
-    ['Add a place of destination', partyPickerName(values.placeOfDestination)],
     ['Add a place of origin', partyPickerName(values.placeOfOrigin)],
     ['Add a consignee', partyPickerName(values.consignee)],
     ['Add an importer', partyPickerName(values.importer)]
@@ -912,6 +921,7 @@ export const answerRolesAndAddresses = async (page) => {
     await page.getByRole('radio', { name }).check()
     await saveAndExpectLanding(page, LANDINGS.addresses)
   }
+  await addPlaceOfDestination(page)
   await answerCphNumberFromAddLink(page)
   await saveAndExpectLanding(page, LANDINGS.contactAddress)
 }
@@ -941,6 +951,51 @@ export const answerCphNumberFromAddLink = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Consignment addresses' })
   ).toBeVisible()
+}
+
+export const openPermanentAddressFromAddLink = async (page) => {
+  await page
+    .getByRole('link', { name: 'Add a permanent address', exact: true })
+    .click()
+}
+
+/**
+ * Answers one permanent address card, found by its heading.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} cardHeading - the card's title, such as "Felis catus 1".
+ * @param {object} [newAddress] - the hand-entered address fields to fill.
+ * Checks "Same as the place of destination (POD)" when omitted.
+ */
+export const answerPermanentAddressCard = async (
+  page,
+  cardHeading,
+  newAddress
+) => {
+  const card = page.getByRole('region', { name: cardHeading, exact: true })
+  if (!newAddress) {
+    await card
+      .getByRole('radio', { name: 'Same as the place of destination (POD)' })
+      .check()
+    return
+  }
+  await card.getByRole('radio', { name: 'Enter a new address' }).check()
+  const PERMANENT_ADDRESS_FIELD_LABELS = {
+    nameOrOrganisationName: 'Name or organisation name',
+    addressLine1: 'Address line 1',
+    addressLine2: 'Address line 2 (optional)',
+    townOrCity: 'Town or city',
+    county: 'County (optional)',
+    postcode: 'Postcode or Zip code',
+    email: 'Email address',
+    phone: 'Phone number'
+  }
+  for (const [field, label] of Object.entries(PERMANENT_ADDRESS_FIELD_LABELS)) {
+    const value = newAddress[field]
+    if (value) {
+      await card.getByLabel(label, { exact: true }).fill(value)
+    }
+  }
 }
 
 export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'

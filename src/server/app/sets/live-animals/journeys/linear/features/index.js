@@ -12,6 +12,7 @@ import * as partyPicker from './addresses/party-picker/party-picker.controller.j
 import * as addressReturn from './addresses/address-return/controller.js'
 import * as partyEdit from './addresses/party-edit/party-edit.controller.js'
 import * as cphNumber from './cph-number/controller.js'
+import * as permanentAddress from './permanent-address/controller.js'
 import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './transport/transporters/transporters.controller.js'
@@ -37,6 +38,7 @@ export const dispatchPages = [
   documents.meta,
   addresses.meta,
   cphNumber.meta,
+  permanentAddress.meta,
   portOfEntry.meta,
   transitCountries.meta,
   transporters.meta,
@@ -59,6 +61,7 @@ export const allRoutes = [
   ...addressReturn.routes,
   ...partyEdit.routes,
   ...cphNumber.routes,
+  ...permanentAddress.routes,
   ...portOfEntry.routes,
   ...transitCountries.routes,
   ...transporters.routes,

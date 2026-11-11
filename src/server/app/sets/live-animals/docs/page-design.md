@@ -50,8 +50,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter type question. The two transporter details forms are
+  leaves the way they came in: the CPH number page, the permanent address
+  page, the role address pickers and the transporter type question. The two
+  transporter details forms are
   the one exception: each ends with the primary and a secondary "Cancel and
   return to dashboard", because a trader who opened one did not come from the
   hub and the design gives the add route its own way out of the journey.
@@ -253,9 +254,6 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Removing an identifier record is a POST on the card form with no GET, so a
   link cannot trigger it.
 - A consignment with nothing to identify skips the page.
-- The phone field is the one permanent-address field with a hint. A trader
-  giving an address outside the UK cannot otherwise know the number is dialled
-  from here.
 
 ## Commodity pages
 
@@ -360,6 +358,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   in the book, or no longer in it, is refused with the role's error. A
   missing or deleted selection travels as no selection, and a Change link's
   context is kept on every way out of the picker.
+- The permanent address section is a third section shape, for a consignment
+  carrying a cat, dog or ferret line, alongside the party sections and the
+  county parish holding section. Its hint is a lead-in sentence followed by
+  two bullets, not the party sections' single-line hint. Once every animal
+  that needs one has a permanent address, the section lists each animal's
+  address by name with a "Change" link, and no "Edit details": the address
+  was hand-entered or copied from the place of destination on the permanent
+  address page, never picked from the address book, so there is no record
+  there to edit.
 
 ## CPH number
 
@@ -378,6 +385,25 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   auto-advance).
 - One error message belongs to the group, not to each box. The date-input row
   classes only sit the boxes side by side.
+
+## Permanent address
+
+- Reached only from the consignment addresses page's Permanent address
+  section, for a consignment carrying a cat, dog or ferret line.
+- Its cards come from the animal identifier records already entered, one per
+  animal, never from the line's animal count: the permanent address is
+  stored on the animal identifier record, so a card can only exist once that
+  record does.
+- Each card asks once, as its own radio group legend, whether the animal
+  lives at the place of destination or at a new address. The page carries no
+  second question above the cards.
+- The new-address fields ask no country; a hand-entered address always
+  records the United Kingdom.
+- The phone field is the one new-address field with a hint. A trader giving
+  an address outside the UK cannot otherwise know the number is dialled from
+  here.
+- An animal left with neither option chosen saves with no permanent address;
+  the save still succeeds for the others.
 
 ## Documents
 

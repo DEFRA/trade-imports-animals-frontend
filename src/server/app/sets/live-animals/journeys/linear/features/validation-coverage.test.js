@@ -23,6 +23,10 @@ const VALIDATION_OPT_OUTS = new Map([
     'The addresses hub. Per-role errors surface through outstandingPartyErrors on the review page rather than through this page.'
   ],
   [
+    'permanentAddress',
+    'Collects nothing directly. Its answers sit on the animal identifier records the commodities feature already owns, and an animal left with neither option chosen simply saves with none, and nothing on this page refuses an answer.'
+  ],
+  [
     'declaration',
     'Submit page. Its single required-checkbox rule lives inline in the controller; not part of the cross-journey stored-answers surface.'
   ]

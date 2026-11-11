@@ -14,13 +14,17 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { requiredEarlierAnswers } from '../../../../test-support.js'
 import { dispatchPages } from '../index.js'
-import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
+import {
+  itSendsBackToWhereTheTraderCameFrom,
+  petConsignmentSeed
+} from '../../test-support.js'
 import {
   CYA_SLUG,
   TRAIL_START,
   withTrail
 } from '../../../../../../shared/kit.js'
 import { addressesPage } from './page.js'
+import { permanentAddressPage } from '../permanent-address/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { consignmentContactSelectPage } from '../contact/page.js'
 import {
@@ -52,6 +56,8 @@ const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const ASTRA_NAME = 'Astra Rosales'
 const CPH_ASKED_LINES = [BOS_TAURUS_ROW]
+const PERMANENT_ADDRESS_TITLE = 'Permanent address'
+const PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES = `${permanentAddressPage.slug}?return=addresses`
 
 describe('GET addresses — sections for parties not yet chosen', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -93,18 +99,81 @@ describe('GET addresses — added address banner', () => {
   })
 })
 
-describe('GET addresses — conditional CPH section', () => {
+describe('GET addresses — conditional permanent address section', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should list only the five party sections when no CPH-triggering commodity line exists', async () => {
+  it('Should list the five party sections then the permanent address section, and no CPH section, for a cats-only consignment', async () => {
     const result = await driveAddresses({
       commodityLines: [FELIS_CATUS_ROW]
     })
 
-    expect(sectionsOf(result).map(({ title }) => title)).toEqual(
-      PARTIES.map(({ title }) => title)
-    )
+    expect(sectionsOf(result).map(({ title }) => title)).toEqual([
+      ...PARTIES.map(({ title }) => title),
+      PERMANENT_ADDRESS_TITLE
+    ])
   })
+
+  it('Should list no permanent address section for a cattle-only consignment', async () => {
+    const result = await driveAddresses({ commodityLines: [BOS_TAURUS_ROW] })
+
+    expect(
+      sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE)
+    ).toBeUndefined()
+  })
+
+  it('Should offer the permanent address section before any animal has one, with its add link carrying the return marker', async () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [{ animalIdentifierMicrochip: 'MICROCHIP-1' }]
+    })
+    const result = await driveAddresses({ commodityLines })
+
+    expect(sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE)).toEqual({
+      id: 'permanentAddress',
+      title: PERMANENT_ADDRESS_TITLE,
+      hint: 'A permanent address is where an animal:',
+      bullets: [
+        'will permanently reside',
+        'can be checked by the Animal and Plant Health Agency (APHA)'
+      ],
+      hiddenSuffix: PERMANENT_ADDRESS_TITLE.toLowerCase(),
+      addLink: {
+        href: pagePath(
+          result.journeyId,
+          PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
+        ),
+        text: 'Add a permanent address'
+      }
+    })
+  })
+
+  it('Should show the saved addresses with a Change link once every animal that needs one has one', async () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [
+        {
+          animalIdentifierMicrochip: 'MICROCHIP-1',
+          permanentAddressOrigin: 'newAddress',
+          permanentAddress: { name: 'Pet Owner' }
+        }
+      ]
+    })
+    const result = await driveAddresses({ commodityLines })
+
+    expect(
+      sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE).chosen
+    ).toEqual({
+      lines: ['Pet Owner'],
+      changeHref: pagePath(
+        result.journeyId,
+        PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
+      )
+    })
+  })
+})
+
+describe('GET addresses — conditional CPH section', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should end with an empty CPH section offering the add link into cph-number when a CPH-triggering commodity line exists', async () => {
     const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES })

@@ -9,13 +9,9 @@ import { copy as cy } from '../../copy/copy.cy.js'
 import { buildCommodityGroups } from '../../view-model/commodity-groups.js'
 import { lineKey } from '../../search/selection/line-key.js'
 import { speciesLabel } from '../../species-label.js'
-import { addressFieldsFor, blankAddress } from '../address/fields.js'
 import { fieldName } from '../fields.js'
-import {
-  blankValuesFor,
-  permanentAddressApplies,
-  scopedFields
-} from '../identifier/fields.js'
+import { animalLabelOf } from '../animal-label.js'
+import { blankValuesFor, scopedFields } from '../identifier/fields.js'
 import { identifierCellText, identifierColumns } from '../identifier/table.js'
 import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
 import { identificationCardAnchor } from './error-summary.js'
@@ -26,9 +22,6 @@ const overCountTextFor = (cap, label, units) =>
   cap !== null && units > cap
     ? copy.overCount(cap, label, units, units - cap)
     : null
-
-const animalLabelOf = (label, number) =>
-  label ? copy.animalRowNamed(label, number) : copy.animalRow(number)
 
 const unitEntries = (key, label, columns, units) =>
   units.map((unit, unitIndex) => ({
@@ -79,15 +72,6 @@ const visibleIdentifierFields = (
         error: errors[fieldName(field.id, index)]
       }))
 
-const visibleAddressFields = (
-  showAddress,
-  atCap,
-  index,
-  addressValues,
-  errors
-) =>
-  showAddress && !atCap ? addressFieldsFor(index, addressValues, errors) : []
-
 export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
   const commodityCode = entry.commodityCode
@@ -97,8 +81,6 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const speciesLatinName = entry.speciesLatinName
   const label = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode)
-  const addressValues = form?.addressValues ?? blankAddress()
-  const showAddress = permanentAddressApplies(commodityCode, speciesLatinName)
   const columns = identifierColumns(commodityCode, speciesLatinName)
   const unitRows = unitEntries(lineKey(entry), label, columns, units)
   return {
@@ -114,21 +96,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
       unitRows
     ),
     hasUnits: units.length > 0,
-    fields: visibleIdentifierFields(
-      atCap,
-      commodityCode,
-      index,
-      values,
-      errors
-    ),
-    showAddress: showAddress && !atCap,
-    addressFields: visibleAddressFields(
-      showAddress,
-      atCap,
-      index,
-      addressValues,
-      errors
-    )
+    fields: visibleIdentifierFields(atCap, commodityCode, index, values, errors)
   }
 }
 

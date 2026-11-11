@@ -25,6 +25,31 @@ export const FIELD_RULES = {
 
 export const FIELDS = Object.keys(FIELD_RULES)
 
+/** The GOV.UK autocomplete token for each field that has one, and the width
+ * class each field's input carries, as party-edit.njk's inputs are built. */
+export const AUTOCOMPLETE_TOKENS = {
+  name: 'organization',
+  addressLine1: 'address-line1',
+  addressLine2: 'address-line2',
+  townOrCity: 'address-level2',
+  postcode: 'postal-code',
+  phone: 'tel',
+  email: 'email'
+}
+
+const TWO_THIRDS_WIDTH = 'govuk-!-width-two-thirds'
+
+export const FIELD_CLASSES = {
+  name: TWO_THIRDS_WIDTH,
+  addressLine1: TWO_THIRDS_WIDTH,
+  addressLine2: TWO_THIRDS_WIDTH,
+  townOrCity: TWO_THIRDS_WIDTH,
+  county: TWO_THIRDS_WIDTH,
+  postcode: 'govuk-input--width-10',
+  phone: TWO_THIRDS_WIDTH,
+  email: TWO_THIRDS_WIDTH
+}
+
 const { errors } = copyFor({ en, cy })
 
 const maxLengthOf = (field) => FIELD_RULES[field].maxLength

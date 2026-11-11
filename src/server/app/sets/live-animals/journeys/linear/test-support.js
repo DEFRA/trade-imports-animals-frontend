@@ -7,6 +7,28 @@ import {
   expectBackLinkIsPath,
   trailQuery
 } from '../../../../engine/test-support.js'
+import { lineOf } from './features/commodities/search/test-support.js'
+
+/**
+ * A consignment of commodity lines that already hold animal identifier
+ * records, for a page or a test that needs an animal whose commodity and
+ * species pair needs a permanent address. Carries the country of origin
+ * every page's Save and continue needs before it will open a later page.
+ *
+ * @param {...{row: object, units: object[]}} lines - one entry per
+ * commodity line: `row` is a species row from `search/test-support.js`,
+ * `units` its animal identifier records, in order.
+ * @returns {{countryOfOrigin: string, commodityLines: object[]}} the seed.
+ */
+export const petConsignmentSeed = (...lines) => ({
+  countryOfOrigin: 'FR',
+  commodityLines: lines.map(({ row, units }) =>
+    lineOf(row, {
+      numberOfAnimalsQuantity: String(units.length),
+      animalIdentifiers: units
+    })
+  )
+})
 
 const backCases = ({ previousPage }) => [
   ...(previousPage

@@ -19,9 +19,9 @@ imported. The `review` section has the one authored section
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and the required earlier answers.
 
-The `consignment-parties` section holds the CPH number page and then Roles and addresses, so
-the CPH page, a sub-page marked `subPage: true` on its page identity, goes on to Roles and addresses and
-Roles and addresses goes on to the contact address.
+The `consignment-parties` section holds the CPH number page, then the permanent address page,
+then Roles and addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
+to Roles and addresses and Roles and addresses goes on to the contact address.
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
 keys the transport feature's own add-session module owns: the values an
@@ -175,8 +175,8 @@ Overview task, or by opening the notification from the dashboard. Save and conti
 goes to the next page that applies in the journey's one page order from every start
 (a new notification, an Overview task, a reopened draft, a copy, a Change link, an
 amendment or a new browser session), and past the last page that applies it goes to
-the review page. The CPH number page is a sub-page: it goes on from the page that
-opens it to Roles and addresses.
+the review page. The CPH number page and the permanent address page are both
+sub-pages: each goes on from the page that opens it to Roles and addresses.
 
 A notification is created by the dashboard's create POST or by the start entry
 (`<set>/start`, which the Import Notification Service's type question opens), through one

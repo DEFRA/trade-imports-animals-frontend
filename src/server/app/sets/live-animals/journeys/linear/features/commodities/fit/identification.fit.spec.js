@@ -6,6 +6,8 @@ import {
   FELIS_CATUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
   PHONE_VIEWPORT,
+  answerPermanentAddressCard,
+  openPermanentAddressFromAddLink,
   saveAndContinue,
   saveAndReturnToHub,
   STRUTHIO_ROW,
@@ -38,13 +40,7 @@ const GOVUK_GREEN = 'rgb(15, 122, 82)'
 const REGULAR_FONT_WEIGHT = '400'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
-const MAX_LINE_LENGTH = 255
-const MAX_TOWN_OR_COUNTY_LENGTH = 100
-const MAX_POSTAL_OR_ZIP_CODE_LENGTH = 12
-const MAX_TELEPHONE_LENGTH = 20
-const MAX_EMAIL_LENGTH = 254
 const MAX_IDENTIFIER_LENGTH = 58
-const EMAIL_DOMAIN = '@example.com'
 const DEFAULT_ANIMALS_COUNT = '1'
 
 const addLines = async (page, speciesWithCounts) => {
@@ -84,27 +80,9 @@ const expectErrorFocus = async (page, message, field) => {
   await expect(field).toBeFocused()
 }
 
-const validPermanentAddress = {
-  nameOrOrganisationName: 'Pet Owner',
-  addressLine1: '1 Farm Lane',
-  addressLine2: 'Apartment 2',
-  townOrCity: 'Skipton',
-  county: 'North Yorkshire',
-  postcode: 'BD23 1UD',
-  phone: '+44 1756 555 0192',
-  email: 'owner@example.co.uk'
-}
-
-const fillAddress = async (page, address = validPermanentAddress) => {
-  for (const [field, value] of Object.entries(address)) {
-    await page.locator(`#${field}-0`).fill(value)
-  }
-}
-
-const fillFelisCatusRecord = async (page, address = validPermanentAddress) => {
+const fillFelisCatusRecord = async (page) => {
   await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
   await page.locator(PASSPORT_FIELD).fill(PASSPORT_NUMBER)
-  await fillAddress(page, address)
 }
 
 const submitAdd = (page) =>
@@ -211,58 +189,6 @@ const identifierValidations = [
   [EQUUS_CABALUS_ROW, 'horseName', 'Horse name']
 ]
 
-const requiredAddressValidations = [
-  ['name or organisation name', 'nameOrOrganisationName'],
-  ['address line 1', 'addressLine1'],
-  ['town or city', 'townOrCity'],
-  ['postcode or Zip code', 'postcode'],
-  ['phone number', 'phone'],
-  ['email address', 'email']
-]
-
-const addressFormatValidations = [
-  [
-    'name or organisation name over 255 characters',
-    'nameOrOrganisationName',
-    'N'.repeat(MAX_LINE_LENGTH + 1)
-  ],
-  [
-    'address line 1 over 255 characters',
-    'addressLine1',
-    'A'.repeat(MAX_LINE_LENGTH + 1)
-  ],
-  [
-    'address line 2 over 255 characters',
-    'addressLine2',
-    'B'.repeat(MAX_LINE_LENGTH + 1)
-  ],
-  [
-    'town or city over 100 characters',
-    'townOrCity',
-    'T'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1)
-  ],
-  [
-    'county over 100 characters',
-    'county',
-    'C'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1)
-  ],
-  [
-    'postcode or Zip code over 12 characters',
-    'postcode',
-    'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1)
-  ],
-  [
-    'phone number over 20 characters',
-    'phone',
-    '1'.repeat(MAX_TELEPHONE_LENGTH + 1)
-  ],
-  [
-    'email address over 254 characters',
-    'email',
-    `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - EMAIL_DOMAIN.length)}${EMAIL_DOMAIN}`
-  ]
-]
-
 test.describe('animal identification', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -322,60 +248,22 @@ test.describe('animal identification', () => {
     }
   })
 
-  test('permanent address asks for eight fields and never for a country', async ({
+  test('offers no permanent address field or guidance, only the identifier fields and its save control', async ({
     page
   }) => {
     await openFelisCatusIdentification(page)
 
-    for (const field of Object.keys(validPermanentAddress)) {
-      await expect(page.locator(`#${field}-0`)).toBeVisible()
-      await expect(page.locator(`#${field}-0`)).toHaveAccessibleName(
-        copy.identification.address[field]
-      )
-    }
-    await expect(page.getByText('(optional)')).toHaveCount(2)
-    await expect(page.locator('#addressLine2-0')).toHaveAccessibleName(
-      'Address line 2 (optional)'
-    )
-    await expect(page.locator('#county-0')).toHaveAccessibleName(
-      'County (optional)'
-    )
-    await expect(page.locator('#country-0')).toHaveCount(0)
-    await expect(page.locator('select')).toHaveCount(0)
-  })
-
-  test('permanent address labels the postcode and phone fields and hints the country code', async ({
-    page
-  }) => {
-    await openFelisCatusIdentification(page)
-
+    const card = speciesCard(page, FELIS_CATUS_ROW)
+    await expect(card.getByRole('textbox')).toHaveCount(3)
     await expect(
-      page.getByLabel(copy.identification.address.postcode, {
-        exact: true
-      })
-    ).toBeVisible()
+      card.getByText('A permanent address is where an animal:')
+    ).toHaveCount(0)
     await expect(
-      page.getByLabel(copy.identification.address.phone, {
-        exact: true
-      })
-    ).toHaveAccessibleDescription(copy.identification.addressHints.phone)
-  })
-
-  test('permanent address warns that a false address is fraud and says APHA can check it', async ({
-    page
-  }) => {
-    await openFelisCatusIdentification(page)
-
-    const guidance = copy.identification.permanentAddress
-    await expect(page.getByText(guidance.warning)).toBeVisible()
-    await expect(page.getByText(guidance.definitionLeadIn)).toBeVisible()
-    for (const item of guidance.definitionItems) {
-      await expect(
-        page.getByRole('listitem').filter({ hasText: item })
-      ).toBeVisible()
-    }
+      card.getByText('Providing a false address is an act of fraud')
+    ).toHaveCount(0)
+    await expect(card.locator('#nameOrOrganisationName-0')).toHaveCount(0)
     await expect(
-      page.getByRole('heading', { name: guidance.question })
+      card.getByRole('button', { name: copy.identification.saveAndAddAnother })
     ).toBeVisible()
   })
 
@@ -737,61 +625,40 @@ test.describe('animal identification identifier validation', () => {
   })
 })
 
-test.describe('animal identification address validation', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-  })
-
-  for (const [name, field] of requiredAddressValidations) {
-    test(`permanent address validation: empty ${name} links to and focuses the preserved field`, async ({
-      page
-    }) => {
-      await openFelisCatusIdentification(page)
-      await fillFelisCatusRecord(page)
-      await page.locator(`#${field}-0`).fill('')
-      await submitAdd(page)
-
-      await expectErrorFocus(
-        page,
-        copy.identification.errors.addressMandatory[field],
-        page.locator(`#${field}-0`)
-      )
-      await expect(page.locator(`#${field}-0`)).toHaveValue('')
-      await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
-    })
-  }
-
-  for (const [name, field, invalid] of addressFormatValidations) {
-    test(`permanent address validation: ${name} links to and focuses the preserved value`, async ({
-      page
-    }) => {
-      await openFelisCatusIdentification(page)
-      await fillFelisCatusRecord(page, {
-        ...validPermanentAddress,
-        [field]: invalid
-      })
-      await submitAdd(page)
-
-      await expectErrorFocus(
-        page,
-        copy.identification.errors.addressFormat[field],
-        page.locator(`#${field}-0`)
-      )
-      await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
-      await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
-    })
-  }
-})
-
 test.describe('animal identification records', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('adds a complete record and reads it back as a row of the saved-animals table', async ({
+  test('adds a complete record and reads it back as a row of the saved-animals table, once a permanent address is saved against it on its own page', async ({
     page
   }) => {
-    const row = await addFelisCatusRecordRow(page)
+    await addFelisCatusRecordRow(page)
+
+    await saveAndReturnToHub(page).click()
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    await openPermanentAddressFromAddLink(page)
+    const PET_OWNER_ADDRESS = {
+      nameOrOrganisationName: 'Pet Owner',
+      addressLine1: '1 Farm Lane',
+      townOrCity: 'Skipton',
+      postcode: 'BD23 1UD',
+      email: 'owner@example.co.uk',
+      phone: '+44 1756 555 0192'
+    }
+
+    await answerPermanentAddressCard(
+      page,
+      copy.identification.animalRowNamed(FELIS_CATUS_ROW.speciesLatinName, 1),
+      PET_OWNER_ADDRESS
+    )
+    await saveAndContinue(page).click()
+
+    await openOverview(page)
+    await page
+      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
+      .click()
+    const row = savedAnimalRow(page, FELIS_CATUS_ROW, 1)
 
     await expect(
       columnHeader(page, copy.identification.table.animalColumn)
@@ -863,7 +730,6 @@ test.describe('animal identification records', () => {
   }) => {
     await openIdentification(page, [[MUSTELA_PUTORIUS_FURO_ROW, '2']])
     await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
-    await fillAddress(page)
     await submitAdd(page)
 
     await expect(

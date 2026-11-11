@@ -5,8 +5,8 @@ const partyFromPermanentAddress = (permanentAddress) =>
   permanentAddress &&
   compact({
     name: permanentAddress.name,
-    phone: permanentAddress.address?.phone,
-    email: permanentAddress.address?.email,
+    phone: permanentAddress.phone,
+    email: permanentAddress.email,
     address: toWireAddress(permanentAddress.address)
   })
 

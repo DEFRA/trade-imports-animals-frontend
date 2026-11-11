@@ -10,6 +10,7 @@ import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
 import { cphNumberPage } from '../features/cph-number/page.js'
+import { permanentAddressPage } from '../features/permanent-address/page.js'
 import {
   portOfEntryPage,
   transitCountriesPage,
@@ -63,7 +64,7 @@ export const sections = [
   },
   {
     id: 'consignment-parties',
-    pages: [cphNumberPage, addressesPage]
+    pages: [cphNumberPage, permanentAddressPage, addressesPage]
   },
   {
     id: 'contact-address',

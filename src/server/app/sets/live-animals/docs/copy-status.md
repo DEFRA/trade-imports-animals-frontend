@@ -33,3 +33,10 @@ thirteen in `journeys/linear/features/documents/copy/copy.cy.js`, which the
 upload page and the review page both read. The ones carrying a slash need the
 most attention: each joins two document names the English list pairs, and Welsh
 mutation after the joiner has not been checked.
+
+The permanent address page's Welsh is a machine draft too. A translator must
+review it in `journeys/linear/features/permanent-address/copy/copy.cy.js`.
+The consignment addresses page's permanent address section leaves in
+`journeys/linear/features/addresses/copy/copy.cy.js` are the same machine draft
+and need the same review. Do not ship either without Welsh Language Standards
+sign-off.

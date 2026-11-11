@@ -183,13 +183,12 @@ describe(`${SUITE} — the cards view`, () => {
     ])
   })
 
-  it('Should show only the commodity-gated fields per card — typed for 01061900 Felis catus with the address, no fallbacks', async () => {
+  it('Should show only the commodity-gated identifier fields per card — typed for 01061900 Felis catus, no fallbacks', async () => {
     const [card] = await viewCards({
       commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
     })
     const labels = card.fields.map((field) => field.label)
     expect(labels).toEqual(['Microchip', 'Passport', 'Tattoo'])
-    expect(card.showAddress).toBe(true)
     const ids = card.fields.map((field) => field.id)
     expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])
   })
@@ -654,23 +653,6 @@ describe(`${SUITE} — Save and add another`, () => {
     })
   })
 
-  it('Should block a partial permanent address on the pressed card', async () => {
-    const result = await driveHandler(post, {
-      seed: withOriginSaved({
-        commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
-      }),
-      payload: {
-        action: 'add:0',
-        [PASSPORT_FIELD_0]: 'UK123456789',
-        'nameOrOrganisationName-0': 'Pet Owner'
-      }
-    })
-    expect(result.view.context.errors['addressLine1-0']).toBe(
-      'Enter address line 1'
-    )
-    expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
-  })
-
   it("Should save only the pressed card's animal and show no error for another species' over-long value", async () => {
     const result = await driveHandler(post, {
       seed: withOriginSaved({
@@ -1010,7 +992,6 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
     })
     return {
       fieldIds: card.fields.map((field) => field.id),
-      showAddress: card.showAddress,
       columnHeadings: card.savedAnimalsTable.head.map(({ text }) => text)
     }
   }
@@ -1020,42 +1001,46 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
       commodityCode: '0102',
       speciesLatinName: BOS_TAURUS,
       fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
-      showAddress: false
+      permanentAddressColumn: false
     },
     {
       commodityCode: '0101',
       speciesLatinName: EQUUS_CABALUS,
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
-      showAddress: false
+      permanentAddressColumn: false
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Felis catus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      showAddress: true
+      permanentAddressColumn: true
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      showAddress: true
+      permanentAddressColumn: true
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Oryctolagus cuniculus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      showAddress: false
+      permanentAddressColumn: false
     }
   ]
 
   it.each(MATRIX)(
-    'Should render $fieldIds for $commodityCode $speciesLatinName, permanent address $showAddress',
-    async ({ commodityCode, speciesLatinName, fieldIds, showAddress }) => {
+    'Should render $fieldIds for $commodityCode $speciesLatinName, permanent address column $permanentAddressColumn',
+    async ({
+      commodityCode,
+      speciesLatinName,
+      fieldIds,
+      permanentAddressColumn
+    }) => {
       const rendered = await renderFor(commodityCode, speciesLatinName)
       expect(rendered.fieldIds).toEqual(fieldIds)
-      expect(rendered.showAddress).toBe(showAddress)
       expect(rendered.columnHeadings.includes('Permanent address')).toBe(
-        showAddress
+        permanentAddressColumn
       )
     }
   )

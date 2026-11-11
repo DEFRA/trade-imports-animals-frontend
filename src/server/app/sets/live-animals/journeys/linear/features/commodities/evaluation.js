@@ -14,6 +14,7 @@ import {
   numberOfPackages,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   speciesLatinName,
   tattoo,
   unitRecord
@@ -59,5 +60,6 @@ export const evaluationBindings = feature('commodities', [
   unitLeaf('animalIdentifierTattoo', tattoo),
   unitLeaf('animalIdentifierEarTag', earTag),
   unitLeaf('horseName', horseName),
-  unitLeaf('permanentAddress', permanentAddress)
+  unitLeaf('permanentAddress', permanentAddress),
+  unitLeaf('permanentAddressOrigin', permanentAddressOrigin)
 ])

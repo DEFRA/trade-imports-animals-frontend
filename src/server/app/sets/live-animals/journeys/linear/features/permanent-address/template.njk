@@ -1,0 +1,70 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
+
+{% block journeyContent %}
+  {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {{ govukWarningText({ text: copy.warning }) }}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+
+    {% for card in cards %}
+      <section id="{{ card.key }}" class="govuk-summary-card" aria-labelledby="{{ card.key }}-title">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title" id="{{ card.key }}-title">{{ card.title }}</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {% if card.identifierLines.length %}
+            {% call govukInsetText() %}
+              {% for line in card.identifierLines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+            {% endcall %}
+          {% endif %}
+
+          {% set newAddressHtml %}
+            {% for field in card.addressFields %}
+              {{ govukInput({
+                id: field.id,
+                name: field.id,
+                label: { text: field.label },
+                hint: field.hint and { text: field.hint },
+                type: field.type,
+                value: field.value,
+                autocomplete: field.autocomplete,
+                classes: field.classes
+              }) }}
+            {% endfor %}
+          {% endset %}
+
+          {% set radioItems = [] %}
+          {% for option in card.options %}
+            {% set radioItems = (radioItems.push({
+              value: option.value,
+              text: option.text,
+              hint: option.hint and { text: option.hint },
+              checked: option.checked,
+              conditional: option.revealsAddressFields and { html: newAddressHtml }
+            }), radioItems) %}
+          {% endfor %}
+
+          {{ govukRadios({
+            name: card.optionName,
+            fieldset: {
+              legend: { text: copy.legend, classes: "govuk-fieldset__legend--s" }
+            },
+            items: radioItems
+          }) }}
+        </div>
+      </section>
+    {% endfor %}
+
+    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
+  </form>
+{% endblock %}

@@ -78,6 +78,19 @@ describe('#copy', () => {
     )
   })
 
+  it('Should explain a permanent address and offer to add one', () => {
+    expect(copy.hub.permanentAddress.title).toBe('Permanent address')
+    expect(copy.hub.permanentAddress.leadIn).toBe(
+      'A permanent address is where an animal:'
+    )
+    expect(copy.hub.permanentAddress.bullets).toEqual([
+      'will permanently reside',
+      'can be checked by the Animal and Plant Health Agency (APHA)'
+    ])
+    expect(copy.hub.permanentAddress.add).toBe('Add a permanent address')
+    expect(copyCy.hub.permanentAddress.title).toBe('Cyfeiriad parhaol')
+  })
+
   it('Should call the consignor Consignor in English and Anfonwr in Welsh', () => {
     expect(copy.parties.consignor.title).toBe('Consignor')
     expect(copyCy.parties.consignor.title).toBe('Anfonwr')

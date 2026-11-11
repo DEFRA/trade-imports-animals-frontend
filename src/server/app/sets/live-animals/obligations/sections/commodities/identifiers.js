@@ -49,6 +49,12 @@ const permanentAddressReason = {
     'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
 }
 
+const permanentAddressOriginReason = {
+  code: 'obligation.permanentAddressOrigin.applicable.becausePermanentAddressLine',
+  explanation:
+    'permanentAddressOrigin applies on units of lines whose commodityCode and species pair is in the permanent-address list'
+}
+
 const MICROCHIP_ID = '8f030bfa-0734-40c8-9d9e-b9e95dac4724'
 const PASSPORT_ID = '39657a80-91a2-4fc6-8345-9f0617284a51'
 const TATTOO_ID = '3a768b91-a2b3-4fd7-8456-a01728395b62'
@@ -118,16 +124,27 @@ export const horseName = {
   ])
 }
 
+const permanentAddressPairGate = (reasons) =>
+  allowListedPairs(
+    commodityCode,
+    speciesLatinName,
+    permanentAddressCodeSpecies,
+    unitRecord,
+    reasons
+  )
+
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListedPairs(
-    commodityCode,
-    speciesLatinName,
-    permanentAddressCodeSpecies,
-    unitRecord,
-    [permanentAddressReason]
-  )
+  applyTo: permanentAddressPairGate([permanentAddressReason])
+}
+
+export const permanentAddressOrigin = {
+  id: '4e1f2a3b-5c6d-4f70-8e81-9f2a3b4c5d6e',
+  name: 'permanentAddressOrigin',
+  within: unitRecord,
+  status: 'optional',
+  applyTo: permanentAddressPairGate([permanentAddressOriginReason])
 }

@@ -9,6 +9,7 @@ import {
   microchip,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   tattoo,
   unitRecord
 } from './sections/commodities/identifiers.js'
@@ -100,6 +101,7 @@ export {
   numberOfPackages,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   placeOfDestination,
   placeOfOrigin,
   poApprovedReferenceNumber,
@@ -163,6 +165,7 @@ export const obligations = [
   earTag,
   horseName,
   permanentAddress,
+  permanentAddressOrigin,
   documents,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
