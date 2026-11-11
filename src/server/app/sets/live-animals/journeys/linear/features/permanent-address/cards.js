@@ -61,6 +61,8 @@ const placeOfDestinationHint = (placeOfDestination) =>
 
 const PARTY_SOURCE_FIELD = { nameOrOrganisationName: 'name' }
 
+const INPUT_TYPES = { email: 'email', phone: 'tel' }
+
 const addressFormValuesOf = (party) => {
   const partyValues = formValuesOf(party)
   return Object.fromEntries(
@@ -78,7 +80,7 @@ const addressFieldInputsOf = (key, values, copy) =>
       id: fieldNameFor(id, key),
       label: copy.address[id],
       hint: id === 'phone' ? copy.addressHints.phone : undefined,
-      type: id === 'email' ? 'email' : id === 'phone' ? 'tel' : undefined,
+      type: INPUT_TYPES[id],
       value: values[id],
       autocomplete: AUTOCOMPLETE_TOKENS[partyField],
       classes: FIELD_CLASSES[partyField]
