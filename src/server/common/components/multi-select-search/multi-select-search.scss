@@ -48,8 +48,21 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
     margin-left: $app-multi-select-search-species-indent;
   }
 
-  .govuk-checkboxes__item:nth-child(even) {
+  .govuk-checkboxes__item:nth-child(odd) {
     background-color: $app-multi-select-search-stripe;
+  }
+
+  // The rows are the hover feedback here, so drop the ring GOV.UK draws round
+  // a hovered small tick box, keeping only the focus ring.
+  .govuk-checkboxes__input:not(:disabled):not(:focus):hover
+    + .govuk-checkboxes__label::before {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .govuk-checkboxes__input:not(:disabled):focus:hover
+    + .govuk-checkboxes__label::before {
+    box-shadow: 0 0 0 $govuk-focus-width govuk-functional-colour(focus);
   }
 }
 
