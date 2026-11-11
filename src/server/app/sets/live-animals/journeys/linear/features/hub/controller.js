@@ -15,9 +15,10 @@ import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus } from '../../flow/task-rows.js'
 import { invalidRowIds } from '../../flow/stored-answers.js'
 import { notificationViewPage } from '../check-answers/page.js'
+import { hubPage } from './page.js'
 import {
   journeyStrip,
-  routeOptions,
+  pageRouteOptions,
   TRAIL_START,
   withTrail
 } from '../../../../../../shared/kit.js'
@@ -130,5 +131,10 @@ const handler = async (request, h) => {
 }
 
 export const routes = [
-  { method: 'GET', path: hubRoutePath(), options: routeOptions, handler }
+  {
+    method: 'GET',
+    path: hubRoutePath(),
+    options: pageRouteOptions(hubPage),
+    handler
+  }
 ]

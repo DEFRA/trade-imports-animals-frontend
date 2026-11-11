@@ -31,10 +31,19 @@ const toRecord = async (operator) => ({
   }
 })
 
+/** The largest page size the address book serves. */
+export const MAX_API_PAGE_SIZE = 100
+
 /** One page of the organisation's live addresses with its paging numbers. */
-export const listAddresses = async (orgId, { page = 1, query } = {}) => {
+export const listAddresses = async (
+  orgId,
+  { page = 1, pageSize, query } = {}
+) => {
   const url = new URL(addressesUrl(orgId))
   url.searchParams.set('page', String(page))
+  if (pageSize) {
+    url.searchParams.set('pageSize', String(pageSize))
+  }
   if (query) {
     url.searchParams.set('q', query)
   }

@@ -1,1 +1,5 @@
-export const originPage = { id: 'origin', slug: 'origin' }
+export const originPage = {
+  id: 'origin',
+  slug: 'origin',
+  maturity: 'agreed'
+}

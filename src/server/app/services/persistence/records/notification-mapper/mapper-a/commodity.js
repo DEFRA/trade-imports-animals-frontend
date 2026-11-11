@@ -7,14 +7,6 @@ import { groupLinesByCommodityCode } from '../shared/lines/group-by-commodity-co
 import { speciesEntryFromLine } from '../shared/lines/species-entry.js'
 import { speciesLines } from '../shared/lines/species-lines.js'
 import { totalOf } from '../shared/lines/total.js'
-import { typeTextForLine } from '../shared/lines/type-text-for-line.js'
-
-const groupHasUniformType = (group) => {
-  const speciesOnly = speciesLines(group)
-  const lines = speciesOnly.length > 0 ? speciesOnly : group
-  const types = new Set(lines.map((line) => typeTextForLine(line) ?? ''))
-  return types.size <= 1
-}
 
 const commodityNameForGroup = (group) => {
   const firstLine = group[0]
@@ -31,19 +23,13 @@ const commodityNameForGroup = (group) => {
 }
 
 const commodityEntryFromGroup = (group) => {
-  const uniformType = groupHasUniformType(group)
-  const species = speciesLines(group).map((line) =>
-    speciesEntryFromLine(line, {
-      typeOfCommodity: uniformType ? undefined : typeTextForLine(line)
-    })
-  )
+  const species = speciesLines(group).map(speciesEntryFromLine)
   const firstLine = group[0]
   const code = firstLine.commodityCode
   return compact({
     name: commodityNameForGroup(group),
     commodityCode: code,
     description: commodityDescriptionFor(code),
-    typeOfCommodity: uniformType ? typeTextForLine(firstLine) : undefined,
     totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
     totalNoOfPackages: totalOf(group, 'numberOfPackages'),
     species: species.length > 0 ? species : undefined

@@ -20,7 +20,6 @@ describe('commoditiesFromLines', () => {
           commodityCode: CATTLE_CODE,
           speciesLatinName: BOS_TAURUS,
           speciesCommonName: 'Domestic Cattle',
-          commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]

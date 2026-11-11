@@ -252,8 +252,8 @@ describe('controller <-> model commit contract', () => {
       new Set(committableCollects(commoditiesSearch.meta.collects))
     )
     expect(result.after.commodityLines).toEqual([
-      lineOf(BOS_TAURUS_ROW, { commodityType: '16' }),
-      lineOf(FELIS_CATUS_ROW, { commodityType: '2' })
+      lineOf(BOS_TAURUS_ROW),
+      lineOf(FELIS_CATUS_ROW)
     ])
   })
 

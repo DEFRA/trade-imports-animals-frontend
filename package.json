@@ -17,6 +17,7 @@
     "docker:dev": "npm run dev",
     "fit:start": "NODE_ENV=development node .",
     "check:workspace-stack": "node scripts/check-workspace-stack.js",
+    "check:signed-off-tests": "node scripts/signed-off-tests.js",
     "test:fit": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test",
     "test:fit:journeys": "npm run test:fit -- --project=journeys",
     "test:fit:features": "npm run test:fit -- --project=features",

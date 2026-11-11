@@ -524,19 +524,16 @@ describe('commodity search — saving the selection', () => {
     expect(result.after.commodityLines).toEqual([
       {
         ...BISON_BISON_ROW,
-        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
         ...BOS_TAURUS_ROW,
-        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
         ...FELIS_CATUS_ROW,
-        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }
@@ -590,7 +587,6 @@ describe('commodity search — saving the selection', () => {
       { ...kept, numberOfAnimalsQuantity: 25 },
       {
         ...MUSTELA_PUTORIUS_FURO_ROW,
-        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }
@@ -611,7 +607,6 @@ describe('commodity search — saving the selection', () => {
       {
         commodityCode: '01062000',
         speciesLatinName: 'Otra Testudinata',
-        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }

@@ -22,7 +22,7 @@ const animalIdentifierFrom = (unit) =>
 
 const commonNameFrom = (line) => line.speciesCommonName
 
-export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
+export const speciesEntryFromLine = (line) => {
   const identifierUnits = line.animalIdentifiers ?? []
   const firstUnit = identifierUnits[0] ?? {}
   const latinName = line.speciesLatinName
@@ -30,7 +30,6 @@ export const speciesEntryFromLine = (line, { typeOfCommodity } = {}) => {
     value: latinName,
     text: latinName,
     commonName: commonNameFrom(line),
-    typeOfCommodity,
     noOfAnimals: line.numberOfAnimalsQuantity,
     noOfPackages: line.numberOfPackages,
     earTag: firstUnit.animalIdentifierEarTag,

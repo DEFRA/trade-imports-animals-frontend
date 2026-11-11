@@ -118,7 +118,6 @@ describe('Mapper A PUT /notifications contract', () => {
           name: 'Cow',
           commodityCode: '0102',
           description: 'Live bovine animals',
-          typeOfCommodity: 'Domestic',
           totalNoOfAnimals: 1,
           totalNoOfPackages: 5,
           species: [

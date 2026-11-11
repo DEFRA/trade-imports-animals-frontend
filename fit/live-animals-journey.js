@@ -1223,12 +1223,13 @@ export const answerContactAddress = async (page) => {
  * Answers the whole notification one task row at a time.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ skipAnimalIdentification?: boolean }} [options] - pass
- *   `skipAnimalIdentification` to leave the identification row untouched.
+ * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean }} [options] -
+ *   pass `skipAnimalIdentification` to leave the identification row
+ *   untouched, and `skipTransitCountries` to add no transit country.
  */
 export const completeAnswerSections = async (
   page,
-  { skipAnimalIdentification = false } = {}
+  { skipAnimalIdentification = false, skipTransitCountries = false } = {}
 ) => {
   const task = (name) => page.getByRole('link', { name }).click()
 
@@ -1261,9 +1262,11 @@ export const completeAnswerSections = async (
   await task('Arrival details')
   await answerArrivalDetails(page)
   await openOverview(page)
-  await task('Transit countries')
-  await answerTransitCountries(page)
-  await openOverview(page)
+  if (!skipTransitCountries) {
+    await task('Transit countries')
+    await answerTransitCountries(page)
+    await openOverview(page)
+  }
   await task('Transport details')
   await answerTransporter(page)
   await openOverview(page)

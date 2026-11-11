@@ -7,7 +7,8 @@ import {
 } from '../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
-import { routeOptions } from '../../../../../../../shared/kit.js'
+import { pageRouteOptions } from '../../../../../../../shared/kit.js'
+import { addressesPage } from '../page.js'
 import { isRecoverableBackendError } from '../../../../../../../services/persistence/records/errors.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
@@ -204,7 +205,7 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath('address-return'),
-    options: routeOptions,
+    options: pageRouteOptions(addressesPage),
     handler: get
   }
 ]

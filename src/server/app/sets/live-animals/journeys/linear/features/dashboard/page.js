@@ -1,1 +1,5 @@
-export const dashboardPage = { id: 'dashboard', slug: '' }
+export const dashboardPage = {
+  id: 'dashboard',
+  slug: '',
+  maturity: 'exploring'
+}

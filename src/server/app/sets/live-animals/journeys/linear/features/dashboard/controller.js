@@ -16,6 +16,7 @@ import {
   startJourney
 } from '../../../../../../engine/journey.js'
 import {
+  pageRouteOptions,
   routeOptions,
   sharedCopy,
   surfaceClass,
@@ -27,6 +28,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { notificationViewPage } from '../check-answers/page.js'
+import { notificationActionsPage } from '../notification-actions/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import {
@@ -175,19 +177,19 @@ export const routes = [
   {
     method: 'GET',
     path: dashboardRoutePath(),
-    options: routeOptions,
+    options: pageRouteOptions(dashboardPage),
     handler: listGet
   },
   {
     method: 'POST',
     path: pageRoutePath('amend'),
-    options: routeOptions,
+    options: pageRouteOptions(notificationActionsPage),
     handler: amendPost
   },
   {
     method: 'POST',
     path: createRoutePath(),
-    options: routeOptions,
+    options: pageRouteOptions(notificationActionsPage),
     handler: createPost
   },
   {

@@ -38,7 +38,6 @@ const {
   animalsCertifiedFor,
   commodityLine,
   commodityCode,
-  commodityType,
   speciesLatinName,
   numberOfAnimals,
   numberOfPackages,
@@ -488,16 +487,6 @@ describe('commodity line field fulfilments (round-trip)', () => {
     expect(result.fulfilments[commodityCode.id]).toEqual(
       commodityCodeFulfilments
     )
-  })
-
-  it('commodityType stores one value per line', () => {
-    const result = evaluator.evaluate({
-      [commodityType.id]: { [LINE_HORSES]: 'Adult', [LINE_CATS]: 'Adult' }
-    })
-    expect(result.fulfilments[commodityType.id]).toEqual({
-      [LINE_HORSES]: 'Adult',
-      [LINE_CATS]: 'Adult'
-    })
   })
 
   it('numberOfAnimals stores one whole-number value per line', () => {

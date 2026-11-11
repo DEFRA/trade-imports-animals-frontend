@@ -9,6 +9,7 @@ import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-st
 import * as kit from '../../../../../../shared/kit.js'
 import { renderNotificationView } from '../check-answers/controller.js'
 import { renderDashboard } from '../dashboard/controller.js'
+import { notificationActionsPage } from './page.js'
 
 const originPath = (request) =>
   request.payload?.copyOrigin === 'notification-view'
@@ -57,7 +58,7 @@ export const routes = [
   {
     method: 'POST',
     path: pageRoutePath('copy'),
-    options: kit.routeOptions,
+    options: kit.pageRouteOptions(notificationActionsPage),
     handler: copyPost
   }
 ]
