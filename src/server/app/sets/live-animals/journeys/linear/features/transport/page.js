@@ -1,35 +1,35 @@
 export const portOfEntryPage = {
   id: 'port-of-entry',
   slug: 'port-of-entry',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const transitCountriesPage = {
   id: 'transit-countries',
   slug: 'transit-countries',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const transportersPage = {
   id: 'transporters',
   slug: 'transporters',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const transporterAddPage = {
   id: 'transporter-add',
   slug: 'transporters/add',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const commercialTransporterDetailsPage = {
   id: 'commercial-transporter-details',
   slug: 'transporters/add/commercial',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const privateTransporterDetailsPage = {
   id: 'private-transporter-details',
   slug: 'transporters/add/private',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }

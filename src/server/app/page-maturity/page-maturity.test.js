@@ -3,8 +3,20 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { config } from '../../../config/config.js'
 import { startStubModeServer } from '../../common/test-helpers/stub-mode-server.js'
 import { pageRouteOptions } from '../shared/kit.js'
+import { additionalDetailsPage } from '../sets/live-animals/journeys/linear/features/additional-details/page.js'
+import { consignmentDetailsPage } from '../sets/live-animals/journeys/linear/features/commodities/page.js'
 import { dashboardPage } from '../sets/live-animals/journeys/linear/features/dashboard/page.js'
+import { documentsPage } from '../sets/live-animals/journeys/linear/features/documents/page.js'
+import { importReasonPage } from '../sets/live-animals/journeys/linear/features/import-reason/page.js'
 import { originPage } from '../sets/live-animals/journeys/linear/features/origin/page.js'
+import {
+  commercialTransporterDetailsPage,
+  portOfEntryPage,
+  privateTransporterDetailsPage,
+  transitCountriesPage,
+  transporterAddPage,
+  transportersPage
+} from '../sets/live-animals/journeys/linear/features/transport/page.js'
 import { SET_BASE } from '../sets/live-animals/set.js'
 import { copy } from './copy/copy.en.js'
 import { BANNER_CLASSES, LEVELS, TAG_CLASSES } from './levels.js'
@@ -129,16 +141,41 @@ describe('page maturity of the registered routes', () => {
     expect(levelOf(origin)).toBe(originPage.maturity)
   })
 
-  it('Should make every notification journey route Detailing', () => {
+  it('Should make the agreed pages Agreed and every other notification journey route Detailing', () => {
+    const agreedPageIds = new Set(
+      [
+        originPage,
+        importReasonPage,
+        consignmentDetailsPage,
+        additionalDetailsPage,
+        portOfEntryPage,
+        transitCountriesPage,
+        transportersPage,
+        transporterAddPage,
+        commercialTransporterDetailsPage,
+        privateTransporterDetailsPage,
+        documentsPage
+      ].map(({ id }) => id)
+    )
     const journeyRoutes = routes.filter(
       ({ path }) =>
         path === NOTIFICATIONS || path.startsWith(`${NOTIFICATIONS}/`)
     )
+    const expectedLevelOf = (route) =>
+      agreedPageIds.has(route.settings.app?.page?.id)
+        ? LEVELS.agreed
+        : LEVELS.detailing
 
-    expect(journeyRoutes.length).toBeGreaterThan(0)
+    expect(
+      new Set(
+        journeyRoutes
+          .filter((route) => levelOf(route) === LEVELS.agreed)
+          .map((route) => route.settings.app.page.id)
+      )
+    ).toEqual(agreedPageIds)
     for (const route of journeyRoutes) {
       expect(levelOf(route), `${route.method} ${route.path}`).toBe(
-        LEVELS.detailing
+        expectedLevelOf(route)
       )
     }
   })

@@ -1,5 +1,5 @@
 export const documentsPage = {
   id: 'accompanying-documents',
   slug: 'accompanying-documents',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
