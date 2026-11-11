@@ -9,7 +9,7 @@ import {
   HTTP_STATUS_NOT_FOUND
 } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
-import { routeOptions } from '../../../../../../shared/kit.js'
+import { pageRouteOptions } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
@@ -407,26 +407,26 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: routeOptions,
+    options: pageRouteOptions(page),
     handler: get
   },
   {
     method: 'POST',
     path: pageRoutePath(page.slug),
-    options: routeOptions,
+    options: pageRouteOptions(page),
     handler: post
   },
   {
     method: 'GET',
     path: pageRoutePath(`${page.slug}/status`),
-    options: routeOptions,
+    options: pageRouteOptions(page),
     handler: getStatus
   },
   {
     method: 'GET',
     path: pageRoutePath(`${page.slug}/{uploadId}/file`),
     options: {
-      ...routeOptions,
+      ...pageRouteOptions(page),
       validate: {
         params: Joi.object({
           journeyId: Joi.string().required(),

@@ -6,10 +6,25 @@ vertical slice of page identity, controllers, copy, templates, bindings and test
 
 ## Page identity
 
-A `page.js` exports `{ id, slug }` (plus an authored `gate` where needed and `subPage: true` on a page reached only from the page that opens it) and imports nothing. The controller spreads the
+A `page.js` exports `{ id, slug, maturity }` (plus an authored `gate` where needed and `subPage: true` on a page reached only from the page that opens it) and imports nothing. The controller spreads the
 same object into `meta`, while
 [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js) uses it in section
 order. Keeping the identity leaf import-free avoids a controller–flow module cycle.
+
+## Page maturity
+
+`maturity` is the page's level in the phase banner: one of the ids in
+[`page-maturity/levels.js`](../../../page-maturity/levels.js) (`exploring`,
+`detailing`, `agreed`, `readyForLive`), written as a string so `page.js` stays
+import-free. A page that sets none is Exploring.
+
+The banner reads the level from the page the matched route carries.
+`kit.pageRoutes()` puts the page on each route it builds. A hand-written route
+that renders a page uses `kit.pageRouteOptions(page)` in place of
+`kit.routeOptions`. A feature with no `page.js` of its own, such as the hub, adds
+one to hold its level. A route that carries no page shows no level.
+
+A page's level changes through a reviewed pull request.
 
 ## Collecting controllers
 

@@ -1,4 +1,5 @@
 export const confirmationPage = {
   id: 'confirmation',
-  slug: 'confirmation'
+  slug: 'confirmation',
+  maturity: 'detailing'
 }
