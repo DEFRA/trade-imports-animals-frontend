@@ -321,13 +321,13 @@ describe('#all', () => {
     expect(fetched).toHaveBeenCalledTimes(1)
   })
 
-  test('Should read a large book in pages of the size asked for', async () => {
+  test('Should read a large book in pages of a hundred', async () => {
     const fetched = vi.fn(bookOf(1001))
     switchToRealMode()
     stubFetch(fetched)
 
     const { all } = await addressBook()
-    const records = await all(ORG, { pageSize: 100 })
+    const records = await all(ORG)
 
     expect(records.map(({ id }) => id)).toEqual(
       Array.from({ length: 1001 }, (_, index) => `record-${index + 1}`)

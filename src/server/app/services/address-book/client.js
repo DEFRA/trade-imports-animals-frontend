@@ -31,6 +31,9 @@ const toRecord = async (operator) => ({
   }
 })
 
+/** The largest page size the address book serves. */
+export const MAX_API_PAGE_SIZE = 100
+
 /** One page of the organisation's live addresses with its paging numbers. */
 export const listAddresses = async (
   orgId,
