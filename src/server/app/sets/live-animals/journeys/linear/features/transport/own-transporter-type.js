@@ -29,7 +29,7 @@ export const redirectUnlessOwnTransporterType = async (
     OWN_TRANSPORTER_TYPE_REDIRECT_MESSAGE
   )
   return h.redirect(
-    kit.withChangeContext(
+    kit.carryTrail(
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
     )

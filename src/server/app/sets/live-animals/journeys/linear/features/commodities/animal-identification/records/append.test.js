@@ -11,7 +11,7 @@ import {
   journeyRequest,
   stubH
 } from '../../../../../../../../engine/test-support.js'
-import { seedWithCommodityLineOfAnimals } from '../../../../../../test-support.js'
+import { seedFromFranceWithCommodityLineOfAnimals } from '../../../../../../test-support.js'
 import { dispatchPages } from '../../../index.js'
 import { copy } from '../../copy/copy.en.js'
 import { appendLineRecords } from './append.js'
@@ -25,7 +25,7 @@ describe('#appendLineRecords', () => {
   beforeEach(() => store.clear())
 
   it('Should refuse a record for a line already holding its one animal and return the line index and cap on the card error', async () => {
-    const [line] = seedWithCommodityLineOfAnimals(1).commodityLines
+    const [line] = seedFromFranceWithCommodityLineOfAnimals(1).commodityLines
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [

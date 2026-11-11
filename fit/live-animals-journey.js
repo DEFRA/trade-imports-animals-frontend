@@ -23,6 +23,9 @@ import {
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
+import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
+import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
+import { copy as contactCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/contact/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
 import { copy as hubCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js'
@@ -160,13 +163,13 @@ export const expectStackedOnSameRightEdge = async (above, below, subject) => {
 }
 
 /**
- * An anchored matcher for a URL under this set's mount.
+ * An anchored matcher for a URL under this set's mount, with or without a trail.
  *
  * @param {string} pathPattern - the path under the mount, as regex source.
  * @returns {RegExp} the anchored matcher.
  */
 export const urlUnderBase = (pathPattern) =>
-  new RegExp(`^https?://[^/]+${BASE}${pathPattern}$`)
+  new RegExp(`^https?://[^/]+${BASE}${pathPattern}(?:[?&]from=[^#]*)?$`)
 
 const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 
@@ -469,7 +472,7 @@ export const chooseCountryOfOrigin = (
 export const answerOriginEntry = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.commodities)
 }
 
 const startNotificationWithOriginAnswered = async (page) => {
@@ -486,14 +489,15 @@ export const expectOverview = (page) =>
   expect(page.getByRole('heading', { name: hubCopy.title })).toBeVisible()
 
 /**
- * Opens the notification's overview, then the page at `slug`.
+ * Opens the notification's overview, then follows the link in the row titled
+ * `rowTitle`.
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} slug - the page's slug within the notification.
+ * @param {string} rowTitle - the title of the overview row to open.
  */
-export const visitOverviewThenOpen = async (page, slug) => {
-  await page.goto(journeyUrl(page))
-  await page.goto(journeyUrl(page, slug))
+export const openFromOverviewRow = async (page, rowTitle) => {
+  await openOverview(page)
+  await page.getByRole('link', { name: rowTitle }).click()
 }
 
 /**
@@ -547,12 +551,11 @@ export const documentRowFor = (scope, reference) =>
  */
 export const startNotification = async (page) => {
   await startNotificationWithOriginAnswered(page)
-  await page.goto(journeyUrl(page))
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 /**
- * Starts a notification, answers origin and stops on the import reason page.
+ * Starts a notification, answers origin and opens the import reason page by address, leaving commodities unanswered.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -565,23 +568,16 @@ export const startNotificationAtImportReason = async (page) => {
 }
 
 /**
- * Starts a notification and carries the opening run through the origin and
+ * Starts a notification and presses Save and continue through the origin and
  * commodity pages to the import reason page.
  *
  * @param {import('@playwright/test').Page} page
  */
-export const carryOpeningRunToImportReason = async (page) => {
+export const saveAndContinueToImportReason = async (page) => {
   await startNotificationAtOrigin(page)
 
   await answerOriginDetails(page)
-  await expect(
-    page.getByRole('heading', { name: commoditiesCopy.search.title })
-  ).toBeVisible()
-
   await answerWhatYouAreImporting(page)
-  await expect(
-    page.getByRole('heading', { name: importReasonCopy.title })
-  ).toBeVisible()
 }
 
 export const choosePortOfEntry = (page, option) => {
@@ -600,8 +596,8 @@ export const answerCountryOfOrigin = async (page) => {
     .click()
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
-  await save(page)
-  await expectOverview(page)
+  await saveAndExpectLanding(page, LANDINGS.commodities)
+  await openOverview(page)
 }
 
 export const searchCommodities = async (page, query) => {
@@ -653,7 +649,7 @@ export const openCommoditySearch = async (page) => {
 export const openCommodityDetails = async (page, speciesToSelect) => {
   await openCommoditySearch(page)
   await selectSpecies(page, speciesToSelect)
-  await save(page)
+  await saveAndReturnToHub(page).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page
     .getByRole('link', { name: 'Commodity details', exact: true })
@@ -688,7 +684,11 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
     })
     .click()
 
-export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
+export const unlockSections = async (
+  page,
+  chosen = FELIS_CATUS_ROW,
+  { identificationApplies = true } = {}
+) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -696,8 +696,13 @@ export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill('1')
-  await save(page)
-  await expectOverview(page)
+  await saveAndExpectLanding(
+    page,
+    identificationApplies
+      ? LANDINGS.animalIdentification
+      : LANDINGS.additionalDetails
+  )
+  await openOverview(page)
 }
 
 export const setUploadFile = (
@@ -747,9 +752,63 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = (page) => saveAndContinue(page).click()
+const save = async (page) => {
+  await saveAndContinue(page).click()
+}
 
-export const answerOriginDetails = async (
+export const LANDINGS = {
+  commodities: { slug: 'commodities', title: commoditiesCopy.search.title },
+  importReason: { slug: 'import-reason', title: importReasonCopy.title },
+  commodityDetails: {
+    slug: 'consignment-details',
+    title: commoditiesCopy.consignmentDetails.title
+  },
+  animalIdentification: {
+    slug: 'commodities/identification',
+    title: commoditiesCopy.identification.title
+  },
+  additionalDetails: {
+    slug: 'additional-details',
+    title: additionalDetailsCopy.title
+  },
+  arrivalDetails: {
+    slug: 'port-of-entry',
+    title: transportCopy.portOfEntry.title
+  },
+  transitCountries: {
+    slug: 'transit-countries',
+    title: transportCopy.transitCountries.title
+  },
+  transporters: {
+    slug: 'transporters',
+    title: transportCopy.transporters.title
+  },
+  documents: { slug: 'accompanying-documents', title: documentsCopy.title },
+  addresses: { slug: 'addresses', title: addressesCopy.hub.title },
+  contactAddress: {
+    slug: 'consignment/contact/select',
+    title: contactCopy.title
+  }
+}
+
+export const expectLanding = async (page, { slug, title }) => {
+  await expect(page).toHaveURL(urlUnderBase(`/notifications/[^/]+/${slug}`))
+  await expect(
+    page.getByRole('heading', { name: title, exact: true })
+  ).toBeVisible()
+}
+
+export const saveAndExpectLanding = async (page, landing) => {
+  await save(page)
+  await expectLanding(page, landing)
+}
+
+export const openOverview = async (page) => {
+  await page.goto(journeyUrl(page))
+  await expectOverview(page)
+}
+
+export const fillOriginDetails = async (
   page,
   {
     countryName,
@@ -767,7 +826,11 @@ export const answerOriginDetails = async (
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(internalReference)
-  await save(page)
+}
+
+export const answerOriginDetails = async (page, answers) => {
+  await fillOriginDetails(page, answers)
+  await saveAndExpectLanding(page, LANDINGS.commodities)
 }
 
 export const answerWhatYouAreImporting = async (
@@ -775,13 +838,13 @@ export const answerWhatYouAreImporting = async (
   chosen = BOS_TAURUS_ROW
 ) => {
   await selectSpecies(page, [chosen])
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.importReason)
 }
 
 export const answerWhatYouAreImportingFromOverview = async (page, chosen) => {
   await page.getByRole('link', { name: hubCopy.rows.commodities.title }).click()
   await answerWhatYouAreImporting(page, chosen)
-  await expectOverview(page)
+  await openOverview(page)
 }
 
 export const answerCommodityCounts = async (page) => {
@@ -793,29 +856,35 @@ export const answerCommodityCounts = async (page) => {
   await page
     .getByLabel('Number of packages (when required)')
     .fill(line.numberOfPackages)
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.animalIdentification)
 }
 
 export const answerAnimalIdentification = async (page) => {
   const [unit] = values.commodityLines[0].animalIdentifiers
   await expect(
-    page.getByRole('heading', { name: 'Identification details', exact: true })
+    page.getByRole('heading', {
+      name: LANDINGS.animalIdentification.title,
+      exact: true
+    })
   ).toBeVisible()
   await page
     .getByLabel('Ear tag', { exact: true })
     .fill(unit.animalIdentifierEarTag)
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.additionalDetails)
 }
 
 export const answerImportReason = async (page) => {
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await page.getByRole('radio', { name: 'Breeding' }).check()
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.commodityDetails)
 }
 
 export const answerAdditionalDetails = async (page) => {
   await expect(
-    page.getByRole('heading', { name: 'Additional details', exact: true })
+    page.getByRole('heading', {
+      name: LANDINGS.additionalDetails.title,
+      exact: true
+    })
   ).toBeVisible()
   await page.getByRole('radio', { name: 'Slaughter' }).check()
   await page
@@ -824,7 +893,7 @@ export const answerAdditionalDetails = async (page) => {
     })
     .getByRole('radio', { name: 'No' })
     .check()
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.arrivalDetails)
 }
 
 export const addressesSection = (page, heading) =>
@@ -841,10 +910,10 @@ export const answerRolesAndAddresses = async (page) => {
   for (const [addLink, name] of parties) {
     await page.getByRole('link', { name: addLink, exact: true }).click()
     await page.getByRole('radio', { name }).check()
-    await save(page)
+    await saveAndExpectLanding(page, LANDINGS.addresses)
   }
   await answerCphNumberFromAddLink(page)
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.contactAddress)
 }
 
 export const answerCphNumber = async (page) => {
@@ -857,7 +926,7 @@ export const answerCphNumber = async (page) => {
   await page.getByLabel('County', { exact: true }).fill(county)
   await page.getByLabel('Parish', { exact: true }).fill(parish)
   await page.getByLabel('Holding number', { exact: true }).fill(holding)
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.addresses)
 }
 
 export const openCphNumberFromAddLink = async (page) => {
@@ -879,7 +948,7 @@ export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'
 export const chooseMeansOfTransport = (page, meansOfTransport) =>
   page.locator(MEANS_OF_TRANSPORT_SELECT).selectOption(meansOfTransport)
 
-export const answerArrivalDetails = async (page) => {
+export const fillArrivalDetails = async (page) => {
   await page
     .getByLabel('Arrival date at port of entry')
     .fill(ARRIVAL_DATE_IN_WINDOW)
@@ -891,7 +960,11 @@ export const answerArrivalDetails = async (page) => {
   await page
     .getByLabel('Transport document reference')
     .fill(values.transportDocumentReference)
-  await save(page)
+}
+
+export const answerArrivalDetails = async (page) => {
+  await fillArrivalDetails(page)
+  await saveAndExpectLanding(page, LANDINGS.transitCountries)
 }
 
 export const addTransitCountry = async (page, name) => {
@@ -907,7 +980,7 @@ export const addTransitCountry = async (page, name) => {
 export const answerTransitCountries = async (page) => {
   await addTransitCountry(page, 'France')
   await addTransitCountry(page, 'Belgium')
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.transporters)
 }
 
 /**
@@ -927,39 +1000,54 @@ export const openArrival = async (page) => {
   ).toBeVisible()
 }
 
-/**
- * Opens the arrival details page from a fresh notification, chooses the means
- * of transport, saves and lands on the overview.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} meansOfTransport - the option value to choose.
- */
-export const saveArrivalWithMeans = async (page, meansOfTransport) => {
-  await openArrival(page)
-  await chooseMeansAndSave(page, meansOfTransport)
+const chooseMeansAndSave = async (page, meansOfTransport, { landing }) => {
+  await chooseMeansOfTransport(page, meansOfTransport)
+  await saveAndExpectLanding(page, landing)
+  await openOverview(page)
 }
 
-const chooseMeansAndSave = async (page, meansOfTransport) => {
-  await chooseMeansOfTransport(page, meansOfTransport)
-  await save(page)
-  await expectOverview(page)
+const saveArrivalWithMeans = async (page, meansOfTransport, { landing }) => {
+  await openArrival(page)
+  await chooseMeansAndSave(page, meansOfTransport, { landing })
 }
 
 /**
  * Opens the arrival details page at the given address, chooses the means of
- * transport, saves and lands on the overview.
+ * transport, saves, checks the page Save and continue opens and lands on the
+ * overview.
  *
  * @param {import('@playwright/test').Page} page - the page to drive; it need not be the one that opened the notification.
  * @param {string} arrivalUrl - the address of the arrival details page.
  * @param {string} meansOfTransport - the option value to choose.
+ * @param {object} expected
+ * @param {{ slug: string, title: string }} expected.landing - the page Save and continue opens, one of `LANDINGS`.
  */
 export const saveMeansOfTransportAt = async (
+  page,
+  arrivalUrl,
+  meansOfTransport,
+  { landing }
+) => {
+  await page.goto(arrivalUrl)
+  await chooseMeansAndSave(page, meansOfTransport, { landing })
+}
+
+/**
+ * Opens the arrival details page at the given address, chooses the means of
+ * transport and presses Save and continue, staying on the page it lands on.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} arrivalUrl - the address of the arrival details page.
+ * @param {string} meansOfTransport - the option value to choose.
+ */
+export const saveMeansOfTransportAndContinueAt = async (
   page,
   arrivalUrl,
   meansOfTransport
 ) => {
   await page.goto(arrivalUrl)
-  await chooseMeansAndSave(page, meansOfTransport)
+  await chooseMeansOfTransport(page, meansOfTransport)
+  await save(page)
 }
 
 /**
@@ -967,7 +1055,8 @@ export const saveMeansOfTransportAt = async (
  *
  * @param {import('@playwright/test').Page} page
  */
-export const saveArrivalByAir = (page) => saveArrivalWithMeans(page, 'AIRPLANE')
+export const saveArrivalByAir = (page) =>
+  saveArrivalWithMeans(page, 'AIRPLANE', { landing: LANDINGS.transporters })
 
 /**
  * Opens the transit countries page from a fresh notification, arriving by road.
@@ -975,7 +1064,9 @@ export const saveArrivalByAir = (page) => saveArrivalWithMeans(page, 'AIRPLANE')
  * @param {import('@playwright/test').Page} page
  */
 export const openTransit = async (page) => {
-  await saveArrivalWithMeans(page, values.meansOfTransport)
+  await saveArrivalWithMeans(page, values.meansOfTransport, {
+    landing: LANDINGS.transitCountries
+  })
   await page
     .getByRole('link', {
       name: hubCopy.rows.transitCountries.title,
@@ -1023,6 +1114,18 @@ export const openTransporterType = async (page) => {
  * @param {string} transporterType - `COMMERCIAL` or `PRIVATE`.
  */
 export const answerTransporterType = async (page, transporterType) => {
+  await openTransporterType(page)
+  await chooseTransporterType(page, transporterType)
+}
+
+/**
+ * Chooses a transporter type on the type question and continues to that
+ * type's own add form.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} transporterType - `COMMERCIAL` or `PRIVATE`.
+ */
+export const chooseTransporterType = async (page, transporterType) => {
   const optionText = {
     [COMMERCIAL]: transportCopy.transporterAdd.options.Commercial.text,
     [PRIVATE]: transportCopy.transporterAdd.options.Private.text
@@ -1031,7 +1134,6 @@ export const answerTransporterType = async (page, transporterType) => {
     [COMMERCIAL]: transportCopy.commercialTransporterDetails.title,
     [PRIVATE]: transportCopy.privateTransporterDetails.title
   }
-  await openTransporterType(page)
   await page
     .getByRole('radio', {
       name: optionText[transporterType]
@@ -1049,13 +1151,16 @@ export const answerTransporter = async (page) => {
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
     .check()
-  await save(page)
+  await saveAndExpectLanding(page, LANDINGS.documents)
 }
 
-export const answerContactAddress = async (page) => {
-  await page
+const chooseContactAddress = (page) =>
+  page
     .getByRole('radio', { name: partyPickerName(values.contactAddress) })
     .check()
+
+export const answerContactAddress = async (page) => {
+  await chooseContactAddress(page)
   await save(page)
 }
 
@@ -1074,40 +1179,44 @@ export const completeAnswerSections = async (
 
   await task('Where is this consignment coming from?')
   await answerOriginDetails(page)
+  await openOverview(page)
 
   await answerWhatYouAreImportingFromOverview(page)
   await task('Commodity details')
   await answerCommodityCounts(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   if (!skipAnimalIdentification) {
     await task('Identification details')
     await answerAnimalIdentification(page)
-    await expectOverview(page)
+    await openOverview(page)
   }
 
   await task(hubCopy.rows.importReason.title)
   await answerImportReason(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Additional details')
   await answerAdditionalDetails(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
+  await openOverview(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Transit countries')
   await answerTransitCountries(page)
-  await expectOverview(page)
+  await openOverview(page)
   await task('Transport details')
   await answerTransporter(page)
-  await expectOverview(page)
+  await openOverview(page)
 
   await task('Contact address for this consignment')
-  await answerContactAddress(page)
+  await chooseContactAddress(page)
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
 }
 
 export const openReviewFromHub = async (page) => {

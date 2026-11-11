@@ -3,6 +3,7 @@ import createFetchMock from 'vitest-fetch-mock'
 
 import { config } from '../../../../../../../../../config/config.js'
 import {
+  actWithSessionOrganisation,
   expectOneLogged,
   journeyRequest
 } from '../../../../../../../engine/test-support.js'
@@ -27,9 +28,11 @@ describe('scanStatusOf', () => {
     fetchMocker.mockRejectOnce(failure)
     const request = journeyRequest('journey-1')
 
-    const status = await scanStatusOf(
-      { uploadId: 'up-1', filename: 'itahc.pdf' },
-      { refresh: true, request }
+    const status = await actWithSessionOrganisation(request, () =>
+      scanStatusOf(
+        { uploadId: 'up-1', filename: 'itahc.pdf' },
+        { refresh: true, request }
+      )
     )
 
     expect(status).toEqual({ scanStatus: SCAN_STATUS.PENDING })

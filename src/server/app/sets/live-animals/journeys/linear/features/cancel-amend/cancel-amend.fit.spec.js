@@ -5,6 +5,7 @@ import {
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
+  openNotificationView,
   openReviewFromHub,
   saveAndReturnToHub,
   signIn,
@@ -49,16 +50,17 @@ const amendAndOpenCancel = async (page, reference) => {
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()
   await expectAmendStrip(page)
-  await page
-    .getByRole('link', { name: 'Where is this consignment coming from?' })
-    .click()
+  await page.getByRole('link', { name: 'Change import details' }).click()
   await expectAmendStrip(page)
   await chooseCountryOfOrigin(page, 'France')
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await openReviewFromHub(page)
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await openNotificationView(page)
   await cancelAmendLink(page).click()
 }
 
@@ -101,7 +103,7 @@ test.describe('cancel-amend feature', () => {
 
     await cancelAmendLink(page).click()
 
-    await expect(page).toHaveURL(/\/cancel-amend$/)
+    await expect(page).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(strip(page).locator(TAG)).toHaveText(
       sharedCopy.journeyStrip.amend
@@ -215,7 +217,7 @@ test.describe('cancel-amend feature without JavaScript', () => {
 
       await noJs.goto(`${BASE}/notifications/${reference}/origin`)
       await cancelAmendLink(noJs).click()
-      await expect(noJs).toHaveURL(/\/cancel-amend$/)
+      await expect(noJs).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)

@@ -18,6 +18,7 @@ import {
   recordingLogger,
   resetMocksAndConfigAfterTests,
   stubH,
+  actWithSessionOrganisation,
   expectOneSaveFallbackLogged,
   unavailableBackendError,
   useStubbedJourney
@@ -61,20 +62,20 @@ const drivePost = async ({
   await afterReview(journeyId)
   const h = stubH()
   const logger = recordingLogger()
-  const response = await post(
-    journeyRequest(journeyId, {
-      logger,
-      payload: {
-        step,
-        concurrencyToken: `${reviewedConcurrencyToken}`,
-        ...payload
-      },
-      state: reviewedState(
-        journeyId,
-        sessionConcurrencyToken(reviewedConcurrencyToken)
-      )
-    }),
-    h
+  const request = journeyRequest(journeyId, {
+    logger,
+    payload: {
+      step,
+      concurrencyToken: `${reviewedConcurrencyToken}`,
+      ...payload
+    },
+    state: reviewedState(
+      journeyId,
+      sessionConcurrencyToken(reviewedConcurrencyToken)
+    )
+  })
+  const response = await actWithSessionOrganisation(request, () =>
+    post(request, h)
   )
   return {
     journeyId,
@@ -407,17 +408,54 @@ describe('#declaration submit against the real records adapter', () => {
       const { concurrencyToken } = await store.get(refused.journeyId)
       const h = stubH()
 
-      await post(
-        continueRequest(
-          journeyRequest(refused.journeyId, {
-            state: { [flowOnlyAnswersCookie()]: sessionAfterRefusal }
-          }),
-          concurrencyToken
-        ),
-        h
+      const request = continueRequest(
+        journeyRequest(refused.journeyId, {
+          state: { [flowOnlyAnswersCookie()]: sessionAfterRefusal }
+        }),
+        concurrencyToken
       )
+      await actWithSessionOrganisation(request, () => post(request, h))
 
       expect(h.captured.view.context.values).toEqual({ declaration: '' })
+    })
+
+    it('Should hold a declaration shown again after a failed save to the review it was shown from, submitting nothing once the notification changed', async () => {
+      backendResponds({
+        status: 503,
+        statusText: 'Service Unavailable',
+        body: ''
+      })
+      const failed = await drivePost({
+        payload: { declaration: 'confirmed', crumb: 'test-crumb' }
+      })
+      expect(failed.response.statusCode).toBe(500)
+      await editElsewhere(failed.journeyId)
+      const logger = recordingLogger()
+
+      const response = await post(
+        journeyRequest(failed.journeyId, {
+          logger,
+          payload: {
+            step: 'declare',
+            concurrencyToken: `${failed.reviewedConcurrencyToken}`,
+            declaration: 'confirmed'
+          },
+          state: reviewedState(
+            failed.journeyId,
+            failed.reviewedConcurrencyToken
+          )
+        }),
+        stubH()
+      )
+
+      expect(response).toEqual({
+        redirect: reviewPath(failed.journeyId, CHANGED)
+      })
+      expectRefusalLogged(
+        { journeyId: failed.journeyId, logger },
+        declaration.DECLARATION_REFUSAL.changedSinceReview
+      )
+      expect((await store.get(failed.journeyId)).status).toBe('draft')
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {

@@ -24,8 +24,7 @@ state is not stored.
 ## Session port
 
 [`src/server/app/engine/persistence/session.js`](../engine/persistence/session.js)
-delegates known journey ids, opening-run state, the entry that began the
-opening run, flow-only answers and the
+delegates known journey ids, flow-only answers and the
 reviewed token — the concurrency token this browser last rendered an editable
 review at, which the declaration requires before it will show or submit. It also
 holds the configured cookie names used by `registerJourneyCookie()`.
@@ -36,8 +35,6 @@ The live-animals journey supplies these names in its
 ```js
 {
   knownJourneys: 'liveAnimalsKnownJourneys',
-  openingRun: 'liveAnimalsOpeningRun',
-  openingRunEntry: 'liveAnimalsOpeningRunEntry',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
   addedAddressBanner: 'liveAnimalsAddedAddressBanner',
@@ -45,8 +42,10 @@ The live-animals journey supplies these names in its
 }
 ```
 
-Session-port state (known journeys, opening run, the entry that began it,
-flow-only answers and reviewed tokens) is keyed by journey id. It does not replace the canonical record.
+Session-port state (known journeys, flow-only answers and reviewed tokens) is
+keyed by journey id. It does not replace the canonical record, and it holds no
+record of how a notification was started or of the trader's progress through the
+journey.
 
 The address handshake's two cookies bypass the session port and are set with
 `h.state` in both modes. The token cookie holds a map keyed by fulfilment id.
@@ -97,9 +96,10 @@ per-species counts stay the raw string answers. A complement's `typeOfCommodity`
 is the text of the line's stored commodity type, and is left out when that text is
 blank.
 
-The backend stores parties as they are and hands them back the same way, so the
-records adapter never sends the reader's organisation to it. The organisation is
-the address book's business, not the backend's.
+Every records call carries the signed-in organisation in
+`Trade-Imports-Organisation-Id`. The backend stores it as the owner on create and
+answers another organisation's notification as not found (403 on the fulfilments
+read, which the adapter treats as not found).
 
 GBN-AG's `TradeCountry` carries an ISO 3166-1 alpha-2 code, so a territory the
 destination and transit selects offer must leave as its country. The identification

@@ -35,6 +35,12 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
+import { consignmentContactSelectPage } from '../contact/page.js'
 import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -149,13 +155,21 @@ const htmlOf = (rows, key) => rowByKey(rows, key)?.value.html
 const keysOf = (rows) => rows.map((row) => row.key.text)
 const cardChangeHrefOf = (sections, title) =>
   cardByTitle(sections, title)?.actions?.items[0].href
-const changeHrefsOf = (sections) =>
-  cardsOf(sections).flatMap((card) => [
-    ...(card.actions?.items ?? []).map((action) => action.href),
-    ...(card.rows ?? []).flatMap((entry) =>
+const cardActionHrefsOf = (sections) =>
+  cardsOf(sections).flatMap((card) =>
+    (card.actions?.items ?? []).map((action) => action.href)
+  )
+const changeHrefsOf = (sections) => [
+  ...cardActionHrefsOf(sections),
+  ...cardsOf(sections).flatMap((card) =>
+    (card.rows ?? []).flatMap((entry) =>
       (entry.actions?.items ?? []).map((action) => action.href)
     )
-  ])
+  )
+]
+const FROM_REVIEW = `?from=${CYA_SLUG}`
+const hrefEndingWithFromReview = (path) =>
+  new RegExp(`${RegExp.escape(['/', path, FROM_REVIEW].join(''))}$`)
 const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
@@ -304,14 +318,16 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     'Should retain Change hrefs for an editable %s journey',
     async (status) => {
       const view = await viewForStatus(status)
-      const hrefs = changeHrefsOf(view.context.sections)
+      const hrefs = cardActionHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
       expect(view.context.copyAction).toBeNull()
       expect(view.context.deleteHref).toBeNull()
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(
-        expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
+        expect.arrayContaining([
+          expect.stringMatching(hrefEndingWithFromReview('origin'))
+        ])
       )
     }
   )
@@ -351,13 +367,13 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(draft.context.successBanner).toBeNull()
   })
 
-  it('Should go Back to the notification list from a submitted notification', async () => {
+  it('Should go Back to the dashboard from a submitted notification', async () => {
     const view = await viewForStatus(SUBMITTED)
 
     expect(view.context.backLink).toBe(dashboardPath())
   })
 
-  it('Should go Back to the notification list from the submitted view shown after an amendment is cancelled', async () => {
+  it('Should go Back to the dashboard from the submitted view shown after an amendment is cancelled', async () => {
     const journeyId = await journeyIdForStatus(AMEND, fullSeed)
     await store.seedAnswers(journeyId, {
       ...fullSeed,
@@ -382,6 +398,72 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.backLink).toBe(hubPath(journeyId))
   })
+
+  describe.each([DRAFT, AMEND, SUBMITTED])(
+    'the Back link of a %s review',
+    (status) => {
+      const backFor = async (query) => {
+        const journeyId = await journeyIdForStatus(status, fullSeed)
+        const view = await viewOfJourney(journeyId, query)
+        return { journeyId, backLink: view.context.backLink }
+      }
+      const fallbackFor = (journeyId) =>
+        status === SUBMITTED ? dashboardPath() : hubPath(journeyId)
+
+      it('Should go Back to the last journey page when the trader pressed Save and continue on it', async () => {
+        const { journeyId, backLink } = await backFor({
+          from: `${TRAIL_START.overview},${consignmentContactSelectPage.slug}`
+        })
+
+        expect(backLink).toBe(
+          withTrail(pagePath(journeyId, consignmentContactSelectPage.slug), [
+            TRAIL_START.overview
+          ])
+        )
+      })
+
+      it('Should go Back to Overview when the review was opened from Overview', async () => {
+        const { journeyId, backLink } = await backFor({
+          from: TRAIL_START.overview
+        })
+
+        expect(backLink).toBe(hubPath(journeyId))
+      })
+
+      it('Should go Back to the dashboard when the review was opened from a dashboard card', async () => {
+        const { backLink } = await backFor({ from: TRAIL_START.dashboard })
+
+        expect(backLink).toBe(dashboardPath())
+      })
+
+      it.each([
+        ['nothing says where the trader came from', undefined],
+        ['the trail names a place the journey does not have', 'not-a-place']
+      ])('Should fall back when %s', async (_case, from) => {
+        const { journeyId, backLink } = await backFor(from ? { from } : {})
+
+        expect(backLink).toBe(fallbackFor(journeyId))
+      })
+    }
+  )
+
+  it.each([DRAFT, AMEND])(
+    'Should push the review onto its own trail on every Change link of a %s review',
+    async (status) => {
+      const journeyId = await journeyIdForStatus(status, fullSeed)
+      const view = await viewOfJourney(journeyId, {
+        from: TRAIL_START.dashboard
+      })
+      const hrefs = cardActionHrefsOf(view.context.sections)
+
+      expect(hrefs).not.toHaveLength(0)
+      for (const href of hrefs) {
+        expect(
+          new URL(href, 'http://review.test').searchParams.get('from')
+        ).toBe(`${TRAIL_START.dashboard},${CYA_SLUG}`)
+      }
+    }
+  )
 })
 
 describe(`${SUITE} — section and subsection headings`, () => {
@@ -626,26 +708,26 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
   })
 
-  it('Should point each card Change link at the page that collects its answers with a change flag', async () => {
+  it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(cardChangeHrefOf(sections, IMPORT_DETAILS_CARD)).toMatch(
-      /\/origin\?change=1$/
+      hrefEndingWithFromReview('origin')
     )
     expect(cardChangeHrefOf(sections, ADDITIONAL_ANIMAL_DETAILS_CARD)).toMatch(
-      /\/additional-details\?change=1$/
+      hrefEndingWithFromReview('additional-details')
     )
     expect(cardChangeHrefOf(sections, ARRIVAL_DETAILS_CARD)).toMatch(
-      /\/port-of-entry\?change=1$/
+      hrefEndingWithFromReview('port-of-entry')
     )
     expect(cardChangeHrefOf(sections, TRANSPORT_DETAILS_CARD)).toMatch(
-      /\/transporters\?change=1$/
+      hrefEndingWithFromReview('transporters')
     )
     expect(cardChangeHrefOf(sections, ROLES_AND_ADDRESSES_CARD)).toMatch(
-      /\/addresses\?change=1$/
+      hrefEndingWithFromReview('addresses')
     )
     expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
-      /\/consignment\/contact\/select\?change=1$/
+      hrefEndingWithFromReview('consignment/contact/select')
     )
   })
 
@@ -659,21 +741,21 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
   })
 
-  it('Should point the species-card Change action at the consignment-details page with a change flag', async () => {
+  it('Should point the species-card Change action at the consignment-details page carrying the review on the trail', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
-      /\/consignment-details\?change=1$/
+      hrefEndingWithFromReview('consignment-details')
     )
   })
 
-  it('Should point the uploaded-documents card Change action at the documents page with a change flag', async () => {
+  it('Should point the uploaded-documents card Change action at the documents page carrying the review on the trail', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
       UPLOADED_DOCUMENTS_CARD
     )
     expect(card.actions.items[0].href).toMatch(
-      /\/accompanying-documents\?change=1$/
+      hrefEndingWithFromReview('accompanying-documents')
     )
   })
 })
@@ -734,7 +816,7 @@ describe(`${SUITE} — transit countries`, () => {
     ).actions.items
 
     expect(items).toHaveLength(1)
-    expect(items[0].href).toMatch(/\/transit-countries\?change=1$/)
+    expect(items[0].href).toMatch(hrefEndingWithFromReview('transit-countries'))
     expect(items[0].visuallyHiddenText).toBe(
       copyEn.hidden.cards.transitCountries
     )
@@ -744,7 +826,9 @@ describe(`${SUITE} — transit countries`, () => {
     const card = cardByTitle(await sectionsFor(fullSeed), ARRIVAL_DETAILS_CARD)
 
     expect(card.actions.items).toHaveLength(1)
-    expect(card.actions.items[0].href).toMatch(/\/port-of-entry\?change=1$/)
+    expect(card.actions.items[0].href).toMatch(
+      hrefEndingWithFromReview('port-of-entry')
+    )
     expect(keysOf(card.rows)).not.toContain(TRANSITED_COUNTRIES_KEY)
   })
 
@@ -779,7 +863,9 @@ describe(`${SUITE} — reason-for-import card`, () => {
     )
     expect(valueOf(card.rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
     expect(card.actions.items).toHaveLength(1)
-    expect(card.actions.items[0].href).toMatch(/\/import-reason\?change=1$/)
+    expect(card.actions.items[0].href).toMatch(
+      hrefEndingWithFromReview('import-reason')
+    )
   })
 
   it('Should leave the additional-animal-details card only the answers its own page collects', async () => {
@@ -880,7 +966,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       UPLOADED_DOCUMENTS_CARD
     )
     expect(card.actions.items[0].href).toMatch(
-      /\/accompanying-documents\?change=1$/
+      hrefEndingWithFromReview('accompanying-documents')
     )
   })
 
@@ -1112,7 +1198,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keysOf(card.rows)).toContain(PORT_OF_EXIT_KEY)
     expect(rowActionsOf(sections)).toEqual([])
     expect(cardChangeHrefOf(sections, REASON_FOR_IMPORT_CARD)).toMatch(
-      /\/import-reason\?change=1$/
+      hrefEndingWithFromReview('import-reason')
     )
   })
 })
@@ -1556,6 +1642,18 @@ describe(`${SUITE} — Continue to the declaration`, () => {
         href: '#description-of-the-goods'
       }
     ])
+  })
+
+  it('Should show the declaration on Continue of an amendment holding a species not listed under its code', async () => {
+    const { view } = await driveHandler(
+      declarationRoutesFromReview[0].handler,
+      {
+        seed: withUnlistedSpecies(),
+        startingFrom: [amendmentOpened()]
+      }
+    )
+
+    expect(view.view).toMatch(/\/declaration\/template$/)
   })
 
   it('Should not name a species not listed under its code until Continue is refused', async () => {

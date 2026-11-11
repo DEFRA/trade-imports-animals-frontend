@@ -5,6 +5,7 @@ import {
   PHONE_VIEWPORT,
   answerTransporterType,
   cancelAndReturnToDashboard,
+  chooseTransporterType,
   contentWidthOf,
   continueTransporterType,
   expectNoSeriousOrCriticalViolations,
@@ -19,6 +20,7 @@ import {
   openTransporterType,
   rowFor,
   saveAndContinue,
+  saveAndReturnToHub,
   searchByPressingEnter,
   signIn,
   signInWithOwnTransporterStore,
@@ -26,6 +28,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
+import { sentenceCasedTransporterName } from '../transporter-add-session.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { countriesOriginEntries } from '../../../../../../../services/_capture/fixtures.js'
 import { compareLabels } from '../../../../../../../services/countries/country-labels.js'
@@ -42,7 +45,10 @@ import { copy } from '../copy/copy.en.js'
 import { config } from '../../../../../../../../../config/config.js'
 import {
   addressOverLengthValidations,
-  contactOverLengthValidations
+  contactOverLengthValidations,
+  fillCommercialTransporter,
+  fillPrivateTransporter,
+  validPrivateTransporter
 } from './test-support.js'
 import { addressSummary } from '../../addresses/address-summary.js'
 
@@ -136,18 +142,6 @@ const fillsPrivateNameThenCancelsToDashboard = async (page) => {
   await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 }
 
-const validPrivateTransporter = {
-  nameOrOrganisationName: 'Jean Dupont',
-  addressLine1: '10 Rue de la Ferme',
-  addressLine2: 'Bâtiment 2',
-  townOrCity: 'Calais',
-  county: 'Pas-de-Calais',
-  postcode: '62100',
-  country: 'France',
-  phone: '+33 3 21 00 00 00',
-  email: 'jean.dupont@example.fr'
-}
-
 const handTypedTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
   addressLine1: '12 Rue des Fermes',
@@ -158,18 +152,9 @@ const handTypedTransporter = {
   email: 'jean.dupont@example.fr'
 }
 
-const fillPrivateTransporter = async (
-  page,
-  transporter = validPrivateTransporter
-) => {
-  for (const [field, value] of Object.entries(transporter)) {
-    const control = page.locator(`#${field}`)
-    if (field === 'country') {
-      await control.selectOption(value)
-    } else {
-      await control.fill(value)
-    }
-  }
+const addTransporterOfTypeFromList = async (page, transporterType) => {
+  await addTransporterOf(page).click()
+  await chooseTransporterType(page, transporterType)
 }
 
 const expectTamperedCountryRefusedOnTheUnitedKingdom = async (
@@ -249,6 +234,8 @@ const expectTransporterTypeOptions = async (page) => {
   await expect(options).toHaveCount(2)
   await expect(options.nth(0)).toHaveValue(PRIVATE)
   await expect(options.nth(1)).toHaveValue(COMMERCIAL)
+  await expect(options.nth(0)).not.toBeChecked()
+  await expect(options.nth(1)).not.toBeChecked()
 
   const privateOption = page.getByRole('radio', {
     name: copy.transporterAdd.options.Private.text
@@ -361,7 +348,7 @@ test.describe('transporter list page', () => {
     await answerTransporterType(page, PRIVATE)
     await fillPrivateTransporter(page)
     await saveAndContinue(page).click()
-    const listUrl = journeyUrl(page, 'transporters')
+    const listUrl = `${journeyUrl(page, 'transporters')}?from=overview`
 
     const addedName = validPrivateTransporter.nameOrOrganisationName
     const link = transporterRow(page, addedName).getByRole('link', {
@@ -412,7 +399,7 @@ test.describe('picking a transporter on the list', () => {
   }) => {
     await openTransporterList(page)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -426,7 +413,7 @@ test.describe('picking a transporter on the list', () => {
   }) => {
     await openTransporterList(page)
     await page.getByRole('radio', { name: privateRecord.name }).check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -459,7 +446,7 @@ test.describe('picking a transporter on the list', () => {
         name: handTypedTransporter.nameOrOrganisationName
       })
     ).toBeChecked()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
@@ -496,17 +483,15 @@ test.describe('picking a transporter on the list', () => {
   })
 })
 
-test.describe('a View details link opened with change context', () => {
-  test('keeps the change context on the return it carries', async ({
-    page
-  }) => {
+test.describe('a View details link on a list opened from the review', () => {
+  test('carries the trail on the return it carries', async ({ page }) => {
     await signInWithOwnTransporterStore(page)
     await answerTransporterType(page, PRIVATE)
     await fillPrivateTransporter(page)
     await saveAndContinue(page).click()
 
-    const listUrlWithChangeContext = `${journeyUrl(page, 'transporters')}?change=1`
-    await page.goto(listUrlWithChangeContext)
+    const listUrlFromReview = `${journeyUrl(page, 'transporters')}?from=notification-view`
+    await page.goto(listUrlFromReview)
 
     const addedName = validPrivateTransporter.nameOrOrganisationName
     const link = transporterRow(page, addedName).getByRole('link', {
@@ -515,9 +500,7 @@ test.describe('a View details link opened with change context', () => {
     })
     const href = await link.getAttribute('href')
 
-    expect(new URL(href).searchParams.get('return')).toBe(
-      listUrlWithChangeContext
-    )
+    expect(new URL(href).searchParams.get('return')).toBe(listUrlFromReview)
   })
 })
 
@@ -667,7 +650,7 @@ test.describe('filtering the transporter list as the trader types', () => {
 
     await searchBoxOf(page).fill(privateRecord.name)
     await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transporters'))
@@ -732,9 +715,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     await openTransporterList(page)
     await searchTransporters(page, privateRecord.name)
 
-    await expect(
-      page.getByLabel(copy.transporters.search.label, { exact: true })
-    ).toHaveValue(privateRecord.name)
+    await expect(searchBoxOf(page)).toHaveValue(privateRecord.name)
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
     ).toBeVisible()
@@ -745,7 +726,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, 'no such transporter')
+    await searchTransporters(page, NO_MATCH_TERM)
 
     await expect(page.getByText(copy.transporters.noMatches)).toBeVisible()
     await expect(page.locator(TABLE)).toBeHidden()
@@ -757,7 +738,7 @@ test.describe('searching the transporter list without JavaScript', () => {
     await openTransporterList(page)
     await searchTransporters(page, commercialRecord.name)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page.goto(journeyUrl(page, 'transporters'))
@@ -821,17 +802,44 @@ test.describe('adding a transporter that is not on the list', () => {
     await signIn(page)
   })
 
-  test('reaches the type question from the list, not before it', async ({
+  test('reaches the type question from the list, not before it, with neither type chosen', async ({
     page
   }) => {
     await openTransporterType(page)
 
-    await expect(page).toHaveURL(/\/transporters\/add$/)
+    await expect(page).toHaveURL(/\/transporters\/add\?from=overview$/)
     await expectTransporterTypeOptions(page)
     await expectPageEndsWithPrimaryAlone(
       page,
       copy.transporterAdd.continueButton
     )
+  })
+
+  test('adding a private transporter after saving private and commercial ones opens a blank form with country on the United Kingdom', async ({
+    page
+  }) => {
+    const fields = copy.privateTransporterDetails.fields
+    await answerTransporterType(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+    await addTransporterOfTypeFromList(page, COMMERCIAL)
+    await fillCommercialTransporter(page)
+    await saveAndContinue(page).click()
+    await addTransporterOfTypeFromList(page, PRIVATE)
+
+    for (const label of [
+      fields.nameOrOrganisationName,
+      fields.addressLine1,
+      fields.addressLine2,
+      fields.townOrCity,
+      fields.county,
+      fields.postcode,
+      fields.phone,
+      fields.email
+    ]) {
+      await expect(page.getByLabel(label)).toHaveValue('')
+    }
+    await expect(page.getByLabel(fields.country)).toHaveValue(UNITED_KINGDOM)
   })
 
   test('heads the type question with the choice it asks for, under the new-transporter caption, and warns the trader to check the list for duplicates', async ({
@@ -876,18 +884,26 @@ test.describe('adding a transporter that is not on the list', () => {
     ).toBeVisible()
   })
 
-  test('the add route keeps the change context on its back link', async ({
-    page
-  }) => {
+  test('the add route carries the trail on its back link', async ({ page }) => {
     await openTransporterList(page)
-    await page.goto(`${journeyUrl(page, 'transporters')}?change=1`)
-    await page.getByRole('button', { name: copy.transporters.add }).click()
+    await page.goto(
+      `${journeyUrl(page, 'transporters')}?from=notification-view`
+    )
+    await addTransporterOf(page).click()
 
-    await expect(page).toHaveURL(/\/transporters\/add\?change=1$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\?from=(?:[^#]*%2C)?notification-view$/
+    )
     await expect(page.locator(BACK_LINK)).toHaveAttribute(
       'href',
-      /\/transporters\?change=1$/
+      /\/transporters\?from=(?:[^#]*%2C)?notification-view$/
     )
+  })
+})
+
+test.describe('choosing the type of a transporter that is not on the list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
   })
 
   test('opening the private form before a type is chosen lands on the type question', async ({
@@ -965,7 +981,7 @@ test.describe('adding a transporter that is not on the list', () => {
   }) => {
     await answerTransporterType(page, PRIVATE)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/private$/)
+    await expect(page).toHaveURL(/\/transporters\/add\/private\?from=overview$/)
     await page.locator(BACK_LINK).click()
     await expect(
       page.getByRole('radio', {
@@ -979,7 +995,9 @@ test.describe('adding a transporter that is not on the list', () => {
   }) => {
     await answerTransporterType(page, COMMERCIAL)
 
-    await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
+    await expect(page).toHaveURL(
+      /\/transporters\/add\/commercial\?from=overview$/
+    )
   })
 
   test('a transporter added on one notification is on the list of the next one, ready to pick', async ({
@@ -1011,7 +1029,7 @@ test.describe('adding a transporter that is not on the list', () => {
     )
 
     await row.getByRole('radio').check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
@@ -1205,19 +1223,12 @@ test.describe('private transporter persistence', () => {
       nameOrOrganisationName: transporter.name,
       ...transporter.address
     }
-    for (const [field, value] of Object.entries(fields)) {
-      const control = page.locator(`#${field}`)
-      if (field === 'country') {
-        await control.selectOption(value)
-      } else {
-        await control.fill(value)
-      }
-    }
+    await fillPrivateTransporter(page, fields)
     await saveAndContinue(page).click()
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
     ).toBeVisible()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await openNotificationView(page)
@@ -1241,6 +1252,32 @@ test.describe('private transporter persistence', () => {
 })
 
 test.describe('saving an added transporter', () => {
+  test('lands on the transporter list opened from the review, whose Back link opens the review', async ({
+    page
+  }) => {
+    await signInWithOwnTransporterStore(page)
+    await openTransporterList(page)
+    await page.goto(
+      `${journeyUrl(page, 'transporters')}?from=notification-view`
+    )
+    await addTransporterOfTypeFromList(page, PRIVATE)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await saveAndContinue(page).click()
+
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
+    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/notification-view$/
+    )
+    await page.locator(BACK_LINK).click()
+    await expect(
+      page.getByRole('heading', { level: 1, name: checkAnswersCopy.title })
+    ).toBeVisible()
+  })
+
   test('lands on the transporter list with the new transporter first and checked, under the named success banner', async ({
     page
   }) => {
@@ -1249,7 +1286,10 @@ test.describe('saving an added transporter', () => {
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
-    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
     const firstRow = page
       .getByRole('row')
       .filter({ has: page.getByRole('radio') })
@@ -1291,7 +1331,7 @@ test.describe('cancelling an add form', () => {
     await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
     await page.getByRole('radio', { name: privateRecord.name }).check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     const transporterListUrl = journeyUrl(page, 'transporters')
@@ -1321,17 +1361,14 @@ test.describe('cancelling an add form', () => {
     await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
     await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(transportTaskRow()).toContainText(hubCopy.statuses.complete)
 
     const transporterListUrl = journeyUrl(page, 'transporters')
     const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, 'transporters/add'))
-    await page
-      .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
-      .check()
-    await continueTransporterType(page).click()
+    await chooseTransporterType(page, PRIVATE)
     await fillsPrivateNameThenCancelsToDashboard(page)
 
     await page.goto(transporterListUrl)
@@ -1389,7 +1426,10 @@ test.describe('saving and cancelling the private form without JavaScript', () =>
     await fillPrivateTransporter(page, handTypedTransporter)
     await saveAndContinue(page).click()
 
-    await expectTransporterListShowsAddedBanner(page, 'Jean dupont')
+    await expectTransporterListShowsAddedBanner(
+      page,
+      sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
+    )
   })
 
   test('cancel takes the trader to the dashboard', async ({ page }) => {

@@ -40,7 +40,7 @@ const fields = compose(
 const render = (request, h, journey, values, { errors = {} } = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: kit.withChangeContext(
+      backLink: kit.carryTrail(
         request,
         pagePath(journey.journeyId, transportersPage.slug)
       ),
@@ -103,7 +103,7 @@ const post = async (request, h) => {
     transporterTypeChosenPatch(values.transporterType)
   )
   return h.redirect(
-    kit.withChangeContext(
+    kit.carryTrail(
       request,
       pagePath(
         request.params.journeyId,

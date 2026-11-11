@@ -5,7 +5,10 @@ import {
   DRAFT,
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
+import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import { records } from './index.js'
+
+const asTestOrg = (run) => withOrganisationId('5900001', run)
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -46,7 +49,7 @@ describe('real records adapter — amend', () => {
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
     fetchMocker.mockResponse(JSON.stringify(mockNotification('GBN-1', 'AMEND')))
 
-    const amended = await records.amend('GBN-1')
+    const amended = await asTestOrg(() => records.amend('GBN-1'))
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${notificationsUrl}/GBN-1/amend`)
@@ -59,7 +62,7 @@ describe('real records adapter — amend', () => {
   test('Should surface a failed amend as an error carrying the response status', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
-    await expect(records.amend('GBN-1')).rejects.toThrow(
+    await expect(asTestOrg(() => records.amend('GBN-1'))).rejects.toThrow(
       /Failed to amend notification: 409/
     )
   })
@@ -85,11 +88,13 @@ describe('real records adapter — paged list', () => {
       })
     )
 
-    const listed = await records.list({
-      journeyIds: ['session-id-is-ignored-in-real-mode'],
-      page: 2,
-      sort: 'createdAt,asc'
-    })
+    const listed = await asTestOrg(() =>
+      records.list({
+        journeyIds: ['session-id-is-ignored-in-real-mode'],
+        page: 2,
+        sort: 'createdAt,asc'
+      })
+    )
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${notificationsUrl}?page=2&sort=createdAt,asc`)
@@ -149,8 +154,8 @@ describe('real records adapter — paged list', () => {
       ['Not Found', { status: 404 }]
     )
 
-    expect(await records.has('GBN-1')).toBe(true)
-    expect(await records.has('GBN-GONE')).toBe(false)
+    expect(await asTestOrg(() => records.has('GBN-1'))).toBe(true)
+    expect(await asTestOrg(() => records.has('GBN-GONE'))).toBe(false)
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
       { method: 'GET', url: `${notificationsUrl}/GBN-1/fulfilments` },

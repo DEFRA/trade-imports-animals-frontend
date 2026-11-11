@@ -20,10 +20,7 @@ const withQuery = (href, name, value) =>
  */
 export const refreshHref = (request, attempt, uploadSession) => {
   const refresh = withQuery(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    ),
+    kit.carryTrail(request, pagePath(request.params.journeyId, page.slug)),
     'attempt',
     attempt
   )

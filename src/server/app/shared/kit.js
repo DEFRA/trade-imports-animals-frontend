@@ -1,18 +1,24 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
-import { nextInTaskRow } from '../flow/navigation.js'
-import {
-  journeyLayout,
-  journeyNextRunTarget,
-  journeyPreviousRunTarget,
-  journeySectionCaption
-} from '../flow/journey-flow.js'
-import { inOpeningRun } from '../flow/run-state.js'
+import { nextStepLanding } from '../flow/navigation.js'
+import { journeyLayout, journeySectionCaption } from '../flow/journey-flow.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
-import { AMEND_RETURN_CHOICE, amendFormActions } from './amend-form-actions.js'
+import { carryTrail, pushTrail } from './trail.js'
+
+export {
+  carryTrail,
+  pushTrail,
+  readReturnMarker,
+  requestTrail,
+  TRAIL_START,
+  trailBackLink,
+  trailPlus,
+  withReturnMarker,
+  withTrail
+} from './trail.js'
 
 export const routeOptions = { auth: 'session' }
 
@@ -150,30 +156,23 @@ const HUB_EXIT_VALUE = 'hub'
 
 /**
  * The save choice a request carries: whether Save and return to overview was
- * pressed, and whether the save returns to the review.
+ * pressed.
  *
  * @param {object} request - the request being answered.
- * @returns {{ hubExit: boolean, change: boolean }} the save choice.
+ * @returns {{ hubExit: boolean }} the save choice.
  */
 export const requestSaveChoice = (request) => ({
-  hubExit: request.payload?.[HUB_EXIT_FIELD] === HUB_EXIT_VALUE,
-  change: Boolean(request.query?.change)
+  hubExit: request.payload?.[HUB_EXIT_FIELD] === HUB_EXIT_VALUE
 })
 
 /**
  * The save choice carried by a returned form.
  *
- * @param {object} request - the returning request.
  * @param {object} returnedForm - the returned form values.
- * @param {object} [journey] - the journey the page belongs to.
- * @returns {{ hubExit: boolean, change: boolean }} the save choice.
+ * @returns {{ hubExit: boolean }} the save choice.
  */
-export const returnedSaveChoice = (request, returnedForm, journey) => ({
-  hubExit: returnedForm[HUB_EXIT_FIELD] === HUB_EXIT_VALUE,
-  change:
-    journey?.status === AMEND
-      ? returnedForm[AMEND_RETURN_CHOICE.name] === AMEND_RETURN_CHOICE.value
-      : requestSaveChoice(request).change
+export const returnedSaveChoice = (returnedForm) => ({
+  hubExit: returnedForm[HUB_EXIT_FIELD] === HUB_EXIT_VALUE
 })
 
 export const hubExitTarget = (
@@ -181,127 +180,25 @@ export const hubExitTarget = (
   { saveChoice = requestSaveChoice(request) } = {}
 ) => (saveChoice.hubExit ? hubPath(request.params.journeyId) : null)
 
-export const changeContext = (request) => requestSaveChoice(request).change
-
-/** The href with `change=1` added to its query string. */
-export const appendChangeContext = (href) =>
-  `${href}${href.includes('?') ? '&' : '?'}change=1`
-
-export const withChangeContext = (request, href) =>
-  changeContext(request) ? appendChangeContext(href) : href
-
-const RETURN_PARAMETER = 'return'
-
-/** The href with a `return` marker added to its query string. */
-export const withReturnMarker = (href, slug) =>
-  `${href}${href.includes('?') ? '&' : '?'}${RETURN_PARAMETER}=${encodeURIComponent(slug)}`
-
-/**
- * Reads the `return` marker a request carries.
- *
- * @param {object} request - the request being answered.
- * @param {string[]} allowedSlugs - the page slugs the marker may name.
- * @returns {{ honouredSlug?: string, refusedMarker?: string }} `{}` without a
- * marker, `{ honouredSlug }` when the marker is one of `allowedSlugs`, else
- * `{ refusedMarker }` holding the value received.
- */
-export const readReturnMarker = (request, allowedSlugs) => {
-  const marker = request.query?.[RETURN_PARAMETER]
-  if (marker === undefined) {
-    return {}
-  }
-  return allowedSlugs.includes(marker)
-    ? { honouredSlug: marker }
-    : { refusedMarker: marker }
-}
-
-/**
- * Where a valid save goes.
- *
- * @param {object} request - the request being answered.
- * @param {string} fallback - where a save goes when it neither exits to the
- * overview nor returns to the review.
- * @param {object} [options]
- * @param {{ hubExit: boolean, change: boolean }} [options.saveChoice] - the
- * save choice to follow. Defaults to the request's own.
- * @returns {string} the path to go to.
- */
-export const exitTarget = (
-  request,
-  fallback,
-  { saveChoice = requestSaveChoice(request) } = {}
-) =>
-  hubExitTarget(request, { saveChoice }) ??
-  (saveChoice.change ? pagePath(request.params.journeyId, CYA_SLUG) : fallback)
-
-/** The review's path for a save made while amending from a Change link, else null. */
-export const amendReviewTarget = (request, journey) =>
-  journey?.status === AMEND && changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
-    : null
-
-export const runTarget = async (request, stepId, scope) =>
-  (await inOpeningRun(request, request.params.journeyId))
-    ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
-    : null
-
-const previousStepBackLink = async (
-  request,
-  stepId,
-  { journey, scope, answers }
-) => {
+const nextPagePath = (request, page, scope) => {
   const { journeyId } = request.params
-  const opensInRun = await inOpeningRun(request, journeyId)
-  const draftOpenedFromChangeLink =
-    !opensInRun && journey.status === DRAFT && changeContext(request)
-  if (!opensInRun && !draftOpenedFromChangeLink) {
-    return null
+  const landing = nextStepLanding(page.id, scope, journeyId)
+  if (!landing) {
+    return pagePath(journeyId, CYA_SLUG)
   }
-  const previousStep = journeyPreviousRunTarget(
-    stepId,
-    { scope, answers },
-    journeyId
-  )
-  return draftOpenedFromChangeLink && previousStep
-    ? appendChangeContext(previousStep)
-    : previousStep
-}
-
-/**
- * Where a run step's Back link goes.
- *
- * @param {object} request - the request being answered.
- * @param {string} stepId - the run step's id.
- * @param {{ journey: object, scope: object, answers: object }} state - the
- * journey, its scope and its stored answers.
- * @param {object} [options]
- * @param {boolean} [options.returnsToReview] - the page returns to the
- * review rather than the overview. When true, a request carrying change
- * context or a notification being amended is answered with the review;
- * every other state is answered exactly as it is without the option.
- * @returns {Promise<string>} the review's path when returnsToReview applies
- * and the request carries change context or the notification is being
- * amended; otherwise the previous run step's path while the opening run is
- * active, or, on a draft whose request carries change context, the previous
- * run step's path with change context appended; otherwise, or when no earlier
- * step applies, the overview's path.
- */
-export const runBackLink = async (
-  request,
-  stepId,
-  { journey, scope, answers },
-  { returnsToReview = false } = {}
-) => {
-  if (returnsToReview && (changeContext(request) || journey.status === AMEND)) {
-    return pagePath(journey.journeyId, CYA_SLUG)
+  if (landing.unopened) {
+    request.logger.info(
+      {
+        journeyId,
+        route: request.route?.path,
+        savedPageId: page.id,
+        unopenedPageId: landing.unopened.pageId,
+        missingAnswerIds: landing.unopened.missingAnswerIds
+      },
+      'Save and continue opened the page that asks for a missing earlier answer'
+    )
   }
-  return (
-    (await previousStepBackLink(request, stepId, {
-      journey,
-      scope,
-      answers
-    })) ?? hubPath(journey.journeyId)
-  )
+  return landing.path
 }
 
 /**
@@ -311,17 +208,31 @@ export const runBackLink = async (
  * @param {object} page - the page being saved.
  * @param {object} scope - the journey's scope.
  * @param {object} [options]
- * @param {{ hubExit: boolean, change: boolean }} [options.saveChoice] - the
- * save choice to follow. Defaults to the request's own.
- * @returns {Promise<string>} the path to go to.
+ * @param {{ hubExit: boolean }} [options.saveChoice] - the save choice to
+ * follow. Defaults to the request's own.
+ * @returns {string} the overview's path when Save and return to overview was
+ * pressed, else the next page that applies, else the review's path, carrying
+ * the request's trail plus the page saved. A next page that needs a required
+ * earlier answer that is missing gives the page that asks for it, logged once.
  */
-export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
-  exitTarget(
-    request,
-    (await runTarget(request, page.id, scope)) ??
-      nextInTaskRow(page.id, scope, request.params.journeyId),
-    { saveChoice }
-  )
+export const nextTarget = (request, page, scope, { saveChoice } = {}) =>
+  hubExitTarget(request, { saveChoice }) ??
+  pushTrail(request, nextPagePath(request, page, scope), page.slug)
+
+/**
+ * Where a page that is skipped goes next.
+ *
+ * @param {object} request - the request being answered.
+ * @param {object} page - the page being skipped.
+ * @param {object} scope - the journey's scope.
+ * @returns {string} the overview's path when Save and return to overview was
+ * pressed, else the next page that applies, else the review's path, carrying
+ * the request's trail unchanged. A next page that needs a required earlier
+ * answer that is missing gives the page that asks for it, logged once.
+ */
+export const nextTargetKeepingTrail = (request, page, scope) =>
+  hubExitTarget(request) ??
+  carryTrail(request, nextPagePath(request, page, scope))
 
 /**
  * The chrome every journey page shares.
@@ -331,10 +242,6 @@ export const nextTarget = async (request, page, scope, { saveChoice } = {}) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
- * @param {object} [options.request] - the request being answered. Supply it
- * on a page that ends with `saveActions`, and the view gains `amend`: the two
- * form actions its save buttons carry while the journey is being amended, and
- * `returnChoice`, or null otherwise.
  * @param {string} [options.surface] - a key of `SURFACES` naming the width of
  * the content column. Defaults to `form`, the reading measure; an unknown
  * surface throws.
@@ -354,12 +261,10 @@ export const base = (
     offerCancelAmend = true,
     showJourneyStrip = true,
     successBanner = null,
-    request,
     surface = 'form'
   } = {}
 ) => {
   const hasJourney = journeyId != null
-  const amending = journey?.status === AMEND
   return {
     layout: journeyLayout(),
     pageTitle: title,
@@ -370,11 +275,6 @@ export const base = (
     journeyStrip: showJourneyStrip
       ? journeyStrip(journey, { offerCancelAmend })
       : null,
-    amending,
-    amend:
-      amending && request
-        ? amendFormActions(request.path ?? '', request.url?.searchParams)
-        : null,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,

@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  openedFromChangeLink,
-  openingRunAt,
+  reviewChangeLinkQuery,
+  trailQuery,
   expectBackLinkIsPath,
   expectNoRefusalLogged,
   getHandlerOf,
@@ -15,12 +15,15 @@ import {
 import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
 import {
-  RUN_ACTIVE,
-  RUN_COMPLETE,
-  RUN_ENTRY_LIST_CREATE,
-  RUN_ENTRY_START
-} from '../../../../../../flow/run-state.js'
-import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../shared/kit.js'
 import * as countries from '../../../../../../services/countries/index.js'
 
 import * as origin from './controller.js'
@@ -148,6 +151,32 @@ describe('POST /origin — preserved field values when save is refused', () => {
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
     expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST /origin — where Save and continue goes', () => {
+  const payload = {
+    countryOfOrigin: 'FR',
+    regionOfOriginCodeRequirement: 'no'
+  }
+
+  it('Should go on to the commodities page carrying origin on the trail', async () => {
+    const { journeyId, response } = await driveHandler(post, { payload })
+
+    expect(response.redirect).toBe(
+      withTrail(pagePath(journeyId, 'commodities'), ['origin'])
+    )
+  })
+
+  it('Should go on to the commodities page carrying the review and origin on the trail when opened from a Change link', async () => {
+    const { journeyId, response } = await driveHandler(post, {
+      payload,
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
+    })
+
+    expect(response.redirect).toBe(
+      withTrail(pagePath(journeyId, 'commodities'), [CYA_SLUG, 'origin'])
+    )
   })
 })
 
@@ -413,28 +442,14 @@ describe('GET /origin — where Back goes', () => {
   ]
 
   it.each(seeds)(
-    'Should send Back to the dashboard while the opening run is active and began at the list with $name',
+    'Should send Back to the dashboard for a notification started from the dashboard with $name',
     async ({ seed }) => {
       const result = await driveHandler(get, {
         seed,
-        startingFrom: [
-          openingRunAt(RUN_ACTIVE, { entry: RUN_ENTRY_LIST_CREATE })
-        ]
+        startingFrom: [{ query: trailQuery(TRAIL_START.dashboard) }]
       })
 
-      expect(result.view.context.backLink).toBe(dashboardPath())
-    }
-  )
-
-  it.each(seeds)(
-    'Should send Back to the dashboard while the opening run is active and its entry is unrecorded with $name',
-    async ({ seed }) => {
-      const result = await driveHandler(get, {
-        seed,
-        startingFrom: [openingRunAt(RUN_ACTIVE)]
-      })
-
-      expect(result.view.context.backLink).toBe(dashboardPath())
+      expectBackLinkIsPath(result, dashboardPath())
     }
   )
 
@@ -446,60 +461,60 @@ describe('GET /origin — where Back goes', () => {
     })
 
     it.each(seeds)(
-      'Should send Back to the INS type question for this notification while the active opening run began at the start entry with $name',
+      'Should send Back to the INS type question for this notification started there with $name',
       async ({ seed }) => {
         const result = await driveHandler(get, {
           seed,
-          startingFrom: [openingRunAt(RUN_ACTIVE, { entry: RUN_ENTRY_START })]
+          startingFrom: [{ query: trailQuery(TRAIL_START.ins) }]
         })
 
-        expect(result.view.context.backLink).toBe(
+        expectBackLinkIsPath(
+          result,
           `http://ins.example/notification-type?notification-id=${result.journeyId}&current-notification-type=live-animals`
         )
       }
     )
-
-    it('Should send Back to the overview once the opening run is complete, even though it began at the start entry', async () => {
-      const result = await driveHandler(get, {
-        seed: answer,
-        startingFrom: [openingRunAt(RUN_COMPLETE, { entry: RUN_ENTRY_START })]
-      })
-
-      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-    })
   })
 
   it.each(seeds)(
-    'Should send Back to the overview once the opening run is complete with $name',
+    'Should send Back to the overview when opened from the overview with $name',
     async ({ seed }) => {
       const result = await driveHandler(get, {
         seed,
-        startingFrom: [openingRunAt(RUN_COMPLETE)]
+        startingFrom: [{ query: trailQuery(TRAIL_START.overview) }]
       })
 
-      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+      expectBackLinkIsPath(result, hubPath(result.journeyId))
     }
   )
 
-  it('Should send Back to the overview for a notification with a committed answer and no opening run', async () => {
-    const result = await driveHandler(get, { seed: answer })
-
-    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-  })
-
-  it('Should send Back to the overview for a committed answer on a draft opened from a Change link', async () => {
+  it('Should send Back to the review for a committed answer on a draft opened from a Change link', async () => {
     const result = await driveHandler(get, {
       seed: answer,
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
+
+    expectBackLinkIsPath(result, pagePath(result.journeyId, CYA_SLUG))
+  })
+
+  it('Should send Back to the overview for a notification with a committed answer and no trail', async () => {
+    const result = await driveHandler(get, { seed: answer })
 
     expectBackLinkIsPath(result, hubPath(result.journeyId))
   })
 
-  it('Should send Back to the dashboard for a notification with no answer and no opening run', async () => {
+  it('Should send Back to the dashboard for a notification with no answer and no trail', async () => {
     const result = await driveHandler(get)
 
-    expect(result.view.context.backLink).toBe(dashboardPath())
+    expectBackLinkIsPath(result, dashboardPath())
+  })
+
+  it('Should send Back to the dashboard for no answer and a trail naming a place the journey does not have', async () => {
+    const result = await driveHandler(get, {
+      startingFrom: [{ query: trailQuery('not-a-place') }]
+    })
+
+    expectBackLinkIsPath(result, dashboardPath())
   })
 })
 

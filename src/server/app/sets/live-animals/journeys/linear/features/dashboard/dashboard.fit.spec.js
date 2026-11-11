@@ -13,6 +13,7 @@ import {
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
+import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 
 const FEEDBACK_MAILTO = 'mailto:APHAServiceDesk@apha.gov.uk'
 
@@ -199,7 +200,9 @@ test.describe('dashboard feature — notification rows and actions', () => {
     test.slow()
     const reference = await stageSubmittedNotification(page)
     await actionFor(page, 'button', 'Amend', reference).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: checkAnswersCopy.title })
+    ).toBeVisible()
 
     await page.goto(BASE)
 

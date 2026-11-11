@@ -1,7 +1,8 @@
 import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import { additionalDetailsPage } from '../../additional-details/page.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -20,7 +21,16 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import { itSendsBackToOverview } from '../../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
+import {
+  seedFromFranceWithOneEarTaggedCattle,
+  withOriginSaved
+} from '../../../../../test-support.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../../shared/kit.js'
 import { animalIdentificationPage, consignmentDetailsPage } from '../page.js'
 import { lineKey } from '../search/selection/line-key.js'
 
@@ -97,6 +107,17 @@ const firstRemoveCellHtml = (card) => card.savedAnimalsTable.rows[0].at(-1).html
 
 const SUITE =
   '#animalIdentificationController — the single card-per-species surface'
+
+const additionalDetailsPath = (journeyId) =>
+  pagePath(journeyId, additionalDetailsPage.slug)
+
+const additionalDetailsAfterSaving = (journeyId) =>
+  withTrail(additionalDetailsPath(journeyId), [animalIdentificationPage.slug])
+
+const changeCountPath = (journeyId) =>
+  withTrail(pagePath(journeyId, consignmentDetailsPage.slug), [
+    animalIdentificationPage.slug
+  ])
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
@@ -298,14 +319,16 @@ describe(`${SUITE} — the in-card save button`, () => {
 
   it('Should still capture a one-animal record through the page primary', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '1' })
         ]
-      },
+      }),
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsAfterSaving(result.journeyId)
+    })
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
     expect(
       result.after.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
@@ -352,7 +375,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     )
   })
 
-  it('Should point every card at the consignment-details page to change the animal count', async () => {
+  it('Should point every card at the consignment-details page to change the animal count, with identification details on the trail', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [
@@ -367,12 +390,12 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     )
 
     expect(cards.map((card) => card.changeCountHref)).toEqual([
-      pagePath(journey.journeyId, 'consignment-details'),
-      pagePath(journey.journeyId, 'consignment-details')
+      changeCountPath(journey.journeyId),
+      changeCountPath(journey.journeyId)
     ])
   })
 
-  it('Should keep the change context on every card link when the trader arrived from check your answers', async () => {
+  it('Should extend the trail on every card link when the trader arrived from check your answers', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       commodityLines: [
@@ -382,14 +405,17 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     })
     const h = stubH()
     await getHandler(
-      journeyRequest(journey.journeyId, { query: { change: '1' } }),
+      journeyRequest(journey.journeyId, { query: { from: CYA_SLUG } }),
       h
     )
     const cards = h.captured.view.context.sections.flatMap(
       (section) => section.cards
     )
 
-    const expected = `${pagePath(journey.journeyId, consignmentDetailsPage.slug)}?change=1`
+    const expected = withTrail(
+      pagePath(journey.journeyId, consignmentDetailsPage.slug),
+      [CYA_SLUG, animalIdentificationPage.slug]
+    )
     expect(cards.map((card) => card.changeCountHref)).toEqual([
       expected,
       expected
@@ -514,11 +540,11 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it("Should append the card's record and stay on the surface with the PRG redirect", async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' })
         ]
-      },
+      }),
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
@@ -531,9 +557,9 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it('Should reject an empty Save and add another — never append a blank record, and log nothing', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
@@ -546,14 +572,7 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it('Should surface the engine cap rejection as a card-level error when a stale form posts once every animal is entered, and log the refusal', async () => {
     const result = await driveHandler(post, {
-      seed: {
-        commodityLines: [
-          lineOf(BOS_TAURUS_ROW, {
-            numberOfAnimalsQuantity: '1',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-          })
-        ]
-      },
+      seed: seedFromFranceWithOneEarTaggedCattle(),
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK2' }
     })
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
@@ -573,9 +592,9 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it('Should block a partial permanent address on the pressed card', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [felisCatusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: {
         action: 'add:0',
         [PASSPORT_FIELD_0]: 'UK123456789',
@@ -590,12 +609,12 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it("Should save only the pressed card's animal and show no error for another species' over-long value", async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           bosTaurusLine({ numberOfAnimalsQuantity: '2' }),
           bisonBisonLine({ numberOfAnimalsQuantity: '2' })
         ]
-      },
+      }),
       payload: {
         action: 'add:0',
         [EAR_TAG_FIELD_0]: 'UK1',
@@ -616,9 +635,9 @@ describe(`${SUITE} — Save and add another`, () => {
   it('Should save a 58-character identifier typed with spaces around it without them', async () => {
     const identifier = 'x'.repeat(58)
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: { action: 'add:0', [EAR_TAG_FIELD_0]: `  ${identifier}  ` }
     })
     expect(
@@ -630,9 +649,9 @@ describe(`${SUITE} — Save and add another`, () => {
 
   it('Should refuse a 59-character identifier with the field-named message', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: { action: 'add:0', [EAR_TAG_FIELD_0]: 'x'.repeat(59) }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(EAR_TAG_REFUSED)
@@ -643,15 +662,15 @@ describe(`${SUITE} — Save and add another`, () => {
 describe(`${SUITE} — Save and continue`, () => {
   setupIdentificationEngine()
 
-  it('Should append the held record of a one-animal line then exit along the section flow to the hub', async () => {
+  it('Should append the held record of a one-animal line then go on to Additional details', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
-      },
+      }),
       payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
-      redirect: hubPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
     const [unit] = result.after.commodityLines[0].animalIdentifiers
     expect(unit.animalIdentifierEarTag).toBe('UK1')
@@ -660,27 +679,29 @@ describe(`${SUITE} — Save and continue`, () => {
 
   it('Should exit without appending when no form holds data — the zero-record pass', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
-      },
+      }),
       payload: {}
     })
     expect(result.response).toEqual({
-      redirect: hubPath(result.journeyId)
+      redirect: additionalDetailsAfterSaving(result.journeyId)
     })
-    expect(result.after).toEqual({
-      commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: 1 })]
-    })
+    expect(result.after).toEqual(
+      withOriginSaved({
+        commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: 1 })]
+      })
+    )
   })
 
   it('Should save the one-animal line and leave a multi-animal line unsaved when both hold typed values', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           bosTaurusLine({ numberOfAnimalsQuantity: '1' }),
           felisCatusLine({ numberOfAnimalsQuantity: '2' })
         ]
-      },
+      }),
       payload: {
         'animalIdentifierEarTag-0': 'UK1',
         'animalIdentifierPassport-1': 'UK123456789'
@@ -694,12 +715,14 @@ describe(`${SUITE} — Save and continue`, () => {
 
   it('Should show no error for an over-long value typed into a multi-animal line', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: { 'animalIdentifierEarTag-0': 'x'.repeat(59) }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsAfterSaving(result.journeyId)
+    })
   })
 })
 
@@ -708,14 +731,14 @@ describe(`${SUITE} — Enter in a field`, () => {
 
   it('Should save the value typed into a multi-animal line after its existing records and stay on identification details', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           lineOf(BOS_TAURUS_ROW, {
             numberOfAnimalsQuantity: '3',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
           })
         ]
-      },
+      }),
       payload: {
         action: IMPLICIT_SUBMIT,
         [EAR_TAG_FIELD_0]: 'UK2'
@@ -733,9 +756,9 @@ describe(`${SUITE} — Enter in a field`, () => {
   it('Should refuse an over-long value typed into a multi-animal line, keep it in the field and save nothing', async () => {
     const tooLong = 'x'.repeat(59)
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-      },
+      }),
       payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: tooLong }
     })
     expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(EAR_TAG_REFUSED)
@@ -750,12 +773,12 @@ describe(`${SUITE} — Enter in a field`, () => {
 
   it('Should save the values typed into a one-animal line and a multi-animal line and stay on identification details', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [
           bosTaurusLine({ numberOfAnimalsQuantity: '1' }),
           felisCatusLine({ numberOfAnimalsQuantity: '2' })
         ]
-      },
+      }),
       payload: {
         action: IMPLICIT_SUBMIT,
         [EAR_TAG_FIELD_0]: 'UK1',
@@ -776,14 +799,16 @@ describe(`${SUITE} — Enter in a field`, () => {
     ).toEqual(['UK123456789'])
   })
 
-  it('Should save the value typed into a one-animal line and go on to the hub', async () => {
+  it('Should save the value typed into a one-animal line and go on to Additional details', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '1' })]
-      },
+      }),
       payload: { action: IMPLICIT_SUBMIT, [EAR_TAG_FIELD_0]: 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsAfterSaving(result.journeyId)
+    })
     expect(
       result.after.commodityLines[0].animalIdentifiers.map(
         (unit) => unit.animalIdentifierEarTag
@@ -797,14 +822,7 @@ describe(`${SUITE} — Remove`, () => {
 
   it('Should remove the named record on the remove POST and return to the surface — a freed slot reopens the entry form', async () => {
     const result = await driveHandler(post, {
-      seed: {
-        commodityLines: [
-          lineOf(BOS_TAURUS_ROW, {
-            numberOfAnimalsQuantity: '1',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-          })
-        ]
-      },
+      seed: seedFromFranceWithOneEarTaggedCattle(),
       payload: { action: removeUnitAction(BOS_TAURUS_ROW, 0) }
     })
     expect(result.response).toEqual({
@@ -967,11 +985,14 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
 describe(`${SUITE} — a commodity that carries no identifier of its own`, () => {
   setupIdentificationEngine()
 
-  const requestPage = async (seed) => {
+  const requestPage = async (seed, query = {}) => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, seed)
     const h = stubH()
-    const response = await getHandler(journeyRequest(journey.journeyId), h)
+    const response = await getHandler(
+      journeyRequest(journey.journeyId, { query }),
+      h
+    )
     return { journeyId: journey.journeyId, response, view: h.captured.view }
   }
 
@@ -1015,33 +1036,56 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
   })
 
   it('Should carry a request for the page on when no line carries an identifier', async () => {
-    const { journeyId, response, view } = await requestPage({
-      commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-    })
+    const { journeyId, response, view } = await requestPage(
+      withOriginSaved({
+        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
+      })
+    )
     expect(view).toBeUndefined()
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({ redirect: additionalDetailsPath(journeyId) })
   })
 
-  it('Should carry a request for the page on when the notification has no commodities', async () => {
-    const { journeyId, response, view } = await requestPage({
-      commodityLines: []
+  it('Should carry the trail of the request on to the next page when no line carries an identifier', async () => {
+    const { journeyId, response } = await requestPage(
+      withOriginSaved({
+        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
+      }),
+      { from: `${TRAIL_START.overview},${consignmentDetailsPage.slug}` }
+    )
+    expect(response).toEqual({
+      redirect: withTrail(additionalDetailsPath(journeyId), [
+        TRAIL_START.overview,
+        consignmentDetailsPage.slug
+      ])
     })
-    expect(view).toBeUndefined()
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 
-  const untouchedStruthioAnswers = {
+  it('Should send a request for the page to What are you importing? when the notification has no commodities', async () => {
+    const { journeyId, response, view } = await requestPage(
+      withOriginSaved({
+        commodityLines: []
+      })
+    )
+    expect(view).toBeUndefined()
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, 'commodities')
+    })
+  })
+
+  const untouchedStruthioAnswers = withOriginSaved({
     commodityLines: [struthioLine({ numberOfAnimalsQuantity: 3 })]
-  }
+  })
 
   it('Should carry a stale add post on without writing a record, logging the skip once', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      },
+      }),
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(result.view).toBeUndefined()
     expect(result.after).toEqual(untouchedStruthioAnswers)
     expect(result.logger.entries).toEqual([
@@ -1056,12 +1100,14 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
 
   it('Should carry a stale remove post on without deleting a record', async () => {
     const result = await driveHandler(post, {
-      seed: {
+      seed: withOriginSaved({
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      },
+      }),
       payload: { action: removeUnitAction(STRUTHIO_ROW, 0) }
     })
-    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.response).toEqual({
+      redirect: additionalDetailsPath(result.journeyId)
+    })
     expect(result.view).toBeUndefined()
     expect(result.after).toEqual(untouchedStruthioAnswers)
   })
@@ -1070,9 +1116,10 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
 describe(`${SUITE} — the Back link`, () => {
   setupIdentificationEngine()
 
-  itSendsBackToOverview(getHandler, {
-    seed: {
+  itSendsBackToWhereTheTraderCameFrom(getHandler, {
+    previousPage: consignmentDetailsPage.slug,
+    seed: withOriginSaved({
       commodityLines: [bosTaurusLine({ numberOfAnimalsQuantity: '2' })]
-    }
+    })
   })
 })

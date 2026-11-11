@@ -6,7 +6,7 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import {
   amendmentOpened,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
 import { store } from '../../../../../engine/store.js'
@@ -14,9 +14,14 @@ import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { seedWithCommodityLineOfAnimals } from '../../../test-support.js'
+import { seedFromFranceWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
-import { base, hubExitTarget } from '../../../../../shared/kit.js'
+import {
+  base,
+  CYA_SLUG,
+  hubExitTarget,
+  withTrail
+} from '../../../../../shared/kit.js'
 
 import * as importReason from './import-reason/controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
@@ -27,6 +32,13 @@ import {
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW
 } from './commodities/search/test-support.js'
+
+const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
+const detailsAfterImportReason = (journeyId, ...trailBeforeImportReason) =>
+  withTrail(pagePath(journeyId, CONSIGNMENT_DETAILS_SLUG), [
+    ...trailBeforeImportReason,
+    'import-reason'
+  ])
 
 const reasonPrerequisites = {
   countryOfOrigin: 'FR',
@@ -76,7 +88,7 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should send Save and continue to the overview outside the opening run when no exit is named', async () => {
+  it('Should send Save and continue on to Commodity details when no exit is named', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
@@ -84,7 +96,9 @@ describe('save actions — hub exit semantics', () => {
         seed: reasonPrerequisites
       }
     )
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
+    expect(response).toEqual({
+      redirect: detailsAfterImportReason(journeyId)
+    })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
@@ -130,26 +144,26 @@ describe('save actions — hub exit semantics', () => {
     expect(exit.after.reasonForImport).toBeUndefined()
   })
 
-  it('Should send a change-context Save and continue back to check your answers', async () => {
+  it('Should send a Save and continue from a Change link on to Commodity details, carrying the trail', async () => {
     const { journeyId, response } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: internalMarketPayload,
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         seed: reasonPrerequisites
       }
     )
     expect(response).toEqual({
-      redirect: pagePath(journeyId, 'notification-view')
+      redirect: detailsAfterImportReason(journeyId, CYA_SLUG)
     })
   })
 
-  it('Should let an explicit hub exit win over the change context', async () => {
+  it('Should let an explicit hub exit win over the trail', async () => {
     const { journeyId, response, after } = await driveHandler(
       postHandlerOf(importReason),
       {
         payload: { ...internalMarketPayload, exit: 'hub' },
-        startingFrom: [openedFromChangeLink()],
+        startingFrom: [{ query: reviewChangeLinkQuery() }],
         seed: reasonPrerequisites
       }
     )
@@ -175,7 +189,7 @@ describe('save actions — hub exit semantics', () => {
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
-        seed: seedWithCommodityLineOfAnimals(1)
+        seed: seedFromFranceWithCommodityLineOfAnimals(1)
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })
@@ -239,35 +253,47 @@ const postAmending = (startingFrom, { payload = internalMarketPayload } = {}) =>
     startingFrom: [amendmentOpened(), ...startingFrom]
   })
 
-describe('save actions — amend endings', () => {
-  it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
-    const saveAndReturn = await postAmending([openedFromChangeLink()])
-    const saveAndContinue = await postAmending([])
+describe('save actions — while amending', () => {
+  it('Should send Save and continue on to the next page that applies, from a Change link or not', async () => {
+    const fromChangeLink = await postAmending([
+      { query: reviewChangeLinkQuery() }
+    ])
+    const fromOverview = await postAmending([])
 
-    expect(saveAndReturn.response).toEqual({
-      redirect: pagePath(saveAndReturn.journeyId, 'notification-view')
+    expect(fromChangeLink.response).toEqual({
+      redirect: detailsAfterImportReason(fromChangeLink.journeyId, CYA_SLUG)
     })
-    expect(saveAndContinue.response).toEqual({
-      redirect: hubPath(saveAndContinue.journeyId)
+    expect(fromOverview.response).toEqual({
+      redirect: detailsAfterImportReason(fromOverview.journeyId)
     })
   })
 
-  it("Should hold an amend's Save and return to the page's own checks, with the same errors and no commit as outside the amendment", async () => {
-    const partlyAnsweredTransit = {
-      reasonForImport: 'transit',
-      transitPortOfExit: 'GB DVR',
-      transitDestinationCountry: ''
+  it.each([
+    ['Save and continue', {}],
+    ['Save and return to overview', { exit: 'hub' }]
+  ])(
+    "Should hold %s to the page's own checks, with the same errors and no commit as outside the amendment",
+    async (_button, buttonPayload) => {
+      const partlyAnsweredTransit = {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: '',
+        ...buttonPayload
+      }
+      const amending = await postAmending(
+        [{ query: reviewChangeLinkQuery() }],
+        {
+          payload: partlyAnsweredTransit
+        }
+      )
+      const outside = await driveHandler(postHandlerOf(importReason), {
+        payload: partlyAnsweredTransit,
+        seed: reasonPrerequisites
+      })
+
+      expect(amending.response.redirect).toBeUndefined()
+      expect(amending.view.context.errors).toEqual(outside.view.context.errors)
+      expect(amending.after).toEqual(amending.before)
     }
-    const amending = await postAmending([openedFromChangeLink()], {
-      payload: partlyAnsweredTransit
-    })
-    const outside = await driveHandler(postHandlerOf(importReason), {
-      payload: partlyAnsweredTransit,
-      seed: reasonPrerequisites
-    })
-
-    expect(amending.response.redirect).toBeUndefined()
-    expect(amending.view.context.errors).toEqual(outside.view.context.errors)
-    expect(amending.after).toEqual(amending.before)
-  })
+  )
 })

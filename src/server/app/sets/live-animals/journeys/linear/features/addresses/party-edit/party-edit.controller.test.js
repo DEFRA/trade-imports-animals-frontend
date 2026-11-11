@@ -1,12 +1,13 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
+import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 
 import {
   addressBookAnswering,
   addressBookRefusingAddresses,
   addressBookRequestUrls,
   driveHandler,
-  openedFromChangeLink,
+  reviewChangeLinkQuery,
   refusingSaves,
   expectOneSaveFallbackLogged,
   resetMocksAndConfigAfterTests,
@@ -92,11 +93,11 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
   it('Should send the trader to pick an address, saving nothing, when a save arrives with no copy', async () => {
     const result = await driveHandler(post, {
       payload: FORM,
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, party.slug)}?change=1`
+      redirect: `${pagePath(result.journeyId, party.slug)}?from=${CYA_SLUG}`
     })
     expect(result.after[party.id]).toBeUndefined()
   })
@@ -201,16 +202,16 @@ describe('Edit address details — where the trader returns to', () => {
     )
   })
 
-  it('Should keep the change context on the way back to the hub', async () => {
+  it('Should carry the trail on the way back to the hub', async () => {
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,
       query: { return: 'addresses' },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
+      redirect: `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     })
   })
 

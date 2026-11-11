@@ -156,11 +156,11 @@ describe('no set singletons — every gateway is keyed by its set', () => {
       ).toBeGreaterThan(0)
 
       const wrapped = entryGuards.filter((argument) =>
-        argument.includes('withSetContext(SET_ID')
+        argument.includes('runInRequestContext(request, SET_ID')
       )
       expect(
         wrapped.length,
-        `${name} registers ${entryGuards.length} onPreHandler extension(s) but re-enters its set in ${wrapped.length}`
+        `${name} registers ${entryGuards.length} onPreHandler extension(s) but binds request context in ${wrapped.length}`
       ).toBe(entryGuards.length)
     }
   })

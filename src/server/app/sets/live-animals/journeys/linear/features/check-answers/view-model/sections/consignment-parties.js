@@ -7,6 +7,8 @@ const copy = copyFor({ en, cy })
 
 export const consignmentPartiesSection = ({
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
@@ -20,6 +22,8 @@ export const consignmentPartiesSection = ({
       cards: [
         rolesAndAddressesCard({
           journeyId,
+          changeLinkTrail,
+          reviewPageTrail,
           answers,
           readOnly,
           parties,

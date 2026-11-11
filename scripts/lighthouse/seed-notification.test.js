@@ -7,6 +7,7 @@ import {
   parties
 } from '../../src/server/app/services/transporters/index.js'
 import {
+  createNotification,
   journeyIdIn,
   SEED_SHAPES,
   seedSteps,
@@ -84,6 +85,25 @@ describe('#seedSteps commercial transporter', () => {
       name: values.commercialTransporter.name,
       type: COMMERCIAL
     })
+  })
+})
+
+describe('#createNotification', () => {
+  it('Should refuse when the dashboard does not render and post nothing', async () => {
+    const posts = []
+    const client = {
+      posts,
+      document: async () => ({ status: 403, crumb: '' }),
+      submit: async (...args) => {
+        posts.push(args)
+        return { status: 302, location: '' }
+      }
+    }
+
+    await expect(createNotification(client)).rejects.toThrow(
+      /Dashboard did not render \(403\)/
+    )
+    expect(posts).toEqual([])
   })
 })
 

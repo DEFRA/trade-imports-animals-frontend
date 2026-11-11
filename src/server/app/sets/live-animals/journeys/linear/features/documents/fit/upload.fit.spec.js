@@ -6,6 +6,7 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectStackedOnSameRightEdge,
   journeyUrl,
+  LANDINGS,
   openDatePicker,
   openDocuments,
   PHONE_VIEWPORT,
@@ -17,6 +18,7 @@ import {
   withinTwoThirdsColumn
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../../../../../../../services/document-uploads/claim-contract.js'
@@ -158,6 +160,16 @@ const uploadDocument = async (page, document = validDocument) => {
   await submitAdd(page)
 }
 
+const uploadDocumentsToCapacity = async (page) => {
+  for (let index = 1; index <= MAX_DOCUMENTS; index++) {
+    await uploadDocument(page, {
+      ...validDocument,
+      accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
+      filename: `itahc-capacity-${index}.pdf`
+    })
+  }
+}
+
 const expectPreservedMetadata = async (page) => {
   await expect(page.getByLabel(copy.reference.label)).toHaveValue(
     validDocument.accompanyingDocumentReference
@@ -294,7 +306,9 @@ test.describe('document upload page', () => {
   test('back link opens the review when the page was opened by changing an answer from the review', async ({
     page
   }) => {
-    await page.goto(`${journeyUrl(page, 'accompanying-documents')}?change=1`)
+    await page.goto(
+      withTrail(journeyUrl(page, 'accompanying-documents'), [CYA_SLUG])
+    )
     await page.locator('.govuk-back-link').click()
 
     await expect(
@@ -658,7 +672,9 @@ test.describe('document upload continue', () => {
     page
   }) => {
     await submitContinue(page)
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
   })
 })
 
@@ -691,6 +707,30 @@ test.describe('document upload saved rows', () => {
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(page.getByLabel(copy.reference.label)).toHaveValue('')
     await expect(row).toContainText(copy.scanTags.complete)
+  })
+
+  test('Save and add another stays on Upload documents with the row listed, and Save and continue then opens Roles and addresses', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page)
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.documents.slug}`)
+    )
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      documentRowFor(page, validDocument.accompanyingDocumentReference)
+    ).toContainText(copy.types.ITAHC)
+
+    await submitContinue(page)
+
+    await expect(page).toHaveURL(
+      new RegExp(`/notifications/[^/]+/${LANDINGS.addresses.slug}`)
+    )
+    await expect(
+      page.getByRole('heading', { name: LANDINGS.addresses.title, exact: true })
+    ).toBeVisible()
   })
 
   test('keeps the saved row inside the file upload group and the page actions outside it', async ({
@@ -813,13 +853,7 @@ test.describe('document upload capacity and accessibility', () => {
     page
   }) => {
     test.slow()
-    for (let index = 1; index <= MAX_DOCUMENTS; index++) {
-      await uploadDocument(page, {
-        ...validDocument,
-        accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
-        filename: `itahc-capacity-${index}.pdf`
-      })
-    }
+    await uploadDocumentsToCapacity(page)
 
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
     await expect(page.getByText(message)).toBeVisible()
@@ -828,6 +862,49 @@ test.describe('document upload capacity and accessibility', () => {
     await expect(addButton).toHaveAttribute('aria-disabled', 'true')
     await expect(addButton).not.toHaveAttribute('formaction', /./)
     await expect(addButton).toHaveAccessibleDescription(new RegExp(message))
+  })
+
+  test('refuses a further document past the maximum with the limit message in the summary linked to the added documents, shown beside the disabled add button and on no field, and keeps every added document', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocumentsToCapacity(page)
+    await fillMetadata(page)
+    await submitContinue(page)
+
+    const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
+    const messageWithPrefix = `${copy.errors.hiddenPrefix} ${message}`
+    const summaryLinks = page
+      .locator('.govuk-error-summary__list')
+      .getByRole('link')
+    await expect(summaryLinks).toHaveText([message])
+    await expect(summaryLinks).toHaveAttribute('href', '#documents-added')
+    await expect(page.locator('.govuk-error-message')).toHaveText([
+      messageWithPrefix
+    ])
+    const errorGroup = page.locator('.govuk-form-group--error')
+    await expect(errorGroup).toHaveCount(1)
+    await expect(errorGroup.locator('#add-document-error')).toHaveText(
+      messageWithPrefix
+    )
+    await expect(errorGroup.getByRole('button')).toHaveText(copy.addAnother)
+    await expect(errorGroup.getByRole('button')).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    )
+    for (const label of [
+      copy.reference.label,
+      copy.documentType.label,
+      copy.dateOfIssue.label
+    ]) {
+      await expect(page.getByLabel(label)).not.toHaveAttribute(
+        'aria-invalid',
+        'true'
+      )
+    }
+    await expect(addedDocumentsTable(page).getByRole('row')).toHaveCount(
+      MAX_DOCUMENTS + 1
+    )
   })
 
   test('empty upload state has no serious or critical axe violations', async ({

@@ -6,12 +6,14 @@ import {
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectPageEndsWithPrimaryAlone,
+  fillOriginDetails,
   journeyIdFromPage,
   openNotificationView,
+  openFromOverviewRow,
   rowFor,
+  saveAndContinue,
   startNotificationAtOrigin,
-  urlUnderBase,
-  visitOverviewThenOpen
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 import {
@@ -24,6 +26,7 @@ import {
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 import { config } from '../../../../../../../../config/config.js'
 import { SET_ID } from '../../../../set.js'
@@ -55,7 +58,7 @@ const regionCodeOnReview = (page) =>
 const removeRegionCodeCap = (page) =>
   regionCodeField(page).evaluate((input) => input.removeAttribute('maxlength'))
 
-const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
+const hubUrlOf = (originUrl) => originUrl.replace(/\/origin(?:\?.*)?$/, '')
 
 const regionCodePrefix = (page) => page.locator(REGION_CODE_PREFIX)
 
@@ -67,6 +70,16 @@ const expectRegionCodePrefix = async (page, code) => {
 const expectNoRegionCodePrefix = async (page) => {
   await expect(regionCodePrefix(page)).toHaveCount(1)
   await expect(regionCodePrefix(page)).toBeHidden()
+}
+
+const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
+
+const saveOriginAnswerAndGoBackFromCommodities = async (page) => {
+  await chooseCountryOfOrigin(page, france.name)
+  await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+  await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+  await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+  await backLink(page).click()
 }
 
 const reopenOriginAfterSaving = async (page, details = {}) => {
@@ -205,7 +218,7 @@ test.describe('origin feature', () => {
   test('back link returns to the dashboard when the page was opened from the dashboard', async ({
     page
   }) => {
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await backLink(page).click()
 
     await expect(page).toHaveURL(BASE)
   })
@@ -217,9 +230,7 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
     const reference = journeyIdFromPage(page)
 
-    const href = await page
-      .getByRole('link', { name: 'Back', exact: true })
-      .getAttribute('href')
+    const href = await backLink(page).getAttribute('href')
     const url = new URL(href)
     expect({
       origin: url.origin,
@@ -234,16 +245,19 @@ test.describe('origin feature', () => {
     })
   })
 
-  test('back link returns to the overview when the page was opened from the overview before any answer is saved', async ({
+  test('Overview requested for a notification with nothing saved shows the origin page, whose Back link opens the dashboard', async ({
     page
   }) => {
-    const hubUrl = hubUrlOf(page.url())
+    const originUrl = page.url().split('?')[0]
 
-    await visitOverviewThenOpen(page, 'origin')
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await page.goto(hubUrlOf(page.url()))
 
-    await expect(page).toHaveURL(hubUrl)
-    await expectOverview(page)
+    await expect(page).toHaveURL(originUrl)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await backLink(page).click()
+
+    await expect(page).toHaveURL(BASE)
   })
 
   test('back link returns to the overview when the page was opened from the overview after an answer is saved', async ({
@@ -254,24 +268,34 @@ test.describe('origin feature', () => {
     await chooseCountryOfOrigin(page, france.name)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await visitOverviewThenOpen(page, 'origin')
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await openFromOverviewRow(page, hubCopy.rows.origin.title)
+    await backLink(page).click()
 
     await expect(page).toHaveURL(hubUrl)
     await expectOverview(page)
   })
 
-  test('back link returns to the dashboard when origin is reached by going back along the opening run', async ({
+  test('back link opens the dashboard after Save and continue on origin and Back from What are you importing? on a notification started from the dashboard', async ({
     page
   }) => {
-    await chooseCountryOfOrigin(page, france.name)
-    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
-    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await saveOriginAnswerAndGoBackFromCommodities(page)
+    await backLink(page).click()
 
     await expect(page).toHaveURL(BASE)
+  })
+
+  test('back link opens the Import Notification Service question after Save and continue on origin and Back from What are you importing? on a notification started from the question', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+    await saveOriginAnswerAndGoBackFromCommodities(page)
+
+    const href = await backLink(page).getAttribute('href')
+    const url = new URL(href)
+    expect({ origin: url.origin, pathname: url.pathname }).toEqual({
+      origin: new URL(config.get('tradeImportsInsFrontend.baseUrl')).origin,
+      pathname: '/notification-type'
+    })
   })
 
   test('ends with Save and continue alone', async ({ page }) => {
@@ -624,7 +648,8 @@ test.describe('country of origin without JavaScript', () => {
   test('a refused page shows the region code error with no prefix', async ({
     page
   }) => {
-    await answerOriginDetails(page, { regionCode: '' })
+    await fillOriginDetails(page, { regionCode: '' })
+    await saveAndContinue(page).click()
 
     await expect(
       page

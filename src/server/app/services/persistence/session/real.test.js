@@ -4,8 +4,6 @@ import yar from '@hapi/yar'
 import { session } from './real.js'
 
 const REVIEWED_PATH = '/reviewed/{journeyId}'
-const RUN_ENTRY_J1_URL = '/run-entry/J-1'
-const RUN_ENTRY_J2_URL = '/run-entry/J-2'
 
 const buildServer = async () => {
   const server = Hapi.server()
@@ -33,47 +31,6 @@ const buildServer = async () => {
       path: '/known',
       handler: async (request) => ({
         ids: await session.knownJourneyIds(request)
-      })
-    },
-    {
-      method: 'POST',
-      path: '/run/{journeyId}',
-      handler: async (request, h) => {
-        await session.setOpeningRun(
-          h,
-          request.params.journeyId,
-          request.payload.phase
-        )
-        return { ok: true }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/run/{journeyId}',
-      handler: async (request) => ({
-        phase:
-          (await session.openingRun(request, request.params.journeyId)) ?? null
-      })
-    },
-    {
-      method: 'POST',
-      path: '/run-entry/{journeyId}',
-      handler: async (request, h) => {
-        await session.setOpeningRunEntry(
-          h,
-          request.params.journeyId,
-          request.payload.entry
-        )
-        return { ok: true }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/run-entry/{journeyId}',
-      handler: async (request) => ({
-        entry:
-          (await session.openingRunEntry(request, request.params.journeyId)) ??
-          null
       })
     },
     {
@@ -183,76 +140,6 @@ describe('#session.reviewedConcurrencyToken (real, yar)', () => {
 
     expect(await tokenAt(server, '/reviewed/J-1', cookie)).toBe(4)
     expect(await tokenAt(server, '/reviewed/J-2', cookie)).toBe(7)
-  })
-})
-
-describe('#session.openingRun (real, yar)', () => {
-  it('Should retain journey-keyed phases without leaking across journeys', async () => {
-    const server = await buildServer()
-    const first = await server.inject({
-      method: 'POST',
-      url: '/run/J-1',
-      payload: { phase: 'active' }
-    })
-    const second = await server.inject({
-      method: 'POST',
-      url: '/run/J-2',
-      payload: { phase: 'complete' },
-      headers: { cookie: cookieOf(first) }
-    })
-    const getOne = await server.inject({
-      method: 'GET',
-      url: '/run/J-1',
-      headers: { cookie: cookieOf(second) }
-    })
-    const getTwo = await server.inject({
-      method: 'GET',
-      url: '/run/J-2',
-      headers: { cookie: cookieOf(second) }
-    })
-    expect(getOne.result.phase).toBe('active')
-    expect(getTwo.result.phase).toBe('complete')
-  })
-
-  it('Should report no opening run for a fresh session', async () => {
-    const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: '/run/J-1' })
-    expect(get.result.phase).toBeNull()
-  })
-})
-
-describe('#session.openingRunEntry (real, yar)', () => {
-  it('Should retain journey-keyed entries without leaking across journeys', async () => {
-    const server = await buildServer()
-    const first = await server.inject({
-      method: 'POST',
-      url: RUN_ENTRY_J1_URL,
-      payload: { entry: 'start' }
-    })
-    const second = await server.inject({
-      method: 'POST',
-      url: RUN_ENTRY_J2_URL,
-      payload: { entry: 'list-create' },
-      headers: { cookie: cookieOf(first) }
-    })
-    const getOne = await server.inject({
-      method: 'GET',
-      url: RUN_ENTRY_J1_URL,
-      headers: { cookie: cookieOf(second) }
-    })
-    const getTwo = await server.inject({
-      method: 'GET',
-      url: RUN_ENTRY_J2_URL,
-      headers: { cookie: cookieOf(second) }
-    })
-    expect(getOne.result.entry).toBe('start')
-    expect(getTwo.result.entry).toBe('list-create')
-  })
-
-  it('Should report no entry for a fresh session', async () => {
-    const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: RUN_ENTRY_J1_URL })
-    expect(get.result.entry).toBeNull()
   })
 })
 

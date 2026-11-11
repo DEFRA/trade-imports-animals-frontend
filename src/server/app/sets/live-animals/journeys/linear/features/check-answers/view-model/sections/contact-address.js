@@ -7,6 +7,8 @@ const copy = copyFor({ en, cy })
 
 export const contactAddressSection = ({
   journeyId,
+  changeLinkTrail,
+  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
@@ -20,6 +22,8 @@ export const contactAddressSection = ({
       cards: [
         contactAddressCard({
           journeyId,
+          changeLinkTrail,
+          reviewPageTrail,
           answers,
           readOnly,
           parties,

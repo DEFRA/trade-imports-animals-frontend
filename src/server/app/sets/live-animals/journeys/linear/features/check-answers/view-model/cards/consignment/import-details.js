@@ -11,6 +11,7 @@ const copy = copyFor({ en, cy })
 
 export const importDetailsCard = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -20,7 +21,7 @@ export const importDetailsCard = async ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
+      { journeyId, changeLinkTrail },
       originPage.slug,
       copy.hidden.cards.importDetails
     )

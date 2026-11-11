@@ -22,7 +22,7 @@ const resultRows = (found, selectedId, viewReturnPath) => {
 export const pickerViewModel = (
   journey,
   party,
-  { query, selectedId, error, found, selected, changing, withViewLinks },
+  { query, selectedId, error, found, selected, trail, withViewLinks },
   copy
 ) => {
   const viewReturnPath =
@@ -31,7 +31,7 @@ export const pickerViewModel = (
       query,
       page: found.page,
       selectedId,
-      changing
+      trail
     })
   const rows = resultRows(found, selectedId, viewReturnPath)
 
@@ -49,7 +49,7 @@ export const pickerViewModel = (
       page: found.page,
       totalPages: found.totalPages,
       selectedId,
-      changing
+      trail
     })
   }
 }

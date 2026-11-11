@@ -99,7 +99,7 @@ export const claimUpload = async (request, correlationId, pageState) => {
     return session
   }
   const form = session.value
-  const saveChoice = kit.returnedSaveChoice(request, form, pageState.journey)
+  const saveChoice = kit.returnedSaveChoice(form)
   const addsAnother = addsAnotherDocument(form)
 
   if (!startsADocument(form) && !addsAnother) {

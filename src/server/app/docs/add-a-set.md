@@ -77,8 +77,8 @@ to the `onPreHandler` entry guard alike.
 cross asynchronous boundaries after `onPreAuth`. Run the gateway's registration
 inside `withSetContext(setId, …)` and pass every route through
 `routeWithSetContext(setId, route)`, which wraps the handler and any
-route-owned lifecycle extension. Server-wide routes stay outside every set
-context.
+route-owned lifecycle extension through `runInRequestContext(request, setId, …)`.
+Server-wide routes stay outside every set context.
 
 What the co-residency suite relies on, and why:
 
@@ -91,9 +91,9 @@ What the co-residency suite relies on, and why:
 - The entry guard is an `onPreHandler` registered on the server, so
   `routeWithSetContext` does not wrap it. Authentication crosses an async
   boundary after the `onPreAuth` that entered the context, so the gateway
-  re-enters the context around the guard itself. Without that the guard
-  resolves only by the sole-set fallback, and every journey page returns 500 as
-  soon as a second set mounts.
+  runs the guard inside `runInRequestContext(request, SET_ID, …)`. Without that
+  the guard lacks the signed-in organisation and the set context, and guarded
+  pages fail against the real backend as soon as a second set mounts.
 - The error page renders the shared chrome. Resolving it through the sole-set
   fallback throws with two sets mounted, which turns the 404 the user should
   see into a 500.
@@ -196,8 +196,6 @@ the kebab-case `<set-id>` from step 1, so `live-animals` gives
 ```js
 export const SESSION_COOKIE_NAMES = {
   knownJourneys: 'liveAnimalsKnownJourneys',
-  openingRun: 'liveAnimalsOpeningRun',
-  openingRunEntry: 'liveAnimalsOpeningRunEntry',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
   addedAddressBanner: 'liveAnimalsAddedAddressBanner',

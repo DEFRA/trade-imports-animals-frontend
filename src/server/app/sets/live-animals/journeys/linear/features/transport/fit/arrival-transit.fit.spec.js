@@ -2,17 +2,23 @@ import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
   MEANS_OF_TRANSPORT_SELECT,
+  LANDINGS,
   addTransitCountry,
+  answerArrivalDetails,
+  answerTransitCountries,
+  answerTransporter,
   choosePortOfEntry,
   describeCalendarPosition,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
   openArrival,
+  openOverview,
   openDatePicker,
   openTransit,
   saveAndContinue,
   saveAndReturnToHub,
+  saveMeansOfTransportAndContinueAt,
   saveMeansOfTransportAt,
   signIn,
   startNotification,
@@ -31,6 +37,7 @@ import {
   copy as sharedCopy,
   validatorDefaults
 } from '../../../../../../../shared/copy.en.js'
+import { copy as commoditiesCopy } from '../../commodities/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
@@ -304,7 +311,7 @@ test.describe('port of entry without JavaScript', () => {
       .getByLabel(copy.portOfEntry.port.label, { exact: true })
       .selectOption(values.portOfEntry)
     await fillTransportDetails(page)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expectOverview(page)
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
@@ -428,7 +435,7 @@ test.describe('arrival details validation', () => {
       await expect(input).toHaveAttribute('type', 'text')
 
       await fillValidArrival(page)
-      await saveAndContinue(page).click()
+      await saveAndReturnToHub(page).click()
       await expectOverview(page)
 
       await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
@@ -597,7 +604,7 @@ test.describe('arrival save and routing', () => {
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expectOverview(page)
     await expect(
@@ -632,7 +639,7 @@ test.describe('arrival save and routing', () => {
     await page
       .locator(MEANS_OF_TRANSPORT_SELECT)
       .selectOption(values.meansOfTransport)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
@@ -650,6 +657,40 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue('')
+  })
+})
+
+test.describe('arrival save and continue with no commodity saved', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('by road with only the country of origin saved goes to What are you importing? and Overview offers no transit countries row', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await saveMeansOfTransportAndContinueAt(
+      page,
+      journeyUrl(page, PORT_OF_ENTRY_PAGE),
+      'ROAD_VEHICLE'
+    )
+
+    await expect(
+      page.getByRole('heading', { name: commoditiesCopy.search.title })
+    ).toBeVisible()
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/notifications/[^/]+/commodities\\?from=${PORT_OF_ENTRY_PAGE}`
+      )
+    )
+    await openOverview(page)
+    await expect(
+      page.getByRole('link', {
+        name: hubCopy.rows.transitCountries.title,
+        exact: true
+      })
+    ).toHaveCount(0)
   })
 })
 
@@ -697,7 +738,8 @@ test.describe('transit countries rendering and validation', () => {
     await saveMeansOfTransportAt(
       page,
       journeyUrl(page, PORT_OF_ENTRY_PAGE),
-      'AIRPLANE'
+      'AIRPLANE',
+      { landing: LANDINGS.transporters }
     )
     await page.goto(journeyUrl(page, TRANSIT_PAGE))
 
@@ -713,7 +755,8 @@ test.describe('transit countries rendering and validation', () => {
     await saveMeansOfTransportAt(
       otherTab,
       journeyUrl(staleTab, PORT_OF_ENTRY_PAGE),
-      'AIRPLANE'
+      'AIRPLANE',
+      { landing: LANDINGS.transporters }
     )
 
     await staleTab
@@ -791,11 +834,11 @@ test.describe('transit countries rendering and validation', () => {
     ).toBeVisible()
   })
 
-  test('transit countries are optional: continuing with none saves and returns to the overview', async ({
+  test('transit countries are optional: Save and return to overview with none added saves and opens Overview', async ({
     page
   }) => {
     await openTransit(page)
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
 
     await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
@@ -971,7 +1014,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await openTransit(page)
     await addTransitCountry(page, 'France')
     await addTransitCountry(page, 'Belgium')
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expectOverview(page)
 
     await page.goto(journeyUrl(page, TRANSIT_PAGE))
@@ -985,7 +1028,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await openTransit(page)
     await addTransitCountry(page, CANARY_ISLANDS)
     await expect(listedCountryNames(page)).toHaveText([CANARY_ISLANDS])
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expectOverview(page)
 
     await page.goto(journeyUrl(page, TRANSIT_PAGE))
@@ -1005,6 +1048,33 @@ test.describe('transit countries list, limits and persistence', () => {
   })
 })
 
+test.describe('transport pages Save and continue order', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('arrival details lead to transit countries, then the transporter list, then Upload documents', async ({
+    page
+  }) => {
+    await openArrival(page)
+
+    await answerArrivalDetails(page)
+    await answerTransitCountries(page)
+    await answerTransporter(page)
+  })
+
+  test('countries added on transit countries are saved in the order they were added', async ({
+    page
+  }) => {
+    await openTransit(page)
+
+    await answerTransitCountries(page)
+
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(listedCountryNames(page)).toHaveText(['France', 'Belgium'])
+  })
+})
+
 test.describe('transit countries without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
 
@@ -1017,7 +1087,7 @@ test.describe('transit countries without JavaScript', () => {
     await expect(
       page.getByRole('cell', { name: 'France', exact: true })
     ).toBeVisible()
-    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
     await expectOverview(page)
   })
 

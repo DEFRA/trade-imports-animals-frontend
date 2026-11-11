@@ -23,18 +23,14 @@
     primary                (object)  optional govukButton params for the primary button
     secondary              (object)  optional { text, name, value } for a secondary submit beside the primary
     showReturnControls     (boolean) offer the return controls; default true
-    amend                  (object)  the amend actions, when amending
-    hubExitWhileAmending   (boolean) keep Save and return to overview while amending; default true
     uploadPath             (string)  the path every save button posts to, as multipart
 #}
 {% macro saveActions(params) %}
   {% set copy = params.copy %}
   {% set primary = params.primary %}
   {% set secondary = params.secondary %}
-  {% set amend = params.amend %}
   {% set uploadPath = params.uploadPath %}
   {% set showReturnControls = params.showReturnControls if params.showReturnControls is defined else true %}
-  {% set hubExitWhileAmending = params.hubExitWhileAmending if params.hubExitWhileAmending is defined else true %}
   {% set fileAttributes = { formaction: uploadPath, formenctype: "multipart/form-data" } if uploadPath else {} %}
   {% set primaryButton = withAttributes(primary or { text: copy.saveAndContinue }, fileAttributes) %}
   {% set secondaryButton = {
@@ -43,19 +39,6 @@
     name: secondary.name,
     value: secondary.value
   } if secondary %}
-  {% set amendReturnButton = withAttributes({
-    text: copy.saveAndReturn,
-    name: amend.returnChoice.name,
-    value: amend.returnChoice.value,
-    attributes: { formaction: amend.returnAction }
-  }, fileAttributes) %}
-  {% set amendContinueButton = withAttributes({
-    text: copy.saveAndContinue,
-    classes: "govuk-button--secondary",
-    name: primary.name,
-    value: primary.value,
-    attributes: { formaction: amend.continueAction }
-  }, fileAttributes) %}
   {% set hubExitButton = withAttributes({
     text: copy.saveAndReturnToHub,
     classes: "govuk-button--secondary",
@@ -63,24 +46,15 @@
     value: "hub"
   }, fileAttributes) %}
   <div class="govuk-button-group">
-    {% if amend %}
-      {{ govukButton(amendReturnButton) }}
-      {{ govukButton(amendContinueButton) }}
-    {% else %}
-      {{ govukButton(primaryButton) }}
-      {% if showReturnControls %}
-        {{ govukButton(hubExitButton) }}
-      {% endif %}
-      {% if secondary %}
-        {{ govukButton(secondaryButton) }}
-      {% endif %}
-    {% endif %}
-  </div>
-  {% if amend %}
-    {% if showReturnControls and hubExitWhileAmending %}
+    {{ govukButton(primaryButton) }}
+    {% if showReturnControls %}
       {{ govukButton(hubExitButton) }}
     {% endif %}
-  {% elif showReturnControls %}
+    {% if secondary %}
+      {{ govukButton(secondaryButton) }}
+    {% endif %}
+  </div>
+  {% if showReturnControls %}
     <p class="govuk-body">
       <a class="govuk-link" href="{{ params.hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
     </p>

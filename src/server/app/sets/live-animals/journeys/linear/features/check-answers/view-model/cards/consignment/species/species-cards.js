@@ -6,14 +6,20 @@ import { speciesCardRows } from './species-card-rows.js'
 import { speciesCardTitle } from './species-card-title.js'
 import { unitsForCommodityLine } from './units-for-commodity-line.js'
 
-export const speciesCards = ({ journeyId, answers, evaluation, readOnly }) =>
+export const speciesCards = ({
+  journeyId,
+  changeLinkTrail,
+  answers,
+  evaluation,
+  readOnly
+}) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
     .map(({ index, entry }) => ({
       title: speciesCardTitle(entry),
       ...editableActions({
         readOnly,
-        actions: speciesCardActions(journeyId, index)
+        actions: speciesCardActions({ journeyId, changeLinkTrail }, index)
       }),
       rows: speciesCardRows(entry),
       identifierTable: identifierTable(

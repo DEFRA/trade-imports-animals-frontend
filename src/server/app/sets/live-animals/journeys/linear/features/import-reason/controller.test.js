@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
-  openingRunAt,
-  expectBackLinkIsPage,
+  trailQuery,
+  expectBackLinkIsPath,
   expectNoRefusalLogged,
   getHandlerOf,
   postHandlerOf,
@@ -12,14 +12,12 @@ import {
 import { FELIS_CATUS_ROW } from '../commodities/search/test-support.js'
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
-import { hubPath } from '../../../../../../shared/paths.js'
-import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../test-support.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { TRAIL_START, withTrail } from '../../../../../../shared/kit.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../test-support.js'
 import { commoditiesPage } from '../commodities/page.js'
 
+import * as portOfEntry from '../transport/port-of-entry/port-of-entry.controller.js'
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -296,6 +294,49 @@ describe('POST import-reason — the reveal the reason opens', () => {
     expect(result.response.redirect).toBeDefined()
     expect(result.after.destinationCountry).toBe('FR')
     expect(result.after.portOfExit).toBeUndefined()
+  })
+})
+
+describe('GET import-reason — the port of exit and the purpose', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const portChoicesAfterPrompt = (items) =>
+    items.slice(1).map(({ value, text }) => ({ value, text }))
+
+  it('Should offer the ports of exit that Arrival details offers as ports of entry, in the same order', async () => {
+    const importReasonPage = await driveHandler(get)
+    const arrivalDetailsPage = await driveHandler(
+      portOfEntry.routes.find((route) => route.method === 'GET').handler
+    )
+
+    expect(
+      portChoicesAfterPrompt(importReasonPage.view.context.portItems)
+    ).toEqual(portChoicesAfterPrompt(arrivalDetailsPage.view.context.portItems))
+    expect(importReasonPage.view.context.portItems.length).toBeGreaterThan(1)
+  })
+
+  it('Should leave every purpose unchecked when Internal market is chosen again after another reason was saved', async () => {
+    const saved = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: 'FR',
+        exit: 'hub'
+      }
+    })
+
+    const reopened = await driveHandler(get, {
+      seed: { ...saved.after, reasonForImport: 'internalMarket' }
+    })
+
+    expect(reopened.view.context.purposeOptions.length).toBeGreaterThan(0)
+    expect(
+      reopened.view.context.purposeOptions.map(({ checked }) => checked)
+    ).toEqual(reopened.view.context.purposeOptions.map(() => false))
   })
 })
 
@@ -623,33 +664,26 @@ describe('import-reason — the Back link', () => {
     commodityLines: [FELIS_CATUS_ROW]
   }
 
-  it('Should go Back to What are you importing? while the opening run is on', async () => {
-    const result = await driveHandler(get, {
-      seed,
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, commoditiesPage.slug)
-  })
-
-  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+  it('Should keep Back on the page saved when the page is shown again after a refusal', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { reasonForImport: 'not-a-real-reason' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, commoditiesPage.slug) }
+      ]
     })
+
     expect(result.response.statusCode).toBe(400)
-    expectBackLinkIsPage(result, commoditiesPage.slug)
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, commoditiesPage.slug), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  itSendsBackToOverview(get, {
+  itSendsBackToWhereTheTraderCameFrom(get, {
     seed,
-    cases: [
-      'when opened from the Overview',
-      'on an amendment opened from a Change link'
-    ]
+    previousPage: commoditiesPage.slug
   })
-
-  itSendsBackCarryingChangeTo(get, [
-    ['What are you importing?', seed, commoditiesPage.slug]
-  ])
 })

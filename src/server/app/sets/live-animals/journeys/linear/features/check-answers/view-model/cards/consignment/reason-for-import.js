@@ -44,6 +44,7 @@ const exitRows = async (answers, scope) => [
 
 export const reasonForImportCard = async ({
   journeyId,
+  changeLinkTrail,
   answers,
   scope,
   readOnly
@@ -53,7 +54,7 @@ export const reasonForImportCard = async ({
   ...editableActions({
     readOnly,
     actions: cardAction(
-      journeyId,
+      { journeyId, changeLinkTrail },
       importReasonPage.slug,
       copy.hidden.cards.reasonForImport
     )

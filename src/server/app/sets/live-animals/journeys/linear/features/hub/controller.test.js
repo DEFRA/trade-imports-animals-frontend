@@ -1,14 +1,17 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../engine/test-support.js'
+import {
+  completeNotification,
+  driveHandler,
+  useStubbedJourney
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import {
+  seedFromFranceWithOneEarTaggedCattle,
+  withOriginSaved
+} from '../../../../test-support.js'
+import { BOS_TAURUS_ROW, lineOf } from '../commodities/search/test-support.js'
 import { routes } from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -22,10 +25,6 @@ const rowsOf = (groups) => groups.flatMap((group) => group.items)
 const rowByTitle = (groups, title) =>
   rowsOf(groups).find((item) => item.title.text === title)
 
-// `GB ZZZ` is absent from the captured ports fixture (see
-// port-of-entry.controller.test.js), so it doubles here as a stale stored
-// port code — every other field on the row is answered, so the engine's own
-// presence-based status reads this row FULFILLED regardless.
 const STALE_PORT = 'GB ZZZ'
 const KNOWN_PORT = 'GB ABD'
 const arrivalDetailsAnswers = {
@@ -37,12 +36,7 @@ const arrivalDetailsAnswers = {
 }
 
 describe('#handler — stored-answer validity demotes the hub tag', () => {
-  beforeAll(() => {
-    configureRecords(SET_ID, recordsStub)
-    configureSession(SET_ID, sessionStub)
-    buildDispatch(SET_ID, dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should read To do for a row whose stored answer no longer passes its own page rules, even though every field is present', async () => {
     const result = await driveHandler(getHandler, {
@@ -60,5 +54,94 @@ describe('#handler — stored-answer validity demotes the hub tag', () => {
     const row = rowByTitle(result.view.context.groups, ARRIVAL_DETAILS_TITLE)
 
     expect(row.status.tag.text).toBe(COMPLETE)
+  })
+
+  it('Should read Identification details To do for a stored animal record carrying no identifier, and Complete for one carrying an ear tag', async () => {
+    const identificationStatusOf = async (seed) => {
+      const result = await driveHandler(getHandler, { seed })
+      return rowByTitle(
+        result.view.context.groups,
+        copy.rows.animalIdentification.title
+      ).status.tag.text
+    }
+
+    expect(
+      await identificationStatusOf(seedFromFranceWithOneEarTaggedCattle())
+    ).toBe(COMPLETE)
+    expect(
+      await identificationStatusOf(
+        withOriginSaved({
+          commodityLines: [
+            lineOf(BOS_TAURUS_ROW, {
+              numberOfAnimalsQuantity: '1',
+              animalIdentifiers: [{ animalIdentifierEarTag: '' }]
+            })
+          ]
+        })
+      )
+    ).toBe(TO_DO)
+  })
+})
+
+describe('#handler — every task link carries the mark that it was opened from Overview', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should link every task row to its page with exactly the Overview mark added', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: completeNotification()
+    })
+    const items = rowsOf(result.view.context.groups)
+
+    expect(items.length).toBeGreaterThan(0)
+    for (const item of items) {
+      const [pagePathOfRow] = item.href.split('?')
+      expect(pagePathOfRow).not.toContain('?')
+      expect(item.href).toBe(`${pagePathOfRow}?from=overview`)
+    }
+  })
+})
+
+describe('#handler — Overview lists the journey in its page order', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should list the six group captions, and under them the task titles, in the order Save and continue visits them', async () => {
+    const result = await driveHandler(getHandler, {
+      seed: completeNotification()
+    })
+
+    expect(
+      result.view.context.groups.map((group) => [
+        group.caption,
+        group.items.map((item) => item.title.text)
+      ])
+    ).toEqual([
+      [
+        copy.groups['about-the-consignment'],
+        [
+          copy.rows.origin.title,
+          copy.rows.commodities.title,
+          copy.rows.importReason.title
+        ]
+      ],
+      [
+        copy.groups['description-of-the-goods'],
+        [
+          copy.rows.consignmentDetails.title,
+          copy.rows.animalIdentification.title,
+          copy.rows.additionalDetails.title
+        ]
+      ],
+      [
+        copy.groups['transport-and-arrival'],
+        [
+          copy.rows.arrivalDetails.title,
+          copy.rows.transitCountries.title,
+          copy.rows.transporter.title
+        ]
+      ],
+      [copy.groups.documents, [copy.rows.documents.title]],
+      [copy.groups['consignment-parties'], [copy.rows.addresses.title]],
+      [copy.groups['contact-address'], [copy.rows.contact.title]]
+    ])
   })
 })

@@ -17,7 +17,11 @@ import {
   records
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  actWithSessionOrganisation,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
@@ -100,7 +104,10 @@ describe('delete notification routes', () => {
     )
     const journey = await records.create()
 
-    const response = await post(journeyRequest(journey.journeyId), stubH())
+    const request = journeyRequest(journey.journeyId)
+    const response = await actWithSessionOrganisation(request, () =>
+      post(request, stubH())
+    )
 
     expect(response.statusCode).toBe(500)
     expect(response.context.recoverableError).toBe(true)

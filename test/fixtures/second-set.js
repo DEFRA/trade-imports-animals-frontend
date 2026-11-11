@@ -22,6 +22,7 @@ import {
   enterSetContext,
   registerSetMount,
   routeWithSetContext,
+  runInRequestContext,
   withSetContext
 } from '../../src/server/app/shared/set-context.js'
 import {
@@ -43,7 +44,6 @@ export const FEATURE_NAME = 'sundry-details'
 
 export const SESSION_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'sundryGoodsKnownJourneys',
-  openingRun: 'sundryGoodsOpeningRun',
   flowOnlyAnswers: 'sundryGoodsFlowOnlyAnswers',
   addressHandshakeTokens: 'sundryGoodsAddressHandshakeTokens',
   addedAddressBanner: 'sundryGoodsAddedAddressBanner',
@@ -194,8 +194,7 @@ export const secondSet = {
           sections,
           taskRows: [],
           rowStatus: () => 'notStarted',
-          nextRunTarget: () => null,
-          previousRunTarget: () => null,
+          insTypeQuestionUrl: () => null,
           flowOnlyKeys: [],
           entryGuardTarget: async () => null,
           layout: 'shared/layout.njk'
@@ -207,7 +206,7 @@ export const secondSet = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            const target = await withSetContext(SET_ID, () =>
+            const target = await runInRequestContext(request, SET_ID, () =>
               journeyEntryGuardTarget(request, h)
             )
             return target ? h.redirect(target).takeover() : h.continue

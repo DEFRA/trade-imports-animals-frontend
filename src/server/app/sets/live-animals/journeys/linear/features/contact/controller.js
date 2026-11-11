@@ -47,9 +47,12 @@ const currentContactOf = async (request, journeyId, answers) => {
     ? {
         name: display.name,
         summary: addressSummary(display.address),
-        editHref: partyEditHref(journeyId, CONTACT_PARTY, page.slug, {
-          change: kit.changeContext(request)
-        })
+        editHref: partyEditHref(
+          journeyId,
+          CONTACT_PARTY,
+          page.slug,
+          kit.requestTrail(request)
+        )
       }
     : null
 }
@@ -58,7 +61,7 @@ const issueAddAddressLink = (request, h, journey) =>
   !isStubMode() &&
   issueInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
 
-const render = async (
+const render = (
   request,
   h,
   current,
@@ -75,8 +78,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      request,
-      backLink: await kit.runBackLink(request, page.id, current),
+      backLink: kit.trailBackLink(request),
       journey: current.journey,
       recoverableError,
       successBanner
@@ -144,23 +146,21 @@ const post = async (request, h) => {
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
     const { journey, answers } = current
-    return (
-      await render(
-        request,
-        h,
-        current,
-        {},
-        options,
-        issueAddAddressLink(request, h, journey),
-        {
-          errors,
-          currentContact: await currentContactOf(
-            request,
-            journey.journeyId,
-            answers
-          )
-        }
-      )
+    return render(
+      request,
+      h,
+      current,
+      {},
+      options,
+      issueAddAddressLink(request, h, journey),
+      {
+        errors,
+        currentContact: await currentContactOf(
+          request,
+          journey.journeyId,
+          answers
+        )
+      }
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -178,23 +178,21 @@ const post = async (request, h) => {
     async () => {
       const current = await state.get(request, h)
       const { journey, answers } = current
-      return (
-        await render(
-          request,
-          h,
-          current,
-          { selectedId: chosen?.id },
-          options,
-          issueAddAddressLink(request, h, journey),
-          {
-            recoverableError: true,
-            currentContact: await currentContactOf(
-              request,
-              journey.journeyId,
-              answers
-            )
-          }
-        )
+      return render(
+        request,
+        h,
+        current,
+        { selectedId: chosen?.id },
+        options,
+        issueAddAddressLink(request, h, journey),
+        {
+          recoverableError: true,
+          currentContact: await currentContactOf(
+            request,
+            journey.journeyId,
+            answers
+          )
+        }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
@@ -203,7 +201,7 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
-  return h.redirect(await kit.nextTarget(request, page, scope))
+  return h.redirect(kit.nextTarget(request, page, scope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

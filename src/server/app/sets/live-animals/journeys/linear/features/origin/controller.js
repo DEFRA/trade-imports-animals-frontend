@@ -8,7 +8,7 @@ import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
-import { entryBackLink } from '../../flow/entry-guard.js'
+import { leaveJourneyLink } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -46,6 +46,7 @@ const regionCodePrefixesByCountry = (countryItems) =>
   )
 
 const render = async (
+  request,
   h,
   journey,
   values,
@@ -54,8 +55,9 @@ const render = async (
   const countryItems = await loadCountryItems()
   return h.view(view, {
     ...kit.base(copy.title, {
-      request: h.request,
-      backLink: await entryBackLink(h.request, journey, answers),
+      backLink: kit.trailBackLink(request, {
+        fallback: leaveJourneyLink(journey, answers)
+      }),
       journey,
       page,
       recoverableError
@@ -74,7 +76,7 @@ const render = async (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values, { errors, answers })
+  return render(request, h, journey, values, { errors, answers })
 }
 
 const post = async (request, h) => {
@@ -84,7 +86,10 @@ const post = async (request, h) => {
   if (hasErrors(errors)) {
     const { journey, answers: storedAnswers } = await state.get(request, h)
     return (
-      await render(h, journey, values, { errors, answers: storedAnswers })
+      await render(request, h, journey, values, {
+        errors,
+        answers: storedAnswers
+      })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -97,7 +102,7 @@ const post = async (request, h) => {
     async () => {
       const { journey, answers: storedAnswers } = await state.get(request, h)
       return (
-        await render(h, journey, values, {
+        await render(request, h, journey, values, {
           answers: storedAnswers,
           recoverableError: true
         })
@@ -109,7 +114,7 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
-  return h.redirect(await kit.nextTarget(request, page, scope))
+  return h.redirect(kit.nextTarget(request, page, scope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

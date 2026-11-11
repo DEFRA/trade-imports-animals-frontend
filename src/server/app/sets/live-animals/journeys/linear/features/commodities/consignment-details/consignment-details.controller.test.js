@@ -2,14 +2,18 @@ import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
 import { pagePath } from '../../../../../../../shared/paths.js'
-import { RUN_ACTIVE } from '../../../../../../../flow/run-state.js'
+import {
+  CYA_SLUG,
+  TRAIL_START,
+  withTrail
+} from '../../../../../../../shared/kit.js'
 import { store } from '../../../../../../../engine/store.js'
 import {
   crumbProtectedServerMounting,
   driveHandler,
-  openedFromChangeLink,
-  openingRunAt,
-  expectBackLinkIsPage,
+  reviewChangeLinkQuery,
+  trailQuery,
+  expectBackLinkIsPath,
   expectOneLogged,
   expectRemovalRefusedLogged,
   postHandlerOf,
@@ -19,10 +23,8 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
-import {
-  itSendsBackCarryingChangeTo,
-  itSendsBackToOverview
-} from '../../../test-support.js'
+import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
+import { importReasonPage } from '../../import-reason/page.js'
 import { commoditiesPage, consignmentDetailsPage } from '../page.js'
 import { lineKey } from '../search/selection/line-key.js'
 
@@ -644,13 +646,15 @@ describe('#consignmentDetailsController — removal and empty-selection redirect
     })
   })
 
-  it('Should carry the change context on the redirect away from an empty details page', async () => {
+  it('Should carry the trail on the redirect away from an empty details page', async () => {
     const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
       seed: { commodityLines: [] },
-      startingFrom: [openedFromChangeLink()]
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, commoditiesPage.slug)}?change=1`
+      redirect: withTrail(pagePath(result.journeyId, commoditiesPage.slug), [
+        CYA_SLUG
+      ])
     })
     expectRedirectedToCommodityQuestionLogged(result, {
       reason: 'no-commodities-on-load'
@@ -963,32 +967,27 @@ describe('#consignmentDetailsController — the Back link', () => {
     ]
   }
 
-  it('Should go Back to What are you importing? while the opening run is on', async () => {
-    const result = await driveHandler(pageGetHandlerOf(consignmentDetails), {
-      seed,
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
-    })
-    expectBackLinkIsPage(result, commoditiesPage.slug)
-  })
-
-  it('Should keep Back on What are you importing? when the page is shown again after a refusal in the run', async () => {
+  it('Should keep Back on the page saved when the page is shown again after a refusal', async () => {
     const result = await driveHandler(post, {
       seed,
       payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' },
-      startingFrom: [openingRunAt(RUN_ACTIVE)]
+      startingFrom: [
+        { query: trailQuery(TRAIL_START.overview, importReasonPage.slug) }
+      ]
     })
     expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
       ANIMALS_REQUIRED_MESSAGE
     )
-    expectBackLinkIsPage(result, commoditiesPage.slug)
+    expectBackLinkIsPath(
+      result,
+      withTrail(pagePath(result.journeyId, importReasonPage.slug), [
+        TRAIL_START.overview
+      ])
+    )
   })
 
-  itSendsBackToOverview(pageGetHandlerOf(consignmentDetails), {
+  itSendsBackToWhereTheTraderCameFrom(pageGetHandlerOf(consignmentDetails), {
     seed,
-    cases: ['when opened from the Overview']
+    previousPage: importReasonPage.slug
   })
-
-  itSendsBackCarryingChangeTo(pageGetHandlerOf(consignmentDetails), [
-    ['What are you importing?', seed, commoditiesPage.slug]
-  ])
 })
