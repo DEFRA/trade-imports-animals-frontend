@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process'
-import { posix } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, posix } from 'node:path'
 
 const git = (repoDir, args) => {
   const result = spawnSync('git', args, { cwd: repoDir, encoding: 'utf8' })
@@ -31,8 +32,7 @@ const changedAndDeletedFiles = (repoDir, mergeBase) => {
     '--no-renames',
     '--diff-filter=MTD',
     '-z',
-    mergeBase,
-    'HEAD'
+    mergeBase
   ])
     .split('\0')
     .filter(Boolean)
@@ -51,12 +51,18 @@ const pageFileAt = (repoDir, revision, folder) => {
   return result.ok ? result.output : undefined
 }
 
+const workingPageFile = (repoDir, folder) => {
+  const path = join(repoDir, folder, 'page.js')
+  return existsSync(path) ? readFileSync(path, 'utf8') : undefined
+}
+
 const owningPage = (repoDir, revisions, filePath) => {
   let folder = posix.dirname(filePath)
   while (folder !== '.') {
-    const pageFiles = revisions
-      .map((revision) => pageFileAt(repoDir, revision, folder))
-      .filter((text) => text !== undefined)
+    const pageFiles = [
+      ...revisions.map((revision) => pageFileAt(repoDir, revision, folder)),
+      workingPageFile(repoDir, folder)
+    ].filter((text) => text !== undefined)
     if (pageFiles.length > 0) {
       return {
         folder,
@@ -71,9 +77,10 @@ const owningPage = (repoDir, revisions, filePath) => {
 }
 
 /**
- * Lists the test files changed or deleted since `baseRef` that sit in the
- * feature folder of a signed-off page: one whose `page.js` sets `maturity`
- * to `agreed` or `readyForLive` at the merge base or at HEAD.
+ * Lists the test files changed or deleted since HEAD left `baseRef`,
+ * committed or not, that sit in the feature folder of a signed-off page:
+ * one whose `page.js` sets `maturity` to `agreed` or `readyForLive` at the
+ * merge base, at HEAD or in the working tree.
  *
  * @param {object} options
  * @param {string} options.repoDir - the git checkout to read

@@ -133,6 +133,43 @@ describe('listSignedOffTestChanges', () => {
     ])
   })
 
+  test('lists a test changed or deleted but not yet committed in a folder whose page is agreed', () => {
+    repo = createFeatureRepo('agreed')
+    repo.write(
+      `${FEATURES}/origin/controller.test.js`,
+      "test('a2', () => {})\n"
+    )
+    repo.remove(`${FEATURES}/origin/origin.fit.spec.js`)
+
+    expect(listChanges(repo)).toEqual([
+      {
+        folder: `${FEATURES}/origin`,
+        files: [
+          { path: `${FEATURES}/origin/controller.test.js`, change: 'changed' },
+          { path: `${FEATURES}/origin/origin.fit.spec.js`, change: 'deleted' }
+        ]
+      }
+    ])
+  })
+
+  test('lists a changed test in a folder whose page is agreed only in the working tree', () => {
+    repo = createFeatureRepo('detailing')
+    repo.write(`${FEATURES}/origin/page.js`, pageFile('agreed'))
+    repo.write(
+      `${FEATURES}/origin/controller.test.js`,
+      "test('a2', () => {})\n"
+    )
+
+    expect(listChanges(repo)).toEqual([
+      {
+        folder: `${FEATURES}/origin`,
+        files: [
+          { path: `${FEATURES}/origin/controller.test.js`, change: 'changed' }
+        ]
+      }
+    ])
+  })
+
   test('lists nothing for a changed test in a folder whose page is detailing', () => {
     repo = createFeatureRepo('detailing')
     repo.write(
