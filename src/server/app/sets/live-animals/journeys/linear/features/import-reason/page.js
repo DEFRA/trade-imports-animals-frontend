@@ -1,5 +1,5 @@
 export const importReasonPage = {
   id: 'import-reason',
   slug: 'import-reason',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }

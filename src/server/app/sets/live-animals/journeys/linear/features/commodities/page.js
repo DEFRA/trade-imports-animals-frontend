@@ -7,7 +7,7 @@ export const commoditiesPage = {
 export const consignmentDetailsPage = {
   id: 'consignmentDetails',
   slug: 'consignment-details',
-  maturity: 'detailing'
+  maturity: 'agreed'
 }
 
 export const animalIdentificationPage = {
