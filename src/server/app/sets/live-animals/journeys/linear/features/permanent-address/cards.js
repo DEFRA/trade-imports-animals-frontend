@@ -61,8 +61,6 @@ const placeOfDestinationHint = (placeOfDestination) =>
 
 const PARTY_SOURCE_FIELD = { nameOrOrganisationName: 'name' }
 
-const INPUT_TYPES = { email: 'email', phone: 'tel' }
-
 const addressFormValuesOf = (party) => {
   const partyValues = formValuesOf(party)
   return Object.fromEntries(
@@ -73,8 +71,9 @@ const addressFormValuesOf = (party) => {
   )
 }
 
-const addressFieldInputsOf = (key, values, copy) =>
-  ADDRESS_FIELDS.map((id) => {
+const addressFieldInputsOf = (key, values, copy) => {
+  const INPUT_TYPES = { email: 'email', phone: 'tel' }
+  return ADDRESS_FIELDS.map((id) => {
     const partyField = PARTY_SOURCE_FIELD[id] ?? id
     return {
       id: fieldNameFor(id, key),
@@ -86,6 +85,7 @@ const addressFieldInputsOf = (key, values, copy) =>
       classes: FIELD_CLASSES[partyField]
     }
   })
+}
 
 const originOf = (unit) =>
   unit.permanentAddressOrigin === PLACE_OF_DESTINATION ||
