@@ -80,6 +80,16 @@ describe('#MultiSelectSearch', () => {
     vi.unstubAllGlobals()
   })
 
+  it('Should mark the search as enhanced, so controls only needed without JavaScript can hide', () => {
+    mount()
+
+    expect(
+      document
+        .querySelector('[data-module="app-multi-select-search"]')
+        .classList.contains('app-multi-select-search--enhanced')
+    ).toBe(true)
+  })
+
   it('Should post the form with the search action once typing pauses, then show the results and announce them', async () => {
     fetchMock.mockResolvedValue(
       answering(responseHtml('1 result available', resultsBodyHtml()))
