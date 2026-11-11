@@ -8,9 +8,6 @@ export const configureCommodityReference = (setId, commodityReference) => {
   store.configure(setId, commodityReference)
 }
 
-export const typeTextForId = (commodityCode, typeId) =>
-  reference().typeTextForId(commodityCode, typeId)
-
 export const commodityNameFor = (commodityCode) =>
   reference().commodityNameFor(commodityCode)
 

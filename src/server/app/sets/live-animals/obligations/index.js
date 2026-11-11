@@ -15,7 +15,6 @@ import {
 import {
   commodityCode,
   commodityLine,
-  commodityType,
   speciesCommonName,
   numberOfAnimals,
   numberOfPackages,
@@ -75,7 +74,6 @@ export {
   arrivalDateAtPort,
   commodityCode,
   commodityLine,
-  commodityType,
   commercialTransporter,
   speciesCommonName,
   consignee,
@@ -150,7 +148,6 @@ export const obligations = [
   animalsCertifiedFor,
   commodityLine,
   commodityCode,
-  commodityType,
   speciesLatinName,
   speciesCommonName,
   numberOfAnimals,

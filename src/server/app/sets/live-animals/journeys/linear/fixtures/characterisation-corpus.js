@@ -24,7 +24,6 @@ const commodityLine = ({
   animalIdentifiers = [{ animalIdentifierEarTag: 'UK123456789012' }]
 } = {}) => ({
   ...row,
-  commodityType: '16',
   numberOfPackages: '1',
   numberOfAnimalsQuantity,
   animalIdentifiers
@@ -133,8 +132,7 @@ export const characterisationCorpus = [
       commodityLines: [
         {
           ...gateOpen.commodityLines[0],
-          ...STRUTHIO_ROW,
-          commodityType: '2'
+          ...STRUTHIO_ROW
         }
       ]
     }

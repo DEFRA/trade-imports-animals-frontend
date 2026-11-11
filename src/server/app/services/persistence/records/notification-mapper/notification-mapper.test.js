@@ -60,7 +60,6 @@ const mappedAnswers = () => ({
       commodityCode: CATTLE_CODE,
       speciesLatinName: BOS_TAURUS,
       speciesCommonName: DOMESTIC_CATTLE,
-      commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -100,7 +99,6 @@ const answersWithGaps = () => ({
       commodityCode: CATTLE_CODE,
       speciesLatinName: BOS_TAURUS,
       speciesCommonName: DOMESTIC_CATTLE,
-      commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -134,7 +132,6 @@ const groupedLines = () => [
   {
     commodityCode: CATTLE_CODE,
     speciesLatinName: BOS_TAURUS,
-    commodityType: '16',
     numberOfPackages: '5',
     numberOfAnimalsQuantity: '25',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -142,7 +139,6 @@ const groupedLines = () => [
   {
     commodityCode: CATTLE_CODE,
     speciesLatinName: BISON_BISON,
-    commodityType: '16',
     numberOfPackages: '2',
     numberOfAnimalsQuantity: '10',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
@@ -151,7 +147,6 @@ const groupedLines = () => [
     commodityCode: OTHER_LIVE_MAMMALS_CODE,
     speciesLatinName: FELIS_CATUS,
     speciesCommonName: DOMESTIC_CAT,
-    commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
     animalIdentifiers: [
@@ -171,7 +166,6 @@ describe('Mapper A — backend notification', () => {
         name: 'Cow',
         commodityCode: '0102',
         description: LIVE_BOVINE_DESCRIPTION,
-        typeOfCommodity: 'Domestic',
         totalNoOfAnimals: 25,
         totalNoOfPackages: 5,
         species: [
@@ -190,43 +184,6 @@ describe('Mapper A — backend notification', () => {
         ]
       }
     ])
-  })
-
-  test('Should put typeOfCommodity on each species when one Cow group has mixed types', () => {
-    const { commodities } = currentNotificationFrom({
-      commodityLines: [
-        {
-          commodityCode: CATTLE_CODE,
-          speciesLatinName: BOS_TAURUS,
-          commodityType: '16',
-          numberOfPackages: '1',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-        },
-        {
-          commodityCode: CATTLE_CODE,
-          speciesLatinName: 'Bos spp.',
-          commodityType: '24',
-          numberOfPackages: '1',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK2' }]
-        }
-      ]
-    })
-    expect(commodities).toHaveLength(1)
-    const [cow] = commodities
-    expect('typeOfCommodity' in cow).toBe(false)
-    expect(cow.species[0].typeOfCommodity).toBe('Domestic')
-    expect(cow.species[1].typeOfCommodity).toBe('Game')
-  })
-
-  test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
-    const { commodities } = currentNotificationFrom({
-      commodityLines: groupedLines()
-    })
-    const [cow, cat] = commodities
-    expect(cow.typeOfCommodity).toBe('Domestic')
-    expect('typeOfCommodity' in cat).toBe(false)
   })
 
   test('Should place every storable answer in its skeleton field home', () => {
@@ -401,7 +358,6 @@ describe('Mapper A — commodities array from lines', () => {
           commodityCode: '0102',
           speciesLatinName: BOS_TAURUS,
           speciesCommonName: DOMESTIC_CATTLE,
-          commodityType: '16',
           numberOfPackages: '1',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
@@ -412,7 +368,6 @@ describe('Mapper A — commodities array from lines', () => {
         name: 'Cow',
         commodityCode: '0102',
         description: LIVE_BOVINE_DESCRIPTION,
-        typeOfCommodity: 'Domestic',
         totalNoOfAnimals: 1,
         totalNoOfPackages: 1,
         species: [
