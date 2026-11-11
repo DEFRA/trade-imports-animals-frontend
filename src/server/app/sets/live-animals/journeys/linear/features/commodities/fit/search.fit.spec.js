@@ -47,6 +47,8 @@ const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
 const searchResults = (page) => page.locator('#commodity-search-results')
 
+const TRANSPARENT = 'rgba(0, 0, 0, 0)'
+
 const resultsDropdown = (page) =>
   searchResults(page).locator('[data-multi-select-search-dropdown]')
 
@@ -561,40 +563,6 @@ test.describe('commodity search as the trader types', () => {
     await expectSelectedHeading(page, 2)
   })
 
-  test('lists the results in a scrolling box joined to the bottom of the search box', async ({
-    page
-  }) => {
-    await searchBox(page).fill(CATTLE_CODE)
-    const dropdown = resultsDropdown(page)
-    await expect(dropdown.getByRole('checkbox')).toHaveCount(15)
-
-    await expectStyle(dropdown, {
-      'max-height': '270px',
-      'overflow-y': 'auto',
-      'border-top-width': '0px'
-    })
-    const box = await searchBox(page).boundingBox()
-    const list = await dropdown.boundingBox()
-    expect(list.y).toBe(box.y + box.height)
-  })
-
-  test('heads each commodity with its name and code, and rules each species row the full width of the list', async ({
-    page
-  }) => {
-    await searchBox(page).fill(CATTLE_CODE)
-    await expect(
-      page.getByRole('group', { name: CATTLE_HEADING, exact: true })
-    ).toBeVisible()
-
-    const dropdown = resultsDropdown(page)
-    const heading = await dropdown.locator('legend').first().boundingBox()
-    const row = await dropdown
-      .locator('.govuk-checkboxes__item')
-      .first()
-      .boundingBox()
-    expect(row.x).toBe(heading.x)
-  })
-
   test('hides the results on Escape, keeping the term, and shows them again when the search box is clicked', async ({
     page
   }) => {
@@ -713,6 +681,70 @@ test.describe('commodity search as the trader types', () => {
       page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox')
     ).toHaveCount(3)
     await expect(resultsStatus(page)).toHaveText('')
+  })
+})
+
+test.describe('commodity search results list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAndOpenSelection({ page })
+    await searchBox(page).fill(CATTLE_CODE)
+    await expect(speciesRows(page)).toHaveCount(15)
+  })
+
+  const speciesRows = (page) =>
+    resultsDropdown(page).locator('.govuk-checkboxes__item')
+
+  test('is a scrolling box joined to the bottom of the search box', async ({
+    page
+  }) => {
+    const dropdown = resultsDropdown(page)
+    await expectStyle(dropdown, {
+      'max-height': '270px',
+      'overflow-y': 'auto',
+      'border-top-width': '0px'
+    })
+    const box = await searchBox(page).boundingBox()
+    const list = await dropdown.boundingBox()
+    expect(list.y).toBe(box.y + box.height)
+  })
+
+  test('heads each commodity with its name and code, and rules each species row the full width of the list', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('group', { name: CATTLE_HEADING, exact: true })
+    ).toBeVisible()
+
+    const heading = await resultsDropdown(page)
+      .locator('legend')
+      .first()
+      .boundingBox()
+    const row = await speciesRows(page).first().boundingBox()
+    expect(row.x).toBe(heading.x)
+  })
+
+  test('shades the first species row under each heading, then every other row', async ({
+    page
+  }) => {
+    const shaded = await speciesRows(page).evaluateAll(
+      (rows, transparent) =>
+        rows
+          .slice(0, 3)
+          .map((row) => getComputedStyle(row).backgroundColor !== transparent),
+      TRANSPARENT
+    )
+    expect(shaded).toEqual([true, false, true])
+  })
+
+  test('draws no ring round a hovered tick box', async ({ page }) => {
+    const tickBox = speciesRows(page).nth(1).getByRole('checkbox')
+    await tickBox.hover()
+    expect(
+      await tickBox.evaluate(
+        (input) =>
+          getComputedStyle(input.nextElementSibling, '::before').boxShadow
+      )
+    ).toBe('none')
   })
 })
 

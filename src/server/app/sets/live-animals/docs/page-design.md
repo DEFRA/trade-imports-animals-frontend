@@ -271,7 +271,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the search box. After a tick, focus stays on the tick box.
 - The results are a list joined to the bottom of the search box, as the
   design draws it: one heading row per commodity, its species beneath, striped
-  rows ruled the full width of the list, and a scroll once the list is taller
+  rows ruled the full width of the list (the first species under each heading
+  shaded), no ring round a hovered tick box, and a scroll once the list is taller
   than about six rows. Each commodity stays a fieldset whose legend is its
   heading, so a screen reader hears the species grouped by commodity.
 - A commodity's heading in the results reads as its name with its code in

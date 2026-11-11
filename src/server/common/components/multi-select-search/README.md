@@ -57,7 +57,8 @@ comment block lists them:
   scrolls past 270px. Mark it `data-multi-select-search-dropdown` so the script
   can hide and show it.
 - `__group` and `__group-heading` style a `govukCheckboxes` fieldset and its
-  legend as a heading row, with the options indented and striped beneath it.
+  legend as a heading row, with the options indented and striped beneath it,
+  starting shaded. A hovered small tick box gets no ring; focus keeps its ring.
 - `__message` is a row of text in the list, such as no results.
 - `__selected` and the classes inside it draw what has been chosen: the count
   with Clear all beside it, then a chip per choice under its group, each with a
