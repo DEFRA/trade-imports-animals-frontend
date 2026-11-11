@@ -98,26 +98,37 @@ export const search = async (orgId, { query = '', page = 1 } = {}) => {
     : searchReal(orgId, query, requested)
 }
 
+const pageNumbersFrom = (first, last) =>
+  Array.from({ length: last - first + 1 }, (_, index) => first + index)
+
 /** Every address the organisation has saved, unpaginated — for the contact
- * picker, which renders a flat radio list rather than a searchable table. */
+ * picker, which renders a flat radio list rather than a searchable table.
+ * Reads the book in its largest pages, a few requests at a time. */
 export const all = async (orgId) => {
   if (isStubMode()) {
     return [...STUB_BOOK]
   }
 
-  const first = await client.listAddresses(orgId, { page: 1 })
-  if (first.totalPages <= 1) {
-    return first.records
-  }
-
-  // Page 1 is already in hand, so the rest start at 2.
-  const FIRST_REMAINING_PAGE = 2
-  const rest = await Promise.all(
-    Array.from({ length: first.totalPages - 1 }, (_, index) =>
-      client.listAddresses(orgId, { page: index + FIRST_REMAINING_PAGE })
+  const PAGES_READ_AT_ONCE = 4
+  const readPage = (page) =>
+    client.listAddresses(orgId, { page, pageSize: client.MAX_API_PAGE_SIZE })
+  const first = await readPage(1)
+  const records = [...first.records]
+  for (
+    let batchStart = 2;
+    batchStart <= first.totalPages;
+    batchStart += PAGES_READ_AT_ONCE
+  ) {
+    const batchEnd = Math.min(
+      batchStart + PAGES_READ_AT_ONCE - 1,
+      first.totalPages
     )
-  )
-  return [...first.records, ...rest.flatMap((found) => found.records)]
+    const batch = await Promise.all(
+      pageNumbersFrom(batchStart, batchEnd).map(readPage)
+    )
+    records.push(...batch.flatMap((found) => found.records))
+  }
+  return records
 }
 
 /** One address by id. Resolves to undefined when the record does not exist for

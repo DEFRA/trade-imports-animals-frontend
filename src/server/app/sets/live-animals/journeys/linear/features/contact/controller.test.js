@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vitest'
 import {
   addressBookAnswering,
   addressBookPage,
+  addressBookRequestUrls,
+  authenticatedCredentials,
   driveHandler,
+  listedAddress,
   reviewChangeLinkQuery,
   refusingSaves,
   resetMocksAndConfigAfterTests,
@@ -23,7 +26,10 @@ import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
 import { CYA_SLUG } from '../../../../../../shared/kit.js'
 import { addressesPage } from '../addresses/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../lib/http-status.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 
 import * as contact from './controller.js'
@@ -224,6 +230,53 @@ describe('GET contact — INS add-address link', () => {
       `notification-id=${result.journeyId}`
     )
     expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
+  })
+})
+
+describe('POST contact — against the address book', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+  resetMocksAndConfigAfterTests()
+
+  const BOOK_CONTACT = listedAddress('book-contact', 'Book Contact', {
+    countryCode: 'GB'
+  })
+  const answeringOneAddress = (record) =>
+    addressBookAnswering((request) =>
+      request.url.endsWith(`/addresses/${record.id}`)
+        ? { body: JSON.stringify(record) }
+        : addressBookPage(record.deleted ? [] : [record])
+    )
+
+  it('Should save the picked contact after reading only that address', async () => {
+    answeringOneAddress(BOOK_CONTACT)
+
+    const result = await driveHandler(post, {
+      payload: { contactAddress: BOOK_CONTACT.id }
+    })
+
+    expect(result.after.contactAddress).toMatchObject({
+      pickedFromId: BOOK_CONTACT.id,
+      name: BOOK_CONTACT.name
+    })
+    const [onlyRequest, ...others] = addressBookRequestUrls()
+    expect(others).toEqual([])
+    expect(onlyRequest).toMatch(
+      new RegExp(
+        `/organisation/${authenticatedCredentials.organisationId}/addresses/book-contact$`
+      )
+    )
+  })
+
+  it('Should answer 400 and commit nothing when the picked address has been deleted', async () => {
+    answeringOneAddress({ ...BOOK_CONTACT, deleted: true })
+
+    const result = await driveHandler(post, {
+      payload: { contactAddress: BOOK_CONTACT.id }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
+    expect(result.after).toEqual(result.before)
   })
 })
 
