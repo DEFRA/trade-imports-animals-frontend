@@ -112,7 +112,8 @@ journeys/linear/features/<group>/
 └── page.js
 ```
 
-Keep every `{ id, slug }` object in the import-free `page.js`. Put all
+Keep every `{ id, slug, maturity }` object in the import-free `page.js`
+([features.md](features.md#page-maturity) says how `maturity` is set). Put all
 group-owned English and Welsh copy in the shared `copy/` folder, namespaced by
 page. Keep the two locale bundles the same shape.
 

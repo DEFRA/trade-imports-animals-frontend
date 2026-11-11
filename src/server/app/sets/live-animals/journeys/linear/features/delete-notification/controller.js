@@ -11,11 +11,12 @@ import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { deleteNotificationPage as page } from './page.js'
 
 const view = `${TEMPLATES}/features/delete-notification/template`
 const copy = copyFor({ en, cy })
 
-const deletePath = (journeyId) => pagePath(journeyId, 'delete')
+const deletePath = (journeyId) => pagePath(journeyId, page.slug)
 const deletable = (journey) =>
   journey.status === state.DRAFT ||
   journey.status === state.SUBMITTED ||
@@ -65,14 +66,14 @@ const post = async (request, h) => {
 export const routes = [
   {
     method: 'GET',
-    path: pageRoutePath('delete'),
-    options: kit.routeOptions,
+    path: pageRoutePath(page.slug),
+    options: kit.pageRouteOptions(page),
     handler: get
   },
   {
     method: 'POST',
-    path: pageRoutePath('delete'),
-    options: kit.routeOptions,
+    path: pageRoutePath(page.slug),
+    options: kit.pageRouteOptions(page),
     handler: post
   }
 ]

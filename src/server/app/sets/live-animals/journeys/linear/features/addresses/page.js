@@ -1,1 +1,5 @@
-export const addressesPage = { id: 'addresses', slug: 'addresses' }
+export const addressesPage = {
+  id: 'addresses',
+  slug: 'addresses',
+  maturity: 'detailing'
+}

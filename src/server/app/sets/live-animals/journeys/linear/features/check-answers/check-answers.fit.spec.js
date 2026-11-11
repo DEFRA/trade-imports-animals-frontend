@@ -19,6 +19,8 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
+import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
+import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -406,6 +408,28 @@ test.describe('check-answers feature navigation and submission', () => {
       page.getByRole('link', { name: copy.errors.parties.consignor })
     ).toBeHidden()
   })
+
+  test('a draft by road with no transit country added continues to the declaration', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await completeAnswerSections(page, { skipTransitCountries: true })
+    await openReviewFromHub(page)
+
+    await expect(
+      page.getByText(copy.errors.cards.transitCountries)
+    ).toHaveCount(0)
+
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(
+      page.getByText(copy.errors.cards.transitCountries)
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('heading', { level: 1, name: declarationCopy.title })
+    ).toBeVisible()
+  })
 })
 
 test.describe('check-answers feature unfinished notification', () => {
@@ -556,5 +580,20 @@ test.describe('check-answers feature submitted notification', () => {
     page
   }) => {
     await expectNoSeriousOrCriticalViolations(page, 'Submitted check answers')
+  })
+
+  test('Delete on the submitted view opens the delete confirmation', async ({
+    page
+  }) => {
+    await page
+      .getByRole('button', {
+        name: sharedCopy.notificationActions.delete.text,
+        exact: true
+      })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: deleteCopy.title })
+    ).toBeVisible()
   })
 })

@@ -1,85 +1,39 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { config } from '../../../config/config.js'
+import { startStubModeServer } from '../../common/test-helpers/stub-mode-server.js'
+import { pageRouteOptions } from '../shared/kit.js'
+import { dashboardPage } from '../sets/live-animals/journeys/linear/features/dashboard/page.js'
+import { originPage } from '../sets/live-animals/journeys/linear/features/origin/page.js'
+import { SET_BASE } from '../sets/live-animals/set.js'
 import { copy } from './copy/copy.en.js'
 import { BANNER_CLASSES, LEVELS, TAG_CLASSES } from './levels.js'
 import { pageLevelFor, pageMaturityContext } from './page-maturity.js'
 
-const NOTIFICATION = '/live-animals/notifications/{journeyId}'
 const ENABLED_KEY = 'pageMaturityBanner.enabled'
 const originalEnabled = config.get(ENABLED_KEY)
 
+const requestFor = (page, response) => ({
+  route: { settings: pageRouteOptions(page) },
+  ...(response && { response })
+})
+
 describe('pageLevelFor', () => {
-  it('Should make the notification list Exploring', () => {
-    expect(pageLevelFor('/live-animals')).toBe(LEVELS.exploring)
-  })
+  it.each(Object.values(LEVELS))(
+    'Should give a page the %s level its page.js sets',
+    (level) => {
+      expect(pageLevelFor({ id: 'example', maturity: level })).toBe(level)
+    }
+  )
 
-  it.each([
-    NOTIFICATION,
-    `${NOTIFICATION}/origin`,
-    `${NOTIFICATION}/notification-view`,
-    `${NOTIFICATION}/declaration`,
-    `${NOTIFICATION}/confirmation`
-  ])('Should make the journey page %s Detailing', (routePath) => {
-    expect(pageLevelFor(routePath)).toBe(LEVELS.detailing)
-  })
-
-  it('Should return undefined for an unlisted path', () => {
-    expect(pageLevelFor('/auth/sign-out')).toBeUndefined()
-  })
-
-  it('Should return undefined for a path that only shares a prefix with a listed path', () => {
-    expect(pageLevelFor('/live-animals/notifications-x')).toBeUndefined()
-    expect(pageLevelFor('/live-animals-extra')).toBeUndefined()
-  })
-
-  it.each([undefined, ''])('Should return undefined for %j', (routePath) => {
-    expect(pageLevelFor(routePath)).toBeUndefined()
-  })
-
-  describe('with a section', () => {
-    const sections = [{ section: '/example/section', level: LEVELS.exploring }]
-    const NEW_PAGE = '/example/section/new'
-
-    it.each([
-      '/example/section',
-      NEW_PAGE,
-      '/example/section/{journeyId}/child'
-    ])('Should treat %s as Exploring through the section', (path) => {
-      expect(pageLevelFor(path, sections)).toBe(LEVELS.exploring)
-    })
-
-    it('Should not treat a path that only shares the section prefix as in it', () => {
-      expect(
-        pageLevelFor('/example/sectionsomething', sections)
-      ).toBeUndefined()
-    })
-
-    it.each(['/', '/auth/sign-out', '/example/{id}/child'])(
-      'Should treat %s as in the section / that covers every route',
-      (path) => {
-        expect(
-          pageLevelFor(path, [{ section: '/', level: LEVELS.detailing }])
-        ).toBe(LEVELS.detailing)
-      }
+  it('Should make a page that sets no level Exploring', () => {
+    expect(pageLevelFor({ id: 'example', slug: 'example' })).toBe(
+      LEVELS.exploring
     )
+  })
 
-    it('Should let an exact page entry win over the section that holds it', () => {
-      expect(
-        pageLevelFor(NEW_PAGE, sections, {
-          [NEW_PAGE]: LEVELS.agreed
-        })
-      ).toBe(LEVELS.agreed)
-    })
-
-    it('Should use the first section that holds the route', () => {
-      expect(
-        pageLevelFor(NEW_PAGE, [
-          ...sections,
-          { section: '/', level: LEVELS.detailing }
-        ])
-      ).toBe(LEVELS.exploring)
-    })
+  it('Should return undefined when there is no page', () => {
+    expect(pageLevelFor(undefined)).toBeUndefined()
   })
 })
 
@@ -92,11 +46,11 @@ describe('pageMaturityContext', () => {
     expect(config.default(ENABLED_KEY)).toBe(true)
   })
 
-  it('Should return the tag, class, line and hidden prefix for a listed page', () => {
+  it('Should return the tag, class, line and hidden prefix for the level the route page sets', () => {
     expect(
-      pageMaturityContext({
-        route: { path: `${NOTIFICATION}/transit-countries` }
-      })
+      pageMaturityContext(
+        requestFor({ id: 'example', maturity: LEVELS.detailing })
+      )
     ).toEqual({
       pageMaturity: {
         tag: {
@@ -110,28 +64,101 @@ describe('pageMaturityContext', () => {
     })
   })
 
-  it('Should return nothing for an unlisted page', () => {
-    expect(pageMaturityContext({ route: { path: '/health' } })).toEqual({})
+  it('Should show Exploring for a route page that sets no level', () => {
+    expect(
+      pageMaturityContext(requestFor({ id: 'example' })).pageMaturity
+    ).toEqual(expect.objectContaining({ classes: BANNER_CLASSES.exploring }))
+  })
+
+  it('Should return nothing for a route that carries no page', () => {
+    expect(
+      pageMaturityContext({ route: { settings: { auth: 'session' } } })
+    ).toEqual({})
   })
 
   it('Should return nothing when the switch is off', () => {
     config.set(ENABLED_KEY, false)
 
-    expect(
-      pageMaturityContext({ route: { path: `${NOTIFICATION}/origin` } })
-    ).toEqual({})
+    expect(pageMaturityContext(requestFor(originPage))).toEqual({})
   })
 
-  it('Should return nothing when the error page is rendered on a listed route', () => {
+  it('Should return nothing when the error page is rendered on a route with a page', () => {
     expect(
-      pageMaturityContext({
-        route: { path: `${NOTIFICATION}/origin` },
-        response: { source: { template: 'shared/error' } }
-      })
+      pageMaturityContext(
+        requestFor(originPage, { source: { template: 'shared/error' } })
+      )
     ).toEqual({})
   })
 
   it('Should return nothing for a request with no route', () => {
-    expect(pageMaturityContext({ path: '/live-animals' })).toEqual({})
+    expect(pageMaturityContext({ path: SET_BASE })).toEqual({})
   })
+})
+
+describe('page maturity of the registered routes', () => {
+  const NOTIFICATIONS = `${SET_BASE}/notifications`
+  let routes
+  let stopServer
+
+  beforeAll(async () => {
+    let server
+    ;({ server, stop: stopServer } = await startStubModeServer())
+    routes = server.table()
+  })
+
+  afterAll(async () => {
+    await stopServer()
+  })
+
+  const routeAt = (method, path) =>
+    routes.find((route) => route.method === method && route.path === path)
+
+  const levelOf = (route) => pageLevelFor(route.settings.app?.page)
+
+  it('Should make the live animals start page Exploring', () => {
+    const start = routeAt('get', SET_BASE)
+
+    expect(start.settings.app.page).toEqual(dashboardPage)
+    expect(levelOf(start)).toBe(LEVELS.exploring)
+  })
+
+  it('Should take a journey page level from its feature page.js', () => {
+    const origin = routeAt('get', `${NOTIFICATIONS}/{journeyId}/origin`)
+
+    expect(origin.settings.app.page).toEqual(originPage)
+    expect(levelOf(origin)).toBe(originPage.maturity)
+  })
+
+  it('Should make every notification journey route Detailing', () => {
+    const journeyRoutes = routes.filter(
+      ({ path }) =>
+        path === NOTIFICATIONS || path.startsWith(`${NOTIFICATIONS}/`)
+    )
+
+    expect(journeyRoutes.length).toBeGreaterThan(0)
+    for (const route of journeyRoutes) {
+      expect(levelOf(route), `${route.method} ${route.path}`).toBe(
+        LEVELS.detailing
+      )
+    }
+  })
+
+  it('Should give every route page a known level', () => {
+    const levels = routes
+      .map((route) => route.settings.app?.page)
+      .filter(Boolean)
+      .map(pageLevelFor)
+
+    expect(levels.length).toBeGreaterThan(0)
+    for (const level of levels) {
+      expect(Object.values(LEVELS)).toContain(level)
+    }
+  })
+
+  it.each(['/health', '/auth/sign-out', `${SET_BASE}/start`])(
+    'Should give %s no level',
+    (path) => {
+      expect(levelOf(routeAt('get', path))).toBeUndefined()
+    }
+  )
 })

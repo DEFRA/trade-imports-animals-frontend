@@ -22,6 +22,15 @@ export {
 
 export const routeOptions = { auth: 'session' }
 
+/**
+ * The options for a route that renders a page. The page rides on the route as
+ * `app.page`, where the phase banner reads its maturity level.
+ *
+ * @param {{ maturity?: string }} page - the page descriptor from its feature's `page.js`.
+ * @returns {{ auth: string, app: { page: object } }} the route options.
+ */
+export const pageRouteOptions = (page) => ({ ...routeOptions, app: { page } })
+
 export const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 export const SURFACES = Object.freeze({
@@ -361,7 +370,7 @@ export const pageRoutes = (page, { get, post }) => [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: routeOptions,
+    options: pageRouteOptions(page),
     handler: get
   },
   ...(post
@@ -369,7 +378,7 @@ export const pageRoutes = (page, { get, post }) => [
         {
           method: 'POST',
           path: pageRoutePath(page.slug),
-          options: routeOptions,
+          options: pageRouteOptions(page),
           handler: redirectOnStaleAction(post)
         }
       ]

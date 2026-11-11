@@ -11,6 +11,7 @@ import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { cancelAmendPage } from './page.js'
 
 const { CANCEL_AMEND_SLUG } = kit
 
@@ -73,13 +74,13 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(CANCEL_AMEND_SLUG),
-    options: kit.routeOptions,
+    options: kit.pageRouteOptions(cancelAmendPage),
     handler: get
   },
   {
     method: 'POST',
     path: pageRoutePath(CANCEL_AMEND_SLUG),
-    options: kit.routeOptions,
+    options: kit.pageRouteOptions(cancelAmendPage),
     handler: post
   }
 ]

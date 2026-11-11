@@ -1,1 +1,5 @@
-export const importReasonPage = { id: 'import-reason', slug: 'import-reason' }
+export const importReasonPage = {
+  id: 'import-reason',
+  slug: 'import-reason',
+  maturity: 'detailing'
+}

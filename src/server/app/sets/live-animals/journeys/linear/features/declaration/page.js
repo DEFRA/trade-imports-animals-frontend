@@ -1,4 +1,5 @@
 export const declarationPage = {
   id: 'declaration',
-  slug: 'declaration'
+  slug: 'declaration',
+  maturity: 'detailing'
 }
