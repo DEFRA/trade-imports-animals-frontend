@@ -73,4 +73,52 @@ describe('permanent-address copy module', () => {
       'phone'
     ])
   })
+
+  it('Should require each of the six fields with the design source message, in English, with a non-empty Welsh counterpart', () => {
+    const REQUIRED_FIELDS = [
+      ['nameOrOrganisationName', 'Enter a name or organisation name'],
+      ['addressLine1', 'Enter address line 1'],
+      ['townOrCity', 'Enter a town or city'],
+      ['postcode', 'Enter a postcode or Zip code'],
+      ['email', 'Enter an email address'],
+      ['phone', 'Enter a phone number']
+    ]
+    for (const [field, message] of REQUIRED_FIELDS) {
+      expect(copy.errors[field]).toBe(message)
+      expect(
+        typeof copyCy.errors[field],
+        `${field} must have a Welsh message`
+      ).toBe('string')
+      expect(
+        copyCy.errors[field].length,
+        `${field} must have a non-empty Welsh message`
+      ).toBeGreaterThan(0)
+    }
+  })
+
+  it('Should refuse a place-of-destination choice with no place of destination yet, in English, with a non-empty Welsh counterpart', () => {
+    expect(copy.errors.placeOfDestinationUnknown).toBe(
+      'Add a place of destination before you can continue'
+    )
+    expect(typeof copyCy.errors.placeOfDestinationUnknown).toBe('string')
+    expect(copyCy.errors.placeOfDestinationUnknown.length).toBeGreaterThan(0)
+  })
+
+  it('Should show the no-animals-identified message in three parts naming consignment details, in English, with non-empty Welsh counterparts', () => {
+    expect(copy.noAnimalsIdentified.before).toBe(
+      'Add the number of animals on '
+    )
+    expect(copy.noAnimalsIdentified.linkText).toBe('consignment details')
+    expect(copy.noAnimalsIdentified.after).toBe(' before you can continue.')
+    for (const part of ['before', 'linkText', 'after']) {
+      expect(typeof copyCy.noAnimalsIdentified[part]).toBe('string')
+      expect(copyCy.noAnimalsIdentified[part].length).toBeGreaterThan(0)
+    }
+  })
+
+  it('Should join a field message and the animal title with "for"', () => {
+    expect(copy.errors.forAnimal('Enter address line 1', 'Felis catus 1')).toBe(
+      'Enter address line 1 for Felis catus 1'
+    )
+  })
 })

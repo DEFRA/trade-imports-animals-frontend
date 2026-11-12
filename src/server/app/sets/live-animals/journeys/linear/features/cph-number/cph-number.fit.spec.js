@@ -11,7 +11,10 @@ import {
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 const WHOLE_NUMBER = '123456789'
@@ -363,6 +366,10 @@ test.describe('cph-number validation', () => {
     await expect(boxes.county).toHaveClass(/govuk-input--error/)
     await expect(boxes.parish).toHaveClass(/govuk-input--error/)
     await expect(boxes.holding).toHaveClass(/govuk-input--error/)
+
+    await expect(page).toHaveTitle(
+      `${errorTitlePrefix}${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
   })
 
   test('has no serious or critical axe violations in the error state', async ({

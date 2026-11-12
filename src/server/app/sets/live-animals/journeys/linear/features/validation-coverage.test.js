@@ -24,7 +24,7 @@ const VALIDATION_OPT_OUTS = new Map([
   ],
   [
     'permanentAddress',
-    'Collects nothing directly. Its answers sit on the animal identifier records the commodities feature already owns, and an animal left with neither option chosen simply saves with none, and nothing on this page refuses an answer.'
+    'Collects nothing directly. Its answers sit on the animal identifier records the commodities feature already owns, so a pageValidation would wrongly surface its own stored reading on the task list and the review page. It refuses an invalid new address and an unready place-of-destination choice through its own save rules instead, and an animal left with neither option chosen still saves with none.'
   ],
   [
     'declaration',

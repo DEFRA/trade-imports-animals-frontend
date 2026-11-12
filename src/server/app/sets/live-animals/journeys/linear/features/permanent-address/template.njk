@@ -7,6 +7,8 @@
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
@@ -16,54 +18,60 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {% for card in cards %}
-      <section id="{{ card.key }}" class="govuk-summary-card" aria-labelledby="{{ card.key }}-title">
-        <div class="govuk-summary-card__title-wrapper">
-          <h2 class="govuk-summary-card__title" id="{{ card.key }}-title">{{ card.title }}</h2>
-        </div>
-        <div class="govuk-summary-card__content">
-          {% if card.identifierLines.length %}
-            {% call govukInsetText() %}
-              {% for line in card.identifierLines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
-            {% endcall %}
-          {% endif %}
+    {% if cards.length %}
+      {% for card in cards %}
+        <section id="{{ card.key }}" class="govuk-summary-card" aria-labelledby="{{ card.key }}-title">
+          <div class="govuk-summary-card__title-wrapper">
+            <h2 class="govuk-summary-card__title" id="{{ card.key }}-title">{{ card.title }}</h2>
+          </div>
+          <div class="govuk-summary-card__content">
+            {% if card.identifierLines.length %}
+              {% call govukInsetText() %}
+                {% for line in card.identifierLines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+              {% endcall %}
+            {% endif %}
 
-          {% set newAddressHtml %}
-            {% for field in card.addressFields %}
-              {{ govukInput({
-                id: field.id,
-                name: field.id,
-                label: { text: field.label },
-                hint: field.hint and { text: field.hint },
-                type: field.type,
-                value: field.value,
-                autocomplete: field.autocomplete,
-                classes: field.classes
-              }) }}
+            {% set newAddressHtml %}
+              {% for field in card.addressFields %}
+                {{ govukInput({
+                  id: field.id,
+                  name: field.id,
+                  label: { text: field.label },
+                  hint: field.hint and { text: field.hint },
+                  type: field.type,
+                  value: field.value,
+                  autocomplete: field.autocomplete,
+                  classes: field.classes,
+                  errorMessage: field.error and { text: field.error }
+                }) }}
+              {% endfor %}
+            {% endset %}
+
+            {% set radioItems = [] %}
+            {% for option in card.options %}
+              {% set radioItems = (radioItems.push({
+                value: option.value,
+                text: option.text,
+                hint: option.hint and { text: option.hint },
+                checked: option.checked,
+                conditional: option.revealsAddressFields and { html: newAddressHtml }
+              }), radioItems) %}
             {% endfor %}
-          {% endset %}
 
-          {% set radioItems = [] %}
-          {% for option in card.options %}
-            {% set radioItems = (radioItems.push({
-              value: option.value,
-              text: option.text,
-              hint: option.hint and { text: option.hint },
-              checked: option.checked,
-              conditional: option.revealsAddressFields and { html: newAddressHtml }
-            }), radioItems) %}
-          {% endfor %}
-
-          {{ govukRadios({
-            name: card.optionName,
-            fieldset: {
-              legend: { text: copy.legend, classes: "govuk-fieldset__legend--s" }
-            },
-            items: radioItems
-          }) }}
-        </div>
-      </section>
-    {% endfor %}
+            {{ govukRadios({
+              name: card.optionName,
+              fieldset: {
+                legend: { text: copy.legend, classes: "govuk-fieldset__legend--s" }
+              },
+              errorMessage: card.optionError and { text: card.optionError },
+              items: radioItems
+            }) }}
+          </div>
+        </section>
+      {% endfor %}
+    {% else %}
+      <p class="govuk-body">{{ copy.noAnimalsIdentified.before }}<a class="govuk-link" href="{{ noAnimalsIdentifiedHref }}">{{ copy.noAnimalsIdentified.linkText }}</a>{{ copy.noAnimalsIdentified.after }}</p>
+    {% endif %}
 
     {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions, showReturnControls: false }) }}
   </form>

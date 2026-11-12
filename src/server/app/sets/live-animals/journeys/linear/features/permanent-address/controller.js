@@ -1,22 +1,28 @@
 import { pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { commodityCodesOf, linesOf } from '../commodities/lines.js'
+import { consignmentDetailsPage } from '../commodities/page.js'
 import { toDisplayParty } from '../addresses/frozen-parties.js'
 import { permanentAddressPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import {
-  PLACE_OF_DESTINATION,
   addressableUnits,
+  anyLineNeedsPermanentAddress,
   buildCards,
-  cardKeyFor
+  linesNeedingPermanentAddress
 } from './cards.js'
 import { answersFromPayload } from './answers.js'
 import { linesWithAnswered, writeAnswers } from './write.js'
+import { refusalsFor } from './validate.js'
+import { summaryTextFor } from './summary.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/permanent-address/template`
@@ -45,38 +51,43 @@ const render = (
       recoverableError
     }),
     copy,
-    cards
+    cards,
+    noAnimalsIdentifiedHref: kit.carryTrail(
+      request,
+      pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+    ),
+    errorSummary: kit.errorSummary(summaryTextFor(cards, copy))
   })
 
-const renderCards = async (answers, evaluation) =>
-  buildCards(
-    answers,
-    evaluation,
-    await toDisplayParty(answers.placeOfDestination),
-    copy
-  )
+const renderCards = (answers, evaluation, placeOfDestination) =>
+  buildCards(answers, evaluation, placeOfDestination, copy)
 
-const renderAnsweredCards = async (answers, evaluation, answered) =>
+const renderAnsweredCards = (
+  answers,
+  evaluation,
+  placeOfDestination,
+  answered,
+  fieldErrors = {}
+) =>
   buildCards(
     {
       ...answers,
       commodityLines: linesWithAnswered(linesOf(answers, evaluation), answered)
     },
     evaluation,
-    await toDisplayParty(answers.placeOfDestination),
-    copy
+    placeOfDestination,
+    copy,
+    fieldErrors
   )
 
-const redirectWhenNoAnimalNeedsAPermanentAddress = async (
-  request,
-  h,
-  answers,
-  evaluation,
-  scope
-) => {
-  if (addressableUnits(answers, evaluation).length > 0) {
-    return null
-  }
+const noLineNeedsAPermanentAddress = (answers, evaluation) =>
+  !anyLineNeedsPermanentAddress(answers, evaluation)
+
+const noAnimalIdentifiedOnALineThatNeedsOne = (answers, evaluation) =>
+  anyLineNeedsPermanentAddress(answers, evaluation) &&
+  addressableUnits(answers, evaluation).length === 0
+
+const logSkipped = (request, answers, evaluation) =>
   request.logger.info(
     {
       journeyId: request.params.journeyId,
@@ -85,67 +96,92 @@ const redirectWhenNoAnimalNeedsAPermanentAddress = async (
     },
     'Permanent address skipped: no animal on this consignment needs a permanent address'
   )
+
+const redirectSkipping = (request, h, answers, evaluation, scope) => {
+  logSkipped(request, answers, evaluation)
   return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
 }
 
-const cardsAnsweredBeforeAPlaceOfDestinationIsKnown = (answered) =>
-  answered
-    .filter(
-      ({ permanentAddressOrigin, permanentAddress }) =>
-        permanentAddressOrigin === PLACE_OF_DESTINATION && !permanentAddress
-    )
-    .map(({ lineIndex, unitIndex }) => cardKeyFor(lineIndex, unitIndex))
-
-const logPlaceOfDestinationUnknown = (request, answered) => {
-  const cards = cardsAnsweredBeforeAPlaceOfDestinationIsKnown(answered)
-  if (cards.length === 0) {
-    return
-  }
-  request.logger.warn(
+const logNoAnimalsIdentified = (request, answers, evaluation) =>
+  request.logger.info(
     {
       journeyId: request.params.journeyId,
-      reason: 'permanent-address-place-of-destination-unknown',
-      cards
+      reason: 'permanent-address-no-animal-identified',
+      commodityCodes: commodityCodesOf(
+        linesNeedingPermanentAddress(answers, evaluation)
+      )
     },
-    'Permanent address saved as the place of destination before one was chosen'
+    'Permanent address shown with no animal identified on a line that needs one'
   )
-}
 
 const get = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
-  const noAnimalRedirect = await redirectWhenNoAnimalNeedsAPermanentAddress(
+  if (noLineNeedsAPermanentAddress(answers, evaluation)) {
+    return redirectSkipping(request, h, answers, evaluation, scope)
+  }
+  if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
+    logNoAnimalsIdentified(request, answers, evaluation)
+    return render(request, h, journey, [])
+  }
+  const placeOfDestinationParty = await toDisplayParty(
+    answers.placeOfDestination
+  )
+  return render(
     request,
     h,
-    answers,
-    evaluation,
-    scope
+    journey,
+    renderCards(answers, evaluation, placeOfDestinationParty)
   )
-  if (noAnimalRedirect) {
-    return noAnimalRedirect
-  }
-  return render(request, h, journey, await renderCards(answers, evaluation))
 }
 
 const post = async (request, h) => {
   const { journey, answers, evaluation, scope } = await state.get(request, h)
-  const noAnimalRedirect = await redirectWhenNoAnimalNeedsAPermanentAddress(
-    request,
-    h,
-    answers,
-    evaluation,
-    scope
-  )
-  if (noAnimalRedirect) {
-    return noAnimalRedirect
+  if (noLineNeedsAPermanentAddress(answers, evaluation)) {
+    return redirectSkipping(request, h, answers, evaluation, scope)
+  }
+  if (noAnimalIdentifiedOnALineThatNeedsOne(answers, evaluation)) {
+    logNoAnimalsIdentified(request, answers, evaluation)
+    return h.redirect(kit.nextTargetKeepingTrail(request, page, scope))
   }
 
+  const payload = request.payload ?? {}
+  const units = addressableUnits(answers, evaluation)
+  const placeOfDestinationParty = await toDisplayParty(
+    answers.placeOfDestination
+  )
+  const { fieldErrors, placeOfDestinationErrors, values } = refusalsFor(
+    payload,
+    units,
+    Boolean(placeOfDestinationParty)
+  )
   const answered = answersFromPayload(
-    request.payload ?? {},
+    values,
     answers,
     evaluation,
     answers.placeOfDestination
   )
-  logPlaceOfDestinationUnknown(request, answered)
+
+  if (Object.keys(fieldErrors).length > 0) {
+    if (Object.keys(placeOfDestinationErrors).length > 0) {
+      kit.logRefusal(request, {
+        level: 'warn',
+        reason: 'permanent-address-place-of-destination-unknown',
+        fieldErrors: placeOfDestinationErrors
+      })
+    }
+    return render(
+      request,
+      h,
+      journey,
+      renderAnsweredCards(
+        answers,
+        evaluation,
+        placeOfDestinationParty,
+        answered,
+        fieldErrors
+      )
+    ).code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   const { failure } = await kit.recoverableSave(
     request,
@@ -155,7 +191,12 @@ const post = async (request, h) => {
         request,
         h,
         journey,
-        await renderAnsweredCards(answers, evaluation, answered),
+        renderAnsweredCards(
+          answers,
+          evaluation,
+          placeOfDestinationParty,
+          answered
+        ),
         { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )

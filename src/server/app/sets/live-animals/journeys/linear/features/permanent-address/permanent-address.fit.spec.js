@@ -16,8 +16,11 @@ import {
   signIn
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
+
+const { errorTitlePrefix, serviceName, govukSuffix } = sharedCopy.layout
 
 const CAT_1 = 'Felis catus 1'
 const CAT_2 = 'Felis catus 2'
@@ -30,6 +33,7 @@ const FERRET_MICROCHIP = 'MICROCHIP-2'
 const NEW_ADDRESS_OPTION = 'Enter a new address'
 const PLACE_OF_DESTINATION_OPTION = 'Same as the place of destination (POD)'
 const NAME_OR_ORGANISATION_LABEL = 'Name or organisation name'
+const FERRET_OWNER_NAME = 'Ferret Owner'
 
 const fillOneCatAndOneFerretIdentifiers = async (page) => {
   await openCommodityDetails(page, [FELIS_CATUS_ROW, MUSTELA_PUTORIUS_FURO_ROW])
@@ -168,7 +172,7 @@ test.describe('permanent address', () => {
       phone: '0113 555 0192'
     })
     await answerPermanentAddressCard(page, FERRET_1, {
-      nameOrOrganisationName: 'Ferret Owner',
+      nameOrOrganisationName: FERRET_OWNER_NAME,
       addressLine1: '1 Farm Lane',
       townOrCity: 'Skipton',
       county: 'North Yorkshire',
@@ -198,7 +202,7 @@ test.describe('permanent address', () => {
       ferretCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
     ).toBeChecked()
     await expect(ferretCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toHaveValue(
-      'Ferret Owner'
+      FERRET_OWNER_NAME
     )
     await expect(ferretCard.getByLabel('County (optional)')).toHaveValue(
       'North Yorkshire'
@@ -352,5 +356,188 @@ test.describe('permanent address — no animal needs one', () => {
     await expect(
       page.getByRole('heading', { name: addressesCopy.hub.title })
     ).toBeVisible()
+  })
+})
+
+const fieldErrorMessage = async (card, label) => {
+  const fieldId = await card
+    .getByLabel(label, { exact: true })
+    .getAttribute('id')
+  return card.locator(`#${fieldId}-error`)
+}
+
+test.describe('permanent address — validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('refuses a blank new address on one card, naming the animal in the summary, leaving the field message plain, with the error-prefixed title', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddress(page)
+
+    await answerPermanentAddressCard(page, CAT_1, {})
+    await saveAndContinue(page).click()
+
+    const summary = page.getByRole('alert')
+    await expect(
+      summary.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+
+    const expectedOrder = [
+      copy.errors.forAnimal(copy.errors.nameOrOrganisationName, CAT_1),
+      copy.errors.forAnimal(copy.errors.addressLine1, CAT_1),
+      copy.errors.forAnimal(copy.errors.townOrCity, CAT_1),
+      copy.errors.forAnimal(copy.errors.postcode, CAT_1),
+      copy.errors.forAnimal(copy.errors.email, CAT_1),
+      copy.errors.forAnimal(copy.errors.phone, CAT_1)
+    ]
+    await expect(summary.getByRole('link')).toHaveText(expectedOrder)
+
+    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    await summary.getByRole('link', { name: expectedOrder[0] }).click()
+    const nameField = catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)
+    await expect(nameField).toBeFocused()
+    await expect(
+      await fieldErrorMessage(catCard, NAME_OR_ORGANISATION_LABEL)
+    ).toHaveText(`Error: ${copy.errors.nameOrOrganisationName}`)
+
+    await expect(page).toHaveTitle(
+      `${errorTitlePrefix}${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
+  })
+
+  test('refuses the same-as-destination choice before one exists, and the summary link moves focus to the first radio', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddress(page)
+
+    await answerPermanentAddressCard(page, CAT_1)
+    await saveAndContinue(page).click()
+
+    const summary = page.getByRole('alert')
+    const summaryLink = summary.getByRole('link', {
+      name: copy.errors.placeOfDestinationUnknown
+    })
+    await expect(summaryLink).toBeVisible()
+
+    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    await expect(
+      catCard.getByText(copy.errors.placeOfDestinationUnknown)
+    ).toBeVisible()
+
+    await summaryLink.click()
+    await expect(
+      catCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
+    ).toBeFocused()
+  })
+
+  test('keeps the other card answered and revealed after a refusal on the first', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddress(page)
+
+    await answerPermanentAddressCard(page, CAT_1, {})
+    await answerPermanentAddressCard(page, FERRET_1, {
+      nameOrOrganisationName: FERRET_OWNER_NAME,
+      addressLine1: '1 Ferret Lane',
+      townOrCity: 'York',
+      postcode: 'YO1 1AA',
+      email: 'ferret@example.co.uk',
+      phone: '01904 555019'
+    })
+    await saveAndContinue(page).click()
+
+    const ferretCard = page.getByRole('region', { name: FERRET_1, exact: true })
+    await expect(
+      ferretCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
+    ).toBeChecked()
+    await expect(ferretCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toHaveValue(
+      FERRET_OWNER_NAME
+    )
+    await expect(ferretCard.getByLabel('Town or city')).toHaveValue('York')
+  })
+
+  test('has no serious or critical axe violations in the refused state', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddress(page)
+
+    await answerPermanentAddressCard(page, CAT_1, {})
+    await saveAndContinue(page).click()
+
+    await expectNoSeriousOrCriticalViolations(page, 'Permanent address refused')
+  })
+})
+
+test.describe('permanent address validation without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('shows the summary and each field message, with the chosen option still revealed', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddress(page)
+
+    await answerPermanentAddressCard(page, CAT_1, {})
+    await saveAndContinue(page).click()
+
+    const summary = page.getByRole('alert')
+    await expect(summary.getByRole('link')).toHaveCount(6)
+
+    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    await expect(catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toBeVisible()
+    await expect(
+      await fieldErrorMessage(catCard, NAME_OR_ORGANISATION_LABEL)
+    ).toHaveText(`Error: ${copy.errors.nameOrOrganisationName}`)
+  })
+})
+
+test.describe('permanent address — no animal identified yet', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('shows the no-animals message in place of the cards, and a save from there changes nothing and returns to the consignment addresses page', async ({
+    page
+  }) => {
+    await openCommodityDetails(page, [FELIS_CATUS_ROW])
+    await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('1')
+    await saveAndContinue(page).click()
+    await saveAndReturnToHub(page).click()
+    await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
+    await page
+      .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
+      .click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    const noAnimalsIdentifiedMessage = page.getByText(
+      `${copy.noAnimalsIdentified.before}${copy.noAnimalsIdentified.linkText}${copy.noAnimalsIdentified.after}`
+    )
+    await expect(noAnimalsIdentifiedMessage).toBeVisible()
+
+    await page
+      .getByRole('link', { name: copy.noAnimalsIdentified.linkText })
+      .click()
+    await expect(page).toHaveURL(
+      /\/notifications\/[^/]+\/consignment-details(?:\?.*)?$/
+    )
+
+    await page.goBack()
+    await saveAndContinue(page).click()
+    await expect(
+      page.getByRole('heading', { name: addressesCopy.hub.title })
+    ).toBeVisible()
+
+    await page
+      .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
+      .click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    await expect(noAnimalsIdentifiedMessage).toBeVisible()
   })
 })

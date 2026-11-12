@@ -22,5 +22,20 @@ export const copy = {
   },
   addressHints: {
     phone: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
+  },
+  errors: {
+    nameOrOrganisationName: 'Rhowch enw neu enw sefydliad',
+    addressLine1: 'Rhowch linell gyfeiriad 1',
+    townOrCity: 'Rhowch dref neu ddinas',
+    postcode: 'Rhowch god post neu god zip',
+    email: 'Rhowch gyfeiriad e-bost',
+    phone: 'Rhowch rif ffôn',
+    placeOfDestinationUnknown: 'Ychwanegwch fan cyrchfan cyn i chi barhau',
+    forAnimal: (message, animal) => `${message} ar gyfer ${animal}`
+  },
+  noAnimalsIdentified: {
+    before: 'Ychwanegwch nifer yr anifeiliaid ar ',
+    linkText: 'fanylion y gyflwyniad',
+    after: ' cyn i chi barhau.'
   }
 }

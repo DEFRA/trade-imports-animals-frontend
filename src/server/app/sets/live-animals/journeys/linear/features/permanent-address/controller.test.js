@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { SET_ID } from '../../../../set.js'
 import {
   driveHandler,
+  expectOneLogged,
+  expectOneRefusalLogged,
   getHandlerOf,
   postHandlerOf,
   refusingSaves,
@@ -14,6 +16,7 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import { withTrail } from '../../../../../../shared/kit.js'
 import {
   itSendsBackToWhereTheTraderCameFrom,
+  itSendsBackToWhereTheTraderCameFromOnRefusal,
   petConsignmentSeed
 } from '../../test-support.js'
 import {
@@ -23,8 +26,10 @@ import {
   lineOf
 } from '../commodities/search/test-support.js'
 import { addressesPage } from '../addresses/page.js'
+import { consignmentDetailsPage } from '../commodities/page.js'
 import * as permanentAddress from './controller.js'
 import { cardKeyFor, fieldNameFor } from './cards.js'
+import { copy } from './copy/copy.en.js'
 
 const get = getHandlerOf(permanentAddress)
 const post = postHandlerOf(permanentAddress)
@@ -66,6 +71,56 @@ const newAddressPayload = (key, values) =>
     ])
   )
 
+const fieldErrorOn = (result, field, key) =>
+  cardsFrom(result)[0].addressFields.find(
+    ({ id }) => id === fieldNameFor(field, key)
+  ).error
+
+const noAnimalIdentifiedSeed = () => ({
+  countryOfOrigin: 'FR',
+  commodityLines: [lineOf(FELIS_CATUS_ROW)]
+})
+
+const expectNoAnimalsIdentifiedLogged = (result) =>
+  expectOneLogged(result.logger, {
+    level: 'info',
+    message:
+      'Permanent address shown with no animal identified on a line that needs one',
+    fields: expect.objectContaining({
+      journeyId: result.journeyId,
+      reason: 'permanent-address-no-animal-identified',
+      commodityCodes: [FELIS_CATUS_ROW.commodityCode]
+    })
+  })
+
+const catAndFerretSeedWithKeys = () => ({
+  seed: petConsignmentSeed(
+    catLine([{ animalIdentifierMicrochip: 'MC-1' }]),
+    ferretLine([{ animalIdentifierMicrochip: 'MC-2' }])
+  ),
+  catKey: cardKeyFor(0, 0),
+  ferretKey: cardKeyFor(1, 0)
+})
+
+const expectSkippedToAddressesWithOneLog = (result) => {
+  expect(result.response.redirect).toBe(
+    pagePath(result.journeyId, addressesPage.slug)
+  )
+  expect(result.after.commodityLines).toEqual([BOS_TAURUS_ROW])
+  expect(result.logger.entries).toEqual([
+    {
+      level: 'info',
+      message:
+        'Permanent address skipped: no animal on this consignment needs a permanent address',
+      fields: expect.objectContaining({
+        journeyId: result.journeyId,
+        reason: 'no-animal-needs-permanent-address',
+        commodityCodes: [BOS_TAURUS_ROW.commodityCode]
+      })
+    }
+  ])
+}
+
 describe('permanent-address — the guard', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -74,32 +129,44 @@ describe('permanent-address — the guard', () => {
       seed: { countryOfOrigin: 'FR', commodityLines: [BOS_TAURUS_ROW] }
     })
 
-    expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, addressesPage.slug)
-    )
-    expect(result.after.commodityLines).toEqual([BOS_TAURUS_ROW])
-    expect(result.logger.entries).toEqual([
-      {
-        level: 'info',
-        message:
-          'Permanent address skipped: no animal on this consignment needs a permanent address',
-        fields: expect.objectContaining({
-          journeyId: result.journeyId,
-          reason: 'no-animal-needs-permanent-address',
-          commodityCodes: [BOS_TAURUS_ROW.commodityCode]
-        })
-      }
-    ])
+    expectSkippedToAddressesWithOneLog(result)
   })
 
-  it('Should send a cat line with no animal record entered the same way', async () => {
-    const result = await driveHandler(get, {
-      seed: { countryOfOrigin: 'FR', commodityLines: [FELIS_CATUS_ROW] }
+  it('Should leave the commodity lines as they were and redirect to the consignment addresses page on a save from a consignment with no cat, dog or ferret line, logging once', async () => {
+    const result = await driveHandler(post, {
+      seed: { countryOfOrigin: 'FR', commodityLines: [BOS_TAURUS_ROW] },
+      payload: {}
     })
+
+    expectSkippedToAddressesWithOneLog(result)
+  })
+})
+
+describe('permanent-address — a line that needs one with no animal identified yet', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should render the page with no cards and the empty-state message carrying the consignment details address, logging once', async () => {
+    const seed = noAnimalIdentifiedSeed()
+
+    const result = await driveHandler(get, { seed })
+
+    expect(cardsFrom(result)).toEqual([])
+    expect(result.view.context.noAnimalsIdentifiedHref).toBe(
+      pagePath(result.journeyId, consignmentDetailsPage.slug)
+    )
+    expectNoAnimalsIdentifiedLogged(result)
+  })
+
+  it('Should leave the commodity lines as they were and redirect to the consignment addresses page on a save from there, logging once', async () => {
+    const seed = noAnimalIdentifiedSeed()
+
+    const result = await driveHandler(post, { seed, payload: {} })
 
     expect(result.response.redirect).toBe(
       pagePath(result.journeyId, addressesPage.slug)
     )
+    expect(result.after.commodityLines).toEqual(seed.commodityLines)
+    expectNoAnimalsIdentifiedLogged(result)
   })
 })
 
@@ -170,6 +237,196 @@ describe('permanent-address — the card list', () => {
   })
 })
 
+describe('permanent-address — a new address is checked before it saves', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const seed = petConsignmentSeed(
+    catLine([{ animalIdentifierMicrochip: 'MC-1' }])
+  )
+  const key = cardKeyFor(0, 0)
+  const REQUIRED_FIELDS = [
+    'nameOrOrganisationName',
+    'addressLine1',
+    'townOrCity',
+    'postcode',
+    'email',
+    'phone'
+  ]
+
+  it('Should refuse a new address with every field blank, naming the six required fields on their own fields and, joined to the animal, in the summary, writing nothing', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: optionPayload(key, 'newAddress')
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    for (const field of REQUIRED_FIELDS) {
+      expect(fieldErrorOn(result, field, key)).toBe(copy.errors[field])
+    }
+    expect(
+      result.view.context.errorSummary.errorList.map((e) => e.text)
+    ).toEqual(
+      REQUIRED_FIELDS.map((field) =>
+        copy.errors.forAnimal(copy.errors[field], 'Felis catus 1')
+      )
+    )
+    expect(
+      result.after.commodityLines[0].animalIdentifiers[0].permanentAddress
+    ).toBeUndefined()
+  })
+
+  it('Should leave address line 2 and county optional while still requiring the other six', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        ...optionPayload(key, 'newAddress'),
+        ...newAddressPayload(key, {
+          addressLine2: 'Unit 4',
+          county: 'North Yorkshire'
+        })
+      }
+    })
+
+    expect(fieldErrorOn(result, 'addressLine2', key)).toBeUndefined()
+    expect(fieldErrorOn(result, 'county', key)).toBeUndefined()
+    for (const field of REQUIRED_FIELDS) {
+      expect(fieldErrorOn(result, field, key)).toBe(copy.errors[field])
+    }
+  })
+
+  it("Should refuse a value one character past county's cap with its own over-long message, naming the field and the limit", async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        ...optionPayload(key, 'newAddress'),
+        ...newAddressPayload(key, {
+          ...HAND_ENTERED_ADDRESS,
+          county: 'a'.repeat(101)
+        })
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(fieldErrorOn(result, 'county', key)).toBe(
+      'County must be 100 characters or fewer'
+    )
+  })
+
+  it('Should accept a value at the cap', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        ...optionPayload(key, 'newAddress'),
+        ...newAddressPayload(key, {
+          ...HAND_ENTERED_ADDRESS,
+          county: 'a'.repeat(100)
+        })
+      }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    expect(
+      result.after.commodityLines[0].animalIdentifiers[0].permanentAddress
+        .address.county
+    ).toBe('a'.repeat(100))
+  })
+
+  it('Should accept a present but malformed email, phone and postcode, checking those three fields only for being blank', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        ...optionPayload(key, 'newAddress'),
+        ...newAddressPayload(key, {
+          ...HAND_ENTERED_ADDRESS,
+          email: 'not-an-email',
+          phone: 'n/a',
+          postcode: 'notapostcode'
+        })
+      }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    const address =
+      result.after.commodityLines[0].animalIdentifiers[0].permanentAddress
+    expect(address.email).toBe('not-an-email')
+    expect(address.phone).toBe('n/a')
+    expect(address.address.postcode).toBe('notapostcode')
+  })
+})
+
+describe('permanent-address — the place-of-destination choice is checked before it saves', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should refuse the choice when the notification has no place of destination, naming no animal, writing nothing, logging exactly one warn', async () => {
+    const seed = petConsignmentSeed(
+      catLine([{ animalIdentifierMicrochip: 'MC-1' }])
+    )
+    const key = cardKeyFor(0, 0)
+
+    const result = await driveHandler(post, {
+      seed,
+      payload: optionPayload(key, 'placeOfDestination')
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    const card = cardsFrom(result)[0]
+    expect(card.options[0].checked).toBe(true)
+    expect(card.optionError).toBe(copy.errors.placeOfDestinationUnknown)
+    expect(result.view.context.errorSummary.errorList).toEqual([
+      {
+        text: copy.errors.placeOfDestinationUnknown,
+        href: `#${card.optionName}`
+      }
+    ])
+    expect(
+      result.after.commodityLines[0].animalIdentifiers[0].permanentAddressOrigin
+    ).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      level: 'warn',
+      reason: 'permanent-address-place-of-destination-unknown',
+      errorCodes: [fieldNameFor('option', key)]
+    })
+  })
+})
+
+describe('permanent-address — a refusal on one card leaves the other as posted', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should keep both cards’ chosen option and typed values, with the new-address fields still revealed, writing nothing for either', async () => {
+    const { seed, catKey, ferretKey } = catAndFerretSeedWithKeys()
+
+    const result = await driveHandler(post, {
+      seed: { ...seed, placeOfDestination: PLACE_OF_DESTINATION_PARTY },
+      payload: {
+        ...optionPayload(catKey, 'newAddress'),
+        ...optionPayload(ferretKey, 'newAddress'),
+        ...newAddressPayload(ferretKey, HAND_ENTERED_ADDRESS)
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    const [catCard, ferretCard] = cardsFrom(result)
+    expect(catCard.options[1].checked).toBe(true)
+    expect(ferretCard.options[1].checked).toBe(true)
+    expect(catCard.options[0].hint).toBe(
+      'Riverside Holding Facility, East Farm Road, Leeds, LS25 3EB, United Kingdom'
+    )
+    expect(
+      ferretCard.addressFields.find(
+        (field) =>
+          field.id === fieldNameFor('nameOrOrganisationName', ferretKey)
+      ).value
+    ).toBe(HAND_ENTERED_ADDRESS.nameOrOrganisationName)
+    expect(
+      result.after.commodityLines[0].animalIdentifiers[0].permanentAddress
+    ).toBeUndefined()
+    expect(
+      result.after.commodityLines[1].animalIdentifiers[0].permanentAddress
+    ).toBeUndefined()
+  })
+})
+
 describe('permanent-address — saving', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -190,23 +447,7 @@ describe('permanent-address — saving', () => {
     expect(unit.permanentAddress).toEqual(PLACE_OF_DESTINATION_PARTY)
   })
 
-  it('Should record the place-of-destination choice with no address when the notification has none stored yet', async () => {
-    const seed = petConsignmentSeed(
-      catLine([{ animalIdentifierMicrochip: 'MC-1' }])
-    )
-    const key = cardKeyFor(0, 0)
-
-    const result = await driveHandler(post, {
-      seed,
-      payload: optionPayload(key, 'placeOfDestination')
-    })
-
-    const unit = result.after.commodityLines[0].animalIdentifiers[0]
-    expect(unit.permanentAddressOrigin).toBe('placeOfDestination')
-    expect(unit.permanentAddress).toBeNull()
-  })
-
-  it('Should store a hand-entered address with a county and no second line in its own fields and the United Kingdom as the country, and the choice', async () => {
+  it('Should store a hand-entered address with a county and no second line in its own fields, a trimmed town or city, and the United Kingdom as the country, and the choice', async () => {
     const seed = petConsignmentSeed(
       catLine([{ animalIdentifierMicrochip: 'MC-1' }])
     )
@@ -216,7 +457,10 @@ describe('permanent-address — saving', () => {
       seed,
       payload: {
         ...optionPayload(key, 'newAddress'),
-        ...newAddressPayload(key, HAND_ENTERED_ADDRESS)
+        ...newAddressPayload(key, {
+          ...HAND_ENTERED_ADDRESS,
+          townOrCity: '  Skipton  '
+        })
       }
     })
 
@@ -250,9 +494,7 @@ describe('permanent-address — saving', () => {
       seed,
       payload: {
         ...optionPayload(answeredKey, 'newAddress'),
-        ...newAddressPayload(answeredKey, {
-          nameOrOrganisationName: 'Pet Owner'
-        })
+        ...newAddressPayload(answeredKey, HAND_ENTERED_ADDRESS)
       }
     })
 
@@ -424,10 +666,14 @@ describe('permanent-address — Save and continue', () => {
       catLine([{ animalIdentifierMicrochip: 'MC-1' }])
     )
     const key = cardKeyFor(0, 0)
+    const payload = {
+      ...optionPayload(key, 'newAddress'),
+      ...newAddressPayload(key, HAND_ENTERED_ADDRESS)
+    }
 
     const openedFromLink = await driveHandler(post, {
       seed,
-      payload: optionPayload(key, 'newAddress'),
+      payload,
       query: { return: 'addresses' }
     })
     expect(openedFromLink.response.redirect).toBe(
@@ -436,7 +682,7 @@ describe('permanent-address — Save and continue', () => {
 
     const openedDirectly = await driveHandler(post, {
       seed,
-      payload: optionPayload(key, 'newAddress')
+      payload
     })
     expect(openedDirectly.response.redirect).toBe(
       withTrail(pagePath(openedDirectly.journeyId, addressesPage.slug), [
@@ -448,6 +694,12 @@ describe('permanent-address — Save and continue', () => {
   itSendsBackToWhereTheTraderCameFrom(get, {
     seed: petConsignmentSeed(catLine([{ animalIdentifierMicrochip: 'MC-1' }])),
     previousPage: 'addresses'
+  })
+
+  itSendsBackToWhereTheTraderCameFromOnRefusal(post, {
+    seed: petConsignmentSeed(catLine([{ animalIdentifierMicrochip: 'MC-1' }])),
+    payload: optionPayload(cardKeyFor(0, 0), 'newAddress'),
+    savedPage: 'addresses'
   })
 })
 
@@ -465,7 +717,7 @@ describe('permanent-address — a refused save', () => {
       seed,
       payload: {
         ...optionPayload(key, 'newAddress'),
-        ...newAddressPayload(key, { nameOrOrganisationName: 'Pet Owner' })
+        ...newAddressPayload(key, HAND_ENTERED_ADDRESS)
       },
       startingFrom: [refusingSaves(failure)]
     })
@@ -474,7 +726,7 @@ describe('permanent-address — a refused save', () => {
     const [, newAddressOption] = cardsFrom(result)[0].options
     expect(newAddressOption.checked).toBe(true)
     const [nameField] = cardsFrom(result)[0].addressFields
-    expect(nameField.value).toBe('Pet Owner')
+    expect(nameField.value).toBe(HAND_ENTERED_ADDRESS.nameOrOrganisationName)
     expect(
       result.logger.entries.filter(
         ({ message }) =>

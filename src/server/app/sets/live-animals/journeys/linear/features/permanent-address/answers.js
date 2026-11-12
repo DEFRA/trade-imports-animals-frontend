@@ -8,7 +8,7 @@ import {
 } from './cards.js'
 
 const newAddressPartyValues = (payload, key) => {
-  const value = (id) => String(payload[fieldNameFor(id, key)] ?? '').trim()
+  const value = (id) => String(payload[fieldNameFor(id, key)] ?? '')
   return {
     name: value('nameOrOrganisationName'),
     addressLine1: value('addressLine1'),
@@ -22,8 +22,11 @@ const newAddressPartyValues = (payload, key) => {
   }
 }
 
+export const optionChosenFor = (payload, key) =>
+  String(payload[fieldNameFor('option', key)] ?? '')
+
 const answerFor = (payload, key, placeOfDestination) => {
-  const chosen = String(payload[fieldNameFor('option', key)] ?? '')
+  const chosen = optionChosenFor(payload, key)
   if (chosen === PLACE_OF_DESTINATION) {
     return {
       permanentAddressOrigin: PLACE_OF_DESTINATION,
@@ -42,7 +45,8 @@ const answerFor = (payload, key, placeOfDestination) => {
 /**
  * The page's answers from a posted form.
  *
- * @param {object} payload - the raw posted form values.
+ * @param {object} values - the posted values, with the page's normalisation
+ * applied.
  * @param {object} answers - the journey's stored answers.
  * @param {object} evaluation - the request-level evaluator result.
  * @param {object} [placeOfDestination] - the notification's place of
@@ -52,14 +56,14 @@ const answerFor = (payload, key, placeOfDestination) => {
  * animal left with neither option chosen has no entry.
  */
 export const answersFromPayload = (
-  payload,
+  values,
   answers,
   evaluation,
   placeOfDestination
 ) =>
   addressableUnits(answers, evaluation)
     .map(({ lineIndex, unitIndex, key }) => {
-      const answer = answerFor(payload, key, placeOfDestination)
+      const answer = answerFor(values, key, placeOfDestination)
       return answer && { lineIndex, unitIndex, ...answer }
     })
     .filter(Boolean)

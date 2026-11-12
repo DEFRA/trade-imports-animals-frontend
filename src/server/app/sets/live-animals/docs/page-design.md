@@ -394,9 +394,26 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   animal, never from the line's animal count: the permanent address is
   stored on the animal identifier record, so a card can only exist once that
   record does.
+- A line that needs a permanent address with no animal identified yet shows
+  no cards; the "Add the number of animals on consignment details before you
+  can continue." message takes their place, and the save control still
+  renders but writes nothing.
 - Each card asks once, as its own radio group legend, whether the animal
   lives at the place of destination or at a new address. The page carries no
   second question above the cards.
+- Choosing "Enter a new address" requires the name or organisation name,
+  address line 1, town or city, postcode or Zip code, email address and
+  phone number; address line 2 and county may be left blank. Every field's
+  character limit and over-long message are the ones the owning
+  `address-rules.js` already builds for the party-edit page; this page
+  states only its own required messages, and no format check on email,
+  phone or postcode.
+- Choosing "Same as the place of destination (POD)" before the notification
+  has one is refused on that card's radio group, naming no animal, on the
+  field or in the summary.
+- The error summary names the card's animal for an address field's refusal
+  ("Enter address line 1 for Felis catus 1"); the message on the field
+  itself stays plain ("Enter address line 1").
 - The new-address fields ask no country; a hand-entered address always
   records the United Kingdom.
 - The phone field is the one new-address field with a hint. A trader giving

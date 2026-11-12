@@ -57,14 +57,40 @@ const maxLengthOf = (field) => FIELD_RULES[field].maxLength
 const maxLengthMessageFor = (field) =>
   errors[field].maxLength(maxLengthOf(field))
 
-const requiredTextRule = (field) =>
-  requiredMaxText(field, maxLengthOf(field), {
-    required: errors[field].required,
+/**
+ * The required-with-cap rule for an address field: blank refuses with
+ * `required`, over `field`'s V4 limit refuses with this feature's over-long
+ * message for `field`.
+ *
+ * @param {string} field - a key of `FIELD_RULES` whose limit and over-long
+ * message the rule reads.
+ * @param {object} [options]
+ * @param {string} [options.key] - the key the rule reports its error under,
+ * defaulting to `field`.
+ * @param {string} [options.required] - the message shown when the value is
+ * blank, defaulting to this feature's own required message for `field`.
+ */
+export const requiredTextRule = (
+  field,
+  { key = field, required = errors[field].required } = {}
+) =>
+  requiredMaxText(key, maxLengthOf(field), {
+    required,
     maxLength: maxLengthMessageFor(field)
   })
 
-const optionalTextRule = (field) =>
-  maxText(field, maxLengthOf(field), maxLengthMessageFor(field))
+/**
+ * The optional-with-cap rule for an address field, keyed the same way as
+ * `requiredTextRule`.
+ *
+ * @param {string} field - a key of `FIELD_RULES` whose limit and over-long
+ * message the rule reads.
+ * @param {object} [options]
+ * @param {string} [options.key] - the key the rule reports its error under,
+ * defaulting to `field`.
+ */
+export const optionalTextRule = (field, { key = field } = {}) =>
+  maxText(key, maxLengthOf(field), maxLengthMessageFor(field))
 
 export const addressRules = (countryCodes) =>
   compose(

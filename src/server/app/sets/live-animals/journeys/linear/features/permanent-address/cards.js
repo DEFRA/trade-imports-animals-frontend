@@ -29,10 +29,15 @@ export const cardKeyFor = (lineIndex, unitIndex) => `${lineIndex}-${unitIndex}`
 
 export const fieldNameFor = (id, key) => `${id}-${key}`
 
-export const anyLineNeedsPermanentAddress = (answers, evaluation) =>
-  linesOf(answers, evaluation).some(({ entry }) =>
+export const PARTY_SOURCE_FIELD = { nameOrOrganisationName: 'name' }
+
+export const linesNeedingPermanentAddress = (answers, evaluation) =>
+  linesOf(answers, evaluation).filter(({ entry }) =>
     permanentAddressApplies(entry.commodityCode, entry.speciesLatinName)
   )
+
+export const anyLineNeedsPermanentAddress = (answers, evaluation) =>
+  linesNeedingPermanentAddress(answers, evaluation).length > 0
 
 export const addressableUnits = (answers, evaluation) =>
   linesOf(answers, evaluation).flatMap(({ index: lineIndex, entry: line }) =>
@@ -59,8 +64,6 @@ const placeOfDestinationHint = (placeOfDestination) =>
       )
     : undefined
 
-const PARTY_SOURCE_FIELD = { nameOrOrganisationName: 'name' }
-
 const addressFormValuesOf = (party) => {
   const partyValues = formValuesOf(party)
   return Object.fromEntries(
@@ -71,18 +74,20 @@ const addressFormValuesOf = (party) => {
   )
 }
 
-const addressFieldInputsOf = (key, values, copy) => {
+const addressFieldInputsOf = (key, values, copy, fieldErrors) => {
   const INPUT_TYPES = { email: 'email', phone: 'tel' }
   return ADDRESS_FIELDS.map((id) => {
     const partyField = PARTY_SOURCE_FIELD[id] ?? id
+    const fieldId = fieldNameFor(id, key)
     return {
-      id: fieldNameFor(id, key),
+      id: fieldId,
       label: copy.address[id],
       hint: id === 'phone' ? copy.addressHints.phone : undefined,
       type: INPUT_TYPES[id],
       value: values[id],
       autocomplete: AUTOCOMPLETE_TOKENS[partyField],
-      classes: FIELD_CLASSES[partyField]
+      classes: FIELD_CLASSES[partyField],
+      error: fieldErrors[fieldId]
     }
   })
 }
@@ -96,19 +101,22 @@ const originOf = (unit) =>
 const buildCard = (
   { lineIndex, unitIndex, key, line, unit },
   placeOfDestination,
-  copy
+  copy,
+  fieldErrors
 ) => {
   const selected = originOf(unit)
   const addressValues = addressFormValuesOf(
     selected === NEW_ADDRESS ? unit.permanentAddress : undefined
   )
+  const optionName = fieldNameFor('option', key)
   return {
     key,
     lineIndex,
     unitIndex,
     title: animalLabelOf(line.speciesLatinName, unitIndex + 1),
     identifierLines: identifierLinesOf(line, unit, copy),
-    optionName: fieldNameFor('option', key),
+    optionName,
+    optionError: fieldErrors[optionName],
     options: [
       {
         value: PLACE_OF_DESTINATION,
@@ -124,11 +132,17 @@ const buildCard = (
         revealsAddressFields: true
       }
     ],
-    addressFields: addressFieldInputsOf(key, addressValues, copy)
+    addressFields: addressFieldInputsOf(key, addressValues, copy, fieldErrors)
   }
 }
 
-export const buildCards = (answers, evaluation, placeOfDestination, copy) =>
+export const buildCards = (
+  answers,
+  evaluation,
+  placeOfDestination,
+  copy,
+  fieldErrors = {}
+) =>
   addressableUnits(answers, evaluation).map((addressableUnit) =>
-    buildCard(addressableUnit, placeOfDestination, copy)
+    buildCard(addressableUnit, placeOfDestination, copy, fieldErrors)
   )
