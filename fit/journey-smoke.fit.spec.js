@@ -25,6 +25,7 @@ import {
   saveAndContinueToImportReason,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  errorSummary,
   expectLanding,
   expectSpeciesSelected,
   journeyUrl,
@@ -257,7 +258,7 @@ test.describe('live-animals journey glue', () => {
       urlUnderBase('/notifications/[^/]+/notification-view')
     )
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
-    const summary = page.getByRole('alert')
+    const summary = errorSummary(page)
     await expect(summary).toContainText('There is a problem')
     await expect(summary).toContainText('Complete reason for import')
     await expect(summary).toContainText('Complete roles and addresses')

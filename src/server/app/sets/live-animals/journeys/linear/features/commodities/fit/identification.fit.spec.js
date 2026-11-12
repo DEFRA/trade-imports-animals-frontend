@@ -12,6 +12,7 @@ import {
   numberOfAnimalsFor,
   errorSummary,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectStyle,
   measureReferenceElement,
   expectNoHorizontalOverflow,
@@ -75,13 +76,6 @@ const openFelisCatusIdentification = (page) =>
 
 const entryLabelsOf = (fields) =>
   fields.map((field) => copy.identification.identifierLabels[field])
-
-const expectErrorFocus = async (page, message, selector) => {
-  const link = errorSummaryLinks(page, message)
-  await expect(link).toBeVisible()
-  await link.click()
-  await expect(page.locator(selector)).toBeFocused()
-}
 
 const validPermanentAddress = {
   nameOrOrganisationName: 'Pet Owner',
@@ -650,10 +644,10 @@ test.describe('animal identification identifier validation', () => {
     await openFelisCatusIdentification(page)
     await submitAdd(page)
 
-    await expectErrorFocus(
+    await followErrorLinkToField(
       page,
       copy.identification.errors.atLeastOneIdentifier,
-      MICROCHIP_FIELD
+      page.locator(MICROCHIP_FIELD)
     )
     await expect(page.locator(MICROCHIP_FIELD)).toHaveValue('')
   })
@@ -667,10 +661,10 @@ test.describe('animal identification identifier validation', () => {
       await page.locator(`#${field}-0`).fill(invalid)
       await saveAndContinue(page).click()
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.identifierMax[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
     })
@@ -708,10 +702,10 @@ test.describe('animal identification address validation', () => {
       await page.locator(`#${field}-0`).fill('')
       await submitAdd(page)
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.addressMandatory[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue('')
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
@@ -729,10 +723,10 @@ test.describe('animal identification address validation', () => {
       })
       await submitAdd(page)
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.addressFormat[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)

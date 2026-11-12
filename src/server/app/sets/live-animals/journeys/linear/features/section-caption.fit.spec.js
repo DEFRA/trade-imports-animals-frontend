@@ -9,6 +9,7 @@ import {
   startNotificationAtImportReason,
   startNotificationAtOrigin
 } from '../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../shared/copy.en.js'
 import { copy as sectionCaptionsCopy } from '../flow/section-captions/copy/copy.en.js'
 import { copy as dashboardCopy } from './dashboard/copy/copy.en.js'
 import { copy as hubCopy } from './hub/copy/copy.en.js'
@@ -59,9 +60,11 @@ test.describe('section caption above the page heading', () => {
     await expect(
       page.getByRole('main').getByRole('heading').first()
     ).toHaveAccessibleName(hubCopy.title)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
-      hubCopy.title
-    )
+    const title = page.getByRole('heading', { level: 1 })
+    await expect(title).toHaveAccessibleName(hubCopy.title)
+    const beforeTitle = title.locator('xpath=preceding-sibling::*')
+    await expect(beforeTitle).toHaveCount(1)
+    await expect(beforeTitle).toContainText(sharedCopy.journeyStrip.draft)
   })
 
   test('has no serious or critical axe violations with a caption on the page', async ({

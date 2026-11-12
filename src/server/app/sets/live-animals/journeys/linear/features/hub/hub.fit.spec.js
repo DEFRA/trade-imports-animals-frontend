@@ -8,6 +8,8 @@ import {
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectStyle,
+  measureReferenceElement,
   openOverview,
   openReviewFromHub,
   saveAndContinue,
@@ -359,9 +361,14 @@ test.describe('hub feature — the Review and submit button', () => {
       copy.reviewAndSubmit,
       copy.returnToDashboard
     ])
-    await expect(
-      page.getByRole('button', { name: copy.reviewAndSubmit })
-    ).not.toHaveClass(/govuk-button--secondary/)
+    await expectStyle(
+      page.getByRole('button', { name: copy.reviewAndSubmit }),
+      await measureReferenceElement(page, {
+        tagName: 'button',
+        className: 'govuk-button',
+        properties: ['background-color']
+      })
+    )
     await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 

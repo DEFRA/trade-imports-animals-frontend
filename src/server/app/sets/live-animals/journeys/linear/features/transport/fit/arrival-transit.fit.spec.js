@@ -14,6 +14,7 @@ import {
   describeCalendarPosition,
   errorSummary,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectOverview,
   expectNoSeriousOrCriticalViolations,
   govukColourOf,
@@ -362,15 +363,11 @@ test.describe('arrival details validation', () => {
     await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill('31/2/2026')
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.portOfEntry.errors.arrivalDateInvalid
-    )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(
+      copy.portOfEntry.errors.arrivalDateInvalid,
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toBeFocused()
+    )
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue('31/2/2026')
@@ -418,12 +415,11 @@ test.describe('arrival details validation', () => {
         await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill(value)
         await saveAndContinue(page).click()
 
-        const link = errorSummaryLinks(page, outOfRangeError)
-        await expect(link).toBeVisible()
-        await link.click()
-        await expect(
+        await followErrorLinkToField(
+          page,
+          outOfRangeError,
           page.getByLabel(copy.portOfEntry.arrivalDate.label)
-        ).toBeFocused()
+        )
         await expect(
           page.getByLabel(copy.portOfEntry.arrivalDate.label)
         ).toHaveValue(value)
@@ -474,10 +470,11 @@ test.describe('arrival details validation', () => {
     })
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(page, validatorDefaults.oneOf)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(portInput)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      validatorDefaults.oneOf,
+      page.locator(portInput)
+    )
     await expect(page.locator(portInput)).toHaveValue('')
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
@@ -498,10 +495,11 @@ test.describe('arrival details validation', () => {
     })
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(page, meansRequiredError)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      meansRequiredError,
+      page.locator(MEANS_OF_TRANSPORT_SELECT)
+    )
     await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toHaveValue('')
     await expect(page.locator(portNativeSelect)).toHaveValue(values.portOfEntry)
   })
@@ -516,7 +514,6 @@ test.describe('arrival details validation', () => {
       page.getByRole('heading', { name: copy.portOfEntry.title })
     ).toBeVisible()
     await expect(page).toHaveTitle(/^Error: /)
-    const link = errorSummaryLinks(page, meansRequiredError)
     await expect(errorSummaryLinks(page)).toHaveText([meansRequiredError])
     await expect(page.locator('#meansOfTransport-error')).toContainText(
       meansRequiredError
@@ -528,8 +525,11 @@ test.describe('arrival details validation', () => {
       'border-top-color',
       await govukColourOf(page, 'error')
     )
-    await link.click()
-    await expect(page.locator(MEANS_OF_TRANSPORT_SELECT)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      meansRequiredError,
+      page.locator(MEANS_OF_TRANSPORT_SELECT)
+    )
   })
 
   test('means validation: Save and return to overview with no means shows the required error, shows the answers back and saves nothing', async ({
@@ -570,15 +570,11 @@ test.describe('arrival transport reference validation', () => {
     await page.getByLabel(copy.portOfEntry.identification.label).fill(invalid)
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.portOfEntry.errors.identificationMaxLength
-    )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(
+      copy.portOfEntry.errors.identificationMaxLength,
       page.getByLabel(copy.portOfEntry.identification.label)
-    ).toBeFocused()
+    )
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(invalid)
@@ -596,15 +592,11 @@ test.describe('arrival transport reference validation', () => {
       .fill(invalid)
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.portOfEntry.errors.documentReferenceMaxLength
-    )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(
+      copy.portOfEntry.errors.documentReferenceMaxLength,
       page.getByLabel(copy.portOfEntry.documentReference.label)
-    ).toBeFocused()
+    )
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(invalid)
@@ -874,13 +866,11 @@ test.describe('transit countries rendering and validation', () => {
       .getByRole('button', { name: copy.transitCountries.add, exact: true })
       .click()
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.transitCountries.errors.chooseCountry
+      copy.transitCountries.errors.chooseCountry,
+      page.locator(transitCountryInput)
     )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(transitCountryInput)).toBeFocused()
   })
 
   test('transit validation: a country already added is refused by name', async ({
@@ -907,10 +897,11 @@ test.describe('transit countries rendering and validation', () => {
     await submitTransitedCountriesTheFormCannotProduce(page, ['INVALID'])
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(page, copy.transitCountries.errors.fromList)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(transitCountryInput)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.transitCountries.errors.fromList,
+      page.locator(transitCountryInput)
+    )
     expect(await addedCountries(page)).toEqual([])
     await expect(page.getByRole('cell', { name: 'INVALID' })).toHaveCount(0)
   })
@@ -1024,13 +1015,11 @@ test.describe('transit countries list, limits and persistence', () => {
     )
     await saveAndContinue(page).click()
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.transitCountries.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
+      copy.transitCountries.errors.maxCountries(MAX_TRANSITED_COUNTRIES),
+      page.locator(transitCountryInput)
     )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(transitCountryInput)).toBeFocused()
     expect(await addedCountries(page)).toHaveLength(MAX_TRANSITED_COUNTRIES + 1)
   })
 

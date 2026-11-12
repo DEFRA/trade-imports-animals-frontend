@@ -10,7 +10,8 @@ import {
   startNotificationAtOrigin,
   urlUnderBase,
   errorSummary,
-  followErrorLinkToField
+  followErrorLinkToField,
+  govukColourOf
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
@@ -106,9 +107,13 @@ test.describe('cph-number feature', () => {
   }) => {
     const boxes = partBoxes(page)
 
-    await expect(boxes.county).toHaveClass(/govuk-input--width-2/)
-    await expect(boxes.parish).toHaveClass(/govuk-input--width-3/)
-    await expect(boxes.holding).toHaveClass(/govuk-input--width-4/)
+    const widths = await Promise.all(
+      [boxes.county, boxes.parish, boxes.holding].map(
+        async (box) => (await box.boundingBox()).width
+      )
+    )
+    expect(widths[0]).toBeLessThan(widths[1])
+    expect(widths[1]).toBeLessThan(widths[2])
 
     for (const box of Object.values(boxes)) {
       await expect(box).toHaveAttribute('inputmode', 'numeric')
@@ -122,7 +127,6 @@ test.describe('cph-number feature', () => {
       const label = page.locator(`label[for="${id}"]`)
       await expect(label).toHaveText(text)
       await expect(label).toBeVisible()
-      await expect(label).not.toHaveClass(/govuk-visually-hidden/)
       const box = await label.boundingBox()
       expect(
         box.width,
@@ -347,9 +351,10 @@ test.describe('cph-number validation', () => {
     ).toHaveAccessibleDescription(new RegExp(copy.errors.countyLength))
 
     const boxes = partBoxes(page)
-    await expect(boxes.county).toHaveClass(/govuk-input--error/)
-    await expect(boxes.parish).toHaveClass(/govuk-input--error/)
-    await expect(boxes.holding).toHaveClass(/govuk-input--error/)
+    const errorBorder = await govukColourOf(page, 'error')
+    for (const box of Object.values(boxes)) {
+      await expect(box).toHaveCSS('border-top-color', errorBorder)
+    }
   })
 
   test('has no serious or critical axe violations in the error state', async ({

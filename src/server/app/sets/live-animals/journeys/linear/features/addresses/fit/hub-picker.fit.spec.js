@@ -7,6 +7,7 @@ import {
   addressesSection,
   contentWidthOf,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
@@ -426,10 +427,11 @@ test.describe('party picker save', () => {
     await searchAddresses(page, 'Denmark')
     await postAnIdNotInTheBook(page)
 
-    const link = errorSummaryLinks(page, CONSIGNOR.error)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByRole('radio').first()).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      CONSIGNOR.error,
+      page.getByRole('radio').first()
+    )
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
     await expect(page.getByLabel(copy.picker.search.label)).toHaveValue(
       'Denmark'
@@ -441,11 +443,8 @@ test.describe('party picker save', () => {
   }) => {
     await postAnIdNotInTheBookAfterASearchMatchingNothing(page)
 
-    const link = errorSummaryLinks(page, CONSIGNOR.error)
-    await expect(link).toBeVisible()
-    await link.click()
     const searchBox = page.getByLabel(copy.picker.search.label)
-    await expect(searchBox).toBeFocused()
+    await followErrorLinkToField(page, CONSIGNOR.error, searchBox)
     await expect(searchBox).toHaveValue(NO_MATCH_QUERY)
   })
 })

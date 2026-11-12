@@ -4,6 +4,7 @@ import {
   documentRowFor,
   errorSummary,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   expectStackedOnSameRightEdge,
@@ -338,10 +339,11 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.referenceRequired)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(copy.reference.label)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.referenceRequired,
+      page.getByLabel(copy.reference.label)
+    )
     await expect(page.getByLabel(copy.reference.label)).toHaveValue('')
     await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
       validDocument.accompanyingDocumentDateOfIssue
@@ -358,13 +360,11 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorSummaryLinks(
+    await followErrorLinkToField(
       page,
-      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
+      copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH),
+      page.getByLabel(copy.reference.label)
     )
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(copy.reference.label)).toBeFocused()
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(reference)
     await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
       validDocument.accompanyingDocumentDateOfIssue
@@ -387,10 +387,11 @@ test.describe('document upload type validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.typeRequired)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(copy.documentType.label)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.typeRequired,
+      page.getByLabel(copy.documentType.label)
+    )
     await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(
       validDocument.accompanyingDocumentReference
@@ -455,10 +456,11 @@ test.describe('document upload date validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.dateRequired)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(copy.dateOfIssue.label)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.dateRequired,
+      page.getByLabel(copy.dateOfIssue.label)
+    )
     await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue('')
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(
       validDocument.accompanyingDocumentReference
@@ -474,10 +476,11 @@ test.describe('document upload date validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.dateInvalid)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(copy.dateOfIssue.label)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.dateInvalid,
+      page.getByLabel(copy.dateOfIssue.label)
+    )
     await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
       '31/2/2026'
     )
@@ -499,10 +502,11 @@ test.describe('document upload file validation', () => {
     await fillMetadata(page)
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.fileRequired)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(uploadControl(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.fileRequired,
+      uploadControl(page)
+    )
     await expectPreservedMetadata(page)
   })
 
@@ -518,10 +522,11 @@ test.describe('document upload file validation', () => {
     )
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, fileTypeMessage(copy))
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(uploadControl(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      fileTypeMessage(copy),
+      uploadControl(page)
+    )
     await expectPreservedMetadata(page)
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
     await expectNoDocumentsAdded(page)
@@ -535,10 +540,11 @@ test.describe('document upload file validation', () => {
     await setUploadFile(page, 'itahc-empty.pdf', Buffer.alloc(0))
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, copy.errors.fileEmpty)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(uploadControl(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.fileEmpty,
+      uploadControl(page)
+    )
     await expectPreservedMetadata(page)
     await expectNoDocumentsAdded(page)
   })
@@ -633,10 +639,11 @@ test.describe('document upload oversize validation', () => {
     await setUploadFile(page, OVERSIZE_FILENAME)
     await submitAdd(page)
 
-    const link = errorSummaryLinks(page, oversizeMessage(copy))
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(uploadControl(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      oversizeMessage(copy),
+      uploadControl(page)
+    )
     await expectNoDocumentsAdded(page)
   })
 })

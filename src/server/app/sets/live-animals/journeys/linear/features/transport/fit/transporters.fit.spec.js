@@ -130,13 +130,11 @@ const searchTransporters = async (page, term) => {
 }
 
 const expectTransporterErrorLinkFocusesUncheckedFirstOption = async (page) => {
-  const link = errorSummaryLinks(
+  await followErrorLinkToField(
     page,
-    copy.transporters.errors.transporterRequired
+    copy.transporters.errors.transporterRequired,
+    page.locator('input[name="transporter"]').first()
   )
-  await expect(link).toBeVisible()
-  await link.click()
-  await expect(page.locator('input[name="transporter"]').first()).toBeFocused()
   await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(0)
 }
 
