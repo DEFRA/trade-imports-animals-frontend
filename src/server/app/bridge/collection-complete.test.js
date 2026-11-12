@@ -64,7 +64,6 @@ describe('#entryComplete', () => {
     const answers = {
       commodityLines: [
         commodityLine({
-          commodityType: '16',
           numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
         })

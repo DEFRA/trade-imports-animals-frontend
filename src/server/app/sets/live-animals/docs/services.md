@@ -8,8 +8,8 @@ The commodities reference service belongs to the live-animals set:
 - [`src/server/app/sets/live-animals/services/commodities/rules.js`](../services/commodities/rules.js)
 - [`src/server/app/sets/live-animals/services/commodities/stub.js`](../services/commodities/stub.js)
 
-It provides CN codes and the species under them, the `0102` type split and the
-allow-lists used by live-animals obligations and pages. This vocabulary is not a
+It provides CN codes and the species under them, and the allow-lists used by
+live-animals obligations and pages. This vocabulary is not a
 generic platform contract.
 
 At boot, this set's gateway
@@ -75,10 +75,6 @@ so generic notification-mapper code does not import the set.
   sit under `01061410`; and ratites (`01063300`) and pigeons (`01063910`),
   because the specification names birds of prey, psittaciformes and other game
   birds but not those two.
-- The Domestic/Game split on `0102` comes from the IPAFFS commodity-categories
-  extract, which names `Bos spp.` as Game. MDM lists `Bos sp.`, so no `0102`
-  species MDM offers is Game today. Every other code has one type with blank
-  text, which the backend payload drops.
 - MDM has no common name for some species, so a line's common name is
   optional.
 - Save sends a `commodities[]` entry per grouped commodity line with `name`,

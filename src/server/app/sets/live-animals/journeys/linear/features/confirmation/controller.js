@@ -6,7 +6,7 @@ import {
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
-import { base, routeOptions } from '../../../../../../shared/kit.js'
+import { base, pageRouteOptions } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { confirmationPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -36,7 +36,7 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: routeOptions,
+    options: pageRouteOptions(page),
     handler: get
   }
 ]

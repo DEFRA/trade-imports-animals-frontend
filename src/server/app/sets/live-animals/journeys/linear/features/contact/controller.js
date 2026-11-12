@@ -136,12 +136,19 @@ const get = async (request, h) => {
   )
 }
 
+const loadLiveAddress = async (orgId, addressId) => {
+  const record = await addressBook.party(orgId, addressId)
+  return record?.deleted ? undefined : record
+}
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const orgId = organisationIdOf(request)
-  const options = await addressBook.all(orgId)
+  const chosen = payload.contactAddress
+    ? await loadLiveAddress(orgId, payload.contactAddress)
+    : undefined
   const { errors } = await validation.onSubmit(payload, {
-    addressOptions: options
+    addressOptions: chosen ? [chosen] : []
   })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
@@ -151,7 +158,7 @@ const post = async (request, h) => {
       h,
       current,
       {},
-      options,
+      await addressBook.all(orgId),
       issueAddAddressLink(request, h, journey),
       {
         errors,
@@ -164,9 +171,6 @@ const post = async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const chosen = payload.contactAddress
-    ? await addressBook.party(orgId, payload.contactAddress)
-    : undefined
   const { value: committed, failure } = await kit.recoverableSave(
     request,
     () =>
@@ -183,7 +187,7 @@ const post = async (request, h) => {
         h,
         current,
         { selectedId: chosen?.id },
-        options,
+        await addressBook.all(orgId),
         issueAddAddressLink(request, h, journey),
         {
           recoverableError: true,

@@ -14,9 +14,7 @@ import {
   permanentAddressCodeSpecies,
   listsSpeciesIndividually,
   needsIdentifying,
-  tattooCommodityCodes,
-  typeIdFor,
-  typeTextForId
+  tattooCommodityCodes
 } from './index.js'
 import { CATTLE_CODE, HORSES_CODE, OTHER_LIVE_MAMMALS_CODE } from './rules.js'
 import { OSTRICHES_CODE } from '../../journeys/linear/features/commodities/search/test-support.js'
@@ -122,39 +120,6 @@ describe('the CPH exemption', () => {
       HORSES_CODE,
       OTHER_LIVE_MAMMALS_CODE
     ])
-  })
-})
-
-describe('#typeIdFor', () => {
-  it('Should split cattle into Domestic and Game by species', () => {
-    expect(typeIdFor(CATTLE_CODE, 'Bos taurus')).toBe('16')
-    expect(typeIdFor(CATTLE_CODE, 'Bos sp.')).toBe('24')
-    expect(typeIdFor(CATTLE_CODE, 'Bison bison')).toBe('16')
-  })
-
-  it('Should give every other code its one type', () => {
-    const otherCodes = packageCountCommodityCodes().filter(
-      (code) => code !== CATTLE_CODE
-    )
-    for (const code of otherCodes) {
-      expect(typeIdFor(code, 'Felis catus')).toBe('2')
-      expect(typeIdFor(code, 'Bos spp.')).toBe('2')
-    }
-  })
-})
-
-describe('#typeTextForId', () => {
-  it('Should name the cattle types Domestic and Game', () => {
-    expect(typeTextForId(CATTLE_CODE, '16')).toBe('Domestic')
-    expect(typeTextForId(CATTLE_CODE, '24')).toBe('Game')
-  })
-
-  it('Should give a single-type code blank text', () => {
-    expect(typeTextForId(OTHER_LIVE_MAMMALS_CODE, '2')).toBe('')
-  })
-
-  it('Should give no text for a type id the code does not have', () => {
-    expect(typeTextForId(CATTLE_CODE, '2')).toBeUndefined()
   })
 })
 

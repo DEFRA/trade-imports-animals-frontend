@@ -38,13 +38,16 @@ const operator = (id, overrides = {}) => ({
 })
 
 /** An address book of `total` records, served the way the API serves it:
- * `apiPageSize` records per page, page number taken from the query string. */
-const bookOf = (total, apiPageSize = 25) => {
+ * the requested page size or else `defaultPageSize` records per page, page
+ * number taken from the query string. */
+const bookOf = (total, defaultPageSize = 25) => {
   const all = Array.from({ length: total }, (_, index) =>
     operator(`record-${index + 1}`)
   )
   return async (url) => {
-    const page = Number(new URL(url).searchParams.get('page') ?? 1)
+    const { searchParams } = new URL(url)
+    const page = Number(searchParams.get('page') ?? 1)
+    const apiPageSize = Number(searchParams.get('pageSize') ?? defaultPageSize)
     const totalPages = Math.max(1, Math.ceil(total / apiPageSize))
     if (page > totalPages) {
       return { ok: false, status: 400, statusText: 'Page out of range' }
@@ -316,6 +319,47 @@ describe('#all', () => {
     await all(ORG)
 
     expect(fetched).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should read a large book in pages of a hundred', async () => {
+    const fetched = vi.fn(bookOf(1001))
+    switchToRealMode()
+    stubFetch(fetched)
+
+    const { all } = await addressBook()
+    const records = await all(ORG)
+
+    expect(records.map(({ id }) => id)).toEqual(
+      Array.from({ length: 1001 }, (_, index) => `record-${index + 1}`)
+    )
+    expect(
+      fetched.mock.calls.map(([url]) => new URL(url).searchParams.get('page'))
+    ).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'])
+    expect(
+      fetched.mock.calls.every(
+        ([url]) => new URL(url).searchParams.get('pageSize') === '100'
+      )
+    ).toBe(true)
+  })
+
+  test('Should have at most four page requests in flight at once', async () => {
+    const serve = bookOf(2000)
+    let inFlight = 0
+    let mostInFlight = 0
+    switchToRealMode()
+    stubFetch(async (url) => {
+      inFlight += 1
+      mostInFlight = Math.max(mostInFlight, inFlight)
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      inFlight -= 1
+      return serve(url)
+    })
+
+    const { all } = await addressBook()
+    const records = await all(ORG)
+
+    expect(records).toHaveLength(2000)
+    expect(mostInFlight).toBe(4)
   })
 })
 

@@ -23,13 +23,6 @@ export const commodityCode = {
   status: 'mandatory'
 }
 
-export const commodityType = {
-  id: '22071829-2a3b-4e5f-8cde-28f9a0b1c2d4',
-  name: 'commodityType',
-  within: commodityLine,
-  status: 'mandatory'
-}
-
 export const speciesLatinName = {
   id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
   name: 'speciesLatinName',
