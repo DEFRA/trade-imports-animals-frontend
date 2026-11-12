@@ -98,19 +98,17 @@ at run time.
 
 `type-ahead.fit.spec.js` keeps the helpers only it uses:
 
-| Helper              | What it does                                                               |
-| ------------------- | -------------------------------------------------------------------------- |
-| `govukInputStyleOf` | Reads computed properties of a plain GOV.UK input, optionally focused.     |
-| `shadowInColour`    | Returns a `box-shadow` value with its colour replaced by the colour given. |
+| Helper              | What it does                                                           |
+| ------------------- | ---------------------------------------------------------------------- |
+| `govukInputStyleOf` | Reads computed properties of a plain GOV.UK input, optionally focused. |
 
 The type-ahead style tests prove appearance by position, size relative to
 another element, a GOV.UK colour token read at run time, or comparison with a
 plain GOV.UK element.
 
 The focus test compares the enhanced input's outline with GOV.UK's focus token
-and width, and its inset shadow's offsets, blur and spread with the plain GOV.UK
-focused input's as read. It pins the shadow colour to the input's own text
-colour, which is what the component paints it in.
+and width, and its whole inset shadow, colour included, with the plain GOV.UK
+focused input's as read.
 
 The typography test adds one guard: the enhanced input's font family names GDS
 Transport. Without it the test would pass when the GOV.UK stylesheet failed to

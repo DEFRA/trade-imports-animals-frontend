@@ -119,9 +119,6 @@ const revealedTypeAheads = [
   })
 ]
 
-const shadowInColour = (shadow, colour) =>
-  `${colour} ${shadow.replace(/^rgba?\([^)]*\)\s*/, '')}`
-
 const searchButtonOf = (input) =>
   input.locator(AUTOCOMPLETE_CONTAINER).locator(SEARCH_BUTTON)
 
@@ -413,7 +410,7 @@ test.describe('country of origin type-ahead styles', () => {
     }
   })
 
-  test("gives the enhanced input the GOV.UK input focus outline, and GOV.UK's inset focus shadow in the input's own text colour", async ({
+  test('gives the enhanced input the GOV.UK focus colour and outline width, and the inset shadow of a focused GOV.UK input', async ({
     page
   }) => {
     const input = inputFor(page, 'countryOfOrigin')
@@ -428,13 +425,7 @@ test.describe('country of origin type-ahead styles', () => {
 
     await expect(input).toHaveCSS('outline-color', focusColour)
     await expect(input).toHaveCSS('outline-width', govukOutlineWidth)
-    const inputColour = await input.evaluate(
-      (element) => getComputedStyle(element).color
-    )
-    await expect(input).toHaveCSS(
-      'box-shadow',
-      shadowInColour(govukShadow, inputColour)
-    )
+    await expect(input).toHaveCSS('box-shadow', govukShadow)
   })
 
   test('gives the enhanced input the GOV.UK error border width and the same error colour as the inline error message', async ({
