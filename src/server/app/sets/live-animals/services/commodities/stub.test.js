@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  COMMODITY_GROUPS,
   matchesCodePrefix,
   matchesWordPrefixes,
   searchCommodities
@@ -70,13 +71,16 @@ describe('#searchCommodities', () => {
   })
 
   it('Should list every species of a code found by its code, a page at a time', () => {
-    const firstPage = searchCommodities('0102', { page: 0, size: 5 })
-    expect(firstPage.total).toBe(7)
-    expect(firstPage.groups).toHaveLength(1)
-    expect(firstPage.groups[0].species).toHaveLength(5)
+    const { species } = COMMODITY_GROUPS.find((group) => group.code === '0102')
 
+    const firstPage = searchCommodities('0102', { page: 0, size: 5 })
     const secondPage = searchCommodities('0102', { page: 1, size: 5 })
-    expect(secondPage.groups[0].species).toHaveLength(2)
+
+    expect(firstPage.total).toBe(species.length)
+    expect([
+      ...firstPage.groups[0].species,
+      ...secondPage.groups[0].species
+    ]).toEqual(species)
   })
 
   it('Should group matches under each code they fall under, in data order', () => {
