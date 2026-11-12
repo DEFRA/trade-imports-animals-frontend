@@ -14,7 +14,8 @@ import {
   saveAndReturnToHub,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  errorSummaryLinks
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import * as certification from '../../../../../../services/certification-purposes/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
@@ -58,9 +59,7 @@ const clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer = async (
   page,
   { certified, unweaned }
 ) => {
-  const certificationError = page
-    .getByRole('alert')
-    .getByRole('link', { name: validatorDefaults.oneOf })
+  const certificationError = errorSummaryLinks(page, validatorDefaults.oneOf)
   await expect(certificationError).toBeVisible()
   await certificationError.click()
   await expect(certified.getByRole('radio').first()).toBeFocused()
@@ -264,9 +263,7 @@ test.describe('additional-details feature — validation', () => {
 
     await saveAndContinue(page).click()
 
-    const unweanedError = page
-      .getByRole('alert')
-      .getByRole('link', { name: validatorDefaults.oneOf })
+    const unweanedError = errorSummaryLinks(page, validatorDefaults.oneOf)
     await expect(unweanedError).toBeVisible()
     await unweanedError.click()
     await expect(unweaned.getByRole('radio').first()).toBeFocused()

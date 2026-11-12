@@ -8,7 +8,9 @@ import {
   openReviewFromHub,
   signIn,
   startNotification,
-  urlUnderBase
+  urlUnderBase,
+  errorSummaryLinks,
+  backLink
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -114,9 +116,9 @@ test.describe('declaration feature', () => {
   })
 
   test('starts the page with the heading', async ({ page }) => {
-    await expect(
-      page.locator('main .govuk-grid-column-two-thirds > :first-child')
-    ).toHaveText(copy.title)
+    const title = page.getByRole('heading', { level: 1, name: copy.title })
+    await expect(title).toBeVisible()
+    await expect(title.locator('xpath=preceding-sibling::*')).toHaveCount(0)
   })
 
   test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
@@ -124,9 +126,10 @@ test.describe('declaration feature', () => {
   }) => {
     await page.locator(SUBMIT_BUTTON).click()
 
-    const declarationError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.declarationRequired })
+    const declarationError = errorSummaryLinks(
+      page,
+      copy.errors.declarationRequired
+    )
     await expect(declarationError).toBeVisible()
     await expect(page.locator('.govuk-error-message')).toContainText(
       copy.errors.declarationRequired
@@ -141,13 +144,12 @@ test.describe('declaration feature', () => {
   })
 
   test('back link returns to check answers', async ({ page }) => {
-    const backLink = page.getByRole('link', { name: 'Back', exact: true })
-    await expect(backLink).toHaveAttribute(
+    await expect(backLink(page)).toHaveAttribute(
       'href',
       new URL(journeyUrl(page, 'notification-view'), page.url()).pathname
     )
 
-    await backLink.click()
+    await backLink(page).click()
 
     await expect(page).toHaveURL(REVIEW_URL)
   })

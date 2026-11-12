@@ -10,6 +10,7 @@ import {
   continueTransporterType,
   errorSummary,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
@@ -30,7 +31,8 @@ import {
   searchByPressingEnter,
   signIn,
   signInWithOwnTransporterStore,
-  values
+  values,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -62,7 +64,6 @@ const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
 const COMMERCIAL_ADD_SLUG = 'transporters/add/commercial'
-const BACK_LINK = '.govuk-back-link'
 const NO_MATCH_TERM = 'no such transporter'
 const INVALID_TRANSPORTER_ID = 'invalid-transporter'
 
@@ -114,7 +115,11 @@ const submitTransporterNotOnTheList = async (page) => {
 }
 
 const searchRowLeftHalfOf = (page) =>
-  page.locator('.govuk-grid-column-one-half').first()
+  page
+    .locator('div')
+    .filter({ has: searchBoxOf(page) })
+    .filter({ hasNot: addTransporterOf(page) })
+    .first()
 
 const addTransporterOf = (page) =>
   page.getByRole('button', { name: copy.transporters.add })
@@ -133,16 +138,6 @@ const expectTransporterErrorLinkFocusesUncheckedFirstOption = async (page) => {
   await link.click()
   await expect(page.locator('input[name="transporter"]').first()).toBeFocused()
   await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(0)
-}
-
-const followPrivateErrorLinkToField = async (page, errorKey, field) => {
-  const link = errorSummaryLinks(
-    page,
-    copy.privateTransporterDetails.errors[errorKey]
-  )
-  await expect(link).toBeVisible()
-  await link.click()
-  await expect(page.locator(`#${field}`)).toBeFocused()
 }
 
 const SOME_TYPED_TRANSPORTER_NAME = 'Some typed transporter name'
@@ -275,7 +270,9 @@ const expectTransporterTypeOptions = async (page) => {
     copy.transporterAdd.options.Commercial.hint
   )
 
-  await expect(page.locator('fieldset > .govuk-hint')).toHaveCount(0)
+  await expect(
+    page.getByRole('group', { name: copy.transporterAdd.title })
+  ).toHaveAccessibleDescription('')
 }
 
 test.describe('transporter list page', () => {
@@ -905,7 +902,7 @@ test.describe('adding a transporter that is not on the list', () => {
 
   test('the type question goes back to the list', async ({ page }) => {
     await openTransporterType(page)
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
 
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
@@ -922,7 +919,7 @@ test.describe('adding a transporter that is not on the list', () => {
     await expect(page).toHaveURL(
       /\/transporters\/add\?from=(?:[^#]*%2C)?notification-view$/
     )
-    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+    await expect(backLink(page)).toHaveAttribute(
       'href',
       /\/transporters\?from=(?:[^#]*%2C)?notification-view$/
     )
@@ -1010,7 +1007,7 @@ test.describe('choosing the type of a transporter that is not on the list', () =
     await answerTransporterType(page, PRIVATE)
 
     await expect(page).toHaveURL(/\/transporters\/add\/private\?from=overview$/)
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await expect(
       page.getByRole('radio', {
         name: copy.transporterAdd.options.Private.text
@@ -1175,7 +1172,11 @@ test.describe('private transporter required validations', () => {
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
 
-      await followPrivateErrorLinkToField(page, error, field)
+      await followErrorLinkToField(
+        page,
+        copy.privateTransporterDetails.errors[error],
+        field
+      )
       await expect(page.locator(`#${field}`)).toHaveValue('')
       await expect(page.locator(addressLine1Input)).toHaveValue(
         field === 'addressLine1' ? '' : validPrivateTransporter.addressLine1
@@ -1200,7 +1201,11 @@ test.describe('private transporter format validations', () => {
       })
       await saveAndContinue(page).click()
 
-      await followPrivateErrorLinkToField(page, error, field)
+      await followErrorLinkToField(
+        page,
+        copy.privateTransporterDetails.errors[error],
+        field
+      )
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
       await expect(page.locator(addressLine1Input)).toHaveValue(
         field === 'addressLine1'
@@ -1290,11 +1295,11 @@ test.describe('saving an added transporter', () => {
       page,
       sentenceCasedTransporterName(handTypedTransporter.nameOrOrganisationName)
     )
-    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+    await expect(backLink(page)).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/notification-view$/
     )
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
     await expect(
       page.getByRole('heading', { level: 1, name: checkAnswersCopy.title })
     ).toBeVisible()

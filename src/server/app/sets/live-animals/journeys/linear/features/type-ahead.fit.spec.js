@@ -24,9 +24,9 @@ import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as transportCopy } from './transport/copy/copy.en.js'
 
-const AUTOCOMPLETE_CONTAINER =
-  'xpath=ancestor::*[contains(@class,"app-autocomplete")][1]'
-const SEARCH_BUTTON = '.app-autocomplete__button'
+const COMBOBOX_WRAPPER = 'xpath=ancestor::*[.//*[@role="listbox"]][1]'
+const COMBOBOX_CONTAINER = `${COMBOBOX_WRAPPER}/..`
+const SEARCH_BUTTON_BESIDE_WRAPPER = `${COMBOBOX_WRAPPER}/following-sibling::*[@aria-hidden="true"]`
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 
 const inputFor = (page, inputId) => page.locator(`input#${inputId}`)
@@ -119,8 +119,7 @@ const revealedTypeAheads = [
   })
 ]
 
-const searchButtonOf = (input) =>
-  input.locator(AUTOCOMPLETE_CONTAINER).locator(SEARCH_BUTTON)
+const searchButtonOf = (input) => input.locator(SEARCH_BUTTON_BESIDE_WRAPPER)
 
 const edgesOf = (locator) =>
   locator.evaluate((element) => {
@@ -469,7 +468,7 @@ const govukInputStyleOf = (
   })
 
 const suggestionListWidthsOf = async (input) => {
-  const container = input.locator(AUTOCOMPLETE_CONTAINER)
+  const container = input.locator(COMBOBOX_CONTAINER)
   return {
     listWidth: (await edgesOf(container.getByRole('listbox'))).width,
     controlWidth: (await edgesOf(container)).width

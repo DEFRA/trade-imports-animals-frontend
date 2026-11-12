@@ -14,7 +14,8 @@ import {
   saveAndReturnToHub,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  backLink
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
@@ -275,7 +276,7 @@ test.describe('hub feature', () => {
   }) => {
     await startNotification(page)
 
-    await expect(page.locator('.govuk-back-link')).toHaveCount(0)
+    await expect(backLink(page)).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
     ).toHaveAttribute('href', BASE)
@@ -354,7 +355,7 @@ test.describe('hub feature — the Review and submit button', () => {
   }) => {
     await startNotification(page)
 
-    await expect(page.locator('.govuk-button-group .govuk-button')).toHaveText([
+    await expect(page.getByRole('main').getByRole('button')).toHaveText([
       copy.reviewAndSubmit,
       copy.returnToDashboard
     ])

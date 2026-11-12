@@ -18,7 +18,9 @@ import {
   selectSpecies,
   selectedSummary,
   signIn,
-  startNotificationAtOrigin
+  startNotificationAtOrigin,
+  errorSummary,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { labelFor } from '../search/test-support.js'
@@ -34,8 +36,6 @@ const canonicalSelectionOrder = [
   labelFor(BOS_TAURUS_ROW.speciesLatinName),
   labelFor(FELIS_CATUS_ROW.speciesLatinName)
 ]
-
-const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
 
 const pressSpeciesRemove = (page, { speciesLatinName }) =>
   selectedSummary(page)
@@ -265,7 +265,7 @@ test.describe('commodity search — choosing and saving species', () => {
     await searchCommodities(page, 'Bos')
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+    await expect(errorSummary(page).getByRole('link')).toHaveText([
       copy.search.errors.selectCommodity
     ])
     await expect(searchBox(page)).toHaveAccessibleDescription(

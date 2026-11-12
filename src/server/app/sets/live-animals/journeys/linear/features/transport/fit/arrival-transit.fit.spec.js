@@ -27,7 +27,8 @@ import {
   signIn,
   startNotification,
   unlockSections,
-  values
+  values,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import {
   countryAndSubdivisionEntriesNamedWithCountry,
@@ -259,7 +260,7 @@ test.describe('arrival details rendering', () => {
 
   test('arrival back link returns to the overview', async ({ page }) => {
     await openArrival(page)
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 })

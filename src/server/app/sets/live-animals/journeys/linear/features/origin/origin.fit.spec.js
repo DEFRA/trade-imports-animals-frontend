@@ -13,7 +13,11 @@ import {
   rowFor,
   saveAndContinue,
   startNotificationAtOrigin,
-  urlUnderBase
+  urlUnderBase,
+  errorSummary,
+  errorSummaryLinks,
+  followErrorLinkToField,
+  backLink
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 import {
@@ -72,8 +76,6 @@ const expectNoRegionCodePrefix = async (page) => {
   await expect(regionCodePrefix(page)).toBeHidden()
 }
 
-const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
-
 const saveOriginAnswerAndGoBackFromCommodities = async (page) => {
   await chooseCountryOfOrigin(page, france.name)
   await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
@@ -94,7 +96,7 @@ const submitRefusedOriginWithFrance = async (page) => {
   await chooseCountryOfOrigin(page, france.name)
   await chooseYesForRegionCode(page)
   await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(errorSummary(page)).toBeVisible()
 }
 
 const chooseYesForRegionCode = (page) =>
@@ -459,7 +461,7 @@ test.describe('origin region of origin code and internal reference', () => {
     await chooseOutOfListCountry(page, markup)
     await chooseYesForRegionCode(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expect(regionCodePrefix(page)).toHaveText(markup.toUpperCase())
   })
@@ -636,9 +638,7 @@ test.describe('country of origin without JavaScript', () => {
     await saveAndContinue(page).click()
 
     await expect(
-      page
-        .getByRole('alert')
-        .getByRole('link', { name: copy.errors.regionCodeRequired })
+      errorSummaryLinks(page, copy.errors.regionCodeRequired)
     ).toBeVisible()
     await expect(page.locator('#regionOfOriginCodeSuffix-error')).toContainText(
       copy.errors.regionCodeRequired
@@ -698,12 +698,11 @@ test.describe('origin country and region validation', () => {
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    const countryError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.countryFromList })
-    await expect(countryError).toBeVisible()
-    await countryError.click()
-    await expect(page.locator(countryInput)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.countryFromList,
+      page.locator(countryInput)
+    )
     await expect(page.locator(countryInput)).toHaveValue('')
     await expect(page.locator(countryHidden)).toHaveValue('')
   })
@@ -713,7 +712,7 @@ test.describe('origin country and region validation', () => {
   }) => {
     await chooseOutOfListCountry(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -734,14 +733,11 @@ test.describe('origin country and region validation', () => {
       })
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    const requirementError = page
-      .getByRole('alert')
-      .getByRole('link', { name: validatorDefaults.oneOf })
-    await expect(requirementError).toBeVisible()
-    await requirementError.click()
-    await expect(
+    await followErrorLinkToField(
+      page,
+      validatorDefaults.oneOf,
       page.locator('input[name="regionOfOriginCodeRequirement"]').first()
-    ).toBeFocused()
+    )
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
     await expect(
       page.locator('input[name="regionOfOriginCodeRequirement"]:checked')
@@ -757,12 +753,11 @@ test.describe('origin country and region validation', () => {
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     await expect(page).toHaveURL(originUrl)
-    const regionCodeError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.regionCodeRequired })
-    await expect(regionCodeError).toBeVisible()
-    await regionCodeError.click()
-    await expect(regionCodeField(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.regionCodeRequired,
+      regionCodeField(page)
+    )
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeChecked()
@@ -785,7 +780,7 @@ test.describe('origin country and region validation', () => {
     await chooseCountryOfOrigin(page, france.name)
     await chooseYesForRegionCode(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -802,12 +797,11 @@ test.describe('origin country and region validation', () => {
     await regionCodeField(page).fill('ABCDEF')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    const regionCodeError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.regionCodeMaxLength })
-    await expect(regionCodeError).toBeVisible()
-    await regionCodeError.click()
-    await expect(regionCodeField(page)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.regionCodeMaxLength,
+      regionCodeField(page)
+    )
     await expect(regionCodeField(page)).toHaveValue('ABCDEF')
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
     await expect(page.locator(countryInput)).toHaveValue(france.name)
@@ -831,12 +825,11 @@ test.describe('origin internal reference validation', () => {
     await page.getByLabel(copy.internalReference.label).fill(invalidReference)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    const referenceError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.internalReferenceMaxLength })
-    await expect(referenceError).toBeVisible()
-    await referenceError.click()
-    await expect(page.getByLabel(copy.internalReference.label)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.internalReferenceMaxLength,
+      page.getByLabel(copy.internalReference.label)
+    )
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       invalidReference
     )

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   describeCalendarPosition,
   documentRowFor,
+  errorSummary,
   errorSummaryLinks,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -16,7 +17,8 @@ import {
   signIn,
   values,
   withinFullWidthColumn,
-  withinTwoThirdsColumn
+  withinTwoThirdsColumn,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
@@ -297,7 +299,7 @@ test.describe('document upload page', () => {
   })
 
   test('back link returns to the overview', async ({ page }) => {
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -307,7 +309,7 @@ test.describe('document upload page', () => {
     await page.goto(
       withTrail(journeyUrl(page, 'accompanying-documents'), [CYA_SLUG])
     )
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
 
     await expect(
       page.getByRole('heading', { name: 'Review your notification' })
@@ -563,7 +565,7 @@ test.describe('document upload oversize validation', () => {
     await expect(page.locator(CLIENT_SIZE_SUMMARY)).toContainText(
       oversizeMessage(copy)
     )
-    await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
+    await expect(errorSummary(page).getByRole('heading')).toBeFocused()
     await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
       /file-error/
@@ -908,7 +910,7 @@ test.describe('document upload capacity and accessibility', () => {
     page
   }) => {
     await submitAdd(page)
-    await expect(page.locator('.govuk-error-summary')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
     await expect(page.locator('#accompanyingDocumentType-error')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,

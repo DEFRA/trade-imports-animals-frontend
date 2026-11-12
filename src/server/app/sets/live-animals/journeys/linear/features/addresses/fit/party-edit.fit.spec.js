@@ -6,7 +6,8 @@ import {
   signIn,
   startNotification,
   unlockSections,
-  values
+  values,
+  followErrorLinkToField
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -85,12 +86,11 @@ test.describe('edit a copied address', () => {
     await page.getByLabel(editCopy.fields.postcode).fill('')
     await page.getByRole('button', { name: editCopy.save }).click()
 
-    const link = page
-      .getByRole('alert')
-      .getByRole('link', { name: editCopy.errors.postcode.required })
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(editCopy.fields.postcode)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      editCopy.errors.postcode.required,
+      page.getByLabel(editCopy.fields.postcode)
+    )
   })
 
   test('cancel leaves the copy as it was', async ({ page }) => {

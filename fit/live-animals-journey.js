@@ -199,7 +199,7 @@ export const expectCaptionAboveHeading = async (
     name: headingName,
     exact: true
   })
-  const caption = page.getByText(captionText, { exact: true })
+  const caption = page.getByRole('main').getByText(captionText, { exact: true })
 
   await expect(heading).toBeVisible()
   await expect(caption).toBeVisible()
@@ -225,6 +225,32 @@ export const errorSummary = (page) => page.getByRole('alert')
  */
 export const errorSummaryLinks = (page, name) =>
   errorSummary(page).getByRole('link', { name })
+
+/**
+ * The page's Back link.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export const backLink = (page) =>
+  page.getByRole('link', { name: 'Back', exact: true })
+
+/**
+ * Follows the error summary link named `message` and expects focus to land on
+ * the field the link points to.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} message - the error summary link's accessible name.
+ * @param {string | import('@playwright/test').Locator} field - the id of the
+ *   field, or a locator for it.
+ */
+export const followErrorLinkToField = async (page, message, field) => {
+  const link = errorSummaryLinks(page, message)
+  await expect(link).toBeVisible()
+  await link.click()
+  const target = typeof field === 'string' ? page.locator('#' + field) : field
+  await expect(target).toBeFocused()
+}
 
 export const PHONE_VIEWPORT = { width: 360, height: 740 }
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
@@ -417,7 +443,7 @@ export const searchByPressingEnter = async (page, { search, term }) => {
   await box.fill(term)
   await Promise.all([page.waitForEvent('load'), box.press('Enter')])
   await expect(box).toHaveValue(term)
-  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(errorSummary(page)).toHaveCount(0)
 }
 
 const expectCalendarEndsAboveNextQuestion = async (

@@ -1,5 +1,5 @@
 import { matchPositions } from './search-fold.js'
-import { escapeHtml } from './escape-html.js'
+import { escapeHtml } from '../../../shared/escape-html.js'
 
 const strongMatch = (text) =>
   `<strong class="govuk-!-font-weight-bold">${escapeHtml(text)}</strong>`

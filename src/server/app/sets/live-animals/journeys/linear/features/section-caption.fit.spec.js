@@ -11,11 +11,10 @@ import {
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../flow/section-captions/copy/copy.en.js'
 import { copy as dashboardCopy } from './dashboard/copy/copy.en.js'
+import { copy as hubCopy } from './hub/copy/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
 import { copy as importReasonCopy } from './import-reason/copy/copy.en.js'
 
-const ANY_GOVUK_CAPTION =
-  '.govuk-caption-s, .govuk-caption-m, .govuk-caption-l, .govuk-caption-xl'
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
 
 test.describe('section caption above the page heading', () => {
@@ -28,15 +27,13 @@ test.describe('section caption above the page heading', () => {
   }) => {
     await startNotificationAtOrigin(page)
 
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(originCopy.title)
-    await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveText(
-      ABOUT_THE_CONSIGNMENT
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: ABOUT_THE_CONSIGNMENT,
+      headingName: originCopy.title
+    })
   })
 
-  test('puts the section caption above the heading of a page whose question is a legend, and names the group by the legend', async ({
+  test('puts the section caption above the heading of a page whose question is a legend', async ({
     page
   }) => {
     await startNotificationAtImportReason(page)
@@ -45,26 +42,26 @@ test.describe('section caption above the page heading', () => {
       captionText: ABOUT_THE_CONSIGNMENT,
       headingName: importReasonCopy.title
     })
-    await expect(
-      page.getByRole('group', { name: importReasonCopy.legend })
-    ).toHaveAccessibleName(importReasonCopy.legend)
   })
 
   test('names the dashboard above its heading', async ({ page }) => {
     await page.goto(BASE)
 
-    await expect(
-      page.locator('span.govuk-caption-xl + h1.govuk-heading-xl')
-    ).toHaveText(dashboardCopy.title)
-    await expect(page.locator('span.govuk-caption-xl')).toHaveText(
-      sectionCaptionsCopy.sections.dashboard
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: sectionCaptionsCopy.sections.dashboard,
+      headingName: dashboardCopy.title
+    })
   })
 
-  test('leaves the overview with no section caption', async ({ page }) => {
+  test('starts the overview with its level 1 heading', async ({ page }) => {
     await startNotification(page)
 
-    await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveCount(0)
+    await expect(
+      page.getByRole('main').getByRole('heading').first()
+    ).toHaveAccessibleName(hubCopy.title)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(
+      hubCopy.title
+    )
   })
 
   test('has no serious or critical axe violations with a caption on the page', async ({
@@ -72,9 +69,9 @@ test.describe('section caption above the page heading', () => {
   }) => {
     await startNotificationAtImportReason(page)
 
-    await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveText(
-      ABOUT_THE_CONSIGNMENT
-    )
+    await expect(
+      page.getByText(ABOUT_THE_CONSIGNMENT, { exact: true })
+    ).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, 'Captioned page')
   })

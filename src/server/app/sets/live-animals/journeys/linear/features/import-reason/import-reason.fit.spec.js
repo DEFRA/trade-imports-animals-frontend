@@ -15,7 +15,10 @@ import {
   saveAndContinue,
   saveAndReturnToHub,
   startNotificationAtImportReason,
-  urlUnderBase
+  urlUnderBase,
+  errorSummary,
+  errorSummaryLinks,
+  followErrorLinkToField
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import {
   countryAndSubdivisionEntriesNamedWithCountry,
@@ -238,12 +241,11 @@ test.describe('import-reason feature', () => {
       })
     await saveAndContinue(page).click()
 
-    const reasonError = page
-      .getByRole('alert')
-      .getByRole('link', { name: validatorDefaults.oneOf })
-    await expect(reasonError).toBeVisible()
-    await reasonError.click()
-    await expect(page.locator(REASON_INPUT_SELECTOR).first()).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      validatorDefaults.oneOf,
+      page.locator(REASON_INPUT_SELECTOR).first()
+    )
     await expect(page.locator(`${REASON_INPUT_SELECTOR}:checked`)).toHaveCount(
       0
     )
@@ -473,12 +475,11 @@ test.describe('import-reason reveal validation', () => {
     await chooseTypeAheadOption(page, TRANSIT_PORT)
     await saveAndContinue(page).click()
 
-    const countryError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.countryRequired })
-    await expect(countryError).toBeVisible()
-    await countryError.click()
-    await expect(page.locator(transitCountryInput)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.countryRequired,
+      page.locator(transitCountryInput)
+    )
     await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
   })
 
@@ -488,12 +489,8 @@ test.describe('import-reason reveal validation', () => {
     await radioFor(page, 'transit').check()
     await saveAndReturnToHub(page).click()
 
-    const portError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.portRequired })
-    const countryError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.countryRequired })
+    const portError = errorSummaryLinks(page, copy.errors.portRequired)
+    const countryError = errorSummaryLinks(page, copy.errors.countryRequired)
     await expect(portError).toBeVisible()
     await expect(countryError).toBeVisible()
     await expect(radioFor(page, 'transit')).toBeChecked()
@@ -510,9 +507,7 @@ test.describe('import-reason reveal validation', () => {
     await chooseTypeAheadOption(page, TRANSIT_COUNTRY)
     await saveAndReturnToHub(page).click()
 
-    const portError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.portRequired })
+    const portError = errorSummaryLinks(page, copy.errors.portRequired)
     await expect(portError).toBeVisible()
     await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
     const reveal = await revealFor(page, 'transit')
@@ -525,9 +520,7 @@ test.describe('import-reason reveal validation', () => {
     await radioFor(page, 'internalMarket').check()
     await saveAndContinue(page).click()
 
-    const purposeError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.purposeRequired })
+    const purposeError = errorSummaryLinks(page, copy.errors.purposeRequired)
     await expect(purposeError).toBeVisible()
 
     const reveal = await revealFor(page, 'internalMarket')
@@ -568,9 +561,7 @@ test.describe('import-reason reveal validation', () => {
     await chooseTypeAheadOption(page, TEMPORARY_ADMISSION_PORT)
     await saveAndContinue(page).click()
 
-    const dateError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.dateRequired })
+    const dateError = errorSummaryLinks(page, copy.errors.dateRequired)
     await expect(dateError).toBeVisible()
 
     const reveal = await revealFor(page, 'temporaryAdmissionHorses')
@@ -816,7 +807,7 @@ test.describe('import-reason reveal accessibility', () => {
   }) => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
     await saveAndContinue(page).click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
@@ -826,7 +817,7 @@ test.describe('import-reason reveal accessibility', () => {
   }) => {
     await radioFor(page, 'transit').check()
     await saveAndContinue(page).click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
   })
@@ -846,7 +837,7 @@ test.describe('import-reason reveal accessibility', () => {
   }) => {
     await radioFor(page, 'internalMarket').check()
     await saveAndContinue(page).click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, copy.title)
   })

@@ -8,7 +8,9 @@ import {
   openCphNumberFromAddLink,
   selectSpecies,
   startNotificationAtOrigin,
-  urlUnderBase
+  urlUnderBase,
+  errorSummary,
+  followErrorLinkToField
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
@@ -240,7 +242,7 @@ test.describe('cph-number without JavaScript', () => {
     await partBoxes(page).county.fill('1234')
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const summary = page.getByRole('alert')
+    const summary = errorSummary(page)
     await expect(
       summary.getByRole('link', { name: copy.errors.countyLength })
     ).toBeVisible()
@@ -265,14 +267,8 @@ test.describe('cph-number validation', () => {
   }) => {
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const requiredError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.cphRequired })
-    await expect(requiredError).toBeVisible()
-    await requiredError.click()
-
     const boxes = partBoxes(page)
-    await expect(boxes.county).toBeFocused()
+    await followErrorLinkToField(page, copy.errors.cphRequired, boxes.county)
     await expect(boxes.county).toHaveValue('')
   })
 
@@ -282,14 +278,8 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '12', parish: '34', holding: '6789' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const parishError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.parishLength })
-    await expect(parishError).toBeVisible()
-    await parishError.click()
-
     const boxes = partBoxes(page)
-    await expect(boxes.parish).toBeFocused()
+    await followErrorLinkToField(page, copy.errors.parishLength, boxes.parish)
     await expect(boxes.parish).toHaveValue('34')
     await expect(boxes.county).toHaveValue('12')
     await expect(boxes.holding).toHaveValue('6789')
@@ -301,12 +291,11 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '12', parish: '345', holding: '' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const holdingError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.holdingRequired })
-    await expect(holdingError).toBeVisible()
-    await holdingError.click()
-    await expect(partBoxes(page).holding).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.holdingRequired,
+      partBoxes(page).holding
+    )
   })
 
   test('CPH validation: a non-digit part names that part and keeps what was typed', async ({
@@ -315,14 +304,12 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '12', parish: '345', holding: '678a' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const digitsError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.holdingDigitsOnly })
-    await expect(digitsError).toBeVisible()
-    await digitsError.click()
-
     const boxes = partBoxes(page)
-    await expect(boxes.holding).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      copy.errors.holdingDigitsOnly,
+      boxes.holding
+    )
     await expect(boxes.holding).toHaveValue('678a')
   })
 
@@ -332,7 +319,7 @@ test.describe('cph-number validation', () => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const summary = page.getByRole('alert')
+    const summary = errorSummary(page)
     await expect(
       summary.getByRole('link', { name: copy.errors.countyLength })
     ).toBeVisible()
@@ -369,7 +356,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await page.locator(SUBMIT_BUTTON).first().click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(
       page,

@@ -5,6 +5,7 @@ import {
   cancelAndReturnToDashboard,
   errorSummary,
   errorSummaryLinks,
+  followErrorLinkToField,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAndCancel,
   expectTransporterListShowsAddedBanner,
@@ -12,7 +13,8 @@ import {
   saveAndContinue,
   saveAndReturnToHub,
   signIn,
-  signInWithOwnTransporterStore
+  signInWithOwnTransporterStore,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
@@ -29,7 +31,6 @@ import {
 const form = copy.commercialTransporterDetails
 const COMMERCIAL_SLUG = 'transporters/add/commercial'
 const NORTHERN_IRELAND = 'Northern Ireland'
-const BACK_LINK = '.govuk-back-link'
 const approvalNumberInput = '#approvalNumber'
 const SOME_TYPED_APPROVAL_NUMBER = 'Some typed approval number'
 
@@ -99,21 +100,17 @@ test.describe('adding a commercial transporter that is not on the list', () => {
   }) => {
     await answerTransporterType(page, COMMERCIAL)
 
-    const banner = page.locator('.govuk-notification-banner')
+    const banner = page.getByRole('region', { name: form.guidanceBannerTitle })
     await expect(
       banner.getByRole('heading', { level: 2, name: form.guidanceBannerTitle })
     ).toBeVisible()
     await expect(
       banner.getByRole('heading', { level: 2, name: form.guidanceTitle })
     ).toBeVisible()
-    const bannerOpening = await banner
-      .locator('.govuk-notification-banner__content > *')
-      .first()
-      .evaluate((node) => ({
-        tag: node.tagName.toLowerCase(),
-        text: node.textContent.trim()
-      }))
-    expect(bannerOpening).toEqual({ tag: 'h2', text: form.guidanceTitle })
+    await expect(banner.getByRole('heading')).toHaveText([
+      form.guidanceBannerTitle,
+      form.guidanceTitle
+    ])
     await expect(banner).toContainText(
       copy.transporters.guidance.authorisationLead
     )
@@ -160,7 +157,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
 
   test('the form goes back to the type question', async ({ page }) => {
     await answerTransporterType(page, COMMERCIAL)
-    await page.locator(BACK_LINK).click()
+    await backLink(page).click()
 
     await expect(
       page.getByRole('heading', { name: copy.transporterAdd.title })
@@ -304,10 +301,7 @@ test.describe('commercial transporter required validations', () => {
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
 
-      const link = errorSummaryLinks(page, form.errors[error])
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.locator(`#${field}`)).toBeFocused()
+      await followErrorLinkToField(page, form.errors[error], field)
       await expect(page.locator(`#${field}`)).toHaveValue('')
       await expect(page.locator(approvalNumberInput)).toHaveValue(
         field === 'approvalNumber'
@@ -334,10 +328,7 @@ test.describe('commercial transporter format validations', () => {
       })
       await saveAndContinue(page).click()
 
-      const link = errorSummaryLinks(page, form.errors[error])
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.locator(`#${field}`)).toBeFocused()
+      await followErrorLinkToField(page, form.errors[error], field)
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
       await expect(page.locator(approvalNumberInput)).toHaveValue(
         field === 'approvalNumber'

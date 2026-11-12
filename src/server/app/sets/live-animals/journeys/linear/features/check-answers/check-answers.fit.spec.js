@@ -140,7 +140,8 @@ test.describe('check-answers feature section structure', () => {
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
     ).toHaveText(copy.sections.contactAddress)
 
-    const lastBlock = page.locator('.govuk-grid-column-two-thirds > *').last()
+    const lastBlock = page.getByRole('main').locator('form').last()
+    await expect(lastBlock.locator('xpath=following-sibling::*')).toHaveCount(0)
     await expect(lastBlock).toHaveJSProperty('tagName', 'FORM')
 
     await expect(

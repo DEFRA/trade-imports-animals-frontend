@@ -17,7 +17,8 @@ import {
   startNotification,
   unlockSections,
   values,
-  withinFullWidthColumn
+  withinFullWidthColumn,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -151,7 +152,7 @@ test.describe('addresses hub', () => {
     )
     for (const party of PARTIES) {
       const section = addressesSection(page, party.title)
-      await expect(section.locator('.govuk-hint')).toHaveText(party.hint)
+      await expect(section.getByText(party.hint, { exact: true })).toBeVisible()
       await expect(section.getByRole('link')).toHaveText([party.add])
       await expect(section.getByRole('link')).toHaveAccessibleName(party.add)
     }
@@ -165,7 +166,7 @@ test.describe('addresses hub', () => {
   })
 
   test('hub back link returns to the overview', async ({ page }) => {
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -190,9 +191,9 @@ test.describe('addresses hub', () => {
 
     for (const party of PARTIES) {
       const section = addressesSection(page, party.title)
-      await expect(section.locator('.govuk-inset-text strong')).toHaveText(
-        partyPickerName(values[party.id])
-      )
+      await expect(
+        section.getByText(partyPickerName(values[party.id]), { exact: true })
+      ).toBeVisible()
       const [change, editDetails] = chosenLinkNames(party)
       await expect(section.getByRole('link')).toHaveText([change, editDetails])
       await expect(
@@ -202,11 +203,10 @@ test.describe('addresses hub', () => {
         section.getByRole('link', { name: copy.hub.editDetails })
       ).toHaveAccessibleName(editDetails)
     }
-    await expect(
-      addressesSection(page, CONSIGNOR.title).locator('.govuk-inset-text')
-    ).toHaveText(addressBookInsetText(values.consignor), {
-      useInnerText: true
-    })
+    await expect(addressesSection(page, CONSIGNOR.title)).toContainText(
+      addressBookInsetText(values.consignor),
+      { useInnerText: true }
+    )
   })
 
   test('following the consignor add link opens the picker headed Consignor', async ({
@@ -271,7 +271,9 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await openAddresses(page, STRUTHIO_ROW, { identificationApplies: false })
 
     const section = addressesSection(page, copy.hub.cph.title)
-    await expect(section.locator('.govuk-hint')).toHaveText(copy.hub.cph.hint)
+    await expect(
+      section.getByText(copy.hub.cph.hint, { exact: true })
+    ).toBeVisible()
     await expect(section.getByRole('link')).toHaveText([copy.hub.cph.add])
   })
 
@@ -340,9 +342,9 @@ test.describe('party picker per role', () => {
       await page.getByRole('radio', { name: selectedName }).check()
       await saveAndContinue(page)
       await expectBackOnTheAddressesPage(page)
-      await expect(section.locator('.govuk-inset-text strong')).toHaveText(
-        selectedName
-      )
+      await expect(
+        section.getByText(selectedName, { exact: true })
+      ).toBeVisible()
       await expect(section.getByRole('link')).toHaveText(chosenLinkNames(party))
       await section.getByRole('link', { name: copy.hub.change }).click()
       await expect(

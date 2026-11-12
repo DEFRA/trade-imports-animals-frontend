@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test'
 import {
   chooseCountryOfOrigin,
   signIn,
-  startNotificationAtOrigin
+  startNotificationAtOrigin,
+  errorSummaryLinks
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../shared/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
@@ -36,9 +37,7 @@ test.describe('page title', () => {
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     await expect(
-      page
-        .getByRole('alert')
-        .getByRole('link', { name: originCopy.errors.regionCodeRequired })
+      errorSummaryLinks(page, originCopy.errors.regionCodeRequired)
     ).toBeVisible()
     await expect(page).toHaveTitle(
       `${errorTitlePrefix}${originCopy.title} - ${serviceName} - ${govukSuffix}`
