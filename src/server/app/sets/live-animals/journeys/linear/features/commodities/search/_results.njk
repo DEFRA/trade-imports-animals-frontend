@@ -1,0 +1,59 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+
+{% macro commoditySearchResults(params) %}
+  {% for key in params.carriedKeys %}
+    <input type="hidden" name="selection" value="{{ key }}" />
+  {% endfor %}
+
+  {% if params.commodityGroups.length or params.noResults %}
+    <div class="app-multi-select-search__dropdown" data-multi-select-search-dropdown>
+      {% for group in params.commodityGroups %}
+        {{ govukCheckboxes({
+          idPrefix: "species" if loop.first else "species-group-" + loop.index,
+          name: "species",
+          classes: "govuk-checkboxes--small",
+          formGroup: { classes: "app-multi-select-search__group" },
+          fieldset: { legend: { html: group.legendHtml, classes: "app-multi-select-search__group-heading" } },
+          items: group.items
+        }) }}
+      {% endfor %}
+      {% if params.noResults %}
+        <p class="app-multi-select-search__message">{{ params.copy.noResults }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if params.commodityGroups.length %}
+    {{ govukButton({
+      text: params.copy.updateSelected,
+      classes: "govuk-button--secondary app-multi-select-search__update",
+      name: "action",
+      value: "search"
+    }) }}
+  {% endif %}
+
+  {% if params.selectedSummary.count %}
+    <div id="commodity-selection" class="app-multi-select-search__selected">
+      <div class="app-multi-select-search__selected-header">
+        <h2 class="app-multi-select-search__selected-heading">{{ params.selectedSummary.heading }}</h2>
+        <button type="submit" class="govuk-link app-link-button app-multi-select-search__clear" name="action" value="clear">{{ params.copy.selected.clearAll }}</button>
+      </div>
+      <ul class="app-multi-select-search__selected-list">
+        {% for group in params.selectedSummary.groups %}
+          <li class="app-multi-select-search__selected-group">
+            <p class="app-multi-select-search__selected-group-label"><strong>{{ group.legend }}</strong>:</p>
+            <ul class="app-multi-select-search__chips">
+              {% for item in group.items %}
+                <li class="app-multi-select-search__chip">
+                  <span class="app-multi-select-search__chip-label">{{ item.label }}</span>
+                  <button type="submit" class="app-multi-select-search__chip-remove" name="action" value="{{ item.removeAction }}"><span class="govuk-visually-hidden">{{ params.copy.selected.remove }} {{ item.label }}</span></button>
+                </li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endmacro %}

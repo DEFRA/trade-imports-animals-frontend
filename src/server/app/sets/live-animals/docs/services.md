@@ -85,7 +85,8 @@ so generic notification-mapper code does not import the set.
   reference-data supplies names for every CN code.
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
-  `commoditySearchRows`. They are never sent to the backend. The chosen species
+  `commoditySearchRows`. Its results route stores them in the same way. They
+  are never sent to the backend. The chosen species
   also ride back as hidden `selection` values, so a choice made under an earlier
   query survives a new search. The page lists the results it received in
   commodity-heading then species-label order, and the selected panel offers a

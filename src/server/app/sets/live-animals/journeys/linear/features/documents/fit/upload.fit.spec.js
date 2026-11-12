@@ -1030,6 +1030,8 @@ test.describe('document upload page across the browser history', () => {
   }) => {
     const addButton = page.getByRole('button', { name: copy.addAnother })
     const uploadPathBeforeRestore = await addButton.getAttribute('formaction')
+    // The page's script listens for pageshow, and it has run by load.
+    await page.waitForLoadState('load')
 
     await page.evaluate(() => {
       const restored = new Event('pageshow')

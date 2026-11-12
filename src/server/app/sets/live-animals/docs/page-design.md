@@ -261,13 +261,48 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - A choice made under an earlier search has no tick box on screen, so it is
   sent back with the form as a hidden value.
+- With JavaScript the results refresh in place as the trader types, ticks,
+  removes or clears, through the shared multi-select search. The results are
+  the ones the page renders without JavaScript, so every rule below holds on
+  both paths. A polite status message gives the number of species a typed
+  search lists, or "No results found". A tick, a Remove or Clear all is not
+  announced, because the box and the summary already show it.
+- After a Remove or Clear all, the button pressed has gone, so focus moves to
+  the search box. After a tick, focus stays on the tick box.
+- Without JavaScript a tick cannot refresh the summary, so an "Update selected"
+  secondary button sits under the results. It runs the search again, keeping
+  the term and the ticks, and the summary and chips catch up. With JavaScript
+  the button is hidden, because a tick refreshes them itself.
+- The results are a list joined to the bottom of the search box, as the
+  design draws it: one heading row per commodity, its species beneath, striped
+  rows ruled the full width of the list (the first species under each heading
+  shaded), no ring round a hovered tick box, and a scroll once the list is taller
+  than about six rows. Each commodity stays a fieldset whose legend is its
+  heading, so a screen reader hears the species grouped by commodity.
+- A commodity's heading in the results reads as its name with its code in
+  round brackets, such as "Cow (0102)", where the service knows a name for the
+  code, and as the code alone where it does not. The names come from
+  `commodityNameFor` in the set's commodities service; the chips and the
+  Commodity details page still name a commodity by its code.
+- With JavaScript, Escape in the search box or a click outside the search hides
+  the list, keeping the term and every choice, and focusing or clicking the
+  search box shows it again. The list hides once the click has landed, so a
+  click on a button below the list is not moved out from under the pointer.
+- What has been chosen shows as a chip per species, under its commodity code,
+  as the design draws it: the species' Latin name and a cross named "Remove"
+  and that Latin name. Clear all sits beside the count, as a link.
+- If the results cannot be fetched, the page is posted as it is without
+  JavaScript, so the trader still gets the results.
+- One result is announced as "1 result available". The design announces
+  "1 results available"; the singular is open with the designer.
 - A search's results are listed in order: the commodity groups by their
-  heading, and each group's species by the label they are offered under, over
+  code, and each group's species by the label they are offered under, over
   the page of results the search returned.
 - A species reads as its Latin name with its common name in round
-  brackets wherever it is listed or named — the search results, the selected
-  panel, Commodity details, the Selected commodities tables and
-  Identification details — and as its Latin name alone where the
+  brackets wherever it is listed or named — the search results, Commodity
+  details, the Selected commodities tables and Identification details, but
+  not the chips of what has been chosen, which the design gives the Latin name
+  alone — and as its Latin name alone where the
   reference data holds no common name for it. The permanent-address rule and
   the identifier-column rule read the line's stored Latin name rather
   than that label, so a species whose common name changes what it reads as

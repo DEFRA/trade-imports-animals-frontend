@@ -11,6 +11,7 @@ import {
   withFlowOnlyAnswers,
   expectRemovalRefusedLogged,
   journeyRequest,
+  postHandlerEndingWith,
   postHandlerOf,
   errorViewContextFor,
   stubH,
@@ -43,9 +44,9 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS,
+  CATTLE_HEADING,
   FELIS_CATUS_ROW,
-  MUSTELA_PUTORIUS_FURO_ROW,
-  labelFor
+  MUSTELA_PUTORIUS_FURO_ROW
 } from './test-support.js'
 
 const get = search.routes.find((route) => route.method === 'GET').handler
@@ -127,7 +128,7 @@ describe('commodity search', () => {
     const result = await searchFor('buffalo')
     expect(groupsOf(result)).toEqual([
       {
-        legendHtml: '0102',
+        legendHtml: CATTLE_HEADING,
         items: [
           {
             value: '0102|Bubalus',
@@ -154,7 +155,7 @@ describe('commodity search', () => {
 
   it('Should list every species under a code searched for, in species-label order', async () => {
     const result = await searchFor('0102')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(textsOf(result)).toEqual([
       'Bibos spp. (Cattle)',
       'Bison (Bison)',
@@ -177,7 +178,7 @@ describe('commodity search', () => {
   it('Should bold the matched text in the commodity heading and in a species label', async () => {
     const headingResult = await searchFor('0102')
     expect(groupsOf(headingResult)[0].legendHtml).toBe(
-      '<strong class="govuk-!-font-weight-bold">0102</strong>'
+      'Cow (<strong class="govuk-!-font-weight-bold">0102</strong>)'
     )
 
     const labelResult = await searchFor('taurus')
@@ -332,7 +333,7 @@ describe('commodity search — carried and stored search rows', () => {
 describe('commodity search — what has been chosen so far', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should summarise the stored selection, counted and grouped by code', async () => {
+  it('Should summarise the stored selection, counted, grouped by code and each named by its Latin name', async () => {
     const result = await driveHandler(get, {
       seed: {
         commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
@@ -346,11 +347,11 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '0102',
           items: [
             {
-              label: labelFor(BISON_BISON_ROW.speciesLatinName),
+              label: BISON_BISON_ROW.speciesLatinName,
               removeAction: removeActionFor(BISON_BISON_KEY)
             },
             {
-              label: labelFor(BOS_TAURUS_ROW.speciesLatinName),
+              label: BOS_TAURUS_ROW.speciesLatinName,
               removeAction: removeActionFor(BOS_TAURUS_KEY)
             }
           ]
@@ -359,7 +360,7 @@ describe('commodity search — what has been chosen so far', () => {
           legend: '01061900',
           items: [
             {
-              label: labelFor(FELIS_CATUS_ROW.speciesLatinName),
+              label: FELIS_CATUS_ROW.speciesLatinName,
               removeAction: removeActionFor(FELIS_CATUS_KEY)
             }
           ]
@@ -379,7 +380,7 @@ describe('commodity search — what has been chosen so far', () => {
     })
     expect(result.view.context.selectedSummary.count).toBe(0)
     expect(result.view.context.query).toBe('buffalo')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(result.after).toEqual(result.before)
   })
 })
@@ -437,6 +438,128 @@ describe('commodity search — removing one chosen species', () => {
       reason: 'no-species-for-key',
       key: tamperedKey
     })
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('commodity search — results refreshed in place', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const postResults = postHandlerEndingWith(search, `/${search.RESULTS_SLUG}`)
+
+  const refreshResults = (payload, startingFrom = []) =>
+    driveHandler(postResults, { payload, startingFrom })
+
+  it('Should point the page at its results route', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.resultsUrl).toBe(
+      pagePath(result.journeyId, search.RESULTS_SLUG)
+    )
+  })
+
+  it('Should render only the results for a search, ticking what is chosen and carrying the rest', async () => {
+    const result = await refreshResults(
+      {
+        action: 'search',
+        [search.SEARCH_FIELD]: 'felis',
+        selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
+    )
+    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(legendsOf(result)).toEqual(['01061900'])
+    expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
+    expect(result.view.context.selectedSummary.count).toBe(2)
+    expect(result.view.context.pageTitle).toBeUndefined()
+  })
+
+  it("Should store this search's rows beside the rows already shown", async () => {
+    const result = await refreshResults(
+      { action: 'search', [search.SEARCH_FIELD]: 'furo' },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(keysOf(storedSearchRowsOf(result))).toEqual([
+      BOS_TAURUS_KEY,
+      lineKey(MUSTELA_PUTORIUS_FURO_ROW)
+    ])
+  })
+
+  it('Should announce how many species a search lists', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'buffalo'
+    })
+    expect(result.view.context.announcement).toBe('3 results available')
+  })
+
+  it('Should announce a search that lists one species in the singular', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'furo'
+    })
+    expect(result.view.context.announcement).toBe('1 result available')
+  })
+
+  it('Should announce a long-enough search that matches nothing', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'zzzzzz'
+    })
+    expect(result.view.context.announcement).toBe('No results found')
+  })
+
+  it('Should announce nothing for a query shorter than three characters', async () => {
+    const result = await refreshResults({
+      action: 'search',
+      [search.SEARCH_FIELD]: 'Bo'
+    })
+    expect(result.view.context.announcement).toBe('')
+  })
+
+  it('Should honour a remove, leaving the other choice in the summary', async () => {
+    const result = await refreshResults(
+      {
+        action: removeActionFor(BOS_TAURUS_KEY),
+        selection: [BOS_TAURUS_KEY, FELIS_CATUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
+    )
+    expect(result.view.context.carriedKeys).toEqual([FELIS_CATUS_KEY])
+    expect(result.view.context.selectedSummary.count).toBe(1)
+  })
+
+  it('Should empty the summary on Clear all, keeping the results', async () => {
+    const result = await refreshResults(
+      {
+        action: 'clear',
+        [search.SEARCH_FIELD]: 'buffalo',
+        selection: [BOS_TAURUS_KEY]
+      },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(result.view.context.selectedSummary.count).toBe(0)
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
+  })
+
+  it('Should refuse a remove naming a key the stored search rows never held, and log one refusal', async () => {
+    const tamperedKey = '0102|Not a species'
+    const result = await refreshResults(
+      { action: removeActionFor(tamperedKey), species: BOS_TAURUS_KEY },
+      [afterSearchShowed(BOS_TAURUS_ROW)]
+    )
+    expect(result.response.output.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expectRemovalRefusedLogged(result, {
+      reason: 'no-species-for-key',
+      key: tamperedKey
+    })
+  })
+
+  it('Should save no commodity lines, even when posted ticks and no action', async () => {
+    const result = await refreshResults({ species: BOS_TAURUS_KEY }, [
+      afterSearchShowed(BOS_TAURUS_ROW)
+    ])
+    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(result.view.context.selectedSummary.count).toBe(1)
     expect(result.after).toEqual(result.before)
   })
 })
@@ -509,7 +632,7 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: `#${search.SEARCH_FIELD}` }
     ])
     expect(result.view.context.query).toBe('buffalo')
-    expect(legendsOf(result)).toEqual(['0102'])
+    expect(legendsOf(result)).toEqual([CATTLE_HEADING])
     expect(result.after).toEqual(result.before)
   })
 

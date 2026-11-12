@@ -5,14 +5,13 @@ import {
   PHONE_VIEWPORT,
   fillArrivalDetails,
   answerCountryOfOrigin,
+  answerWhatYouAreImportingFromOverview,
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
-  openOverview,
   openReviewFromHub,
   saveAndContinue,
   saveAndReturnToHub,
-  selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -38,17 +37,13 @@ const ANIMALS = '25'
 const PACKAGES = '5'
 const TOTAL_BOX = '.app-commodity-total'
 const SECTION_HEADING = 'h3.govuk-heading-m'
-const SAVE_AND_CONTINUE = 'Save and continue'
 const CANNOT_START_STATUS = '.govuk-task-list__status--cannot-start-yet'
 const TASK_ROW_HINT = '.govuk-task-list__hint'
 
 const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: copy.rows.commodities.title }).click()
-  await selectSpecies(page, [BOS_TAURUS_ROW])
-  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  await openOverview(page)
+  await answerWhatYouAreImportingFromOverview(page, BOS_TAURUS_ROW)
   await page
     .getByRole('link', {
       name: copy.rows.consignmentDetails.title,
