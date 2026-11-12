@@ -10,8 +10,12 @@ import { copy as cy } from '../../../../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-export const filledIdentifierColumns = (units, commodityCode) => [
-  ...scopedFields(commodityCode)
+export const filledIdentifierColumns = (
+  units,
+  commodityCode,
+  speciesLatinName
+) => [
+  ...scopedFields(commodityCode, speciesLatinName)
     .filter(({ id }) => units.some((unit) => !isBlank(unit[id])))
     .map(({ id }) => [id, IDENTIFIER_LABELS[id]]),
   ...(units.some((unit) => !isBlank(unit[PERMANENT_ADDRESS]?.name))

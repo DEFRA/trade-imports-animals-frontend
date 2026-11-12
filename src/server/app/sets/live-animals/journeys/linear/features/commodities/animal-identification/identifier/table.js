@@ -12,7 +12,7 @@ const copy = copyFor({ en, cy }).identification
 export const IDENTIFIER_LABELS = copy.identifierLabels
 
 export const identifierColumns = (commodityCode, speciesLatinName) => [
-  ...scopedFields(commodityCode).map((field) => [
+  ...scopedFields(commodityCode, speciesLatinName).map((field) => [
     field.id,
     IDENTIFIER_LABELS[field.id]
   ]),

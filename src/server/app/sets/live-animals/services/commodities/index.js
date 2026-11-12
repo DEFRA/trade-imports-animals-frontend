@@ -4,8 +4,9 @@ import {
   COMMODITY_NAMES_BY_CODE,
   CPH_EXEMPT_CODES,
   EAR_TAG_CODES,
-  HORSE_NAME_CODES,
+  HORSE_NAME_CODE_SPECIES,
   IDENTIFIED_CODES,
+  identifierNameOf,
   MICROCHIP_CODES,
   PACKAGE_COUNT_CODES,
   PASSPORT_CODES,
@@ -19,7 +20,8 @@ export const listsSpeciesIndividually = (code) => code === PER_SPECIES_CODE
 
 export const packageCountCommodityCodes = () => PACKAGE_COUNT_CODES
 
-export const identifiersFor = (code) => COMMODITY_IDENTIFIERS[code] ?? []
+export const identifiersFor = (code) =>
+  (COMMODITY_IDENTIFIERS[code] ?? []).map(identifierNameOf)
 
 export const commodityDescriptionFor = (code) => COMMODITY_DESCRIPTIONS[code]
 
@@ -33,7 +35,7 @@ export const tattooCommodityCodes = () => TATTOO_CODES
 
 export const earTagCommodityCodes = () => EAR_TAG_CODES
 
-export const horseNameCommodityCodes = () => HORSE_NAME_CODES
+export const horseNameCodeSpecies = () => HORSE_NAME_CODE_SPECIES
 
 export const identifiedCommodityCodes = () => IDENTIFIED_CODES
 

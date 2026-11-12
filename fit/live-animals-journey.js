@@ -15,11 +15,15 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS_ROW,
+  CAPRA_HIRCUS_ROW,
+  EQUUS_ASINUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
   GALLUS_GALLUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
+  OVIS_ARIES_ROW,
   STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
@@ -47,11 +51,15 @@ export {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS_ROW,
+  CAPRA_HIRCUS_ROW,
+  EQUUS_ASINUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
   GALLUS_GALLUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
-  STRUTHIO_ROW
+  OVIS_ARIES_ROW,
+  STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW
 }
 
 const isGovukConditionalRevealFalsePositive = (violation) =>

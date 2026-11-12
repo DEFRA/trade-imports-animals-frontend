@@ -24,10 +24,19 @@ so generic notification-mapper code does not import the set.
   identification page asks for them. The order belongs to the code: `0102`
   (cattle) is asked for its ear tag first, `0101` (equines: horses, asses,
   mules and hinnies) for its microchip.
-- The per-identifier allow-lists are derived from that map, so an identifier's
-  gate and its place on the page cannot drift apart. Adding an identifier to a
-  code is one edit. `IDENTIFIED_CODES` is derived from the same map, so whether
-  a code is asked to identify at all is part of that edit.
+- An identifier on a code may name the species on that code it applies to;
+  where it names none, it applies to every species the catalogue serves under
+  the code. The horse name is the one identifier that names a species: `0101`
+  serves five equine species, and the horse name applies to the horse species
+  alone.
+- The per-identifier allow-lists are derived from that map: a code-wide
+  identifier's allow-list is codes, gated with `allowListed`; a
+  species-named identifier's allow-list is `[code, species]` pairs, gated with
+  `allowListedPairs`, the same mechanism the permanent address uses. Either
+  way an identifier's gate and its place on the page cannot drift apart.
+  Adding an identifier to a code is one edit. `IDENTIFIED_CODES` is derived
+  from the same map, so whether a code is asked to identify at all is part of
+  that edit.
 - A code with no identifiers, such as poultry (`01051111`), is asked for none.
   There is no free-text identifier, so its line gets no identification card and
   no animal records.
@@ -56,8 +65,9 @@ so generic notification-mapper code does not import the set.
   rules live in [`rules.js`](../services/commodities/rules.js). A rule keyed by
   a Latin name matches MDM's spelling exactly: if MDM corrects a spelling, the
   rule stops matching until it is confirmed against MDM and corrected to
-  follow it. Whether the domestic dog's entry below still needs that
-  correction is an open question, not resolved here.
+  follow it. This covers the horse name's species as well as the
+  permanent-address species below. Whether the domestic dog's entry below
+  still needs that correction is an open question, not resolved here.
 - `PERMANENT_ADDRESS_SPECIES` gates on the code and the species together, as
   above. `01061900` holds the domestic cats, dogs and ferrets that need one
   alongside many mammals that do not, and MDM lists one species under several

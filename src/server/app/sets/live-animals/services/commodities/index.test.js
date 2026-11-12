@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   cphExemptCommodityCodes,
   earTagCommodityCodes,
-  horseNameCommodityCodes,
+  horseNameCodeSpecies,
   identifiedCommodityCodes,
   identifiersFor,
   commodityDescriptionFor,
@@ -16,7 +16,14 @@ import {
   needsIdentifying,
   tattooCommodityCodes
 } from './index.js'
-import { CATTLE_CODE, HORSES_CODE, OTHER_LIVE_MAMMALS_CODE } from './rules.js'
+import {
+  CATTLE_CODE,
+  GOAT_CODE,
+  HORSES_CODE,
+  OTHER_LIVE_MAMMALS_CODE,
+  SHEEP_CODE,
+  SWINE_CODE
+} from './rules.js'
 import { OSTRICHES_CODE } from '../../journeys/linear/features/commodities/search/test-support.js'
 
 describe('#listsSpeciesIndividually', () => {
@@ -44,6 +51,9 @@ describe('#identifiersFor', () => {
       'animalIdentifierPassport',
       'animalIdentifierTattoo'
     ])
+    expect(identifiersFor(SWINE_CODE)).toEqual(['animalIdentifierEarTag'])
+    expect(identifiersFor(SHEEP_CODE)).toEqual(['animalIdentifierEarTag'])
+    expect(identifiersFor(GOAT_CODE)).toEqual(['animalIdentifierEarTag'])
   })
 
   it('Should give no identifiers for a code that carries none', () => {
@@ -53,7 +63,7 @@ describe('#identifiersFor', () => {
 })
 
 describe('the identifier allowlists', () => {
-  const derivations = [
+  const codeOnlyDerivations = [
     [
       'microchip',
       microchipCommodityCodes,
@@ -72,25 +82,44 @@ describe('the identifier allowlists', () => {
       'animalIdentifierTattoo',
       [OTHER_LIVE_MAMMALS_CODE]
     ],
-    ['ear tag', earTagCommodityCodes, 'animalIdentifierEarTag', [CATTLE_CODE]],
-    ['horse name', horseNameCommodityCodes, 'horseName', [HORSES_CODE]]
+    [
+      'ear tag',
+      earTagCommodityCodes,
+      'animalIdentifierEarTag',
+      [CATTLE_CODE, SWINE_CODE, SHEEP_CODE, GOAT_CODE]
+    ]
   ]
 
-  for (const [name, allowlist, identifier, expectedCodes] of derivations) {
+  for (const [
+    name,
+    allowlist,
+    identifier,
+    expectedCodes
+  ] of codeOnlyDerivations) {
     it(`Should list only codes that carry the ${name}`, () => {
       for (const code of allowlist()) {
         expect(identifiersFor(code)).toContain(identifier)
       }
-      expect([...allowlist()].sort()).toEqual(expectedCodes)
+      expect([...allowlist()].sort()).toEqual([...expectedCodes].sort())
     })
   }
 
+  it('Should list only the horse species for the horse name, paired with 0101', () => {
+    expect(horseNameCodeSpecies()).toEqual([[HORSES_CODE, 'Equus cabalus']])
+    expect(identifiersFor(HORSES_CODE)).toContain('horseName')
+  })
+
   it('Should identify exactly the codes that carry at least one identifier', () => {
-    expect([...identifiedCommodityCodes()].sort()).toEqual([
-      HORSES_CODE,
-      CATTLE_CODE,
-      OTHER_LIVE_MAMMALS_CODE
-    ])
+    expect([...identifiedCommodityCodes()].sort()).toEqual(
+      [
+        HORSES_CODE,
+        CATTLE_CODE,
+        SWINE_CODE,
+        SHEEP_CODE,
+        GOAT_CODE,
+        OTHER_LIVE_MAMMALS_CODE
+      ].sort()
+    )
   })
 
   it('Should need identifying for a line whose code carries identifiers and not for one whose code does not', () => {

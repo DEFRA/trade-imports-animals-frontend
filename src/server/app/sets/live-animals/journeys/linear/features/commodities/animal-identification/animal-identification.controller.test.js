@@ -21,6 +21,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
+import { copy } from '../copy/copy.en.js'
 import { itSendsBackToWhereTheTraderCameFrom } from '../../../test-support.js'
 import {
   seedFromFranceWithOneEarTaggedCattle,
@@ -39,12 +40,16 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS,
   BOS_TAURUS_ROW,
+  CAPRA_HIRCUS,
+  EQUUS_ASINUS,
   EQUUS_CABALUS,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS,
   FELIS_CATUS_ROW,
+  OVIS_ARIES,
   STRUTHIO,
   STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS,
   labelFor,
   lineOf
 } from '../search/test-support.js'
@@ -99,8 +104,10 @@ const textsOf = (cells) => cells.map((cell) => cell.text)
 const savedAnimalLabels = (card) =>
   card.savedAnimalsTable.rows.map(([animalCell]) => animalCell.text)
 
-const savedIdentifierColumns = (card) =>
-  textsOf(card.savedAnimalsTable.head.slice(1, -1))
+const savedAnimalsColumns = (card) =>
+  textsOf(card.savedAnimalsTable.head.slice(0, -1))
+
+const savedIdentifierColumns = (card) => savedAnimalsColumns(card).slice(1)
 
 const savedIdentifierCells = (card, unitIndex) =>
   textsOf(card.savedAnimalsTable.rows[unitIndex].slice(1, -1))
@@ -208,7 +215,7 @@ describe(`${SUITE} — the cards view`, () => {
     expect(equusCabalus.fields.map((field) => field.label)).toEqual([
       'Microchip',
       'Passport',
-      'Horse name'
+      copy.identification.identifierLabels.horseName
     ])
   })
 
@@ -429,7 +436,7 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
 describe(`${SUITE} — the saved-animals table`, () => {
   setupIdentificationEngine()
 
-  it('Should head the table with every identifier the commodity declares, not only the ones filled in', async () => {
+  it('Should head the table with every identifier asked of the species, not only the ones a saved record filled in', async () => {
     const [card] = await viewCards({
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, {
@@ -510,7 +517,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
       'Microchip',
       'Passport',
       'Tattoo',
-      'Permanent address'
+      copy.identification.table.permanentAddressColumn
     ])
     expect(savedIdentifierCells(card, 0)).toEqual([
       '',
@@ -532,7 +539,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
     expect(savedIdentifierColumns(card)).toEqual([
       'Microchip',
       'Passport',
-      'Horse name'
+      copy.identification.identifierLabels.horseName
     ])
     expect(savedIdentifierCells(card, 0)).toEqual(['', '', 'Shergar'])
   })
@@ -992,7 +999,7 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
     })
     return {
       fieldIds: card.fields.map((field) => field.id),
-      columnHeadings: card.savedAnimalsTable.head.map(({ text }) => text)
+      columnHeadings: savedAnimalsColumns(card)
     }
   }
 
@@ -1001,47 +1008,81 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
       commodityCode: '0102',
       speciesLatinName: BOS_TAURUS,
       fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
-      permanentAddressColumn: false
+      columnHeadings: ['Animal', 'Ear tag', 'Passport']
     },
     {
       commodityCode: '0101',
       speciesLatinName: EQUUS_CABALUS,
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
-      permanentAddressColumn: false
+      columnHeadings: [
+        'Animal',
+        'Microchip',
+        'Passport',
+        copy.identification.identifierLabels.horseName
+      ]
+    },
+    {
+      commodityCode: '0101',
+      speciesLatinName: EQUUS_ASINUS,
+      fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0],
+      columnHeadings: ['Animal', 'Microchip', 'Passport']
+    },
+    {
+      commodityCode: '0103',
+      speciesLatinName: SUS_SCROFA_DOMESTICUS,
+      fieldIds: [EAR_TAG_FIELD_0],
+      columnHeadings: ['Animal', 'Ear tag']
+    },
+    {
+      commodityCode: '010410',
+      speciesLatinName: OVIS_ARIES,
+      fieldIds: [EAR_TAG_FIELD_0],
+      columnHeadings: ['Animal', 'Ear tag']
+    },
+    {
+      commodityCode: '010420',
+      speciesLatinName: CAPRA_HIRCUS,
+      fieldIds: [EAR_TAG_FIELD_0],
+      columnHeadings: ['Animal', 'Ear tag']
     },
     {
       commodityCode: '01061900',
-      speciesLatinName: 'Felis catus',
+      speciesLatinName: FELIS_CATUS,
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      permanentAddressColumn: true
+      columnHeadings: [
+        'Animal',
+        'Microchip',
+        'Passport',
+        'Tattoo',
+        copy.identification.table.permanentAddressColumn
+      ]
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      permanentAddressColumn: true
+      columnHeadings: [
+        'Animal',
+        'Microchip',
+        'Passport',
+        'Tattoo',
+        copy.identification.table.permanentAddressColumn
+      ]
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Oryctolagus cuniculus',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      permanentAddressColumn: false
+      columnHeadings: ['Animal', 'Microchip', 'Passport', 'Tattoo']
     }
   ]
 
   it.each(MATRIX)(
-    'Should render $fieldIds for $commodityCode $speciesLatinName, permanent address column $permanentAddressColumn',
-    async ({
-      commodityCode,
-      speciesLatinName,
-      fieldIds,
-      permanentAddressColumn
-    }) => {
+    'Should render $fieldIds and head $columnHeadings for $commodityCode $speciesLatinName',
+    async ({ commodityCode, speciesLatinName, fieldIds, columnHeadings }) => {
       const rendered = await renderFor(commodityCode, speciesLatinName)
       expect(rendered.fieldIds).toEqual(fieldIds)
-      expect(rendered.columnHeadings.includes('Permanent address')).toBe(
-        permanentAddressColumn
-      )
+      expect(rendered.columnHeadings).toEqual(columnHeadings)
     }
   )
 })

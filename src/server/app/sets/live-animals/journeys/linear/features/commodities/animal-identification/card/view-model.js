@@ -59,13 +59,14 @@ const saveButtonTextFor = (cap, records) => {
 const visibleIdentifierFields = (
   atCap,
   commodityCode,
+  speciesLatinName,
   index,
   values,
   errors
 ) =>
   atCap
     ? []
-    : scopedFields(commodityCode).map((field) => ({
+    : scopedFields(commodityCode, speciesLatinName).map((field) => ({
         ...field,
         id: fieldName(field.id, index),
         value: values[field.id] ?? '',
@@ -80,7 +81,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const atCap = isAtCap(cap, units.length)
   const speciesLatinName = entry.speciesLatinName
   const label = speciesLabel(entry)
-  const values = form?.values ?? blankValuesFor(commodityCode)
+  const values = form?.values ?? blankValuesFor(commodityCode, speciesLatinName)
   const columns = identifierColumns(commodityCode, speciesLatinName)
   const unitRows = unitEntries(lineKey(entry), label, columns, units)
   return {
@@ -96,7 +97,14 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
       unitRows
     ),
     hasUnits: units.length > 0,
-    fields: visibleIdentifierFields(atCap, commodityCode, index, values, errors)
+    fields: visibleIdentifierFields(
+      atCap,
+      commodityCode,
+      speciesLatinName,
+      index,
+      values,
+      errors
+    )
   }
 }
 

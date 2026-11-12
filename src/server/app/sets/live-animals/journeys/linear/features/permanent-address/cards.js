@@ -48,7 +48,7 @@ export const addressableUnits = (answers, evaluation) =>
   )
 
 const identifierLinesOf = (line, unit, copy) =>
-  scopedFields(line.commodityCode)
+  scopedFields(line.commodityCode, line.speciesLatinName)
     .filter((field) => (unit[field.id] ?? '') !== '')
     .map((field) => copy.identifierLine(field.label, unit[field.id]))
 

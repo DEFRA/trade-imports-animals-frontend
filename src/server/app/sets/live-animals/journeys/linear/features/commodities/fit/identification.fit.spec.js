@@ -2,15 +2,19 @@ import { expect, test } from '@playwright/test'
 import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
+  CAPRA_HIRCUS_ROW,
+  EQUUS_ASINUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
+  OVIS_ARIES_ROW,
   PHONE_VIEWPORT,
   answerPermanentAddressCard,
   openPermanentAddressFromAddLink,
   saveAndContinue,
   saveAndReturnToHub,
   STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW,
   numberOfAnimalsFor,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -53,12 +57,20 @@ const addLines = async (page, speciesWithCounts) => {
   }
 }
 
+const openIdentificationFromHub = (page) =>
+  page
+    .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
+    .click()
+
+const reopenIdentificationFromHub = async (page) => {
+  await openOverview(page)
+  await openIdentificationFromHub(page)
+}
+
 const openIdentification = async (page, speciesWithCounts) => {
   await addLines(page, speciesWithCounts)
   await saveAndReturnToHub(page).click()
-  await page
-    .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
-    .click()
+  await openIdentificationFromHub(page)
   await expect(
     page.getByRole('heading', { name: 'Identification details', exact: true })
   ).toBeVisible()
@@ -158,6 +170,13 @@ const removeAnimalRow = async (page, chosen, number) => {
   return row
 }
 
+const saveSoleAnimalAndReopenCard = async (page, chosen, earTag) => {
+  await page.locator(EAR_TAG_FIELD).fill(earTag)
+  await saveAndContinue(page).click()
+  await reopenIdentificationFromHub(page)
+  return speciesCard(page, chosen)
+}
+
 const addBosTaurusRecord = async (page, earTag, { last = false } = {}) => {
   await page.locator(EAR_TAG_FIELD).fill(earTag)
   await (last ? submitSaveAndFinish(page) : submitAdd(page))
@@ -186,7 +205,23 @@ const identifierValidations = [
   [FELIS_CATUS_ROW, 'animalIdentifierTattoo', 'Tattoo'],
   [BOS_TAURUS_ROW, 'animalIdentifierPassport', 'Passport'],
   [BOS_TAURUS_ROW, 'animalIdentifierEarTag', 'Ear tag'],
-  [EQUUS_CABALUS_ROW, 'horseName', 'Horse name']
+  [EQUUS_CABALUS_ROW, 'horseName', 'Horse name'],
+  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierEarTag', 'Ear tag']
+]
+
+const earTagOnlyRows = [OVIS_ARIES_ROW, CAPRA_HIRCUS_ROW]
+
+const OTHER_IDENTIFIER_LABELS = [
+  copy.identification.identifierLabels.animalIdentifierMicrochip,
+  copy.identification.identifierLabels.animalIdentifierPassport,
+  copy.identification.identifierLabels.animalIdentifierTattoo,
+  copy.identification.identifierLabels.horseName
+]
+
+const EAR_TAG_SAVED_ANIMALS_HEAD = [
+  copy.identification.table.animalColumn,
+  copy.identification.identifierLabels.animalIdentifierEarTag,
+  copy.identification.table.actionsHidden
 ]
 
 test.describe('animal identification', () => {
@@ -357,6 +392,114 @@ test.describe('animal identification', () => {
   })
 })
 
+test.describe('animal identification species-driven identifiers', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('asks a pig line for an ear tag and no other identifier, and heads its saved-animals table with Animal, Ear tag and a Remove action', async ({
+    page
+  }) => {
+    await openIdentification(page, [[SUS_SCROFA_DOMESTICUS_ROW]])
+    const card = speciesCard(page, SUS_SCROFA_DOMESTICUS_ROW)
+
+    await expect(card.getByRole('textbox')).toHaveCount(1)
+    await expect(page.locator(EAR_TAG_FIELD)).toBeVisible()
+    for (const label of OTHER_IDENTIFIER_LABELS) {
+      await expect(card.getByLabel(label, { exact: true })).toHaveCount(0)
+    }
+
+    const savedCard = await saveSoleAnimalAndReopenCard(
+      page,
+      SUS_SCROFA_DOMESTICUS_ROW,
+      'UK100000000001'
+    )
+
+    await expect(savedCard.getByRole('columnheader')).toHaveText(
+      EAR_TAG_SAVED_ANIMALS_HEAD
+    )
+    const row = savedAnimalRow(page, SUS_SCROFA_DOMESTICUS_ROW, 1)
+    await expect(
+      row.getByRole('cell', { name: 'UK100000000001', exact: true })
+    ).toBeVisible()
+    await expect(
+      row.getByRole('button', { name: copy.identification.removeRow })
+    ).toBeVisible()
+  })
+
+  test('asks a sheep line and a goat line each for an ear tag and no other identifier, and heads each saved-animals table with Animal, Ear tag and a Remove action', async ({
+    page
+  }) => {
+    for (const chosen of earTagOnlyRows) {
+      await openIdentification(page, [[chosen]])
+      const card = speciesCard(page, chosen)
+
+      await expect(card.getByRole('textbox')).toHaveCount(1)
+      for (const label of OTHER_IDENTIFIER_LABELS) {
+        await expect(card.getByLabel(label, { exact: true })).toHaveCount(0)
+      }
+
+      const savedCard = await saveSoleAnimalAndReopenCard(
+        page,
+        chosen,
+        'UK200000000001'
+      )
+
+      await expect(savedCard.getByRole('columnheader')).toHaveText(
+        EAR_TAG_SAVED_ANIMALS_HEAD
+      )
+      const row = savedAnimalRow(page, chosen, 1)
+      await expect(
+        row.getByRole('cell', { name: 'UK200000000001', exact: true })
+      ).toBeVisible()
+      await expect(
+        row.getByRole('button', { name: copy.identification.removeRow })
+      ).toBeVisible()
+    }
+  })
+
+  test('asks the horse species on 0101 for a horse name and the donkey species on the same code for no horse name, while both are asked for a microchip and a passport', async ({
+    page
+  }) => {
+    await openIdentification(page, [[EQUUS_CABALUS_ROW], [EQUUS_ASINUS_ROW]])
+    const horseCard = speciesCard(page, EQUUS_CABALUS_ROW)
+    const donkeyCard = speciesCard(page, EQUUS_ASINUS_ROW)
+
+    await expect(
+      horseCard.getByLabel(
+        copy.identification.identifierLabels.animalIdentifierMicrochip,
+        { exact: true }
+      )
+    ).toBeVisible()
+    await expect(
+      horseCard.getByLabel(
+        copy.identification.identifierLabels.animalIdentifierPassport,
+        { exact: true }
+      )
+    ).toBeVisible()
+    await expect(
+      horseCard.getByLabel(copy.identification.identifierLabels.horseName, {
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(horseCard.getByRole('textbox')).toHaveCount(3)
+
+    await expect(
+      donkeyCard.getByLabel(
+        copy.identification.identifierLabels.animalIdentifierMicrochip,
+        { exact: true }
+      )
+    ).toBeVisible()
+    await expect(
+      donkeyCard.getByLabel(
+        copy.identification.identifierLabels.animalIdentifierPassport,
+        { exact: true }
+      )
+    ).toBeVisible()
+    await expect(donkeyCard.getByRole('textbox')).toHaveCount(2)
+  })
+})
+
 test.describe('animal identification in-card save button', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -415,10 +558,7 @@ test.describe('animal identification in-card save button', () => {
     await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
     await saveAndContinue(page).click()
 
-    await openOverview(page)
-    await page
-      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
-      .click()
+    await reopenIdentificationFromHub(page)
     await expect(
       savedAnimalRow(page, BOS_TAURUS_ROW, 1).getByRole('cell', {
         name: 'UK000000000001',
@@ -590,7 +730,7 @@ test.describe('animal identification identifier validation', () => {
   })
 
   for (const [species, field, label] of identifierValidations) {
-    test(`validation: ${label} over ${MAX_IDENTIFIER_LENGTH} characters links to and focuses the preserved value`, async ({
+    test(`validation: ${label} over ${MAX_IDENTIFIER_LENGTH} characters for ${labelFor(species.speciesLatinName)} links to and focuses the preserved value`, async ({
       page
     }) => {
       await openIdentification(page, [[species]])
@@ -654,10 +794,7 @@ test.describe('animal identification records', () => {
     )
     await saveAndContinue(page).click()
 
-    await openOverview(page)
-    await page
-      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
-      .click()
+    await reopenIdentificationFromHub(page)
     const row = savedAnimalRow(page, FELIS_CATUS_ROW, 1)
 
     await expect(
@@ -696,7 +833,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
   })
 
-  test('heads the table with every identifier the commodity declares, not only the ones filled in', async ({
+  test('heads the table with every identifier asked of the species, not only the ones a saved record filled in', async ({
     page
   }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW, '2']])

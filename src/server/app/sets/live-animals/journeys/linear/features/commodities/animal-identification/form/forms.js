@@ -31,17 +31,22 @@ export const staysOnIdentification = (action, forms, answers) =>
     ))
 
 const buildLineForm = (payload, entry, index) => {
-  const { commodityCode } = entry
-  const values = identifierValuesFromPayload(payload, commodityCode, index)
+  const { commodityCode, speciesLatinName } = entry
+  const values = identifierValuesFromPayload(
+    payload,
+    commodityCode,
+    speciesLatinName,
+    index
+  )
   const holdsData = identifierProvided(values)
 
   const { errors } = validate(
-    identifierChecksFor(commodityCode, index),
+    identifierChecksFor(commodityCode, speciesLatinName, index),
     payload
   )
 
   return {
-    form: { commodityCode, values, holdsData },
+    form: { commodityCode, speciesLatinName, values, holdsData },
     errors
   }
 }
@@ -102,8 +107,8 @@ export const withEmptyFormGuard = (errors, forms, addIndex) => {
   if (addIndex === null || anyData || !forms.has(addIndex)) {
     return errors
   }
-  const { commodityCode } = forms.get(addIndex)
-  const [first] = scopedFields(commodityCode)
+  const { commodityCode, speciesLatinName } = forms.get(addIndex)
+  const [first] = scopedFields(commodityCode, speciesLatinName)
   return {
     ...errors,
     [fieldName(first.id, addIndex)]: copy.errors.atLeastOneIdentifier

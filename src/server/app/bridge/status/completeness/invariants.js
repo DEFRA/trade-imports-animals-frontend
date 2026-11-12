@@ -23,13 +23,22 @@ export const parentCountInvariantViolated = (
 // which skips an instance no listed leaf is in scope for — asked here before
 // any instance exists, so it reads the gate metadata rather than the
 // implications.
-// Gate shapes this helper can actually read. Anything else — an equals/
-// present/includes/branched gate, a depth-1 gate, or a gate fanned onto a
-// different group — cannot be judged from metadata here, so the leaf is
-// treated as one that could apply and the floor keeps biting. The permissive
-// direction (reporting an empty collection satisfied) must never be reached
-// by a shape we did not mean to admit.
-const READABLE_GATE_TYPES = ['allowListed', 'notInUnionOf']
+// Gate shapes this helper can actually read. Anything else cannot be judged
+// from metadata here, so the leaf is treated as one that could apply and the
+// floor keeps biting. The permissive direction (reporting an empty collection
+// satisfied) must never be reached by a shape we did not mean to admit.
+const READABLE_GATE_TYPES = ['allowListed', 'allowListedPairs', 'notInUnionOf']
+
+const gateValueAt = (metadata, state, parentFulfilmentIndex) => {
+  const storedValueOf = (obligationId) =>
+    state.fulfilments?.[obligationId]?.[parentFulfilmentIndex]
+  return metadata.pairedObligationId
+    ? [
+        storedValueOf(metadata.obligationId),
+        storedValueOf(metadata.pairedObligationId)
+      ]
+    : storedValueOf(metadata.obligationId)
+}
 
 const anyOfLeafCouldApply = (group, parentFulfilmentIndex, state) =>
   (group.requires.anyOfIds ?? []).some((leafId) => {
@@ -44,7 +53,7 @@ const anyOfLeafCouldApply = (group, parentFulfilmentIndex, state) =>
     }
     return admitsValue(
       metadata,
-      state.fulfilments?.[metadata.obligationId]?.[parentFulfilmentIndex]
+      gateValueAt(metadata, state, parentFulfilmentIndex)
     )
   })
 

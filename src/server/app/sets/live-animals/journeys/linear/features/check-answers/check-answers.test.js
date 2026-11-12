@@ -53,6 +53,7 @@ import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import {
   BOS_TAURUS_ROW,
+  EQUUS_CABALUS_ROW,
   OSTRICHES_CODE
 } from '../commodities/search/test-support.js'
 import {
@@ -200,6 +201,7 @@ const copyOf = (id) =>
 
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
 const CATTLE_CARD_TITLE = '0102 — Bos taurus'
+const HORSE_CARD_TITLE = '0101 — Equus cabalus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -756,6 +758,46 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(card.actions.items[0].href).toMatch(
       hrefEndingWithFromReview('accompanying-documents')
     )
+  })
+})
+
+describe(`${SUITE} — species identifier table`, () => {
+  setupCheckAnswersEngine()
+
+  it("Should head a horse line's identifier table with the horse name, and never with the ear tag it was not asked for", async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [
+          {
+            ...EQUUS_CABALUS_ROW,
+            numberOfAnimalsQuantity: '1',
+            animalIdentifiers: [
+              {
+                animalIdentifierMicrochip: 'UK900123456789012',
+                animalIdentifierPassport: 'UK987654321',
+                horseName: 'Silver'
+              }
+            ]
+          }
+        ]
+      }),
+      HORSE_CARD_TITLE
+    )
+    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Microchip',
+      'Passport',
+      'Horse name'
+    ])
+    expect(card.identifierTable.rows).toEqual([
+      [
+        { text: 'Animal 1' },
+        { text: 'UK900123456789012' },
+        { text: 'UK987654321' },
+        { text: 'Silver' }
+      ]
+    ])
   })
 })
 

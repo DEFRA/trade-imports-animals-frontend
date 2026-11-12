@@ -1,6 +1,6 @@
 import {
   earTagCommodityCodes,
-  horseNameCommodityCodes,
+  horseNameCodeSpecies,
   identifiedCommodityCodes,
   microchipCommodityCodes,
   passportCommodityCodes,
@@ -40,7 +40,8 @@ const earTagReason = {
 
 const horseNameReason = {
   code: 'obligation.horseName.applicable.becauseHorseCommodity',
-  explanation: 'horseName applies on units of horse-commodity lines'
+  explanation:
+    'horseName applies on units of lines whose commodityCode and species pair is in the horse-name list'
 }
 
 const permanentAddressReason = {
@@ -119,9 +120,13 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, horseNameCommodityCodes, unitRecord, [
-    horseNameReason
-  ])
+  applyTo: allowListedPairs(
+    commodityCode,
+    speciesLatinName,
+    horseNameCodeSpecies,
+    unitRecord,
+    [horseNameReason]
+  )
 }
 
 const permanentAddressPairGate = (reasons) =>

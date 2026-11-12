@@ -9,6 +9,7 @@ import {
 } from '../../sets/live-animals/services/commodities/rules.js'
 import {
   BOS_TAURUS,
+  EQUUS_CABALUS,
   OSTRICHES_CODE
 } from '../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
@@ -139,7 +140,8 @@ const earTagReason = {
 }
 const horseNameReason = {
   code: 'obligation.horseName.applicable.becauseHorseCommodity',
-  explanation: 'horseName applies on units of horse-commodity lines'
+  explanation:
+    'horseName applies on units of lines whose commodityCode and species pair is in the horse-name list'
 }
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
@@ -853,19 +855,29 @@ describe('earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
   })
 })
 
-describe('horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
-  it('is in scope for a 0101 line', () => {
+describe('horseName (gatedBy allowListedPairs(commodityCode, speciesLatinName, horse-name list))', () => {
+  it('is in scope for a 0101 line of the horse species', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
+      [speciesLatinName.id]: { [LINE_HORSES]: EQUUS_CABALUS },
       [horseName.id]: { [`${LINE_HORSES}.${UNIT_1}`]: 'Silver' }
     })
     expect(result.obligations[horseName.id].inScope).toBe(true)
     expect(result.obligations[horseName.id].reasons).toEqual([horseNameReason])
   })
 
+  it('is out of scope for a 0101 line of another species', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
+      [speciesLatinName.id]: { [LINE_HORSES]: 'Equus asinus' }
+    })
+    expect(result.obligations[horseName.id]).toEqual({ inScope: false })
+  })
+
   it('is out of scope for a 0102 line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE }
+      [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
+      [speciesLatinName.id]: { [LINE_CATTLE]: BOS_TAURUS }
     })
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
   })
@@ -978,6 +990,7 @@ describe('mixed lines drive per-line identifier gating', () => {
         [LINE_CATTLE]: CATTLE_CODE,
         [LINE_HORSES]: HORSES_CODE
       },
+      [speciesLatinName.id]: { [LINE_HORSES]: EQUUS_CABALUS },
       [passport.id]: {
         [`${LINE_CATTLE}.${UNIT_1}`]: 'UK-C-1',
         [`${LINE_HORSES}.${UNIT_1}`]: 'UK-H-1'
