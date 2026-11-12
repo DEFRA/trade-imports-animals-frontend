@@ -10,6 +10,7 @@ import {
   saveAndReturnToHub,
   STRUTHIO_ROW,
   numberOfAnimalsFor,
+  errorSummaryLinks,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -72,11 +73,8 @@ const openFelisCatusIdentification = (page) =>
 const entryLabelsOf = (fields) =>
   fields.map((field) => copy.identification.identifierLabels[field])
 
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 const expectErrorFocus = async (page, message, selector) => {
-  const link = errorLink(page, message)
+  const link = errorSummaryLinks(page, message)
   await expect(link).toBeVisible()
   await link.click()
   await expect(page.locator(selector)).toBeFocused()
@@ -683,7 +681,7 @@ test.describe('animal identification identifier validation', () => {
     await submitOverLongMicrochip(page)
 
     await expect(
-      errorLink(
+      errorSummaryLinks(
         page,
         copy.identification.errors.identifierMax.animalIdentifierMicrochip
       )
@@ -866,7 +864,10 @@ test.describe('animal identification records', () => {
 
     await submitStaleAdd(page)
 
-    const link = errorLink(page, copy.identification.errors.capReached(2))
+    const link = errorSummaryLinks(
+      page,
+      copy.identification.errors.capReached(2)
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
@@ -908,8 +909,8 @@ test.describe('animal identification records', () => {
       labelFor(BOS_TAURUS_ROW.speciesLatinName),
       1
     )
-    await expect(errorLink(page, countDrop)).toBeVisible()
-    await errorLink(page, countDrop).click()
+    await expect(errorSummaryLinks(page, countDrop)).toBeVisible()
+    await errorSummaryLinks(page, countDrop).click()
     await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
     await expect(
       commodityHeading(page, BOS_TAURUS_CODE_HEADING)
@@ -1041,7 +1042,7 @@ test.describe('animal identification sections and species cards', () => {
     await submitOverLongMicrochip(page)
 
     await expect(
-      errorLink(
+      errorSummaryLinks(
         page,
         copy.identification.errors.identifierMax.animalIdentifierMicrochip
       )

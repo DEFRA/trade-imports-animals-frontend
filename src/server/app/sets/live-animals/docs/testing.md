@@ -72,45 +72,71 @@ live-animals helper uses
 - Ferrets are identified by microchip in law, so a chip number on its own is
   enough to save a ferret.
 
+These steps are shared because more than one spec uses them:
+
+- `measureReferenceElement` reads computed properties of an element made only
+  from GOV.UK classes and inline styles, then removes it.
+- `govukColourOf` reads a GOV.UK colour token through it.
+- `govukVisuallyHiddenStyleOf` reads the values GOV.UK gives hidden text.
+- `expectStyle` asserts a set of CSS properties on an element.
+- `errorSummary` finds the page's error summary by its alert role.
+- `errorSummaryLinks` finds the error summary's links, narrowed to one named
+  link when a name is passed. It serves both a click on one link and an
+  assertion over the whole list.
+- `expectCaptionAboveHeading` proves a section caption sits above the level 1
+  heading.
+
+When a second spec needs a local step, move it to
+`fit/live-animals-journey.js` in the same change and delete every local copy.
+A step only one spec uses stays in that spec.
+
 ## Type-ahead style tests
 
 The type-ahead style tests (typography, focus indicator, error border) compare
 the enhanced input with a plain GOV.UK input and with GOV.UK colour tokens read
 at run time.
 
-`expectStyle`, which asserts a set of CSS properties on an element, is shared
-from `fit/live-animals-journey.js`. The other helpers live in
-`type-ahead.fit.spec.js` because only that spec uses them. When a second spec
-needs one, move it to `fit/live-animals-journey.js` in the same change and
-delete every local copy.
+`type-ahead.fit.spec.js` keeps the helpers only it uses:
 
-| Helper                    | What it does                                                            |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `govukColourOf`           | Reads a GOV.UK colour token in the browser.                             |
-| `govukInputStyleOf`       | Reads computed properties of a plain GOV.UK input, optionally focused.  |
-| `measureReferenceElement` | Creates a reference element, reads its computed properties, removes it. |
-| `shadowInColour`          | Rewrites the colour in a shadow value.                                  |
+| Helper              | What it does                                                               |
+| ------------------- | -------------------------------------------------------------------------- |
+| `govukInputStyleOf` | Reads computed properties of a plain GOV.UK input, optionally focused.     |
+| `shadowInColour`    | Returns a `box-shadow` value with its colour replaced by the colour given. |
 
 The type-ahead style tests prove appearance by position, size relative to
 another element, a GOV.UK colour token read at run time, or comparison with a
-plain GOV.UK element. The typography test adds one guard: the enhanced input's
-font family names GDS Transport. Without it the test would pass when the GOV.UK stylesheet failed to
+plain GOV.UK element.
+
+The focus test compares the enhanced input's outline with GOV.UK's focus token
+and width, and its inset shadow's offsets, blur and spread with the plain GOV.UK
+focused input's as read. It pins the shadow colour to the input's own text
+colour, which is what the component paints it in.
+
+The typography test adds one guard: the enhanced input's font family names GDS
+Transport. Without it the test would pass when the GOV.UK stylesheet failed to
 load, because both inputs would fall back to the browser default.
 
 The screenshot tests in `trade-imports-ins-tests`
 (`tests/animals/e2e/visual/origin-of-import.visual.spec.ts`) capture the
-type-ahead on first load and with a chosen country and the region box showing.
+type-ahead on first load, which shows the search button's colours and the
+absent dropdown arrow, and with a chosen country and the region box showing.
 No screenshot captures its focused or error state, so those two states are
 proved by the type-ahead style tests.
+
+Each type-ahead is also proved to offer a name when the trader's search differs
+from it only by accents, with the matching letters in bold.
 
 ## Appearance
 
 The screenshot specs live in `trade-imports-ins-tests` under
-`tests/animals/e2e/visual/`.
+`tests/animals/e2e/visual/`. They show the arrival details question labels at
+their medium size and the Upload documents actions column right-aligned.
 
-Do not add fixed `rgb()` values, `box-shadow` strings, pixel sizes or font
-weights to a fit spec; prove appearance by position, relative size or a colour
-read at run time, or with a screenshot.
+Do not add fixed `rgb()` values, `box-shadow` strings, pixel sizes, font
+weights, text alignment or class lists to a fit spec. Prove a look without a
+screenshot by comparing it with a GOV.UK value read at run time or with another
+element's size, and find elements by role, accessible name or heading, not by
+class.
 
 ## Required checks for a journey change
 

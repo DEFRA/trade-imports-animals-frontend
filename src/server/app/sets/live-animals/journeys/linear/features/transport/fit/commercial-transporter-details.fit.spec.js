@@ -3,6 +3,8 @@ import {
   BASE,
   answerTransporterType,
   cancelAndReturnToDashboard,
+  errorSummary,
+  errorSummaryLinks,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAndCancel,
   expectTransporterListShowsAddedBanner,
@@ -28,12 +30,8 @@ const form = copy.commercialTransporterDetails
 const COMMERCIAL_SLUG = 'transporters/add/commercial'
 const NORTHERN_IRELAND = 'Northern Ireland'
 const BACK_LINK = '.govuk-back-link'
-const ERROR_SUMMARY = '.govuk-error-summary'
 const approvalNumberInput = '#approvalNumber'
 const SOME_TYPED_APPROVAL_NUMBER = 'Some typed approval number'
-
-const errorLink = (page, message) =>
-  page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
 
 const requiredValidations = [
   [
@@ -235,7 +233,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     ).click()
 
     await expect(page).toHaveURL(BASE)
-    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+    await expect(errorSummary(page)).toHaveCount(0)
 
     await page.goto(transporterListUrl)
     await expect(
@@ -286,7 +284,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()
-    await expect(page.locator(ERROR_SUMMARY).getByRole('link')).toHaveText(
+    await expect(errorSummaryLinks(page)).toHaveText(
       BLANK_COMMERCIAL_FORM_ERRORS.map((error) => form.errors[error])
     )
   })
@@ -306,7 +304,7 @@ test.describe('commercial transporter required validations', () => {
       await page.locator(`#${field}`).fill('')
       await saveAndContinue(page).click()
 
-      const link = errorLink(page, form.errors[error])
+      const link = errorSummaryLinks(page, form.errors[error])
       await expect(link).toBeVisible()
       await link.click()
       await expect(page.locator(`#${field}`)).toBeFocused()
@@ -336,7 +334,7 @@ test.describe('commercial transporter format validations', () => {
       })
       await saveAndContinue(page).click()
 
-      const link = errorLink(page, form.errors[error])
+      const link = errorSummaryLinks(page, form.errors[error])
       await expect(link).toBeVisible()
       await link.click()
       await expect(page.locator(`#${field}`)).toBeFocused()
@@ -371,7 +369,7 @@ test.describe('commercial transporter form accessibility', () => {
     await page.locator(approvalNumberInput).fill('')
     await saveAndContinue(page).click()
 
-    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
     await expectNoSeriousOrCriticalViolations(page, `${form.title} in error`)
   })
 })

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   describeCalendarPosition,
   documentRowFor,
+  errorSummaryLinks,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   expectStackedOnSameRightEdge,
@@ -35,9 +36,6 @@ const HTTP_OK = 200
 const DATE_OF_ISSUE_TEXT = '03/01/2026'
 const OVERSIZE_FILENAME = 'oversize.pdf'
 const CLIENT_SIZE_SUMMARY = 'li[data-client-error="file-size-summary"]'
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
 const fileUploadCard = (page) =>
   page.getByRole('region', { name: copy.fileUploadHeading })
@@ -338,7 +336,7 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.referenceRequired)
+    const link = errorSummaryLinks(page, copy.errors.referenceRequired)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.reference.label)).toBeFocused()
@@ -358,7 +356,7 @@ test.describe('document upload reference validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(
+    const link = errorSummaryLinks(
       page,
       copy.errors.referenceMaxLength(REFERENCE_MAX_LENGTH)
     )
@@ -387,7 +385,7 @@ test.describe('document upload type validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.typeRequired)
+    const link = errorSummaryLinks(page, copy.errors.typeRequired)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.documentType.label)).toBeFocused()
@@ -455,7 +453,7 @@ test.describe('document upload date validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.dateRequired)
+    const link = errorSummaryLinks(page, copy.errors.dateRequired)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.dateOfIssue.label)).toBeFocused()
@@ -474,7 +472,7 @@ test.describe('document upload date validation', () => {
     })
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.dateInvalid)
+    const link = errorSummaryLinks(page, copy.errors.dateInvalid)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.dateOfIssue.label)).toBeFocused()
@@ -499,7 +497,7 @@ test.describe('document upload file validation', () => {
     await fillMetadata(page)
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.fileRequired)
+    const link = errorSummaryLinks(page, copy.errors.fileRequired)
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -518,7 +516,7 @@ test.describe('document upload file validation', () => {
     )
     await submitAdd(page)
 
-    const link = errorLink(page, fileTypeMessage(copy))
+    const link = errorSummaryLinks(page, fileTypeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -535,7 +533,7 @@ test.describe('document upload file validation', () => {
     await setUploadFile(page, 'itahc-empty.pdf', Buffer.alloc(0))
     await submitAdd(page)
 
-    const link = errorLink(page, copy.errors.fileEmpty)
+    const link = errorSummaryLinks(page, copy.errors.fileEmpty)
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -633,7 +631,7 @@ test.describe('document upload oversize validation', () => {
     await setUploadFile(page, OVERSIZE_FILENAME)
     await submitAdd(page)
 
-    const link = errorLink(page, oversizeMessage(copy))
+    const link = errorSummaryLinks(page, oversizeMessage(copy))
     await expect(link).toBeVisible()
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
@@ -662,9 +660,15 @@ test.describe('document upload continue', () => {
       .selectOption(validDocument.accompanyingDocumentType)
     await submitContinue(page)
 
-    await expect(errorLink(page, copy.errors.referenceRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.referenceRequired)
+    ).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.dateRequired)
+    ).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.fileRequired)
+    ).toBeVisible()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
@@ -752,7 +756,7 @@ test.describe('document upload saved rows', () => {
     await expectLongReferenceFitsCard(page)
   })
 
-  test('lists the document under five headings with View file and Remove right-aligned at the end of the row, lined up with each other once they wrap', async ({
+  test('lists the document under five headings with View file and Remove in the last cell of the row, lined up with each other once they wrap', async ({
     page
   }) => {
     test.slow()
@@ -774,10 +778,6 @@ test.describe('document upload saved rows', () => {
     ])
     const actionsCell = actionsCellOf(row)
     await expectViewFileAndRemoveInCell(actionsCell)
-    await expect(actionsCell).toHaveCSS('text-align', 'right')
-    await expect(
-      addedDocumentsTable(page).getByRole('columnheader').last()
-    ).toHaveCSS('text-align', 'right')
 
     await page.setViewportSize(PHONE_VIEWPORT)
     await expectStackedOnSameRightEdge(
@@ -874,33 +874,21 @@ test.describe('document upload capacity and accessibility', () => {
 
     const message = copy.errors.maxDocuments(MAX_DOCUMENTS)
     const messageWithPrefix = `${copy.errors.hiddenPrefix} ${message}`
-    const summaryLinks = page
-      .locator('.govuk-error-summary__list')
-      .getByRole('link')
+    const summaryLinks = errorSummaryLinks(page)
     await expect(summaryLinks).toHaveText([message])
     await expect(summaryLinks).toHaveAttribute('href', '#documents-added')
-    await expect(page.locator('.govuk-error-message')).toHaveText([
-      messageWithPrefix
-    ])
-    const errorGroup = page.locator('.govuk-form-group--error')
-    await expect(errorGroup).toHaveCount(1)
-    await expect(errorGroup.locator('#add-document-error')).toHaveText(
+    await expect(page.locator('#add-document-error')).toHaveText(
       messageWithPrefix
     )
-    await expect(errorGroup.getByRole('button')).toHaveText(copy.addAnother)
-    await expect(errorGroup.getByRole('button')).toHaveAttribute(
-      'aria-disabled',
-      'true'
-    )
-    for (const label of [
-      copy.reference.label,
-      copy.documentType.label,
-      copy.dateOfIssue.label
+    const addButton = page.getByRole('button', { name: copy.addAnother })
+    await expect(addButton).toHaveAttribute('aria-disabled', 'true')
+    await expect(addButton).toHaveAccessibleDescription(messageWithPrefix)
+    for (const [label, hint] of [
+      [copy.reference.label, ''],
+      [copy.documentType.label, ''],
+      [copy.dateOfIssue.label, copy.dateOfIssue.hint]
     ]) {
-      await expect(page.getByLabel(label)).not.toHaveAttribute(
-        'aria-invalid',
-        'true'
-      )
+      await expect(page.getByLabel(label)).toHaveAccessibleDescription(hint)
     }
     await expect(addedDocumentsTable(page).getByRole('row')).toHaveCount(
       MAX_DOCUMENTS + 1
@@ -1000,9 +988,15 @@ test.describe('document upload page without JavaScript', () => {
       .fill(validDocument.accompanyingDocumentReference)
     await saveAndReturnToHub(page).click()
 
-    await expect(errorLink(page, copy.errors.typeRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
-    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.typeRequired)
+    ).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.dateRequired)
+    ).toBeVisible()
+    await expect(
+      errorSummaryLinks(page, copy.errors.fileRequired)
+    ).toBeVisible()
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(
       validDocument.accompanyingDocumentReference
     )

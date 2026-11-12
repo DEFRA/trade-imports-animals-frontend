@@ -132,28 +132,6 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expectEveryQuantityEmpty(page)
   })
 
-  test('steps the type down from commodity heading to species heading to quantity labels', async ({
-    page
-  }) => {
-    await expect(
-      page.getByRole('heading', {
-        name: BOS_TAURUS_ROW.commodityCode,
-        exact: true
-      })
-    ).toHaveClass(/govuk-heading-l/)
-    await expect(
-      page.getByRole('heading', {
-        name: labelFor(BOS_TAURUS_ROW.speciesLatinName)
-      })
-    ).toHaveClass(/govuk-heading-m/)
-    await expect(
-      page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
-    ).toHaveClass(/govuk-label--s/)
-    await expect(
-      page.locator(`label[for="${FIRST_PACKAGES_FIELD}"]`)
-    ).toHaveClass(/govuk-label--s/)
-  })
-
   test('keeps the code-level remove for 0102 Bos taurus and gives each species on code 01061900 its own remove, each naming the entry it removes', async ({
     page
   }) => {
@@ -360,6 +338,37 @@ test.describe('commodity consignment details — persistence and accessibility',
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openDetails(page)
+  })
+
+  test('steps the type down from commodity heading to species heading to quantity labels', async ({
+    page
+  }) => {
+    const fontSizeOf = (locator) =>
+      locator.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize)
+      )
+    const [commodityHeading, speciesHeading, animalsLabel, packagesLabel] =
+      await Promise.all([
+        fontSizeOf(
+          page.getByRole('heading', {
+            name: BOS_TAURUS_ROW.commodityCode,
+            exact: true
+          })
+        ),
+        fontSizeOf(
+          page.getByRole('heading', {
+            name: labelFor(BOS_TAURUS_ROW.speciesLatinName)
+          })
+        ),
+        fontSizeOf(
+          page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
+        ),
+        fontSizeOf(page.locator(`label[for="${FIRST_PACKAGES_FIELD}"]`))
+      ])
+
+    expect(commodityHeading).toBeGreaterThan(speciesHeading)
+    expect(speciesHeading).toBeGreaterThan(animalsLabel)
+    expect(speciesHeading).toBeGreaterThan(packagesLabel)
   })
 
   test('saves and persists per-species counts', async ({ page }) => {

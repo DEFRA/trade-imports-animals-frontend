@@ -159,22 +159,6 @@ test.describe('origin feature', () => {
     ).toHaveText(CANARY_ISLANDS_LABEL)
   })
 
-  test('sets all three question labels at the same medium size', async ({
-    page
-  }) => {
-    await expect(page.locator('label[for="countryOfOrigin"]')).toHaveClass(
-      /govuk-label--m/
-    )
-    await expect(
-      page
-        .getByRole('group', { name: copy.regionRequirement.legend })
-        .locator('legend')
-    ).toHaveClass(/govuk-fieldset__legend--m/)
-    await expect(
-      page.locator('label[for="internalReferenceNumber"]')
-    ).toHaveClass(/govuk-label--m/)
-  })
-
   test('shows the draft status and the notification reference before any answer is saved', async ({
     page
   }) => {

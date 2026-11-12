@@ -4,9 +4,9 @@ import {
   STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
   PHONE_VIEWPORT,
-  addressBookInsetText,
   addressesSection,
   contentWidthOf,
+  errorSummaryLinks,
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
@@ -24,6 +24,15 @@ import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PAGE_SIZE } from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
+import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
+
+const addressBookInsetText = (party) => {
+  const {
+    name,
+    address: { addressLine1, townOrCity, postcode, country }
+  } = STUB_BOOK.find((record) => record.name === partyPickerName(party))
+  return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
+}
 
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
@@ -74,9 +83,6 @@ const openPartyPicker = async (page, party) => {
   await page.getByRole('link', { name: party.add, exact: true }).click()
   await expect(page.getByRole('heading', { name: party.title })).toBeVisible()
 }
-
-const pickerErrorLink = (page, message) =>
-  page.getByRole('alert').getByRole('link', { name: message })
 
 const searchAddresses = async (page, query) => {
   await page.getByLabel(copy.picker.search.label).fill(query)
@@ -418,7 +424,7 @@ test.describe('party picker save', () => {
     await searchAddresses(page, 'Denmark')
     await postAnIdNotInTheBook(page)
 
-    const link = pickerErrorLink(page, CONSIGNOR.error)
+    const link = errorSummaryLinks(page, CONSIGNOR.error)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByRole('radio').first()).toBeFocused()
@@ -433,7 +439,7 @@ test.describe('party picker save', () => {
   }) => {
     await postAnIdNotInTheBookAfterASearchMatchingNothing(page)
 
-    const link = pickerErrorLink(page, CONSIGNOR.error)
+    const link = errorSummaryLinks(page, CONSIGNOR.error)
     await expect(link).toBeVisible()
     await link.click()
     const searchBox = page.getByLabel(copy.picker.search.label)
@@ -519,7 +525,7 @@ test.describe('party picker search', () => {
     page
   }) => {
     await postAnIdNotInTheBook(page)
-    await expect(pickerErrorLink(page, CONSIGNOR.error)).toBeVisible()
+    await expect(errorSummaryLinks(page, CONSIGNOR.error)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, 'Address picker refused')
   })

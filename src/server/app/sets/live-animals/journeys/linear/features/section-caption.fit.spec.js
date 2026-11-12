@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   BASE,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   signIn,
   startNotification,
@@ -35,20 +36,18 @@ test.describe('section caption above the page heading', () => {
     )
   })
 
-  test('names the section on a page whose question is a hidden legend', async ({
+  test('puts the section caption above the heading of a page whose question is a legend, and names the group by the legend', async ({
     page
   }) => {
     await startNotificationAtImportReason(page)
 
-    await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveText(
-      ABOUT_THE_CONSIGNMENT
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: ABOUT_THE_CONSIGNMENT,
+      headingName: importReasonCopy.title
+    })
     await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(importReasonCopy.title)
-    await expect(
-      page.locator('legend').filter({ hasText: importReasonCopy.legend })
-    ).toHaveClass(/govuk-visually-hidden/)
+      page.getByRole('group', { name: importReasonCopy.legend })
+    ).toHaveAccessibleName(importReasonCopy.legend)
   })
 
   test('names the dashboard above its heading', async ({ page }) => {

@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   addDocument,
   documentRowFor,
+  errorSummaryLinks,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
   expectStackedOnSameRightEdge,
@@ -16,9 +17,6 @@ import {
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
-
-const errorSummaryLink = (page, name) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name })
 
 const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
 
@@ -86,13 +84,13 @@ test.describe('document scan-status rendering', () => {
     await expect(row).toContainText(copy.scanTags.scanning)
     await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
-      errorSummaryLink(page, copy.errors.rejected(document.filename))
+      errorSummaryLinks(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
     await saveAndContinue(page).click()
     await expect(
-      errorSummaryLink(page, copy.errors.rejected(document.filename))
+      errorSummaryLinks(page, copy.errors.rejected(document.filename))
     ).toBeVisible()
     await row
       .getByRole('button', {
