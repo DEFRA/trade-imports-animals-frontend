@@ -20,7 +20,9 @@ export const copy = {
         'yn preswylio’n barhaol',
         'yn gallu cael ei wirio gan yr Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA)'
       ],
-      add: 'Ychwanegu cyfeiriad parhaol'
+      add: 'Ychwanegu cyfeiriad parhaol',
+      addedForAnimals: (count) =>
+        `Cyfeiriadau parhaol wedi’u hychwanegu ar gyfer ${count} anifail`
     }
   },
   parties: {

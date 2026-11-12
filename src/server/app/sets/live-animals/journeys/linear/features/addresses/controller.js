@@ -7,9 +7,10 @@ import { addressesPage as page } from './page.js'
 import { cphNumberPage } from '../cph-number/page.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import {
-  addressableUnits,
-  anyLineNeedsPermanentAddress
+  anyLineNeedsPermanentAddress,
+  PLACE_OF_DESTINATION
 } from '../permanent-address/cards.js'
+import { permanentAddressesFromStoredAnswers } from '../permanent-address/saved-addresses.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
 import { partyEditHref } from './party-edit/edit-href.js'
@@ -78,7 +79,31 @@ const cphSection = (request, journeyId, answers) => {
   })
 }
 
-const permanentAddressSection = (request, journeyId, answers, evaluation) => {
+const oneAddressCoversEveryAddressableAnimal = (permanentAddresses) =>
+  permanentAddresses.length === 1 ||
+  permanentAddresses.every(
+    ({ permanentAddressOrigin }) =>
+      permanentAddressOrigin === PLACE_OF_DESTINATION
+  )
+
+const oneAddressChosen = (permanentAddress, href) => ({
+  name: permanentAddress.name,
+  lines: insetAddressLines(permanentAddress),
+  changeHref: href
+})
+
+const countOfAnimalsChosen = (count, href) => ({
+  lines: [copy.permanentAddress.addedForAnimals(count)],
+  changeHref: href
+})
+
+const permanentAddressSection = (
+  request,
+  journeyId,
+  answers,
+  evaluation,
+  permanentAddresses
+) => {
   if (!anyLineNeedsPermanentAddress(answers, evaluation)) {
     return null
   }
@@ -89,35 +114,53 @@ const permanentAddressSection = (request, journeyId, answers, evaluation) => {
       page.slug
     )
   )
-  const units = addressableUnits(answers, evaluation)
-  const everyAnswered =
-    units.length > 0 && units.every(({ unit }) => unit.permanentAddress?.name)
+  const everyAnimalAnswered =
+    permanentAddresses.length > 0 &&
+    permanentAddresses.every(({ permanentAddress }) => permanentAddress)
   return hubSection({
     id: 'permanentAddress',
     title: copy.permanentAddress.title,
     hint: copy.permanentAddress.leadIn,
     bullets: copy.permanentAddress.bullets,
     add: { href, text: copy.permanentAddress.add },
-    chosen: everyAnswered && {
-      lines: units.map(({ unit }) => unit.permanentAddress.name),
-      changeHref: href
-    }
+    chosen:
+      everyAnimalAnswered &&
+      (oneAddressCoversEveryAddressableAnimal(permanentAddresses)
+        ? oneAddressChosen(permanentAddresses[0].permanentAddress, href)
+        : countOfAnimalsChosen(permanentAddresses.length, href))
   })
 }
 
-const sections = (request, journeyId, answers, scope, parties, evaluation) => [
+const sections = (
+  request,
+  journeyId,
+  answers,
+  scope,
+  parties,
+  evaluation,
+  permanentAddresses
+) => [
   ...PARTIES.map(partySectionBuilder(request, journeyId, parties)),
   ...(scope.has('countyParishHoldingCph')
     ? [cphSection(request, journeyId, answers)]
     : []),
-  ...[permanentAddressSection(request, journeyId, answers, evaluation)].filter(
-    Boolean
-  )
+  ...[
+    permanentAddressSection(
+      request,
+      journeyId,
+      answers,
+      evaluation,
+      permanentAddresses
+    )
+  ].filter(Boolean)
 ]
 
 const get = async (request, h) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
-  const parties = await partiesFromStoredAnswers(answers)
+  const [parties, permanentAddresses] = await Promise.all([
+    partiesFromStoredAnswers(answers),
+    permanentAddressesFromStoredAnswers(answers, evaluation)
+  ])
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: kit.trailBackLink(request),
@@ -132,7 +175,8 @@ const get = async (request, h) => {
       answers,
       scope,
       parties,
-      evaluation
+      evaluation,
+      permanentAddresses
     )
   })
 }

@@ -82,6 +82,14 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   only sometimes asked gets its own card and link.
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
+- The roles-and-addresses card carries one row per animal that has a saved
+  permanent address, after the county parish holding row, each keyed by the
+  animal's species common name and number and holding that animal's saved
+  address exactly as a party row reads. An animal that still owes one has no
+  row: the card that shows the answer is not the card that owes it. A line
+  that needs a permanent address with no animal counted carries no row
+  either. The species card's identifier table heads only the identifiers the
+  species was asked for; it carries no permanent address column.
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,
@@ -362,9 +370,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   carrying a cat, dog or ferret line, alongside the party sections and the
   county parish holding section. Its hint is a lead-in sentence followed by
   two bullets, not the party sections' single-line hint. Once every animal
-  that needs one has a permanent address, the section lists each animal's
-  address by name with a "Change" link, and no "Edit details": the address
-  was hand-entered or copied from the place of destination on the permanent
+  that needs one has a permanent address, the section shows one address —
+  every addressable animal saved against the place of destination, or only
+  one animal needing one — or otherwise the one line "Permanent addresses
+  added for N animals", N being the number of animals that need one. Either
+  shape carries a "Change" link and no "Edit details": the address was
+  hand-entered or copied from the place of destination on the permanent
   address page, never picked from the address book, so there is no record
   there to edit.
 

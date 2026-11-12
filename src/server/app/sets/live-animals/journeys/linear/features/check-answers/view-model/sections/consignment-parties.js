@@ -12,7 +12,8 @@ export const consignmentPartiesSection = ({
   answers,
   readOnly,
   parties = answers,
-  partyErrors = {}
+  partyErrors = {},
+  permanentAddresses = []
 }) => ({
   anchor: 'consignment-parties',
   heading: copy.sections.consignmentParties,
@@ -27,7 +28,8 @@ export const consignmentPartiesSection = ({
           answers,
           readOnly,
           parties,
-          partyErrors
+          partyErrors,
+          permanentAddresses
         })
       ]
     }

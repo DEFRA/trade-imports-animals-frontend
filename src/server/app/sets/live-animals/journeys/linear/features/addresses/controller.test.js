@@ -58,6 +58,8 @@ const ASTRA_NAME = 'Astra Rosales'
 const CPH_ASKED_LINES = [BOS_TAURUS_ROW]
 const PERMANENT_ADDRESS_TITLE = 'Permanent address'
 const PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES = `${permanentAddressPage.slug}?return=addresses`
+const CAT_1_MICROCHIP = 'MICROCHIP-1'
+const CAT_2_MICROCHIP = 'MICROCHIP-2'
 
 describe('GET addresses — sections for parties not yet chosen', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -124,7 +126,7 @@ describe('GET addresses — conditional permanent address section', () => {
   it('Should offer the permanent address section before any animal has one, with its add link carrying the return marker', async () => {
     const { commodityLines } = petConsignmentSeed({
       row: FELIS_CATUS_ROW,
-      units: [{ animalIdentifierMicrochip: 'MICROCHIP-1' }]
+      units: [{ animalIdentifierMicrochip: CAT_1_MICROCHIP }]
     })
     const result = await driveAddresses({ commodityLines })
 
@@ -147,14 +149,24 @@ describe('GET addresses — conditional permanent address section', () => {
     })
   })
 
-  it('Should show the saved addresses with a Change link once every animal that needs one has one', async () => {
+  it('Should show the one saved address, with its inset lines and a Change link, for a single hand-entered animal', async () => {
     const { commodityLines } = petConsignmentSeed({
       row: FELIS_CATUS_ROW,
       units: [
         {
-          animalIdentifierMicrochip: 'MICROCHIP-1',
+          animalIdentifierMicrochip: CAT_1_MICROCHIP,
           permanentAddressOrigin: 'newAddress',
-          permanentAddress: { name: 'Pet Owner' }
+          permanentAddress: {
+            name: 'Pet Owner',
+            phone: '0113 555 0192',
+            email: 'pet@example.co.uk',
+            address: {
+              addressLine1: '1 Pet Lane',
+              townOrCity: 'Leeds',
+              postcode: 'LS1 1AA',
+              countryCode: 'GB'
+            }
+          }
         }
       ]
     })
@@ -163,11 +175,107 @@ describe('GET addresses — conditional permanent address section', () => {
     expect(
       sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE).chosen
     ).toEqual({
-      lines: ['Pet Owner'],
+      name: 'Pet Owner',
+      lines: ['1 Pet Lane', 'Leeds, LS1 1AA, United Kingdom'],
       changeHref: pagePath(
         result.journeyId,
         PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
       )
+    })
+  })
+
+  it('Should show that one address once, not a count line, when two animals are both saved against the place of destination', async () => {
+    const placeOfDestinationAddress = {
+      name: 'Tech Imports Ltd',
+      phone: '01632 960000',
+      email: 'tech-imports-ltd@example.com',
+      address: {
+        addressLine1: '18 Dockside Road',
+        townOrCity: 'London',
+        postcode: 'E14 9GE',
+        countryCode: 'GB'
+      }
+    }
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [
+        {
+          animalIdentifierMicrochip: CAT_1_MICROCHIP,
+          permanentAddressOrigin: 'placeOfDestination',
+          permanentAddress: placeOfDestinationAddress
+        },
+        {
+          animalIdentifierMicrochip: CAT_2_MICROCHIP,
+          permanentAddressOrigin: 'placeOfDestination',
+          permanentAddress: placeOfDestinationAddress
+        }
+      ]
+    })
+    const result = await driveAddresses({ commodityLines })
+
+    expect(
+      sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE).chosen
+    ).toEqual({
+      name: 'Tech Imports Ltd',
+      lines: ['18 Dockside Road', 'London, E14 9GE, United Kingdom'],
+      changeHref: pagePath(
+        result.journeyId,
+        PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
+      )
+    })
+  })
+
+  it('Should show the count line, not an address, when two animals hold different hand-entered addresses', async () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [
+        {
+          animalIdentifierMicrochip: CAT_1_MICROCHIP,
+          permanentAddressOrigin: 'newAddress',
+          permanentAddress: { name: 'Pet Owner One' }
+        },
+        {
+          animalIdentifierMicrochip: CAT_2_MICROCHIP,
+          permanentAddressOrigin: 'newAddress',
+          permanentAddress: { name: 'Pet Owner Two' }
+        }
+      ]
+    })
+    const result = await driveAddresses({ commodityLines })
+
+    expect(
+      sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE).chosen
+    ).toEqual({
+      lines: ['Permanent addresses added for 2 animals'],
+      changeHref: pagePath(
+        result.journeyId,
+        PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
+      )
+    })
+  })
+
+  it('Should keep offering the add link, with no chosen content, while one of two animals has no saved address', async () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [
+        {
+          animalIdentifierMicrochip: CAT_1_MICROCHIP,
+          permanentAddressOrigin: 'newAddress',
+          permanentAddress: { name: 'Pet Owner One' }
+        },
+        { animalIdentifierMicrochip: CAT_2_MICROCHIP }
+      ]
+    })
+    const result = await driveAddresses({ commodityLines })
+    const section = sectionTitled(sectionsOf(result), PERMANENT_ADDRESS_TITLE)
+
+    expect(section.chosen).toBeUndefined()
+    expect(section.addLink).toEqual({
+      href: pagePath(
+        result.journeyId,
+        PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES
+      ),
+      text: 'Add a permanent address'
     })
   })
 })

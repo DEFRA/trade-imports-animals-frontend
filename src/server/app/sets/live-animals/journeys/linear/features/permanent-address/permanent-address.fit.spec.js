@@ -8,6 +8,7 @@ import {
   answerPermanentAddressCard,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
+  identifyAnimalsByMicrochip,
   numberOfAnimalsFor,
   openCommodityDetails,
   openPermanentAddressFromAddLink,
@@ -158,7 +159,7 @@ test.describe('permanent address', () => {
     ).toBeVisible()
   })
 
-  test('saves each animal with its own hand-entered address, and reopens with each one selected and its own values back', async ({
+  test('saves each animal with its own hand-entered address, counts the two animals on the consignment addresses page, and reopens with each one selected and its own values back', async ({
     page
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
@@ -185,7 +186,16 @@ test.describe('permanent address', () => {
     await expect(
       page.getByRole('heading', { name: addressesCopy.hub.title })
     ).toBeVisible()
-    await addressesSection(page, addressesCopy.hub.permanentAddress.title)
+    const permanentAddressSection = addressesSection(
+      page,
+      addressesCopy.hub.permanentAddress.title
+    )
+    await expect(
+      permanentAddressSection.getByText(
+        addressesCopy.hub.permanentAddress.addedForAnimals(2)
+      )
+    ).toBeVisible()
+    await permanentAddressSection
       .getByRole('link', { name: addressesCopy.hub.change })
       .click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
@@ -294,6 +304,32 @@ test.describe('permanent address — place of destination and partial answers', 
       ferretCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
     ).not.toBeChecked()
   })
+
+  test('shows that one address once, with a Change link, when a cat and a ferret are both saved against the place of destination', async ({
+    page
+  }) => {
+    await openOnePerSpeciesPermanentAddressWithPlaceOfDestinationKnown(page)
+
+    await answerPermanentAddressCard(page, CAT_1)
+    await answerPermanentAddressCard(page, FERRET_1)
+    await saveAndContinue(page).click()
+
+    const permanentAddressSection = addressesSection(
+      page,
+      addressesCopy.hub.permanentAddress.title
+    )
+    await expect(
+      permanentAddressSection.getByText('Tech Imports Ltd')
+    ).toBeVisible()
+    await expect(
+      permanentAddressSection.getByText('18 Dockside Road')
+    ).toBeVisible()
+    await expect(
+      permanentAddressSection.getByRole('link', {
+        name: addressesCopy.hub.change
+      })
+    ).toHaveCount(1)
+  })
 })
 
 test.describe('permanent address — multiple animals of one species', () => {
@@ -311,10 +347,7 @@ test.describe('permanent address — multiple animals of one species', () => {
     await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('2')
     await (await numberOfAnimalsFor(page, MUSTELA_PUTORIUS_FURO_ROW)).fill('1')
     await saveAndContinue(page).click()
-    await page.locator(MICROCHIP_FIELD).fill(CAT_MICROCHIP)
-    await page.getByRole('button', { name: 'Save and add another' }).click()
-    await page.locator(MICROCHIP_FIELD).fill(FERRET_MICROCHIP)
-    await page.getByRole('button', { name: 'Save and finish' }).click()
+    await identifyAnimalsByMicrochip(page, [CAT_MICROCHIP, FERRET_MICROCHIP])
     await page.locator('#animalIdentifierMicrochip-1').fill('MICROCHIP-3')
     await openPermanentAddressFromHub(page)
 

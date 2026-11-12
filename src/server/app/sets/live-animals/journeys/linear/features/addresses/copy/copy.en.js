@@ -19,7 +19,9 @@ export const copy = {
         'will permanently reside',
         'can be checked by the Animal and Plant Health Agency (APHA)'
       ],
-      add: 'Add a permanent address'
+      add: 'Add a permanent address',
+      addedForAnimals: (count) =>
+        `Permanent addresses added for ${count} animals`
     }
   },
   parties: {

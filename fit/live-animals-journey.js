@@ -881,6 +881,22 @@ export const answerAnimalIdentification = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.additionalDetails)
 }
 
+/** Identifies every animal on one commodity line by microchip, one save per animal. */
+export const identifyAnimalsByMicrochip = async (page, microchips) => {
+  const microchipField = page.locator('#animalIdentifierMicrochip-0')
+  for (const [index, microchip] of microchips.entries()) {
+    await microchipField.fill(microchip)
+    await page
+      .getByRole('button', {
+        name:
+          index === microchips.length - 1
+            ? 'Save and finish'
+            : 'Save and add another'
+      })
+      .click()
+  }
+}
+
 export const answerImportReason = async (page) => {
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await page.getByRole('radio', { name: 'Breeding' }).check()

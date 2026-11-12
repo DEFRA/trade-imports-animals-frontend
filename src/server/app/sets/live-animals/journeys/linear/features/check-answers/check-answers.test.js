@@ -54,9 +54,11 @@ import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import {
   BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
+  FELIS_CATUS_ROW,
   OSTRICHES_CODE,
   SUS_SCROFA_DOMESTICUS_ROW
 } from '../commodities/search/test-support.js'
+import { petConsignmentSeed } from '../../test-support.js'
 import {
   CATTLE_CODE,
   GOAT_CODE,
@@ -200,10 +202,34 @@ const PRIVATE_TRANSPORTER_NAME = 'Jean Dupont'
 const copyOf = (id) =>
   answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
 
+const PET_OWNER_ADDRESS = {
+  name: 'Pet Owner',
+  phone: '0113 555 0192',
+  email: 'pet@example.co.uk',
+  address: {
+    addressLine1: '1 Pet Lane',
+    townOrCity: 'Leeds',
+    postcode: 'LS1 1AA',
+    countryCode: 'GB'
+  }
+}
+const PET_OWNER_ADDRESS_HTML =
+  '<strong>Pet Owner</strong><br>1 Pet Lane<br>Leeds<br>LS1 1AA<br>United Kingdom<br>0113 555 0192<br>pet@example.co.uk'
+
+const catsConsignmentSeed = (units, { numberOfAnimalsQuantity } = {}) => ({
+  ...fullSeed,
+  ...petConsignmentSeed({
+    row: FELIS_CATUS_ROW,
+    units,
+    numberOfAnimalsQuantity
+  })
+})
+
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
 const CATTLE_CARD_TITLE = '0102 — Bos taurus'
 const HORSE_CARD_TITLE = '0101 — Equus cabalus'
 const PIG_CARD_TITLE = '0103 — Sus scrofa domesticus'
+const CAT_CARD_TITLE = `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -227,6 +253,11 @@ const DOCUMENT_TYPE_KEY = 'Document type'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
 const PORT_OF_EXIT_KEY = 'Port of exit'
+const PLACE_OF_ORIGIN_KEY = 'Place of origin'
+const PLACE_OF_DESTINATION_KEY = 'Place of destination'
+const DOMESTIC_CAT_1_LABEL = 'Domestic Cat 1'
+const CAT_1_MICROCHIP = 'MICROCHIP-1'
+const CAT_2_MICROCHIP = 'MICROCHIP-2'
 
 const fullSeed = {
   countryOfOrigin: 'FR',
@@ -241,8 +272,7 @@ const fullSeed = {
       animalIdentifiers: [
         {
           animalIdentifierEarTag: 'UK1',
-          animalIdentifierPassport: 'UK123456789',
-          permanentAddress: { name: 'Pet Owner' }
+          animalIdentifierPassport: 'UK123456789'
         }
       ]
     }
@@ -676,7 +706,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(htmlOf(card.rows, 'Consignor')).toBe(
       `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland<br>${STUB_TELEPHONE}<br>astra-rosales@example.com`
     )
-    expect(htmlOf(card.rows, 'Place of destination')).toBe(
+    expect(htmlOf(card.rows, PLACE_OF_DESTINATION_KEY)).toBe(
       `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
     )
     const contact = cardByTitle(
@@ -864,6 +894,104 @@ describe(`${SUITE} — species identifier table`, () => {
     ])
     expect(card.identifierTable.rows).toEqual([
       [{ text: 'Animal 1' }, { text: 'UK100000000001' }, { text: 'PT77' }]
+    ])
+  })
+
+  it('Should head a cat line’s identifier table with the identifiers the species was asked for alone, while its animals hold saved permanent addresses', async () => {
+    const seed = catsConsignmentSeed([
+      {
+        animalIdentifierMicrochip: CAT_1_MICROCHIP,
+        permanentAddressOrigin: 'newAddress',
+        permanentAddress: PET_OWNER_ADDRESS
+      },
+      {
+        animalIdentifierMicrochip: CAT_2_MICROCHIP,
+        permanentAddressOrigin: 'newAddress',
+        permanentAddress: PET_OWNER_ADDRESS
+      }
+    ])
+    const card = cardByTitle(await sectionsFor(seed), CAT_CARD_TITLE)
+
+    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Microchip'
+    ])
+    expect(card.identifierTable.rows).toEqual([
+      [{ text: 'Animal 1' }, { text: CAT_1_MICROCHIP }],
+      [{ text: 'Animal 2' }, { text: CAT_2_MICROCHIP }]
+    ])
+  })
+})
+
+describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, () => {
+  setupCheckAnswersEngine()
+
+  it("Should list one row per animal after the party rows, each keyed by the animal's label and valued by its saved permanent address", async () => {
+    const seed = catsConsignmentSeed([
+      {
+        animalIdentifierMicrochip: CAT_1_MICROCHIP,
+        permanentAddressOrigin: 'placeOfDestination',
+        permanentAddress: copyOf('tech-imports-ltd')
+      },
+      {
+        animalIdentifierMicrochip: CAT_2_MICROCHIP,
+        permanentAddressOrigin: 'newAddress',
+        permanentAddress: PET_OWNER_ADDRESS
+      }
+    ])
+    const card = cardByTitle(await sectionsFor(seed), ROLES_AND_ADDRESSES_CARD)
+
+    expect(keysOf(card.rows)).toEqual([
+      PLACE_OF_ORIGIN_KEY,
+      'Consignor',
+      'Consignee',
+      'Importer',
+      PLACE_OF_DESTINATION_KEY,
+      DOMESTIC_CAT_1_LABEL,
+      'Domestic Cat 2'
+    ])
+    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(
+      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
+    )
+    expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
+  })
+
+  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still report the outstanding answer against the species card', async () => {
+    const seed = catsConsignmentSeed([
+      {
+        animalIdentifierMicrochip: CAT_1_MICROCHIP,
+        permanentAddressOrigin: 'newAddress',
+        permanentAddress: PET_OWNER_ADDRESS
+      },
+      { animalIdentifierMicrochip: CAT_2_MICROCHIP }
+    ])
+    const card = cardByTitle(await sectionsFor(seed), ROLES_AND_ADDRESSES_CARD)
+
+    expect(keysOf(card.rows)).toEqual([
+      PLACE_OF_ORIGIN_KEY,
+      'Consignor',
+      'Consignee',
+      'Importer',
+      PLACE_OF_DESTINATION_KEY,
+      DOMESTIC_CAT_1_LABEL
+    ])
+    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
+    const summary = await summaryFor(seed)
+    expect(summary.errorList.map((entry) => entry.text)).toContain(
+      SPECIES_INCOMPLETE
+    )
+  })
+
+  it('Should list no permanent address row when a line needing one holds no animal identifier records', async () => {
+    const seed = catsConsignmentSeed([], { numberOfAnimalsQuantity: 2 })
+    const card = cardByTitle(await sectionsFor(seed), ROLES_AND_ADDRESSES_CARD)
+
+    expect(keysOf(card.rows)).toEqual([
+      PLACE_OF_ORIGIN_KEY,
+      'Consignor',
+      'Consignee',
+      'Importer',
+      PLACE_OF_DESTINATION_KEY
     ])
   })
 })
@@ -1104,7 +1232,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(htmlOf(card.rows, 'Place of origin')).toBe(MISSING_HTML)
+    expect(htmlOf(card.rows, PLACE_OF_ORIGIN_KEY)).toBe(MISSING_HTML)
   })
 })
 

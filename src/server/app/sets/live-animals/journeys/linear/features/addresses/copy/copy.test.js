@@ -91,6 +91,15 @@ describe('#copy', () => {
     expect(copyCy.hub.permanentAddress.title).toBe('Cyfeiriad parhaol')
   })
 
+  it('Should interpolate the number of animals into the count line, in English and in Welsh', () => {
+    expect(copy.hub.permanentAddress.addedForAnimals(2)).toBe(
+      'Permanent addresses added for 2 animals'
+    )
+    expect(copyCy.hub.permanentAddress.addedForAnimals(2)).toBe(
+      'Cyfeiriadau parhaol wedi’u hychwanegu ar gyfer 2 anifail'
+    )
+  })
+
   it('Should call the consignor Consignor in English and Anfonwr in Welsh', () => {
     expect(copy.parties.consignor.title).toBe('Consignor')
     expect(copyCy.parties.consignor.title).toBe('Anfonwr')

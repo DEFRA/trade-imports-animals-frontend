@@ -15,16 +15,19 @@ import { lineOf } from './features/commodities/search/test-support.js'
  * species pair needs a permanent address. Carries the country of origin
  * every page's Save and continue needs before it will open a later page.
  *
- * @param {...{row: object, units: object[]}} lines - one entry per
- * commodity line: `row` is a species row from `search/test-support.js`,
- * `units` its animal identifier records, in order.
+ * @param {...{row: object, units: object[], numberOfAnimalsQuantity?: number}} lines
+ * one entry per commodity line: `row` is a species row from
+ * `search/test-support.js`, `units` its animal identifier records, in
+ * order; `numberOfAnimalsQuantity` overrides the count derived from
+ * `units.length`, for a line whose count is given while its identifiers are
+ * not.
  * @returns {{countryOfOrigin: string, commodityLines: object[]}} the seed.
  */
 export const petConsignmentSeed = (...lines) => ({
   countryOfOrigin: 'FR',
-  commodityLines: lines.map(({ row, units }) =>
+  commodityLines: lines.map(({ row, units, numberOfAnimalsQuantity }) =>
     lineOf(row, {
-      numberOfAnimalsQuantity: String(units.length),
+      numberOfAnimalsQuantity: String(numberOfAnimalsQuantity ?? units.length),
       animalIdentifiers: units
     })
   )

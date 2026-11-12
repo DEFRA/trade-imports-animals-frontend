@@ -92,7 +92,7 @@ const addressFieldInputsOf = (key, values, copy, fieldErrors) => {
   })
 }
 
-const originOf = (unit) =>
+export const originOf = (unit) =>
   unit.permanentAddressOrigin === PLACE_OF_DESTINATION ||
   unit.permanentAddressOrigin === NEW_ADDRESS
     ? unit.permanentAddressOrigin
