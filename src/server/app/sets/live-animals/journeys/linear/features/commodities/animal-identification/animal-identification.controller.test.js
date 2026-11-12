@@ -504,35 +504,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
     expect(savedAnimalLabels(card)[0]).toBe('Animal 1')
   })
 
-  it('Should give the permanent address its own column where the code and species require one', async () => {
-    const [card] = await viewCards({
-      commodityLines: [
-        lineOf(FELIS_CATUS_ROW, {
-          numberOfAnimalsQuantity: '2',
-          animalIdentifiers: [
-            {
-              animalIdentifierPassport: 'UK123456789',
-              permanentAddress: { name: 'Pet Owner' }
-            }
-          ]
-        })
-      ]
-    })
-    expect(savedIdentifierColumns(card)).toEqual([
-      'Microchip',
-      'Passport',
-      'Tattoo',
-      copy.identification.table.permanentAddressColumn
-    ])
-    expect(savedIdentifierCells(card, 0)).toEqual([
-      '',
-      'UK123456789',
-      '',
-      'Pet Owner'
-    ])
-  })
-
-  it('Should head an 0101 Equus cabalus line with the three identifiers it carries and no permanent address', async () => {
+  it('Should head an 0101 Equus cabalus line with the three identifiers it carries', async () => {
     const [card] = await viewCards({
       commodityLines: [
         lineOf(EQUUS_CABALUS_ROW, {
@@ -1058,25 +1030,13 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
       commodityCode: '01061900',
       speciesLatinName: FELIS_CATUS,
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      columnHeadings: [
-        'Animal',
-        'Microchip',
-        'Passport',
-        'Tattoo',
-        copy.identification.table.permanentAddressColumn
-      ]
+      columnHeadings: ['Animal', 'Microchip', 'Passport', 'Tattoo']
     },
     {
       commodityCode: '01061900',
       speciesLatinName: 'Canis familiaris',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
-      columnHeadings: [
-        'Animal',
-        'Microchip',
-        'Passport',
-        'Tattoo',
-        copy.identification.table.permanentAddressColumn
-      ]
+      columnHeadings: ['Animal', 'Microchip', 'Passport', 'Tattoo']
     },
     {
       commodityCode: '01061900',

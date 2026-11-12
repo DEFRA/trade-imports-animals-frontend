@@ -86,7 +86,6 @@ export const copy = {
     },
     table: {
       animalColumn: 'Anifail',
-      permanentAddressColumn: 'Cyfeiriad parhaol',
       actionsHidden: ACTIONS_HIDDEN
     },
     counter: (species, next, cap) =>

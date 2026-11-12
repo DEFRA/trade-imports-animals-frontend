@@ -16,11 +16,6 @@ export const scopedFields = (commodityCode, speciesLatinName) =>
     .filter((id) => appliesForGateValue(id, commodityCode, speciesLatinName))
     .map((id) => ({ id, label: copy.identifierLabels[id] }))
 
-export const PERMANENT_ADDRESS = 'permanentAddress'
-
-export const permanentAddressApplies = (commodityCode, speciesLatinName) =>
-  appliesForGateValue(PERMANENT_ADDRESS, commodityCode, speciesLatinName)
-
 export const identifierChecksFor = (commodityCode, speciesLatinName, index) => {
   const IDENTIFIER_MAX_LENGTH = 58
   return compose(

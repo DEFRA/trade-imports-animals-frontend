@@ -1,8 +1,6 @@
+import { appliesForGateValue } from '../../../../../../bridge/applicability.js'
 import { linesOf } from '../commodities/lines.js'
-import {
-  permanentAddressApplies,
-  scopedFields
-} from '../commodities/animal-identification/identifier/fields.js'
+import { scopedFields } from '../commodities/animal-identification/identifier/fields.js'
 import { animalLabelOf } from '../commodities/animal-identification/animal-label.js'
 import { insetAddressLines } from '../addresses/party-picker/view-model/address-lines.js'
 import {
@@ -13,6 +11,9 @@ import {
 
 export const PLACE_OF_DESTINATION = 'placeOfDestination'
 export const NEW_ADDRESS = 'newAddress'
+
+const permanentAddressApplies = (commodityCode, speciesLatinName) =>
+  appliesForGateValue('permanentAddress', commodityCode, speciesLatinName)
 
 export const ADDRESS_FIELDS = [
   'nameOrOrganisationName',

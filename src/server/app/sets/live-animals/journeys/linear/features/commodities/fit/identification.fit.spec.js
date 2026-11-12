@@ -9,10 +9,10 @@ import {
   MUSTELA_PUTORIUS_FURO_ROW,
   OVIS_ARIES_ROW,
   PHONE_VIEWPORT,
-  answerPermanentAddressCard,
-  openPermanentAddressFromAddLink,
+  removeAnimalRow,
   saveAndContinue,
   saveAndReturnToHub,
+  savedAnimalRow,
   STRUTHIO_ROW,
   SUS_SCROFA_DOMESTICUS_ROW,
   numberOfAnimalsFor,
@@ -82,6 +82,16 @@ const openFelisCatusIdentification = (page) =>
 const entryLabelsOf = (fields) =>
   fields.map((field) => copy.identification.identifierLabels[field])
 
+const PET_CODE_COLUMN_HEADINGS = [
+  copy.identification.table.animalColumn,
+  ...entryLabelsOf([
+    'animalIdentifierMicrochip',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ]),
+  copy.identification.table.actionsHidden
+]
+
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY_SELECTOR).getByRole('link', { name: message })
 
@@ -107,14 +117,6 @@ const submitSaveAndFinish = (page) =>
 
 const inCardSaveButton = (page, name) =>
   page.getByRole('button', { name, exact: true })
-
-const savedAnimalRow = (page, chosen, number) =>
-  page.getByRole('row').filter({
-    hasText: copy.identification.animalRowNamed(
-      labelFor(chosen.speciesLatinName),
-      number
-    )
-  })
 
 const submitOverLongMicrochip = async (page) => {
   await openIdentification(page, [[FELIS_CATUS_ROW, '1']])
@@ -163,12 +165,6 @@ const speciesCard = (page, chosen) =>
     name: labelFor(chosen.speciesLatinName),
     exact: true
   })
-
-const removeAnimalRow = async (page, chosen, number) => {
-  const row = savedAnimalRow(page, chosen, number)
-  await row.getByRole('button', { name: copy.identification.removeRow }).click()
-  return row
-}
 
 const saveSoleAnimalAndReopenCard = async (page, chosen, field, value) => {
   await page.locator(`#${field}-0`).fill(value)
@@ -238,7 +234,6 @@ test.describe('animal identification', () => {
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-2')).toHaveCount(0)
     await expect(page.locator('#identification-card-2')).toHaveCount(0)
-    await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
   })
 
   test('asks a Bos taurus line for its ear tag before its passport, and an Equus cabalus line for its microchip first', async ({
@@ -278,20 +273,20 @@ test.describe('animal identification', () => {
     }
   })
 
-  test('offers no permanent address field or guidance, only the identifier fields and its save control', async ({
+  test('asks only for the three identifier fields a Felis catus line needs, ending with its save control', async ({
     page
   }) => {
     await openFelisCatusIdentification(page)
 
     const card = speciesCard(page, FELIS_CATUS_ROW)
     await expect(card.getByRole('textbox')).toHaveCount(3)
-    await expect(
-      card.getByText('A permanent address is where an animal:')
-    ).toHaveCount(0)
-    await expect(
-      card.getByText('Providing a false address is an act of fraud')
-    ).toHaveCount(0)
-    await expect(card.locator('#nameOrOrganisationName-0')).toHaveCount(0)
+    await expect(card.locator('label[for$="-0"]')).toHaveText(
+      entryLabelsOf([
+        'animalIdentifierMicrochip',
+        'animalIdentifierPassport',
+        'animalIdentifierTattoo'
+      ])
+    )
     await expect(
       card.getByRole('button', { name: copy.identification.saveAndAddAnother })
     ).toBeVisible()
@@ -821,66 +816,20 @@ test.describe('animal identification records', () => {
     await signIn(page)
   })
 
-  test('adds a complete record and reads it back as a row of the saved-animals table, once a permanent address is saved against it on its own page', async ({
+  test('lists a saved cat record in its card, headed by the animal column, its three identifiers and the remove action', async ({
     page
   }) => {
-    await addFelisCatusRecordRow(page)
+    const row = await addFelisCatusRecordRow(page)
 
-    await saveAndReturnToHub(page).click()
-    await page.getByRole('link', { name: 'Roles and addresses' }).click()
-    await openPermanentAddressFromAddLink(page)
-    const PET_OWNER_ADDRESS = {
-      nameOrOrganisationName: 'Pet Owner',
-      addressLine1: '1 Farm Lane',
-      townOrCity: 'Skipton',
-      postcode: 'BD23 1UD',
-      email: 'owner@example.co.uk',
-      phone: '+44 1756 555 0192'
-    }
-
-    await answerPermanentAddressCard(
-      page,
-      copy.identification.animalRowNamed(FELIS_CATUS_ROW.speciesLatinName, 1),
-      PET_OWNER_ADDRESS
+    const card = speciesCard(page, FELIS_CATUS_ROW)
+    await expect(card.getByRole('columnheader')).toHaveText(
+      PET_CODE_COLUMN_HEADINGS
     )
-    await saveAndContinue(page).click()
-
-    await reopenIdentificationFromHub(page)
-    const row = savedAnimalRow(page, FELIS_CATUS_ROW, 1)
-
-    await expect(
-      columnHeader(page, copy.identification.table.animalColumn)
-    ).toBeVisible()
-    await expect(
-      columnHeader(
-        page,
-        copy.identification.identifierLabels.animalIdentifierMicrochip
-      )
-    ).toBeVisible()
-    await expect(
-      columnHeader(
-        page,
-        copy.identification.identifierLabels.animalIdentifierPassport
-      )
-    ).toBeVisible()
-    await expect(
-      columnHeader(
-        page,
-        copy.identification.identifierLabels.animalIdentifierTattoo
-      )
-    ).toBeVisible()
-    await expect(
-      columnHeader(page, copy.identification.table.permanentAddressColumn)
-    ).toBeVisible()
-
     await expect(
       row.getByRole('cell', { name: MICROCHIP_NUMBER, exact: true })
     ).toBeVisible()
     await expect(
       row.getByRole('cell', { name: PASSPORT_NUMBER, exact: true })
-    ).toBeVisible()
-    await expect(
-      row.getByRole('cell', { name: 'Pet Owner', exact: true })
     ).toBeVisible()
   })
 
@@ -919,7 +868,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
   })
 
-  test('saves a Mustela putorius furo identified only by its microchip and reads the number back', async ({
+  test("saves a Mustela putorius furo identified only by its microchip, heads its table with the animal column, its three identifiers and the remove action, moves the card on to the line's second animal and reads the number back", async ({
     page
   }) => {
     await openIdentification(page, [[MUSTELA_PUTORIUS_FURO_ROW, '2']])
@@ -927,11 +876,18 @@ test.describe('animal identification records', () => {
     await submitAdd(page)
 
     await expect(
-      columnHeader(
-        page,
-        copy.identification.identifierLabels.animalIdentifierMicrochip
-      )
+      page.getByRole('heading', {
+        name: copy.identification.counter(
+          labelFor(MUSTELA_PUTORIUS_FURO_ROW.speciesLatinName),
+          2,
+          2
+        )
+      })
     ).toBeVisible()
+    const card = speciesCard(page, MUSTELA_PUTORIUS_FURO_ROW)
+    await expect(card.getByRole('columnheader')).toHaveText(
+      PET_CODE_COLUMN_HEADINGS
+    )
     await page.reload()
     await expect(
       savedAnimalRow(page, MUSTELA_PUTORIUS_FURO_ROW, 1).getByRole('cell', {

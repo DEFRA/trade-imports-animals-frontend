@@ -29,7 +29,6 @@ import { buildSelectedCommodities } from './summary/selected-commodities.js'
 import { scopedFields } from './identifier/fields.js'
 import { needsIdentifying } from '../../../../../services/commodities/index.js'
 
-export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
 
 export const meta = { ...page, collects: [] }

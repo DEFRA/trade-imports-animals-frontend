@@ -82,7 +82,6 @@ export const copy = {
     },
     table: {
       animalColumn: 'Animal',
-      permanentAddressColumn: 'Permanent address',
       actionsHidden: 'Actions'
     },
     counter: (species, next, cap) =>

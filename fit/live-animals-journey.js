@@ -881,20 +881,61 @@ export const answerAnimalIdentification = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.additionalDetails)
 }
 
-/** Identifies every animal on one commodity line by microchip, one save per animal. */
-export const identifyAnimalsByMicrochip = async (page, microchips) => {
+/**
+ * Saves one animal per given microchip on the open commodity line, one save
+ * each. With `leavesAnimalsOutstanding`, the last save uses Save and add
+ * another rather than Save and finish, so animals the line still declares stay
+ * outstanding.
+ */
+export const identifyAnimalsByMicrochip = async (
+  page,
+  microchips,
+  { leavesAnimalsOutstanding = false } = {}
+) => {
   const microchipField = page.locator('#animalIdentifierMicrochip-0')
   for (const [index, microchip] of microchips.entries()) {
     await microchipField.fill(microchip)
     await page
       .getByRole('button', {
         name:
-          index === microchips.length - 1
+          index === microchips.length - 1 && !leavesAnimalsOutstanding
             ? 'Save and finish'
             : 'Save and add another'
       })
       .click()
   }
+}
+
+/**
+ * The saved-animals table row for the numbered animal of a species.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ speciesLatinName: string }} chosen - the species row.
+ * @param {number} number - the animal's position on its card.
+ * @returns {import('@playwright/test').Locator}
+ */
+export const savedAnimalRow = (page, chosen, number) =>
+  page.getByRole('row').filter({
+    hasText: commoditiesCopy.identification.animalRowNamed(
+      labelFor(chosen.speciesLatinName),
+      number
+    )
+  })
+
+/**
+ * Removes the numbered animal of a species from its saved-animals table.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ speciesLatinName: string }} chosen - the species row.
+ * @param {number} number - the animal's position on its card.
+ * @returns {Promise<import('@playwright/test').Locator>} the row that was removed.
+ */
+export const removeAnimalRow = async (page, chosen, number) => {
+  const row = savedAnimalRow(page, chosen, number)
+  await row
+    .getByRole('button', { name: commoditiesCopy.identification.removeRow })
+    .click()
+  return row
 }
 
 export const answerImportReason = async (page) => {

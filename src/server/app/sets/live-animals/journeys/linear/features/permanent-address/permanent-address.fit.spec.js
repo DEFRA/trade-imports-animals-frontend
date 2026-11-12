@@ -11,7 +11,9 @@ import {
   identifyAnimalsByMicrochip,
   numberOfAnimalsFor,
   openCommodityDetails,
+  openFromOverviewRow,
   openPermanentAddressFromAddLink,
+  removeAnimalRow,
   saveAndContinue,
   saveAndReturnToHub,
   signIn
@@ -31,10 +33,37 @@ const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const FERRET_MICROCHIP_FIELD = '#animalIdentifierMicrochip-1'
 const CAT_MICROCHIP = 'MICROCHIP-1'
 const FERRET_MICROCHIP = 'MICROCHIP-2'
+const SECOND_CAT_MICROCHIP = 'MICROCHIP-3'
 const NEW_ADDRESS_OPTION = 'Enter a new address'
 const PLACE_OF_DESTINATION_OPTION = 'Same as the place of destination (POD)'
 const NAME_OR_ORGANISATION_LABEL = 'Name or organisation name'
+const TOWN_OR_CITY_LABEL = 'Town or city'
+const PHONE_NUMBER_LABEL = 'Phone number'
 const FERRET_OWNER_NAME = 'Ferret Owner'
+
+const expectStoredNewAddressShown = async (card, address) => {
+  await expect(
+    card.getByRole('radio', { name: NEW_ADDRESS_OPTION })
+  ).toBeChecked()
+  await expect(
+    card.getByLabel(NAME_OR_ORGANISATION_LABEL, { exact: true })
+  ).toHaveValue(address.nameOrOrganisationName)
+  await expect(card.getByLabel('Address line 1', { exact: true })).toHaveValue(
+    address.addressLine1
+  )
+  await expect(
+    card.getByLabel(TOWN_OR_CITY_LABEL, { exact: true })
+  ).toHaveValue(address.townOrCity)
+  await expect(
+    card.getByLabel('Postcode or Zip code', { exact: true })
+  ).toHaveValue(address.postcode)
+  await expect(card.getByLabel('Email address', { exact: true })).toHaveValue(
+    address.email
+  )
+  await expect(
+    card.getByLabel(PHONE_NUMBER_LABEL, { exact: true })
+  ).toHaveValue(address.phone)
+}
 
 const fillOneCatAndOneFerretIdentifiers = async (page) => {
   await openCommodityDetails(page, [FELIS_CATUS_ROW, MUSTELA_PUTORIUS_FURO_ROW])
@@ -63,6 +92,16 @@ const openPermanentAddressFromHub = async (page) => {
 const openOnePerSpeciesPermanentAddress = async (page) => {
   await fillOneCatAndOneFerretIdentifiers(page)
   await openPermanentAddressFromHub(page)
+}
+
+const saveFirstCatLeavingLineAndFerretOutstanding = async (page) => {
+  await openCommodityDetails(page, [FELIS_CATUS_ROW, MUSTELA_PUTORIUS_FURO_ROW])
+  await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('2')
+  await (await numberOfAnimalsFor(page, MUSTELA_PUTORIUS_FURO_ROW)).fill('1')
+  await saveAndContinue(page).click()
+  await identifyAnimalsByMicrochip(page, [CAT_MICROCHIP], {
+    leavesAnimalsOutstanding: true
+  })
 }
 
 test.describe('permanent address', () => {
@@ -116,14 +155,14 @@ test.describe('permanent address', () => {
       NAME_OR_ORGANISATION_LABEL,
       'Address line 1',
       'Address line 2 (optional)',
-      'Town or city',
+      TOWN_OR_CITY_LABEL,
       'County (optional)',
       'Postcode or Zip code',
       'Email address',
-      'Phone number'
+      PHONE_NUMBER_LABEL
     ])
     await expect(
-      catCard.getByLabel('Phone number')
+      catCard.getByLabel(PHONE_NUMBER_LABEL)
     ).toHaveAccessibleDescription(
       'For international numbers include the country code'
     )
@@ -340,15 +379,9 @@ test.describe('permanent address — multiple animals of one species', () => {
   test('shows three cards for a cat line of two and a ferret line of one', async ({
     page
   }) => {
-    await openCommodityDetails(page, [
-      FELIS_CATUS_ROW,
-      MUSTELA_PUTORIUS_FURO_ROW
-    ])
-    await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('2')
-    await (await numberOfAnimalsFor(page, MUSTELA_PUTORIUS_FURO_ROW)).fill('1')
-    await saveAndContinue(page).click()
-    await identifyAnimalsByMicrochip(page, [CAT_MICROCHIP, FERRET_MICROCHIP])
-    await page.locator('#animalIdentifierMicrochip-1').fill('MICROCHIP-3')
+    await saveFirstCatLeavingLineAndFerretOutstanding(page)
+    await identifyAnimalsByMicrochip(page, [SECOND_CAT_MICROCHIP])
+    await page.locator(FERRET_MICROCHIP_FIELD).fill(FERRET_MICROCHIP)
     await openPermanentAddressFromHub(page)
 
     await expect(
@@ -360,6 +393,62 @@ test.describe('permanent address — multiple animals of one species', () => {
     await expect(
       page.getByRole('region', { name: FERRET_1, exact: true })
     ).toBeVisible()
+  })
+
+  test("keeps the first cat's saved address unchanged after the line's second cat is saved, then removed, on Identification details", async ({
+    page
+  }) => {
+    await saveFirstCatLeavingLineAndFerretOutstanding(page)
+    await openPermanentAddressFromHub(page)
+
+    const CAT_OWNER_ADDRESS = {
+      nameOrOrganisationName: 'Cat Owner',
+      addressLine1: '1 Cat Lane',
+      townOrCity: 'Leeds',
+      postcode: 'LS1 1AA',
+      email: 'cat@example.co.uk',
+      phone: '0113 555 0192'
+    }
+    await answerPermanentAddressCard(page, CAT_1, CAT_OWNER_ADDRESS)
+    await saveAndContinue(page).click()
+
+    await openFromOverviewRow(page, hubCopy.rows.animalIdentification.title)
+    await identifyAnimalsByMicrochip(page, [SECOND_CAT_MICROCHIP])
+
+    await openFromOverviewRow(page, hubCopy.rows.addresses.title)
+    await page
+      .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
+      .click()
+
+    const firstCatCard = page.getByRole('region', { name: CAT_1, exact: true })
+    await expectStoredNewAddressShown(firstCatCard, CAT_OWNER_ADDRESS)
+    const secondCatCard = page.getByRole('region', {
+      name: CAT_2,
+      exact: true
+    })
+    await expect(
+      secondCatCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
+    ).not.toBeChecked()
+    await expect(
+      secondCatCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
+    ).not.toBeChecked()
+
+    await openFromOverviewRow(page, hubCopy.rows.animalIdentification.title)
+    await removeAnimalRow(page, FELIS_CATUS_ROW, 2)
+
+    await openFromOverviewRow(page, hubCopy.rows.addresses.title)
+    await addressesSection(page, addressesCopy.hub.permanentAddress.title)
+      .getByRole('link', { name: addressesCopy.hub.change })
+      .click()
+
+    const reopenedCatCard = page.getByRole('region', {
+      name: CAT_1,
+      exact: true
+    })
+    await expectStoredNewAddressShown(reopenedCatCard, CAT_OWNER_ADDRESS)
+    await expect(
+      page.getByRole('region', { name: CAT_2, exact: true })
+    ).toHaveCount(0)
   })
 })
 
@@ -488,7 +577,7 @@ test.describe('permanent address — validation', () => {
     await expect(ferretCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toHaveValue(
       FERRET_OWNER_NAME
     )
-    await expect(ferretCard.getByLabel('Town or city')).toHaveValue('York')
+    await expect(ferretCard.getByLabel(TOWN_OR_CITY_LABEL)).toHaveValue('York')
   })
 
   test('has no serious or critical axe violations in the refused state', async ({
