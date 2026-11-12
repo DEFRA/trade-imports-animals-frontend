@@ -54,7 +54,8 @@ import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import {
   BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
-  OSTRICHES_CODE
+  OSTRICHES_CODE,
+  SUS_SCROFA_DOMESTICUS_ROW
 } from '../commodities/search/test-support.js'
 import {
   CATTLE_CODE,
@@ -202,6 +203,7 @@ const copyOf = (id) =>
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
 const CATTLE_CARD_TITLE = '0102 — Bos taurus'
 const HORSE_CARD_TITLE = '0101 — Equus cabalus'
+const PIG_CARD_TITLE = '0103 — Sus scrofa domesticus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
@@ -797,6 +799,71 @@ describe(`${SUITE} — species identifier table`, () => {
         { text: 'UK987654321' },
         { text: 'Silver' }
       ]
+    ])
+  })
+
+  it("Should head a cattle line's identifier table with the tattoo when a unit carries one", async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [
+          {
+            ...BOS_TAURUS_ROW,
+            numberOfAnimalsQuantity: '1',
+            animalIdentifiers: [
+              {
+                animalIdentifierEarTag: 'UK1',
+                animalIdentifierPassport: 'UK123456789',
+                animalIdentifierTattoo: 'CT99'
+              }
+            ]
+          }
+        ]
+      }),
+      CATTLE_CARD_TITLE
+    )
+    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Ear tag',
+      'Passport',
+      'Tattoo'
+    ])
+    expect(card.identifierTable.rows).toEqual([
+      [
+        { text: 'Animal 1' },
+        { text: 'UK1' },
+        { text: 'UK123456789' },
+        { text: 'CT99' }
+      ]
+    ])
+  })
+
+  it("Should head a pig line's identifier table with the tattoo when a unit carries one", async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [
+          {
+            ...SUS_SCROFA_DOMESTICUS_ROW,
+            numberOfAnimalsQuantity: '1',
+            animalIdentifiers: [
+              {
+                animalIdentifierEarTag: 'UK100000000001',
+                animalIdentifierTattoo: 'PT77'
+              }
+            ]
+          }
+        ]
+      }),
+      PIG_CARD_TITLE
+    )
+    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Ear tag',
+      'Tattoo'
+    ])
+    expect(card.identifierTable.rows).toEqual([
+      [{ text: 'Animal 1' }, { text: 'UK100000000001' }, { text: 'PT77' }]
     ])
   })
 })

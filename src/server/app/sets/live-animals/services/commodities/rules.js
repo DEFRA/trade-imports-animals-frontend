@@ -8,13 +8,17 @@ export const OTHER_LIVE_MAMMALS_CODE = '01061900'
 const HORSE_NAME_SPECIES = 'Equus cabalus'
 
 export const COMMODITY_IDENTIFIERS = {
-  [CATTLE_CODE]: ['animalIdentifierEarTag', 'animalIdentifierPassport'],
+  [CATTLE_CODE]: [
+    'animalIdentifierEarTag',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ],
   [HORSES_CODE]: [
     'animalIdentifierMicrochip',
     'animalIdentifierPassport',
     { name: 'horseName', species: HORSE_NAME_SPECIES }
   ],
-  [SWINE_CODE]: ['animalIdentifierEarTag'],
+  [SWINE_CODE]: ['animalIdentifierEarTag', 'animalIdentifierTattoo'],
   [SHEEP_CODE]: ['animalIdentifierEarTag'],
   [GOAT_CODE]: ['animalIdentifierEarTag'],
   [OTHER_LIVE_MAMMALS_CODE]: [

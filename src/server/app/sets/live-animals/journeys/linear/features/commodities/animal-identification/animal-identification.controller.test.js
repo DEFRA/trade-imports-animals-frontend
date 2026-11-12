@@ -206,7 +206,8 @@ describe(`${SUITE} — the cards view`, () => {
     })
     expect(bosTaurus.fields.map((field) => field.id)).toEqual([
       EAR_TAG_FIELD_0,
-      PASSPORT_FIELD_0
+      PASSPORT_FIELD_0,
+      TATTOO_FIELD_0
     ])
 
     const [equusCabalus] = await viewCards({
@@ -445,8 +446,12 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(savedIdentifierColumns(card)).toEqual(['Ear tag', 'Passport'])
-    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', ''])
+    expect(savedIdentifierColumns(card)).toEqual([
+      'Ear tag',
+      'Passport',
+      'Tattoo'
+    ])
+    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', '', ''])
   })
 
   it('Should number the rows within a commodity line by the species and the row position', async () => {
@@ -465,7 +470,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
       BOS_TAURUS_1,
       `${labelFor(BOS_TAURUS)} 2`
     ])
-    expect(savedIdentifierCells(card, 1)).toEqual(['', 'UK2'])
+    expect(savedIdentifierCells(card, 1)).toEqual(['', 'UK2', ''])
   })
 
   it('Should key each row by its own line\'s species so two commodity lines do not both start at "Animal 1"', async () => {
@@ -636,8 +641,12 @@ describe(`${SUITE} — Save and add another`, () => {
     })
 
     const [card] = await viewCards(result.after)
-    expect(savedIdentifierColumns(card)).toEqual(['Ear tag', 'Passport'])
-    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', ''])
+    expect(savedIdentifierColumns(card)).toEqual([
+      'Ear tag',
+      'Passport',
+      'Tattoo'
+    ])
+    expect(savedIdentifierCells(card, 0)).toEqual(['UK1', '', ''])
   })
 
   it('Should surface the engine cap rejection as a card-level error when a stale form posts once every animal is entered, and log the refusal', async () => {
@@ -1007,8 +1016,8 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
     {
       commodityCode: '0102',
       speciesLatinName: BOS_TAURUS,
-      fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
-      columnHeadings: ['Animal', 'Ear tag', 'Passport']
+      fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
+      columnHeadings: ['Animal', 'Ear tag', 'Passport', 'Tattoo']
     },
     {
       commodityCode: '0101',
@@ -1030,8 +1039,8 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
     {
       commodityCode: '0103',
       speciesLatinName: SUS_SCROFA_DOMESTICUS,
-      fieldIds: [EAR_TAG_FIELD_0],
-      columnHeadings: ['Animal', 'Ear tag']
+      fieldIds: [EAR_TAG_FIELD_0, TATTOO_FIELD_0],
+      columnHeadings: ['Animal', 'Ear tag', 'Tattoo']
     },
     {
       commodityCode: '010410',
@@ -1136,7 +1145,8 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(cards[0].anchor).toBe('identification-card-1')
     expect(cards[0].fields.map((field) => field.id)).toEqual([
       'animalIdentifierEarTag-1',
-      'animalIdentifierPassport-1'
+      'animalIdentifierPassport-1',
+      'animalIdentifierTattoo-1'
     ])
   })
 

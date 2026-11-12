@@ -305,7 +305,7 @@ const EXPECTED = {
   'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
-  'tattoo list': ['01061900'],
+  'tattoo list': ['0102', '0103', '01061900'],
   'ear-tag list': ['0102', '0103', '010410', '010420'],
   'horse-name list': [['0101', 'Equus cabalus']],
   'permanent-address list': [

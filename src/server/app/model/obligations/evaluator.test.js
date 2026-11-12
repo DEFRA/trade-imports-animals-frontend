@@ -815,15 +815,13 @@ describe('tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
 
-  // The ear tag value is stored so a unit instance is enumerated and the
-  // commodity gate — not an empty unitRecord — is what puts the tattoo out of
-  // scope.
-  it('is out of scope for a 0102 line (0102 not in the tattoo list)', () => {
+  it('is in scope for a 0102 line (0102 in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
-      [earTag.id]: { [`${LINE_CATTLE}.${UNIT_1}`]: 'UK123456789012' }
+      [tattoo.id]: { [`${LINE_CATTLE}.${UNIT_1}`]: 'UK123456789012' }
     })
-    expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
+    expect(result.obligations[tattoo.id].inScope).toBe(true)
+    expect(result.obligations[tattoo.id].reasons).toEqual([tattooReason])
   })
 })
 
@@ -902,7 +900,7 @@ describe('a commodity with no identifier type of its own', () => {
     expect(result.obligations[earTag.id].inScope).toBe(true)
     expect(result.obligations[passport.id].inScope).toBe(true)
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
-    expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
+    expect(result.obligations[tattoo.id].inScope).toBe(true)
   })
 
   it('purges an identifier value smuggled onto an ostrich unit', () => {
@@ -1304,10 +1302,9 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 //
 // 18 always-in-scope obligations use the data-only shape
 // `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
-// `dependsOn`. They classify as `'unindexed'` (Phase 1.4 folded the
-// former no-within `'field'` case in) and `unindexedImplication` falls
-// through to `{ inScope: true, status: obligation.status }` when no
-// applicabilityDecision is present.
+// `dependsOn`. They classify as `'unindexed'` and `unindexedImplication`
+// falls through to `{ inScope: true, status: obligation.status }` when
+// no applicabilityDecision is present.
 //
 // The fidelity contract this block pins: for every one of the 18
 // obligations, `evaluator.evaluate({})` returns EXACTLY the decision
@@ -1339,70 +1336,35 @@ describe('trivial applyTo drop fidelity (18 always-in-scope obligations)', () =>
     ['animalsCertifiedFor', animalsCertifiedFor]
   ]
 
+  const allEighteenObligations = [
+    ...trivialAlwaysMandatoryObligations.map(([, obligation]) => obligation),
+    internalReferenceNumber
+  ]
+
   it.each(trivialAlwaysMandatoryObligations)(
-    '%s evaluates as { inScope: true, status: "mandatory" } on empty input (post-drop)',
+    '%s evaluates as { inScope: true, status: "mandatory" } on empty input',
     (_name, obligation) => {
       const result = evaluator.evaluate({})
       expect(result.obligations[obligation.id]).toEqual(mandatory)
     }
   )
 
-  it('internalReferenceNumber evaluates as { inScope: true, status: "optional" } on empty input (post-drop)', () => {
+  it('internalReferenceNumber evaluates as { inScope: true, status: "optional" } on empty input', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
   })
 
-  it('none of the 18 obligations carry an applyTo closure any more (data-only shape)', () => {
-    // Load-bearing invariant of the commit — the whole point of Phase
-    // 4.5.3 is that these obligations are pure metadata. If someone
-    // re-adds an `applyTo: () => (...)` to any of them, this fires.
-    const stragglers = [
-      poApprovedReferenceNumber,
-      countryOfOrigin,
-      regionCodeRequirement,
-      reasonForImport,
-      placeOfOrigin,
-      consignor,
-      consignee,
-      importer,
-      placeOfDestination,
-      transporterType,
-      meansOfTransport,
-      transportIdentification,
-      transportDocumentReference,
-      arrivalDateAtPort,
-      portOfEntry,
-      contactAddress,
-      internalReferenceNumber,
-      animalsCertifiedFor
-    ].filter((o) => typeof o.applyTo === 'function')
+  it('none of the 18 obligations carry an applyTo closure (data-only shape)', () => {
+    const stragglers = allEighteenObligations.filter(
+      (o) => typeof o.applyTo === 'function'
+    )
     expect(stragglers).toEqual([])
   })
 
-  it('none of the 18 obligations carry a dependsOn key any more (derivable from no-applyTo)', () => {
-    // Same shape guard as above — `dependsOn: []` was redundant with
-    // "no gate = no dependencies". A future author reintroducing it
-    // without an applyTo would drift the schema.
-    const stragglers = [
-      poApprovedReferenceNumber,
-      countryOfOrigin,
-      regionCodeRequirement,
-      reasonForImport,
-      placeOfOrigin,
-      consignor,
-      consignee,
-      importer,
-      placeOfDestination,
-      transporterType,
-      meansOfTransport,
-      transportIdentification,
-      transportDocumentReference,
-      arrivalDateAtPort,
-      portOfEntry,
-      contactAddress,
-      internalReferenceNumber,
-      animalsCertifiedFor
-    ].filter((o) => o.dependsOn !== undefined)
+  it('none of the 18 obligations carry a dependsOn key (derivable from no-applyTo)', () => {
+    const stragglers = allEighteenObligations.filter(
+      (o) => o.dependsOn !== undefined
+    )
     expect(stragglers).toEqual([])
   })
 })

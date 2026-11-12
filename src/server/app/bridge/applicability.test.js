@@ -15,6 +15,12 @@ describe('#appliesForGateValue', () => {
     }
   })
 
+  it('Should apply the tattoo for cattle and pigs as well as cats, dogs and ferrets', () => {
+    for (const code of ['0102', '0103', '01061900']) {
+      expect(appliesForGateValue('animalIdentifierTattoo', code)).toBe(true)
+    }
+  })
+
   it('Should apply permanentAddress for the species Felis catus under 01061900', () => {
     expect(
       appliesForGateValue('permanentAddress', '01061900', 'Felis catus')

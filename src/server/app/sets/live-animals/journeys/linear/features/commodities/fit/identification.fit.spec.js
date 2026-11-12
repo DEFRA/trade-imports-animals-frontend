@@ -170,8 +170,8 @@ const removeAnimalRow = async (page, chosen, number) => {
   return row
 }
 
-const saveSoleAnimalAndReopenCard = async (page, chosen, earTag) => {
-  await page.locator(EAR_TAG_FIELD).fill(earTag)
+const saveSoleAnimalAndReopenCard = async (page, chosen, field, value) => {
+  await page.locator(`#${field}-0`).fill(value)
   await saveAndContinue(page).click()
   await reopenIdentificationFromHub(page)
   return speciesCard(page, chosen)
@@ -205,24 +205,13 @@ const identifierValidations = [
   [FELIS_CATUS_ROW, 'animalIdentifierTattoo', 'Tattoo'],
   [BOS_TAURUS_ROW, 'animalIdentifierPassport', 'Passport'],
   [BOS_TAURUS_ROW, 'animalIdentifierEarTag', 'Ear tag'],
+  [BOS_TAURUS_ROW, 'animalIdentifierTattoo', 'Tattoo'],
   [EQUUS_CABALUS_ROW, 'horseName', 'Horse name'],
-  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierEarTag', 'Ear tag']
+  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierEarTag', 'Ear tag'],
+  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierTattoo', 'Tattoo']
 ]
 
 const earTagOnlyRows = [OVIS_ARIES_ROW, CAPRA_HIRCUS_ROW]
-
-const OTHER_IDENTIFIER_LABELS = [
-  copy.identification.identifierLabels.animalIdentifierMicrochip,
-  copy.identification.identifierLabels.animalIdentifierPassport,
-  copy.identification.identifierLabels.animalIdentifierTattoo,
-  copy.identification.identifierLabels.horseName
-]
-
-const EAR_TAG_SAVED_ANIMALS_HEAD = [
-  copy.identification.table.animalColumn,
-  copy.identification.identifierLabels.animalIdentifierEarTag,
-  copy.identification.table.actionsHidden
-]
 
 test.describe('animal identification', () => {
   test.beforeEach(async ({ page }) => {
@@ -243,7 +232,8 @@ test.describe('animal identification', () => {
     await expect(page.locator(MICROCHIP_FIELD)).toBeVisible()
     await expect(page.locator('#horseName-0')).toBeVisible()
     await expect(page.locator(SECOND_EAR_TAG_FIELD)).toBeVisible()
-    await expect(page.locator('#animalIdentifierTattoo-1')).toHaveCount(0)
+    await expect(page.locator('#animalIdentifierPassport-1')).toBeVisible()
+    await expect(page.locator('#animalIdentifierTattoo-1')).toBeVisible()
     await expect(page.locator('#animalIdentifierMicrochip-1')).toHaveCount(0)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-2')).toHaveCount(0)
@@ -264,18 +254,23 @@ test.describe('animal identification', () => {
       ])
     )
     await expect(page.locator('label[for$="-1"]')).toHaveText(
-      entryLabelsOf(['animalIdentifierEarTag', 'animalIdentifierPassport'])
+      entryLabelsOf([
+        'animalIdentifierEarTag',
+        'animalIdentifierPassport',
+        'animalIdentifierTattoo'
+      ])
     )
   })
 
-  test('labels the passport and ear tag fields on a Bos taurus line with the words the saved-animals table heads them with', async ({
+  test('labels the passport, ear tag and tattoo fields on a Bos taurus line with the words the saved-animals table heads them with', async ({
     page
   }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW]])
 
     for (const field of [
       'animalIdentifierPassport',
-      'animalIdentifierEarTag'
+      'animalIdentifierEarTag',
+      'animalIdentifierTattoo'
     ]) {
       await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
         copy.identification.identifierLabels[field]
@@ -397,26 +392,39 @@ test.describe('animal identification species-driven identifiers', () => {
     await signIn(page)
   })
 
-  test('asks a pig line for an ear tag and no other identifier, and heads its saved-animals table with Animal, Ear tag and a Remove action', async ({
+  test('asks a pig line for an ear tag and a tattoo, and heads its saved-animals table with Animal, Ear tag, Tattoo and a Remove action', async ({
     page
   }) => {
     await openIdentification(page, [[SUS_SCROFA_DOMESTICUS_ROW]])
     const card = speciesCard(page, SUS_SCROFA_DOMESTICUS_ROW)
+    const absentIdentifierLabels = [
+      copy.identification.identifierLabels.animalIdentifierMicrochip,
+      copy.identification.identifierLabels.animalIdentifierPassport,
+      copy.identification.identifierLabels.horseName
+    ]
+    const earTagAndTattooSavedAnimalsHead = [
+      copy.identification.table.animalColumn,
+      copy.identification.identifierLabels.animalIdentifierEarTag,
+      copy.identification.identifierLabels.animalIdentifierTattoo,
+      copy.identification.table.actionsHidden
+    ]
 
-    await expect(card.getByRole('textbox')).toHaveCount(1)
+    await expect(card.getByRole('textbox')).toHaveCount(2)
     await expect(page.locator(EAR_TAG_FIELD)).toBeVisible()
-    for (const label of OTHER_IDENTIFIER_LABELS) {
+    await expect(page.locator('#animalIdentifierTattoo-0')).toBeVisible()
+    for (const label of absentIdentifierLabels) {
       await expect(card.getByLabel(label, { exact: true })).toHaveCount(0)
     }
 
     const savedCard = await saveSoleAnimalAndReopenCard(
       page,
       SUS_SCROFA_DOMESTICUS_ROW,
+      'animalIdentifierEarTag',
       'UK100000000001'
     )
 
     await expect(savedCard.getByRole('columnheader')).toHaveText(
-      EAR_TAG_SAVED_ANIMALS_HEAD
+      earTagAndTattooSavedAnimalsHead
     )
     const row = savedAnimalRow(page, SUS_SCROFA_DOMESTICUS_ROW, 1)
     await expect(
@@ -430,23 +438,36 @@ test.describe('animal identification species-driven identifiers', () => {
   test('asks a sheep line and a goat line each for an ear tag and no other identifier, and heads each saved-animals table with Animal, Ear tag and a Remove action', async ({
     page
   }) => {
+    const absentIdentifierLabels = [
+      copy.identification.identifierLabels.animalIdentifierMicrochip,
+      copy.identification.identifierLabels.animalIdentifierPassport,
+      copy.identification.identifierLabels.animalIdentifierTattoo,
+      copy.identification.identifierLabels.horseName
+    ]
+    const earTagSavedAnimalsHead = [
+      copy.identification.table.animalColumn,
+      copy.identification.identifierLabels.animalIdentifierEarTag,
+      copy.identification.table.actionsHidden
+    ]
+
     for (const chosen of earTagOnlyRows) {
       await openIdentification(page, [[chosen]])
       const card = speciesCard(page, chosen)
 
       await expect(card.getByRole('textbox')).toHaveCount(1)
-      for (const label of OTHER_IDENTIFIER_LABELS) {
+      for (const label of absentIdentifierLabels) {
         await expect(card.getByLabel(label, { exact: true })).toHaveCount(0)
       }
 
       const savedCard = await saveSoleAnimalAndReopenCard(
         page,
         chosen,
+        'animalIdentifierEarTag',
         'UK200000000001'
       )
 
       await expect(savedCard.getByRole('columnheader')).toHaveText(
-        EAR_TAG_SAVED_ANIMALS_HEAD
+        earTagSavedAnimalsHead
       )
       const row = savedAnimalRow(page, chosen, 1)
       await expect(
@@ -454,6 +475,36 @@ test.describe('animal identification species-driven identifiers', () => {
       ).toBeVisible()
       await expect(
         row.getByRole('button', { name: copy.identification.removeRow })
+      ).toBeVisible()
+    }
+  })
+
+  test('saves an animal by its tattoo alone on a cattle line and on a pig line, and reads the tattoo back under the tattoo column', async ({
+    page
+  }) => {
+    const tattoo = 'T'.repeat(MAX_IDENTIFIER_LENGTH)
+
+    for (const chosen of [BOS_TAURUS_ROW, SUS_SCROFA_DOMESTICUS_ROW]) {
+      await openIdentification(page, [[chosen]])
+
+      const savedCard = await saveSoleAnimalAndReopenCard(
+        page,
+        chosen,
+        'animalIdentifierTattoo',
+        tattoo
+      )
+
+      await expect(
+        savedCard.getByRole('columnheader', {
+          name: copy.identification.identifierLabels.animalIdentifierTattoo,
+          exact: true
+        })
+      ).toBeVisible()
+      await expect(
+        savedAnimalRow(page, chosen, 1).getByRole('cell', {
+          name: tattoo,
+          exact: true
+        })
       ).toBeVisible()
     }
   })
@@ -852,6 +903,12 @@ test.describe('animal identification records', () => {
       columnHeader(
         page,
         copy.identification.identifierLabels.animalIdentifierEarTag
+      )
+    ).toBeVisible()
+    await expect(
+      columnHeader(
+        page,
+        copy.identification.identifierLabels.animalIdentifierTattoo
       )
     ).toBeVisible()
     await expect(

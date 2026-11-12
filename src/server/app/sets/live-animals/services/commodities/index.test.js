@@ -39,7 +39,8 @@ describe('#identifiersFor', () => {
   it('Should give each code its identifiers in the order it asks for them', () => {
     expect(identifiersFor(CATTLE_CODE)).toEqual([
       'animalIdentifierEarTag',
-      'animalIdentifierPassport'
+      'animalIdentifierPassport',
+      'animalIdentifierTattoo'
     ])
     expect(identifiersFor(HORSES_CODE)).toEqual([
       'animalIdentifierMicrochip',
@@ -51,7 +52,10 @@ describe('#identifiersFor', () => {
       'animalIdentifierPassport',
       'animalIdentifierTattoo'
     ])
-    expect(identifiersFor(SWINE_CODE)).toEqual(['animalIdentifierEarTag'])
+    expect(identifiersFor(SWINE_CODE)).toEqual([
+      'animalIdentifierEarTag',
+      'animalIdentifierTattoo'
+    ])
     expect(identifiersFor(SHEEP_CODE)).toEqual(['animalIdentifierEarTag'])
     expect(identifiersFor(GOAT_CODE)).toEqual(['animalIdentifierEarTag'])
   })
@@ -80,7 +84,7 @@ describe('the identifier allowlists', () => {
       'tattoo',
       tattooCommodityCodes,
       'animalIdentifierTattoo',
-      [OTHER_LIVE_MAMMALS_CODE]
+      [CATTLE_CODE, SWINE_CODE, OTHER_LIVE_MAMMALS_CODE]
     ],
     [
       'ear tag',
