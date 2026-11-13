@@ -3,7 +3,7 @@ import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { lineKey } from '../selection/line-key.js'
 import { removeActionFor } from '../selection/remove-action.js'
-import { legendFor } from '../../commodity-legend.js'
+import { namedLegendFor } from '../../commodity-legend.js'
 
 const copy = copyFor({ en, cy }).search
 
@@ -15,7 +15,7 @@ const itemFor = (row) => ({
 const groupsFor = (rows) =>
   [...Map.groupBy(rows, (row) => row.commodityCode)].map(
     ([commodityCode, rowsForCode]) => ({
-      legend: legendFor(commodityCode),
+      legend: namedLegendFor(commodityCode),
       items: rowsForCode.map(itemFor)
     })
   )

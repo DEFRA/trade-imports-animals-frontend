@@ -4,7 +4,7 @@ import { legendHtmlFor, speciesLabelHtml } from './labels.js'
 
 describe('#legendHtmlFor', () => {
   it('Should name the commodity with its code in brackets', () => {
-    expect(legendHtmlFor('0102', '')).toBe('Cow (0102)')
+    expect(legendHtmlFor('0102', '')).toBe('Cattle (0102)')
   })
 
   it('Should show the code alone for a commodity with no name', () => {
@@ -13,13 +13,13 @@ describe('#legendHtmlFor', () => {
 
   it('Should bold the part of the commodity heading the query matched', () => {
     expect(legendHtmlFor('0102', '01')).toBe(
-      'Cow (<strong class="govuk-!-font-weight-bold">01</strong>02)'
+      'Cattle (<strong class="govuk-!-font-weight-bold">01</strong>02)'
     )
   })
 
   it('Should bold a match in the commodity name', () => {
-    expect(legendHtmlFor('0102', 'co')).toBe(
-      '<strong class="govuk-!-font-weight-bold">Co</strong>w (0102)'
+    expect(legendHtmlFor('0102', 'ca')).toBe(
+      '<strong class="govuk-!-font-weight-bold">Ca</strong>ttle (0102)'
     )
   })
 })

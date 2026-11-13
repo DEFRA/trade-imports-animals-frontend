@@ -58,10 +58,10 @@ describe('dashboard notification helpers', () => {
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
     expect(listRowCommodityLabel({ commodityCode: '0102' })).toBe('0102')
-    expect(listRowCommodityLabel({ name: 'Cow' })).toBe('Cow')
-    expect(listRowCommodityLabel({ name: 'Cow', commodityCode: '0102' })).toBe(
-      'Cow'
-    )
+    expect(listRowCommodityLabel({ name: 'Cattle' })).toBe('Cattle')
+    expect(
+      listRowCommodityLabel({ name: 'Cattle', commodityCode: '0102' })
+    ).toBe('Cattle')
     expect(listRowCommodityLabel(null)).toBe('')
   })
 
