@@ -27,6 +27,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
+- The commodities block, the task list and each numbered section are regions
+  named by their heading, and each total box is a region with a name of its
+  own, so a screen reader can list the regions and jump between them. Each
+  total box shows its label as a heading, but the region takes its name from
+  its own copy (Animals summary, Packages summary), so a screen reader lists
+  it apart from the label.
 - With no commodity chosen, the commodity details task is still a link: the
   consignment details page asks the commodity question rather than drawing an
   empty table, and a task opened from the overview goes on to the next page that applies

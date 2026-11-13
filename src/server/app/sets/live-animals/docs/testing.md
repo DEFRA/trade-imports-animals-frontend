@@ -131,7 +131,8 @@ from it only by accents, with the matching letters in bold.
 
 The screenshot specs live in `trade-imports-ins-tests` under
 `tests/animals/e2e/visual/`. They show the arrival details question labels at
-their medium size and the Upload documents actions column right-aligned.
+their medium size, the Upload documents actions column right-aligned, and the
+Overview's two commodity total boxes with their captions.
 
 Do not add fixed `rgb()` values, `box-shadow` strings, pixel sizes, font
 weights, text alignment or class lists to a fit spec. Prove a look without a
