@@ -16,12 +16,12 @@ const resultsIn = (html) => {
 }
 
 const fetchResults = async (url, body) => {
-  try {
-    const response = await fetch(url, { method: 'POST', body })
-    return response.ok ? resultsIn(await response.text()) : null
-  } catch {
-    return null
+  const response = await fetch(url, { method: 'POST', body })
+  const fresh = response.ok ? resultsIn(await response.text()) : null
+  if (!fresh) {
+    throw new Error(`No results came back from ${url}`)
   }
+  return fresh
 }
 
 const focusReplacementOf = (trigger, searchBox) => {
@@ -85,11 +85,7 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
       resultsUrl,
       formBodyFor(form, refreshRequest.submitter)
     )
-    if (fresh) {
-      showResults(fresh, refreshRequest)
-    } else {
-      submitNatively(refreshRequest.submitter)
-    }
+    showResults(fresh, refreshRequest)
   }
 
   return {
