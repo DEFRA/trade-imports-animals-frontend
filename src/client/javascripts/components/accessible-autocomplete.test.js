@@ -217,6 +217,20 @@ describe('AccessibleAutocomplete', () => {
     })
   })
 
+  describe('Welsh status', () => {
+    it.each([
+      [1, '1 canlyniad ar gael. France 1 o 1'],
+      [3, '3 o ganlyniadau ar gael. France 1 o 3']
+    ])(
+      'Should announce %i results in Welsh when the page is in Welsh',
+      (count, status) => {
+        const { config } = enhanceCountrySelect({ language: 'cy' })
+
+        expect(config.tStatusResults(count, `France 1 o ${count}`)).toBe(status)
+      }
+    )
+  })
+
   describe('aria-describedby', () => {
     it('Should carry the select hint onto the enhanced box', () => {
       const { select, input } = enhanceCountrySelect()
