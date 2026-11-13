@@ -19,7 +19,7 @@ export const copy = {
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan',
-      remove: 'Tynnu'
+      remove: (species, commodity) => `Tynnu ${species} o ${commodity}`
     },
     updateSelected: 'Diweddaru’r dewis',
     help: {

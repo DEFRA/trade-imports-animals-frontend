@@ -7,18 +7,22 @@ import { namedLegendFor } from '../../commodity-legend.js'
 
 const copy = copyFor({ en, cy }).search
 
-const itemFor = (row) => ({
+const itemFor = (row, legend) => ({
   label: row.speciesLatinName,
+  removeLabel: copy.selected.remove(row.speciesLatinName, legend),
   removeAction: removeActionFor(lineKey(row))
 })
 
+const groupFor = ([commodityCode, rowsForCode]) => {
+  const legend = namedLegendFor(commodityCode)
+  return {
+    legend,
+    items: rowsForCode.map((row) => itemFor(row, legend))
+  }
+}
+
 const groupsFor = (rows) =>
-  [...Map.groupBy(rows, (row) => row.commodityCode)].map(
-    ([commodityCode, rowsForCode]) => ({
-      legend: namedLegendFor(commodityCode),
-      items: rowsForCode.map(itemFor)
-    })
-  )
+  [...Map.groupBy(rows, (row) => row.commodityCode)].map(groupFor)
 
 export const selectedSummary = (rows) => ({
   count: rows.length,

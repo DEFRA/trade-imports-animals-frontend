@@ -47,7 +47,7 @@
               {% for item in group.items %}
                 <li class="app-multi-select-search__chip">
                   <span class="app-multi-select-search__chip-label">{{ item.label }}</span>
-                  <button type="submit" class="app-multi-select-search__chip-remove" name="action" value="{{ item.removeAction }}"><span class="govuk-visually-hidden">{{ params.copy.selected.remove }} {{ item.label }}</span></button>
+                  <button type="submit" class="app-multi-select-search__chip-remove" name="action" value="{{ item.removeAction }}"><span class="govuk-visually-hidden">{{ item.removeLabel }}</span></button>
                 </li>
               {% endfor %}
             </ul>
