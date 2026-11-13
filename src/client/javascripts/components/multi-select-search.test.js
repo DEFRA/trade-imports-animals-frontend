@@ -47,6 +47,7 @@ const responseHtml = (announcement, resultsHtml) =>
   )
 
 const answering = (html) => ({ ok: true, text: async () => html })
+const refusing = () => ({ ok: false, text: async () => '' })
 
 const mount = (resultsHtml = resultsBodyHtml()) => {
   document.body.innerHTML = pageHtml(resultsHtml)
@@ -236,7 +237,7 @@ describe('#MultiSelectSearch', () => {
 
   it('Should submit the form itself with the pressed action when the results request fails', async () => {
     const { form, searchBox, searchButton } = mount('')
-    fetchMock.mockResolvedValue({ ok: false, text: async () => '' })
+    fetchMock.mockResolvedValue(refusing())
     const nativeSubmitters = cancelNativeSubmitsOf(form)
 
     searchBox.value = 'thing'
@@ -274,7 +275,7 @@ describe('#MultiSelectSearch', () => {
   it('Should refresh in place again after its own submit of the form is cancelled', async () => {
     const { form, results } = mount()
     fetchMock
-      .mockResolvedValueOnce({ ok: false, text: async () => '' })
+      .mockResolvedValueOnce(refusing())
       .mockResolvedValueOnce(
         answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
       )
@@ -292,7 +293,7 @@ describe('#MultiSelectSearch', () => {
   it('Should refresh in place again when the page it submitted away from is restored from the back-forward cache', async () => {
     const { results } = mount()
     fetchMock
-      .mockResolvedValueOnce({ ok: false, text: async () => '' })
+      .mockResolvedValueOnce(refusing())
       .mockResolvedValueOnce(
         answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
       )
