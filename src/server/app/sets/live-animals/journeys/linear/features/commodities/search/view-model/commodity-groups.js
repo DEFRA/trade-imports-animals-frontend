@@ -1,7 +1,7 @@
 import { lineKey } from '../selection/line-key.js'
 import { resultRows } from '../selection/rows.js'
-import { legendHtmlFor, speciesLabelHtml } from './labels.js'
-import { inLegendOrder, inSpeciesLabelOrder } from './result-order.js'
+import { commodityLabelHtml, speciesLabelHtml } from './labels.js'
+import { inCodeOrder, inSpeciesLabelOrder } from './result-order.js'
 
 const itemFor = (row, selected, query) => {
   const key = lineKey(row)
@@ -17,8 +17,8 @@ export const commodityGroups = (results, selected, query = '') => {
     resultRows(results),
     (row) => row.commodityCode
   )
-  return inLegendOrder([...rowsByCode.keys()]).map((commodityCode) => ({
-    legendHtml: legendHtmlFor(commodityCode, query),
+  return inCodeOrder([...rowsByCode.keys()]).map((commodityCode) => ({
+    legendHtml: commodityLabelHtml(commodityCode, query),
     items: inSpeciesLabelOrder(rowsByCode.get(commodityCode)).map((row) =>
       itemFor(row, selected, query)
     )
