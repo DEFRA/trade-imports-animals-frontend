@@ -5,13 +5,22 @@ export const SHEEP_CODE = '010410'
 export const GOAT_CODE = '010420'
 export const OTHER_LIVE_MAMMALS_CODE = '01061900'
 
+const HORSE_NAME_SPECIES = 'Equus cabalus'
+
 export const COMMODITY_IDENTIFIERS = {
-  [CATTLE_CODE]: ['animalIdentifierEarTag', 'animalIdentifierPassport'],
+  [CATTLE_CODE]: [
+    'animalIdentifierEarTag',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ],
   [HORSES_CODE]: [
     'animalIdentifierMicrochip',
     'animalIdentifierPassport',
-    'horseName'
+    { name: 'horseName', species: HORSE_NAME_SPECIES }
   ],
+  [SWINE_CODE]: ['animalIdentifierEarTag', 'animalIdentifierTattoo'],
+  [SHEEP_CODE]: ['animalIdentifierEarTag'],
+  [GOAT_CODE]: ['animalIdentifierEarTag'],
   [OTHER_LIVE_MAMMALS_CODE]: [
     'animalIdentifierMicrochip',
     'animalIdentifierPassport',
@@ -19,20 +28,37 @@ export const COMMODITY_IDENTIFIERS = {
   ]
 }
 
-const codesCarrying = (identifier) =>
-  Object.keys(COMMODITY_IDENTIFIERS).filter((code) =>
-    COMMODITY_IDENTIFIERS[code].includes(identifier)
-  )
+export const identifierNameOf = (entry) =>
+  typeof entry === 'string' ? entry : entry.name
 
-export const MICROCHIP_CODES = codesCarrying('animalIdentifierMicrochip')
+const codesOrSpeciesPairsCarrying = (identifier) =>
+  Object.entries(COMMODITY_IDENTIFIERS).flatMap(([code, entries]) => {
+    const entry = entries.find(
+      (candidate) => identifierNameOf(candidate) === identifier
+    )
+    if (!entry) {
+      return []
+    }
+    return typeof entry === 'string' ? [code] : [[code, entry.species]]
+  })
 
-export const PASSPORT_CODES = codesCarrying('animalIdentifierPassport')
+export const MICROCHIP_CODES = codesOrSpeciesPairsCarrying(
+  'animalIdentifierMicrochip'
+)
 
-export const TATTOO_CODES = codesCarrying('animalIdentifierTattoo')
+export const PASSPORT_CODES = codesOrSpeciesPairsCarrying(
+  'animalIdentifierPassport'
+)
 
-export const EAR_TAG_CODES = codesCarrying('animalIdentifierEarTag')
+export const TATTOO_CODES = codesOrSpeciesPairsCarrying(
+  'animalIdentifierTattoo'
+)
 
-export const HORSE_NAME_CODES = codesCarrying('horseName')
+export const EAR_TAG_CODES = codesOrSpeciesPairsCarrying(
+  'animalIdentifierEarTag'
+)
+
+export const HORSE_NAME_CODE_SPECIES = codesOrSpeciesPairsCarrying('horseName')
 
 export const IDENTIFIED_CODES = Object.keys(COMMODITY_IDENTIFIERS)
 

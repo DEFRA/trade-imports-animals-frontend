@@ -70,7 +70,6 @@ export const copy = {
   },
   identifierTable: {
     animalColumn: 'Animal',
-    permanentAddress: 'Permanent address',
     animalN: (n) => `Animal ${n}`,
     heading: 'Animal details'
   },

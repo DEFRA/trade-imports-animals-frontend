@@ -2,29 +2,11 @@ import * as state from '../../../../../../../../engine/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { addressRecordProvided } from '../address/fields.js'
 import { identifierCapOf } from '../line-cap.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const unitFromForm = (form) => {
-  const unit = { ...form.values }
-  if (form.showAddress && addressRecordProvided(form.addressValues)) {
-    unit.permanentAddress = {
-      name: form.addressValues.nameOrOrganisationName,
-      address: {
-        addressLine1: form.addressValues.addressLine1,
-        addressLine2: form.addressValues.addressLine2,
-        townOrCity: form.addressValues.townOrCity,
-        county: form.addressValues.county,
-        postcode: form.addressValues.postcode,
-        phone: form.addressValues.phone,
-        email: form.addressValues.email
-      }
-    }
-  }
-  return unit
-}
+const unitFromForm = (form) => ({ ...form.values })
 
 const recordCapFailure = async (request, h, index) => {
   const { answers: current } = await state.get(request, h)

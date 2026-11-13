@@ -116,7 +116,7 @@ describe('additional-details — the Back link', () => {
   const IDENTIFICATION_SLUG = 'commodities/identification'
   const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
 
-  it('Should go Back to commodity details when commodity details was the page saved, passing over identification', async () => {
+  it('Should go Back to commodity details when commodity details was the page saved', async () => {
     const result = await driveHandler(get, {
       seed: { countryOfOrigin: 'FR', commodityLines: [STRUTHIO_ROW] },
       startingFrom: [

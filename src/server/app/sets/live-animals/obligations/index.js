@@ -4,11 +4,14 @@ import {
   containsUnweanedAnimals
 } from './sections/commodities/aggregates.js'
 import {
+  description,
   earTag,
   horseName,
+  identificationDetails,
   microchip,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   tattoo,
   unitRecord
 } from './sections/commodities/identifiers.js'
@@ -83,6 +86,7 @@ export {
   countryOfOrigin,
   countryOfOriginSubdivisionCode,
   cph,
+  description,
   destinationCountry,
   documentFilename,
   documents,
@@ -90,6 +94,7 @@ export {
   earTag,
   exitDate,
   horseName,
+  identificationDetails,
   importer,
   internalReferenceNumber,
   meansOfTransport,
@@ -98,6 +103,7 @@ export {
   numberOfPackages,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   placeOfDestination,
   placeOfOrigin,
   poApprovedReferenceNumber,
@@ -159,7 +165,10 @@ export const obligations = [
   tattoo,
   earTag,
   horseName,
+  identificationDetails,
+  description,
   permanentAddress,
+  permanentAddressOrigin,
   documents,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,

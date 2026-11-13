@@ -23,6 +23,10 @@ const VALIDATION_OPT_OUTS = new Map([
     'The addresses hub. Per-role errors surface through outstandingPartyErrors on the review page rather than through this page.'
   ],
   [
+    'permanentAddress',
+    'Collects nothing directly. Its answers sit on the animal identifier records the commodities feature already owns, so a pageValidation would wrongly surface its own stored reading on the task list and the review page. It refuses an invalid new address and an unready place-of-destination choice through its own save rules instead, and an animal left with neither option chosen still saves with none.'
+  ],
+  [
     'declaration',
     'Submit page. Its single required-checkbox rule lives inline in the controller; not part of the cross-journey stored-answers surface.'
   ]

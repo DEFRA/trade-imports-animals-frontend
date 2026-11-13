@@ -2,22 +2,33 @@ import { expect, test } from '@playwright/test'
 import {
   BASE,
   DESKTOP_VIEWPORT,
+  FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
+  addPlaceOfDestination,
+  answerPermanentAddressCard,
   chooseTypeAheadOption,
   chooseCountryOfOrigin,
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   expectStyle,
   govukVisuallyHiddenStyleOf,
+  identifyAnimalsByMicrochip,
   journeyIdFromPage,
   journeyUrl,
   notificationViewUrl,
+  numberOfAnimalsFor,
+  openCommodityDetails,
   openNotificationView,
+  openOverview,
+  openPermanentAddressFromAddLink,
   openReviewFromHub,
+  partyPickerName,
   rowFor,
+  saveAndContinue,
   signIn,
   startNotification,
-  urlUnderBase
+  urlUnderBase,
+  values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -120,6 +131,60 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
+test.describe('check-answers feature permanent address rows', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('renders one review row per cat, keyed by its common name and number, and heads the species card with identifiers alone', async ({
+    page
+  }) => {
+    test.slow()
+    await openCommodityDetails(page, [FELIS_CATUS_ROW])
+    await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('2')
+    await saveAndContinue(page).click()
+    await identifyAnimalsByMicrochip(page, ['MICROCHIP-1', 'MICROCHIP-2'])
+
+    await openOverview(page)
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    await addPlaceOfDestination(page)
+    await openPermanentAddressFromAddLink(page)
+    await expect(
+      page.getByRole('heading', { name: 'Permanent address' })
+    ).toBeVisible()
+    await answerPermanentAddressCard(page, 'Felis catus 1')
+    await answerPermanentAddressCard(page, 'Felis catus 2', {
+      nameOrOrganisationName: 'Pet Owner',
+      addressLine1: '1 Pet Lane',
+      townOrCity: 'Leeds',
+      postcode: 'LS1 1AA',
+      email: 'pet@example.co.uk',
+      phone: '0113 555 0192'
+    })
+    await saveAndContinue(page).click()
+
+    await openOverview(page)
+    await openReviewFromHub(page)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    const catOneRow = rowFor(page, 'Domestic Cat 1')
+    await expect(catOneRow).toContainText(
+      partyPickerName(values.placeOfDestination)
+    )
+    await expect(catOneRow).toContainText('18 Dockside Road')
+    await expect(catOneRow).toContainText('United Kingdom')
+    await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
+
+    const speciesCard = page.locator('.govuk-summary-card', {
+      hasText: `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
+    })
+    await expect(speciesCard.getByRole('columnheader')).toHaveText([
+      'Animal',
+      'Microchip'
+    ])
+  })
+})
+
 test.describe('check-answers feature section structure', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -165,23 +230,30 @@ test.describe('check-answers feature section structure', () => {
     ).toBeVisible()
   })
 
-  test('titles every card with a level 3 heading straight under its section heading', async ({
+  test('puts every card title straight under its section heading, with no other heading between them', async ({
     page
   }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expect(page.getByRole('heading', { level: 3 })).toHaveText([
+    await expect(page.getByRole('main').getByRole('heading')).toHaveText([
+      sharedCopy.errorSummary.title,
+      copy.title,
+      copy.sections.aboutTheConsignment,
       copy.cards.originOfImport,
       copy.cards.mainImportReason,
+      copy.sections.descriptionOfTheGoods,
       copy.cards.additionalDetails,
+      copy.sections.transportAndArrival,
       copy.cards.arrivalDetails,
       copy.cards.transportDetails,
+      copy.sections.documents,
       copy.cards.documents,
+      copy.sections.consignmentAddresses,
       copy.cards.addresses,
+      copy.sections.contactAddress,
       copy.cards.contactAddress
     ])
-    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(0)
   })
 })
 

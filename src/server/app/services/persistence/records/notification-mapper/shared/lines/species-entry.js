@@ -5,8 +5,8 @@ const partyFromPermanentAddress = (permanentAddress) =>
   permanentAddress &&
   compact({
     name: permanentAddress.name,
-    phone: permanentAddress.address?.phone,
-    email: permanentAddress.address?.email,
+    phone: permanentAddress.phone,
+    email: permanentAddress.email,
     address: toWireAddress(permanentAddress.address)
   })
 
@@ -17,6 +17,8 @@ const animalIdentifierFrom = (unit) =>
     tattoo: unit.animalIdentifierTattoo,
     earTag: unit.animalIdentifierEarTag,
     horseName: unit.horseName,
+    identificationDetails: unit.identificationDetails,
+    description: unit.description,
     permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 

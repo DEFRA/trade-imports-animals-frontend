@@ -11,6 +11,17 @@ export const copy = {
       title: 'County parish holding (CPH) number',
       hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.',
       add: 'Add a CPH number'
+    },
+    permanentAddress: {
+      title: 'Permanent address',
+      leadIn: 'A permanent address is where an animal:',
+      bullets: [
+        'will permanently reside',
+        'can be checked by the Animal and Plant Health Agency (APHA)'
+      ],
+      add: 'Add a permanent address',
+      addedForAnimals: (count) =>
+        `Permanent addresses added for ${count} animals`
     }
   },
   parties: {

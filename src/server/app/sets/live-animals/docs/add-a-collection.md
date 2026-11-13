@@ -148,9 +148,11 @@ argument is what makes it work at depth:
   whose own commodity code is allow-listed.
 - **a group** — the gated field is deeper than its gate. The per-unit
   identifier fields (`passport`, `earTag`, …) are `within unitRecord` but gate
-  on `commodityCode`, which lives one level up on the line. They pass
-  `unitRecord` as the gatedParentGroup so the line-level decision fans down
-  onto every unit in that line.
+  on the line's `commodityCode` — and, where an identifier is asked of
+  particular species, on the line's `speciesLatinName` as well, as
+  `horseName` does through `allowListedPairs`. Both live one level up on the
+  line. They pass `unitRecord` as the gatedParentGroup so the line-level
+  decision fans down onto every unit in that line.
 
 When an instance falls out of scope, the engine wipes that instance's stale
 value — a field-level wipe inside one instance, not a whole-instance delete.

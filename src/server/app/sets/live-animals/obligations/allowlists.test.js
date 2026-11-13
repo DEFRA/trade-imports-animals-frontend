@@ -6,18 +6,22 @@ import {
   numberOfPackages,
   cph,
   containsUnweanedAnimals,
+  description,
+  identificationDetails,
   microchip,
   passport,
   tattoo,
   earTag,
   horseName,
   permanentAddress,
+  permanentAddressOrigin,
   speciesLatinName
 } from './index.js'
 import {
   cphExemptCommodityCodes,
   earTagCommodityCodes,
-  horseNameCommodityCodes,
+  horseNameCodeSpecies,
+  identifiedCommodityCodes,
   microchipCommodityCodes,
   packageCountCommodityCodes,
   passportCommodityCodes,
@@ -26,8 +30,29 @@ import {
   unweanedCommodityCodes
 } from '../services/commodities/index.js'
 import { COMMODITY_GROUPS } from '../services/commodities/stub.js'
+import { OSTRICHES_CODE } from '../journeys/linear/features/commodities/search/test-support.js'
 
 const UNLISTED_VALUE = 'Unicorn'
+const UNIT_1_FULFILMENT_INDEX = 'line1.unit1'
+
+const PERMANENT_ADDRESS_REASONS = {
+  permanentAddress: {
+    code: 'obligation.permanentAddress.applicable.becausePermanentAddressLine',
+    explanation:
+      'permanentAddress applies on units of lines whose commodityCode and species pair is in the permanent-address list'
+  },
+  permanentAddressOrigin: {
+    code: 'obligation.permanentAddressOrigin.applicable.becausePermanentAddressLine',
+    explanation:
+      'permanentAddressOrigin applies on units of lines whose commodityCode and species pair is in the permanent-address list'
+  }
+}
+
+const HORSE_NAME_REASON = {
+  code: 'obligation.horseName.applicable.becauseHorseCommodity',
+  explanation:
+    'horseName applies on units of lines whose commodityCode and species pair is in the horse-name list'
+}
 
 let evaluate
 beforeAll(() => {
@@ -162,12 +187,6 @@ const UNIT_SCOPED_ALLOWLISTS = [
     gate: commodityCode,
     values: earTagCommodityCodes(),
     gated: earTag
-  },
-  {
-    name: 'horse-name list',
-    gate: commodityCode,
-    values: horseNameCommodityCodes(),
-    gated: horseName
   }
 ]
 
@@ -177,18 +196,18 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
       it(`Should put ${gated.name} in scope for a unit under ${gate.name} = '${value}'`, () => {
         const state = evaluate({
           [gate.id]: { line1: value },
-          [gated.id]: { 'line1.unit1': '' }
+          [gated.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
         })
         const fulfilmentIndexes =
           state.obligations[gated.id].fulfilmentIndexes ?? []
-        expect(fulfilmentIndexes).toContain('line1.unit1')
+        expect(fulfilmentIndexes).toContain(UNIT_1_FULFILMENT_INDEX)
       })
     }
 
     it(`Should not put ${gated.name} in scope for a control value`, () => {
       const state = evaluate({
         [gate.id]: { line1: UNLISTED_VALUE },
-        [gated.id]: { 'line1.unit1': '' }
+        [gated.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
       })
       const fulfilmentIndexes =
         state.obligations[gated.id].fulfilmentIndexes ?? []
@@ -197,28 +216,92 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
   })
 }
 
-describe('permanent-address list → permanentAddress (unit-record-scoped)', () => {
-  const permanentAddressIndexesFor = (code, latinName) =>
+describe('identified-code list → identificationDetails, description (unit-record-scoped fallback)', () => {
+  for (const obligation of [identificationDetails, description]) {
+    it(`Should put ${obligation.name} in scope for a unit under commodityCode = '${OSTRICHES_CODE}'`, () => {
+      const state = evaluate({
+        [commodityCode.id]: { line1: OSTRICHES_CODE },
+        [obligation.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+      })
+      const fulfilmentIndexes =
+        state.obligations[obligation.id].fulfilmentIndexes ?? []
+      expect(fulfilmentIndexes).toContain(UNIT_1_FULFILMENT_INDEX)
+    })
+
+    for (const code of identifiedCommodityCodes()) {
+      it(`Should not put ${obligation.name} in scope for a unit under commodityCode = '${code}'`, () => {
+        const state = evaluate({
+          [commodityCode.id]: { line1: code },
+          [obligation.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+        })
+        const fulfilmentIndexes =
+          state.obligations[obligation.id].fulfilmentIndexes ?? []
+        expect(fulfilmentIndexes).toEqual([])
+      })
+    }
+  }
+})
+
+describe.each([
+  ['permanentAddress', permanentAddress],
+  ['permanentAddressOrigin', permanentAddressOrigin]
+])('permanent-address list → %s (unit-record-scoped)', (_name, obligation) => {
+  const decisionFor = (code, latinName) =>
     evaluate({
       [commodityCode.id]: { line1: code },
       [speciesLatinName.id]: { line1: latinName },
-      [permanentAddress.id]: { 'line1.unit1': '' }
-    }).obligations[permanentAddress.id].fulfilmentIndexes ?? []
+      [obligation.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+    }).obligations[obligation.id]
+
+  const indexesFor = (code, latinName) =>
+    decisionFor(code, latinName).fulfilmentIndexes ?? []
 
   for (const [code, latinName] of permanentAddressCodeSpecies()) {
-    it(`Should put permanentAddress in scope for a unit of ${latinName} under ${code}`, () => {
-      expect(permanentAddressIndexesFor(code, latinName)).toContain(
-        'line1.unit1'
-      )
+    it(`Should put ${obligation.name} in scope for a unit of ${latinName} under ${code}`, () => {
+      expect(indexesFor(code, latinName)).toContain(UNIT_1_FULFILMENT_INDEX)
+      expect(decisionFor(code, latinName).reasons).toEqual([
+        PERMANENT_ADDRESS_REASONS[obligation.name]
+      ])
     })
   }
 
-  it('Should not put permanentAddress in scope for the genus Felis under 01061900', () => {
-    expect(permanentAddressIndexesFor('01061900', 'Felis')).toEqual([])
+  it(`Should not put ${obligation.name} in scope for the genus Felis under 01061900`, () => {
+    expect(indexesFor('01061900', 'Felis')).toEqual([])
   })
 
-  it('Should not put permanentAddress in scope for a listed species under another code', () => {
-    expect(permanentAddressIndexesFor('0102', 'Felis catus')).toEqual([])
+  it(`Should not put ${obligation.name} in scope for a listed species under another code`, () => {
+    expect(indexesFor('0102', 'Felis catus')).toEqual([])
+  })
+
+  it(`Should not put ${obligation.name} in scope for a species that is not listed`, () => {
+    expect(indexesFor('01061900', 'Mustela nigripes')).toEqual([])
+  })
+})
+
+describe('horse-name list → horseName (unit-record-scoped, pair-gated)', () => {
+  const decisionFor = (code, latinName) =>
+    evaluate({
+      [commodityCode.id]: { line1: code },
+      [speciesLatinName.id]: { line1: latinName },
+      [horseName.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+    }).obligations[horseName.id]
+
+  const indexesFor = (code, latinName) =>
+    decisionFor(code, latinName).fulfilmentIndexes ?? []
+
+  for (const [code, latinName] of horseNameCodeSpecies()) {
+    it(`Should put horseName in scope for a unit of ${latinName} under ${code}`, () => {
+      expect(indexesFor(code, latinName)).toContain(UNIT_1_FULFILMENT_INDEX)
+      expect(decisionFor(code, latinName).reasons).toEqual([HORSE_NAME_REASON])
+    })
+  }
+
+  it('Should not put horseName in scope for the donkey species under 0101', () => {
+    expect(indexesFor('0101', 'Equus asinus')).toEqual([])
+  })
+
+  it('Should not put horseName in scope for the horse species under another code', () => {
+    expect(indexesFor('0102', 'Equus cabalus')).toEqual([])
   })
 })
 
@@ -252,9 +335,9 @@ const EXPECTED = {
   'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
-  'tattoo list': ['01061900'],
-  'ear-tag list': ['0102'],
-  'horse-name list': ['0101'],
+  'tattoo list': ['0102', '0103', '01061900'],
+  'ear-tag list': ['0102', '0103', '010410', '010420'],
+  'horse-name list': [['0101', 'Equus cabalus']],
   'permanent-address list': [
     ['01061900', 'Felis catus'],
     ['01061900', 'Canis familiaris'],
@@ -270,7 +353,7 @@ const ALLOWLISTS_UNDER_TEST = [
   { name: 'passport list', values: passportCommodityCodes() },
   { name: 'tattoo list', values: tattooCommodityCodes() },
   { name: 'ear-tag list', values: earTagCommodityCodes() },
-  { name: 'horse-name list', values: horseNameCommodityCodes() },
+  { name: 'horse-name list', values: horseNameCodeSpecies() },
   { name: 'permanent-address list', values: permanentAddressCodeSpecies() }
 ]
 

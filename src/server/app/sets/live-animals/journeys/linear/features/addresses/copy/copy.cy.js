@@ -12,6 +12,17 @@ export const copy = {
       title: 'Rhif daliad plwyf sirol (CPH)',
       hint: 'Mae’r rhif daliad plwyf sirol (CPH) yn adnabod y daliad lle bydd yr anifeiliaid yn cael eu cadw.',
       add: 'Ychwanegu rhif CPH'
+    },
+    permanentAddress: {
+      title: 'Cyfeiriad parhaol',
+      leadIn: 'Cyfeiriad parhaol yw lle bydd anifail:',
+      bullets: [
+        'yn preswylio’n barhaol',
+        'yn gallu cael ei wirio gan yr Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA)'
+      ],
+      add: 'Ychwanegu cyfeiriad parhaol',
+      addedForAnimals: (count) =>
+        `Cyfeiriadau parhaol wedi’u hychwanegu ar gyfer ${count} anifail`
     }
   },
   parties: {

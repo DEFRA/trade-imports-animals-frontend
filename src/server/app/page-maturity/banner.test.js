@@ -159,6 +159,8 @@ describe('page maturity banner on a served page', () => {
     return bannersOf(payload)
   }
 
+  const serverBootTimeout = 30000
+
   beforeAll(async () => {
     ;({ server, stop: stopServer } = await startStubModeServer())
     const signIn = await server.inject({
@@ -171,7 +173,7 @@ describe('page maturity banner on a served page', () => {
       url: SERVED_PAGE_URL,
       headers: { cookie }
     })
-  })
+  }, serverBootTimeout)
 
   afterEach(() => {
     config.set(ENABLED_KEY, originalEnabled)

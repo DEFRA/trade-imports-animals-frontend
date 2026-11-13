@@ -71,7 +71,6 @@ export const copy = {
   },
   identifierTable: {
     animalColumn: 'Anifail',
-    permanentAddress: 'Cyfeiriad parhaol',
     animalN: (n) => `Anifail ${n}`,
     heading: 'Manylion yr anifeiliaid'
   },

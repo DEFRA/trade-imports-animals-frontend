@@ -1,4 +1,3 @@
-import { pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -22,12 +21,7 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
-const hubEntryReturn = (request) => {
-  const { honouredSlug } = kit.readReturnMarker(request, ['addresses'])
-  return honouredSlug
-    ? kit.carryTrail(request, pagePath(request.params.journeyId, honouredSlug))
-    : null
-}
+const ADDRESSES_HUB_SLUGS = ['addresses']
 
 const render = (
   request,
@@ -38,7 +32,9 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubEntryReturn(request) ?? kit.trailBackLink(request),
+      backLink:
+        kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
+        kit.trailBackLink(request),
       journey,
       page,
       recoverableError
@@ -83,7 +79,7 @@ const post = async (request, h) => {
   const { scope } = committed
   return h.redirect(
     kit.hubExitTarget(request) ??
-      hubEntryReturn(request) ??
+      kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
       kit.nextTarget(request, page, scope)
   )
 }
