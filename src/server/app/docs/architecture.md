@@ -49,6 +49,8 @@ The reusable code lives in these directories:
 - `shared/` — common controller and template support
 - `analysis/` — journey simulation and reachability tooling
 
+`src/shared/` holds pure helpers that both the browser bundle (`src/client/`) and the server import, such as `escape-html.js`.
+
 Production L2 code does not import a set. Set and journey data arrive through L1
 configuration.
 

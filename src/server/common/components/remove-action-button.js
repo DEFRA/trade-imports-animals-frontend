@@ -1,4 +1,4 @@
-import { escapeHtml } from '../../app/shared/escape-html.js'
+import { escapeHtml } from '../../../shared/escape-html.js'
 import { visuallyHiddenText } from '../visually-hidden-text.js'
 
 const trailingClass = (classes) => (classes ? ` ${classes}` : '')
