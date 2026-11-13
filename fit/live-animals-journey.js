@@ -669,9 +669,7 @@ export const expectSpeciesSelected = async (
   const group = selectedSummary(page)
     .getByRole('listitem')
     .filter({ has: commodityLine })
-  await expect(
-    group.getByText(`${commodityCode}:`, { exact: true })
-  ).toBeVisible()
+  await expect(group.locator(commodityLine)).toBeVisible()
   await expect(
     group
       .getByRole('listitem')
