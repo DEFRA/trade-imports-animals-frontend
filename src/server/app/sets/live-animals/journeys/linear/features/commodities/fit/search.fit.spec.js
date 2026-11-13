@@ -48,13 +48,11 @@ const errorLink = (page, message) =>
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
-const searchResults = (page) => page.locator('#commodity-search-results')
-
 const updateSelectedButton = (page) =>
   page.getByRole('button', { name: copy.search.updateSelected })
 
 const resultsDropdown = (page) =>
-  searchResults(page).locator('[data-multi-select-search-dropdown]')
+  page.locator('[data-multi-select-search-dropdown]')
 
 const expectSelectedHeading = (page, count) =>
   expect(selectedSummary(page)).toContainText(
@@ -225,7 +223,7 @@ test.describe('commodity search', () => {
   test('says so when nothing matches', async ({ page }) => {
     await searchCommodities(page, 'zzz')
     await expect(
-      searchResults(page).getByText(copy.search.noResults, { exact: true })
+      resultsDropdown(page).getByText(copy.search.noResults, { exact: true })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
   })
@@ -681,7 +679,10 @@ test.describe('commodity search results list', () => {
   })
 
   const speciesRows = (page) =>
-    resultsDropdown(page).locator('.govuk-checkboxes__item')
+    page
+      .getByRole('group', { name: CATTLE_HEADING, exact: true })
+      .getByRole('checkbox')
+      .locator('..')
 
   test('is a scrolling box joined to the bottom of the search box', async ({
     page
