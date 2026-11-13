@@ -109,7 +109,8 @@ Collections use hand-written controllers over generic engine operations.
 - [`commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js)
   reconciles selected lines before the details page edits them. Its results
   route renders only the results, for the page's multi-select search to swap
-  in, and saves no lines.
+  in. What it stores is set out in the
+  [multi-select search README](../../../../common/components/multi-select-search/README.md#what-the-page-supplies).
 - [`commodities/animal-identification/animal-identification.controller.js`](../journeys/linear/features/commodities/animal-identification/animal-identification.controller.js)
   manages a nested collection within one commodity line.
 

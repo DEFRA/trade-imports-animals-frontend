@@ -20,8 +20,10 @@ The commodity search page is the first page to use it. See
   on screen. The component never builds any of it.
 - **A results route.** This is a POST route that takes the page's own form and
   answers with `appMultiSelectSearchResults`. The body of that response is the
-  same results, rendered by the same partial the page uses. The route saves
-  nothing the page's save would save. It only works out what to show.
+  same results, rendered by the same partial the page uses. The route may store
+  the search rows it shows, as the page's own search does, so a later save can
+  check a choice against them. It never saves the trader's choice: only the
+  page's save does that.
 - **The announcement.** The `announcement` param of
   `appMultiSelectSearchResults` is what a screen reader is told after a search,
   such as how many results there are. It is page copy, so the page builds it.

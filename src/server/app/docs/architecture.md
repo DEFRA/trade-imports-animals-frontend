@@ -167,7 +167,8 @@ purpose, because they hold work the trader has not saved anywhere else yet:
 - the commodity search page re-renders after a search, Clear all or a
   per-species removal, because it holds the search rows and the ticks on
   screen. With JavaScript the same post goes to the page's results route,
-  which renders only the results and saves no lines
+  which renders only the results; what it stores is set out in the
+  [multi-select search README](../../common/components/multi-select-search/README.md#what-the-page-supplies)
 - Commodity details re-renders after a removal, because the quantity fields
   hold numbers the trader has typed and not yet saved, which a redirect would
   drop. Its removal names the entry it drops rather than its position, so a
