@@ -105,6 +105,12 @@ const textsOf = (result) =>
 
 const keysOf = (lines) => lines.map(lineKey)
 
+const checkedValuesOf = (result) =>
+  groupsOf(result)
+    .flatMap((group) => group.items)
+    .filter((item) => item.checked)
+    .map((item) => item.value)
+
 describe('commodity search', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -229,10 +235,7 @@ describe('commodity search — carried and stored search rows', () => {
     const result = await searchFor('buffalo', { selection: lineKey(bubalis) }, [
       afterSearchShowed(bubalis)
     ])
-    const items = groupsOf(result).flatMap((group) => group.items)
-    expect(
-      items.filter((item) => item.checked).map((item) => item.value)
-    ).toEqual([lineKey(bubalis)])
+    expect(checkedValuesOf(result)).toEqual([lineKey(bubalis)])
   })
 
   it('Should carry a choice made under an earlier query off screen', async () => {
@@ -453,6 +456,9 @@ describe('commodity search — results refreshed in place', () => {
   const refreshResults = (payload, startingFrom = []) =>
     driveHandler(postResults, { payload, startingFrom })
 
+  const RESULTS_TEMPLATE =
+    'live-animals/journeys/linear/features/commodities/search/search-results'
+
   it('Should point the page at its results route', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.resultsUrl).toBe(
@@ -469,11 +475,20 @@ describe('commodity search — results refreshed in place', () => {
       },
       [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
     )
-    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(result.view.view).toBe(RESULTS_TEMPLATE)
+    expect(Object.keys(result.view.context).sort()).toEqual([
+      'announcement',
+      'carriedKeys',
+      'commodityGroups',
+      'copy',
+      'noResults',
+      'query',
+      'selectedSummary'
+    ])
     expect(legendsOf(result)).toEqual(['01061900'])
+    expect(checkedValuesOf(result)).toEqual([FELIS_CATUS_KEY])
     expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
     expect(result.view.context.selectedSummary.count).toBe(2)
-    expect(result.view.context.pageTitle).toBeUndefined()
   })
 
   it("Should store this search's rows beside the rows already shown", async () => {
@@ -561,7 +576,7 @@ describe('commodity search — results refreshed in place', () => {
     const result = await refreshResults({ species: BOS_TAURUS_KEY }, [
       afterSearchShowed(BOS_TAURUS_ROW)
     ])
-    expect(result.view.view).toMatch(/\/search-results$/)
+    expect(result.view.view).toBe(RESULTS_TEMPLATE)
     expect(result.view.context.selectedSummary.count).toBe(1)
     expect(result.after).toEqual(result.before)
   })
