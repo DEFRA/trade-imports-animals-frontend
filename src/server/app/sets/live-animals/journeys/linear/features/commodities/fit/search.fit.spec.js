@@ -191,7 +191,9 @@ test.describe('commodity search', () => {
     page
   }) => {
     await searchCommodities(page, 'gallus')
-    const firstCode = page.getByRole('group', { name: '01051111' })
+    const firstCode = page.getByRole('group', {
+      name: GALLUS_GALLUS_ROW.commodityCode
+    })
     const secondCode = page.getByRole('group', {
       name: GALLUS_GALLUS_SECOND_CODE_ROW.commodityCode
     })
