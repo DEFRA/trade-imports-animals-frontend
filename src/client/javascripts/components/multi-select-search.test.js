@@ -62,7 +62,7 @@ const mount = (resultsHtml = resultsBodyHtml()) => {
   }
 }
 
-const nativeSubmitsOf = (form, record = (event) => event.submitter) => {
+const cancelNativeSubmitsOf = (form, record = (event) => event.submitter) => {
   const nativeSubmits = []
   form.addEventListener('submit', (event) => {
     if (!event.defaultPrevented) {
@@ -178,7 +178,7 @@ describe('#MultiSelectSearch', () => {
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
     )
     fetchMock.mockResolvedValue(answering(responseHtml('', resultsBodyHtml())))
-    const nativeSubmits = nativeSubmitsOf(form)
+    const nativeSubmits = cancelNativeSubmitsOf(form)
 
     results().querySelector('button[value="remove:a"]').click()
     await settle()
@@ -196,7 +196,7 @@ describe('#MultiSelectSearch', () => {
     fetchMock.mockResolvedValue(
       answering(responseHtml('1 result available', resultsBodyHtml()))
     )
-    const nativeSubmits = nativeSubmitsOf(form)
+    const nativeSubmits = cancelNativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
@@ -237,7 +237,7 @@ describe('#MultiSelectSearch', () => {
   it('Should submit the form itself with the pressed action when the results request fails', async () => {
     const { form, searchBox, searchButton } = mount('')
     fetchMock.mockResolvedValue({ ok: false, text: async () => '' })
-    const nativeSubmitters = nativeSubmitsOf(form)
+    const nativeSubmitters = cancelNativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
@@ -249,7 +249,7 @@ describe('#MultiSelectSearch', () => {
   it('Should submit the form itself with the pressed action when the results response has no results in it', async () => {
     const { form, searchBox, searchButton, results } = mount('')
     fetchMock.mockResolvedValue(answering('<p id="elsewhere">Signed out</p>'))
-    const nativeSubmitters = nativeSubmitsOf(form)
+    const nativeSubmitters = cancelNativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
@@ -262,7 +262,7 @@ describe('#MultiSelectSearch', () => {
   it('Should submit the form itself with the pressed action when the results request cannot be sent', async () => {
     const { form, searchBox, searchButton } = mount('')
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
-    const nativeSubmitters = nativeSubmitsOf(form)
+    const nativeSubmitters = cancelNativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
@@ -278,7 +278,7 @@ describe('#MultiSelectSearch', () => {
       .mockResolvedValueOnce(
         answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
       )
-    nativeSubmitsOf(form)
+    cancelNativeSubmitsOf(form)
 
     results().querySelector('#thing-a').click()
     await settle()
@@ -315,7 +315,7 @@ describe('#MultiSelectSearch', () => {
     )
     const refresh = heldResponse()
     fetchMock.mockReturnValueOnce(refresh.promise)
-    const nativeSubmits = nativeSubmitsOf(form, (event) => ({
+    const nativeSubmits = cancelNativeSubmitsOf(form, (event) => ({
       submitter: event.submitter,
       chosen: new FormData(form).getAll('chosen')
     }))
@@ -393,7 +393,7 @@ describe('#MultiSelectSearch', () => {
 
   it('Should leave a save outside the search to submit the form, and post nothing for it', async () => {
     const { form, saveButton } = mount()
-    const nativeSubmitters = nativeSubmitsOf(form)
+    const nativeSubmitters = cancelNativeSubmitsOf(form)
 
     saveButton.click()
     await settle()
