@@ -108,9 +108,10 @@ so generic notification-mapper code does not import the set.
   the fixture against the codes, Latin names and common names it lists, and
   nothing outside this repo; in the tests repo, the stack test
   `trade-imports-ins-tests` `tests/animals/e2e/pages/commodities.spec.ts`
-  asserts the species checkbox accessible names and the selected panel
-  against `speciesLabel(commodityLines.cattle)` (`commodities.spec.ts:69`
-  and `:109`), so it fails if the MDM stub's common name changes.
+  asserts the species checkbox accessible names against
+  `speciesLabel(commodityLines.cattle)` (`commodities.spec.ts:69`), so it
+  fails if the MDM stub's common name changes. Its tally checks find each
+  chosen species by its Latin name alone, so they do not pin the common name.
   Whoever recaptures the stub must update this fixture by hand to match,
   because no automated check compares the two files.
 - The species check at submission reads a renamed species as a removed one:
