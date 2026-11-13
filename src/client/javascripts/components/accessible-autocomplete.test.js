@@ -48,10 +48,10 @@ const suggestionAfterTyping = (config, query, suggestion) => {
   return config.templates.suggestion(suggestion)
 }
 
-const countChangeEvents = (form) => {
-  const changes = []
-  form.addEventListener('change', (event) => changes.push(event.target))
-  return changes
+const recordChangeTargets = (form) => {
+  const changeTargets = []
+  form.addEventListener('change', (event) => changeTargets.push(event.target))
+  return changeTargets
 }
 
 describe('AccessibleAutocomplete', () => {
@@ -161,47 +161,47 @@ describe('AccessibleAutocomplete', () => {
   describe('confirming a choice', () => {
     it('Should select the option and send one bubbling change when a suggestion is chosen', () => {
       const { select, form, config } = enhanceCountrySelect()
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
 
       config.onConfirm('France')
 
       expect(select.value).toBe('FR')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should select the option the box holds when the box is left on an exact match', () => {
       const { select, form, input, config } = enhanceCountrySelect()
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Germany'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('DE')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should send a change when the box is left on text that matches nothing and the choice clears', () => {
       const { select, form, input, config } = enhanceCountrySelect()
       config.onConfirm('France')
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Fran'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should send nothing when the box is left with the choice unchanged', () => {
       const { select, form, input, config } = enhanceCountrySelect()
       config.onConfirm('Germany')
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Germany'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('DE')
-      expect(changes).toEqual([])
+      expect(changeTargets).toEqual([])
     })
   })
 
