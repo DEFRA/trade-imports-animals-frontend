@@ -110,44 +110,57 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
   }
 }
 
-const refreshOnEachChange = ($module, parts, refresher) => {
-  const { form, results, searchBox, searchButton } = parts
+const typedSearchDelay = () => {
   const typingDelayMs = 250
   let typingTimer
 
-  const refreshNow = (refreshRequest) => {
-    clearTimeout(typingTimer)
-    refresher.refresh(refreshRequest)
+  return {
+    restart: (refreshTypedSearch) => {
+      clearTimeout(typingTimer)
+      typingTimer = setTimeout(refreshTypedSearch, typingDelayMs)
+    },
+    drop: () => clearTimeout(typingTimer)
   }
+}
 
-  searchBox.addEventListener('input', () => {
-    clearTimeout(typingTimer)
-    typingTimer = setTimeout(
-      () =>
-        refreshNow({
-          submitter: searchButton,
-          trigger: searchBox,
-          announce: true
-        }),
-      typingDelayMs
+const refreshOnTypingAndTicking = (
+  { results, searchBox, searchButton },
+  refresher,
+  typedSearch
+) => {
+  searchBox.addEventListener('input', () =>
+    typedSearch.restart(() =>
+      refresher.refresh({
+        submitter: searchButton,
+        trigger: searchBox,
+        announce: true
+      })
     )
-  })
+  )
 
-  results.addEventListener('change', (event) =>
-    refreshNow({
+  results.addEventListener('change', (event) => {
+    typedSearch.drop()
+    refresher.refresh({
       submitter: searchButton,
       trigger: event.target,
       announce: false
     })
-  )
+  })
+}
 
+const refreshInPlaceOfModuleSubmitsAndHoldOutsideSubmits = (
+  $module,
+  { form, searchButton },
+  refresher,
+  typedSearch
+) => {
   form.addEventListener('submit', (event) => {
     if (refresher.isSubmittingNatively()) {
       return
     }
+    typedSearch.drop()
     const { submitter } = event
     if (!submitter || !$module.contains(submitter)) {
-      clearTimeout(typingTimer)
       if (refresher.hasRefreshesWaiting()) {
         event.preventDefault()
         refresher.submitOnceRefreshesLand(submitter)
@@ -155,7 +168,7 @@ const refreshOnEachChange = ($module, parts, refresher) => {
       return
     }
     event.preventDefault()
-    refreshNow({
+    refresher.refresh({
       submitter,
       trigger: submitter,
       announce: submitter === searchButton
@@ -205,7 +218,15 @@ class MultiSelectSearch {
   constructor($module) {
     const parts = $module ? partsOf($module) : null
     if (parts) {
-      refreshOnEachChange($module, parts, resultsRefresher(parts))
+      const refresher = resultsRefresher(parts)
+      const typedSearch = typedSearchDelay()
+      refreshOnTypingAndTicking(parts, refresher, typedSearch)
+      refreshInPlaceOfModuleSubmitsAndHoldOutsideSubmits(
+        $module,
+        parts,
+        refresher,
+        typedSearch
+      )
       showDropdownOnFocusAndHideOnEscapeOrClickAway($module, parts)
       $module.classList.add(ENHANCED_CLASS)
     }
