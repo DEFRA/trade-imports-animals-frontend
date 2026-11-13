@@ -79,12 +79,13 @@ const render = (request, h, current, { errorText = null, ...shown }) => {
 const speciesCountOf = (groups) =>
   groups.reduce((count, group) => count + group.items.length, 0)
 
-const announcementFor = ({ query, commodityGroups: groups }) => {
+const announcementFor = ({ query, noResults, commodityGroups: groups }) => {
   if (!isSearchable(query)) {
     return ''
   }
-  const count = speciesCountOf(groups)
-  return count === 0 ? copy.noResults : copy.resultsAvailable(count)
+  return noResults
+    ? copy.noResults
+    : copy.resultsAvailable(speciesCountOf(groups))
 }
 
 const renderResults = (_request, h, current, shown) => {
