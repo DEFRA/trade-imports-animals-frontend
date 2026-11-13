@@ -50,8 +50,8 @@ the response.
 ## Styles
 
 `multi-select-search.scss` beside the macro draws the design's dropdown and
-chips. The page puts its results in the classes it styles, and the macro's
-comment block lists them:
+chips. The page puts its results in the classes it styles, each prefixed
+`app-multi-select-search`, and this list is the one that names them all:
 
 - `__dropdown` is the results list, joined to the bottom of the search box. It
   scrolls past 270px. Mark it `data-multi-select-search-dropdown` so the script
@@ -62,7 +62,9 @@ comment block lists them:
 - `__message` is a row of text in the list, such as no results.
 - `__selected` and the classes inside it draw what has been chosen: the count
   with Clear all beside it, then a chip per choice under its group, each with a
-  cross to remove it.
+  cross to remove it. Inside it go `__selected-header`, `__selected-heading`,
+  `__clear`, `__selected-list`, `__selected-group`, `__selected-group-label`,
+  `__chips`, `__chip`, `__chip-label` and `__chip-remove`.
 - `__update` is a button under the results for use without JavaScript, such as
   "Update selected" posting `action=search`. A tick cannot post the form
   without a script, so this is how the chips catch up. The script adds
