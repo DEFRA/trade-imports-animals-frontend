@@ -225,6 +225,44 @@ describe('#MultiSelectSearch', () => {
     expect(nativeSubmitters).toEqual([searchButton])
   })
 
+  it('Should refresh in place again after its own submit of the form is cancelled', async () => {
+    const { form, results } = mount()
+    fetchMock
+      .mockResolvedValueOnce({ ok: false, text: async () => '' })
+      .mockResolvedValueOnce(
+        answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
+      )
+    form.addEventListener('submit', (event) => event.preventDefault())
+
+    results().querySelector('#thing-a').click()
+    await settle()
+    results().querySelector('#thing-a').click()
+    await settle()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(results().querySelector('#refreshed')).not.toBeNull()
+  })
+
+  it('Should refresh in place again when the page it submitted away from is restored from the back-forward cache', async () => {
+    const { results } = mount()
+    fetchMock
+      .mockResolvedValueOnce({ ok: false, text: async () => '' })
+      .mockResolvedValueOnce(
+        answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
+      )
+
+    results().querySelector('#thing-a').click()
+    await settle()
+    const restored = new Event('pageshow')
+    Object.defineProperty(restored, 'persisted', { value: true })
+    window.dispatchEvent(restored)
+    results().querySelector('#thing-a').click()
+    await settle()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(results().querySelector('#refreshed')).not.toBeNull()
+  })
+
   it('Should hold a save pressed while results are refreshing until they land, then submit it with the refreshed form', async () => {
     const { form, results, saveButton } = mount(
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
