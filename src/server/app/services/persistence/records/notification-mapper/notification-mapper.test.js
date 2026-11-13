@@ -108,14 +108,15 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
+          permanentAddressOrigin: 'newAddress',
           permanentAddress: {
             name: 'Owner',
+            phone: '01234 567890',
+            email: 'owner@example.com',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
               postcode: 'AB1 2CD',
-              countryCode: 'FR',
-              phone: '01234 567890',
-              email: 'owner@example.com'
+              countryCode: 'FR'
             }
           }
         },
@@ -426,6 +427,16 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
   })
 
+  test('Should carry no record of which option the trader chose for a permanent address', () => {
+    const notification = currentNotificationFrom(answersWithGaps())
+    const [firstUnit] = notification.commodities[0].species[0].animalIdentifiers
+
+    expect(firstUnit.permanentAddress).not.toHaveProperty(
+      'permanentAddressOrigin'
+    )
+    expect(firstUnit).not.toHaveProperty('permanentAddressOrigin')
+  })
+
   test('Should carry a unit identified only by its microchip onto the species entry', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
@@ -449,6 +460,33 @@ describe('Mapper A — per-unit animal identifiers', () => {
       microchip: '900987654321098',
       animalIdentifiers: [{ microchip: '900987654321098' }]
     })
+  })
+
+  test('Should carry a unit holding only the two free-text fallback answers onto the species entry', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commodityCode: OSTRICHES_CODE,
+          speciesLatinName: STRUTHIO,
+          speciesCommonName: 'Ostriches',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '40',
+          animalIdentifiers: [
+            {
+              identificationDetails: 'Scar on left wing',
+              description: 'Dark plumage'
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(notification.commodities[0].species[0].animalIdentifiers).toEqual([
+      {
+        identificationDetails: 'Scar on left wing',
+        description: 'Dark plumage'
+      }
+    ])
   })
 
   test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {

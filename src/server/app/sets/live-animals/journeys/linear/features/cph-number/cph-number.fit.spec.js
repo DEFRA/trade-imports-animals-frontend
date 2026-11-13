@@ -16,7 +16,10 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../flow/section-captions/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 const WHOLE_NUMBER = '123456789'
@@ -358,6 +361,10 @@ test.describe('cph-number validation', () => {
     for (const box of Object.values(boxes)) {
       await expect(box).toHaveCSS('border-top-color', errorBorder)
     }
+
+    await expect(page).toHaveTitle(
+      `${errorTitlePrefix}${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
   })
 
   test('has no serious or critical axe violations in the error state', async ({

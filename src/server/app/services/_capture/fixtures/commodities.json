@@ -130,6 +130,15 @@
     ]
   },
   {
+    "code": "010420",
+    "species": [
+      {
+        "latinName": "Capra hircus",
+        "commonName": "Goat"
+      }
+    ]
+  },
+  {
     "code": "01051111",
     "species": [
       {

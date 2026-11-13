@@ -5,14 +5,17 @@ import {
 import {
   commodityCode,
   commodityLine,
+  description,
   speciesCommonName,
   earTag,
   horseName,
+  identificationDetails,
   microchip,
   numberOfAnimals,
   numberOfPackages,
   passport,
   permanentAddress,
+  permanentAddressOrigin,
   speciesLatinName,
   tattoo,
   unitRecord
@@ -57,5 +60,8 @@ export const evaluationBindings = feature('commodities', [
   unitLeaf('animalIdentifierTattoo', tattoo),
   unitLeaf('animalIdentifierEarTag', earTag),
   unitLeaf('horseName', horseName),
-  unitLeaf('permanentAddress', permanentAddress)
+  unitLeaf('identificationDetails', identificationDetails),
+  unitLeaf('description', description),
+  unitLeaf('permanentAddress', permanentAddress),
+  unitLeaf('permanentAddressOrigin', permanentAddressOrigin)
 ])

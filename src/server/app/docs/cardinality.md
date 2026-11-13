@@ -41,11 +41,14 @@ commodity has an identifier set, not distinct species, so two lines of the same
 species satisfy it.
 
 A leaf the floor reads through `admitsValue` must expose `metadata.values`, which
-only the allowlist and complement shapes define. A leaf gated by any other shape
-(equals, present, includes, branched), or by an allowlist fanned onto some other
-group, cannot be judged from the parent's stored values, so the floor keeps
-asking for a record rather than going vacuous. Going vacuous would report an
-empty collection satisfied and leave the notification submittable.
+the allowlist, pair-allowlist and complement shapes define. A pair-gated leaf is
+judged from both its gate obligation's and its paired obligation's stored values
+at the parent's index — the horse name, listed per `[commodity code, species]`
+pair, is judged that way. A leaf gated by any other shape (equals, present,
+includes, branched), or by a gate fanned onto some other group, cannot be judged
+from the parent's stored values, so the floor keeps asking for a record rather
+than going vacuous. Going vacuous would report an empty collection satisfied and
+leave the notification submittable.
 
 ## Value-linked append caps
 

@@ -8,14 +8,18 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import {
-  identifiedCommodityCodes,
-  identifiersFor
-} from '../../../../../services/commodities/index.js'
+import { identifiedCommodityCodes } from '../../../../../services/commodities/index.js'
+import { HORSES_CODE } from '../../../../../services/commodities/rules.js'
+import { scopedFields } from '../animal-identification/identifier/fields.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-import { BOS_TAURUS } from '../search/test-support.js'
+import {
+  BOS_TAURUS,
+  EQUUS_CABALUS,
+  OSTRICHES_CODE,
+  STRUTHIO
+} from '../search/test-support.js'
 
 describe('#copy', () => {
   it.each([
@@ -46,13 +50,18 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity code asks for', () => {
-    const identifiers = new Set(
-      identifiedCommodityCodes().flatMap((code) => identifiersFor(code))
-    )
+  it('Should carry a non-empty label and length error in English and Welsh for every identifier the panel can ask for', () => {
+    const panelFieldIds = (code, speciesLatinName) =>
+      scopedFields(code, speciesLatinName).map((field) => field.id)
+    const identifiers = new Set([
+      ...identifiedCommodityCodes().flatMap((code) =>
+        panelFieldIds(code, code === HORSES_CODE ? EQUUS_CABALUS : undefined)
+      ),
+      ...panelFieldIds(OSTRICHES_CODE, STRUTHIO)
+    ])
     expect(
       identifiers.size,
-      'no commodity code carries any identifier'
+      'no commodity line asks for any identifier'
     ).toBeGreaterThan(0)
 
     for (const block of [copy, copyCy]) {
@@ -123,48 +132,6 @@ describe('#copy', () => {
     )
     expect(copyCy.identification.changeAnimalCount).toBe(
       'Newid nifer yr anifeiliaid'
-    )
-  })
-
-  it('Should warn that a false permanent address is fraud and say APHA can check it', () => {
-    expect(copy.identification.permanentAddress.warning).toBe(
-      'Providing a false address is an act of fraud'
-    )
-    expect(copy.identification.permanentAddress.definitionLeadIn).toBe(
-      'A permanent address is where an animal:'
-    )
-    expect(copy.identification.permanentAddress.definitionItems).toEqual([
-      'will permanently reside',
-      'can be checked by the Animal and Plant Health Agency (APHA)'
-    ])
-    expect(copy.identification.permanentAddress.question).toBe(
-      'Where will their permanent address be?'
-    )
-    expect(copyCy.identification.permanentAddress.definitionItems[1]).toContain(
-      'APHA'
-    )
-  })
-
-  it('Should label the permanent address postcode and phone fields, hint the country code and name both fields the same way in their errors', () => {
-    expect(copy.identification.address.postcode).toBe('Postcode or Zip code')
-    expect(copy.identification.address.phone).toBe('Phone number')
-    expect(copy.identification.addressHints.phone).toBe(
-      'For international numbers include the country code'
-    )
-    expect(copyCy.identification.addressHints.phone).toBe(
-      'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
-    )
-    expect(copy.identification.errors.addressMandatory.phone).toBe(
-      'Enter a phone number'
-    )
-    expect(copy.identification.errors.addressFormat.postcode).toBe(
-      'Postcode or Zip code must be 12 characters or less'
-    )
-    expect(copy.identification.errors.addressMandatory.postcode).toBe(
-      'Enter a postcode or Zip code'
-    )
-    expect(copy.identification.errors.addressFormat.phone).toBe(
-      'Phone number must be 20 characters or less'
     )
   })
 

@@ -14,6 +14,7 @@ import {
   expectThreeSaveControls,
   openCommoditySearch,
   openOverview,
+  pressSpeciesRemove,
   searchCommodities,
   selectSpecies,
   selectedSummary,
@@ -35,14 +36,6 @@ const canonicalSelectionOrder = [
   labelFor(BOS_TAURUS_ROW.speciesLatinName),
   labelFor(FELIS_CATUS_ROW.speciesLatinName)
 ]
-
-const pressSpeciesRemove = (page, { speciesLatinName }) =>
-  selectedSummary(page)
-    .getByRole('button', {
-      name: `Remove ${labelFor(speciesLatinName)}`,
-      exact: true
-    })
-    .click()
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 

@@ -151,7 +151,7 @@ describe('#proveFlowReachability', () => {
     }
   })
 
-  it('Should scope no identifier leaf on the unidentified-line variant', () => {
+  it('Should scope the two free-text fallback identifiers but no typed identifier on the unidentified-line variant', () => {
     const { answers } = seedVariants().find(
       (variant) => variant.id === 'unidentified-line'
     )
@@ -178,6 +178,9 @@ describe('#proveFlowReachability', () => {
       'permanentAddress'
     ]) {
       expect(scopedNames).not.toContain(name)
+    }
+    for (const name of ['identificationDetails', 'description']) {
+      expect(scopedNames).toContain(name)
     }
   })
 })

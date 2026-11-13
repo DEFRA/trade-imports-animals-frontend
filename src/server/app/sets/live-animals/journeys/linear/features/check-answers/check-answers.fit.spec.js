@@ -2,22 +2,33 @@ import { expect, test } from '@playwright/test'
 import {
   BASE,
   DESKTOP_VIEWPORT,
+  FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
+  addPlaceOfDestination,
+  answerPermanentAddressCard,
   chooseTypeAheadOption,
   chooseCountryOfOrigin,
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   expectStyle,
   govukVisuallyHiddenStyleOf,
+  identifyAnimalsByMicrochip,
   journeyIdFromPage,
   journeyUrl,
   notificationViewUrl,
+  numberOfAnimalsFor,
+  openCommodityDetails,
   openNotificationView,
+  openOverview,
+  openPermanentAddressFromAddLink,
   openReviewFromHub,
+  partyPickerName,
   rowFor,
+  saveAndContinue,
   signIn,
   startNotification,
-  urlUnderBase
+  urlUnderBase,
+  values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -30,6 +41,7 @@ const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
+const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
 const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.portOfEntry,
   copy.rows.arrivalDate,
@@ -118,6 +130,60 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
+test.describe('check-answers feature permanent address rows', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('renders one review row per cat, keyed by its common name and number, and heads the species card with identifiers alone', async ({
+    page
+  }) => {
+    test.slow()
+    await openCommodityDetails(page, [FELIS_CATUS_ROW])
+    await (await numberOfAnimalsFor(page, FELIS_CATUS_ROW)).fill('2')
+    await saveAndContinue(page).click()
+    await identifyAnimalsByMicrochip(page, ['MICROCHIP-1', 'MICROCHIP-2'])
+
+    await openOverview(page)
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    await addPlaceOfDestination(page)
+    await openPermanentAddressFromAddLink(page)
+    await expect(
+      page.getByRole('heading', { name: 'Permanent address' })
+    ).toBeVisible()
+    await answerPermanentAddressCard(page, 'Felis catus 1')
+    await answerPermanentAddressCard(page, 'Felis catus 2', {
+      nameOrOrganisationName: 'Pet Owner',
+      addressLine1: '1 Pet Lane',
+      townOrCity: 'Leeds',
+      postcode: 'LS1 1AA',
+      email: 'pet@example.co.uk',
+      phone: '0113 555 0192'
+    })
+    await saveAndContinue(page).click()
+
+    await openOverview(page)
+    await openReviewFromHub(page)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+    const catOneRow = rowFor(page, 'Domestic Cat 1')
+    await expect(catOneRow).toContainText(
+      partyPickerName(values.placeOfDestination)
+    )
+    await expect(catOneRow).toContainText('18 Dockside Road')
+    await expect(catOneRow).toContainText('United Kingdom')
+    await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
+
+    const speciesCard = page.locator(SUMMARY_CARD_SELECTOR, {
+      hasText: `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
+    })
+    await expect(speciesCard.getByRole('columnheader')).toHaveText([
+      'Animal',
+      'Microchip'
+    ])
+  })
+})
+
 test.describe('check-answers feature section structure', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -178,7 +244,7 @@ test.describe('check-answers feature section structure', () => {
       copy.groups.contactAddress
     ])
     await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
-      await page.locator('.govuk-summary-card').count()
+      await page.locator(SUMMARY_CARD_SELECTOR).count()
     )
   })
 })
@@ -369,7 +435,7 @@ test.describe('check-answers feature change links', () => {
     await startNotification(page)
     await openNotificationView(page)
 
-    const cards = page.locator('.govuk-summary-card')
+    const cards = page.locator(SUMMARY_CARD_SELECTOR)
     const cardCount = await cards.count()
 
     expect(cardCount).toBeGreaterThan(0)

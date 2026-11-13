@@ -15,11 +15,15 @@ import {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS_ROW,
+  CAPRA_HIRCUS_ROW,
+  EQUUS_ASINUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
   GALLUS_GALLUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
+  OVIS_ARIES_ROW,
   STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
@@ -47,11 +51,15 @@ export {
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   BUBALUS_BUBALIS_ROW,
+  CAPRA_HIRCUS_ROW,
+  EQUUS_ASINUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
   GALLUS_GALLUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
-  STRUTHIO_ROW
+  OVIS_ARIES_ROW,
+  STRUTHIO_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW
 }
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
@@ -781,11 +789,15 @@ export const expectSpeciesSelected = async (
   ).toBeVisible()
 }
 
-export const unlockSections = async (
-  page,
-  chosen = FELIS_CATUS_ROW,
-  { identificationApplies = true } = {}
-) => {
+export const pressSpeciesRemove = (page, { speciesLatinName }) =>
+  selectedSummary(page)
+    .getByRole('button', {
+      name: `Remove ${labelFor(speciesLatinName)}`,
+      exact: true
+    })
+    .click()
+
+export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -793,12 +805,7 @@ export const unlockSections = async (
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill('1')
-  await saveAndExpectLanding(
-    page,
-    identificationApplies
-      ? LANDINGS.animalIdentification
-      : LANDINGS.additionalDetails
-  )
+  await saveAndExpectLanding(page, LANDINGS.animalIdentification)
   await openOverview(page)
 }
 
@@ -970,6 +977,63 @@ export const answerAnimalIdentification = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.additionalDetails)
 }
 
+/**
+ * Saves one animal per given microchip on the open commodity line, one save
+ * each. With `leavesAnimalsOutstanding`, the last save uses Save and add
+ * another rather than Save and finish, so animals the line still declares stay
+ * outstanding.
+ */
+export const identifyAnimalsByMicrochip = async (
+  page,
+  microchips,
+  { leavesAnimalsOutstanding = false } = {}
+) => {
+  const microchipField = page.locator('#animalIdentifierMicrochip-0')
+  for (const [index, microchip] of microchips.entries()) {
+    await microchipField.fill(microchip)
+    await page
+      .getByRole('button', {
+        name:
+          index === microchips.length - 1 && !leavesAnimalsOutstanding
+            ? 'Save and finish'
+            : 'Save and add another'
+      })
+      .click()
+  }
+}
+
+/**
+ * The saved-animals table row for the numbered animal of a species.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ speciesLatinName: string }} chosen - the species row.
+ * @param {number} number - the animal's position on its card.
+ * @returns {import('@playwright/test').Locator}
+ */
+export const savedAnimalRow = (page, chosen, number) =>
+  page.getByRole('row').filter({
+    hasText: commoditiesCopy.identification.animalRowNamed(
+      labelFor(chosen.speciesLatinName),
+      number
+    )
+  })
+
+/**
+ * Removes the numbered animal of a species from its saved-animals table.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ speciesLatinName: string }} chosen - the species row.
+ * @param {number} number - the animal's position on its card.
+ * @returns {Promise<import('@playwright/test').Locator>} the row that was removed.
+ */
+export const removeAnimalRow = async (page, chosen, number) => {
+  const row = savedAnimalRow(page, chosen, number)
+  await row
+    .getByRole('button', { name: commoditiesCopy.identification.removeRow })
+    .click()
+  return row
+}
+
 export const answerImportReason = async (page) => {
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await page.getByRole('radio', { name: 'Breeding' }).check()
@@ -996,10 +1060,19 @@ export const answerAdditionalDetails = async (page) => {
 export const addressesSection = (page, heading) =>
   page.getByRole('region', { name: heading, exact: true })
 
+export const addPlaceOfDestination = async (page) => {
+  await page
+    .getByRole('link', { name: 'Add a place of destination', exact: true })
+    .click()
+  await page
+    .getByRole('radio', { name: partyPickerName(values.placeOfDestination) })
+    .check()
+  await saveAndExpectLanding(page, LANDINGS.addresses)
+}
+
 export const answerRolesAndAddresses = async (page) => {
   const parties = [
     ['Add a consignor', partyPickerName(values.consignor)],
-    ['Add a place of destination', partyPickerName(values.placeOfDestination)],
     ['Add a place of origin', partyPickerName(values.placeOfOrigin)],
     ['Add a consignee', partyPickerName(values.consignee)],
     ['Add an importer', partyPickerName(values.importer)]
@@ -1009,6 +1082,7 @@ export const answerRolesAndAddresses = async (page) => {
     await page.getByRole('radio', { name }).check()
     await saveAndExpectLanding(page, LANDINGS.addresses)
   }
+  await addPlaceOfDestination(page)
   await answerCphNumberFromAddLink(page)
   await saveAndExpectLanding(page, LANDINGS.contactAddress)
 }
@@ -1038,6 +1112,51 @@ export const answerCphNumberFromAddLink = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Consignment addresses' })
   ).toBeVisible()
+}
+
+export const openPermanentAddressFromAddLink = async (page) => {
+  await page
+    .getByRole('link', { name: 'Add a permanent address', exact: true })
+    .click()
+}
+
+/**
+ * Answers one permanent address card, found by its heading.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} cardHeading - the card's title, such as "Felis catus 1".
+ * @param {object} [newAddress] - the hand-entered address fields to fill.
+ * Checks "Same as the place of destination (POD)" when omitted.
+ */
+export const answerPermanentAddressCard = async (
+  page,
+  cardHeading,
+  newAddress
+) => {
+  const card = page.getByRole('region', { name: cardHeading, exact: true })
+  if (!newAddress) {
+    await card
+      .getByRole('radio', { name: 'Same as the place of destination (POD)' })
+      .check()
+    return
+  }
+  await card.getByRole('radio', { name: 'Enter a new address' }).check()
+  const PERMANENT_ADDRESS_FIELD_LABELS = {
+    nameOrOrganisationName: 'Name or organisation name',
+    addressLine1: 'Address line 1',
+    addressLine2: 'Address line 2 (optional)',
+    townOrCity: 'Town or city',
+    county: 'County (optional)',
+    postcode: 'Postcode or Zip code',
+    email: 'Email address',
+    phone: 'Phone number'
+  }
+  for (const [field, label] of Object.entries(PERMANENT_ADDRESS_FIELD_LABELS)) {
+    const value = newAddress[field]
+    if (value) {
+      await card.getByLabel(label, { exact: true }).fill(value)
+    }
+  }
 }
 
 export const MEANS_OF_TRANSPORT_SELECT = 'select#meansOfTransport'

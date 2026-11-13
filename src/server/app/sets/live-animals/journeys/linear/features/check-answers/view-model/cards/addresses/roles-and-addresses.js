@@ -14,8 +14,9 @@ const copy = copyFor({ en, cy })
 
 /**
  * The roles and addresses summary card: one row per party, a CPH row when CPH
- * applies and, unless read-only, a card Change action to the addresses page and
- * an edit link on each party row.
+ * applies, one row per animal holding a saved permanent address, and, unless
+ * read-only, a card Change action to the addresses page and an edit link on
+ * each party row.
  *
  * @param {object} options
  * @param {string} options.journeyId - the journey the card belongs to.
@@ -25,6 +26,8 @@ const copy = copyFor({ en, cy })
  * @param {boolean} options.readOnly - true to omit every Change action and edit link.
  * @param {object} [options.parties] - the stored party copies in display shape; defaults to `answers`.
  * @param {object} [options.partyErrors] - the error text per party id.
+ * @param {{label: string, permanentAddress: (object|undefined)}[]} [options.permanentAddresses] -
+ * an animal with no saved address contributes no row.
  * @returns {object} the summary card.
  */
 export const rolesAndAddressesCard = ({
@@ -34,7 +37,8 @@ export const rolesAndAddressesCard = ({
   answers,
   readOnly,
   parties = answers,
-  partyErrors = {}
+  partyErrors = {},
+  permanentAddresses = []
 }) => ({
   id: 'rolesAndAddresses',
   title: copy.cards.rolesAndAddresses,
@@ -57,6 +61,9 @@ export const rolesAndAddressesCard = ({
     ),
     ...(cphApplies(answers)
       ? [row(copy.rows.cph, answers.countyParishHoldingCph)]
-      : [])
+      : []),
+    ...permanentAddresses
+      .filter(({ permanentAddress }) => permanentAddress)
+      .map(({ label, permanentAddress }) => partyRow(label, permanentAddress))
   ]
 })

@@ -10,21 +10,20 @@ const copy = copyFor({ en, cy }).identification
 
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
-export const scopedFields = (commodityCode) =>
-  commodities
-    .identifiersFor(commodityCode)
-    .filter((id) => appliesForGateValue(id, commodityCode))
+export const scopedFields = (commodityCode, speciesLatinName) => {
+  const fallbackIdentifierFields = ['identificationDetails', 'description']
+  return [
+    ...commodities.identifiersFor(commodityCode),
+    ...fallbackIdentifierFields
+  ]
+    .filter((id) => appliesForGateValue(id, commodityCode, speciesLatinName))
     .map((id) => ({ id, label: copy.identifierLabels[id] }))
+}
 
-export const PERMANENT_ADDRESS = 'permanentAddress'
-
-export const permanentAddressApplies = (commodityCode, speciesLatinName) =>
-  appliesForGateValue(PERMANENT_ADDRESS, [commodityCode, speciesLatinName])
-
-export const identifierChecksFor = (commodityCode, index) => {
+export const identifierChecksFor = (commodityCode, speciesLatinName, index) => {
   const IDENTIFIER_MAX_LENGTH = 58
   return compose(
-    ...scopedFields(commodityCode).map((field) =>
+    ...scopedFields(commodityCode, speciesLatinName).map((field) =>
       maxText(
         fieldName(field.id, index),
         IDENTIFIER_MAX_LENGTH,
@@ -34,13 +33,20 @@ export const identifierChecksFor = (commodityCode, index) => {
   )
 }
 
-export const identifierValuesFromPayload = (payload, commodityCode, index) =>
+export const identifierValuesFromPayload = (
+  payload,
+  commodityCode,
+  speciesLatinName,
+  index
+) =>
   Object.fromEntries(
-    scopedFields(commodityCode).map((field) => [
+    scopedFields(commodityCode, speciesLatinName).map((field) => [
       field.id,
       (payload[fieldName(field.id, index)] ?? '').trim()
     ])
   )
 
-export const blankValuesFor = (commodityCode) =>
-  Object.fromEntries(scopedFields(commodityCode).map((field) => [field.id, '']))
+export const blankValuesFor = (commodityCode, speciesLatinName) =>
+  Object.fromEntries(
+    scopedFields(commodityCode, speciesLatinName).map((field) => [field.id, ''])
+  )

@@ -104,7 +104,8 @@ export const seedVariants = () => [
       ...submitReadySeed,
       commodityLines: [
         lineOf(STRUTHIO_ROW, {
-          numberOfAnimalsQuantity: '40'
+          numberOfAnimalsQuantity: '40',
+          animalIdentifiers: [{ identificationDetails: 'Scar on left wing' }]
         })
       ]
     }
