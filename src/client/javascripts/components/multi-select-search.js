@@ -52,9 +52,22 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
   let submittingNatively = false
 
   const submitNatively = (submitter) => {
+    let nativeSubmit
+    const noteNativeSubmit = (event) => {
+      nativeSubmit = event
+    }
     submittingNatively = true
+    form.addEventListener('submit', noteNativeSubmit, { once: true })
     form.requestSubmit(submitter)
+    form.removeEventListener('submit', noteNativeSubmit)
+    submittingNatively = nativeSubmit?.defaultPrevented === false
   }
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      submittingNatively = false
+    }
+  })
 
   const showResults = (fresh, { trigger, announce }) => {
     results.replaceChildren(...fresh.childNodes)
