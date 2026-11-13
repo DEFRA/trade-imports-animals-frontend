@@ -62,6 +62,25 @@ const mount = (resultsHtml = resultsBodyHtml()) => {
   }
 }
 
+const nativeSubmitsOf = (form, record = (event) => event.submitter) => {
+  const nativeSubmits = []
+  form.addEventListener('submit', (event) => {
+    if (!event.defaultPrevented) {
+      nativeSubmits.push(record(event))
+      event.preventDefault()
+    }
+  })
+  return nativeSubmits
+}
+
+const dropdownOf = (results) =>
+  results().querySelector('[data-multi-select-search-dropdown]')
+
+const heldResponse = () => {
+  const { promise, resolve } = Promise.withResolvers()
+  return { promise, answer: resolve }
+}
+
 const postedBody = (call) => new URLSearchParams(call[1].body.toString())
 
 const settle = () => vi.runAllTimersAsync()
@@ -143,13 +162,7 @@ describe('#MultiSelectSearch', () => {
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
     )
     fetchMock.mockResolvedValue(answering(responseHtml('', resultsBodyHtml())))
-    const navigated = vi.fn()
-    form.addEventListener('submit', (event) => {
-      if (!event.defaultPrevented) {
-        navigated()
-        event.preventDefault()
-      }
-    })
+    const nativeSubmits = nativeSubmitsOf(form)
 
     results().querySelector('button[value="remove:a"]').click()
     await settle()
@@ -157,7 +170,7 @@ describe('#MultiSelectSearch', () => {
     expect(postedBody(fetchMock.mock.calls[0]).getAll('action')).toEqual([
       'remove:a'
     ])
-    expect(navigated).not.toHaveBeenCalled()
+    expect(nativeSubmits).toEqual([])
     expect(results().querySelector('button[value="remove:a"]')).toBeNull()
     expect(document.activeElement).toBe(searchBox)
   })
@@ -167,20 +180,14 @@ describe('#MultiSelectSearch', () => {
     fetchMock.mockResolvedValue(
       answering(responseHtml('1 result available', resultsBodyHtml()))
     )
-    const navigated = vi.fn()
-    form.addEventListener('submit', (event) => {
-      if (!event.defaultPrevented) {
-        navigated()
-        event.preventDefault()
-      }
-    })
+    const nativeSubmits = nativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
     await settle()
 
     expect(postedBody(fetchMock.mock.calls[0]).get('q')).toBe('thing')
-    expect(navigated).not.toHaveBeenCalled()
+    expect(nativeSubmits).toEqual([])
     expect(status.textContent).toBe('1 result available')
   })
 
@@ -188,13 +195,9 @@ describe('#MultiSelectSearch', () => {
     const { searchBox, searchButton, results } = mount(
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
     )
-    let answerClear
+    const clear = heldResponse()
     fetchMock
-      .mockReturnValueOnce(
-        new Promise((resolve) => {
-          answerClear = resolve
-        })
-      )
+      .mockReturnValueOnce(clear.promise)
       .mockResolvedValueOnce(
         answering(responseHtml('', '<p id="searched">Searched</p>'))
       )
@@ -205,7 +208,7 @@ describe('#MultiSelectSearch', () => {
     await settle()
     expect(fetchMock).toHaveBeenCalledOnce()
 
-    answerClear(answering(responseHtml('', resultsBodyHtml())))
+    clear.answer(answering(responseHtml('', resultsBodyHtml())))
     await settle()
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -218,13 +221,7 @@ describe('#MultiSelectSearch', () => {
   it('Should submit the form itself with the pressed action when the results request fails', async () => {
     const { form, searchBox, searchButton } = mount('')
     fetchMock.mockResolvedValue({ ok: false, text: async () => '' })
-    const nativeSubmitters = []
-    form.addEventListener('submit', (event) => {
-      if (!event.defaultPrevented) {
-        nativeSubmitters.push(event.submitter)
-        event.preventDefault()
-      }
-    })
+    const nativeSubmitters = nativeSubmitsOf(form)
 
     searchBox.value = 'thing'
     searchButton.click()
@@ -240,7 +237,7 @@ describe('#MultiSelectSearch', () => {
       .mockResolvedValueOnce(
         answering(responseHtml('', '<p id="refreshed">Refreshed</p>'))
       )
-    form.addEventListener('submit', (event) => event.preventDefault())
+    nativeSubmitsOf(form)
 
     results().querySelector('#thing-a').click()
     await settle()
@@ -275,37 +272,25 @@ describe('#MultiSelectSearch', () => {
     const { form, results, saveButton } = mount(
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
     )
-    let answerRefresh
-    fetchMock.mockReturnValueOnce(
-      new Promise((resolve) => {
-        answerRefresh = resolve
-      })
-    )
-    const nativeSubmits = []
-    form.addEventListener('submit', (event) => {
-      if (!event.defaultPrevented) {
-        nativeSubmits.push({
-          submitter: event.submitter,
-          chosen: new FormData(form).getAll('chosen')
-        })
-        event.preventDefault()
-      }
-    })
+    const refresh = heldResponse()
+    fetchMock.mockReturnValueOnce(refresh.promise)
+    const nativeSubmits = nativeSubmitsOf(form, (event) => ({
+      submitter: event.submitter,
+      chosen: new FormData(form).getAll('chosen')
+    }))
 
     results().querySelector('button[value="clear"]').click()
     saveButton.click()
     await settle()
     expect(nativeSubmits).toEqual([])
 
-    answerRefresh(answering(responseHtml('', resultsBodyHtml())))
+    refresh.answer(answering(responseHtml('', resultsBodyHtml())))
     await settle()
     expect(nativeSubmits).toEqual([{ submitter: saveButton, chosen: [] }])
   })
 
   it('Should hide the results on Escape in the search box, keeping the term, and show them again when the box is focused', () => {
     const { searchBox, results } = mount()
-    const dropdown = () =>
-      results().querySelector('[data-multi-select-search-dropdown]')
     searchBox.value = 'thing'
 
     const escape = new globalThis.KeyboardEvent('keydown', {
@@ -314,42 +299,34 @@ describe('#MultiSelectSearch', () => {
     })
     searchBox.dispatchEvent(escape)
 
-    expect(dropdown().hidden).toBe(true)
+    expect(dropdownOf(results).hidden).toBe(true)
     expect(escape.defaultPrevented).toBe(true)
     expect(searchBox.value).toBe('thing')
 
     searchBox.dispatchEvent(new Event('focus'))
-    expect(dropdown().hidden).toBe(false)
+    expect(dropdownOf(results).hidden).toBe(false)
   })
 
   it('Should hide the results only once a click outside the search has landed, and keep them for a click inside it', () => {
     const { results, saveButton } = mount()
-    const dropdown = () =>
-      results().querySelector('[data-multi-select-search-dropdown]')
     const outside = document.createElement('p')
     document.body.append(outside)
 
     results()
       .querySelector('#thing-a')
       .dispatchEvent(new Event('click', { bubbles: true }))
-    expect(dropdown().hidden).toBe(false)
+    expect(dropdownOf(results).hidden).toBe(false)
 
     saveButton.dispatchEvent(new Event('pointerdown', { bubbles: true }))
-    expect(dropdown().hidden).toBe(false)
+    expect(dropdownOf(results).hidden).toBe(false)
 
     outside.click()
-    expect(dropdown().hidden).toBe(true)
+    expect(dropdownOf(results).hidden).toBe(true)
   })
 
   it('Should leave a save outside the search to submit the form, and post nothing for it', async () => {
     const { form, saveButton } = mount()
-    const nativeSubmitters = []
-    form.addEventListener('submit', (event) => {
-      if (!event.defaultPrevented) {
-        nativeSubmitters.push(event.submitter)
-        event.preventDefault()
-      }
-    })
+    const nativeSubmitters = nativeSubmitsOf(form)
 
     saveButton.click()
     await settle()
