@@ -23,8 +23,14 @@ const fetchResults = async (url, body) => {
   return fresh
 }
 
-const focusReplacementOf = (trigger, searchBox) => {
-  if (trigger.isConnected) {
+const noElementHasFocus = () =>
+  !document.activeElement || document.activeElement === document.body
+
+const focusTriggerReplacementOrSearchBoxIfSwapLostFocus = (
+  trigger,
+  searchBox
+) => {
+  if (trigger.isConnected || !noElementHasFocus()) {
     return
   }
   const replacement = trigger.id ? document.getElementById(trigger.id) : null
@@ -70,7 +76,7 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
 
   const showResults = (fresh, { trigger, announce }) => {
     results.replaceChildren(...fresh.childNodes)
-    focusReplacementOf(trigger, searchBox)
+    focusTriggerReplacementOrSearchBoxIfSwapLostFocus(trigger, searchBox)
     if (announce) {
       status.textContent = fresh.dataset.announcement ?? ''
     }

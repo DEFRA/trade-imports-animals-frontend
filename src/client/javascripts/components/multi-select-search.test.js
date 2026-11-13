@@ -157,6 +157,22 @@ describe('#MultiSelectSearch', () => {
     expect(status.textContent).toBe('')
   })
 
+  it('Should leave focus in the search box when the trader moves it there while a tick refresh is in flight', async () => {
+    const { searchBox, results } = mount()
+    const tick = heldResponse()
+    fetchMock.mockReturnValueOnce(tick.promise)
+
+    const box = results().querySelector('#thing-a')
+    box.focus()
+    box.click()
+    searchBox.focus()
+    tick.answer(answering(responseHtml('', resultsBodyHtml({ ticked: true }))))
+    await settle()
+
+    expect(results().querySelector('#thing-a').checked).toBe(true)
+    expect(document.activeElement).toBe(searchBox)
+  })
+
   it('Should post the pressed Remove as the action, refresh in place and move focus to the search box', async () => {
     const { form, searchBox, results } = mount(
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
