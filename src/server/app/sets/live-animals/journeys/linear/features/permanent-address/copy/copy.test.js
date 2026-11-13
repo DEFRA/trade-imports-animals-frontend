@@ -117,11 +117,8 @@ describe('permanent-address copy module', () => {
   })
 
   it('Should join a field message and the animal title with "for"', () => {
-    expect(
-      copy.errors.forAnimal(
-        'Enter address line 1',
-        'Felis catus (Domestic Cat) 1'
-      )
-    ).toBe('Enter address line 1 for Felis catus (Domestic Cat) 1')
+    expect(copy.errors.forAnimal('Enter address line 1', 'Felis catus 1')).toBe(
+      'Enter address line 1 for Felis catus 1'
+    )
   })
 })

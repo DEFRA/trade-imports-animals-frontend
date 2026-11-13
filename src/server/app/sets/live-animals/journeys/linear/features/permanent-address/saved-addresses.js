@@ -4,9 +4,9 @@ import { animalLabelOf } from '../commodities/animal-identification/animal-label
 
 /**
  * Each addressable animal's saved permanent address, in line and animal
- * order: its label (the species and number), the choice it was saved with,
- * and its address in the shape the journey renders (country name resolved),
- * or no address while the animal still owes one.
+ * order: its label (the species' common name and number), the choice it was
+ * saved with, and its address in the shape the journey renders (country name
+ * resolved), or no address while the animal still owes one.
  *
  * @param {object} answers - the journey's stored answers.
  * @param {object} evaluation - the request-level evaluator result.
@@ -19,7 +19,7 @@ export const permanentAddressesFromStoredAnswers = async (
   Promise.all(
     addressableUnits(answers, evaluation).map(
       async ({ line, unitIndex, unit }) => ({
-        label: animalLabelOf(line, unitIndex + 1),
+        label: animalLabelOf(line.speciesCommonName, unitIndex + 1),
         permanentAddressOrigin: originOf(unit),
         permanentAddress: await toDisplayParty(unit.permanentAddress)
       })

@@ -114,7 +114,7 @@ const buildCard = (
     key,
     lineIndex,
     unitIndex,
-    title: animalLabelOf(line, unitIndex + 1),
+    title: animalLabelOf(line.speciesLatinName, unitIndex + 1),
     identifierLines: identifierLinesOf(line, unit, copy),
     optionName,
     optionError: fieldErrors[optionName],
