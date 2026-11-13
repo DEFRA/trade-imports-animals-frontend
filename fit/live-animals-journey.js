@@ -714,8 +714,11 @@ export const answerCountryOfOrigin = async (page) => {
   await openOverview(page)
 }
 
+const commoditySearchBox = (page) =>
+  page.getByLabel(commoditiesCopy.search.searchLabel)
+
 export const searchCommodities = async (page, query) => {
-  await page.getByLabel('Search for a commodity').fill(query)
+  await commoditySearchBox(page).fill(query)
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
@@ -730,6 +733,11 @@ export const selectSpecies = async (page, speciesToSelect) => {
     await searchCommodities(page, chosen.speciesLatinName)
     await tickSpecies(page, chosen)
   }
+}
+
+export const typeAndTickSpecies = async (page, chosen) => {
+  await commoditySearchBox(page).fill(chosen.speciesLatinName)
+  await tickSpecies(page, chosen)
 }
 
 export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
@@ -799,6 +807,11 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
       name: `Remove ${speciesLatinName}`,
       exact: true
     })
+    .click()
+
+export const pressClearAll = (page) =>
+  page
+    .getByRole('button', { name: commoditiesCopy.search.selected.clearAll })
     .click()
 
 export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {

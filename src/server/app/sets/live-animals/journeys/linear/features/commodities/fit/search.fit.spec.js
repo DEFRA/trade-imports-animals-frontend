@@ -16,6 +16,7 @@ import {
   expectThreeSaveControls,
   openCommoditySearch,
   openOverview,
+  pressClearAll,
   pressSpeciesRemove,
   saveAndExpectLanding,
   searchCommodities,
@@ -24,7 +25,8 @@ import {
   signIn,
   startNotificationAtOrigin,
   backLink,
-  tickSpecies
+  tickSpecies,
+  typeAndTickSpecies
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { CATTLE_HEADING, labelFor } from '../search/test-support.js'
@@ -226,9 +228,7 @@ test.describe('commodity search — choosing and saving species', () => {
     await expectSpeciesSelected(page, BOS_TAURUS_ROW)
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await expect(selectedSummary(page)).toHaveCount(0)
   })
 
@@ -373,9 +373,7 @@ test.describe('commodity search — choosing and saving species', () => {
       'Commodity search with results'
     )
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await saveAndContinue(page).click()
     await expect(
       errorSummaryLinks(page, copy.search.errors.selectCommodity)
@@ -484,8 +482,7 @@ test.describe('commodity search as the trader types', () => {
   const resultsStatus = (page) => page.getByRole('status')
 
   const chooseCatThenSlowTheResults = async (page) => {
-    await searchBox(page).fill(FELIS_CATUS_ROW.speciesLatinName)
-    await tickSpecies(page, FELIS_CATUS_ROW)
+    await typeAndTickSpecies(page, FELIS_CATUS_ROW)
     await expectSelectedHeading(page, 1)
     await page.route('**/commodities/results', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -529,12 +526,10 @@ test.describe('commodity search as the trader types', () => {
   test('keeps species ticked under two typed searches and saves both', async ({
     page
   }) => {
-    await searchBox(page).fill(FELIS_CATUS_ROW.speciesLatinName)
-    await tickSpecies(page, FELIS_CATUS_ROW)
+    await typeAndTickSpecies(page, FELIS_CATUS_ROW)
     await expectSelectedHeading(page, 1)
 
-    await searchBox(page).fill(BOS_TAURUS_ROW.speciesLatinName)
-    await tickSpecies(page, BOS_TAURUS_ROW)
+    await typeAndTickSpecies(page, BOS_TAURUS_ROW)
     await expectSelectedHeading(page, 2)
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
     await expectSpeciesSelected(page, BOS_TAURUS_ROW)
@@ -562,8 +557,7 @@ test.describe('commodity search as the trader types', () => {
   test('hides the results on a click outside the search, keeping what is chosen', async ({
     page
   }) => {
-    await searchBox(page).fill(BOS_TAURUS_ROW.speciesLatinName)
-    await tickSpecies(page, BOS_TAURUS_ROW)
+    await typeAndTickSpecies(page, BOS_TAURUS_ROW)
     await expectSelectedHeading(page, 1)
 
     await page.getByRole('heading', { name: copy.search.title }).click()
@@ -575,8 +569,7 @@ test.describe('commodity search as the trader types', () => {
   test('drops an unticked species from what is chosen, keeping focus on its tick box', async ({
     page
   }) => {
-    await searchBox(page).fill(BOS_TAURUS_ROW.speciesLatinName)
-    await tickSpecies(page, BOS_TAURUS_ROW)
+    await typeAndTickSpecies(page, BOS_TAURUS_ROW)
     await expectSelectedHeading(page, 1)
 
     const box = page
@@ -593,10 +586,8 @@ test.describe('commodity search as the trader types', () => {
   test('removes one species and clears the rest in place, returning focus to the search box', async ({
     page
   }) => {
-    await searchBox(page).fill(FELIS_CATUS_ROW.speciesLatinName)
-    await tickSpecies(page, FELIS_CATUS_ROW)
-    await searchBox(page).fill(BOS_TAURUS_ROW.speciesLatinName)
-    await tickSpecies(page, BOS_TAURUS_ROW)
+    await typeAndTickSpecies(page, FELIS_CATUS_ROW)
+    await typeAndTickSpecies(page, BOS_TAURUS_ROW)
     await expectSelectedHeading(page, 2)
 
     await pressSpeciesRemove(page, BOS_TAURUS_ROW)
@@ -605,9 +596,7 @@ test.describe('commodity search as the trader types', () => {
     await expect(searchBox(page)).toBeFocused()
     await expect(searchBox(page)).toHaveValue(BOS_TAURUS_ROW.speciesLatinName)
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await expect(selectedSummary(page)).toHaveCount(0)
     await expect(searchBox(page)).toBeFocused()
   })
@@ -617,9 +606,7 @@ test.describe('commodity search as the trader types', () => {
   }) => {
     await chooseCatThenSlowTheResults(page)
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await saveAndContinue(page).click()
 
     await expect(
@@ -633,9 +620,7 @@ test.describe('commodity search as the trader types', () => {
   }) => {
     await chooseCatThenSlowTheResults(page)
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await searchCommodities(page, BOS_TAURUS_ROW.speciesLatinName)
     await tickSpecies(page, BOS_TAURUS_ROW)
     await saveAndExpectLanding(page, LANDINGS.importReason)
@@ -773,9 +758,7 @@ test.describe('commodity search without JavaScript', () => {
     await expectSelectedHeading(page, 1)
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
 
-    await page
-      .getByRole('button', { name: copy.search.selected.clearAll })
-      .click()
+    await pressClearAll(page)
     await expect(selectedSummary(page)).toHaveCount(0)
   })
 
