@@ -188,6 +188,36 @@ const addFelisCatusRecordRow = async (page) => {
   return savedAnimalRow(page, FELIS_CATUS_ROW, 1)
 }
 
+const earTagFieldOf = (page, chosen) =>
+  speciesCard(page, chosen).getByLabel(
+    copy.identification.identifierLabels.animalIdentifierEarTag,
+    { exact: true }
+  )
+
+const saveButtonOf = (page, chosen, name) =>
+  speciesCard(page, chosen).getByRole('button', { name })
+
+const openBosTaurusAndBisonBisonEachWithOneSaved = async (
+  page,
+  animalCount
+) => {
+  await openIdentification(page, [
+    [BOS_TAURUS_ROW, animalCount],
+    [BISON_BISON_ROW, animalCount]
+  ])
+  for (const [chosen, earTag] of [
+    [BOS_TAURUS_ROW, 'UK000000000001'],
+    [BISON_BISON_ROW, 'UK000000000002']
+  ]) {
+    await earTagFieldOf(page, chosen).fill(earTag)
+    await saveButtonOf(
+      page,
+      chosen,
+      copy.identification.saveAndAddAnother
+    ).click()
+  }
+}
+
 const submitStaleAdd = (page) =>
   page.evaluate(() => {
     const form = document.querySelector('form')
@@ -1145,6 +1175,72 @@ test.describe('animal identification records', () => {
         )
       })
     ).toBeVisible()
+  })
+})
+
+test.describe('animal identification keyboard behaviour across two saved panels', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('appends a new animal to the Bos taurus table when Enter is pressed in its field, leaving the Bison bison table unchanged', async ({
+    page
+  }) => {
+    await openBosTaurusAndBisonBisonEachWithOneSaved(page, '2')
+
+    const bosTaurusEarTag = earTagFieldOf(page, BOS_TAURUS_ROW)
+    await bosTaurusEarTag.fill('UK000000000003')
+    await bosTaurusEarTag.press('Enter')
+
+    await expectCompleteCard(page, BOS_TAURUS_ROW, 2)
+    await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 1)).toContainText(
+      'UK000000000001'
+    )
+    await expect(savedAnimalRow(page, BOS_TAURUS_ROW, 2)).toContainText(
+      'UK000000000003'
+    )
+    await expect(
+      speciesCard(page, BISON_BISON_ROW)
+        .getByRole('table')
+        .locator('tbody')
+        .getByRole('row')
+    ).toHaveCount(1)
+    await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toContainText(
+      'UK000000000002'
+    )
+    await expect(
+      page.getByRole('heading', {
+        name: copy.identification.title,
+        exact: true
+      })
+    ).toBeVisible()
+  })
+
+  test("lists its own save button then its own first Remove button as the only controls in an open panel, and reaches them by tabbing forward from its last identifier field, never the Bos taurus card's controls", async ({
+    page
+  }) => {
+    await openBosTaurusAndBisonBisonEachWithOneSaved(page, '2')
+    const card = speciesCard(page, BISON_BISON_ROW)
+
+    await expect(card.getByRole('button')).toHaveText([
+      copy.identification.saveAndFinish,
+      new RegExp(`^${copy.identification.removeRow}`)
+    ])
+
+    await card.getByRole('textbox').last().focus()
+    await page.keyboard.press('Tab')
+    await expect(
+      saveButtonOf(page, BISON_BISON_ROW, copy.identification.saveAndFinish)
+    ).toBeFocused()
+
+    await page.keyboard.press('Tab')
+    await expect(
+      card
+        .getByRole('button', {
+          name: new RegExp(`^${copy.identification.removeRow}`)
+        })
+        .first()
+    ).toBeFocused()
   })
 })
 
