@@ -2,7 +2,8 @@
 
 import { withThousandsSeparators } from './thousands-separators.js'
 
-const plural = (count, noun) => `${count} ${noun}`
+const plural = (count, singular, pluralForm) =>
+  `${count} ${count === 1 ? singular : pluralForm}`
 
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
@@ -17,7 +18,7 @@ export const copy = {
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
     resultsAvailable: (count) =>
-      `${plural(count, count === 1 ? 'canlyniad' : 'o ganlyniadau')} ar gael`,
+      `${plural(count, 'canlyniad', 'o ganlyniadau')} ar gael`,
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan',
@@ -68,7 +69,7 @@ export const copy = {
       packagesAboveMax: (max) =>
         `Rhaid i nifer y pecynnau fod yn ${withThousandsSeparators(max)} neu lai`,
       countDrop: (records, species, entered) =>
-        `Mae gennych ${plural(records, 'cofnod dynodwr')} ar gyfer ${species} ond fe wnaethoch nodi ${plural(entered, 'anifail')}. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`
+        `Mae gennych ${records} cofnod dynodwr ar gyfer ${species} ond fe wnaethoch nodi ${entered} anifail. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`
     }
   },
   identification: {
