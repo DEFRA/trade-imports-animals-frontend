@@ -20,6 +20,7 @@ import {
   OSTRICHES_CODE,
   STRUTHIO
 } from '../search/test-support.js'
+import { welshResultsAvailable } from '../../../../../../../../../client/common/helpers/welsh-results-available.js'
 
 describe('#copy', () => {
   it.each([
@@ -114,9 +115,8 @@ describe('#copy', () => {
     )
   })
 
-  it('Should announce one Welsh result in the singular and several with o + plural', () => {
-    expect(copyCy.search.resultsAvailable(1)).toBe('1 canlyniad ar gael')
-    expect(copyCy.search.resultsAvailable(3)).toBe('3 o ganlyniadau ar gael')
+  it('Should announce the Welsh result count with the shared Welsh results rule', () => {
+    expect(copyCy.search.resultsAvailable).toBe(welshResultsAvailable)
   })
 
   it('Should interpolate counter', () => {
