@@ -6,7 +6,7 @@ import {
   wrappingCell
 } from '../../../../../../../../common/constants/table-cells.js'
 import { visuallyHiddenText } from '../../../../../../../../common/visually-hidden-text.js'
-import { escapeHtml } from '../../../../../../../shared/escape-html.js'
+import { escapeHtml } from '../../../../../../../../../shared/escape-html.js'
 import { speciesLabel } from '../species-label.js'
 import { buildCommodityGroups } from './commodity-groups.js'
 

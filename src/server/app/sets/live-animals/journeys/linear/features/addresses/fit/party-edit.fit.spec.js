@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
   addressesSection,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   partyPickerName,
   signIn,
   startNotification,
   unlockSections,
-  values
+  values,
+  followErrorLinkToField
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
@@ -53,12 +55,10 @@ test.describe('edit a copied address', () => {
   test('opens pre-filled from the copy, captioned with the role', async ({
     page
   }) => {
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(editCopy.title)
-    await expect(page.locator('span.govuk-caption-l')).toHaveText(
-      CONSIGNOR.title
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: CONSIGNOR.title,
+      headingName: editCopy.title
+    })
     await expect(page.getByLabel(editCopy.fields.name)).toHaveValue(
       partyPickerName(values.consignor)
     )
@@ -85,12 +85,11 @@ test.describe('edit a copied address', () => {
     await page.getByLabel(editCopy.fields.postcode).fill('')
     await page.getByRole('button', { name: editCopy.save }).click()
 
-    const link = page
-      .getByRole('alert')
-      .getByRole('link', { name: editCopy.errors.postcode.required })
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByLabel(editCopy.fields.postcode)).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      editCopy.errors.postcode.required,
+      page.getByLabel(editCopy.fields.postcode)
+    )
   })
 
   test('cancel leaves the copy as it was', async ({ page }) => {

@@ -17,6 +17,10 @@
   padding-right: helpers.$app-square-icon-button-size;
 }
 
+.autocomplete__input--focused {
+  @include govuk-focused-form-input;
+}
+
 .app-autocomplete {
   position: relative;
 }

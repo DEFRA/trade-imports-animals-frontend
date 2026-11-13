@@ -10,6 +10,12 @@ import {
   saveAndReturnToHub,
   STRUTHIO_ROW,
   numberOfAnimalsFor,
+  errorSummary,
+  errorSummaryLinks,
+  followErrorLinkToField,
+  expectStyle,
+  govukPrimaryButtonStyleOf,
+  measureReferenceElement,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyUrl,
@@ -19,7 +25,8 @@ import {
   selectSpecies,
   signIn,
   withinFullWidthColumn,
-  withinTwoThirdsColumn
+  withinTwoThirdsColumn,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { animalIdentificationPage } from '../page.js'
 import { copy } from '../copy/copy.en.js'
@@ -32,8 +39,6 @@ const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
 const SECOND_EAR_TAG_FIELD = '#animalIdentifierEarTag-1'
 const BOS_TAURUS_CODE_HEADING = BOS_TAURUS_ROW.commodityCode
-const GOVUK_GREEN = 'rgb(15, 122, 82)'
-const REGULAR_FONT_WEIGHT = '400'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -71,16 +76,6 @@ const openFelisCatusIdentification = (page) =>
 
 const entryLabelsOf = (fields) =>
   fields.map((field) => copy.identification.identifierLabels[field])
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
-const expectErrorFocus = async (page, message, selector) => {
-  const link = errorLink(page, message)
-  await expect(link).toBeVisible()
-  await link.click()
-  await expect(page.locator(selector)).toBeFocused()
-}
 
 const validPermanentAddress = {
   nameOrOrganisationName: 'Pet Owner',
@@ -381,17 +376,15 @@ test.describe('animal identification', () => {
     page
   }) => {
     await openFelisCatusIdentification(page)
-
-    const saveActions = page.locator('.govuk-button-group')
-    await expect(saveActions.locator(saveAndContinue(page))).toBeVisible()
+    await expect(saveAndContinue(page)).toBeVisible()
     await expect(
-      saveActions.getByRole('button', { name: 'Save and finish' })
+      page.getByRole('button', { name: 'Save and finish' })
     ).toHaveCount(0)
   })
 
   test('back link returns to the overview', async ({ page }) => {
     await openFelisCatusIdentification(page)
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
@@ -651,10 +644,10 @@ test.describe('animal identification identifier validation', () => {
     await openFelisCatusIdentification(page)
     await submitAdd(page)
 
-    await expectErrorFocus(
+    await followErrorLinkToField(
       page,
       copy.identification.errors.atLeastOneIdentifier,
-      MICROCHIP_FIELD
+      page.locator(MICROCHIP_FIELD)
     )
     await expect(page.locator(MICROCHIP_FIELD)).toHaveValue('')
   })
@@ -668,10 +661,10 @@ test.describe('animal identification identifier validation', () => {
       await page.locator(`#${field}-0`).fill(invalid)
       await saveAndContinue(page).click()
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.identifierMax[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
     })
@@ -683,7 +676,7 @@ test.describe('animal identification identifier validation', () => {
     await submitOverLongMicrochip(page)
 
     await expect(
-      errorLink(
+      errorSummaryLinks(
         page,
         copy.identification.errors.identifierMax.animalIdentifierMicrochip
       )
@@ -709,10 +702,10 @@ test.describe('animal identification address validation', () => {
       await page.locator(`#${field}-0`).fill('')
       await submitAdd(page)
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.addressMandatory[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue('')
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
@@ -730,10 +723,10 @@ test.describe('animal identification address validation', () => {
       })
       await submitAdd(page)
 
-      await expectErrorFocus(
+      await followErrorLinkToField(
         page,
         copy.identification.errors.addressFormat[field],
-        `#${field}-0`
+        page.locator(`#${field}-0`)
       )
       await expect(page.locator(`#${field}-0`)).toHaveValue(invalid)
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
@@ -866,7 +859,10 @@ test.describe('animal identification records', () => {
 
     await submitStaleAdd(page)
 
-    const link = errorLink(page, copy.identification.errors.capReached(2))
+    const link = errorSummaryLinks(
+      page,
+      copy.identification.errors.capReached(2)
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
@@ -908,8 +904,8 @@ test.describe('animal identification records', () => {
       labelFor(BOS_TAURUS_ROW.speciesLatinName),
       1
     )
-    await expect(errorLink(page, countDrop)).toBeVisible()
-    await errorLink(page, countDrop).click()
+    await expect(errorSummaryLinks(page, countDrop)).toBeVisible()
+    await errorSummaryLinks(page, countDrop).click()
     await expect(page).toHaveURL(/#identification-card-0(?:\?from=[^#]*)?$/)
     await expect(
       commodityHeading(page, BOS_TAURUS_CODE_HEADING)
@@ -991,15 +987,21 @@ test.describe('animal identification sections and species cards', () => {
   test('shows the card button as a primary button', async ({ page }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW, '2']])
 
-    await expect(
-      page.getByRole('button', { name: copy.identification.saveAndAddAnother })
-    ).toHaveCSS('background-color', GOVUK_GREEN)
+    await expectStyle(
+      page.getByRole('button', { name: copy.identification.saveAndAddAnother }),
+      await govukPrimaryButtonStyleOf(page)
+    )
   })
 
   test('labels the identifier fields in regular weight with no hint', async ({
     page
   }) => {
     await openIdentification(page, [[FELIS_CATUS_ROW, '2']])
+    const govukLabelStyle = await measureReferenceElement(page, {
+      tagName: 'label',
+      className: 'govuk-label',
+      properties: ['font-weight']
+    })
 
     for (const field of [
       'animalIdentifierMicrochip',
@@ -1009,9 +1011,9 @@ test.describe('animal identification sections and species cards', () => {
       await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
         copy.identification.identifierLabels[field]
       )
-      await expect(page.locator(`label[for="${field}-0"]`)).toHaveCSS(
-        'font-weight',
-        REGULAR_FONT_WEIGHT
+      await expectStyle(
+        page.locator(`label[for="${field}-0"]`),
+        govukLabelStyle
       )
       await expect(page.locator(`#${field}-0`)).toHaveAccessibleDescription('')
     }
@@ -1041,7 +1043,7 @@ test.describe('animal identification sections and species cards', () => {
     await submitOverLongMicrochip(page)
 
     await expect(
-      errorLink(
+      errorSummaryLinks(
         page,
         copy.identification.errors.identifierMax.animalIdentifierMicrochip
       )
@@ -1111,7 +1113,7 @@ test.describe('animal identification without JavaScript', () => {
       .getByRole('button', { name: copy.identification.saveAndAddAnother })
       .click()
 
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(errorSummary(page)).toHaveCount(0)
     await expect(savedAnimalRow(page, BISON_BISON_ROW, 1)).toBeVisible()
     await expect(page.locator(EAR_TAG_FIELD)).toHaveValue('')
     await expect(page.locator(SECOND_EAR_TAG_FIELD)).toHaveValue('')

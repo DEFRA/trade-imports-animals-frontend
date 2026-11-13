@@ -1,20 +1,8 @@
 import { matchPositions } from './search-fold.js'
-
-const HTML_ESCAPES = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
-}
-
-const escapeHtml = (text) =>
-  text.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char])
-
-const MATCH_CLASS = 'govuk-!-font-weight-bold'
+import { escapeHtml } from '../../../shared/escape-html.js'
 
 const strongMatch = (text) =>
-  `<strong class="${MATCH_CLASS}">${escapeHtml(text)}</strong>`
+  `<strong class="govuk-!-font-weight-bold">${escapeHtml(text)}</strong>`
 
 /** The text as safe HTML, with each place the search term matches (ignoring
  * case and accents) wrapped in a bold `<strong>`. */

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectCaptionAboveHeading,
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
@@ -16,7 +17,11 @@ import {
   journeyUrl,
   openCommodityDetails,
   selectSpecies,
-  signIn
+  signIn,
+  errorSummary,
+  errorSummaryLinks,
+  followErrorLinkToField,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
@@ -70,6 +75,30 @@ const errorFor = (field) =>
   field.startsWith('numberOfAnimals')
     ? copy.consignmentDetails.errors.animalsWholeNumber
     : copy.consignmentDetails.errors.packagesWholeNumber
+
+const bosTaurusFontSizesOf = async (page) => {
+  const fontSizeOf = (locator) =>
+    locator.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize)
+    )
+  const [commodityHeading, speciesHeading, animalsLabel, packagesLabel] =
+    await Promise.all([
+      fontSizeOf(
+        page.getByRole('heading', {
+          name: BOS_TAURUS_ROW.commodityCode,
+          exact: true
+        })
+      ),
+      fontSizeOf(
+        page.getByRole('heading', {
+          name: labelFor(BOS_TAURUS_ROW.speciesLatinName)
+        })
+      ),
+      fontSizeOf(page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)),
+      fontSizeOf(page.locator(`label[for="${FIRST_PACKAGES_FIELD}"]`))
+    ])
+  return { commodityHeading, speciesHeading, animalsLabel, packagesLabel }
+}
 
 const removeBosTaurusLeavingOnlyFelisCatus = async (page) => {
   await page.getByRole('button', { name: REMOVE_BOS_TAURUS }).click()
@@ -132,28 +161,6 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expectEveryQuantityEmpty(page)
   })
 
-  test('steps the type down from commodity heading to species heading to quantity labels', async ({
-    page
-  }) => {
-    await expect(
-      page.getByRole('heading', {
-        name: BOS_TAURUS_ROW.commodityCode,
-        exact: true
-      })
-    ).toHaveClass(/govuk-heading-l/)
-    await expect(
-      page.getByRole('heading', {
-        name: labelFor(BOS_TAURUS_ROW.speciesLatinName)
-      })
-    ).toHaveClass(/govuk-heading-m/)
-    await expect(
-      page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
-    ).toHaveClass(/govuk-label--s/)
-    await expect(
-      page.locator(`label[for="${FIRST_PACKAGES_FIELD}"]`)
-    ).toHaveClass(/govuk-label--s/)
-  })
-
   test('keeps the code-level remove for 0102 Bos taurus and gives each species on code 01061900 its own remove, each naming the entry it removes', async ({
     page
   }) => {
@@ -172,7 +179,7 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('back link returns to the overview the hub task came from', async ({
     page
   }) => {
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -184,12 +191,7 @@ test.describe('commodity consignment details — rendering and validation', () =
       await page.locator(`#${field}`).fill(invalid)
       await saveAndContinue(page).click()
 
-      const link = page
-        .getByRole('alert')
-        .getByRole('link', { name: errorFor(field) })
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.locator(`#${field}`)).toBeFocused()
+      await followErrorLinkToField(page, errorFor(field), field)
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
       await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue(
         field === FIRST_ANIMALS_QUANTITY_FIELD ? invalid : validQuantities[0]
@@ -205,9 +207,10 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
-    const links = page.getByRole('alert').getByRole('link', {
-      name: copy.consignmentDetails.errors.animalsRequired
-    })
+    const links = errorSummaryLinks(
+      page,
+      copy.consignmentDetails.errors.animalsRequired
+    )
     await expect(links).toHaveCount(2)
     await expect(
       page.locator(`${FIRST_ANIMALS_QUANTITY_INPUT}-error`)
@@ -223,12 +226,10 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('captions the page with the description-of-the-goods section', async ({
     page
   }) => {
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(copy.consignmentDetails.title)
-    await expect(page.locator('span.govuk-caption-l')).toHaveText(
-      sectionCaptionsCopy.sections.descriptionOfTheGoods
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: sectionCaptionsCopy.sections.descriptionOfTheGoods,
+      headingName: copy.consignmentDetails.title
+    })
   })
 
   test('puts one rule between the two commodities and none above the save buttons', async ({
@@ -278,7 +279,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     await page.locator(`#${SECOND_PACKAGES_FIELD}`).fill('abc')
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+    await expect(errorSummaryLinks(page)).toHaveText([
       copy.consignmentDetails.errors.animalsRequired,
       copy.consignmentDetails.errors.animalsRequired,
       copy.consignmentDetails.errors.packagesWholeNumber,
@@ -292,13 +293,25 @@ test.describe('commodity consignment details — rendering and validation', () =
     await page.locator(FIRST_ANIMALS_QUANTITY_INPUT).fill('25')
     await saveAndContinue(page).click()
 
-    const links = page.getByRole('alert').getByRole('link', {
-      name: copy.consignmentDetails.errors.animalsRequired
-    })
+    const links = errorSummaryLinks(
+      page,
+      copy.consignmentDetails.errors.animalsRequired
+    )
     await expect(links).toHaveCount(1)
     await links.click()
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toBeFocused()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
+  })
+
+  test('steps the type down from commodity heading to species heading to quantity labels', async ({
+    page
+  }) => {
+    const { commodityHeading, speciesHeading, animalsLabel, packagesLabel } =
+      await bosTaurusFontSizesOf(page)
+
+    expect(commodityHeading).toBeGreaterThan(speciesHeading)
+    expect(speciesHeading).toBeGreaterThan(animalsLabel)
+    expect(speciesHeading).toBeGreaterThan(packagesLabel)
   })
 })
 
@@ -317,7 +330,7 @@ test.describe('commodity consignment details — the number-of-animals cap', () 
     await page.locator(SECOND_ANIMALS_QUANTITY_INPUT).fill(aboveMax)
     await saveAndContinue(page).click()
 
-    const links = page.getByRole('alert').getByRole('link')
+    const links = errorSummaryLinks(page)
     await expect(links).toHaveCount(1)
     await expect(links).toHaveText(
       copy.consignmentDetails.errors.animalsAboveMax(2147483647)
@@ -506,7 +519,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectNoSeriousOrCriticalViolations(page, 'Commodity details')
 
     await saveAndContinue(page).click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(errorSummary(page)).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,
       'Commodity details with errors'
