@@ -72,13 +72,22 @@ describe('AccessibleAutocomplete', () => {
   })
 
   describe('suggestions', () => {
-    it('Should list only the options that have a value, matching what was typed in any case', () => {
+    it('Should list the options matching what was typed in any case', () => {
       const { config } = enhanceCountrySelect()
       const listed = []
 
       config.source('  FR ', (results) => listed.push(...results))
 
       expect(listed).toEqual(['France'])
+    })
+
+    it('Should not offer the option that has no value', () => {
+      const { config } = enhanceCountrySelect()
+      const listed = []
+
+      config.source('select', (results) => listed.push(...results))
+
+      expect(listed).toEqual([])
     })
 
     it('Should offer an accented option for plain letters and bold its accented letters', () => {
