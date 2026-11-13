@@ -432,7 +432,7 @@ describe.each([
       ])
     })
 
-    it('Should empty the summary when the trader clears it, keeping the query', async () => {
+    it('Should empty the summary when the trader clears it, keeping the results listed', async () => {
       const result = await refresh(
         {
           action: 'clear',
@@ -446,7 +446,7 @@ describe.each([
       expect(result.after).toEqual(result.before)
     })
 
-    it('Should remove one chosen species carried off screen, leave the other chosen and keep the query and results on screen', async () => {
+    it('Should remove one chosen species carried off screen, leave the other chosen and keep the results on screen', async () => {
       const result = await refresh(
         {
           action: removeActionFor(BOS_TAURUS_KEY),
