@@ -26,6 +26,7 @@ import {
   SUS_SCROFA_DOMESTICUS_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import { namedLegendFor } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/commodity-legend.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
@@ -778,7 +779,9 @@ export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) => {
-  const commodityLine = page.getByText(`${commodityCode}:`, { exact: true })
+  const commodityLine = page.getByText(`${namedLegendFor(commodityCode)}:`, {
+    exact: true
+  })
   const group = selectedSummary(page)
     .getByRole('listitem')
     .filter({ has: commodityLine })
