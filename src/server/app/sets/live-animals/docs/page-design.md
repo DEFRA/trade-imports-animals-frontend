@@ -266,13 +266,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the ones the page renders without JavaScript, so the ordering, labelling and
   selection rules below hold on both paths. A polite status message gives the number of species a typed
   search lists, or "No results found". A tick, a Remove or Clear all is not
-  announced, because the box and the summary already show it.
+  announced, because the box and the tally already show it.
 - After a Remove or Clear all, the button pressed has gone, so focus moves to
   the search box. After a tick, focus stays on the tick box.
-- Without JavaScript a tick cannot refresh the summary, so an "Update selected"
+- Without JavaScript a tick cannot refresh the tally, so an "Update selected"
   secondary button sits under the results. It runs the search again, keeping
-  the term and the ticks, and the summary and chips catch up. With JavaScript
-  the button is hidden, because a tick refreshes them itself. The button and
+  the term and the ticks, and the tally catches up. With JavaScript
+  the button is hidden, because a tick refreshes the tally itself. The button and
   its copy are agreed for now, and will be revisited when the designers pick
   up their no-JavaScript ticket.
 - The results are a list joined to the bottom of the search box, as the
@@ -281,7 +281,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   shaded), no ring round a hovered tick box, and a scroll once the list is taller
   than about six rows. Each commodity stays a fieldset whose legend is its
   heading, so a screen reader hears the species grouped by commodity.
-- A commodity's heading in the results, and in what has been chosen, reads as
+- A commodity's heading in the results, and in the tally, reads as
   its name with its code in round brackets, such as "Cattle (0102)", where the
   service knows a name for the code, and as the code alone where it does not.
   The names come from `commodityNameFor` in the set's commodities service; the
@@ -290,7 +290,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the list, keeping the term and every choice, and focusing or clicking the
   search box shows it again. The list hides once the click has landed, so a
   click on a button below the list is not moved out from under the pointer.
-- What has been chosen shows as a chip per species, under its commodity's heading,
+- The tally, the panel of what has been chosen, shows a chip per species,
+  under its commodity's heading,
   as the design draws it: the species' Latin name and a cross named "Remove"
   and that Latin name. Clear all sits beside the count, as a form
   button styled as a link that posts the page form.
@@ -304,13 +305,13 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - A species reads as its Latin name with its common name in round
   brackets wherever it is listed or named — the search results, Commodity
   details, the Selected commodities tables and Identification details, but
-  not the chips of what has been chosen, which the design gives the Latin name
+  not the tally's chips, which the design gives the Latin name
   alone — and as its Latin name alone where the
   reference data holds no common name for it. The permanent-address rule and
   the identifier-column rule read the line's stored Latin name rather
   than that label, so a species whose common name changes what it reads as
   still gates the same way.
-- The selected panel offers a removal per chosen species, posting the page
+- The tally offers a removal per chosen species, posting the page
   form with the species' key in the button value so the entry pressed is the
   entry removed however the panel is ordered — the same rule the Transport
   section states at the Transit countries bullet below.
@@ -342,7 +343,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   actions. Each Remove carries the entry it removes — the
   commodity's code on a code row, the line's key on a species row — so a
   repeated or stale removal is refused rather than taking another row, the
-  same rule this doc states above for the selected panel and below for
+  same rule this doc states above for the tally and below for
   transit countries. A removal that empties the selection still goes to the
   commodity question, because that is where the next answer comes from. A
   removal is a POST on the page form with no GET, so a link cannot trigger
