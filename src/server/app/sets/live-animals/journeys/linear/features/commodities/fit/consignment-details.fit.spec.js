@@ -5,6 +5,7 @@ import {
   FELIS_CATUS_ROW,
   MUSTELA_PUTORIUS_FURO_ROW,
   STRUTHIO_ROW,
+  commoditySearchBox,
   saveAndContinue,
   saveAndReturnToHub,
   numberOfAnimalsFor,
@@ -445,7 +446,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(
       page.getByRole('heading', { name: copy.search.title })
     ).toBeVisible()
-    await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
+    await expect(commoditySearchBox(page)).toBeVisible()
 
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await expect(

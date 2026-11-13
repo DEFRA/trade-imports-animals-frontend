@@ -601,7 +601,7 @@ export const answerCountryOfOrigin = async (page) => {
   await openOverview(page)
 }
 
-const commoditySearchBox = (page) =>
+export const commoditySearchBox = (page) =>
   page.getByLabel(commoditiesCopy.search.searchLabel)
 
 export const searchCommodities = async (page, query) => {
