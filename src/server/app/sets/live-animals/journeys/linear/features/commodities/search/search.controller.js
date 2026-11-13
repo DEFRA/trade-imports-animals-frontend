@@ -117,8 +117,7 @@ const searchAndStoreRows = async (
   return { current, shown: { selected, results, query } }
 }
 
-const logDroppedKeys = (request, payload, rowsByKey) => {
-  const droppedKeys = droppedKeysFromPayload(payload, rowsByKey)
+const logDroppedKeys = (request, { droppedKeys }) => {
   if (droppedKeys.length > 0) {
     request.logger.warn(
       { journeyId: request.params.journeyId, droppedKeys },
@@ -133,14 +132,14 @@ const readPost = async (request, h) => {
   const query = normaliseQuery(payload[SEARCH_FIELD])
   const rowsByKey = knownRowsByKey(await state.get(request, h))
   if (action === CLEAR_ACTION) {
-    return { action, query, rowsByKey, selected: [] }
+    return { action, query, rowsByKey, selected: [], droppedKeys: [] }
   }
-  logDroppedKeys(request, payload, rowsByKey)
   return {
     action,
     query,
     rowsByKey,
-    selected: mergedKeysFromPayload(payload, rowsByKey)
+    selected: mergedKeysFromPayload(payload, rowsByKey),
+    droppedKeys: droppedKeysFromPayload(payload, rowsByKey)
   }
 }
 
@@ -175,6 +174,7 @@ const searchStoreRowsAndRender = async (request, h, posted, renderShown) => {
 
 const post = async (request, h) => {
   const posted = await readPost(request, h)
+  logDroppedKeys(request, posted)
 
   if (refreshesWithoutSaving(posted.action)) {
     return (
@@ -202,6 +202,7 @@ const post = async (request, h) => {
 
 const postResults = async (request, h) => {
   const posted = await readPost(request, h)
+  logDroppedKeys(request, posted)
   return (
     refuseUnknownRemoval(request, posted) ??
     searchStoreRowsAndRender(request, h, posted, renderResults)
