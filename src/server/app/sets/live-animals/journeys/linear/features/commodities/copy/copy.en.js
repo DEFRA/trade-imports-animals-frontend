@@ -16,7 +16,7 @@ export const copy = {
     selected: {
       heading: (count) => `${count} selected`,
       clearAll: 'Clear all',
-      remove: 'Remove'
+      remove: (species, commodity) => `Remove ${species} from ${commodity}`
     },
     updateSelected: 'Update selected',
     help: {

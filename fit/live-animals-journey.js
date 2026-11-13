@@ -688,13 +688,17 @@ export const expectSpeciesSelected = async (
   ).toBeVisible()
 }
 
-export const pressSpeciesRemove = (page, { speciesLatinName }) =>
-  selectedSummary(page)
-    .getByRole('button', {
-      name: `Remove ${speciesLatinName}`,
-      exact: true
-    })
-    .click()
+const speciesRemoveButton = (page, { commodityCode, speciesLatinName }) =>
+  selectedSummary(page).getByRole('button', {
+    name: commoditiesCopy.search.selected.remove(
+      speciesLatinName,
+      namedLegendFor(commodityCode)
+    ),
+    exact: true
+  })
+
+export const pressSpeciesRemove = (page, row) =>
+  speciesRemoveButton(page, row).click()
 
 export const pressClearAll = (page) =>
   page

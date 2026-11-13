@@ -41,6 +41,11 @@ const canonicalSelectionOrder = [
   labelFor(FELIS_CATUS_ROW.speciesLatinName)
 ]
 
+const GALLUS_GALLUS_SECOND_CODE_ROW = {
+  ...GALLUS_GALLUS_ROW,
+  commodityCode: '01059400'
+}
+
 const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
 
 const errorLink = (page, message) =>
@@ -204,7 +209,9 @@ test.describe('commodity search', () => {
   }) => {
     await searchCommodities(page, 'gallus')
     const firstCode = page.getByRole('group', { name: '01051111' })
-    const secondCode = page.getByRole('group', { name: '01059400' })
+    const secondCode = page.getByRole('group', {
+      name: GALLUS_GALLUS_SECOND_CODE_ROW.commodityCode
+    })
     await expect(
       firstCode.getByRole('checkbox', {
         name: labelFor(GALLUS_GALLUS_ROW.speciesLatinName),
@@ -331,14 +338,18 @@ test.describe('commodity search — choosing and saving species', () => {
   }) => {
     await saveGallusGallusUnderItsFirstCodeThenSearchGallus(page)
     await expect(
-      page.getByRole('group', { name: '01059400' }).getByRole('checkbox', {
-        name: labelFor(GALLUS_GALLUS_ROW.speciesLatinName),
-        exact: true
-      })
+      page
+        .getByRole('group', {
+          name: GALLUS_GALLUS_SECOND_CODE_ROW.commodityCode
+        })
+        .getByRole('checkbox', {
+          name: labelFor(GALLUS_GALLUS_ROW.speciesLatinName),
+          exact: true
+        })
     ).not.toBeChecked()
   })
 
-  test('shows each chosen species as a chip of its Latin name with a Remove control named for it', async ({
+  test('shows each chosen species as a chip of its Latin name with a Remove control naming the species and its commodity', async ({
     page
   }) => {
     await selectSpecies(page, [BOS_TAURUS_ROW, FELIS_CATUS_ROW])
@@ -347,16 +358,41 @@ test.describe('commodity search — choosing and saving species', () => {
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
     await expect(
       selectedSummary(page).getByRole('button', {
-        name: `Remove ${BOS_TAURUS_ROW.speciesLatinName}`,
+        name: `Remove ${BOS_TAURUS_ROW.speciesLatinName} from ${CATTLE_HEADING}`,
         exact: true
       })
     ).toBeVisible()
     await expect(
       selectedSummary(page).getByRole('button', {
-        name: `Remove ${FELIS_CATUS_ROW.speciesLatinName}`,
+        name: `Remove ${FELIS_CATUS_ROW.speciesLatinName} from ${FELIS_CATUS_ROW.commodityCode}`,
         exact: true
       })
     ).toBeVisible()
+  })
+
+  test('names the Remove control for one Latin name chosen under two codes by each code, and removes only that line', async ({
+    page
+  }) => {
+    await selectSpecies(page, [
+      GALLUS_GALLUS_ROW,
+      GALLUS_GALLUS_SECOND_CODE_ROW
+    ])
+    const removeUnderFirstCode = selectedSummary(page).getByRole('button', {
+      name: `Remove ${GALLUS_GALLUS_ROW.speciesLatinName} from ${GALLUS_GALLUS_ROW.commodityCode}`,
+      exact: true
+    })
+    const removeUnderSecondCode = selectedSummary(page).getByRole('button', {
+      name: `Remove ${GALLUS_GALLUS_ROW.speciesLatinName} from ${GALLUS_GALLUS_SECOND_CODE_ROW.commodityCode}`,
+      exact: true
+    })
+    await expect(removeUnderFirstCode).toHaveCount(1)
+    await expect(removeUnderSecondCode).toHaveCount(1)
+
+    await pressSpeciesRemove(page, GALLUS_GALLUS_SECOND_CODE_ROW)
+
+    await expectSelectedHeading(page, 1)
+    await expectSpeciesSelected(page, GALLUS_GALLUS_ROW)
+    await expect(removeUnderSecondCode).toHaveCount(0)
   })
 
   test('removes one chosen species and leaves the other chosen and ticked on screen', async ({

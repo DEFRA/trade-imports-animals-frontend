@@ -333,7 +333,7 @@ describe('commodity search — carried and stored search rows', () => {
 describe('commodity search — what has been chosen so far', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should summarise the stored selection, counted, grouped under each commodity heading and each named by its Latin name', async () => {
+  it('Should summarise the stored selection, counted, grouped under each commodity heading, each named by its Latin name with a Remove label naming the species and its commodity', async () => {
     const result = await driveHandler(get, {
       seed: {
         commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
@@ -348,10 +348,12 @@ describe('commodity search — what has been chosen so far', () => {
           items: [
             {
               label: BISON_BISON_ROW.speciesLatinName,
+              removeLabel: `Remove ${BISON_BISON_ROW.speciesLatinName} from ${CATTLE_HEADING}`,
               removeAction: removeActionFor(BISON_BISON_KEY)
             },
             {
               label: BOS_TAURUS_ROW.speciesLatinName,
+              removeLabel: `Remove ${BOS_TAURUS_ROW.speciesLatinName} from ${CATTLE_HEADING}`,
               removeAction: removeActionFor(BOS_TAURUS_KEY)
             }
           ]
@@ -361,6 +363,7 @@ describe('commodity search — what has been chosen so far', () => {
           items: [
             {
               label: FELIS_CATUS_ROW.speciesLatinName,
+              removeLabel: `Remove ${FELIS_CATUS_ROW.speciesLatinName} from 01061900`,
               removeAction: removeActionFor(FELIS_CATUS_KEY)
             }
           ]
