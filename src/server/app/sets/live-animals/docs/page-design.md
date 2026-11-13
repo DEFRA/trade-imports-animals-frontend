@@ -261,8 +261,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   button comes first in the form so that Enter never presses a Remove button
   or the visible "Save and continue".
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading, and no identifier field has a hint — the
-  identification-details and description fallback follows this too. Labels
+  saved-animals column heading, and no identifier field has a hint. Labels
   are regular weight.
 - The saved-animals table has one column per identifier that species' panel
   asks for, not per identifier the trader filled: the commodity's own

@@ -254,6 +254,33 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.contactAddress,
       copy.cards.contactAddress
     ])
+
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 1 })
+    ).toHaveText([copy.title])
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 2 })
+    ).toHaveText([
+      sharedCopy.errorSummary.title,
+      copy.sections.aboutTheConsignment,
+      copy.sections.descriptionOfTheGoods,
+      copy.sections.transportAndArrival,
+      copy.sections.documents,
+      copy.sections.consignmentAddresses,
+      copy.sections.contactAddress
+    ])
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 3 })
+    ).toHaveText([
+      copy.cards.originOfImport,
+      copy.cards.mainImportReason,
+      copy.cards.additionalDetails,
+      copy.cards.arrivalDetails,
+      copy.cards.transportDetails,
+      copy.cards.documents,
+      copy.cards.addresses,
+      copy.cards.contactAddress
+    ])
   })
 })
 
