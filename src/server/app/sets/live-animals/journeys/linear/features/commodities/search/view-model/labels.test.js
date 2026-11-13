@@ -11,7 +11,7 @@ describe('#legendHtmlFor', () => {
     expect(legendHtmlFor('01061900', '')).toBe('01061900')
   })
 
-  it('Should bold the part of the commodity heading the query matched', () => {
+  it('Should bold a match in the commodity code', () => {
     expect(legendHtmlFor('0102', '01')).toBe(
       'Cattle (<strong class="govuk-!-font-weight-bold">01</strong>02)'
     )
