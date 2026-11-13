@@ -1,9 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 
+import { welshResultsAvailable } from '../../../../../../../../../client/common/helpers/welsh-results-available.js'
 import { withThousandsSeparators } from './thousands-separators.js'
-
-const plural = (count, singular, pluralForm) =>
-  `${count} ${count === 1 ? singular : pluralForm}`
 
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
@@ -17,8 +15,7 @@ export const copy = {
       'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
-    resultsAvailable: (count) =>
-      `${plural(count, 'canlyniad', 'o ganlyniadau')} ar gael`,
+    resultsAvailable: welshResultsAvailable,
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan',
