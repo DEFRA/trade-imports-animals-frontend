@@ -27,20 +27,6 @@
   Params:
     announcement   (string)  what a screen reader is told about the results
 
-  Classes for the caller body, styled in multi-select-search.scss:
-    app-multi-select-search__dropdown    the results list, joined under the box;
-                                         give it data-multi-select-search-dropdown
-                                         so Escape and a click outside close it
-    app-multi-select-search__group       a govukCheckboxes formGroup in the list
-    app-multi-select-search__group-heading  its legend, a heading row
-    app-multi-select-search__message     a message row, such as no results
-    app-multi-select-search__selected    the summary of what is chosen, with
-                                         __selected-header, __selected-heading,
-                                         __clear, __selected-list,
-                                         __selected-group, __selected-group-label,
-                                         __chips, __chip, __chip-label and
-                                         __chip-remove inside it
-
   Usage:
   {% call appMultiSelectSearchResults({ announcement: announcement }) %}
     {{ resultsHtml }}
