@@ -94,7 +94,8 @@ JavaScript on or off.
   server at once, so neither can overwrite the search rows the other stored.
 - Each response replaces the results.
 - After a swap, focus goes back to the element with the same id. If that element
-  has gone, such as a Remove button, focus moves to the search box.
+  has gone, such as a Remove button, focus moves to the search box. If the
+  trader has moved focus elsewhere while the results refreshed, it stays there.
 - After a typed search or a Search press, the live region reads the response's
   announcement. A tick, a Remove or Clear all announces nothing.
 - When the results route fails or cannot be reached, the script submits the
