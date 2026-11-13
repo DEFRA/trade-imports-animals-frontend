@@ -78,7 +78,9 @@ export const copy = {
       animalIdentifierPassport: 'Passport',
       animalIdentifierTattoo: 'Tattoo',
       animalIdentifierEarTag: 'Ear tag',
-      horseName: 'Horse name'
+      horseName: 'Horse name',
+      identificationDetails: 'Identification details',
+      description: 'Description'
     },
     table: {
       animalColumn: 'Animal',
@@ -100,7 +102,10 @@ export const copy = {
         animalIdentifierPassport: 'Passport must be 58 characters or less',
         animalIdentifierTattoo: 'Tattoo must be 58 characters or less',
         animalIdentifierEarTag: 'Ear tag must be 58 characters or less',
-        horseName: 'Horse name must be 58 characters or less'
+        horseName: 'Horse name must be 58 characters or less',
+        identificationDetails:
+          'Identification details must be 58 characters or less',
+        description: 'Description must be 58 characters or less'
       },
       atLeastOneIdentifier: 'Enter at least one identifier for this animal',
       capReached: (cap) =>

@@ -462,6 +462,33 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
   })
 
+  test('Should carry a unit holding only the two free-text fallback answers onto the species entry', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commodityCode: OSTRICHES_CODE,
+          speciesLatinName: STRUTHIO,
+          speciesCommonName: 'Ostriches',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '40',
+          animalIdentifiers: [
+            {
+              identificationDetails: 'Scar on left wing',
+              description: 'Dark plumage'
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(notification.commodities[0].species[0].animalIdentifiers).toEqual([
+      {
+        identificationDetails: 'Scar on left wing',
+        description: 'Dark plumage'
+      }
+    ])
+  })
+
   test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {
     const firstUnit = { earTag: 'FIRST-EAR-TAG', passport: 'FIRST-PASSPORT' }
     const secondUnit = { earTag: 'SECOND-EAR-TAG', passport: 'SECOND-PASSPORT' }

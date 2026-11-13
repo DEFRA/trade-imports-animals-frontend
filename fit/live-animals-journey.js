@@ -692,11 +692,7 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
     })
     .click()
 
-export const unlockSections = async (
-  page,
-  chosen = FELIS_CATUS_ROW,
-  { identificationApplies = true } = {}
-) => {
+export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -704,12 +700,7 @@ export const unlockSections = async (
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill('1')
-  await saveAndExpectLanding(
-    page,
-    identificationApplies
-      ? LANDINGS.animalIdentification
-      : LANDINGS.additionalDetails
-  )
+  await saveAndExpectLanding(page, LANDINGS.animalIdentification)
   await openOverview(page)
 }
 

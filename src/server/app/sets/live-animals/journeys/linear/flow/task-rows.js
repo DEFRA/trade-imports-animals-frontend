@@ -1,12 +1,12 @@
 import { NA, statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
-import { needsIdentifying } from '../../../services/commodities/index.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
+import { hasAnIdentifierField } from '../features/commodities/animal-identification/identifier/fields.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
@@ -19,9 +19,9 @@ import {
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 
-export const identifiesAnAnimal = (answers) =>
+export const anyLineHasAnIdentifierField = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
-    needsIdentifying
+    (line) => hasAnIdentifierField(line.commodityCode, line.speciesLatinName)
   )
 
 export const taskRows = [
@@ -56,7 +56,7 @@ export const taskRows = [
     pages: [animalIdentificationPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }],
     conditional: true,
-    applies: identifiesAnAnimal
+    applies: anyLineHasAnIdentifierField
   },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },

@@ -16,10 +16,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every task is a link from the moment the notification exists, so a trader
   can work in any order. A task that does not apply to the consignment is
   left off the list rather than shown shut.
-- The identification task appears only once a chosen commodity carries an
-  identifier. Its part, `commodityLines`, is always in scope, so `statusOf`
-  never reaches Not applicable for it; the row carries its own applicability
-  test, the same one the identification page uses.
+- The identification task appears for any consignment that holds a chosen
+  commodity line, and is Not applicable only when the notification holds
+  none. Its part, `commodityLines`, is always in scope, so `statusOf` never
+  reaches Not applicable for it; the row carries its own applicability test,
+  the same one the identification page uses.
 - The commodity details task comes first in the second section, then
   identification, then additional details: the journey's page order, which
   Save and continue follows.
@@ -231,7 +232,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   class so long unbroken identifiers and commodity names wrap inside table
   cells at 390px.
 - A species with no number of animals has no card, and a consignment whose
-  identified species all lack a count shows the summary and no cards.
+  species all lack a count shows the summary and no cards.
 - The card title is the species name, with "Change number of animals" beside
   it naming the species. The link pushes this page onto the trail, so Back on the count page returns here and Continue on
   Commodity details goes on to the next page that applies.
@@ -253,15 +254,17 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   button comes first in the form so that Enter never presses a Remove button
   or the visible "Save and continue".
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading, and no identifier field has a hint. Labels
+  saved-animals column heading, and no identifier field has a hint — the
+  identification-details and description fallback follows this too. Labels
   are regular weight.
-- The saved-animals table has one column per identifier the commodity
-  declares, not per identifier the trader filled. The header row says which
-  identifiers the line expects, and an empty cell shows which are still
-  missing.
+- The saved-animals table has one column per identifier that species' panel
+  asks for, not per identifier the trader filled: the commodity's own
+  identifiers, or the two free-text fallback answers for a commodity that
+  declares none. The header row says which identifiers the line expects, and
+  an empty cell shows which are still missing.
 - Removing an identifier record is a POST on the card form with no GET, so a
   link cannot trigger it.
-- A consignment with nothing to identify skips the page.
+- The page is skipped only when the notification holds no commodity line.
 
 ## Commodity pages
 

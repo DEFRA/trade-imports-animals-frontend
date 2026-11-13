@@ -49,6 +49,8 @@ const {
   tattoo,
   earTag,
   horseName,
+  identificationDetails,
+  description,
   permanentAddress,
   documents,
   accompanyingDocumentType,
@@ -882,7 +884,7 @@ describe('horseName (gatedBy allowListedPairs(commodityCode, speciesLatinName, h
 })
 
 describe('a commodity with no identifier type of its own', () => {
-  it('puts no identifier obligation in scope on an ostrich line', () => {
+  it('puts none of the commodity’s own identifier types in scope on an ostrich line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
       [earTag.id]: { [`${LINE_OSTRICHES}.${UNIT_1}`]: 'STRAY' }
@@ -911,10 +913,38 @@ describe('a commodity with no identifier type of its own', () => {
     expect(result.fulfilments[earTag.id]).toBeUndefined()
   })
 
-  it('leaves the at-least-one-identifier rule with nothing to ask on such a line', () => {
+  it('asks for no animal record on an ostrich line that holds none', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
       [numberOfAnimals.id]: { [LINE_OSTRICHES]: 2 }
+    })
+    expect(groupInvariantErrors(unitRecord, result)).toEqual([])
+  })
+
+  it('reads a record on an ostrich line as incomplete when it holds neither fallback answer', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
+      [identificationDetails.id]: { [`${LINE_OSTRICHES}.${UNIT_1}`]: '' }
+    })
+    expect(groupInvariantErrors(unitRecord, result)).not.toEqual([])
+  })
+
+  it('reads a record on an ostrich line as complete when it holds the identification details alone', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
+      [identificationDetails.id]: {
+        [`${LINE_OSTRICHES}.${UNIT_1}`]: 'Scar on left wing'
+      }
+    })
+    expect(groupInvariantErrors(unitRecord, result)).toEqual([])
+  })
+
+  it('reads a record on an ostrich line as complete when it holds the description alone', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_OSTRICHES]: OSTRICHES_CODE },
+      [description.id]: {
+        [`${LINE_OSTRICHES}.${UNIT_1}`]: 'Dark plumage'
+      }
     })
     expect(groupInvariantErrors(unitRecord, result)).toEqual([])
   })

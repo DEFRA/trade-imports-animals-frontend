@@ -26,7 +26,10 @@ import {
   arrivalWindow,
   DAYS_BEFORE
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
-import { seedFromFranceWithCommodityLineOfAnimals } from './sets/live-animals/test-support.js'
+import {
+  seedFromFranceWithCommodityLineOfAnimals,
+  withOriginSaved
+} from './sets/live-animals/test-support.js'
 import { petConsignmentSeed } from './sets/live-animals/journeys/linear/test-support.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
@@ -57,6 +60,7 @@ import {
   BOS_TAURUS,
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
+  STRUTHIO_ROW,
   lineOf
 } from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { lineKey } from './sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
@@ -311,6 +315,35 @@ describe('controller <-> model commit contract', () => {
       animalIdentifierTattoo: ''
     })
     expect('animalIdentifierEarTag' in unit).toBe(false)
+    expect('permanentAddress' in unit).toBe(false)
+  })
+
+  it('Should append an animal identifier unit at depth-2 on a fallback line whose commodity declares no identifier, writing only the two free-text fallback answers', async () => {
+    expect(animalIdentification.meta.collects).toEqual([])
+    const post = postHandlerEndingWith(
+      animalIdentification,
+      'commodities/identification'
+    )
+    const result = await drive(post, {
+      seed: withOriginSaved({
+        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '2' })]
+      }),
+      payload: {
+        action: 'add:0',
+        'identificationDetails-0': 'Scar on left wing',
+        'description-0': 'Dark plumage'
+      }
+    })
+    const unit = result.after.commodityLines[0].animalIdentifiers[0]
+    expect(unit).toEqual({
+      identificationDetails: 'Scar on left wing',
+      description: 'Dark plumage'
+    })
+    expect('animalIdentifierMicrochip' in unit).toBe(false)
+    expect('animalIdentifierPassport' in unit).toBe(false)
+    expect('animalIdentifierTattoo' in unit).toBe(false)
+    expect('animalIdentifierEarTag' in unit).toBe(false)
+    expect('horseName' in unit).toBe(false)
     expect('permanentAddress' in unit).toBe(false)
   })
 

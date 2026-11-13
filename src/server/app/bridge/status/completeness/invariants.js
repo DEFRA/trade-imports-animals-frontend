@@ -78,9 +78,7 @@ const floorAskedOfParent = (group, parentFulfilmentIndex, state) => {
 
 // Empty collection: satisfied iff no requiredAtLeastOne floor bites. A floor
 // that is only an `anyOfIds` rule is vacuous under a parent none of its leaves
-// could apply to — a commodity line whose commodity carries no identifier of
-// its own is asked for no animal records, rather than for records it could
-// never fill in. A `floorAppliesToParent` gate is the second way the floor
+// could apply to. A `floorAppliesToParent` gate is the second way the floor
 // goes vacuous: the group declares the states in which it asks for a record
 // at all.
 export const emptyCollectionSatisfiesFloor = (

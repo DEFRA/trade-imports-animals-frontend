@@ -347,23 +347,11 @@ describe('#rowStatus — the conditional animal-identification row', () => {
     expect(statusIn('animalIdentification', { countryOfOrigin: 'FR' })).toBe(NA)
   })
 
-  it('Should be Not applicable (absent) while no chosen commodity carries an identifier', () => {
+  it('Should read Completed for a consignment whose only commodity declares no identifier of its own', () => {
     expect(
       statusIn('animalIdentification', {
         countryOfOrigin: 'FR',
         commodityLines: [{ commodityCode: STRUTHIO_ROW.commodityCode }]
-      })
-    ).toBe(NA)
-  })
-
-  it('Should read Completed as soon as one chosen commodity carries an identifier', () => {
-    expect(
-      statusIn('animalIdentification', {
-        countryOfOrigin: 'FR',
-        commodityLines: [
-          { commodityCode: STRUTHIO_ROW.commodityCode },
-          { commodityCode: BOS_TAURUS_ROW.commodityCode }
-        ]
       })
     ).toBe(FULFILLED)
   })

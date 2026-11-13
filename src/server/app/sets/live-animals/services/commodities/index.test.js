@@ -13,7 +13,6 @@ import {
   passportCommodityCodes,
   permanentAddressCodeSpecies,
   listsSpeciesIndividually,
-  needsIdentifying,
   tattooCommodityCodes
 } from './index.js'
 import {
@@ -124,12 +123,6 @@ describe('the identifier allowlists', () => {
         OTHER_LIVE_MAMMALS_CODE
       ].sort()
     )
-  })
-
-  it('Should need identifying for a line whose code carries identifiers and not for one whose code does not', () => {
-    expect(needsIdentifying({ commodityCode: CATTLE_CODE })).toBe(true)
-    expect(needsIdentifying({ commodityCode: OSTRICHES_CODE })).toBe(false)
-    expect(needsIdentifying(undefined)).toBe(false)
   })
 
   it('Should key every permanent-address species to an identified code', () => {

@@ -146,14 +146,14 @@ it still goes Back where it did before: the CPH number page, the permanent addre
 page, add transporter and a picker's View link each carry the trail out and back.
 
 Pages that redirect onward without showing themselves carry the trail rather than push
-onto it. The identification page's no-identifiers guard sends the request on to the
-additional details carrying the trail, so Back on the additional details opens Commodity
-details when nothing was identified. What are you importing? opened by Commodity details
-or Identification details saves back to the page that opened it, carrying the trail, and
-its Back opens that page. The CPH number page opened from the CPH section's add link
-saves back to Roles and addresses and goes Back there; opened from a review Change link
-its Back is the review and its Save and continue goes to Roles and addresses. A return
-value that is not one of the pages allowed to open this sub-page is refused, logged and ignored.
+onto it. The identification page's no-commodity-line guard carries the trail on to What
+are you importing?, so Back there opens the page the trader came from. What are you
+importing? opened by Commodity details or Identification details saves back to the page
+that opened it, carrying the trail, and its Back opens that page. The CPH number page
+opened from the CPH section's add link saves back to Roles and addresses and goes Back
+there; opened from a review Change link its Back is the review and its Save and continue
+goes to Roles and addresses. A return value that is not one of the pages allowed to open
+this sub-page is refused, logged and ignored.
 
 A trail that names a place the journey does not have is ignored and logged once, and
 the page goes Back to its fallback. The fallback is the overview, except on the first

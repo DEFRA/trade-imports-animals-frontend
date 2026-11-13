@@ -82,7 +82,9 @@ export const copy = {
       animalIdentifierPassport: 'Pasbort',
       animalIdentifierTattoo: 'Tatŵ',
       animalIdentifierEarTag: 'Tag clust',
-      horseName: 'Enw’r ceffyl'
+      horseName: 'Enw’r ceffyl',
+      identificationDetails: 'Manylion adnabod',
+      description: 'Disgrifiad'
     },
     table: {
       animalColumn: 'Anifail',
@@ -105,7 +107,10 @@ export const copy = {
         animalIdentifierPassport: 'Rhaid i’r pasbort fod yn 58 nod neu lai',
         animalIdentifierTattoo: 'Rhaid i’r tatŵ fod yn 58 nod neu lai',
         animalIdentifierEarTag: 'Rhaid i’r tag clust fod yn 58 nod neu lai',
-        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai'
+        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai',
+        identificationDetails:
+          'Rhaid i’r manylion adnabod fod yn 58 nod neu lai',
+        description: 'Rhaid i’r disgrifiad fod yn 58 nod neu lai'
       },
       atLeastOneIdentifier: 'Rhowch o leiaf un dynodwr ar gyfer yr anifail hwn',
       capReached: (cap) =>

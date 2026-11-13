@@ -46,6 +46,9 @@ const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_IDENTIFIER_LENGTH = 58
 const DEFAULT_ANIMALS_COUNT = '1'
+const FIRST_LINE_ENTRY_LABEL_SELECTOR = 'label[for$="-0"]'
+const IDENTIFICATION_DETAILS_VALUE = 'Scar on left wing'
+const DESCRIPTION_VALUE = 'Dark plumage'
 
 const addLines = async (page, speciesWithCounts) => {
   await openCommodityDetails(
@@ -72,7 +75,7 @@ const openIdentification = async (page, speciesWithCounts) => {
   await saveAndReturnToHub(page).click()
   await openIdentificationFromHub(page)
   await expect(
-    page.getByRole('heading', { name: 'Identification details', exact: true })
+    page.getByRole('heading', { name: copy.identification.title, exact: true })
   ).toBeVisible()
 }
 
@@ -204,7 +207,17 @@ const identifierValidations = [
   [BOS_TAURUS_ROW, 'animalIdentifierTattoo', 'Tattoo'],
   [EQUUS_CABALUS_ROW, 'horseName', 'Horse name'],
   [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierEarTag', 'Ear tag'],
-  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierTattoo', 'Tattoo']
+  [SUS_SCROFA_DOMESTICUS_ROW, 'animalIdentifierTattoo', 'Tattoo'],
+  [
+    STRUTHIO_ROW,
+    'identificationDetails',
+    copy.identification.identifierLabels.identificationDetails
+  ],
+  [
+    STRUTHIO_ROW,
+    'description',
+    copy.identification.identifierLabels.description
+  ]
 ]
 
 const earTagOnlyRows = [OVIS_ARIES_ROW, CAPRA_HIRCUS_ROW]
@@ -233,7 +246,8 @@ test.describe('animal identification', () => {
     await expect(page.locator('#animalIdentifierMicrochip-1')).toHaveCount(0)
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-2')).toHaveCount(0)
-    await expect(page.locator('#identification-card-2')).toHaveCount(0)
+    await expect(page.locator('#identificationDetails-2')).toBeVisible()
+    await expect(page.locator('#description-2')).toBeVisible()
   })
 
   test('asks a Bos taurus line for its ear tag before its passport, and an Equus cabalus line for its microchip first', async ({
@@ -241,7 +255,7 @@ test.describe('animal identification', () => {
   }) => {
     await openIdentification(page, [[EQUUS_CABALUS_ROW], [BOS_TAURUS_ROW]])
 
-    await expect(page.locator('label[for$="-0"]')).toHaveText(
+    await expect(page.locator(FIRST_LINE_ENTRY_LABEL_SELECTOR)).toHaveText(
       entryLabelsOf([
         'animalIdentifierMicrochip',
         'animalIdentifierPassport',
@@ -280,7 +294,7 @@ test.describe('animal identification', () => {
 
     const card = speciesCard(page, FELIS_CATUS_ROW)
     await expect(card.getByRole('textbox')).toHaveCount(3)
-    await expect(card.locator('label[for$="-0"]')).toHaveText(
+    await expect(card.locator(FIRST_LINE_ENTRY_LABEL_SELECTOR)).toHaveText(
       entryLabelsOf([
         'animalIdentifierMicrochip',
         'animalIdentifierPassport',
@@ -360,7 +374,7 @@ test.describe('animal identification', () => {
     )
   })
 
-  test('carries a consignment with nothing to identify past the page', async ({
+  test('reaches a consignment of a commodity that declares no identifier rather than skipping past the page', async ({
     page
   }) => {
     await addLines(page, [[STRUTHIO_ROW, '3']])
@@ -370,11 +384,13 @@ test.describe('animal identification', () => {
     await page.goto(journeyUrl(page, IDENTIFICATION_SLUG))
 
     await expect(
-      page.getByRole('heading', { name: 'Additional details', exact: true })
+      page.getByRole('heading', {
+        name: copy.identification.title,
+        exact: true
+      })
     ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Identification details', exact: true })
-    ).toHaveCount(0)
+    const card = speciesCard(page, STRUTHIO_ROW)
+    await expect(card.getByRole('textbox')).toHaveCount(2)
   })
 })
 
@@ -539,6 +555,154 @@ test.describe('animal identification species-driven identifiers', () => {
       )
     ).toBeVisible()
     await expect(donkeyCard.getByRole('textbox')).toHaveCount(2)
+  })
+})
+
+test.describe('animal identification unidentified commodity', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('asks an unidentified commodity for identification details then description, each a labelled text input the same width as a typed identifier field with no hint', async ({
+    page
+  }) => {
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    const card = speciesCard(page, STRUTHIO_ROW)
+
+    await expect(card.getByRole('textbox')).toHaveCount(2)
+    await expect(card.locator(FIRST_LINE_ENTRY_LABEL_SELECTOR)).toHaveText(
+      entryLabelsOf(['identificationDetails', 'description'])
+    )
+    for (const field of ['identificationDetails', 'description']) {
+      await expect(page.locator(`#${field}-0`)).toHaveClass(
+        /govuk-input--width-20/
+      )
+      await expect(page.locator(`#${field}-0`)).toHaveAccessibleDescription('')
+    }
+  })
+
+  test('saves identification details alone, or description alone, and heads the saved-animals table with Animal, Identification details, Description and a Remove action', async ({
+    page
+  }) => {
+    const fallbackSavedAnimalsHead = [
+      copy.identification.table.animalColumn,
+      copy.identification.identifierLabels.identificationDetails,
+      copy.identification.identifierLabels.description,
+      copy.identification.table.actionsHidden
+    ]
+
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    const detailsOnlyCard = await saveSoleAnimalAndReopenCard(
+      page,
+      STRUTHIO_ROW,
+      'identificationDetails',
+      IDENTIFICATION_DETAILS_VALUE
+    )
+    await expect(detailsOnlyCard.getByRole('columnheader')).toHaveText(
+      fallbackSavedAnimalsHead
+    )
+    const detailsOnlyRow = savedAnimalRow(page, STRUTHIO_ROW, 1)
+    await expect(
+      detailsOnlyRow.getByRole('cell', {
+        name: IDENTIFICATION_DETAILS_VALUE,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      detailsOnlyRow.getByRole('button', {
+        name: copy.identification.removeRow
+      })
+    ).toBeVisible()
+    await removeAnimalRow(page, STRUTHIO_ROW, 1)
+
+    const descriptionOnlyCard = await saveSoleAnimalAndReopenCard(
+      page,
+      STRUTHIO_ROW,
+      'description',
+      DESCRIPTION_VALUE
+    )
+    await expect(descriptionOnlyCard.getByRole('columnheader')).toHaveText(
+      fallbackSavedAnimalsHead
+    )
+    await expect(
+      savedAnimalRow(page, STRUTHIO_ROW, 1).getByRole('cell', {
+        name: DESCRIPTION_VALUE,
+        exact: true
+      })
+    ).toBeVisible()
+  })
+
+  test('saves an identification details value of 58 characters', async ({
+    page
+  }) => {
+    const atMax = 'D'.repeat(MAX_IDENTIFIER_LENGTH)
+
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    const savedCard = await saveSoleAnimalAndReopenCard(
+      page,
+      STRUTHIO_ROW,
+      'identificationDetails',
+      atMax
+    )
+
+    await expect(
+      savedAnimalRow(page, STRUTHIO_ROW, 1).getByRole('cell', {
+        name: atMax,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(savedCard.getByRole('textbox')).toHaveCount(0)
+  })
+
+  test('reopening the page shows both saved values on the fallback card', async ({
+    page
+  }) => {
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    await page
+      .locator('#identificationDetails-0')
+      .fill(IDENTIFICATION_DETAILS_VALUE)
+    await page.locator('#description-0').fill(DESCRIPTION_VALUE)
+    await saveAndContinue(page).click()
+
+    await reopenIdentificationFromHub(page)
+    const row = savedAnimalRow(page, STRUTHIO_ROW, 1)
+    await expect(
+      row.getByRole('cell', { name: IDENTIFICATION_DETAILS_VALUE, exact: true })
+    ).toBeVisible()
+    await expect(
+      row.getByRole('cell', { name: DESCRIPTION_VALUE, exact: true })
+    ).toBeVisible()
+  })
+
+  test('has no serious or critical axe violations on a fallback panel', async ({
+    page
+  }) => {
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with the fallback identifiers'
+    )
+  })
+
+  test('has no serious or critical axe violations in the fallback length-error state', async ({
+    page
+  }) => {
+    await openIdentification(page, [[STRUTHIO_ROW]])
+    await page
+      .locator('#identificationDetails-0')
+      .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
+    await saveAndContinue(page).click()
+
+    await expect(
+      errorLink(
+        page,
+        copy.identification.errors.identifierMax.identificationDetails
+      )
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with a fallback length error'
+    )
   })
 })
 

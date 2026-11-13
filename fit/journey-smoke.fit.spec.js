@@ -11,14 +11,12 @@ import {
   BASE,
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
-  STRUTHIO_ROW,
   answerAdditionalDetails,
   answerAnimalIdentification,
   answerArrivalDetails,
   answerCommodityCounts,
   answerContactAddress,
   answerImportReason,
-  answerOriginDetails,
   answerRolesAndAddresses,
   answerTransitCountries,
   answerTransporter,
@@ -36,7 +34,6 @@ import {
   selectSpecies,
   signIn,
   startNotification,
-  startNotificationAtOrigin,
   urlUnderBase,
   values
 } from './live-animals-journey.js'
@@ -195,7 +192,7 @@ test.describe('live-animals journey glue', () => {
     await expect(exactHeading(page, importReasonCopy.title)).toBeVisible()
   })
 
-  test('after Save and continue, Back from Additional details opens Identification details when a chosen species needs identifiers', async ({
+  test('after Save and continue, Back from Additional details opens Identification details', async ({
     page
   }) => {
     await saveAndContinueToAdditionalDetails(page)
@@ -204,25 +201,6 @@ test.describe('live-animals journey glue', () => {
 
     await expect(
       exactHeading(page, commoditiesCopy.identification.title)
-    ).toBeVisible()
-  })
-
-  test('after Save and continue, Back from Additional details opens Commodity details when no chosen species needs identifiers', async ({
-    page
-  }) => {
-    await startNotificationAtOrigin(page)
-    await answerOriginDetails(page)
-    await selectSpecies(page, [STRUTHIO_ROW])
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await answerImportReason(page)
-    await page.getByLabel('Number of animals').fill('2')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(exactHeading(page, additionalDetailsCopy.title)).toBeVisible()
-
-    await followBack(page)
-
-    await expect(
-      exactHeading(page, commoditiesCopy.consignmentDetails.title)
     ).toBeVisible()
   })
 

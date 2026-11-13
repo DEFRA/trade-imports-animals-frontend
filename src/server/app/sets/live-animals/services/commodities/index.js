@@ -39,9 +39,6 @@ export const horseNameCodeSpecies = () => HORSE_NAME_CODE_SPECIES
 
 export const identifiedCommodityCodes = () => IDENTIFIED_CODES
 
-export const needsIdentifying = (line) =>
-  IDENTIFIED_CODES.includes(line?.commodityCode)
-
 export const permanentAddressCodeSpecies = () => PERMANENT_ADDRESS_CODE_SPECIES
 
 export const unweanedCommodityCodes = () => UNWEANED_CODES

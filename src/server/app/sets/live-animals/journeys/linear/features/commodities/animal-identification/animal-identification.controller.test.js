@@ -86,8 +86,6 @@ const bisonBisonLine = (extra = {}) => lineOf(BISON_BISON_ROW, extra)
 
 const equusLine = (extra = {}) => lineOf(EQUUS_CABALUS_ROW, extra)
 
-const struthioLine = (extra = {}) => lineOf(STRUTHIO_ROW, extra)
-
 const viewContext = async (seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
@@ -1059,25 +1057,26 @@ describe(`${SUITE} — identifier render matrix — model metadata per commodity
 describe(`${SUITE} — a commodity that carries no identifier of its own`, () => {
   setupIdentificationEngine()
 
-  const requestPage = async (seed, query = {}) => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, seed)
-    const h = stubH()
-    const response = await getHandler(
-      journeyRequest(journey.journeyId, { query }),
-      h
-    )
-    return { journeyId: journey.journeyId, response, view: h.captured.view }
-  }
-
-  it('Should give an ostrich line no card but keep it in the summary', async () => {
+  it('Should give an ostrich line a card asking for identification details then description, and keep it in the summary', async () => {
     const context = await viewContext({
       commodityLines: [
         lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' }),
         lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })
       ]
     })
-    expect(context.sections.map((section) => section.heading)).toEqual(['0102'])
+    expect(context.sections.map((section) => section.heading)).toEqual([
+      '0102',
+      '01063300'
+    ])
+    const [struthioCard] = context.sections[1].cards
+    expect(struthioCard.fields.map((field) => field.id)).toEqual([
+      'identificationDetails-1',
+      'description-1'
+    ])
+    expect(struthioCard.fields.map((field) => field.label)).toEqual([
+      'Identification details',
+      'Description'
+    ])
     expect(context.selectedCommodities).toEqual([
       {
         code: '0102',
@@ -1092,10 +1091,10 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     ])
   })
 
-  it('Should keep a surviving card on its own commodity-line index when an earlier line is filtered out', async () => {
+  it('Should keep a surviving card on its own commodity-line index when an earlier line has no number of animals', async () => {
     const context = await viewContext({
       commodityLines: [
-        lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' }),
+        lineOf(STRUTHIO_ROW),
         lineOf(BOS_TAURUS_ROW, { numberOfAnimalsQuantity: '2' })
       ]
     })
@@ -1109,26 +1108,31 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
       'animalIdentifierTattoo-1'
     ])
   })
+})
 
-  it('Should carry a request for the page on when no line carries an identifier', async () => {
-    const { journeyId, response, view } = await requestPage(
-      withOriginSaved({
-        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      })
+describe(`${SUITE} — a notification that holds no commodity line`, () => {
+  setupIdentificationEngine()
+
+  const requestPage = async (seed, query = {}) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    const h = stubH()
+    const response = await getHandler(
+      journeyRequest(journey.journeyId, { query }),
+      h
     )
-    expect(view).toBeUndefined()
-    expect(response).toEqual({ redirect: additionalDetailsPath(journeyId) })
-  })
+    return { journeyId: journey.journeyId, response, view: h.captured.view }
+  }
 
-  it('Should carry the trail of the request on to the next page when no line carries an identifier', async () => {
+  const untouchedEmptyAnswers = withOriginSaved({})
+
+  it('Should carry the trail of a request for the page on to the page that asks for a commodity when the notification holds no commodity line', async () => {
     const { journeyId, response } = await requestPage(
-      withOriginSaved({
-        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      }),
+      withOriginSaved({ commodityLines: [] }),
       { from: `${TRAIL_START.overview},${consignmentDetailsPage.slug}` }
     )
     expect(response).toEqual({
-      redirect: withTrail(additionalDetailsPath(journeyId), [
+      redirect: withTrail(pagePath(journeyId, 'commodities'), [
         TRAIL_START.overview,
         consignmentDetailsPage.slug
       ])
@@ -1147,44 +1151,47 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     })
   })
 
-  const untouchedStruthioAnswers = withOriginSaved({
-    commodityLines: [struthioLine({ numberOfAnimalsQuantity: 3 })]
-  })
-
-  it('Should carry a stale add post on without writing a record, logging the skip once', async () => {
+  it('Should carry a stale add post on without writing a record, logging the skip and the missing commodity code', async () => {
     const result = await driveHandler(post, {
-      seed: withOriginSaved({
-        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      }),
-      payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
+      seed: withOriginSaved({ commodityLines: [] }),
+      payload: { action: 'add:0' }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: pagePath(result.journeyId, 'commodities')
     })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedStruthioAnswers)
+    expect(result.after).toEqual(untouchedEmptyAnswers)
     expect(result.logger.entries).toEqual([
       {
         level: 'info',
-        fields: { journeyId: result.journeyId, commodityCodes: ['01063300'] },
+        fields: { journeyId: result.journeyId },
         message:
-          'Animal identification skipped: nothing on the consignment carries an identifier'
+          'Animal identification skipped: the notification holds no commodity line to identify'
+      },
+      {
+        level: 'info',
+        fields: {
+          journeyId: result.journeyId,
+          savedPageId: 'animalIdentification',
+          unopenedPageId: 'additional-details',
+          missingAnswerIds: ['commodityCode']
+        },
+        message:
+          'Save and continue opened the page that asks for a missing earlier answer'
       }
     ])
   })
 
   it('Should carry a stale remove post on without deleting a record', async () => {
     const result = await driveHandler(post, {
-      seed: withOriginSaved({
-        commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '3' })]
-      }),
+      seed: withOriginSaved({ commodityLines: [] }),
       payload: { action: removeUnitAction(STRUTHIO_ROW, 0) }
     })
     expect(result.response).toEqual({
-      redirect: additionalDetailsPath(result.journeyId)
+      redirect: pagePath(result.journeyId, 'commodities')
     })
     expect(result.view).toBeUndefined()
-    expect(result.after).toEqual(untouchedStruthioAnswers)
+    expect(result.after).toEqual(untouchedEmptyAnswers)
   })
 })
 

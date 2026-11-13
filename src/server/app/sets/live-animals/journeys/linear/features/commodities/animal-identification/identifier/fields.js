@@ -10,11 +10,18 @@ const copy = copyFor({ en, cy }).identification
 
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
-export const scopedFields = (commodityCode, speciesLatinName) =>
-  commodities
-    .identifiersFor(commodityCode)
+export const scopedFields = (commodityCode, speciesLatinName) => {
+  const fallbackIdentifierFields = ['identificationDetails', 'description']
+  return [
+    ...commodities.identifiersFor(commodityCode),
+    ...fallbackIdentifierFields
+  ]
     .filter((id) => appliesForGateValue(id, commodityCode, speciesLatinName))
     .map((id) => ({ id, label: copy.identifierLabels[id] }))
+}
+
+export const hasAnIdentifierField = (commodityCode, speciesLatinName) =>
+  scopedFields(commodityCode, speciesLatinName).length > 0
 
 export const identifierChecksFor = (commodityCode, speciesLatinName, index) => {
   const IDENTIFIER_MAX_LENGTH = 58

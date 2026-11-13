@@ -17,6 +17,8 @@ const animalIdentifierFrom = (unit) =>
     tattoo: unit.animalIdentifierTattoo,
     earTag: unit.animalIdentifierEarTag,
     horseName: unit.horseName,
+    identificationDetails: unit.identificationDetails,
+    description: unit.description,
     permanentAddress: partyFromPermanentAddress(unit.permanentAddress)
   })
 

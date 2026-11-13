@@ -6,6 +6,8 @@ import {
   numberOfPackages,
   cph,
   containsUnweanedAnimals,
+  description,
+  identificationDetails,
   microchip,
   passport,
   tattoo,
@@ -19,6 +21,7 @@ import {
   cphExemptCommodityCodes,
   earTagCommodityCodes,
   horseNameCodeSpecies,
+  identifiedCommodityCodes,
   microchipCommodityCodes,
   packageCountCommodityCodes,
   passportCommodityCodes,
@@ -27,6 +30,7 @@ import {
   unweanedCommodityCodes
 } from '../services/commodities/index.js'
 import { COMMODITY_GROUPS } from '../services/commodities/stub.js'
+import { OSTRICHES_CODE } from '../journeys/linear/features/commodities/search/test-support.js'
 
 const UNLISTED_VALUE = 'Unicorn'
 const UNIT_1_FULFILMENT_INDEX = 'line1.unit1'
@@ -211,6 +215,32 @@ for (const { name, gate, values, gated } of UNIT_SCOPED_ALLOWLISTS) {
     })
   })
 }
+
+describe('identified-code list → identificationDetails, description (unit-record-scoped fallback)', () => {
+  for (const obligation of [identificationDetails, description]) {
+    it(`Should put ${obligation.name} in scope for a unit under commodityCode = '${OSTRICHES_CODE}'`, () => {
+      const state = evaluate({
+        [commodityCode.id]: { line1: OSTRICHES_CODE },
+        [obligation.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+      })
+      const fulfilmentIndexes =
+        state.obligations[obligation.id].fulfilmentIndexes ?? []
+      expect(fulfilmentIndexes).toContain(UNIT_1_FULFILMENT_INDEX)
+    })
+
+    for (const code of identifiedCommodityCodes()) {
+      it(`Should not put ${obligation.name} in scope for a unit under commodityCode = '${code}'`, () => {
+        const state = evaluate({
+          [commodityCode.id]: { line1: code },
+          [obligation.id]: { [UNIT_1_FULFILMENT_INDEX]: '' }
+        })
+        const fulfilmentIndexes =
+          state.obligations[obligation.id].fulfilmentIndexes ?? []
+        expect(fulfilmentIndexes).toEqual([])
+      })
+    }
+  }
+})
 
 describe.each([
   ['permanentAddress', permanentAddress],

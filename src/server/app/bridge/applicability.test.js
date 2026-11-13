@@ -65,7 +65,7 @@ describe('#appliesForGateValue', () => {
     expect(appliesForGateValue('countyParishHoldingCph', '0101')).toBe(false)
   })
 
-  it('Should apply no identifier for commodity code 01063300', () => {
+  it('Should apply the two free-text fallback identifiers but no typed identifier for commodity code 01063300', () => {
     for (const identifier of [
       'animalIdentifierMicrochip',
       'animalIdentifierPassport',
@@ -74,6 +74,9 @@ describe('#appliesForGateValue', () => {
       'horseName'
     ]) {
       expect(appliesForGateValue(identifier, '01063300')).toBe(false)
+    }
+    for (const identifier of ['identificationDetails', 'description']) {
+      expect(appliesForGateValue(identifier, '01063300')).toBe(true)
     }
   })
 

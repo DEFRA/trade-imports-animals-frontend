@@ -8,14 +8,18 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import {
-  identifiedCommodityCodes,
-  identifiersFor
-} from '../../../../../services/commodities/index.js'
+import { identifiedCommodityCodes } from '../../../../../services/commodities/index.js'
+import { HORSES_CODE } from '../../../../../services/commodities/rules.js'
+import { scopedFields } from '../animal-identification/identifier/fields.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
-import { BOS_TAURUS } from '../search/test-support.js'
+import {
+  BOS_TAURUS,
+  EQUUS_CABALUS,
+  OSTRICHES_CODE,
+  STRUTHIO
+} from '../search/test-support.js'
 
 describe('#copy', () => {
   it.each([
@@ -46,13 +50,18 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
-  it('Should carry a non-empty label and length error in English and Welsh for every identifier a commodity code asks for', () => {
-    const identifiers = new Set(
-      identifiedCommodityCodes().flatMap((code) => identifiersFor(code))
-    )
+  it('Should carry a non-empty label and length error in English and Welsh for every identifier the panel can ask for', () => {
+    const panelFieldIds = (code, speciesLatinName) =>
+      scopedFields(code, speciesLatinName).map((field) => field.id)
+    const identifiers = new Set([
+      ...identifiedCommodityCodes().flatMap((code) =>
+        panelFieldIds(code, code === HORSES_CODE ? EQUUS_CABALUS : undefined)
+      ),
+      ...panelFieldIds(OSTRICHES_CODE, STRUTHIO)
+    ])
     expect(
       identifiers.size,
-      'no commodity code carries any identifier'
+      'no commodity line asks for any identifier'
     ).toBeGreaterThan(0)
 
     for (const block of [copy, copyCy]) {
