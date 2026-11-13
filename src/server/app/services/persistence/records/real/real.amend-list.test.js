@@ -147,8 +147,14 @@ describe('real records adapter — paged list', () => {
       ]
     })
   })
+})
 
-  test('Should implement has with an exact-id canonical GET', async () => {
+describe('real records adapter — has', () => {
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+  })
+
+  test('Should GET the notification fulfilments and return true when found and false on 404', async () => {
     fetchMocker.mockResponses(
       [JSON.stringify(mockNotification('GBN-1', 'DRAFT')), { status: 200 }],
       ['Not Found', { status: 404 }]
