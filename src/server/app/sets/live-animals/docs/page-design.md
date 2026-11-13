@@ -292,7 +292,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   click on a button below the list is not moved out from under the pointer.
 - What has been chosen shows as a chip per species, under its commodity code,
   as the design draws it: the species' Latin name and a cross named "Remove"
-  and that Latin name. Clear all sits beside the count, as a link.
+  and that Latin name. Clear all sits beside the count, as a form
+  button styled as a link that posts the page form.
 - If the results cannot be fetched, the page is posted as it is without
   JavaScript, so the trader still gets the results.
 - One result is announced as "1 result available". The design announces
