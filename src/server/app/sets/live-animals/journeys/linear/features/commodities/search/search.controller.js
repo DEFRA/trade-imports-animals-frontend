@@ -144,7 +144,7 @@ const readPost = async (request, h) => {
   }
 }
 
-const keepsWorkingOnSelection = (action) =>
+const refreshesWithoutSaving = (action) =>
   action === SEARCH_ACTION || action === CLEAR_ACTION || isRemoveAction(action)
 
 const selectionAfterRemoval = ({ action, selected }) =>
@@ -163,11 +163,7 @@ const refuseUnknownRemoval = (request, { action, rowsByKey }) => {
   return Boom.badRequest()
 }
 
-const showSelectionWork = async (request, h, posted, renderShown) => {
-  const refusal = refuseUnknownRemoval(request, posted)
-  if (refusal) {
-    return refusal
-  }
+const searchStoreRowsAndRender = async (request, h, posted, renderShown) => {
   const { current, shown } = await searchAndStoreRows(
     request,
     h,
@@ -180,8 +176,11 @@ const showSelectionWork = async (request, h, posted, renderShown) => {
 const post = async (request, h) => {
   const posted = await readPost(request, h)
 
-  if (keepsWorkingOnSelection(posted.action)) {
-    return showSelectionWork(request, h, posted, render)
+  if (refreshesWithoutSaving(posted.action)) {
+    return (
+      refuseUnknownRemoval(request, posted) ??
+      searchStoreRowsAndRender(request, h, posted, render)
+    )
   }
 
   if (posted.selected.length === 0) {
@@ -201,8 +200,13 @@ const post = async (request, h) => {
   return commitSelection(request, h, rowsFor(posted.selected, posted.rowsByKey))
 }
 
-const postResults = async (request, h) =>
-  showSelectionWork(request, h, await readPost(request, h), renderResults)
+const postResults = async (request, h) => {
+  const posted = await readPost(request, h)
+  return (
+    refuseUnknownRemoval(request, posted) ??
+    searchStoreRowsAndRender(request, h, posted, renderResults)
+  )
+}
 
 export const routes = [
   ...kit.pageRoutes(page, { get, post }),
