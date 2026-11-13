@@ -2,10 +2,10 @@
 
 $app-multi-select-search-max-width: 630px;
 $app-multi-select-search-row-height: 44px;
-$app-multi-select-search-species-indent: 40px;
+$app-multi-select-search-option-indent: 40px;
 $app-multi-select-search-dropdown-height: 270px;
 $app-multi-select-search-row-border: 1px solid govuk-functional-colour(border);
-$app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
+$app-multi-select-search-tint: govuk-colour('black', $variant: 'tint-95');
 
 .app-multi-select-search {
   max-width: $app-multi-select-search-max-width;
@@ -39,17 +39,17 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
 
   .govuk-checkboxes__item {
     min-height: $app-multi-select-search-row-height;
-    padding-left: $app-multi-select-search-species-indent;
+    padding-left: $app-multi-select-search-option-indent;
     border-bottom: $app-multi-select-search-row-border;
   }
 
   .govuk-checkboxes__label::before,
   .govuk-checkboxes__label::after {
-    margin-left: $app-multi-select-search-species-indent;
+    margin-left: $app-multi-select-search-option-indent;
   }
 
   .govuk-checkboxes__item:nth-child(odd) {
-    background-color: $app-multi-select-search-stripe;
+    background-color: $app-multi-select-search-tint;
   }
 
   // The rows are the hover feedback here, so drop the ring GOV.UK draws round
@@ -150,7 +150,7 @@ $app-multi-select-search-stripe: govuk-colour('black', $variant: 'tint-95');
   height: 36px;
   padding: 0 govuk-spacing(2);
   border: 1px solid govuk-functional-colour(border);
-  background-color: $app-multi-select-search-stripe;
+  background-color: $app-multi-select-search-tint;
 }
 
 .app-multi-select-search__chip-remove {
