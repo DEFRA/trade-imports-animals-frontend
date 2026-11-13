@@ -14,18 +14,13 @@ export const documentsSection = ({
 }) => ({
   anchor: 'documents-section',
   heading: copy.sections.documents,
-  groups: [
-    {
-      heading: copy.groups.uploadDocuments,
-      cards: [
-        documentsCard({
-          journeyId,
-          changeLinkTrail,
-          answers,
-          evaluation,
-          readOnly
-        })
-      ]
-    }
+  cards: [
+    documentsCard({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      evaluation,
+      readOnly
+    })
   ]
 })

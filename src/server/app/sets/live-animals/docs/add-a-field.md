@@ -20,7 +20,7 @@ scope, service-backed options, validation, persistence and check-answers rows.
 - [`journeys/linear/features/origin/copy/copy.cy.js`](../journeys/linear/features/origin/copy/copy.cy.js)
 - [`journeys/linear/features/origin/controller.test.js`](../journeys/linear/features/origin/controller.test.js)
 - [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
-- [`journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js)
+- [`journeys/linear/features/check-answers/view-model/cards/consignment/origin-of-import.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/origin-of-import.js)
 - [`src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/origin.js`](../../../services/persistence/records/notification-mapper/mapper-a/sections/origin.js)
 
 Read [`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js)

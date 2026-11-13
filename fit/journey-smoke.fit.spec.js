@@ -261,7 +261,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
     const summary = errorSummary(page)
     await expect(summary).toContainText('There is a problem')
-    await expect(summary).toContainText('Complete reason for import')
+    await expect(summary).toContainText('Complete main import reason')
     await expect(summary).toContainText('Complete roles and addresses')
   })
 

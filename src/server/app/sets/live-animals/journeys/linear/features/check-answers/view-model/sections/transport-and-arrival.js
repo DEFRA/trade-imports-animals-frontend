@@ -17,44 +17,29 @@ export const transportAndArrivalSection = async ({
 }) => ({
   anchor: 'transport-and-arrival',
   heading: copy.sections.transportAndArrival,
-  groups: [
-    {
-      heading: copy.groups.arrivalDetails,
-      cards: [
-        await arrivalDetailsCard({
-          journeyId,
-          changeLinkTrail,
-          answers,
-          readOnly
-        })
-      ]
-    },
+  cards: [
+    await arrivalDetailsCard({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      readOnly
+    }),
     ...(transitedCountriesApplies(answers, scope)
       ? [
-          {
-            heading: copy.groups.transitCountries,
-            cards: [
-              await transitCountriesCard({
-                journeyId,
-                changeLinkTrail,
-                answers,
-                readOnly
-              })
-            ]
-          }
+          await transitCountriesCard({
+            journeyId,
+            changeLinkTrail,
+            answers,
+            readOnly
+          })
         ]
       : []),
-    {
-      heading: copy.groups.transportDetails,
-      cards: [
-        transportDetailsCard({
-          journeyId,
-          changeLinkTrail,
-          answers,
-          scope,
-          readOnly
-        })
-      ]
-    }
+    transportDetailsCard({
+      journeyId,
+      changeLinkTrail,
+      answers,
+      scope,
+      readOnly
+    })
   ]
 })

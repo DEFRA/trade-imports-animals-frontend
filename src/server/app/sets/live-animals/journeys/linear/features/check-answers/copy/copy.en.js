@@ -13,31 +13,19 @@ export const copy = {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
-    documents: '4. Documents',
-    consignmentParties: '5. Consignment parties',
+    documents: '4. Uploaded documents',
+    consignmentAddresses: '5. Consignment addresses',
     contactAddress: '6. Contact address'
   },
-  groups: {
-    whereFrom: 'Where is this consignment coming from?',
+  cards: {
+    originOfImport: 'Origin of import',
     mainImportReason: 'Main import reason',
-    commodityDetails: 'Commodity details',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
-    uploadDocuments: 'Upload documents',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment'
-  },
-  cards: {
-    importDetails: 'Import details',
-    reasonForImport: 'Reason for import',
-    additionalAnimalDetails: 'Additional animal details',
-    arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
-    transportDetails: 'Transport details',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment',
+    addresses: 'Addresses',
+    contactAddress: 'Contact address',
     documents: 'Uploaded documents'
   },
   rows: {
@@ -47,7 +35,7 @@ export const copy = {
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
     unweaned: 'Includes unweaned animals',
-    reasonForImport: 'Reason for import',
+    reasonForImport: 'Main import reason',
     purpose: 'Purpose in the market',
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
@@ -90,14 +78,14 @@ export const copy = {
   documentsEmpty: 'You have not added any documents yet.',
   hidden: {
     cards: {
-      importDetails: 'import details',
-      reasonForImport: 'reason for import',
-      additionalAnimalDetails: 'additional animal details',
+      originOfImport: 'origin of import',
+      mainImportReason: 'main import reason',
+      additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transitCountries: 'transit countries',
       transportDetails: 'transport details',
-      rolesAndAddresses: 'roles and addresses',
-      contactAddress: 'contact address for this consignment',
+      addresses: 'addresses',
+      contactAddress: 'contact address',
       documents: 'uploaded documents'
     },
     commodity: (n) => `commodity ${n}`
@@ -108,14 +96,14 @@ export const copy = {
   errors: {
     prefix: 'Error:',
     cards: {
-      importDetails: 'Complete import details',
-      reasonForImport: 'Complete reason for import',
-      additionalAnimalDetails: 'Complete additional animal details',
+      originOfImport: 'Complete origin of import',
+      mainImportReason: 'Complete main import reason',
+      additionalDetails: 'Complete additional details',
       species: 'Complete species details',
       arrivalDetails: 'Complete arrival details',
       transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
-      rolesAndAddresses: 'Complete roles and addresses',
+      addresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },

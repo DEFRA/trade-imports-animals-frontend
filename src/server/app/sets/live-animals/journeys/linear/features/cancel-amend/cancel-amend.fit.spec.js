@@ -50,7 +50,7 @@ const amendAndOpenCancel = async (page, reference) => {
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()
   await expectAmendStrip(page)
-  await page.getByRole('link', { name: 'Change import details' }).click()
+  await page.getByRole('link', { name: 'Change origin of import' }).click()
   await expectAmendStrip(page)
   await chooseCountryOfOrigin(page, 'France')
   await page

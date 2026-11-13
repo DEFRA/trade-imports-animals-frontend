@@ -12,10 +12,10 @@ const copy = copyFor({ en, cy })
  * it shows and the id the error summary links to.
  */
 export const REVIEW_CARDS = [
-  { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
+  { id: 'originOfImport', anchor: 'origin-of-import', rows: ['origin'] },
   {
-    id: 'reasonForImport',
-    anchor: 'reason-for-import',
+    id: 'mainImportReason',
+    anchor: 'main-import-reason',
     rows: ['importReason']
   },
   {
@@ -24,8 +24,8 @@ export const REVIEW_CARDS = [
     rows: ['commodities', 'consignmentDetails', 'animalIdentification']
   },
   {
-    id: 'additionalAnimalDetails',
-    anchor: 'additional-animal-details',
+    id: 'additionalDetails',
+    anchor: 'additional-details',
     rows: ['additionalDetails']
   },
   {
@@ -45,8 +45,8 @@ export const REVIEW_CARDS = [
   },
   { id: 'documents', anchor: 'documents', rows: ['documents'] },
   {
-    id: 'rolesAndAddresses',
-    anchor: 'roles-and-addresses',
+    id: 'addresses',
+    anchor: 'addresses',
     rows: ['addresses']
   },
   { id: 'contactAddress', anchor: 'contact-address', rows: ['contact'] }
@@ -123,8 +123,5 @@ const decorateCard = (card, cardErrors) => {
 export const withCardErrors = (sections, cardErrors = {}) =>
   sections.map((section) => ({
     ...section,
-    groups: section.groups.map((group) => ({
-      ...group,
-      cards: group.cards.map((card) => decorateCard(card, cardErrors))
-    }))
+    cards: section.cards.map((card) => decorateCard(card, cardErrors))
   }))

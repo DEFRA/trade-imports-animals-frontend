@@ -9,21 +9,21 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-export const importDetailsCard = async ({
+export const originOfImportCard = async ({
   journeyId,
   changeLinkTrail,
   answers,
   scope,
   readOnly
 }) => ({
-  id: 'importDetails',
-  title: copy.cards.importDetails,
+  id: 'originOfImport',
+  title: copy.cards.originOfImport,
   ...editableActions({
     readOnly,
     actions: cardAction(
       { journeyId, changeLinkTrail },
       originPage.slug,
-      copy.hidden.cards.importDetails
+      copy.hidden.cards.originOfImport
     )
   }),
   rows: [

@@ -80,8 +80,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview on a draft or
   an amendment and to the dashboard on a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
-- The review has the same six numbered sections as the hub, with a
-  subsection heading over every card.
+- The review has six numbered sections. Its fourth and fifth are worded
+  differently from the hub's. Each card stands directly under its section
+  heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except
   "Edit details" on an address copied onto this notification. A page that is
   only sometimes asked gets its own card and link.
@@ -107,7 +108,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the message its own page gives. An unfinished card says "complete" instead
   of the stale answer's message.
 - A party never answered raises no address error. Its card is unfinished.
-- The reason-for-import card carries the exit answers, and its one Change
+- The main-import-reason card carries the exit answers, and its one Change
   link reaches the page that collects them.
 - A summary entry for a card that is out of scope is absent, so every entry
   links to an anchor the page carries.

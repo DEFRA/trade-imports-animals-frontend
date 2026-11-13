@@ -1,5 +1,5 @@
 import { aboutConsignmentSection } from './sections/about-consignment.js'
-import { consignmentPartiesSection } from './sections/consignment-parties.js'
+import { consignmentAddressesSection } from './sections/consignment-addresses.js'
 import { contactAddressSection } from './sections/contact-address.js'
 import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
@@ -49,7 +49,7 @@ export const buildSections = async ({
       evaluation,
       readOnly
     }),
-    consignmentPartiesSection({
+    consignmentAddressesSection({
       journeyId,
       changeLinkTrail,
       reviewPageTrail,

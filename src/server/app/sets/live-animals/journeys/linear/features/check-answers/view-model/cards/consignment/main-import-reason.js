@@ -42,21 +42,21 @@ const exitRows = async (answers, scope) => [
     : [])
 ]
 
-export const reasonForImportCard = async ({
+export const mainImportReasonCard = async ({
   journeyId,
   changeLinkTrail,
   answers,
   scope,
   readOnly
 }) => ({
-  id: 'reasonForImport',
-  title: copy.cards.reasonForImport,
+  id: 'mainImportReason',
+  title: copy.cards.mainImportReason,
   ...editableActions({
     readOnly,
     actions: cardAction(
       { journeyId, changeLinkTrail },
       importReasonPage.slug,
-      copy.hidden.cards.reasonForImport
+      copy.hidden.cards.mainImportReason
     )
   }),
   rows: [

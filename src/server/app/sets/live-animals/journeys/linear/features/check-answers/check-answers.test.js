@@ -137,8 +137,7 @@ const viewAndJourneyIdForStatus = async (status) => {
   return { view: await viewOfJourney(journeyId), journeyId }
 }
 
-const cardsOf = (sections) =>
-  sections.flatMap((section) => section.groups.flatMap((group) => group.cards))
+const cardsOf = (sections) => sections.flatMap((section) => section.cards)
 
 const cardByTitle = (sections, title) =>
   cardsOf(sections).find((card) => card.title === title)
@@ -177,7 +176,7 @@ const NOT_APPLICABLE = 'Not applicable'
 const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
-const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
+const ORIGIN_OF_IMPORT_INCOMPLETE = 'Complete origin of import'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
@@ -200,14 +199,15 @@ const copyOf = (id) =>
 
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
 const CATTLE_CARD_TITLE = '0102 — Bos taurus'
-const IMPORT_DETAILS_CARD = 'Import details'
-const REASON_FOR_IMPORT_CARD = 'Reason for import'
-const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
+const ORIGIN_OF_IMPORT_CARD = 'Origin of import'
+const MAIN_IMPORT_REASON = 'Main import reason'
+const ADDITIONAL_DETAILS_CARD = 'Additional details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
 const TRANSIT_COUNTRIES_CARD = 'Transit countries'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
-const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
-const CONTACT_ADDRESS_CARD = 'Contact address for this consignment'
+const ADDRESSES_CARD = 'Addresses'
+const CONTACT_ADDRESS_CARD = 'Contact address'
+const CONTACT_ADDRESS_KEY = 'Contact address'
 const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
@@ -465,7 +465,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   )
 })
 
-describe(`${SUITE} — section and subsection headings`, () => {
+describe(`${SUITE} — section headings and cards`, () => {
   setupCheckAnswersEngine()
 
   it('Should render the numbered design sections in order', async () => {
@@ -474,66 +474,87 @@ describe(`${SUITE} — section and subsection headings`, () => {
       '1. About the consignment',
       '2. Description of the goods',
       '3. Transport and arrival',
-      '4. Documents',
-      '5. Consignment parties',
+      '4. Uploaded documents',
+      '5. Consignment addresses',
       '6. Contact address'
     ])
   })
 
-  it('Should head every group with a subsection heading', async () => {
-    const groups = (await sectionsFor(fullSeed)).flatMap(
-      (section) => section.groups
-    )
+  it('Should give every section exactly its heading, anchor and a list of titled cards', async () => {
+    const sections = await sectionsFor(fullSeed)
 
-    expect(groups.length).toBeGreaterThan(0)
-    for (const group of groups) {
-      expect(typeof group.heading, JSON.stringify(group.heading)).toBe('string')
+    for (const section of sections) {
+      expect(Object.keys(section).sort(), section.heading).toEqual([
+        'anchor',
+        'cards',
+        'heading'
+      ])
+      expect(section.cards.length, section.heading).toBeGreaterThan(0)
+      for (const card of section.cards) {
+        expect(typeof card.title, section.heading).toBe('string')
+      }
     }
   })
 
-  it('Should name the subsection heading of each card', async () => {
-    const sections = await sectionsFor(fullSeed)
-
+  it('Should title the cards in page order', async () => {
     expect(
-      sections.flatMap((section) =>
-        section.groups.map((group) => group.heading)
-      )
+      cardsOf(await sectionsFor(fullSeed)).map((card) => card.title)
     ).toEqual([
-      'Where is this consignment coming from?',
-      'Main import reason',
-      'Commodity details',
-      'Additional details',
+      ORIGIN_OF_IMPORT_CARD,
+      MAIN_IMPORT_REASON,
+      CATTLE_CARD_TITLE,
+      ADDITIONAL_DETAILS_CARD,
       ARRIVAL_DETAILS_CARD,
       TRANSIT_COUNTRIES_CARD,
       TRANSPORT_DETAILS_CARD,
-      'Upload documents',
-      ROLES_AND_ADDRESSES_CARD,
+      UPLOADED_DOCUMENTS_CARD,
+      ADDRESSES_CARD,
       CONTACT_ADDRESS_CARD
     ])
   })
 
-  it('Should place each subsection under the numbered section that owns it', async () => {
+  it('Should place each card in the numbered section that owns it', async () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(
       sections.map((section) => [
         section.anchor,
-        section.groups.map((group) => group.heading)
+        section.cards.map((card) => card.title)
       ])
     ).toEqual([
+      ['about-the-consignment', [ORIGIN_OF_IMPORT_CARD, MAIN_IMPORT_REASON]],
       [
-        'about-the-consignment',
-        ['Where is this consignment coming from?', 'Main import reason']
+        'description-of-the-goods',
+        [CATTLE_CARD_TITLE, ADDITIONAL_DETAILS_CARD]
       ],
-      ['description-of-the-goods', ['Commodity details', 'Additional details']],
       [
         TRANSPORT_AND_ARRIVAL_ANCHOR,
         [ARRIVAL_DETAILS_CARD, TRANSIT_COUNTRIES_CARD, TRANSPORT_DETAILS_CARD]
       ],
-      ['documents-section', ['Upload documents']],
-      ['consignment-parties', [ROLES_AND_ADDRESSES_CARD]],
+      ['documents-section', [UPLOADED_DOCUMENTS_CARD]],
+      ['consignment-addresses', [ADDRESSES_CARD]],
       ['contact-address-section', [CONTACT_ADDRESS_CARD]]
     ])
+  })
+
+  it('Should key the first row of the main import reason card as Main import reason', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), MAIN_IMPORT_REASON)
+
+    expect(keysOf(card.rows)[0]).toBe(MAIN_IMPORT_REASON)
+  })
+
+  it('Should give the addresses card and the contact address card one header action each, to their own pages', async () => {
+    const sections = await sectionsFor(fullSeed)
+    const actionsOf = (title) => cardByTitle(sections, title).actions.items
+
+    expect(actionsOf(ADDRESSES_CARD)).toHaveLength(1)
+    expect(actionsOf(ADDRESSES_CARD)[0].href).toMatch(
+      hrefEndingWithFromReview('addresses')
+    )
+    expect(actionsOf(CONTACT_ADDRESS_CARD)).toHaveLength(1)
+    expect(actionsOf(CONTACT_ADDRESS_CARD)[0].href).toMatch(
+      hrefEndingWithFromReview('consignment/contact/select')
+    )
   })
 })
 
@@ -543,7 +564,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should resolve service-backed labels for coded answers', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
     expect(valueOf(rows, COUNTRY_OF_ORIGIN_KEY)).toBe('France')
-    expect(valueOf(rows, 'Reason for import')).toBe('Internal market')
+    expect(valueOf(rows, MAIN_IMPORT_REASON)).toBe('Internal market')
     expect(valueOf(rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
     expect(valueOf(rows, 'Certified for')).toBe('Slaughter')
   })
@@ -575,11 +596,8 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
   })
 
-  it('Should include the CPH row in the roles-and-addresses card when a line is a CPH-eligible commodity', async () => {
-    const card = cardByTitle(
-      await sectionsFor(fullSeed),
-      ROLES_AND_ADDRESSES_CARD
-    )
+  it('Should include the CPH row in the Addresses card when a line is a CPH-eligible commodity', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
     expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
   })
 
@@ -665,10 +683,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should expand party rows to the stored name, address lines, telephone and email', async () => {
-    const card = cardByTitle(
-      await sectionsFor(fullSeed),
-      ROLES_AND_ADDRESSES_CARD
-    )
+    const card = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
     expect(htmlOf(card.rows, 'Consignor')).toBe(
       `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland<br>${STUB_TELEPHONE}<br>astra-rosales@example.com`
     )
@@ -679,7 +694,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
       await sectionsFor(fullSeed),
       CONTACT_ADDRESS_CARD
     )
-    expect(htmlOf(contact.rows, 'Contact address')).toBe(
+    expect(htmlOf(contact.rows, CONTACT_ADDRESS_KEY)).toBe(
       `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom<br>${STUB_TELEPHONE}<br>animal-and-plant-health-agency@example.com`
     )
   })
@@ -688,7 +703,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     const sections = await sectionsFor(fullSeed)
 
     expect(keysOf(cardByTitle(sections, CONTACT_ADDRESS_CARD).rows)).toEqual([
-      'Contact address'
+      CONTACT_ADDRESS_KEY
     ])
     expect(
       keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
@@ -710,10 +725,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
     const sections = await sectionsFor(fullSeed)
 
-    expect(cardChangeHrefOf(sections, IMPORT_DETAILS_CARD)).toMatch(
+    expect(cardChangeHrefOf(sections, ORIGIN_OF_IMPORT_CARD)).toMatch(
       hrefEndingWithFromReview('origin')
     )
-    expect(cardChangeHrefOf(sections, ADDITIONAL_ANIMAL_DETAILS_CARD)).toMatch(
+    expect(cardChangeHrefOf(sections, ADDITIONAL_DETAILS_CARD)).toMatch(
       hrefEndingWithFromReview('additional-details')
     )
     expect(cardChangeHrefOf(sections, ARRIVAL_DETAILS_CARD)).toMatch(
@@ -722,7 +737,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(cardChangeHrefOf(sections, TRANSPORT_DETAILS_CARD)).toMatch(
       hrefEndingWithFromReview('transporters')
     )
-    expect(cardChangeHrefOf(sections, ROLES_AND_ADDRESSES_CARD)).toMatch(
+    expect(cardChangeHrefOf(sections, ADDRESSES_CARD)).toMatch(
       hrefEndingWithFromReview('addresses')
     )
     expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
@@ -735,7 +750,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     const hiddenTextOf = (title) =>
       cardByTitle(sections, title).actions.items[0].visuallyHiddenText
 
-    expect(hiddenTextOf(IMPORT_DETAILS_CARD)).toBe('import details')
+    expect(hiddenTextOf(ORIGIN_OF_IMPORT_CARD)).toBe('origin of import')
     expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
     expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
   })
@@ -789,13 +804,13 @@ describe(`${SUITE} — document type labels`, () => {
 describe(`${SUITE} — transit countries`, () => {
   setupCheckAnswersEngine()
 
-  it('Should build the transit-countries card under its own heading when transited countries apply', async () => {
+  it('Should build the transit-countries card directly under the section when transited countries apply', async () => {
     const sections = await sectionsFor(fullSeed)
     const transport = sections.find(
       (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
     )
 
-    expect(transport.groups.map((group) => group.heading)).toEqual([
+    expect(transport.cards.map((card) => card.title)).toEqual([
       ARRIVAL_DETAILS_CARD,
       TRANSIT_COUNTRIES_CARD,
       TRANSPORT_DETAILS_CARD
@@ -831,7 +846,7 @@ describe(`${SUITE} — transit countries`, () => {
     expect(keysOf(card.rows)).not.toContain(TRANSITED_COUNTRIES_KEY)
   })
 
-  it('Should drop the transit-countries card and its heading when transited countries do not apply', async () => {
+  it('Should drop the transit-countries card when transited countries do not apply', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       meansOfTransport: 'AIRPLANE'
@@ -840,7 +855,7 @@ describe(`${SUITE} — transit countries`, () => {
       (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
     )
 
-    expect(transport.groups.map((group) => group.heading)).toEqual([
+    expect(transport.cards.map((card) => card.title)).toEqual([
       ARRIVAL_DETAILS_CARD,
       TRANSPORT_DETAILS_CARD
     ])
@@ -848,14 +863,11 @@ describe(`${SUITE} — transit countries`, () => {
   })
 })
 
-describe(`${SUITE} — reason-for-import card`, () => {
+describe(`${SUITE} — main-import-reason card`, () => {
   setupCheckAnswersEngine()
 
   it('Should carry the reason and the purpose, and link to the page that collects them', async () => {
-    const card = cardByTitle(
-      await sectionsFor(fullSeed),
-      REASON_FOR_IMPORT_CARD
-    )
+    const card = cardByTitle(await sectionsFor(fullSeed), MAIN_IMPORT_REASON)
 
     expect(valueOf(card.rows, copyEn.rows.reasonForImport)).toBe(
       'Internal market'
@@ -867,10 +879,10 @@ describe(`${SUITE} — reason-for-import card`, () => {
     )
   })
 
-  it('Should leave the additional-animal-details card only the answers its own page collects', async () => {
+  it('Should leave the additional-details card only the answers its own page collects', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
-      ADDITIONAL_ANIMAL_DETAILS_CARD
+      ADDITIONAL_DETAILS_CARD
     )
 
     expect(keysOf(card.rows)).toEqual([copyEn.rows.certifiedFor, UNWEANED_KEY])
@@ -953,7 +965,9 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
 
   it('Should keep the documents section and its card when nothing has been uploaded', async () => {
     const sections = await sectionsFor(gatedOffSeed)
-    expect(sections.map((section) => section.heading)).toContain('4. Documents')
+    expect(sections.map((section) => section.heading)).toContain(
+      '4. Uploaded documents'
+    )
     const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
     expect(card.documents).toEqual([])
     expect(card.emptyText).toBe('You have not added any documents yet.')
@@ -991,10 +1005,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 
   it('Should leave an unset party with only a visually hidden Missing', async () => {
-    const card = cardByTitle(
-      await sectionsFor(gatedOffSeed),
-      ROLES_AND_ADDRESSES_CARD
-    )
+    const card = cardByTitle(await sectionsFor(gatedOffSeed), ADDRESSES_CARD)
     expect(htmlOf(card.rows, 'Place of origin')).toBe(MISSING_HTML)
   })
 })
@@ -1014,7 +1025,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
 
   it('Should write an unanswered optional row out as Not applicable on a finished card', async () => {
     const sections = await sectionsFor(withoutInternalReference())
-    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const card = cardByTitle(sections, ORIGIN_OF_IMPORT_CARD)
 
     expect(card.error).toBeNull()
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
@@ -1024,19 +1035,19 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     const sections = await sectionsFor(
       without(fullSeed, 'internalReferenceNumber', 'countryOfOrigin')
     )
-    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const card = cardByTitle(sections, ORIGIN_OF_IMPORT_CARD)
     const reference = rowByKey(card.rows, INTERNAL_REFERENCE_KEY)
 
-    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(card.error).toBe(ORIGIN_OF_IMPORT_INCOMPLETE)
     expect(reference.value.text).toBeUndefined()
     expect(reference.value.html).toBe(MISSING_HTML)
   })
 
   it('Should leave an answered row alone inside an unfinished card', async () => {
     const sections = await sectionsFor(without(fullSeed, 'countryOfOrigin'))
-    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const card = cardByTitle(sections, ORIGIN_OF_IMPORT_CARD)
 
-    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(card.error).toBe(ORIGIN_OF_IMPORT_INCOMPLETE)
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe('Imports456GB')
   })
 
@@ -1045,10 +1056,10 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
       ...without(fullSeed, 'countryOfOrigin'),
       internalReferenceNumber: NOT_APPLICABLE
     })
-    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const card = cardByTitle(sections, ORIGIN_OF_IMPORT_CARD)
     const reference = rowByKey(card.rows, INTERNAL_REFERENCE_KEY)
 
-    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(card.error).toBe(ORIGIN_OF_IMPORT_INCOMPLETE)
     expect(reference.value.text).toBe(NOT_APPLICABLE)
     expect(reference.value.html).toBeUndefined()
   })
@@ -1075,13 +1086,13 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
       SUBMITTED,
       withoutInternalReference()
     )
-    const card = cardByTitle(context.sections, IMPORT_DETAILS_CARD)
+    const card = cardByTitle(context.sections, ORIGIN_OF_IMPORT_CARD)
 
     expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 })
 
-describe(`${SUITE} — reason-for-import exit answers`, () => {
+describe(`${SUITE} — main-import-reason exit answers`, () => {
   setupCheckAnswersEngine()
 
   const reasonSeed = (answers) => ({
@@ -1183,7 +1194,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(htmlOf(rows, PORT_OF_EXIT_KEY)).toBe(MISSING_HTML)
   })
 
-  it('Should show every exit row on the reason-for-import card, whose one Change link reaches them', async () => {
+  it('Should show every exit row on the main-import-reason card, whose one Change link reaches them', async () => {
     const sections = await sectionsFor(
       reasonSeed({
         reasonForImport: 'temporaryAdmissionHorses',
@@ -1191,12 +1202,12 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
         portOfExit: 'GB DVR'
       })
     )
-    const card = cardByTitle(sections, REASON_FOR_IMPORT_CARD)
+    const card = cardByTitle(sections, MAIN_IMPORT_REASON)
 
     expect(keysOf(card.rows)).toContain(EXIT_DATE_KEY)
     expect(keysOf(card.rows)).toContain(PORT_OF_EXIT_KEY)
     expect(rowActionsOf(sections)).toEqual([])
-    expect(cardChangeHrefOf(sections, REASON_FOR_IMPORT_CARD)).toMatch(
+    expect(cardChangeHrefOf(sections, MAIN_IMPORT_REASON)).toMatch(
       hrefEndingWithFromReview('import-reason')
     )
   })
@@ -1208,7 +1219,7 @@ describe(`${SUITE} — copied party addresses`, () => {
   it('Should render the name and address held on the copy', async () => {
     const card = cardByTitle(
       await sectionsFor({ consignor: copyOf(CONSIGNOR_ADDRESS_ID) }),
-      ROLES_AND_ADDRESSES_CARD
+      ADDRESSES_CARD
     )
 
     expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
@@ -1218,7 +1229,7 @@ describe(`${SUITE} — copied party addresses`, () => {
   it('Should show the error above a copy that breaks the rules, keeping its details visible', async () => {
     const card = cardByTitle(
       await sectionsFor({ consignor: BROKEN_COPY }),
-      ROLES_AND_ADDRESSES_CARD
+      ADDRESSES_CARD
     )
     const html = htmlOf(card.rows, 'Consignor')
 
@@ -1235,7 +1246,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     }
     const card = cardByTitle(
       await sectionsFor({ consignor: badEmail }),
-      ROLES_AND_ADDRESSES_CARD
+      ADDRESSES_CARD
     )
     const html = htmlOf(card.rows, 'Consignor')
 
@@ -1248,7 +1259,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     const { view, journeyId } = await driveHandler(getHandler, {
       seed: fullSeed
     })
-    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
+    const card = cardByTitle(view.context.sections, ADDRESSES_CARD)
     const consignorRow = card.rows.find((row) => row.key.text === 'Consignor')
 
     expect(consignorRow.actions.items).toEqual([
@@ -1274,7 +1285,7 @@ describe(`${SUITE} — copied party addresses`, () => {
   it('Should give a role never answered no edit link', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
-      ROLES_AND_ADDRESSES_CARD
+      ADDRESSES_CARD
     )
     const importerRow = card.rows.find((row) => row.key.text === 'Importer')
 
@@ -1283,7 +1294,7 @@ describe(`${SUITE} — copied party addresses`, () => {
 
   it('Should offer no edit links on a submitted notification', async () => {
     const { context } = await viewForStatus(SUBMITTED, fullSeed)
-    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+    const card = cardByTitle(context.sections, ADDRESSES_CARD)
 
     expect(card.rows.every((row) => row.actions === undefined)).toBe(true)
   })
@@ -1293,7 +1304,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     try {
       for (const status of [DRAFT, AMEND, SUBMITTED]) {
         const { context } = await viewForStatus(status, fullSeed)
-        const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+        const card = cardByTitle(context.sections, ADDRESSES_CARD)
         expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
       }
       expect(partySpy).not.toHaveBeenCalled()
@@ -1348,7 +1359,7 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
   it('Should leave a role that has never been answered with only a visually hidden Missing', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
-      ROLES_AND_ADDRESSES_CARD
+      ADDRESSES_CARD
     )
     expect(htmlOf(card.rows, 'Importer')).toBe(MISSING_HTML)
   })
@@ -1716,10 +1727,10 @@ describe(`${SUITE} — the unfinished notification`, () => {
 
   it('Should head a brand-new draft with one entry per unfinished card, in page order', async () => {
     expect(await textsFor({})).toEqual([
-      IMPORT_DETAILS_INCOMPLETE,
-      'Complete reason for import',
+      ORIGIN_OF_IMPORT_INCOMPLETE,
+      'Complete main import reason',
       SPECIES_INCOMPLETE,
-      'Complete additional animal details',
+      'Complete additional details',
       ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
       'Complete roles and addresses',
@@ -1738,7 +1749,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       transportDocumentReference: 'CMR-2026-884721'
     })
 
-    expect(texts).not.toContain(IMPORT_DETAILS_INCOMPLETE)
+    expect(texts).not.toContain(ORIGIN_OF_IMPORT_INCOMPLETE)
     expect(texts).not.toContain(ARRIVAL_DETAILS_INCOMPLETE)
     expect(texts).toContain('Complete transport details')
   })
@@ -1747,7 +1758,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     const summary = await summaryFor(withoutParty(fullSeed, 'importer'))
 
     expect(summary.errorList).toEqual([
-      { text: ADDRESSES_INCOMPLETE, href: '#roles-and-addresses' }
+      { text: ADDRESSES_INCOMPLETE, href: '#addresses' }
     ])
   })
 
@@ -1758,9 +1769,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
   it('Should repeat the message inside the card it names', async () => {
     const sections = await sectionsFor(withoutParty(fullSeed, 'importer'))
 
-    expect(cardById(sections, 'rolesAndAddresses').error).toBe(
-      ADDRESSES_INCOMPLETE
-    )
+    expect(cardById(sections, 'addresses').error).toBe(ADDRESSES_INCOMPLETE)
   })
 
   it('Should leave a finished card unmarked', async () => {
@@ -1781,7 +1790,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     )
 
     expect(context.errorSummary).toBeNull()
-    expect(cardById(context.sections, 'rolesAndAddresses').error).toBeNull()
+    expect(cardById(context.sections, 'addresses').error).toBeNull()
   })
 
   it('Should resolve the species entry to a section anchor that exists on the page', async () => {

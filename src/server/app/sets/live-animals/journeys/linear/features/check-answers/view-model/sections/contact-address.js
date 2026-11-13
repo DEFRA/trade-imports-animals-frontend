@@ -16,20 +16,15 @@ export const contactAddressSection = ({
 }) => ({
   anchor: 'contact-address-section',
   heading: copy.sections.contactAddress,
-  groups: [
-    {
-      heading: copy.groups.contactAddress,
-      cards: [
-        contactAddressCard({
-          journeyId,
-          changeLinkTrail,
-          reviewPageTrail,
-          answers,
-          readOnly,
-          parties,
-          partyErrors
-        })
-      ]
-    }
+  cards: [
+    contactAddressCard({
+      journeyId,
+      changeLinkTrail,
+      reviewPageTrail,
+      answers,
+      readOnly,
+      parties,
+      partyErrors
+    })
   ]
 })

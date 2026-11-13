@@ -23,6 +23,8 @@ import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
+import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
+import { copy as contactCopy } from '../contact/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -44,7 +46,7 @@ const answerCellFor = (page, label) =>
 const expectOnlyHiddenMissing = async (page, answerCell) => {
   await expect(answerCell).toHaveText(copy.missing)
   await expectStyle(
-    answerCell.locator('xpath=./*'),
+    answerCell.getByText(copy.missing, { exact: true }),
     await govukVisuallyHiddenStyleOf(page)
   )
 }
@@ -134,7 +136,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.consignmentParties,
+      copy.sections.consignmentAddresses,
       copy.sections.contactAddress
     ])
   })
@@ -155,7 +157,7 @@ test.describe('check-answers feature section structure', () => {
     await expect(
       lastBlock
         .locator('xpath=preceding-sibling::*[1]')
-        .getByRole('heading', { name: copy.groups.contactAddress })
+        .getByRole('heading', { name: copy.cards.contactAddress, level: 3 })
     ).toBeVisible()
 
     await expect(
@@ -163,23 +165,23 @@ test.describe('check-answers feature section structure', () => {
     ).toBeVisible()
   })
 
-  test('heads every card with its own subsection heading', async ({ page }) => {
+  test('titles every card with a level 3 heading straight under its section heading', async ({
+    page
+  }) => {
     await startNotification(page)
     await openNotificationView(page)
 
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
-      copy.groups.whereFrom,
-      copy.groups.mainImportReason,
-      copy.groups.additionalDetails,
-      copy.groups.arrivalDetails,
-      copy.groups.transportDetails,
-      copy.groups.uploadDocuments,
-      copy.groups.rolesAndAddresses,
-      copy.groups.contactAddress
+      copy.cards.originOfImport,
+      copy.cards.mainImportReason,
+      copy.cards.additionalDetails,
+      copy.cards.arrivalDetails,
+      copy.cards.transportDetails,
+      copy.cards.documents,
+      copy.cards.addresses,
+      copy.cards.contactAddress
     ])
-    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
-      await page.locator('.govuk-summary-card').count()
-    )
+    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(0)
   })
 })
 
@@ -198,7 +200,7 @@ test.describe('check-answers feature documents section', () => {
       page.getByRole('heading', { name: copy.sections.documents })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.cards.documents })
+      page.getByRole('heading', { name: copy.cards.documents, exact: true })
     ).toBeVisible()
     await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
 
@@ -262,7 +264,7 @@ test.describe('check-answers feature exit answers', () => {
       rowFor(page, copy.rows.destinationCountry).getByRole('link')
     ).toHaveCount(0)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.reasonForImport)
+    const changeLink = cardChangeLink(page, copy.hidden.cards.mainImportReason)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/import-reason\?from=(?:[^#]*%2C)?notification-view$/
@@ -340,7 +342,7 @@ test.describe('check-answers feature change links', () => {
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await openNotificationView(page)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.importDetails)
+    const changeLink = cardChangeLink(page, copy.hidden.cards.originOfImport)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/origin\?from=(?:[^#]*%2C)?notification-view$/
@@ -363,26 +365,62 @@ test.describe('check-answers feature change links', () => {
     )
   })
 
-  test('every Change link sits in a card heading and no summary row carries one', async ({
+  test('has one Change link per card, named for its card, in card order, and none on a row', async ({
     page
   }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    const cards = page.locator('.govuk-summary-card')
-    const cardCount = await cards.count()
-
-    expect(cardCount).toBeGreaterThan(0)
-    await expect(page.getByRole('link', { name: copy.change })).toHaveCount(
-      cardCount
+    await expect(
+      page.getByRole('link', { name: new RegExp(`^${copy.change}\\b`) })
+    ).toHaveText(
+      [
+        copy.hidden.cards.originOfImport,
+        copy.hidden.cards.mainImportReason,
+        copy.hidden.cards.additionalDetails,
+        copy.hidden.cards.arrivalDetails,
+        copy.hidden.cards.transportDetails,
+        copy.hidden.cards.documents,
+        copy.hidden.cards.addresses,
+        copy.hidden.cards.contactAddress
+      ].map((hiddenText) => {
+        const name = RegExp.escape(`${copy.change} ${hiddenText}`)
+        return new RegExp(`^${name}( \\(.+\\))?$`)
+      })
     )
-    await expect(page.locator('.govuk-summary-list__actions')).toHaveCount(0)
+  })
 
-    for (let index = 0; index < cardCount; index += 1) {
-      await expect(
-        cards.nth(index).locator('.govuk-summary-card__actions a')
-      ).toHaveCount(1)
-    }
+  test('opens the consignment addresses page from the Addresses card', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await openNotificationView(page)
+
+    const changeLink = cardChangeLink(page, copy.hidden.cards.addresses)
+    await expect(changeLink).toHaveAttribute('href', /\/addresses\?from=/)
+    await changeLink.click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: addressesCopy.hub.title })
+    ).toBeVisible()
+  })
+
+  test('opens the contact address page from the contact address card', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await openNotificationView(page)
+
+    const changeLink = cardChangeLink(page, copy.hidden.cards.contactAddress)
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/consignment\/contact\/select\?from=/
+    )
+    await changeLink.click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: contactCopy.title })
+    ).toBeVisible()
   })
 })
 
@@ -509,6 +547,30 @@ test.describe('check-answers feature unfinished notification', () => {
     await expect(
       page.locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
     ).toContainText(copy.errors.prefix)
+  })
+
+  test('names the unfinished main import reason and additional details cards in the error summary and on each card', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await openNotificationView(page)
+
+    for (const { message, anchor } of [
+      {
+        message: copy.errors.cards.mainImportReason,
+        anchor: '#main-import-reason'
+      },
+      {
+        message: copy.errors.cards.additionalDetails,
+        anchor: '#additional-details'
+      }
+    ]) {
+      await expect(page.getByRole('link', { name: message })).toHaveAttribute(
+        'href',
+        anchor
+      )
+      await expect(page.locator(anchor).getByText(message)).toBeVisible()
+    }
   })
 
   test('refuses Continue and keeps the trader on the review page', async ({

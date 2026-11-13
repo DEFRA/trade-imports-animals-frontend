@@ -13,7 +13,7 @@ import { row } from '../../rows/summary-row.js'
 const copy = copyFor({ en, cy })
 
 /**
- * The roles and addresses summary card: one row per party, a CPH row when CPH
+ * The addresses summary card: one row per party, a CPH row when CPH
  * applies and, unless read-only, a card Change action to the addresses page and
  * an edit link on each party row.
  *
@@ -27,7 +27,7 @@ const copy = copyFor({ en, cy })
  * @param {object} [options.partyErrors] - the error text per party id.
  * @returns {object} the summary card.
  */
-export const rolesAndAddressesCard = ({
+export const addressesCard = ({
   journeyId,
   changeLinkTrail,
   reviewPageTrail,
@@ -36,14 +36,14 @@ export const rolesAndAddressesCard = ({
   parties = answers,
   partyErrors = {}
 }) => ({
-  id: 'rolesAndAddresses',
-  title: copy.cards.rolesAndAddresses,
+  id: 'addresses',
+  title: copy.cards.addresses,
   ...editableActions({
     readOnly,
     actions: cardAction(
       { journeyId, changeLinkTrail },
       addressesPage.slug,
-      copy.hidden.cards.rolesAndAddresses
+      copy.hidden.cards.addresses
     )
   }),
   rows: [

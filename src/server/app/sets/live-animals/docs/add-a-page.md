@@ -258,8 +258,7 @@ key and a value. If the page's fields go into a NEW card, the card needs one
 `cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
 `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf in BOTH
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
-the fit assertion "every Change link sits in a card heading and no summary row
-carries one"
+the fit assertion "one Change link per card, named for its card, in card order, and none on a row"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
 fails. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).
