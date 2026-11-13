@@ -255,7 +255,8 @@ const EXIT_DATE_KEY = 'Exit date'
 const PORT_OF_EXIT_KEY = 'Port of exit'
 const PLACE_OF_ORIGIN_KEY = 'Place of origin'
 const PLACE_OF_DESTINATION_KEY = 'Place of destination'
-const DOMESTIC_CAT_1_LABEL = 'Domestic Cat 1'
+const CAT_1_LABEL = 'Felis catus (Domestic Cat) 1'
+const CAT_2_LABEL = 'Felis catus (Domestic Cat) 2'
 const CAT_1_MICROCHIP = 'MICROCHIP-1'
 const CAT_2_MICROCHIP = 'MICROCHIP-2'
 
@@ -947,13 +948,13 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
       'Consignee',
       'Importer',
       PLACE_OF_DESTINATION_KEY,
-      DOMESTIC_CAT_1_LABEL,
-      'Domestic Cat 2'
+      CAT_1_LABEL,
+      CAT_2_LABEL
     ])
-    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(
+    expect(htmlOf(card.rows, CAT_1_LABEL)).toBe(
       `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
     )
-    expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
+    expect(htmlOf(card.rows, CAT_2_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
   it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still report the outstanding answer against the species card', async () => {
@@ -973,9 +974,9 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
       'Consignee',
       'Importer',
       PLACE_OF_DESTINATION_KEY,
-      DOMESTIC_CAT_1_LABEL
+      CAT_1_LABEL
     ])
-    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
+    expect(htmlOf(card.rows, CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
     expect(summary.errorList.map((entry) => entry.text)).toContain(
       SPECIES_INCOMPLETE

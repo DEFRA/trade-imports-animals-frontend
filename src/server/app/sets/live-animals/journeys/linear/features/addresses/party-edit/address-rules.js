@@ -10,7 +10,6 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
-/** Copied from the INS address book (features/address-book/fields.js). */
 export const FIELD_RULES = {
   name: { maxLength: 255, required: true },
   addressLine1: { maxLength: 255, required: true },
@@ -25,8 +24,6 @@ export const FIELD_RULES = {
 
 export const FIELDS = Object.keys(FIELD_RULES)
 
-/** The GOV.UK autocomplete token for each field that has one, and the width
- * class each field's input carries, as party-edit.njk's inputs are built. */
 export const AUTOCOMPLETE_TOKENS = {
   name: 'organization',
   addressLine1: 'address-line1',
@@ -59,8 +56,8 @@ const maxLengthMessageFor = (field) =>
 
 /**
  * The required-with-cap rule for an address field: blank refuses with
- * `required`, over `field`'s V4 limit refuses with this feature's over-long
- * message for `field`.
+ * `required`, over the cap `FIELD_RULES` sets for `field` refuses with this
+ * feature's over-long message for `field`.
  *
  * @param {string} field - a key of `FIELD_RULES` whose limit and over-long
  * message the rule reads.

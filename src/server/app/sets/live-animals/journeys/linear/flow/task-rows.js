@@ -6,7 +6,7 @@ import {
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
-import { hasAnIdentifierField } from '../features/commodities/animal-identification/identifier/fields.js'
+import { hasAnyCommodityLine } from '../features/commodities/lines.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
@@ -18,11 +18,6 @@ import {
   transportersPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-
-export const anyLineHasAnIdentifierField = (answers) =>
-  (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
-    (line) => hasAnIdentifierField(line.commodityCode, line.speciesLatinName)
-  )
 
 export const taskRows = [
   { id: 'origin', pages: [originPage] },
@@ -56,7 +51,7 @@ export const taskRows = [
     pages: [animalIdentificationPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }],
     conditional: true,
-    applies: anyLineHasAnIdentifierField
+    applies: hasAnyCommodityLine
   },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
@@ -72,9 +67,10 @@ export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 export const rowParts = (row) =>
   row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
 
-const rowApplies = (row, answers) => row.applies?.(answers) ?? true
+const rowApplies = (row, answers, evaluation) =>
+  row.applies?.(answers, evaluation) ?? true
 
 export const rowStatus = (row, answers, inScope, evaluation) =>
-  rowApplies(row, answers)
+  rowApplies(row, answers, evaluation)
     ? statusOf(rowParts(row), answers, inScope, evaluation)
     : NA

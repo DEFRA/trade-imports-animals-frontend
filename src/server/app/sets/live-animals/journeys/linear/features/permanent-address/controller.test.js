@@ -190,9 +190,9 @@ describe('permanent-address — the card list', () => {
     const result = await driveHandler(get, { seed })
 
     expect(cardsFrom(result).map((card) => card.title)).toEqual([
-      'Felis catus 1',
-      'Felis catus 2',
-      'Mustela putorius furo 1'
+      'Felis catus (Domestic Cat) 1',
+      'Felis catus (Domestic Cat) 2',
+      'Mustela putorius furo (Ferret) 1'
     ])
   })
 
@@ -267,7 +267,10 @@ describe('permanent-address — a new address is checked before it saves', () =>
       result.view.context.errorSummary.errorList.map((e) => e.text)
     ).toEqual(
       REQUIRED_FIELDS.map((field) =>
-        copy.errors.forAnimal(copy.errors[field], 'Felis catus 1')
+        copy.errors.forAnimal(
+          copy.errors[field],
+          'Felis catus (Domestic Cat) 1'
+        )
       )
     )
     expect(

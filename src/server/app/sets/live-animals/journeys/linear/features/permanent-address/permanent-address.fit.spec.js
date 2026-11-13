@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
 import {
   BOS_TAURUS_ROW,
+  CAT_1_LABEL,
+  CAT_2_LABEL,
   FELIS_CATUS_ROW,
+  FERRET_1_LABEL,
   MUSTELA_PUTORIUS_FURO_ROW,
   addPlaceOfDestination,
   addressesSection,
@@ -24,10 +27,6 @@ import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 
 const { errorTitlePrefix, serviceName, govukSuffix } = sharedCopy.layout
-
-const CAT_1 = 'Felis catus 1'
-const CAT_2 = 'Felis catus 2'
-const FERRET_1 = 'Mustela putorius furo 1'
 
 const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const FERRET_MICROCHIP_FIELD = '#animalIdentifierMicrochip-1'
@@ -123,8 +122,8 @@ test.describe('permanent address', () => {
     await expect(page.getByText(copy.warning)).toBeVisible()
 
     for (const [heading, chip] of [
-      [CAT_1, CAT_MICROCHIP],
-      [FERRET_1, FERRET_MICROCHIP]
+      [CAT_1_LABEL, CAT_MICROCHIP],
+      [FERRET_1_LABEL, FERRET_MICROCHIP]
     ]) {
       const card = page.getByRole('region', { name: heading, exact: true })
       await expect(card.getByText(`Microchip: ${chip}`)).toBeVisible()
@@ -142,7 +141,7 @@ test.describe('permanent address', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await catCard.getByRole('radio', { name: NEW_ADDRESS_OPTION }).check()
 
     await expect(catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toBeVisible()
@@ -169,7 +168,7 @@ test.describe('permanent address', () => {
     await expect(catCard.locator('select')).toHaveCount(0)
     await expect(
       page
-        .getByRole('region', { name: FERRET_1, exact: true })
+        .getByRole('region', { name: FERRET_1_LABEL, exact: true })
         .getByLabel(NAME_OR_ORGANISATION_LABEL)
     ).toBeHidden()
   })
@@ -203,7 +202,7 @@ test.describe('permanent address', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1, {
+    await answerPermanentAddressCard(page, CAT_1_LABEL, {
       nameOrOrganisationName: 'Cat Owner',
       addressLine1: '1 Cat Lane',
       townOrCity: 'Leeds',
@@ -211,7 +210,7 @@ test.describe('permanent address', () => {
       email: 'cat@example.co.uk',
       phone: '0113 555 0192'
     })
-    await answerPermanentAddressCard(page, FERRET_1, {
+    await answerPermanentAddressCard(page, FERRET_1_LABEL, {
       nameOrOrganisationName: FERRET_OWNER_NAME,
       addressLine1: '1 Farm Lane',
       townOrCity: 'Skipton',
@@ -239,14 +238,17 @@ test.describe('permanent address', () => {
       .click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await expect(
       catCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
     ).toBeChecked()
     await expect(catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toHaveValue(
       'Cat Owner'
     )
-    const ferretCard = page.getByRole('region', { name: FERRET_1, exact: true })
+    const ferretCard = page.getByRole('region', {
+      name: FERRET_1_LABEL,
+      exact: true
+    })
     await expect(
       ferretCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
     ).toBeChecked()
@@ -265,7 +267,7 @@ test.describe('permanent address', () => {
     await expectNoSeriousOrCriticalViolations(page, 'Permanent address')
 
     await page
-      .getByRole('region', { name: CAT_1, exact: true })
+      .getByRole('region', { name: CAT_1_LABEL, exact: true })
       .getByRole('radio', { name: NEW_ADDRESS_OPTION })
       .check()
     await expectNoSeriousOrCriticalViolations(
@@ -294,7 +296,7 @@ test.describe('permanent address — place of destination and partial answers', 
   }) => {
     await openOnePerSpeciesPermanentAddressWithPlaceOfDestinationKnown(page)
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await expect(
       catCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
     ).toHaveAccessibleDescription(
@@ -309,7 +311,10 @@ test.describe('permanent address — place of destination and partial answers', 
     await page
       .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
       .click()
-    const reopenedCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const reopenedCard = page.getByRole('region', {
+      name: CAT_1_LABEL,
+      exact: true
+    })
     await expect(
       reopenedCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
     ).toBeChecked()
@@ -320,7 +325,7 @@ test.describe('permanent address — place of destination and partial answers', 
   }) => {
     await openOnePerSpeciesPermanentAddressWithPlaceOfDestinationKnown(page)
 
-    await answerPermanentAddressCard(page, CAT_1)
+    await answerPermanentAddressCard(page, CAT_1_LABEL)
     await saveAndContinue(page).click()
 
     await expect(
@@ -331,11 +336,14 @@ test.describe('permanent address — place of destination and partial answers', 
       .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
       .click()
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await expect(
       catCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
     ).toBeChecked()
-    const ferretCard = page.getByRole('region', { name: FERRET_1, exact: true })
+    const ferretCard = page.getByRole('region', {
+      name: FERRET_1_LABEL,
+      exact: true
+    })
     await expect(
       ferretCard.getByRole('radio', { name: PLACE_OF_DESTINATION_OPTION })
     ).not.toBeChecked()
@@ -349,8 +357,8 @@ test.describe('permanent address — place of destination and partial answers', 
   }) => {
     await openOnePerSpeciesPermanentAddressWithPlaceOfDestinationKnown(page)
 
-    await answerPermanentAddressCard(page, CAT_1)
-    await answerPermanentAddressCard(page, FERRET_1)
+    await answerPermanentAddressCard(page, CAT_1_LABEL)
+    await answerPermanentAddressCard(page, FERRET_1_LABEL)
     await saveAndContinue(page).click()
 
     const permanentAddressSection = addressesSection(
@@ -385,13 +393,13 @@ test.describe('permanent address — multiple animals of one species', () => {
     await openPermanentAddressFromHub(page)
 
     await expect(
-      page.getByRole('region', { name: CAT_1, exact: true })
+      page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     ).toBeVisible()
     await expect(
-      page.getByRole('region', { name: CAT_2, exact: true })
+      page.getByRole('region', { name: CAT_2_LABEL, exact: true })
     ).toBeVisible()
     await expect(
-      page.getByRole('region', { name: FERRET_1, exact: true })
+      page.getByRole('region', { name: FERRET_1_LABEL, exact: true })
     ).toBeVisible()
   })
 
@@ -409,7 +417,7 @@ test.describe('permanent address — multiple animals of one species', () => {
       email: 'cat@example.co.uk',
       phone: '0113 555 0192'
     }
-    await answerPermanentAddressCard(page, CAT_1, CAT_OWNER_ADDRESS)
+    await answerPermanentAddressCard(page, CAT_1_LABEL, CAT_OWNER_ADDRESS)
     await saveAndContinue(page).click()
 
     await openFromOverviewRow(page, hubCopy.rows.animalIdentification.title)
@@ -420,10 +428,13 @@ test.describe('permanent address — multiple animals of one species', () => {
       .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
       .click()
 
-    const firstCatCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const firstCatCard = page.getByRole('region', {
+      name: CAT_1_LABEL,
+      exact: true
+    })
     await expectStoredNewAddressShown(firstCatCard, CAT_OWNER_ADDRESS)
     const secondCatCard = page.getByRole('region', {
-      name: CAT_2,
+      name: CAT_2_LABEL,
       exact: true
     })
     await expect(
@@ -442,12 +453,12 @@ test.describe('permanent address — multiple animals of one species', () => {
       .click()
 
     const reopenedCatCard = page.getByRole('region', {
-      name: CAT_1,
+      name: CAT_1_LABEL,
       exact: true
     })
     await expectStoredNewAddressShown(reopenedCatCard, CAT_OWNER_ADDRESS)
     await expect(
-      page.getByRole('region', { name: CAT_2, exact: true })
+      page.getByRole('region', { name: CAT_2_LABEL, exact: true })
     ).toHaveCount(0)
   })
 })
@@ -498,7 +509,7 @@ test.describe('permanent address — validation', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1, {})
+    await answerPermanentAddressCard(page, CAT_1_LABEL, {})
     await saveAndContinue(page).click()
 
     const summary = page.getByRole('alert')
@@ -507,16 +518,16 @@ test.describe('permanent address — validation', () => {
     ).toBeVisible()
 
     const expectedOrder = [
-      copy.errors.forAnimal(copy.errors.nameOrOrganisationName, CAT_1),
-      copy.errors.forAnimal(copy.errors.addressLine1, CAT_1),
-      copy.errors.forAnimal(copy.errors.townOrCity, CAT_1),
-      copy.errors.forAnimal(copy.errors.postcode, CAT_1),
-      copy.errors.forAnimal(copy.errors.email, CAT_1),
-      copy.errors.forAnimal(copy.errors.phone, CAT_1)
+      copy.errors.forAnimal(copy.errors.nameOrOrganisationName, CAT_1_LABEL),
+      copy.errors.forAnimal(copy.errors.addressLine1, CAT_1_LABEL),
+      copy.errors.forAnimal(copy.errors.townOrCity, CAT_1_LABEL),
+      copy.errors.forAnimal(copy.errors.postcode, CAT_1_LABEL),
+      copy.errors.forAnimal(copy.errors.email, CAT_1_LABEL),
+      copy.errors.forAnimal(copy.errors.phone, CAT_1_LABEL)
     ]
     await expect(summary.getByRole('link')).toHaveText(expectedOrder)
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await summary.getByRole('link', { name: expectedOrder[0] }).click()
     const nameField = catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)
     await expect(nameField).toBeFocused()
@@ -534,7 +545,7 @@ test.describe('permanent address — validation', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1)
+    await answerPermanentAddressCard(page, CAT_1_LABEL)
     await saveAndContinue(page).click()
 
     const summary = page.getByRole('alert')
@@ -543,7 +554,7 @@ test.describe('permanent address — validation', () => {
     })
     await expect(summaryLink).toBeVisible()
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await expect(
       catCard.getByText(copy.errors.placeOfDestinationUnknown)
     ).toBeVisible()
@@ -559,8 +570,8 @@ test.describe('permanent address — validation', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1, {})
-    await answerPermanentAddressCard(page, FERRET_1, {
+    await answerPermanentAddressCard(page, CAT_1_LABEL, {})
+    await answerPermanentAddressCard(page, FERRET_1_LABEL, {
       nameOrOrganisationName: FERRET_OWNER_NAME,
       addressLine1: '1 Ferret Lane',
       townOrCity: 'York',
@@ -570,7 +581,10 @@ test.describe('permanent address — validation', () => {
     })
     await saveAndContinue(page).click()
 
-    const ferretCard = page.getByRole('region', { name: FERRET_1, exact: true })
+    const ferretCard = page.getByRole('region', {
+      name: FERRET_1_LABEL,
+      exact: true
+    })
     await expect(
       ferretCard.getByRole('radio', { name: NEW_ADDRESS_OPTION })
     ).toBeChecked()
@@ -585,7 +599,7 @@ test.describe('permanent address — validation', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1, {})
+    await answerPermanentAddressCard(page, CAT_1_LABEL, {})
     await saveAndContinue(page).click()
 
     await expectNoSeriousOrCriticalViolations(page, 'Permanent address refused')
@@ -604,13 +618,13 @@ test.describe('permanent address validation without JavaScript', () => {
   }) => {
     await openOnePerSpeciesPermanentAddress(page)
 
-    await answerPermanentAddressCard(page, CAT_1, {})
+    await answerPermanentAddressCard(page, CAT_1_LABEL, {})
     await saveAndContinue(page).click()
 
     const summary = page.getByRole('alert')
     await expect(summary.getByRole('link')).toHaveCount(6)
 
-    const catCard = page.getByRole('region', { name: CAT_1, exact: true })
+    const catCard = page.getByRole('region', { name: CAT_1_LABEL, exact: true })
     await expect(catCard.getByLabel(NAME_OR_ORGANISATION_LABEL)).toBeVisible()
     await expect(
       await fieldErrorMessage(catCard, NAME_OR_ORGANISATION_LABEL)
@@ -636,7 +650,7 @@ test.describe('permanent address — no animal identified yet', () => {
       .click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: CAT_1_LABEL })).toHaveCount(0)
     const noAnimalsIdentifiedMessage = page.getByText(
       `${copy.noAnimalsIdentified.before}${copy.noAnimalsIdentified.linkText}${copy.noAnimalsIdentified.after}`
     )
@@ -659,7 +673,7 @@ test.describe('permanent address — no animal identified yet', () => {
       .getByRole('link', { name: addressesCopy.hub.permanentAddress.add })
       .click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-    await expect(page.getByRole('region', { name: CAT_1 })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: CAT_1_LABEL })).toHaveCount(0)
     await expect(noAnimalsIdentifiedMessage).toBeVisible()
   })
 })

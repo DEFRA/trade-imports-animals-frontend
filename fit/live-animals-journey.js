@@ -797,11 +797,7 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
     })
     .click()
 
-export const unlockSections = async (
-  page,
-  chosen = FELIS_CATUS_ROW,
-  { identificationApplies = true } = {}
-) => {
+export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -1124,11 +1120,15 @@ export const openPermanentAddressFromAddLink = async (page) => {
     .click()
 }
 
+export const CAT_1_LABEL = 'Felis catus (Domestic Cat) 1'
+export const CAT_2_LABEL = 'Felis catus (Domestic Cat) 2'
+export const FERRET_1_LABEL = 'Mustela putorius furo (Ferret) 1'
+
 /**
  * Answers one permanent address card, found by its heading.
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} cardHeading - the card's title, such as "Felis catus 1".
+ * @param {string} cardHeading - the card's title, such as "Felis catus (Domestic Cat) 1".
  * @param {object} [newAddress] - the hand-entered address fields to fill.
  * Checks "Same as the place of destination (POD)" when omitted.
  */

@@ -426,8 +426,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   has one is refused on that card's radio group, naming no animal, on the
   field or in the summary.
 - The error summary names the card's animal for an address field's refusal
-  ("Enter address line 1 for Felis catus 1"); the message on the field
-  itself stays plain ("Enter address line 1").
+  ("Enter address line 1 for Felis catus (Domestic Cat) 1"); the message on the
+  field itself stays plain ("Enter address line 1").
 - The new-address fields ask no country; a hand-entered address always
   records the United Kingdom.
 - The phone field is the one new-address field with a hint. A trader giving

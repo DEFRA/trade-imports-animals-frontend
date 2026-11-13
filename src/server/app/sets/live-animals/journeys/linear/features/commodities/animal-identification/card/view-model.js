@@ -23,11 +23,11 @@ const overCountTextFor = (cap, label, units) =>
     ? copy.overCount(cap, label, units, units - cap)
     : null
 
-const unitEntries = (key, label, columns, units) =>
+const unitEntries = (key, line, columns, units) =>
   units.map((unit, unitIndex) => ({
     key,
     unitIndex,
-    label: animalLabelOf(label, unitIndex + 1),
+    label: animalLabelOf(line, unitIndex + 1),
     cells: columns.map(([id]) => identifierCellText(unit, id)),
     removeAria: copy.removeRowAria(unitIndex + 1)
   }))
@@ -83,7 +83,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const label = speciesLabel(entry)
   const values = form?.values ?? blankValuesFor(commodityCode, speciesLatinName)
   const columns = identifierColumns(commodityCode, speciesLatinName)
-  const unitRows = unitEntries(lineKey(entry), label, columns, units)
+  const unitRows = unitEntries(lineKey(entry), entry, columns, units)
   return {
     index,
     anchor: identificationCardAnchor(index),

@@ -20,9 +20,6 @@ export const scopedFields = (commodityCode, speciesLatinName) => {
     .map((id) => ({ id, label: copy.identifierLabels[id] }))
 }
 
-export const hasAnIdentifierField = (commodityCode, speciesLatinName) =>
-  scopedFields(commodityCode, speciesLatinName).length > 0
-
 export const identifierChecksFor = (commodityCode, speciesLatinName, index) => {
   const IDENTIFIER_MAX_LENGTH = 58
   return compose(

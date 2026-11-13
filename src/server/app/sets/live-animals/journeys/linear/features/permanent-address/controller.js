@@ -29,12 +29,7 @@ const view = `${TEMPLATES}/features/permanent-address/template`
 
 const copy = copyFor({ en, cy })
 
-const hubEntryReturn = (request) => {
-  const { honouredSlug } = kit.readReturnMarker(request, ['addresses'])
-  return honouredSlug
-    ? kit.carryTrail(request, pagePath(request.params.journeyId, honouredSlug))
-    : null
-}
+const ADDRESSES_HUB_SLUGS = ['addresses']
 
 const render = (
   request,
@@ -45,7 +40,9 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubEntryReturn(request) ?? kit.trailBackLink(request),
+      backLink:
+        kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
+        kit.trailBackLink(request),
       journey,
       page,
       recoverableError
@@ -206,7 +203,8 @@ const post = async (request, h) => {
 
   const { scope: savedScope } = await state.get(request, h)
   return h.redirect(
-    hubEntryReturn(request) ?? kit.nextTarget(request, page, savedScope)
+    kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
+      kit.nextTarget(request, page, savedScope)
   )
 }
 

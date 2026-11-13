@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
   BASE,
+  CAT_1_LABEL,
+  CAT_2_LABEL,
   DESKTOP_VIEWPORT,
   FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
@@ -135,7 +137,7 @@ test.describe('check-answers feature permanent address rows', () => {
     await signIn(page)
   })
 
-  test('renders one review row per cat, keyed by its common name and number, and heads the species card with identifiers alone', async ({
+  test('renders one review row per cat, keyed by its species label and number, and heads the species card with identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -151,8 +153,8 @@ test.describe('check-answers feature permanent address rows', () => {
     await expect(
       page.getByRole('heading', { name: 'Permanent address' })
     ).toBeVisible()
-    await answerPermanentAddressCard(page, 'Felis catus 1')
-    await answerPermanentAddressCard(page, 'Felis catus 2', {
+    await answerPermanentAddressCard(page, CAT_1_LABEL)
+    await answerPermanentAddressCard(page, CAT_2_LABEL, {
       nameOrOrganisationName: 'Pet Owner',
       addressLine1: '1 Pet Lane',
       townOrCity: 'Leeds',
@@ -166,13 +168,13 @@ test.describe('check-answers feature permanent address rows', () => {
     await openReviewFromHub(page)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    const catOneRow = rowFor(page, 'Domestic Cat 1')
+    const catOneRow = rowFor(page, CAT_1_LABEL)
     await expect(catOneRow).toContainText(
       partyPickerName(values.placeOfDestination)
     )
     await expect(catOneRow).toContainText('18 Dockside Road')
     await expect(catOneRow).toContainText('United Kingdom')
-    await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
+    await expect(rowFor(page, CAT_2_LABEL)).toContainText('Pet Owner')
 
     const speciesCard = page.locator(SUMMARY_CARD_SELECTOR, {
       hasText: `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`

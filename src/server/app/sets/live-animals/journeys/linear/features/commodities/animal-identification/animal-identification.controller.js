@@ -13,7 +13,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { summaryOf } from './card/error-summary.js'
 import { buildSections } from './card/view-model.js'
-import { linesOf } from '../lines.js'
+import { hasAnyCommodityLine, linesOf } from '../lines.js'
 import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { capAllowsEntry, identifierCapOf } from './line-cap.js'
 import {
@@ -103,7 +103,7 @@ const logCapRefusalsAndRender = (request, h, current, options) => {
 }
 
 const noCommodityLineTarget = async (request, answers, evaluation, scope) => {
-  if (linesOf(answers, evaluation).length > 0) {
+  if (hasAnyCommodityLine(answers, evaluation)) {
     return null
   }
   request.logger.info(
