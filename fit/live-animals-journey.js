@@ -26,7 +26,7 @@ import {
   SUS_SCROFA_DOMESTICUS_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
-import { namedLegendFor } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/commodity-legend.js'
+import { commodityLabel } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/commodity-label.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
@@ -787,7 +787,7 @@ export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) => {
-  const commodityLine = page.getByText(`${namedLegendFor(commodityCode)}:`, {
+  const commodityLine = page.getByText(`${commodityLabel(commodityCode)}:`, {
     exact: true
   })
   const group = selectedSummary(page)
@@ -805,7 +805,7 @@ const speciesRemoveButton = (page, { commodityCode, speciesLatinName }) =>
   selectedSummary(page).getByRole('button', {
     name: commoditiesCopy.search.selected.remove(
       speciesLatinName,
-      namedLegendFor(commodityCode)
+      commodityLabel(commodityCode)
     ),
     exact: true
   })
