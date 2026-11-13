@@ -48,8 +48,6 @@ const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
 const searchResults = (page) => page.locator('#commodity-search-results')
 
-const TRANSPARENT = 'rgba(0, 0, 0, 0)'
-
 const updateSelectedButton = (page) =>
   page.getByRole('button', { name: copy.search.updateSelected })
 
@@ -745,26 +743,23 @@ test.describe('commodity search results list', () => {
   test('shades the first species row under each heading, then every other row', async ({
     page
   }) => {
-    const shaded = await speciesRows(page).evaluateAll(
-      (rows, transparent) =>
-        rows
-          .slice(0, 3)
-          .map((row) => getComputedStyle(row).backgroundColor !== transparent),
-      TRANSPARENT
+    const transparent = 'rgba(0, 0, 0, 0)'
+    const backgrounds = await speciesRows(page).evaluateAll((rows) =>
+      rows.slice(0, 3).map((row) => getComputedStyle(row).backgroundColor)
     )
-    expect(shaded).toEqual([true, false, true])
+    expect(backgrounds.map((background) => background !== transparent)).toEqual(
+      [true, false, true]
+    )
 
     await searchBox(page).fill('gallus')
     const headings = resultsDropdown(page).getByRole('group')
     await expect(headings).toHaveCount(2)
     for (const heading of await headings.all()) {
       const firstRow = heading.getByRole('checkbox').first().locator('..')
-      const firstRowShaded = await firstRow.evaluate(
-        (row, transparent) =>
-          getComputedStyle(row).backgroundColor !== transparent,
-        TRANSPARENT
+      const firstRowBackground = await firstRow.evaluate(
+        (row) => getComputedStyle(row).backgroundColor
       )
-      expect(firstRowShaded).toBe(true)
+      expect(firstRowBackground).not.toBe(transparent)
     }
   })
 
