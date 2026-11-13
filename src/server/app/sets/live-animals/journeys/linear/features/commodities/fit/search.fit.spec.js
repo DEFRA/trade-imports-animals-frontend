@@ -522,7 +522,9 @@ test.describe('commodity search as the trader types', () => {
   test('lists the matching species without pressing Search or leaving the page', async ({
     page
   }) => {
-    const pageUrl = page.url()
+    await page.evaluate(() => {
+      window.stillOnThePage = true
+    })
     await searchBox(page).fill('buffalo')
 
     const group = page.getByRole('group', { name: CATTLE_CODE })
@@ -533,7 +535,9 @@ test.describe('commodity search as the trader types', () => {
       })
     ).toBeVisible()
     await expect(group.getByRole('strong').first()).toHaveText(/buffalo/i)
-    expect(page.url()).toBe(pageUrl)
+    await expect
+      .poll(() => page.evaluate(() => window.stillOnThePage))
+      .toBe(true)
   })
 
   test('announces how many species a typed search lists, and when it lists none', async ({
