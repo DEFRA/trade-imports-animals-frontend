@@ -105,6 +105,11 @@ describe('#copy', () => {
     )
   })
 
+  it('Should announce one Welsh result in the singular and several with o + plural', () => {
+    expect(copyCy.search.resultsAvailable(1)).toBe('1 canlyniad ar gael')
+    expect(copyCy.search.resultsAvailable(3)).toBe('3 o ganlyniadau ar gael')
+  })
+
   it('Should interpolate counter', () => {
     expect(copy.identification.counter(BOS_TAURUS, 2, 2)).toBe(
       'Enter details for Bos taurus 2 of 2'
