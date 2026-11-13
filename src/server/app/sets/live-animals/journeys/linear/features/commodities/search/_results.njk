@@ -42,7 +42,7 @@
       <ul class="app-multi-select-search__selected-list">
         {% for group in params.selectedSummary.groups %}
           <li class="app-multi-select-search__selected-group">
-            <p class="app-multi-select-search__selected-group-label"><strong>{{ group.legend }}</strong>:</p>
+            <p class="app-multi-select-search__selected-group-label"><strong>{{ group.label }}</strong>:</p>
             <ul class="app-multi-select-search__chips">
               {% for item in group.items %}
                 <li class="app-multi-select-search__chip">

@@ -339,7 +339,7 @@ describe('commodity search — what has been chosen so far', () => {
       heading: '3 selected',
       groups: [
         {
-          legend: CATTLE_HEADING,
+          label: CATTLE_HEADING,
           items: [
             {
               label: BISON_BISON_ROW.speciesLatinName,
@@ -354,7 +354,7 @@ describe('commodity search — what has been chosen so far', () => {
           ]
         },
         {
-          legend: '01061900',
+          label: '01061900',
           items: [
             {
               label: FELIS_CATUS_ROW.speciesLatinName,

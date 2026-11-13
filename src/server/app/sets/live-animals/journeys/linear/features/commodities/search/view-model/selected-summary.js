@@ -7,17 +7,17 @@ import { commodityLabel } from '../../commodity-label.js'
 
 const copy = copyFor({ en, cy }).search
 
-const itemFor = (row, legend) => ({
+const itemFor = (row, label) => ({
   label: row.speciesLatinName,
-  removeLabel: copy.selected.remove(row.speciesLatinName, legend),
+  removeLabel: copy.selected.remove(row.speciesLatinName, label),
   removeAction: removeActionFor(lineKey(row))
 })
 
 const groupFor = ([commodityCode, rowsForCode]) => {
-  const legend = commodityLabel(commodityCode)
+  const label = commodityLabel(commodityCode)
   return {
-    legend,
-    items: rowsForCode.map((row) => itemFor(row, legend))
+    label,
+    items: rowsForCode.map((row) => itemFor(row, label))
   }
 }
 
