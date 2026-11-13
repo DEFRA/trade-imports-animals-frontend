@@ -138,7 +138,7 @@ $app-multi-select-search-tint: govuk-colour('black', $variant: 'tint-95');
 }
 
 .app-multi-select-search__chips {
-  gap: 10px;
+  gap: govuk-spacing(2);
 }
 
 .app-multi-select-search__chip {
