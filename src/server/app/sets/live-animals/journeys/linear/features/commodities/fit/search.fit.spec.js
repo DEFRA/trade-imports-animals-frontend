@@ -6,6 +6,7 @@ import {
   FELIS_CATUS_ROW,
   GALLUS_GALLUS_ROW,
   answerOriginEntry,
+  commoditySearchBox,
   saveAndContinue,
   saveAndReturnToHub,
   errorSummaryLinks,
@@ -48,8 +49,6 @@ const GALLUS_GALLUS_SECOND_CODE_ROW = {
   commodityCode: '01059400'
 }
 
-const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
-
 const updateSelectedButton = (page) =>
   page.getByRole('button', { name: copy.search.updateSelected })
 
@@ -88,7 +87,7 @@ test.describe('commodity search', () => {
     page
   }) => {
     await expect(page.getByText(copy.search.inset)).toBeVisible()
-    await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
+    await expect(commoditySearchBox(page)).toBeVisible()
     await expect(page.getByText(copy.search.searchHint)).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(0)
     await expect(selectedSummary(page)).toHaveCount(0)
@@ -249,11 +248,11 @@ test.describe('commodity search — choosing and saving species', () => {
 
     const link = errorSummaryLinks(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
-    await expect(searchBox(page)).toHaveAccessibleDescription(
+    await expect(commoditySearchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
     )
     await link.click()
-    await expect(searchBox(page)).toBeFocused()
+    await expect(commoditySearchBox(page)).toBeFocused()
     await expect(selectedSummary(page)).toHaveCount(0)
   })
 
@@ -266,11 +265,11 @@ test.describe('commodity search — choosing and saving species', () => {
     await expect(errorSummaryLinks(page)).toHaveText([
       copy.search.errors.selectCommodity
     ])
-    await expect(searchBox(page)).toHaveAccessibleDescription(
+    await expect(commoditySearchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
     )
     await errorSummaryLinks(page, copy.search.errors.selectCommodity).click()
-    await expect(searchBox(page)).toBeFocused()
+    await expect(commoditySearchBox(page)).toBeFocused()
   })
 
   test('saves pairs found under different queries, in canonical order', async ({
@@ -530,7 +529,7 @@ test.describe('commodity search as the trader types', () => {
     await page.evaluate(() => {
       window.stillOnThePage = true
     })
-    await searchBox(page).fill('buffalo')
+    await commoditySearchBox(page).fill('buffalo')
 
     const group = page.getByRole('group', { name: CATTLE_CODE })
     await expect(
@@ -548,12 +547,12 @@ test.describe('commodity search as the trader types', () => {
   test('announces how many species a typed search lists, and when it lists none', async ({
     page
   }) => {
-    await searchBox(page).fill('buffalo')
+    await commoditySearchBox(page).fill('buffalo')
     await expect(resultsStatus(page)).toHaveText(
       copy.search.resultsAvailable(3)
     )
 
-    await searchBox(page).fill('zzzzzz')
+    await commoditySearchBox(page).fill('zzzzzz')
     await expect(resultsStatus(page)).toHaveText(copy.search.noResults)
   })
 
@@ -576,15 +575,15 @@ test.describe('commodity search as the trader types', () => {
   test('hides the results on Escape, keeping the term, and shows them again when the search box is clicked', async ({
     page
   }) => {
-    await searchBox(page).fill('buffalo')
+    await commoditySearchBox(page).fill('buffalo')
     const group = page.getByRole('group', { name: CATTLE_CODE })
     await expect(group).toBeVisible()
 
-    await searchBox(page).press('Escape')
+    await commoditySearchBox(page).press('Escape')
     await expect(group).toBeHidden()
-    await expect(searchBox(page)).toHaveValue('buffalo')
+    await expect(commoditySearchBox(page)).toHaveValue('buffalo')
 
-    await searchBox(page).click()
+    await commoditySearchBox(page).click()
     await expect(group).toBeVisible()
   })
 
@@ -627,12 +626,14 @@ test.describe('commodity search as the trader types', () => {
     await pressSpeciesRemove(page, BOS_TAURUS_ROW)
     await expectSelectedHeading(page, 1)
     await expectSpeciesSelected(page, FELIS_CATUS_ROW)
-    await expect(searchBox(page)).toBeFocused()
-    await expect(searchBox(page)).toHaveValue(BOS_TAURUS_ROW.speciesLatinName)
+    await expect(commoditySearchBox(page)).toBeFocused()
+    await expect(commoditySearchBox(page)).toHaveValue(
+      BOS_TAURUS_ROW.speciesLatinName
+    )
 
     await pressClearAll(page)
     await expect(selectedSummary(page)).toHaveCount(0)
-    await expect(searchBox(page)).toBeFocused()
+    await expect(commoditySearchBox(page)).toBeFocused()
   })
 
   test('a save pressed straight after Clear all saves nothing chosen and refuses', async ({
@@ -686,7 +687,7 @@ test.describe('commodity search as the trader types', () => {
 test.describe('commodity search results list', () => {
   test.beforeEach(async ({ page }) => {
     await signInAndOpenSelection({ page })
-    await searchBox(page).fill(CATTLE_CODE)
+    await commoditySearchBox(page).fill(CATTLE_CODE)
     await expect(speciesRows(page)).toHaveCount(15)
   })
 
@@ -705,7 +706,7 @@ test.describe('commodity search results list', () => {
       'overflow-y': 'auto',
       'border-top-width': '0px'
     })
-    const box = await searchBox(page).boundingBox()
+    const box = await commoditySearchBox(page).boundingBox()
     const list = await dropdown.boundingBox()
     expect(list.y).toBe(box.y + box.height)
   })
@@ -749,7 +750,7 @@ test.describe('commodity search results list', () => {
       [true, false, true]
     )
 
-    await searchBox(page).fill('gallus')
+    await commoditySearchBox(page).fill('gallus')
     const headings = resultsDropdown(page).getByRole('group')
     await expect(headings).toHaveCount(2)
     for (const heading of await headings.all()) {
@@ -810,7 +811,7 @@ test.describe('commodity search without JavaScript', () => {
 
     await expectSelectedHeading(page, 1)
     await expectSpeciesSelected(page, BUBALUS_BUBALIS_ROW)
-    await expect(searchBox(page)).toHaveValue('buffalo')
+    await expect(commoditySearchBox(page)).toHaveValue('buffalo')
     await expect(
       page.getByRole('group', { name: CATTLE_CODE }).getByRole('checkbox')
     ).toHaveCount(3)
