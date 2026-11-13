@@ -6,13 +6,16 @@ import {
   answerCountryOfOrigin,
   expectNoSeriousOrCriticalViolations,
   expectOverview,
+  expectStyle,
   journeyUrl,
+  measureReferenceElement,
   urlUnderBase,
   saveAndContinue,
   saveAndReturnToHub,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  errorSummaryLinks
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import * as certification from '../../../../../../services/certification-purposes/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
@@ -56,9 +59,7 @@ const clickCertificationErrorAndExpectRefusalKeepingUnweanedAnswer = async (
   page,
   { certified, unweaned }
 ) => {
-  const certificationError = page
-    .getByRole('alert')
-    .getByRole('link', { name: validatorDefaults.oneOf })
+  const certificationError = errorSummaryLinks(page, validatorDefaults.oneOf)
   await expect(certificationError).toBeVisible()
   await certificationError.click()
   await expect(certified.getByRole('radio').first()).toBeFocused()
@@ -123,13 +124,21 @@ test.describe('additional-details feature — rendering', () => {
     await expectUnweanedQuestionVisible(page)
   })
 
-  test('sets both question legends at the medium size', async ({ page }) => {
-    await expect(
-      page.getByRole('group', { name: copy.certified.legend }).locator('legend')
-    ).toHaveClass(/govuk-fieldset__legend--m/)
-    await expect(
-      page.getByRole('group', { name: copy.unweaned.legend }).locator('legend')
-    ).toHaveClass(/govuk-fieldset__legend--m/)
+  test('sets both question legends in the size and weight of a GOV.UK medium legend', async ({
+    page
+  }) => {
+    const mediumLegend = await measureReferenceElement(page, {
+      tagName: 'legend',
+      className: 'govuk-fieldset__legend govuk-fieldset__legend--m',
+      properties: ['font-size', 'font-weight']
+    })
+
+    for (const { legend } of [copy.certified, copy.unweaned]) {
+      await expectStyle(
+        page.getByRole('group', { name: legend }).locator('legend'),
+        mediumLegend
+      )
+    }
   })
 
   test('back link returns to the notification hub', async ({ page }) => {
@@ -254,9 +263,7 @@ test.describe('additional-details feature — validation', () => {
 
     await saveAndContinue(page).click()
 
-    const unweanedError = page
-      .getByRole('alert')
-      .getByRole('link', { name: validatorDefaults.oneOf })
+    const unweanedError = errorSummaryLinks(page, validatorDefaults.oneOf)
     await expect(unweanedError).toBeVisible()
     await unweanedError.click()
     await expect(unweaned.getByRole('radio').first()).toBeFocused()

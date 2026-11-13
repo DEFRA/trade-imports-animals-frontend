@@ -130,6 +130,150 @@ export const expectStyle = async (element, styles) => {
   }
 }
 
+/**
+ * Reads computed properties of an element made only from the given class names
+ * and inline styles, then removes it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ tagName: string, className?: string, cssText?: string, focused?: boolean, properties: string[] }} reference
+ * @returns {Promise<Record<string, string>>} each property's computed value.
+ */
+export const measureReferenceElement = (
+  page,
+  { tagName, className = '', cssText = '', focused = false, properties }
+) =>
+  page.evaluate(
+    (request) => {
+      const reference = document.createElement(request.tagName)
+      reference.className = request.className
+      reference.style.cssText = request.cssText
+      document.body.append(reference)
+      try {
+        if (request.focused) {
+          reference.focus()
+        }
+        const style = window.getComputedStyle(reference)
+        return Object.fromEntries(
+          request.properties.map((name) => [name, style.getPropertyValue(name)])
+        )
+      } finally {
+        reference.remove()
+      }
+    },
+    { tagName, className, cssText, focused, properties }
+  )
+
+/**
+ * Reads a GOV.UK colour token as the browser resolves it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} token - the custom property name without `--govuk-` and `-colour`, such as `error`.
+ * @returns {Promise<string>} the resolved colour.
+ */
+export const govukColourOf = async (page, token) => {
+  const { color } = await measureReferenceElement(page, {
+    tagName: 'span',
+    cssText: `color: var(--govuk-${token}-colour)`,
+    properties: ['color']
+  })
+  return color
+}
+
+/**
+ * Reads the computed values GOV.UK gives text it hides from sight and keeps for a screen reader.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<Record<string, string>>} each property's computed value.
+ */
+export const govukVisuallyHiddenStyleOf = (page) =>
+  measureReferenceElement(page, {
+    tagName: 'span',
+    className: 'govuk-visually-hidden',
+    properties: ['position', 'overflow', 'white-space', 'clip-path']
+  })
+
+/**
+ * Reads the computed background colour GOV.UK gives its primary button.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<Record<string, string>>} each property's computed value.
+ */
+export const govukPrimaryButtonStyleOf = (page) =>
+  measureReferenceElement(page, {
+    tagName: 'button',
+    className: 'govuk-button',
+    properties: ['background-color']
+  })
+
+/**
+ * Fails unless the page's level 1 heading is showing with its caption, found by its text, above it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ captionText: string, headingName: string }} options
+ */
+export const expectCaptionAboveHeading = async (
+  page,
+  { captionText, headingName }
+) => {
+  const heading = page.getByRole('heading', {
+    level: 1,
+    name: headingName,
+    exact: true
+  })
+  const caption = page.getByRole('main').getByText(captionText, { exact: true })
+
+  await expect(heading).toBeVisible()
+  await expect(caption).toBeVisible()
+  expect((await caption.boundingBox()).y).toBeLessThan(
+    (await heading.boundingBox()).y
+  )
+}
+
+/**
+ * The page's error summary.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export const errorSummary = (page) => page.getByRole('alert')
+
+/**
+ * The links of the page's error summary, narrowed to the one named when a name is given.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [name] - the link's accessible name.
+ * @param {{ exact?: boolean }} [options] - exact: true matches the whole accessible name only.
+ * @returns {import('@playwright/test').Locator}
+ */
+export const errorSummaryLinks = (page, name, { exact } = {}) =>
+  errorSummary(page).getByRole('link', { name, exact })
+
+/**
+ * The page's Back link.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export const backLink = (page) =>
+  page.getByRole('link', { name: 'Back', exact: true })
+
+/**
+ * Follows the error summary link named `message` and expects focus to land on
+ * the field the link points to.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} message - the error summary link's accessible name.
+ * @param {string | import('@playwright/test').Locator} field - the id of the
+ *   field, or a locator for it.
+ */
+export const followErrorLinkToField = async (page, message, field) => {
+  const link = errorSummaryLinks(page, message)
+  await expect(link).toBeVisible()
+  await link.click()
+  const target = typeof field === 'string' ? page.locator('#' + field) : field
+  await expect(target).toBeFocused()
+}
+
 export const PHONE_VIEWPORT = { width: 360, height: 740 }
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 }
 
@@ -185,14 +329,6 @@ const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
-export const addressBookInsetText = (party) => {
-  const {
-    name,
-    address: { addressLine1, townOrCity, postcode, country }
-  } = STUB_BOOK.find((record) => record.name === partyPickerName(party))
-  return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
-}
-
 export const journeyIdFromPage = (page) => {
   const match = new URL(page.url()).pathname
     .slice(BASE.length)
@@ -203,44 +339,6 @@ export const journeyIdFromPage = (page) => {
 
 export const journeyUrl = (page, slug = '') =>
   `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
-
-export const chooseTodayFromDatePicker = async (page, label) => {
-  const expected = await page.evaluate(() => {
-    const date = new Date()
-    const days = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday'
-    ]
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ]
-    return {
-      accessibleName: `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`,
-      inputValue: `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
-    }
-  })
-  const dialog = await openDatePicker(page, label)
-  await dialog
-    .getByRole('button', { name: expected.accessibleName, exact: true })
-    .click()
-  return expected.inputValue
-}
 
 const datePickerOf = (page, label) =>
   page.locator('.moj-datepicker', { has: page.getByLabel(label) })
@@ -255,6 +353,13 @@ export const openDatePicker = async (page, label) => {
   await expect(dialog).toBeVisible()
   return dialog
 }
+
+const inUtc = (options) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options })
+
+/** The accessible name of a date's calendar button, such as "Monday 3 March 2025", for the date's UTC day. */
+export const dayLabel = (date) =>
+  `${inUtc({ weekday: 'long' }).format(date)} ${date.getUTCDate()} ${inUtc({ month: 'long' }).format(date)} ${date.getUTCFullYear()}`
 
 /**
  * The width of an element's content box, without its padding.
@@ -360,7 +465,7 @@ export const searchByPressingEnter = async (page, { search, term }) => {
   await box.fill(term)
   await Promise.all([page.waitForEvent('load'), box.press('Enter')])
   await expect(box).toHaveValue(term)
-  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(errorSummary(page)).toHaveCount(0)
 }
 
 const expectCalendarEndsAboveNextQuestion = async (
@@ -550,7 +655,7 @@ export const chooseOutOfListCountry = (page, code = 'XX') =>
  * @returns {import('@playwright/test').Locator}
  */
 export const documentRowFor = (scope, reference) =>
-  scope.locator('.govuk-table__row', { hasText: reference })
+  scope.getByRole('row').filter({ hasText: reference })
 
 /**
  * Starts a notification, answers origin and stops on the overview.
@@ -692,7 +797,11 @@ export const pressSpeciesRemove = (page, { speciesLatinName }) =>
     })
     .click()
 
-export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {
+export const unlockSections = async (
+  page,
+  chosen = FELIS_CATUS_ROW,
+  { identificationApplies = true } = {}
+) => {
   await answerCountryOfOrigin(page)
   await answerWhatYouAreImportingFromOverview(page, chosen)
   await page.getByRole('link', { name: 'Commodity details' }).click()
@@ -1111,7 +1220,19 @@ export const openArrival = async (page) => {
   ).toBeVisible()
 }
 
-const chooseMeansAndSave = async (page, meansOfTransport, { landing }) => {
+/**
+ * Chooses the means of transport, saves, checks the page Save and continue opens and returns to the overview.
+ *
+ * @param {import('@playwright/test').Page} page - the arrival details page.
+ * @param {string} meansOfTransport - the option value to choose.
+ * @param {object} expected
+ * @param {{ slug: string, title: string }} expected.landing - the page Save and continue opens, one of `LANDINGS`.
+ */
+export const chooseMeansAndSave = async (
+  page,
+  meansOfTransport,
+  { landing }
+) => {
   await chooseMeansOfTransport(page, meansOfTransport)
   await saveAndExpectLanding(page, landing)
   await openOverview(page)
@@ -1120,45 +1241,6 @@ const chooseMeansAndSave = async (page, meansOfTransport, { landing }) => {
 const saveArrivalWithMeans = async (page, meansOfTransport, { landing }) => {
   await openArrival(page)
   await chooseMeansAndSave(page, meansOfTransport, { landing })
-}
-
-/**
- * Opens the arrival details page at the given address, chooses the means of
- * transport, saves, checks the page Save and continue opens and lands on the
- * overview.
- *
- * @param {import('@playwright/test').Page} page - the page to drive; it need not be the one that opened the notification.
- * @param {string} arrivalUrl - the address of the arrival details page.
- * @param {string} meansOfTransport - the option value to choose.
- * @param {object} expected
- * @param {{ slug: string, title: string }} expected.landing - the page Save and continue opens, one of `LANDINGS`.
- */
-export const saveMeansOfTransportAt = async (
-  page,
-  arrivalUrl,
-  meansOfTransport,
-  { landing }
-) => {
-  await page.goto(arrivalUrl)
-  await chooseMeansAndSave(page, meansOfTransport, { landing })
-}
-
-/**
- * Opens the arrival details page at the given address, chooses the means of
- * transport and presses Save and continue, staying on the page it lands on.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} arrivalUrl - the address of the arrival details page.
- * @param {string} meansOfTransport - the option value to choose.
- */
-export const saveMeansOfTransportAndContinueAt = async (
-  page,
-  arrivalUrl,
-  meansOfTransport
-) => {
-  await page.goto(arrivalUrl)
-  await chooseMeansOfTransport(page, meansOfTransport)
-  await save(page)
 }
 
 /**

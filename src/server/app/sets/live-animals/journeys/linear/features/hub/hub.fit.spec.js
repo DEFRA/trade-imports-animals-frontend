@@ -8,13 +8,17 @@ import {
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
+  expectStyle,
+  govukPrimaryButtonStyleOf,
+  measureReferenceElement,
   openOverview,
   openReviewFromHub,
   saveAndContinue,
   saveAndReturnToHub,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  backLink
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
@@ -275,7 +279,7 @@ test.describe('hub feature', () => {
   }) => {
     await startNotification(page)
 
-    await expect(page.locator('.govuk-back-link')).toHaveCount(0)
+    await expect(backLink(page)).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
     ).toHaveAttribute('href', BASE)
@@ -354,13 +358,23 @@ test.describe('hub feature — the Review and submit button', () => {
   }) => {
     await startNotification(page)
 
-    await expect(page.locator('.govuk-button-group .govuk-button')).toHaveText([
+    await expect(page.getByRole('main').getByRole('button')).toHaveText([
       copy.reviewAndSubmit,
       copy.returnToDashboard
     ])
-    await expect(
-      page.getByRole('button', { name: copy.reviewAndSubmit })
-    ).not.toHaveClass(/govuk-button--secondary/)
+    await expectStyle(
+      page.getByRole('button', { name: copy.reviewAndSubmit }),
+      await govukPrimaryButtonStyleOf(page)
+    )
+    const secondaryButtonStyle = await measureReferenceElement(page, {
+      tagName: 'button',
+      className: 'govuk-button govuk-button--secondary',
+      properties: ['background-color']
+    })
+    await expectStyle(
+      page.getByRole('button', { name: copy.returnToDashboard }),
+      secondaryButtonStyle
+    )
     await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 

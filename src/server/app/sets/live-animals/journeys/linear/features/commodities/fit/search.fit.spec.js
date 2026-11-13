@@ -8,17 +8,18 @@ import {
   answerOriginEntry,
   saveAndContinue,
   saveAndReturnToHub,
+  errorSummaryLinks,
   expectNoSeriousOrCriticalViolations,
   expectSpeciesSelected,
   expectThreeSaveControls,
   openCommoditySearch,
   openOverview,
-  pressSpeciesRemove,
   searchCommodities,
   selectSpecies,
   selectedSummary,
   signIn,
-  startNotificationAtOrigin
+  startNotificationAtOrigin,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { labelFor } from '../search/test-support.js'
@@ -35,10 +36,13 @@ const canonicalSelectionOrder = [
   labelFor(FELIS_CATUS_ROW.speciesLatinName)
 ]
 
-const backLink = (page) => page.getByRole('link', { name: 'Back', exact: true })
-
-const errorLink = (page, message) =>
-  page.getByRole('alert').getByRole('link', { name: message })
+const pressSpeciesRemove = (page, { speciesLatinName }) =>
+  selectedSummary(page)
+    .getByRole('button', {
+      name: `Remove ${labelFor(speciesLatinName)}`,
+      exact: true
+    })
+    .click()
 
 const searchBox = (page) => page.getByLabel(copy.search.searchLabel)
 
@@ -231,7 +235,7 @@ test.describe('commodity search — choosing and saving species', () => {
   }) => {
     await saveAndContinue(page).click()
 
-    const link = errorLink(page, copy.search.errors.selectCommodity)
+    const link = errorSummaryLinks(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
     await expect(searchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
@@ -247,13 +251,13 @@ test.describe('commodity search — choosing and saving species', () => {
     await searchCommodities(page, 'Bos')
     await saveAndContinue(page).click()
 
-    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+    await expect(errorSummaryLinks(page)).toHaveText([
       copy.search.errors.selectCommodity
     ])
     await expect(searchBox(page)).toHaveAccessibleDescription(
       SEARCH_BOX_DESCRIPTION_WITH_ERROR
     )
-    await errorLink(page, copy.search.errors.selectCommodity).click()
+    await errorSummaryLinks(page, copy.search.errors.selectCommodity).click()
     await expect(searchBox(page)).toBeFocused()
   })
 
@@ -389,7 +393,7 @@ test.describe('commodity search — choosing and saving species', () => {
       .click()
     await saveAndContinue(page).click()
     await expect(
-      errorLink(page, copy.search.errors.selectCommodity)
+      errorSummaryLinks(page, copy.search.errors.selectCommodity)
     ).toBeVisible()
     await expectNoSeriousOrCriticalViolations(
       page,

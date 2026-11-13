@@ -1,6 +1,6 @@
 import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
-import { escapeHtml } from '../../../../../../../../shared/escape-html.js'
+import { escapeHtml } from '../../../../../../../../../../shared/escape-html.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../../shared/copy.en.js'

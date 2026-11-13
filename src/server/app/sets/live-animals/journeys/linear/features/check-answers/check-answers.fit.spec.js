@@ -10,6 +10,8 @@ import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
+  expectStyle,
+  govukVisuallyHiddenStyleOf,
   identifyAnimalsByMicrochip,
   journeyIdFromPage,
   journeyUrl,
@@ -51,10 +53,11 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
 const answerCellFor = (page, label) =>
   rowFor(page, label).getByRole('definition')
 
-const expectOnlyHiddenMissing = async (answerCell) => {
+const expectOnlyHiddenMissing = async (page, answerCell) => {
   await expect(answerCell).toHaveText(copy.missing)
-  await expect(answerCell.locator('xpath=./*')).toHaveClass(
-    'govuk-visually-hidden'
+  await expectStyle(
+    answerCell.locator('xpath=./*'),
+    await govukVisuallyHiddenStyleOf(page)
   )
 }
 
@@ -102,7 +105,10 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
     )
-    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
+    await expectOnlyHiddenMissing(
+      page,
+      answerCellFor(page, copy.rows.arrivalDate)
+    )
   })
 
   test('journey with only the entry page answered writes the settled blanks out and leaves the outstanding ones blank with a hidden Missing', async ({
@@ -114,7 +120,10 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       sharedCopy.notApplicable
     )
-    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
+    await expectOnlyHiddenMissing(
+      page,
+      answerCellFor(page, copy.rows.arrivalDate)
+    )
     await expect(rowFor(page, copy.rows.arrivalDate)).not.toContainText(
       sharedCopy.notApplicable
     )
@@ -206,12 +215,14 @@ test.describe('check-answers feature section structure', () => {
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
     ).toHaveText(copy.sections.contactAddress)
 
-    const lastBlock = page.locator('.govuk-grid-column-two-thirds > *').last()
-    await expect(lastBlock).toHaveJSProperty('tagName', 'FORM')
+    const lastBlock = page.getByRole('main').locator('form').last()
+    await expect(lastBlock.locator('xpath=following-sibling::*')).toHaveCount(0)
 
     await expect(
-      lastBlock.locator('xpath=preceding-sibling::*[1]')
-    ).toHaveClass(/govuk-summary-card/)
+      lastBlock
+        .locator('xpath=preceding-sibling::*[1]')
+        .getByRole('heading', { name: copy.groups.contactAddress })
+    ).toBeVisible()
 
     await expect(
       lastBlock.getByRole('button', { name: copy.submit.button })
@@ -469,7 +480,10 @@ test.describe('check-answers feature navigation and submission', () => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.consignor))
+    await expectOnlyHiddenMissing(
+      page,
+      answerCellFor(page, copy.rows.consignor)
+    )
     await expect(
       page.getByRole('link', { name: copy.errors.parties.consignor })
     ).toBeHidden()
@@ -513,7 +527,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await expect(card.getByText(sharedCopy.notApplicable)).toHaveCount(0)
     for (const label of ARRIVAL_DETAILS_ROW_LABELS) {
-      await expectOnlyHiddenMissing(answerCellFor(page, label))
+      await expectOnlyHiddenMissing(page, answerCellFor(page, label))
     }
   })
 
@@ -533,7 +547,10 @@ test.describe('check-answers feature unfinished notification', () => {
           .locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
           .getByText(copy.errors.cards.arrivalDetails)
       ).toBeVisible()
-      await expectOnlyHiddenMissing(answerCellFor(page, copy.rows.arrivalDate))
+      await expectOnlyHiddenMissing(
+        page,
+        answerCellFor(page, copy.rows.arrivalDate)
+      )
     }
   })
 

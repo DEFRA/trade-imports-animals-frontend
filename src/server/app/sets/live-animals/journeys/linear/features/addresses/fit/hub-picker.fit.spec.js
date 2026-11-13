@@ -5,9 +5,11 @@ import {
   STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
   PHONE_VIEWPORT,
-  addressBookInsetText,
   addressesSection,
   contentWidthOf,
+  errorSummaryLinks,
+  followErrorLinkToField,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
@@ -18,13 +20,23 @@ import {
   startNotification,
   unlockSections,
   values,
-  withinFullWidthColumn
+  withinFullWidthColumn,
+  backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PAGE_SIZE } from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
+import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
+
+const addressBookInsetText = (party) => {
+  const {
+    name,
+    address: { addressLine1, townOrCity, postcode, country }
+  } = STUB_BOOK.find((record) => record.name === partyPickerName(party))
+  return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
+}
 
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
@@ -75,9 +87,6 @@ const openPartyPicker = async (page, party) => {
   await page.getByRole('link', { name: party.add, exact: true }).click()
   await expect(page.getByRole('heading', { name: party.title })).toBeVisible()
 }
-
-const pickerErrorLink = (page, message) =>
-  page.getByRole('alert').getByRole('link', { name: message })
 
 const searchAddresses = async (page, query) => {
   await page.getByLabel(copy.picker.search.label).fill(query)
@@ -146,7 +155,7 @@ test.describe('addresses hub', () => {
     )
     for (const party of PARTIES) {
       const section = addressesSection(page, party.title)
-      await expect(section.locator('.govuk-hint')).toHaveText(party.hint)
+      await expect(section.getByText(party.hint, { exact: true })).toBeVisible()
       await expect(section.getByRole('link')).toHaveText([party.add])
       await expect(section.getByRole('link')).toHaveAccessibleName(party.add)
     }
@@ -160,7 +169,7 @@ test.describe('addresses hub', () => {
   })
 
   test('hub back link returns to the overview', async ({ page }) => {
-    await page.locator('.govuk-back-link').click()
+    await backLink(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -185,9 +194,9 @@ test.describe('addresses hub', () => {
 
     for (const party of PARTIES) {
       const section = addressesSection(page, party.title)
-      await expect(section.locator('.govuk-inset-text strong')).toHaveText(
-        partyPickerName(values[party.id])
-      )
+      await expect(
+        section.getByText(partyPickerName(values[party.id]), { exact: true })
+      ).toBeVisible()
       const [change, editDetails] = chosenLinkNames(party)
       await expect(section.getByRole('link')).toHaveText([change, editDetails])
       await expect(
@@ -197,11 +206,10 @@ test.describe('addresses hub', () => {
         section.getByRole('link', { name: copy.hub.editDetails })
       ).toHaveAccessibleName(editDetails)
     }
-    await expect(
-      addressesSection(page, CONSIGNOR.title).locator('.govuk-inset-text')
-    ).toHaveText(addressBookInsetText(values.consignor), {
-      useInnerText: true
-    })
+    await expect(addressesSection(page, CONSIGNOR.title)).toContainText(
+      addressBookInsetText(values.consignor),
+      { useInnerText: true }
+    )
   })
 
   test('following the consignor add link opens the picker headed Consignor', async ({
@@ -266,7 +274,9 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await openAddresses(page, STRUTHIO_ROW)
 
     const section = addressesSection(page, copy.hub.cph.title)
-    await expect(section.locator('.govuk-hint')).toHaveText(copy.hub.cph.hint)
+    await expect(
+      section.getByText(copy.hub.cph.hint, { exact: true })
+    ).toBeVisible()
     await expect(section.getByRole('link')).toHaveText([copy.hub.cph.add])
   })
 
@@ -326,12 +336,10 @@ test.describe('party picker per role', () => {
     }) => {
       await openPartyPicker(page, party)
 
-      await expect(
-        page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-      ).toHaveText(party.title)
-      await expect(page.locator('span.govuk-caption-l')).toHaveText(
-        copy.picker.caption
-      )
+      await expectCaptionAboveHeading(page, {
+        captionText: copy.picker.caption,
+        headingName: party.title
+      })
       await expect(page.getByText(party.hint)).toBeVisible()
       await expect(
         page.getByLabel(copy.picker.search.label)
@@ -368,9 +376,9 @@ test.describe('party picker per role', () => {
       await page.getByRole('radio', { name: selectedName }).check()
       await saveAndContinue(page)
       await expectBackOnTheAddressesPage(page)
-      await expect(section.locator('.govuk-inset-text strong')).toHaveText(
-        selectedName
-      )
+      await expect(
+        section.getByText(selectedName, { exact: true })
+      ).toBeVisible()
       await expect(section.getByRole('link')).toHaveText(chosenLinkNames(party))
       await section.getByRole('link', { name: copy.hub.change }).click()
       await expect(
@@ -452,10 +460,11 @@ test.describe('party picker save', () => {
     await searchAddresses(page, 'Denmark')
     await postAnIdNotInTheBook(page)
 
-    const link = pickerErrorLink(page, CONSIGNOR.error)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.getByRole('radio').first()).toBeFocused()
+    await followErrorLinkToField(
+      page,
+      CONSIGNOR.error,
+      page.getByRole('radio').first()
+    )
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
     await expect(page.getByLabel(copy.picker.search.label)).toHaveValue(
       'Denmark'
@@ -467,11 +476,8 @@ test.describe('party picker save', () => {
   }) => {
     await postAnIdNotInTheBookAfterASearchMatchingNothing(page)
 
-    const link = pickerErrorLink(page, CONSIGNOR.error)
-    await expect(link).toBeVisible()
-    await link.click()
     const searchBox = page.getByLabel(copy.picker.search.label)
-    await expect(searchBox).toBeFocused()
+    await followErrorLinkToField(page, CONSIGNOR.error, searchBox)
     await expect(searchBox).toHaveValue(NO_MATCH_QUERY)
   })
 })
@@ -553,7 +559,7 @@ test.describe('party picker search', () => {
     page
   }) => {
     await postAnIdNotInTheBook(page)
-    await expect(pickerErrorLink(page, CONSIGNOR.error)).toBeVisible()
+    await expect(errorSummaryLinks(page, CONSIGNOR.error)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(page, 'Address picker refused')
   })

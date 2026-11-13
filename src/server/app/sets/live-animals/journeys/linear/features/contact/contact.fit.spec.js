@@ -4,7 +4,8 @@ import {
   answerOriginEntry,
   expectNoSeriousOrCriticalViolations,
   startNotificationAtOrigin,
-  urlUnderBase
+  urlUnderBase,
+  errorSummaryLinks
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressSummary } from '../addresses/address-summary.js'
@@ -69,9 +70,7 @@ test.describe('contact feature', () => {
       })
     await page.locator('form button[type="submit"]').first().click()
 
-    const contactError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.contactRequired })
+    const contactError = errorSummaryLinks(page, copy.errors.contactRequired)
     await expect(contactError).toBeVisible()
     await contactError.click()
     await expect(page.locator(CONTACT_ADDRESS_INPUT).first()).toBeFocused()
