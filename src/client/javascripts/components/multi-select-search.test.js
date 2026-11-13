@@ -230,6 +230,31 @@ describe('#MultiSelectSearch', () => {
     expect(nativeSubmitters).toEqual([searchButton])
   })
 
+  it('Should submit the form itself with the pressed action when the results response has no results in it', async () => {
+    const { form, searchBox, searchButton, results } = mount('')
+    fetchMock.mockResolvedValue(answering('<p id="elsewhere">Signed out</p>'))
+    const nativeSubmitters = nativeSubmitsOf(form)
+
+    searchBox.value = 'thing'
+    searchButton.click()
+    await settle()
+
+    expect(nativeSubmitters).toEqual([searchButton])
+    expect(results().querySelector('#elsewhere')).toBeNull()
+  })
+
+  it('Should submit the form itself with the pressed action when the results request cannot be sent', async () => {
+    const { form, searchBox, searchButton } = mount('')
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    const nativeSubmitters = nativeSubmitsOf(form)
+
+    searchBox.value = 'thing'
+    searchButton.click()
+    await settle()
+
+    expect(nativeSubmitters).toEqual([searchButton])
+  })
+
   it('Should refresh in place again after its own submit of the form is cancelled', async () => {
     const { form, results } = mount()
     fetchMock
@@ -305,6 +330,32 @@ describe('#MultiSelectSearch', () => {
 
     searchBox.dispatchEvent(new Event('focus'))
     expect(dropdownOf(results).hidden).toBe(false)
+  })
+
+  it('Should show the results hidden by Escape again when the already focused search box is clicked', () => {
+    const { searchBox, results } = mount()
+    searchBox.focus()
+    searchBox.dispatchEvent(
+      new globalThis.KeyboardEvent('keydown', { key: 'Escape' })
+    )
+    expect(dropdownOf(results).hidden).toBe(true)
+
+    searchBox.click()
+
+    expect(dropdownOf(results).hidden).toBe(false)
+  })
+
+  it('Should leave a search outside a form unenhanced, without failing', () => {
+    document.body.innerHTML = pageHtml(resultsBodyHtml())
+    const $module = document.querySelector(
+      '[data-module="app-multi-select-search"]'
+    )
+    document.body.replaceChildren($module)
+
+    expect(() => new MultiSelectSearch($module)).not.toThrow()
+    expect(
+      $module.classList.contains('app-multi-select-search--enhanced')
+    ).toBe(false)
   })
 
   it('Should hide the results only once a click outside the search has landed, and keep them for a click inside it', () => {
