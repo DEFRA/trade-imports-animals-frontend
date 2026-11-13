@@ -727,6 +727,19 @@ test.describe('commodity search results list', () => {
       .boundingBox()
     const row = await speciesRows(page).first().boundingBox()
     expect(row.x).toBe(heading.x)
+
+    const listInnerWidth = await resultsDropdown(page).evaluate(
+      (dropdown) => dropdown.clientWidth
+    )
+    const rowRules = await speciesRows(page).evaluateAll((rows) =>
+      rows.map((speciesRow) => ({
+        width: speciesRow.offsetWidth,
+        ruleWidth: getComputedStyle(speciesRow).borderBottomWidth
+      }))
+    )
+    expect(rowRules).toEqual(
+      rowRules.map(() => ({ width: listInnerWidth, ruleWidth: '1px' }))
+    )
   })
 
   test('shades the first species row under each heading, then every other row', async ({
@@ -740,9 +753,22 @@ test.describe('commodity search results list', () => {
       TRANSPARENT
     )
     expect(shaded).toEqual([true, false, true])
+
+    await searchBox(page).fill('gallus')
+    const headings = resultsDropdown(page).getByRole('group')
+    await expect(headings).toHaveCount(2)
+    for (const heading of await headings.all()) {
+      const firstRow = heading.getByRole('checkbox').first().locator('..')
+      const firstRowShaded = await firstRow.evaluate(
+        (row, transparent) =>
+          getComputedStyle(row).backgroundColor !== transparent,
+        TRANSPARENT
+      )
+      expect(firstRowShaded).toBe(true)
+    }
   })
 
-  test('offers no Update selected button, as a tick updates what is chosen straight away', async ({
+  test('offers no Update selected button with JavaScript on', async ({
     page
   }) => {
     await expect(updateSelectedButton(page)).toBeHidden()
