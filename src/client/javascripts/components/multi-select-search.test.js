@@ -163,16 +163,24 @@ describe('#MultiSelectSearch', () => {
   })
 
   it('Should run the search when Search is pressed, without leaving the page', async () => {
-    const { searchBox, searchButton, status } = mount('')
+    const { form, searchBox, searchButton, status } = mount('')
     fetchMock.mockResolvedValue(
       answering(responseHtml('1 result available', resultsBodyHtml()))
     )
+    const navigated = vi.fn()
+    form.addEventListener('submit', (event) => {
+      if (!event.defaultPrevented) {
+        navigated()
+        event.preventDefault()
+      }
+    })
 
     searchBox.value = 'thing'
     searchButton.click()
     await settle()
 
     expect(postedBody(fetchMock.mock.calls[0]).get('q')).toBe('thing')
+    expect(navigated).not.toHaveBeenCalled()
     expect(status.textContent).toBe('1 result available')
   })
 
