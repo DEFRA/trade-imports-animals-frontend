@@ -76,7 +76,9 @@ const searchFor = (commoditySearch, payload = {}, startingFrom = []) =>
     startingFrom
   })
 
-const groupsOf = (result) => result.view.context.commodityGroups
+const resultsOf = (result) => result.view.context.results
+
+const groupsOf = (result) => resultsOf(result).commodityGroups
 
 const plainTextOf = (html) => {
   const entities = {
@@ -118,14 +120,14 @@ describe('commodity search', () => {
   it('Should list nothing until the page is searched', async () => {
     const result = await driveHandler(get)
     expect(groupsOf(result)).toEqual([])
-    expect(result.view.context.noResults).toBe(false)
+    expect(resultsOf(result).noResults).toBe(false)
     expect(result.view.context.query).toBe('')
   })
 
   it('Should list nothing for a query shorter than three characters', async () => {
     const result = await searchFor('Bo')
     expect(groupsOf(result)).toEqual([])
-    expect(result.view.context.noResults).toBe(false)
+    expect(resultsOf(result).noResults).toBe(false)
     expect(result.response.statusCode).toBe(200)
     expect(result.view.context.errors).toEqual({})
     expect(result.after).toEqual(result.before)
@@ -220,7 +222,7 @@ describe('commodity search', () => {
   it('Should say so when a long-enough query matches nothing', async () => {
     const result = await searchFor('zzz')
     expect(groupsOf(result)).toEqual([])
-    expect(result.view.context.noResults).toBe(true)
+    expect(resultsOf(result).noResults).toBe(true)
   })
 })
 
@@ -244,14 +246,14 @@ describe('commodity search — carried and stored search rows', () => {
       afterSearchShowed(BOS_TAURUS_ROW)
     ])
     expect(legendsOf(result)).toEqual(['01061900'])
-    expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
+    expect(resultsOf(result).carriedKeys).toEqual([BOS_TAURUS_KEY])
   })
 
   it('Should keep a ticked result off the carried list while it is on screen', async () => {
     const result = await searchFor('felis', { species: FELIS_CATUS_KEY }, [
       afterSearchShowed(FELIS_CATUS_ROW)
     ])
-    expect(result.view.context.carriedKeys).toEqual([])
+    expect(resultsOf(result).carriedKeys).toEqual([])
   })
 
   it('Should drop a result the trader unticked before searching again', async () => {
@@ -261,8 +263,8 @@ describe('commodity search — carried and stored search rows', () => {
     const unticked = await searchFor('felis', {}, [
       afterSearchShowed(FELIS_CATUS_ROW)
     ])
-    expect(ticked.view.context.selectedSummary.count).toBe(1)
-    expect(unticked.view.context.selectedSummary.count).toBe(0)
+    expect(resultsOf(ticked).selectedSummary.count).toBe(1)
+    expect(resultsOf(unticked).selectedSummary.count).toBe(0)
   })
 
   it('Should keep a row an earlier search showed, so a later search cannot lose the choice', async () => {
@@ -308,13 +310,31 @@ describe('commodity search — carried and stored search rows', () => {
 
   it('Should ignore a choice the page was never shown', async () => {
     const result = await searchFor('felis', { selection: BOS_TAURUS_KEY })
-    expect(result.view.context.carriedKeys).toEqual([])
-    expect(result.view.context.selectedSummary.count).toBe(0)
+    expect(resultsOf(result).carriedKeys).toEqual([])
+    expect(resultsOf(result).selectedSummary.count).toBe(0)
   })
 })
 
 describe('commodity search — what has been chosen so far', () => {
   useStubbedJourney(SET_ID, dispatchPages)
+
+  it.each([
+    ['Clear all', 'clear'],
+    ['a Remove', removeActionFor(BOS_TAURUS_KEY)]
+  ])(
+    'Should keep the query in the search box after %s',
+    async (_pressed, action) => {
+      const result = await driveHandler(post, {
+        payload: {
+          action,
+          [search.SEARCH_FIELD]: 'felis',
+          selection: BOS_TAURUS_KEY
+        },
+        startingFrom: [afterSearchShowed(BOS_TAURUS_ROW)]
+      })
+      expect(result.view.context.query).toBe('felis')
+    }
+  )
 
   it('Should summarise the stored selection, counted, grouped under each commodity heading, each named by its Latin name with a Remove label naming the species and its commodity', async () => {
     const result = await driveHandler(get, {
@@ -322,7 +342,7 @@ describe('commodity search — what has been chosen so far', () => {
         commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
       }
     })
-    expect(result.view.context.selectedSummary).toEqual({
+    expect(resultsOf(result).selectedSummary).toEqual({
       count: 3,
       heading: '3 selected',
       groups: [
@@ -370,7 +390,7 @@ describe('commodity search — removing one chosen species', () => {
     })
     expect(result.response.statusCode).toBe(200)
     expect(result.view.context.query).toBe('felis')
-    expect(result.view.context.selectedSummary.count).toBe(1)
+    expect(resultsOf(result).selectedSummary.count).toBe(1)
     expect(result.logger.entries).toEqual([])
   })
 })
@@ -421,8 +441,7 @@ describe.each([
         },
         [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
       )
-      expect(result.view.context.selectedSummary.count).toBe(0)
-      expect(result.view.context.query).toBe('buffalo')
+      expect(resultsOf(result).selectedSummary.count).toBe(0)
       expect(legendsOf(result)).toEqual([CATTLE_HEADING])
       expect(result.after).toEqual(result.before)
     })
@@ -438,9 +457,8 @@ describe.each([
         [afterSearchShowed(BOS_TAURUS_ROW, FELIS_CATUS_ROW)]
       )
       expect(result.response.statusCode).toBe(200)
-      expect(result.view.context.query).toBe('felis')
       expect(legendsOf(result)).toEqual(['01061900'])
-      expect(result.view.context.selectedSummary.count).toBe(1)
+      expect(resultsOf(result).selectedSummary.count).toBe(1)
       expect(result.after).toEqual(result.before)
     })
 
@@ -492,17 +510,12 @@ describe('commodity search — results refreshed in place', () => {
     expect(result.view.view).toBe(RESULTS_TEMPLATE)
     expect(Object.keys(result.view.context).sort()).toEqual([
       'announcement',
-      'carriedKeys',
-      'commodityGroups',
-      'copy',
-      'noResults',
-      'query',
-      'selectedSummary'
+      'results'
     ])
     expect(legendsOf(result)).toEqual(['01061900'])
     expect(checkedValuesOf(result)).toEqual([FELIS_CATUS_KEY])
-    expect(result.view.context.carriedKeys).toEqual([BOS_TAURUS_KEY])
-    expect(result.view.context.selectedSummary.count).toBe(2)
+    expect(resultsOf(result).carriedKeys).toEqual([BOS_TAURUS_KEY])
+    expect(resultsOf(result).selectedSummary.count).toBe(2)
   })
 
   it('Should announce how many species a search lists', async () => {
@@ -542,7 +555,7 @@ describe('commodity search — results refreshed in place', () => {
       afterSearchShowed(BOS_TAURUS_ROW)
     ])
     expect(result.view.view).toBe(RESULTS_TEMPLATE)
-    expect(result.view.context.selectedSummary.count).toBe(1)
+    expect(resultsOf(result).selectedSummary.count).toBe(1)
     expect(result.after).toEqual(result.before)
   })
 })

@@ -51,7 +51,6 @@ const resultsContext = (current, { selected, results = null, query = '' }) => {
   )
   return {
     copy,
-    query,
     commodityGroups: groups,
     noResults: isSearchable(query) && groups.length === 0,
     carriedKeys: selected.filter((key) => !onScreen.has(key)),
@@ -69,7 +68,9 @@ const render = (request, h, current, { errorText = null, ...shown }) => {
       journey: current.journey,
       page
     }),
-    ...resultsContext(current, shown),
+    copy,
+    query: shown.query ?? '',
+    results: resultsContext(current, shown),
     resultsUrl: pagePath(request.params.journeyId, RESULTS_SLUG),
     errors,
     errorSummary: kit.errorSummary(errors)
@@ -79,7 +80,7 @@ const render = (request, h, current, { errorText = null, ...shown }) => {
 const speciesCountOf = (groups) =>
   groups.reduce((count, group) => count + group.items.length, 0)
 
-const announcementFor = ({ query, noResults, commodityGroups: groups }) => {
+const announcementFor = (query, { noResults, commodityGroups: groups }) => {
   if (!isSearchable(query)) {
     return ''
   }
@@ -89,10 +90,10 @@ const announcementFor = ({ query, noResults, commodityGroups: groups }) => {
 }
 
 const renderResults = (_request, h, current, shown) => {
-  const context = resultsContext(current, shown)
+  const results = resultsContext(current, shown)
   return h.view(resultsView, {
-    ...context,
-    announcement: announcementFor(context)
+    results,
+    announcement: announcementFor(shown.query, results)
   })
 }
 
