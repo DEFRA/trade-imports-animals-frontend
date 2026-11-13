@@ -263,8 +263,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   sent back with the form as a hidden value.
 - With JavaScript the results refresh in place as the trader types, ticks,
   removes or clears, through the shared multi-select search. The results are
-  the ones the page renders without JavaScript, so every rule below holds on
-  both paths. A polite status message gives the number of species a typed
+  the ones the page renders without JavaScript, so the ordering, labelling and
+  selection rules below hold on both paths. A polite status message gives the number of species a typed
   search lists, or "No results found". A tick, a Remove or Clear all is not
   announced, because the box and the summary already show it.
 - After a Remove or Clear all, the button pressed has gone, so focus moves to
