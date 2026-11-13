@@ -860,7 +860,7 @@
       },
       "commodities": [
         {
-          "name": "Cow",
+          "name": "Cattle",
           "commodityCode": "0102",
           "description": "Live bovine animals",
           "totalNoOfAnimals": 3,
@@ -1180,7 +1180,7 @@
       },
       "commodities": [
         {
-          "name": "Cow",
+          "name": "Cattle",
           "commodityCode": "0102",
           "description": "Live bovine animals"
         }
@@ -1694,7 +1694,7 @@
       "purposeInInternalMarket": "breeding",
       "commodities": [
         {
-          "name": "Cow",
+          "name": "Cattle",
           "commodityCode": "0102",
           "description": "Live bovine animals",
           "totalNoOfAnimals": 1,

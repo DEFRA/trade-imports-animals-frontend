@@ -178,7 +178,7 @@ describe('commodity search', () => {
   it('Should bold the matched text in the commodity heading and in a species label', async () => {
     const headingResult = await searchFor('0102')
     expect(groupsOf(headingResult)[0].legendHtml).toBe(
-      'Cow (<strong class="govuk-!-font-weight-bold">0102</strong>)'
+      'Cattle (<strong class="govuk-!-font-weight-bold">0102</strong>)'
     )
 
     const labelResult = await searchFor('taurus')
@@ -333,7 +333,7 @@ describe('commodity search — carried and stored search rows', () => {
 describe('commodity search — what has been chosen so far', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should summarise the stored selection, counted, grouped by code and each named by its Latin name', async () => {
+  it('Should summarise the stored selection, counted, grouped under each commodity heading and each named by its Latin name', async () => {
     const result = await driveHandler(get, {
       seed: {
         commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW, FELIS_CATUS_ROW]
@@ -344,7 +344,7 @@ describe('commodity search — what has been chosen so far', () => {
       heading: '3 selected',
       groups: [
         {
-          legend: '0102',
+          legend: CATTLE_HEADING,
           items: [
             {
               label: BISON_BISON_ROW.speciesLatinName,

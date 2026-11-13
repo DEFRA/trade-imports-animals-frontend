@@ -97,6 +97,6 @@ export const COMMODITY_DESCRIPTIONS = {
 
 export const COMMODITY_NAMES_BY_CODE = {
   [HORSES_CODE]: 'Horse',
-  [CATTLE_CODE]: 'Cow',
+  [CATTLE_CODE]: 'Cattle',
   '0301': 'Fish'
 }

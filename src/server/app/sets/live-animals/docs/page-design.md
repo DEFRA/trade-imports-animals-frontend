@@ -281,16 +281,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   shaded), no ring round a hovered tick box, and a scroll once the list is taller
   than about six rows. Each commodity stays a fieldset whose legend is its
   heading, so a screen reader hears the species grouped by commodity.
-- A commodity's heading in the results reads as its name with its code in
-  round brackets, such as "Cow (0102)", where the service knows a name for the
-  code, and as the code alone where it does not. The names come from
-  `commodityNameFor` in the set's commodities service; the chips and the
-  Commodity details page still name a commodity by its code.
+- A commodity's heading in the results, and in what has been chosen, reads as
+  its name with its code in round brackets, such as "Cattle (0102)", where the
+  service knows a name for the code, and as the code alone where it does not.
+  The names come from `commodityNameFor` in the set's commodities service; the
+  Commodity details page still names a commodity by its code.
 - With JavaScript, Escape in the search box or a click outside the search hides
   the list, keeping the term and every choice, and focusing or clicking the
   search box shows it again. The list hides once the click has landed, so a
   click on a button below the list is not moved out from under the pointer.
-- What has been chosen shows as a chip per species, under its commodity code,
+- What has been chosen shows as a chip per species, under its commodity's heading,
   as the design draws it: the species' Latin name and a cross named "Remove"
   and that Latin name. Clear all sits beside the count, as a form
   button styled as a link that posts the page form.
