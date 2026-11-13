@@ -8,6 +8,7 @@ import {
   contentWidthOf,
   errorSummaryLinks,
   followErrorLinkToField,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
@@ -301,12 +302,10 @@ test.describe('party picker per role', () => {
     }) => {
       await openPartyPicker(page, party)
 
-      await expect(
-        page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-      ).toHaveText(party.title)
-      await expect(page.locator('span.govuk-caption-l')).toHaveText(
-        copy.picker.caption
-      )
+      await expectCaptionAboveHeading(page, {
+        captionText: copy.picker.caption,
+        headingName: party.title
+      })
       await expect(page.getByText(party.hint)).toBeVisible()
       await expect(
         page.getByLabel(copy.picker.search.label)

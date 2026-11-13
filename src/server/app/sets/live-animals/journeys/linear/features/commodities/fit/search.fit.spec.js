@@ -19,7 +19,6 @@ import {
   selectedSummary,
   signIn,
   startNotificationAtOrigin,
-  errorSummary,
   backLink
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -252,7 +251,7 @@ test.describe('commodity search — choosing and saving species', () => {
     await searchCommodities(page, 'Bos')
     await saveAndContinue(page).click()
 
-    await expect(errorSummary(page).getByRole('link')).toHaveText([
+    await expect(errorSummaryLinks(page)).toHaveText([
       copy.search.errors.selectCommodity
     ])
     await expect(searchBox(page)).toHaveAccessibleDescription(

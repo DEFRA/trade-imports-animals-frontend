@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  expectCaptionAboveHeading,
   BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
@@ -225,12 +226,10 @@ test.describe('commodity consignment details — rendering and validation', () =
   test('captions the page with the description-of-the-goods section', async ({
     page
   }) => {
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(copy.consignmentDetails.title)
-    await expect(page.locator('span.govuk-caption-l')).toHaveText(
-      sectionCaptionsCopy.sections.descriptionOfTheGoods
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: sectionCaptionsCopy.sections.descriptionOfTheGoods,
+      headingName: copy.consignmentDetails.title
+    })
   })
 
   test('puts one rule between the two commodities and none above the save buttons', async ({
@@ -280,7 +279,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     await page.locator(`#${SECOND_PACKAGES_FIELD}`).fill('abc')
     await saveAndContinue(page).click()
 
-    await expect(errorSummary(page).getByRole('link')).toHaveText([
+    await expect(errorSummaryLinks(page)).toHaveText([
       copy.consignmentDetails.errors.animalsRequired,
       copy.consignmentDetails.errors.animalsRequired,
       copy.consignmentDetails.errors.packagesWholeNumber,
@@ -331,7 +330,7 @@ test.describe('commodity consignment details — the number-of-animals cap', () 
     await page.locator(SECOND_ANIMALS_QUANTITY_INPUT).fill(aboveMax)
     await saveAndContinue(page).click()
 
-    const links = errorSummary(page).getByRole('link')
+    const links = errorSummaryLinks(page)
     await expect(links).toHaveCount(1)
     await expect(links).toHaveText(
       copy.consignmentDetails.errors.animalsAboveMax(2147483647)

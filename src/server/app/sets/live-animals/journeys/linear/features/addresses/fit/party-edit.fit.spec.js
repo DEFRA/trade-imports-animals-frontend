@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   addressesSection,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   partyPickerName,
   signIn,
@@ -54,12 +55,10 @@ test.describe('edit a copied address', () => {
   test('opens pre-filled from the copy, captioned with the role', async ({
     page
   }) => {
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(editCopy.title)
-    await expect(page.locator('span.govuk-caption-l')).toHaveText(
-      CONSIGNOR.title
-    )
+    await expectCaptionAboveHeading(page, {
+      captionText: CONSIGNOR.title,
+      headingName: editCopy.title
+    })
     await expect(page.getByLabel(editCopy.fields.name)).toHaveValue(
       partyPickerName(values.consignor)
     )

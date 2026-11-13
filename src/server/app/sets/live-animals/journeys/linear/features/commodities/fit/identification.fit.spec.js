@@ -14,6 +14,7 @@ import {
   errorSummaryLinks,
   followErrorLinkToField,
   expectStyle,
+  govukPrimaryButtonStyleOf,
   measureReferenceElement,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
@@ -38,7 +39,6 @@ const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
 const SECOND_EAR_TAG_FIELD = '#animalIdentifierEarTag-1'
 const BOS_TAURUS_CODE_HEADING = BOS_TAURUS_ROW.commodityCode
-const REGULAR_FONT_WEIGHT = '400'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -987,15 +987,9 @@ test.describe('animal identification sections and species cards', () => {
   test('shows the card button as a primary button', async ({ page }) => {
     await openIdentification(page, [[BOS_TAURUS_ROW, '2']])
 
-    const primaryButtonStyle = await measureReferenceElement(page, {
-      tagName: 'button',
-      className: 'govuk-button',
-      properties: ['background-color']
-    })
-
     await expectStyle(
       page.getByRole('button', { name: copy.identification.saveAndAddAnother }),
-      primaryButtonStyle
+      await govukPrimaryButtonStyleOf(page)
     )
   })
 
@@ -1003,6 +997,11 @@ test.describe('animal identification sections and species cards', () => {
     page
   }) => {
     await openIdentification(page, [[FELIS_CATUS_ROW, '2']])
+    const govukLabelStyle = await measureReferenceElement(page, {
+      tagName: 'label',
+      className: 'govuk-label',
+      properties: ['font-weight']
+    })
 
     for (const field of [
       'animalIdentifierMicrochip',
@@ -1012,9 +1011,9 @@ test.describe('animal identification sections and species cards', () => {
       await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
         copy.identification.identifierLabels[field]
       )
-      await expect(page.locator(`label[for="${field}-0"]`)).toHaveCSS(
-        'font-weight',
-        REGULAR_FONT_WEIGHT
+      await expectStyle(
+        page.locator(`label[for="${field}-0"]`),
+        govukLabelStyle
       )
       await expect(page.locator(`#${field}-0`)).toHaveAccessibleDescription('')
     }

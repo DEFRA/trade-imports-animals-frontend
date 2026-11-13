@@ -54,12 +54,11 @@ test.describe('section caption above the page heading', () => {
     })
   })
 
-  test('starts the overview with its level 1 heading', async ({ page }) => {
+  test('puts only the draft status strip before the overview heading, with no section caption', async ({
+    page
+  }) => {
     await startNotification(page)
 
-    await expect(
-      page.getByRole('main').getByRole('heading').first()
-    ).toHaveAccessibleName(hubCopy.title)
     const title = page.getByRole('heading', { level: 1 })
     await expect(title).toHaveAccessibleName(hubCopy.title)
     const beforeTitle = title.locator('xpath=preceding-sibling::*')

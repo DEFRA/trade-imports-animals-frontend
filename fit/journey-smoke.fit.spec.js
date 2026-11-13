@@ -25,6 +25,7 @@ import {
   saveAndContinueToImportReason,
   chooseCountryOfOrigin,
   completeAnswerSections,
+  documentRowFor,
   errorSummary,
   expectLanding,
   expectSpeciesSelected,
@@ -336,9 +337,7 @@ test.describe('live-animals journey glue', () => {
     await page.getByRole('link', { name: 'Upload documents' }).click()
     await addDocument(page, document)
     await expect(
-      page.locator('.govuk-table__row', {
-        hasText: document.accompanyingDocumentReference
-      })
+      documentRowFor(page, document.accompanyingDocumentReference)
     ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
@@ -373,9 +372,7 @@ test.describe('live-animals journey glue', () => {
     await addDocument(page, secondDocument)
     await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await expect(
-      page.locator('.govuk-table__row', {
-        hasText: secondDocument.accompanyingDocumentReference
-      })
+      documentRowFor(page, secondDocument.accompanyingDocumentReference)
     ).toContainText('Check completed')
     await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await page.getByRole('button', { name: 'Save and continue' }).click()

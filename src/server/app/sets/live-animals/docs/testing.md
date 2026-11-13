@@ -78,10 +78,13 @@ These steps are shared because more than one spec uses them:
   from GOV.UK classes and inline styles, then removes it.
 - `govukColourOf` reads a GOV.UK colour token through it.
 - `govukVisuallyHiddenStyleOf` reads the values GOV.UK gives hidden text.
+- `govukPrimaryButtonStyleOf` reads the background colour GOV.UK gives its
+  primary button.
 - `expectStyle` asserts a set of CSS properties on an element.
 - `errorSummary` finds the page's error summary by its alert role.
 - `errorSummaryLinks` finds the error summary's links, narrowed to one named
-  link when a name is passed. It serves both a click on one link and an
+  link when a name is passed, and matches the whole accessible name when
+  given `{ exact: true }`. It serves both a click on one link and an
   assertion over the whole list.
 - `expectCaptionAboveHeading` proves a section caption sits above the level 1
   heading.

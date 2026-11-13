@@ -185,6 +185,19 @@ export const govukVisuallyHiddenStyleOf = (page) =>
   })
 
 /**
+ * Reads the computed background colour GOV.UK gives its primary button.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<Record<string, string>>} each property's computed value.
+ */
+export const govukPrimaryButtonStyleOf = (page) =>
+  measureReferenceElement(page, {
+    tagName: 'button',
+    className: 'govuk-button',
+    properties: ['background-color']
+  })
+
+/**
  * Fails unless the page's level 1 heading is showing with its caption, found by its text, above it.
  *
  * @param {import('@playwright/test').Page} page
@@ -221,10 +234,11 @@ export const errorSummary = (page) => page.getByRole('alert')
  *
  * @param {import('@playwright/test').Page} page
  * @param {string} [name] - the link's accessible name.
+ * @param {{ exact?: boolean }} [options] - exact: true matches the whole accessible name only.
  * @returns {import('@playwright/test').Locator}
  */
-export const errorSummaryLinks = (page, name) =>
-  errorSummary(page).getByRole('link', { name })
+export const errorSummaryLinks = (page, name, { exact } = {}) =>
+  errorSummary(page).getByRole('link', { name, exact })
 
 /**
  * The page's Back link.

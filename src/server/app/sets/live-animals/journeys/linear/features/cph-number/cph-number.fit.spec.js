@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   BOS_TAURUS_ROW,
   answerOriginEntry,
+  expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
   openCphNumberFromAddLink,
@@ -13,6 +14,7 @@ import {
   followErrorLinkToField,
   govukColourOf
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sectionCaptionsCopy } from '../../flow/section-captions/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -88,9 +90,10 @@ test.describe('cph-number feature', () => {
   })
 
   test('renders the CPH copy', async ({ page }) => {
-    await expect(
-      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
-    ).toHaveText(copy.title)
+    await expectCaptionAboveHeading(page, {
+      captionText: sectionCaptionsCopy.sections.consignmentParties,
+      headingName: copy.title
+    })
 
     await expect(
       page.getByRole('heading', { name: copy.cph.legend })
