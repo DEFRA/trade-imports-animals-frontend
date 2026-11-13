@@ -33,13 +33,7 @@
       resultsId: "commodity-search-results",
       resultsUrl: resultsUrl
     }) %}
-      {{ commoditySearchResults({
-        copy: copy,
-        commodityGroups: commodityGroups,
-        noResults: noResults,
-        carriedKeys: carriedKeys,
-        selectedSummary: selectedSummary
-      }) }}
+      {{ commoditySearchResults(results) }}
     {% endcall %}
 
     {% set helpHtml %}
