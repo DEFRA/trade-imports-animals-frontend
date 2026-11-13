@@ -14,6 +14,7 @@
 import accessibleAutocomplete from 'accessible-autocomplete'
 import { escapeAndBoldMatches } from '../../common/helpers/bold-matches.js'
 import { containsTerm } from '../../common/helpers/search-fold.js'
+import { welshResultsAvailable } from '../../common/helpers/welsh-results-available.js'
 import { ENGLISH_ASSISTIVE_HINT } from './autocomplete-text.js'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
@@ -44,10 +45,8 @@ const welshText = (noResults) => ({
   tStatusNoResults: () => 'Dim canlyniadau chwilio',
   tStatusSelectedOption: (selectedOption, length, index) =>
     `Mae ${selectedOption} ${index + 1} o ${length} wedi'i amlygu`,
-  tStatusResults: (length, contentSelectedOption) => {
-    const resultOrResults = length === 1 ? 'canlyniad' : 'o ganlyniadau'
-    return `${length} ${resultOrResults} ar gael. ${contentSelectedOption}`
-  }
+  tStatusResults: (length, contentSelectedOption) =>
+    `${welshResultsAvailable(length)}. ${contentSelectedOption}`
 })
 
 const enhancedInputFor = (autocompleteId) => {
