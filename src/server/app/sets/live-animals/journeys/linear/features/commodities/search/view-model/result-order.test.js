@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { inCodeOrder, inSpeciesLabelOrder } from './result-order.js'
 
 describe('#inCodeOrder', () => {
-  it('Should return commodity codes given out of order sorted into commodity-heading order', () => {
+  it('Should return commodity codes given out of order sorted into commodity-code order', () => {
     expect(inCodeOrder(['01061900', '0101', '0102'])).toEqual([
       '0101',
       '0102',
