@@ -53,12 +53,16 @@ import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
+import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
+import { documentOf } from '../../../../../../../common/test-helpers/document-of.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import {
+  BISON_BISON_ROW,
   BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
   FELIS_CATUS_ROW,
+  MUSTELA_PUTORIUS_FURO_ROW,
   OSTRICHES_CODE,
   SUS_SCROFA_DOMESTICUS_ROW
 } from '../commodities/search/test-support.js'
@@ -71,6 +75,8 @@ import {
   SHEEP_CODE,
   SWINE_CODE
 } from '../../../../services/commodities/rules.js'
+
+const environment = nunjucksConfig.options.compileOptions.environment
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 
@@ -150,6 +156,14 @@ const cardsOf = (sections) => sections.flatMap((section) => section.cards)
 const cardByTitle = (sections, title) =>
   cardsOf(sections).find((card) => card.title === title)
 
+const speciesBlockOf = (sections, commodityTitle, heading) =>
+  cardByTitle(sections, commodityTitle).speciesBlocks.find(
+    (block) => block.heading === heading
+  )
+
+const identificationTableOf = (card) =>
+  card.speciesBlocks[0].identificationDetails.table
+
 const rowsOf = (sections) =>
   cardsOf(sections).flatMap((card) => [
     ...(card.rows ?? []),
@@ -182,7 +196,8 @@ const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const ORIGIN_OF_IMPORT_INCOMPLETE = 'Complete origin of import'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
-const SPECIES_INCOMPLETE = 'Complete species details'
+const COMMODITY_DETAILS_INCOMPLETE = 'Complete commodity details'
+const WHAT_ARE_YOU_IMPORTING_INCOMPLETE = 'Complete what are you importing?'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
 const ARRIVAL_DETAILS_INCOMPLETE = 'Complete arrival details'
 
@@ -225,12 +240,13 @@ const catsConsignmentSeed = (units, { numberOfAnimalsQuantity } = {}) => ({
 })
 
 const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
-const CATTLE_CARD_TITLE = '0102 — Bos taurus'
-const HORSE_CARD_TITLE = '0101 — Equus cabalus'
-const PIG_CARD_TITLE = '0103 — Sus scrofa domesticus'
-const CAT_CARD_TITLE = `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
+const CATTLE_CARD_TITLE = CATTLE_CODE
+const HORSE_CARD_TITLE = HORSES_CODE
+const PIG_CARD_TITLE = SWINE_CODE
+const CAT_CARD_TITLE = FELIS_CATUS_ROW.commodityCode
 const ORIGIN_OF_IMPORT_CARD = 'Origin of import'
 const MAIN_IMPORT_REASON = 'Main import reason'
+const WHAT_ARE_YOU_IMPORTING_CARD = 'What are you importing?'
 const ADDITIONAL_DETAILS_CARD = 'Additional details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
@@ -247,7 +263,13 @@ const UNWEANED_KEY = 'Includes unweaned animals'
 const CPH_KEY = 'County parish holding (CPH) number'
 const TRANSITED_COUNTRIES_KEY =
   'Countries that the consignment will travel through'
-const PACKAGES_KEY = 'Number of packages'
+const PACKAGES_KEY = 'Number of packages (when required)'
+const COMMODITY_CODE_KEY = 'Commodity code'
+const COMMON_NAME_KEY = 'Common name'
+const SPECIES_KEY = 'Species'
+const NUMBER_OF_ANIMALS_KEY = 'Number of animals'
+const BOS_TAURUS_HEADING = 'Bos Taurus'
+const BISON_BISON_HEADING = 'Bison Bison'
 const DOCUMENT_TYPE_KEY = 'Document type'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
@@ -537,6 +559,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       cardsOf(await sectionsFor(fullSeed)).map((card) => card.title)
     ).toEqual([
       ORIGIN_OF_IMPORT_CARD,
+      WHAT_ARE_YOU_IMPORTING_CARD,
       MAIN_IMPORT_REASON,
       CATTLE_CARD_TITLE,
       ADDITIONAL_DETAILS_CARD,
@@ -557,7 +580,10 @@ describe(`${SUITE} — section headings and cards`, () => {
         section.cards.map((card) => card.title)
       ])
     ).toEqual([
-      ['about-the-consignment', [ORIGIN_OF_IMPORT_CARD, MAIN_IMPORT_REASON]],
+      [
+        'about-the-consignment',
+        [ORIGIN_OF_IMPORT_CARD, WHAT_ARE_YOU_IMPORTING_CARD, MAIN_IMPORT_REASON]
+      ],
       [
         'description-of-the-goods',
         [CATTLE_CARD_TITLE, ADDITIONAL_DETAILS_CARD]
@@ -663,27 +689,110 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
     expect(valueOf(card.rows, 'Country')).toBe('Germany')
   })
+})
 
-  it('Should render one species card per commodity line with the design rows', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
-    expect(valueOf(card.rows, 'Commodity code')).toBe(CATTLE_CODE)
-    expect(valueOf(card.rows, 'Common name')).toBe('Domestic Cattle')
-    expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
-    expect(valueOf(card.rows, 'Number of animals')).toBe('25')
-    expect(valueOf(card.rows, PACKAGES_KEY)).toBe('5')
+describe(`${SUITE} — commodity selection and species blocks`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should read the commodity selection back once, with each species name capitalised', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      WHAT_ARE_YOU_IMPORTING_CARD
+    )
+    expect(keysOf(card.rows)).toEqual([
+      COMMODITY_CODE_KEY,
+      COMMON_NAME_KEY,
+      SPECIES_KEY
+    ])
+    expect(valueOf(card.rows, COMMODITY_CODE_KEY)).toBe(CATTLE_CODE)
+    expect(valueOf(card.rows, COMMON_NAME_KEY)).toBe('Domestic Cattle')
+    expect(valueOf(card.rows, SPECIES_KEY)).toBe(BOS_TAURUS_HEADING)
   })
 
-  it('Should render a read-only identifier table inside the species card', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
-    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
-      'Animal',
-      'Ear tag',
-      'Passport'
-    ])
-    expect(card.identifierTable.rows).toEqual([
-      [{ text: 'Animal 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
+  it('Should list each species of a commodity once in the selection read-back, and the code once', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW]
+      }),
+      WHAT_ARE_YOU_IMPORTING_CARD
+    )
+    expect(valueOf(card.rows, COMMODITY_CODE_KEY)).toBe(CATTLE_CODE)
+    expect(valueOf(card.rows, COMMON_NAME_KEY)).toBe(
+      'Domestic Cattle, American Bison'
+    )
+    expect(valueOf(card.rows, SPECIES_KEY)).toBe('Bos Taurus, Bison Bison')
+  })
+
+  it('Should add each species its own code and common name under other live mammals', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [FELIS_CATUS_ROW, MUSTELA_PUTORIUS_FURO_ROW]
+      }),
+      WHAT_ARE_YOU_IMPORTING_CARD
+    )
+    expect(valueOf(card.rows, COMMODITY_CODE_KEY)).toBe('01061900, 01061900')
+    expect(valueOf(card.rows, COMMON_NAME_KEY)).toBe('Domestic Cat, Ferret')
+    expect(valueOf(card.rows, SPECIES_KEY)).toBe(
+      'Felis Catus, Mustela Putorius Furo'
+    )
+  })
+
+  it('Should hold one commodity card, titled by its code, with one block per species', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      commodityLines: [BOS_TAURUS_ROW, BISON_BISON_ROW]
+    })
+    const commodityCards = cardsOf(sections).filter((card) =>
+      Boolean(card.speciesBlocks)
+    )
+    expect(commodityCards.map((card) => card.title)).toEqual([CATTLE_CODE])
+    expect(
+      commodityCards[0].speciesBlocks.map((block) => block.heading)
+    ).toEqual([BOS_TAURUS_HEADING, BISON_BISON_HEADING])
+  })
+
+  it('Should show Number of animals then Number of packages (when required) in a cattle block, and no commodity or species rows', async () => {
+    const block = speciesBlockOf(
+      await sectionsFor(fullSeed),
+      CATTLE_CARD_TITLE,
+      BOS_TAURUS_HEADING
+    )
+    expect(keysOf(block.rows)).toEqual([NUMBER_OF_ANIMALS_KEY, PACKAGES_KEY])
+    expect(valueOf(block.rows, NUMBER_OF_ANIMALS_KEY)).toBe('25')
+    expect(valueOf(block.rows, PACKAGES_KEY)).toBe('5')
+  })
+
+  it('Should read a blank package count as Not applicable', async () => {
+    const block = speciesBlockOf(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [{ ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '2' }]
+      }),
+      CATTLE_CARD_TITLE,
+      BOS_TAURUS_HEADING
+    )
+    expect(valueOf(block.rows, PACKAGES_KEY)).toBe(NOT_APPLICABLE)
+  })
+
+  it('Should render a read-only identification details table inside the species block', async () => {
+    const block = speciesBlockOf(
+      await sectionsFor(fullSeed),
+      CATTLE_CARD_TITLE,
+      BOS_TAURUS_HEADING
+    )
+    expect(
+      block.identificationDetails.table.head.map((cell) => cell.text)
+    ).toEqual(['Animal', 'Ear tag', 'Passport'])
+    expect(block.identificationDetails.table.rows).toEqual([
+      [{ text: 'Bos taurus 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
     ])
   })
+})
+
+describe(`${SUITE} — fully-populated notification, documents and change links`, () => {
+  setupCheckAnswersEngine()
 
   it('Should render a document group with the design rows inside the uploaded-documents card', async () => {
     const card = cardByTitle(
@@ -782,15 +891,56 @@ describe(`${SUITE} — fully-populated notification`, () => {
 
     expect(hiddenTextOf(ORIGIN_OF_IMPORT_CARD)).toBe('origin of import')
     expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
-    expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe('commodity 1')
+    expect(hiddenTextOf(CATTLE_CARD_TITLE)).toBe(`commodity ${CATTLE_CODE}`)
   })
 
-  it('Should point the species-card Change action at the consignment-details page carrying the review on the trail', async () => {
+  it('Should point the commodity card Change action at the consignment-details page carrying the review on the trail', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), CATTLE_CARD_TITLE)
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
       hrefEndingWithFromReview('consignment-details')
     )
+  })
+
+  it('Should point the What are you importing? Change action at the commodity selection page carrying the review on the trail', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      WHAT_ARE_YOU_IMPORTING_CARD
+    )
+    expect(card.actions.items).toHaveLength(1)
+    expect(card.actions.items[0].href).toMatch(
+      hrefEndingWithFromReview('commodities')
+    )
+  })
+
+  it('Should give the first row of a species block its own Change action to consignment details, and identification details its own to animal identification', async () => {
+    const block = speciesBlockOf(
+      await sectionsFor(fullSeed),
+      CATTLE_CARD_TITLE,
+      BOS_TAURUS_HEADING
+    )
+    expect(block.rows[0].actions.items[0].href).toMatch(
+      hrefEndingWithFromReview('consignment-details')
+    )
+    expect(block.rows[0].actions.items[0].visuallyHiddenText).toBe(
+      'number of animals for Bos Taurus'
+    )
+    expect(block.rows[1].actions).toBeUndefined()
+    expect(block.identificationDetails.actions.items[0].href).toMatch(
+      hrefEndingWithFromReview('commodities/identification')
+    )
+  })
+
+  it('Should give a submitted notification no Change action on the commodity cards, species blocks or identification details', async () => {
+    const { context } = await viewForStatus(SUBMITTED)
+    const card = cardByTitle(context.sections, CATTLE_CARD_TITLE)
+    const [block] = card.speciesBlocks
+    expect(card.actions).toBeUndefined()
+    expect(block.rows[0].actions).toBeUndefined()
+    expect(block.identificationDetails.actions).toBeUndefined()
+    expect(
+      cardByTitle(context.sections, WHAT_ARE_YOU_IMPORTING_CARD).actions
+    ).toBeUndefined()
   })
 
   it('Should point the uploaded-documents card Change action at the documents page carrying the review on the trail', async () => {
@@ -804,10 +954,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 })
 
-describe(`${SUITE} — species identifier table`, () => {
+describe(`${SUITE} — species identification details`, () => {
   setupCheckAnswersEngine()
 
-  it("Should head a horse line's identifier table with the horse name, and never with the ear tag it was not asked for", async () => {
+  it("Should head a horse line's identification details table with the horse name, and never with the ear tag it was not asked for", async () => {
     const card = cardByTitle(
       await sectionsFor({
         ...fullSeed,
@@ -827,15 +977,15 @@ describe(`${SUITE} — species identifier table`, () => {
       }),
       HORSE_CARD_TITLE
     )
-    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+    expect(identificationTableOf(card).head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Microchip',
       'Passport',
       'Horse name'
     ])
-    expect(card.identifierTable.rows).toEqual([
+    expect(identificationTableOf(card).rows).toEqual([
       [
-        { text: 'Animal 1' },
+        { text: 'Equus cabalus 1' },
         { text: 'UK900123456789012' },
         { text: 'UK987654321' },
         { text: 'Silver' }
@@ -843,7 +993,7 @@ describe(`${SUITE} — species identifier table`, () => {
     ])
   })
 
-  it("Should head a cattle line's identifier table with the tattoo when a unit carries one", async () => {
+  it("Should head a cattle line's identification details table with the tattoo when a unit carries one", async () => {
     const card = cardByTitle(
       await sectionsFor({
         ...fullSeed,
@@ -863,15 +1013,15 @@ describe(`${SUITE} — species identifier table`, () => {
       }),
       CATTLE_CARD_TITLE
     )
-    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+    expect(identificationTableOf(card).head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Ear tag',
       'Passport',
       'Tattoo'
     ])
-    expect(card.identifierTable.rows).toEqual([
+    expect(identificationTableOf(card).rows).toEqual([
       [
-        { text: 'Animal 1' },
+        { text: 'Bos taurus 1' },
         { text: 'UK1' },
         { text: 'UK123456789' },
         { text: 'CT99' }
@@ -879,7 +1029,7 @@ describe(`${SUITE} — species identifier table`, () => {
     ])
   })
 
-  it("Should head a pig line's identifier table with the tattoo when a unit carries one", async () => {
+  it("Should head a pig line's identification details table with the tattoo when a unit carries one", async () => {
     const card = cardByTitle(
       await sectionsFor({
         ...fullSeed,
@@ -898,17 +1048,21 @@ describe(`${SUITE} — species identifier table`, () => {
       }),
       PIG_CARD_TITLE
     )
-    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+    expect(identificationTableOf(card).head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Ear tag',
       'Tattoo'
     ])
-    expect(card.identifierTable.rows).toEqual([
-      [{ text: 'Animal 1' }, { text: 'UK100000000001' }, { text: 'PT77' }]
+    expect(identificationTableOf(card).rows).toEqual([
+      [
+        { text: 'Sus scrofa domesticus 1' },
+        { text: 'UK100000000001' },
+        { text: 'PT77' }
+      ]
     ])
   })
 
-  it('Should head a cat line’s identifier table with the identifiers the species was asked for alone, while its animals hold saved permanent addresses', async () => {
+  it('Should head a cat line’s identification details table with the identifiers the species was asked for alone, while its animals hold saved permanent addresses', async () => {
     const seed = catsConsignmentSeed([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
@@ -923,13 +1077,13 @@ describe(`${SUITE} — species identifier table`, () => {
     ])
     const card = cardByTitle(await sectionsFor(seed), CAT_CARD_TITLE)
 
-    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+    expect(identificationTableOf(card).head.map((cell) => cell.text)).toEqual([
       'Animal',
       'Microchip'
     ])
-    expect(card.identifierTable.rows).toEqual([
-      [{ text: 'Animal 1' }, { text: CAT_1_MICROCHIP }],
-      [{ text: 'Animal 2' }, { text: CAT_2_MICROCHIP }]
+    expect(identificationTableOf(card).rows).toEqual([
+      [{ text: 'Felis catus 1' }, { text: CAT_1_MICROCHIP }],
+      [{ text: 'Felis catus 2' }, { text: CAT_2_MICROCHIP }]
     ])
   })
 })
@@ -967,7 +1121,7 @@ describe(`${SUITE} — permanent address rows on the addresses card`, () => {
     expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
-  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still report the outstanding answer against the species card', async () => {
+  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still name commodity details as outstanding', async () => {
     const seed = catsConsignmentSeed([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
@@ -989,7 +1143,7 @@ describe(`${SUITE} — permanent address rows on the addresses card`, () => {
     expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
     expect(summary.errorList.map((entry) => entry.text)).toContain(
-      SPECIES_INCOMPLETE
+      COMMODITY_DETAILS_INCOMPLETE
     )
   })
 
@@ -1212,8 +1366,9 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 
   it('Should omit the packages row when the commodity is off the package-count list', async () => {
-    const card = cardByTitle(await sectionsFor(gatedOffSeed), OSTRICHES_CODE)
-    expect(keysOf(card.rows)).not.toContain(PACKAGES_KEY)
+    const sections = await sectionsFor(gatedOffSeed)
+    const [block] = cardByTitle(sections, OSTRICHES_CODE).speciesBlocks
+    expect(keysOf(block.rows)).toEqual([NUMBER_OF_ANIMALS_KEY])
   })
 
   it('Should omit the transited-countries row for a non-overland means of transport', async () => {
@@ -1267,9 +1422,12 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(valueOf(card.rows, 'Type')).toBe(PRIVATE_TRANSPORTER_TYPE)
   })
 
-  it('Should omit the identifier table when the commodity holds no entry', async () => {
+  it('Should omit identification details when the species holds no animal entry', async () => {
     const sections = await sectionsFor(gatedOffSeed)
-    expect(cardByTitle(sections, OSTRICHES_CODE).identifierTable).toBeNull()
+    expect(
+      cardByTitle(sections, OSTRICHES_CODE).speciesBlocks[0]
+        .identificationDetails
+    ).toBeNull()
   })
 
   it('Should keep the documents section and its card when nothing has been uploaded', async () => {
@@ -1856,9 +2014,9 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
       commodityLines: [{ commodityCode }]
     })
     const allKeys = keysOf(rowsOf(sections))
-    const speciesCard = cardByTitle(sections, commodityCode)
+    const [block] = cardByTitle(sections, commodityCode).speciesBlocks
     return {
-      packages: keysOf(speciesCard.rows).includes(PACKAGES_KEY),
+      packages: keysOf(block.rows).includes(PACKAGES_KEY),
       unweaned: allKeys.includes(UNWEANED_KEY),
       cph: allKeys.includes(CPH_KEY)
     }
@@ -1986,7 +2144,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
         text: copyEn.errors.species.notListed(
           `${SPECIES_NOT_LISTED_UNDER_CODE} (${CATTLE_CODE})`
         ),
-        href: '#description-of-the-goods'
+        href: '#what-are-you-importing'
       }
     ])
   })
@@ -2065,8 +2223,9 @@ describe(`${SUITE} — the unfinished notification`, () => {
   it('Should head a brand-new draft with one entry per unfinished card, in page order', async () => {
     expect(await textsFor({})).toEqual([
       ORIGIN_OF_IMPORT_INCOMPLETE,
+      WHAT_ARE_YOU_IMPORTING_INCOMPLETE,
       'Complete main import reason',
-      SPECIES_INCOMPLETE,
+      COMMODITY_DETAILS_INCOMPLETE,
       'Complete additional details',
       ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
@@ -2130,10 +2289,10 @@ describe(`${SUITE} — the unfinished notification`, () => {
     expect(cardById(context.sections, 'addresses').error).toBeNull()
   })
 
-  it('Should resolve the species entry to a section anchor that exists on the page', async () => {
+  it('Should link commodity details to the section heading when no commodity card stands', async () => {
     const { view } = await driveHandler(getHandler, { seed: {} })
     const entry = view.context.errorSummary.errorList.find(
-      (item) => item.text === SPECIES_INCOMPLETE
+      (item) => item.text === COMMODITY_DETAILS_INCOMPLETE
     )
 
     expect(entry.href).toBe('#description-of-the-goods')
@@ -2144,46 +2303,163 @@ describe(`${SUITE} — the unfinished notification`, () => {
     ).toBe(true)
   })
 
-  it('Should name species in the summary while leaving the species cards unmarked', async () => {
+  it('Should name What are you importing? with no commodity selected, link it to that card and mark the card', async () => {
+    const { view } = await driveHandler(getHandler, { seed: {} })
+    const entry = view.context.errorSummary.errorList.find(
+      (item) => item.text === WHAT_ARE_YOU_IMPORTING_INCOMPLETE
+    )
+    const card = cardById(view.context.sections, 'whatAreYouImporting')
+
+    expect(entry.href).toBe(`#${card.anchor}`)
+    expect(card.error).toBe(WHAT_ARE_YOU_IMPORTING_INCOMPLETE)
+  })
+
+  it('Should link commodity details to the first commodity card and mark no commodity card', async () => {
     const seed = {
       commodityLines: [
         fullSeed.commodityLines[0],
         { commodityCode: CATTLE_CODE }
       ]
     }
+    const { view } = await driveHandler(getHandler, { seed })
+    const entry = view.context.errorSummary.errorList.find(
+      (item) => item.text === COMMODITY_DETAILS_INCOMPLETE
+    )
+    const commodityCards = cardsOf(view.context.sections).filter((card) =>
+      Boolean(card.speciesBlocks)
+    )
 
-    expect(await textsFor(seed)).toContain(SPECIES_INCOMPLETE)
-
-    const sections = await sectionsFor(seed)
-    const speciesCard = cardsOf(sections).find((card) => card.identifierTable)
-
-    expect(speciesCard).toBeDefined()
-    expect(speciesCard.error).toBeUndefined()
+    expect(entry.href).toBe(`#${commodityCards[0].anchor}`)
+    expect(commodityCards.map((card) => card.error)).toEqual([undefined])
   })
 
-  it('Should build a card for every REVIEW_CARDS entry that anchors to one', async () => {
+  it('Should build a card for every REVIEW_CARDS entry that carries a card id', async () => {
     const sections = await sectionsFor(fullSeed)
     const builtIds = cardsOf(sections).map((card) => card.id)
-    const anchoredIds = REVIEW_CARDS.filter(
-      (card) => card.id !== 'species'
+    const cardIds = REVIEW_CARDS.filter(
+      (card) => card.id !== 'commodityDetails'
     ).map((card) => card.id)
 
-    expect(builtIds).toEqual(expect.arrayContaining(anchoredIds))
+    expect(builtIds).toEqual(expect.arrayContaining(cardIds))
   })
 
   it('Should anchor every summary entry to an id the page carries', async () => {
-    const summary = await summaryFor({})
-    const sections = await sectionsFor({})
+    const seed = {
+      commodityLines: [
+        { ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '1' },
+        { ...BISON_BISON_ROW, numberOfAnimalsQuantity: '1' }
+      ]
+    }
+    const summary = await summaryFor(seed)
+    const sections = await sectionsFor(seed)
     const ids = [
       ...sections.map((section) => section.anchor),
       ...cardsOf(sections)
         .map((card) => card.anchor)
-        .filter(Boolean)
+        .filter(Boolean),
+      ...cardsOf(sections).flatMap((card) =>
+        (card.speciesBlocks ?? []).map((block) => block.anchor)
+      )
     ]
 
+    expect(summary.errorList.length).toBeGreaterThan(1)
     for (const entry of summary.errorList) {
       expect(ids, entry.text).toContain(entry.href.slice(1))
     }
+  })
+})
+
+describe(`${SUITE} — species still owing a count or an identifier`, () => {
+  setupCheckAnswersEngine()
+
+  const twoCattleSpecies = (bosTaurus, bisonBison) => ({
+    commodityLines: [
+      { ...BOS_TAURUS_ROW, ...bosTaurus },
+      { ...BISON_BISON_ROW, ...bisonBison }
+    ]
+  })
+
+  const summaryLinks = async (seed) =>
+    (await summaryFor(seed)).errorList.map(({ text, href }) => [text, href])
+
+  it('Should name a species with no count and link it to its block, which carries that anchor and heading', async () => {
+    const seed = twoCattleSpecies({ numberOfAnimalsQuantity: '1' }, {})
+    const sections = await sectionsFor(seed)
+    const block = speciesBlockOf(sections, CATTLE_CODE, BISON_BISON_HEADING)
+
+    expect(await summaryLinks(seed)).toContainEqual([
+      'Enter the number of animals for bison bison',
+      `#${block.anchor}`
+    ])
+  })
+
+  it('Should name a species with a count and no identifier and link it to its block', async () => {
+    const seed = twoCattleSpecies(
+      { numberOfAnimalsQuantity: '1' },
+      { numberOfAnimalsQuantity: '1' }
+    )
+    const sections = await sectionsFor(seed)
+    const bosTaurus = speciesBlockOf(sections, CATTLE_CODE, BOS_TAURUS_HEADING)
+    const bisonBison = speciesBlockOf(
+      sections,
+      CATTLE_CODE,
+      BISON_BISON_HEADING
+    )
+
+    expect(await summaryLinks(seed)).toEqual(
+      expect.arrayContaining([
+        [
+          'Enter at least 1 animal identifier for bos taurus',
+          `#${bosTaurus.anchor}`
+        ],
+        [
+          'Enter at least 1 animal identifier for bison bison',
+          `#${bisonBison.anchor}`
+        ]
+      ])
+    )
+  })
+
+  it('Should show no message inside a named species block', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: twoCattleSpecies(
+        { numberOfAnimalsQuantity: '1' },
+        { numberOfAnimalsQuantity: '1' }
+      )
+    })
+    const document = documentOf(
+      environment.render(
+        'live-animals/journeys/linear/features/check-answers/template.njk',
+        {
+          ...view.context,
+          userSession: { isAuthenticated: true, displayName: 'Sam Example' },
+          getAssetPath: (asset) => `/assets/${asset}`
+        }
+      )
+    )
+    const block = document.getElementById(
+      speciesBlockOf(view.context.sections, CATTLE_CODE, BOS_TAURUS_HEADING)
+        .anchor
+    )
+
+    expect(block.textContent).toContain(BOS_TAURUS_HEADING)
+    expect(block.querySelectorAll('.govuk-error-message')).toHaveLength(0)
+    expect(block.textContent).not.toContain(
+      copyEn.errors.species.noIdentifier('bos taurus')
+    )
+    expect(block.textContent).not.toContain(
+      copyEn.errors.species.noCount('bos taurus')
+    )
+  })
+
+  it('Should name no species when a single identified species has a count and no identifier', async () => {
+    const texts = (
+      await summaryLinks({
+        commodityLines: [{ ...BOS_TAURUS_ROW, numberOfAnimalsQuantity: '1' }]
+      })
+    ).map(([text]) => text)
+
+    expect(texts.filter((text) => text.startsWith('Enter '))).toEqual([])
   })
 })
 

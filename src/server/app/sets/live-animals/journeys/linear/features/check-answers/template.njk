@@ -11,12 +11,16 @@
   {% endif %}
 {% endmacro %}
 
+{% macro actionLink(item) %}
+  <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span></a>
+{%- endmacro %}
+
 {% macro cardActions(actions) %}
   {% if actions and actions.items.length %}
     <ul class="govuk-summary-card__actions">
       {% for item in actions.items %}
         <li class="govuk-summary-card__action">
-          <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span></a>
+          {{ actionLink(item) }}
         </li>
       {% endfor %}
     </ul>
@@ -57,7 +61,7 @@
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
-      {% if card.identifierTable or card.groups.length or card.emptyText or card.error %}
+      {% if card.speciesBlocks.length or card.groups.length or card.emptyText or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
           <div class="govuk-summary-card__title-wrapper">
             <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
@@ -68,13 +72,26 @@
             {% if card.rows.length %}
               {{ govukSummaryList({ rows: card.rows }) }}
             {% endif %}
-            {% if card.identifierTable %}
-              <h4 class="govuk-heading-s">{{ copy.identifierTable.heading }}</h4>
-              {{ govukTable({
-                head: card.identifierTable.head,
-                rows: card.identifierTable.rows
-              }) }}
-            {% endif %}
+            {% for block in card.speciesBlocks %}
+              <div id="{{ block.anchor }}" tabindex="-1">
+                <h4 class="govuk-heading-s">{{ block.heading }}</h4>
+                {{ govukSummaryList({ rows: block.rows }) }}
+                {% if block.identificationDetails %}
+                  <h5 class="govuk-heading-xs">{{ copy.identificationDetails.heading }}</h5>
+                  {% if block.identificationDetails.actions %}
+                    <p class="govuk-body">
+                      {% for item in block.identificationDetails.actions.items %}
+                        {{ actionLink(item) }}
+                      {% endfor %}
+                    </p>
+                  {% endif %}
+                  {{ govukTable({
+                    head: block.identificationDetails.table.head,
+                    rows: block.identificationDetails.table.rows
+                  }) }}
+                {% endif %}
+              </div>
+            {% endfor %}
             {% for group in card.groups %}
               <h4 class="govuk-heading-s">{{ group.heading }}</h4>
               {{ govukSummaryList({ rows: group.rows }) }}

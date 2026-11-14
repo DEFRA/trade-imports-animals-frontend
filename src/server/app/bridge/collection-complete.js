@@ -1,28 +1,28 @@
-/**
- * Per-instance completeness -> collectionView's `complete`.
- *
- * collectionView reads positional storage for a collection's entries; this
- * module supplies the per-entry `complete` flag. entries / index / path stay
- * positional, so an empty or partial entry is never lost; only its completeness
- * comes from the evaluator.
- *
- * Instance identity is positional (the array index). `fulfilmentIndexInstance`
- * maps a positional entry to its fulfilment index with the segment machinery,
- * exactly as scope.js / purge.js convert fulfilment index <-> positional. The
- * per-instance verdict itself is owned by the obligations model — see
- * `model/obligations/instance-complete.js` for the completeness rules.
- *
- * Known structural divergence retained: a fully-EMPTY nested instance (a unit
- * with no stored leaf) vanishes on round-trip and its unmet `anyOf` cannot be
- * flagged. A fully-empty TOP-LEVEL entry is caught via its unconditional
- * mandatory field leaves.
- */
-
 import { obligationByName } from '../model/obligations/manifest.js'
 import { ancestorChain } from '../model/obligations/manifest-graph.js'
 import { instanceComplete } from '../model/obligations/instance-complete.js'
 import { fulfilmentIndexInstance } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
+import { emptyCollectionShortOfFloor } from './status/completeness/invariants.js'
+import { obligationFor } from './status/obligation-lookup.js'
+import { structuralOf } from './status/structure/index.js'
+
+const collectionNameOf = (collectionPath) =>
+  collectionPath.filter((segment) => typeof segment === 'string').at(-1)
+
+const entryFulfilmentIndex = (group, collectionPath, index) =>
+  fulfilmentIndexInstance(
+    collectionPath,
+    index,
+    [...ancestorChain(group), group].map(({ id }) =>
+      fulfilmentRegistry.groupDescriptorOf(id)
+    )
+  )
+
+const evaluatorStateOf = (evaluation) => ({
+  obligations: evaluation.obligations,
+  fulfilments: evaluation.fulfilments
+})
 
 /**
  * Per-instance completeness for the collection entry at `collectionPath[index]`.
@@ -35,23 +35,44 @@ import { fulfilmentRegistry } from './fulfilment-registry.js'
  * @returns {boolean}
  */
 export const entryComplete = (evaluation, collectionPath, index) => {
-  const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = obligationByName(names.at(-1))
+  const group = obligationByName(collectionNameOf(collectionPath))
   if (!group) {
     return true
   }
-  const groupChain = [...ancestorChain(group), group]
-  const descriptors = groupChain.map(({ id }) =>
-    fulfilmentRegistry.groupDescriptorOf(id)
+  return instanceComplete(
+    group,
+    entryFulfilmentIndex(group, collectionPath, index),
+    evaluatorStateOf(evaluation)
   )
-  const fulfilmentIndex = fulfilmentIndexInstance(
-    collectionPath,
-    index,
-    descriptors
-  )
-  const state = {
-    obligations: evaluation.obligations,
-    fulfilments: evaluation.fulfilments
+}
+
+/**
+ * Whether the collection entry at `collectionPath[index]` is asked for a record
+ * of the nested collection `nestedCollectionName` and holds none.
+ *
+ * @param {object} evaluation - the request-level evaluator result.
+ * @param {Array<string|number>} collectionPath - the parent collection's path.
+ * @param {number} index - positional entry index within the parent collection.
+ * @param {string} nestedCollectionName - the collection nested under the entry.
+ * @returns {boolean} true iff the nested collection's floor asks the entry for
+ * a record and none is stored.
+ */
+export const entryOwesNestedRecord = (
+  evaluation,
+  collectionPath,
+  index,
+  nestedCollectionName
+) => {
+  const parent = obligationByName(collectionNameOf(collectionPath))
+  const nestedCollection = structuralOf(nestedCollectionName)
+  const nested = obligationFor(nestedCollection?.id)
+  if (!parent || !nested) {
+    return false
   }
-  return instanceComplete(group, fulfilmentIndex, state)
+  return emptyCollectionShortOfFloor(
+    nestedCollection,
+    nested,
+    entryFulfilmentIndex(parent, collectionPath, index),
+    evaluatorStateOf(evaluation)
+  )
 }

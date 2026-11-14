@@ -20,6 +20,7 @@ export const copy = {
   cards: {
     originOfImport: 'Origin of import',
     mainImportReason: 'Main import reason',
+    whatAreYouImporting: 'What are you importing?',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
@@ -46,7 +47,7 @@ export const copy = {
     speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
-    numberOfPackages: 'Number of packages',
+    numberOfPackages: 'Number of packages (when required)',
     portOfEntry: 'Port of entry',
     arrivalDate: 'Arrival date at destination',
     meansOfTransport: 'Means of transport to the port of entry',
@@ -70,10 +71,9 @@ export const copy = {
     dateOfIssue: 'Date of issue',
     attachmentType: 'Attachment type'
   },
-  identifierTable: {
+  identificationDetails: {
     animalColumn: 'Animal',
-    animalN: (n) => `Animal ${n}`,
-    heading: 'Animal details'
+    heading: 'Identification details'
   },
   documentN: (n) => `Document ${n}`,
   documentsEmpty: 'You have not added any documents yet.',
@@ -81,6 +81,7 @@ export const copy = {
     cards: {
       originOfImport: 'origin of import',
       mainImportReason: 'main import reason',
+      whatAreYouImporting: 'what are you importing',
       additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
@@ -91,7 +92,9 @@ export const copy = {
     rows: {
       transitCountries: 'transit countries'
     },
-    commodity: (n) => `commodity ${n}`
+    commodity: (title) => `commodity ${title}`,
+    numberOfAnimals: (species) => `number of animals for ${species}`,
+    identificationDetails: (species) => `identification details for ${species}`
   },
   submit: {
     button: 'Continue'
@@ -102,7 +105,8 @@ export const copy = {
       originOfImport: 'Complete origin of import',
       mainImportReason: 'Complete main import reason',
       additionalDetails: 'Complete additional details',
-      species: 'Complete species details',
+      whatAreYouImporting: 'Complete what are you importing?',
+      commodityDetails: 'Complete commodity details',
       arrivalDetails: 'Complete arrival details',
       transportDetails: 'Complete transport details',
       addresses: 'Complete roles and addresses',
@@ -110,6 +114,9 @@ export const copy = {
       documents: 'Complete documents'
     },
     species: {
+      noCount: (species) => `Enter the number of animals for ${species}`,
+      noIdentifier: (species) =>
+        `Enter at least 1 animal identifier for ${species}`,
       notListed: (speciesWithCodes) =>
         `${speciesWithCodes} can no longer be selected. Select a species from the list.`
     },

@@ -54,6 +54,10 @@ The reusable code lives in these directories:
 Production L2 code does not import a set. Set and journey data arrive through L1
 configuration.
 
+A fully empty nested instance, such as a unit with no stored leaf, vanishes on
+round-trip, so its unmet `anyOf` cannot be flagged. A fully empty top-level entry
+is caught by its unconditional mandatory leaves.
+
 ## L3: obligation sets
 
 Each set owns its manifest and section declarations under

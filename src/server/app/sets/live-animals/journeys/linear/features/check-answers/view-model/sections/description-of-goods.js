@@ -2,7 +2,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { additionalDetailsCard } from '../cards/consignment/additional-details.js'
-import { speciesCards } from '../cards/consignment/species/species-cards.js'
+import { commodityCards } from '../cards/consignment/commodity-cards.js'
 
 const copy = copyFor({ en, cy })
 
@@ -16,7 +16,7 @@ export const descriptionOfGoodsSection = ({
   anchor: 'description-of-the-goods',
   heading: copy.sections.descriptionOfTheGoods,
   cards: [
-    ...speciesCards({
+    ...commodityCards({
       journeyId,
       changeLinkTrail,
       answers,

@@ -21,6 +21,7 @@ export const copy = {
   cards: {
     originOfImport: 'Tarddiad y mewnforio',
     mainImportReason: 'Prif reswm mewnforio',
+    whatAreYouImporting: 'Beth ydych chi’n ei fewnforio?',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
@@ -47,7 +48,7 @@ export const copy = {
     speciesCommonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
-    numberOfPackages: 'Nifer y pecynnau',
+    numberOfPackages: 'Nifer y pecynnau (pan fo angen)',
     portOfEntry: 'Porthladd mynediad',
     arrivalDate: 'Dyddiad cyrraedd y gyrchfan',
     meansOfTransport: 'Cyfrwng cludo i’r porthladd mynediad',
@@ -71,10 +72,9 @@ export const copy = {
     dateOfIssue: 'Dyddiad cyhoeddi',
     attachmentType: 'Math o atodiad'
   },
-  identifierTable: {
+  identificationDetails: {
     animalColumn: 'Anifail',
-    animalN: (n) => `Anifail ${n}`,
-    heading: 'Manylion yr anifeiliaid'
+    heading: 'Manylion adnabod'
   },
   documentN: (n) => `Dogfen ${n}`,
   documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
@@ -82,6 +82,7 @@ export const copy = {
     cards: {
       originOfImport: 'tarddiad y mewnforio',
       mainImportReason: 'prif reswm mewnforio',
+      whatAreYouImporting: 'beth ydych chi’n ei fewnforio',
       additionalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
@@ -92,7 +93,9 @@ export const copy = {
     rows: {
       transitCountries: 'gwledydd tramwy'
     },
-    commodity: (n) => `nwydd ${n}`
+    commodity: (title) => `nwydd ${title}`,
+    numberOfAnimals: (species) => `nifer yr anifeiliaid ar gyfer ${species}`,
+    identificationDetails: (species) => `manylion adnabod ar gyfer ${species}`
   },
   submit: {
     button: 'Parhau'
@@ -103,7 +106,8 @@ export const copy = {
       originOfImport: 'Cwblhewch darddiad y mewnforio',
       mainImportReason: 'Cwblhewch y prif reswm mewnforio',
       additionalDetails: 'Cwblhewch y manylion ychwanegol',
-      species: 'Cwblhewch fanylion y rhywogaeth',
+      whatAreYouImporting: 'Cwblhewch beth ydych chi’n ei fewnforio',
+      commodityDetails: 'Cwblhewch fanylion y nwyddau',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transportDetails: 'Cwblhewch y manylion cludo',
       addresses: 'Cwblhewch y rolau a’r cyfeiriadau',
@@ -111,6 +115,9 @@ export const copy = {
       documents: 'Cwblhewch y dogfennau'
     },
     species: {
+      noCount: (species) => `Rhowch nifer yr anifeiliaid ar gyfer ${species}`,
+      noIdentifier: (species) =>
+        `Rhowch o leiaf 1 dynodwr anifail ar gyfer ${species}`,
       notListed: (speciesWithCodes) =>
         `Ni ellir dewis ${speciesWithCodes} mwyach. Dewiswch rywogaeth o'r rhestr.`
     },

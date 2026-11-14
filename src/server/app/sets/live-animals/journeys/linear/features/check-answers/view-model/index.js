@@ -23,6 +23,7 @@ export const buildSections = async ({
       changeLinkTrail,
       answers,
       scope,
+      evaluation,
       readOnly
     }),
     transportAndArrivalSection({

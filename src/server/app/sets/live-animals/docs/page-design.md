@@ -85,11 +85,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The review has six numbered sections. Its fourth and fifth are worded
   differently from the hub's. Each card stands directly under its section
   heading, titled one heading level below it.
-- Each card has one Change link, in its heading. Rows carry none, except
-  "Edit details" on an address copied onto this notification and the transit
-  countries row. The transit countries read back in a "Transit countries"
-  subsection of the Arrival details card, with their own row-level Change
-  link, when they apply.
+- Each card has one Change link, in its heading. Rows carry none, except:
+  - the first row of each species block: Change opens consignment details
+  - each species block's Identification details table: Change opens animal
+    identification
+  - "Edit details" on an address copied onto this notification
+  - the transit countries row
+
+  The transit countries read back in a "Transit countries" subsection of the
+  Arrival details card, with their own row-level Change link, when they apply.
+
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
 - The Addresses card carries one row per animal that has a saved
@@ -98,8 +103,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   address exactly as a party row reads. An animal that still owes one has no
   row: the card that shows the answer is not the card that owes it. A line
   that needs a permanent address with no animal counted carries no row
-  either. The species card's identifier table heads only the identifiers the
-  species was asked for; it carries no permanent address column.
+  either.
+- Each species block's identifiers sit under an "Identification details"
+  heading, in a table that heads only the identifiers the species was asked
+  for; it carries no permanent address column.
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,
@@ -108,8 +115,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   and "Complete ..." line are the only visible marking.
 - Every task row belongs to exactly one card, so "no unfinished card" and
   `readyForCheckYourAnswers` give the same verdict.
-- Species cards carry no card id, so the error summary names outstanding
-  species answers but marks no species card.
+- Commodity cards carry no card id, so the error summary names commodity details
+  without marking a card, and names each short species and links to its own
+  block, which shows no message.
 - The documents card always shows, because documents are part of the
   notification even when none are uploaded. With none, it says so.
 - A submitted notification's review shows no form, no Change links and no

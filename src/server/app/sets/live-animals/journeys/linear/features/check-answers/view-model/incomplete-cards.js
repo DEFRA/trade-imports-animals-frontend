@@ -4,6 +4,7 @@ import { rowStatus, taskRowById } from '../../../flow/task-rows.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { missingCell } from './rows/value-text.js'
+import { speciesBlockHref } from './species-errors.js'
 
 const copy = copyFor({ en, cy })
 
@@ -14,14 +15,20 @@ const copy = copyFor({ en, cy })
 export const REVIEW_CARDS = [
   { id: 'originOfImport', anchor: 'origin-of-import', rows: ['origin'] },
   {
+    id: 'whatAreYouImporting',
+    anchor: 'what-are-you-importing',
+    rows: ['commodities']
+  },
+  {
     id: 'mainImportReason',
     anchor: 'main-import-reason',
     rows: ['importReason']
   },
   {
-    id: 'species',
-    anchor: 'description-of-the-goods',
-    rows: ['commodities', 'consignmentDetails', 'animalIdentification']
+    id: 'commodityDetails',
+    anchor: 'commodity-details',
+    fallbackAnchor: 'description-of-the-goods',
+    rows: ['consignmentDetails', 'animalIdentification']
   },
   {
     id: 'additionalDetails',
@@ -72,11 +79,25 @@ export const incompleteCardErrors = (answers, scope, evaluation) =>
     ).map((card) => [card.id, copy.errors.cards[card.id]])
   )
 
-/** The in-page target for a card error, or undefined for a key that is not a
- * card. */
-export const cardAnchorHref = (key) => {
+export const reviewCardAnchor = (id) => cardById.get(id).anchor
+
+const cardHref = (card, pageAnchors) =>
+  pageAnchors.has(card.anchor) || !card.fallbackAnchor
+    ? `#${card.anchor}`
+    : `#${card.fallbackAnchor}`
+
+/**
+ * The in-page target for a review error key.
+ *
+ * @param {string} key - a card id or a per-species key.
+ * @param {Set<string>} pageAnchors - the anchors the page carries.
+ * @returns {string|undefined} a card key resolves to its card's anchor or,
+ * when the page carries none, its fallback; a per-species key resolves to its
+ * species block's anchor; any other key to undefined.
+ */
+export const cardAnchorHref = (key, pageAnchors) => {
   const card = cardById.get(key)
-  return card ? `#${card.anchor}` : undefined
+  return card ? cardHref(card, pageAnchors) : speciesBlockHref(key)
 }
 
 const isEmptyRow = (row) => row.value?.empty === true

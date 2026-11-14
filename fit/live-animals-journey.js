@@ -1004,6 +1004,27 @@ export const identifyAnimalsByMicrochip = async (
 }
 
 /**
+ * Reaches the review with each chosen species at its count and no animal
+ * identified.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Array<{ species: object, count: string }>} speciesCounts - the
+ * species rows to select and the number of animals each holds.
+ */
+export const openReviewWithSpeciesCounts = async (page, speciesCounts) => {
+  await openCommodityDetails(
+    page,
+    speciesCounts.map(({ species }) => species)
+  )
+  for (const { species, count } of speciesCounts) {
+    await (await numberOfAnimalsFor(page, species)).fill(count)
+  }
+  await saveAndContinue(page).click()
+  await openOverview(page)
+  await openReviewFromHub(page)
+}
+
+/**
  * The saved-animals table row for the numbered animal of a species.
  *
  * @param {import('@playwright/test').Page} page

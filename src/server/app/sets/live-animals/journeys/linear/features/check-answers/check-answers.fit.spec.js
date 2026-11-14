@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test'
 import {
   BASE,
   DESKTOP_VIEWPORT,
+  BISON_BISON_ROW,
+  BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
   cannedPrivateTransporter,
@@ -24,6 +26,7 @@ import {
   openOverview,
   openPermanentAddressFromAddLink,
   openReviewFromHub,
+  openReviewWithSpeciesCounts,
   partyPickerName,
   rowFor,
   saveAndContinue,
@@ -147,7 +150,7 @@ test.describe('check-answers feature permanent address rows', () => {
     await signIn(page)
   })
 
-  test('renders one review row per cat, keyed by its common name and number, and heads the species card with identifiers alone', async ({
+  test('renders one review row per cat, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -186,13 +189,62 @@ test.describe('check-answers feature permanent address rows', () => {
     await expect(catOneRow).toContainText('United Kingdom')
     await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
 
-    const speciesCard = page.locator('.govuk-summary-card', {
-      hasText: `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
+    const speciesBlock = page.locator('[id^="species-block-"]', {
+      has: page.getByRole('heading', { name: 'Felis Catus', exact: true })
     })
-    await expect(speciesCard.getByRole('columnheader')).toHaveText([
+    await expect(
+      speciesBlock.getByRole('heading', {
+        name: copy.identificationDetails.heading
+      })
+    ).toBeVisible()
+    await expect(speciesBlock.getByRole('columnheader')).toHaveText([
       'Animal',
       'Microchip'
     ])
+    await expect(speciesBlock.getByRole('cell').first()).toHaveText(
+      'Felis catus 1'
+    )
+  })
+})
+
+test.describe('check-answers feature species blocks', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('groups two cattle species under one commodity card and names each one short of an identifier, linking to its block', async ({
+    page
+  }) => {
+    test.slow()
+    await openReviewWithSpeciesCounts(page, [
+      { species: BOS_TAURUS_ROW, count: '1' },
+      { species: BISON_BISON_ROW, count: '1' }
+    ])
+
+    await expect(
+      page
+        .getByRole('main')
+        .getByRole('heading', { level: 3, name: BOS_TAURUS_ROW.commodityCode })
+    ).toHaveCount(1)
+    await expect(
+      page.locator('[id^="species-block-"]').getByRole('heading', { level: 4 })
+    ).toHaveText(['Bison Bison', 'Bos Taurus'])
+
+    for (const [speciesName, heading] of [
+      ['bos taurus', 'Bos Taurus'],
+      ['bison bison', 'Bison Bison']
+    ]) {
+      await page
+        .getByRole('link', {
+          name: copy.errors.species.noIdentifier(speciesName)
+        })
+        .click()
+      await expect(
+        page.locator('[id^="species-block-"]:focus').getByRole('heading', {
+          name: heading
+        })
+      ).toBeVisible()
+    }
   })
 })
 
@@ -252,6 +304,7 @@ test.describe('check-answers feature section structure', () => {
       copy.title,
       copy.sections.aboutTheConsignment,
       copy.cards.originOfImport,
+      copy.cards.whatAreYouImporting,
       copy.cards.mainImportReason,
       copy.sections.descriptionOfTheGoods,
       copy.cards.additionalDetails,
@@ -284,6 +337,7 @@ test.describe('check-answers feature section structure', () => {
       page.getByRole('main').getByRole('heading', { level: 3 })
     ).toHaveText([
       copy.cards.originOfImport,
+      copy.cards.whatAreYouImporting,
       copy.cards.mainImportReason,
       copy.cards.additionalDetails,
       copy.cards.arrivalDetails,
@@ -488,6 +542,7 @@ test.describe('check-answers feature change links', () => {
     ).toHaveText(
       [
         copy.hidden.cards.originOfImport,
+        copy.hidden.cards.whatAreYouImporting,
         copy.hidden.cards.mainImportReason,
         copy.hidden.cards.additionalDetails,
         copy.hidden.cards.arrivalDetails,
@@ -760,7 +815,7 @@ test.describe('check-answers feature unfinished notification', () => {
     ).toBeVisible()
   })
 
-  test('refuses submit of a notification with no commodity line and names the missing species details', async ({
+  test('refuses submit of a notification with no commodity line and names what is missing from the commodity selection and the commodity details', async ({
     page
   }) => {
     await startNotification(page)
@@ -770,14 +825,19 @@ test.describe('check-answers feature unfinished notification', () => {
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
-    const speciesEntry = page.getByRole('link', {
-      name: copy.errors.cards.species
+    const importingEntry = page.getByRole('link', {
+      name: copy.errors.cards.whatAreYouImporting
     })
-    await expect(speciesEntry).toBeVisible()
-    await expect(speciesEntry).toHaveAttribute(
+    await expect(importingEntry).toHaveAttribute(
       'href',
-      '#description-of-the-goods'
+      '#what-are-you-importing'
     )
+    await expect(page.locator('#what-are-you-importing')).toContainText(
+      copy.errors.cards.whatAreYouImporting
+    )
+    await expect(
+      page.getByRole('link', { name: copy.errors.cards.commodityDetails })
+    ).toHaveAttribute('href', '#description-of-the-goods')
   })
 
   test('unfinished review has no serious or critical axe violations', async ({

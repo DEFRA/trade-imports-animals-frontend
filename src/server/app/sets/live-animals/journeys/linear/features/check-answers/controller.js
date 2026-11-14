@@ -22,6 +22,7 @@ import { copy as cy } from './copy/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { speciesErrors } from './view-model/species-errors.js'
 import {
   cardAnchorHref,
   incompleteCardErrors,
@@ -33,7 +34,7 @@ import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { permanentAddressesFromStoredAnswers } from '../permanent-address/saved-addresses.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
+import { documentScanCardErrors, unlistedSpeciesErrors } from './refusal.js'
 import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
@@ -43,13 +44,24 @@ const copy = copyFor({ en, cy })
 
 const PARTY_KEY_PREFIX = 'party:'
 
+const anchorsOf = (sections) =>
+  new Set(
+    sections.flatMap((section) => [
+      section.anchor,
+      ...section.cards.flatMap((card) => [
+        card.anchor,
+        ...(card.speciesBlocks ?? []).map((block) => block.anchor)
+      ])
+    ])
+  )
+
 const reviewErrorSummary = (
   journeyId,
   changeLinkTrail,
   reviewPageTrail,
   cardErrors,
   partyErrors,
-  disableAutoFocus
+  { disableAutoFocus, pageAnchors }
 ) =>
   errorSummary(
     {
@@ -70,7 +82,7 @@ const reviewErrorSummary = (
               CYA_SLUG,
               reviewPageTrail
             )
-          : (cardAnchorHref(key) ??
+          : (cardAnchorHref(key, pageAnchors) ??
             changeHref({ journeyId, changeLinkTrail }, key)),
       disableAutoFocus
     }
@@ -133,7 +145,7 @@ const renderCya = async (
       reviewPageTrail,
       cardErrors,
       partyErrors,
-      disableAutoFocus
+      { disableAutoFocus, pageAnchors: anchorsOf(sections) }
     ),
     sections,
     readOnly,
@@ -156,13 +168,15 @@ const renderCya = async (
 const mergeCardErrorsByPrecedence = ({
   invalid,
   scan,
-  species,
-  incomplete
+  unlisted,
+  incomplete,
+  speciesBlocks
 }) => ({
   ...invalid,
   ...scan,
-  ...species,
-  ...incomplete
+  ...unlisted,
+  ...incomplete,
+  ...speciesBlocks
 })
 
 export const renderNotificationView = async (
@@ -188,9 +202,9 @@ export const renderNotificationView = async (
     : await documentScanCardErrors(request, answers, {
         includePending: refused
       })
-  const speciesErrors = hidesAnswerErrors
+  const unlistedErrors = hidesAnswerErrors
     ? {}
-    : await speciesCardErrors(journey, answers, { refused })
+    : await unlistedSpeciesErrors(journey, answers, { refused })
   return renderCya(request, h, journey, {
     answers,
     scope,
@@ -206,8 +220,9 @@ export const renderNotificationView = async (
       : mergeCardErrorsByPrecedence({
           invalid: invalidCardErrors,
           scan: scanDocErrors,
-          species: speciesErrors,
-          incomplete: incompleteCardErrors(answers, scope, evaluation)
+          unlisted: unlistedErrors,
+          incomplete: incompleteCardErrors(answers, scope, evaluation),
+          speciesBlocks: speciesErrors(answers, evaluation)
         }),
     disableAutoFocus: !refused
   })
