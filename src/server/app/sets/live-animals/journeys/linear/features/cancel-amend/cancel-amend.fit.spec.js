@@ -9,7 +9,8 @@ import {
   saveAndReturnToHub,
   signIn,
   submitCompleteNotification,
-  values
+  values,
+  withoutJavaScript
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -18,6 +19,7 @@ import { copy } from './copy/copy.en.js'
 
 const TAG = '.govuk-tag'
 const strip = (page) => page.locator('.app-journey-strip')
+const submittedHeaderTag = (page) => page.locator(`main ${TAG}`)
 const cancelAmendLink = (page) =>
   strip(page).getByRole('link', {
     name: sharedCopy.journeyStrip.cancelAmend,
@@ -93,7 +95,9 @@ test.describe('cancel-amend feature', () => {
     await expect(
       page.getByText(checkAnswersCopy.cancelAmend.successBody)
     ).toBeVisible()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(submittedHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
     await expect(page.getByText('DiscardMe99', { exact: true })).toHaveCount(0)
     await expect(
       page.getByText(values.internalReferenceNumber, { exact: true })
@@ -127,7 +131,9 @@ test.describe('cancel-amend feature', () => {
     page
   }) => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(submittedHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
 
     await expectNoSeriousOrCriticalViolations(
       page,
@@ -176,24 +182,16 @@ test.describe('cancel-amend feature without JavaScript', () => {
     await signIn(page)
     const reference = await submitCompleteNotification(page)
     await amendFromList(page, reference)
-    const context = await browser.newContext({
-      javaScriptEnabled: false,
-      storageState: await page.context().storageState()
-    })
-    try {
-      const noJs = await context.newPage()
-
+    await withoutJavaScript(page, browser, async (noJs) => {
       await noJs.goto(`${BASE}/notifications/${reference}/origin`)
       await cancelAmendLink(noJs).click()
       await expect(noJs).toHaveURL(/\/cancel-amend(?:\?from=[^#]*)?$/)
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-      await expect(strip(noJs).locator(TAG)).toHaveText(
+      await expect(submittedHeaderTag(noJs)).toHaveText(
         sharedCopy.journeyStrip.submitted
       )
-    } finally {
-      await context.close()
-    }
+    })
   })
 })

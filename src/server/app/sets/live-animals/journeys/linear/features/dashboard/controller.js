@@ -25,6 +25,7 @@ import {
 } from '../../../../../../shared/kit.js'
 import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { notificationActionSlugs } from '../../flow/notification-action-slugs.js'
 import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { notificationViewPage } from '../check-answers/page.js'
@@ -182,7 +183,7 @@ export const routes = [
   },
   {
     method: 'POST',
-    path: pageRoutePath('amend'),
+    path: pageRoutePath(notificationActionSlugs.amend),
     options: pageRouteOptions(notificationActionsPage),
     handler: amendPost
   },

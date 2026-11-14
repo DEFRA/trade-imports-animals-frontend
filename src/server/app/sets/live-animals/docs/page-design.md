@@ -139,8 +139,14 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   hides its blank cells: the documents answers are one unit of "unfinished"
   that the review cannot split by document, and the border and line are the
   only visible marking of hidden blanks.
-- A submitted notification's review shows no form, no Change links and no
-  document scan errors.
+- A submitted notification's view is headed by its reference with a Submitted
+  tag and the date submitted, in place of the review heading and status bar.
+  Its header offers Amend this notification, Copy as new and Delete, and an
+  Import reference numbers section shows the notification reference and the
+  customs document code as selectable text. The view has no Continue form, no
+  Change links and no document scan errors.
+- The view of a notification that cannot be found goes to the notification
+  list.
 - The means of transport row reads the arrival page's own label for the
   stored code, so the two cannot differ.
 - An answer the reference data has since retired is named on the review with

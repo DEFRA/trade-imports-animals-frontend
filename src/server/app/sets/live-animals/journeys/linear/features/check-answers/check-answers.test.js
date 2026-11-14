@@ -79,6 +79,8 @@ import {
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
+const SECONDARY_BUTTON_CLASS = 'govuk-button--secondary'
+
 const renderedReviewOf = (view) =>
   documentOf(
     environment.render(
@@ -403,10 +405,32 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
-    expect(view.context.copyAction).toEqual({
-      href: expect.stringMatching(/\/copy$/)
-    })
-    expect(view.context.deleteHref).toMatch(/\/delete$/)
+  })
+
+  it('Should head a submitted view with its reference, a header and no strip', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(SUBMITTED)
+
+    expect(view.context.pageTitle).toBe(journeyId)
+    expect(view.context.heading).toBe(journeyId)
+    expect(view.context.journeyStrip).toBeNull()
+    expect(view.context.submittedHeader.reference).toBe(journeyId)
+  })
+
+  it('Should head a draft with its review title and the strip, and no submitted header', async () => {
+    const draft = await viewForStatus(DRAFT)
+
+    expect(draft.context.pageTitle).toBe(copyEn.title)
+    expect(draft.context.journeyStrip.status.text).toBe('Draft')
+    expect(draft.context.submittedHeader).toBeNull()
+  })
+
+  it('Should redirect the view of a notification that does not exist to the notification list', async () => {
+    const response = await getHandler(
+      journeyRequest('GBN-0000-0000-0000'),
+      stubH()
+    )
+
+    expect(response).toEqual({ redirect: dashboardPath() })
   })
 
   it.each([DRAFT, AMEND])(
@@ -416,8 +440,8 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
       const hrefs = cardChangeHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
-      expect(view.context.copyAction).toBeNull()
-      expect(view.context.deleteHref).toMatch(/\/delete$/)
+      expect(view.context.submittedHeader).toBeNull()
+      expect(view.context.deleteButton.href).toMatch(/\/delete$/)
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(
         expect.arrayContaining([
@@ -440,11 +464,9 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
   it('Should expose Cancel amend in the strip only on an amending review', async () => {
     const draft = await viewForStatus(DRAFT)
-    const submitted = await viewForStatus(SUBMITTED)
     const amend = await viewForStatus(AMEND)
 
     expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
-    expect(submitted.context.journeyStrip.cancelAmend).toBeUndefined()
     expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
       /\/cancel-amend$/
     )
@@ -2744,7 +2766,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
       )
 
       expect(controls.map(({ text }) => text)).toEqual(['Continue', 'Delete'])
-      expect(controls[1].href).toBe(view.context.deleteHref)
+      expect(controls[1].href).toBe(view.context.deleteButton.href)
       expect(controls[1].classes).toContain('govuk-button--warning')
     })
 
@@ -2761,19 +2783,34 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         'Delete'
       ])
       expect(controls[1].href).toBe(view.context.cancelAmendHref)
-      expect(controls[1].classes).toContain('govuk-button--secondary')
-      expect(controls[2].href).toBe(view.context.deleteHref)
+      expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
+      expect(controls[2].href).toBe(view.context.deleteButton.href)
     })
 
-    it('Should offer a submitted review only Copy as new and Delete in its top group, with no Continue', async () => {
-      const { document } = await endControlsOf(SUBMITTED)
+    it('Should offer a submitted view Amend this notification, a secondary Copy as new and a warning Delete in its header, with no Continue form', async () => {
+      const { view, document } = await endControlsOf(SUBMITTED)
+      const { actions } = view.context.submittedHeader
 
+      const controls = [
+        ...document.querySelectorAll('.govuk-button-group .govuk-button')
+      ].map((button) => ({
+        text: button.textContent.trim(),
+        formAction: button.getAttribute('formaction'),
+        href: button.getAttribute('href'),
+        classes: button.className
+      }))
+
+      expect(controls.map(({ text }) => text)).toEqual([
+        'Amend this notification',
+        'Copy as new',
+        'Delete'
+      ])
+      expect(controls[0].formAction).toBe(actions.amend.formAction)
+      expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
+      expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
+      expect(controls[2].href).toBe(actions.delete.href)
+      expect(controls[2].classes).toContain('govuk-button--warning')
       expect(document.querySelector('form[novalidate]')).toBeNull()
-      expect(
-        [...document.querySelectorAll('.govuk-button-group .govuk-button')].map(
-          (button) => button.textContent.trim()
-        )
-      ).toEqual(['Copy as new', 'Delete'])
     })
   })
 })

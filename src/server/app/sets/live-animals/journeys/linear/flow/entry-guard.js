@@ -6,7 +6,8 @@ import {
   setBase
 } from '../../../../../shared/paths.js'
 import { isAnswered } from '../../../../../lib/answered.js'
-import { get } from '../../../../../engine/read.js'
+import { get, isJourneyNotFound } from '../../../../../engine/index.js'
+import { notificationActionSlugs } from './notification-action-slugs.js'
 import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
 import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
@@ -14,7 +15,7 @@ import { buildInsFrontendUrl } from '../../../../../../common/helpers/frontend-u
 import { SET_ID } from '../../../set.js'
 
 const journeyPrefix = () => `${setBase()}/notifications/`
-const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
+const ACTION_SLUGS = new Set(Object.values(notificationActionSlugs))
 
 export const guardedJourneyPath = (path) => {
   const prefix = journeyPrefix()
@@ -54,11 +55,30 @@ export const insTypeQuestionUrl = (journeyId) => {
   return buildInsFrontendUrl(`/notification-type?${query.toString()}`)
 }
 
+const findNotification = async (request, h) => {
+  try {
+    return await get(request, h)
+  } catch (error) {
+    if (isJourneyNotFound(error)) {
+      return undefined
+    }
+    throw error
+  }
+}
+
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null
   }
-  const { journey, answers } = await get(request, h)
+  const notification = await findNotification(request, h)
+  if (!notification) {
+    request.logger.info(
+      { journeyId: request.params.journeyId, path: request.path },
+      'No notification found, left to the page to answer'
+    )
+    return null
+  }
+  const { journey, answers } = notification
   if (hasCommittedNotificationAnswers(answers)) {
     return null
   }

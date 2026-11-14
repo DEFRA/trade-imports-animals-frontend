@@ -20,7 +20,12 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { buildSections } from './view-model/index.js'
+import {
+  deleteButtonFor,
+  submittedHeader
+} from './view-model/submitted-header.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import { speciesErrors } from './view-model/species-errors.js'
@@ -136,7 +141,7 @@ const renderCya = async (
     }),
     cardErrors
   )
-  const title = reviewTitle(journey)
+  const title = readOnly ? journey.journeyId : reviewTitle(journey)
   return h.view(view, {
     pageTitle: title,
     heading: title,
@@ -144,7 +149,8 @@ const renderCya = async (
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     declarationHref: pagePath(journey.journeyId, declarationPage.slug),
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: readOnly ? null : journeyStrip(journey),
+    submittedHeader: readOnly ? submittedHeader(journey) : null,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       changeLinkTrail,
@@ -162,8 +168,7 @@ const renderCya = async (
         }
       : null,
     recoverableError,
-    copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
-    deleteHref: pagePath(journey.journeyId, 'delete'),
+    deleteButton: deleteButtonFor(journey),
     cancelAmendHref:
       journey.status === state.AMEND
         ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
@@ -235,13 +240,36 @@ export const renderNotificationView = async (
   })
 }
 
-const get = async (request, h) => {
+const renderAndRecordReviewed = async (request, h) => {
   const response = await renderNotificationView(request, h)
   const { journey } = await state.get(request, h)
   if (journey.status !== state.SUBMITTED) {
     await recordReviewed(request, h, journey)
   }
   return response
+}
+
+const redirectToNotificationList = (request, h) => {
+  request.logger.info(
+    {
+      journeyId: request.params.journeyId,
+      path: request.path,
+      organisationId: organisationIdOf(request)
+    },
+    'Notification not found, sent to the notification list'
+  )
+  return h.redirect(dashboardPath())
+}
+
+const get = async (request, h) => {
+  try {
+    return await renderAndRecordReviewed(request, h)
+  } catch (error) {
+    if (state.isJourneyNotFound(error)) {
+      return redirectToNotificationList(request, h)
+    }
+    throw error
+  }
 }
 
 export const routes = pageRoutes(page, { get })

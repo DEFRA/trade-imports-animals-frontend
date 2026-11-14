@@ -191,7 +191,10 @@ System-populated obligations and flow-only keys such as `declaration` never coun
 as user answers. A journey with none (a deep link to an id this session never
 created, or a draft with nothing saved) is sent to the origin page, and a request
 for Overview, the review, the declaration or the confirmation page is sent there
-too. Each redirect is logged once with the journey id and the requested path. The
+too. Each redirect is logged once with the journey id and the requested path. A
+notification that cannot be found at all is admitted, and its page answers it:
+the review sends it to the notification list, and every other page answers not
+found. The
 origin page and its children, and the amend, cancel-amend, copy and delete
 actions, are exempt from the guard, so there is no redirect loop.
 

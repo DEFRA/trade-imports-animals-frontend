@@ -39,7 +39,8 @@ import {
   signIn,
   startNotification,
   urlUnderBase,
-  values
+  values,
+  withoutJavaScript
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -50,6 +51,7 @@ import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as contactCopy } from '../contact/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
+import { notificationDateText } from '../review/notification-date.js'
 import { copy } from './copy/copy.en.js'
 
 const INTERNAL_REFERENCE_LABEL =
@@ -291,6 +293,10 @@ test.describe('check-answers feature section structure', () => {
     await startNotification(page)
     await openNotificationView(page)
 
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(copy.title)
+    await expect(page).toHaveTitle(
+      `${sharedCopy.layout.errorTitlePrefix}${copy.title} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+    )
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
     ).toHaveText(copy.sections.contactAddress)
@@ -915,29 +921,91 @@ test.describe('check-answers feature unfinished notification', () => {
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
 
+  const main = (page) => page.getByRole('main')
+
+  const importReferences = (page) =>
+    page.getByRole('region', { name: copy.importReferences.heading })
+
+  let reference
+  let submittedBefore
+  let submittedAfter
+
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    const reference = await submitCompleteNotification(page)
+    submittedBefore = Date.now()
+    reference = await submitCompleteNotification(page)
+    submittedAfter = Date.now()
     await page.goto(BASE)
     await page
       .getByRole('link', {
         name: `View ${dashboardCopy.actionHidden(reference)}`
       })
       .click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: reference, exact: true })
+    ).toBeVisible()
   })
 
-  test('ends with the last card and offers no way to submit again', async ({
+  test('is headed by its reference with a green Submitted tag beside it, no status bar and a title naming the reference', async ({
     page
   }) => {
     await expect(
-      page.getByRole('button', {
-        name: sharedCopy.notificationActions.copy.text
-      })
+      page.getByRole('heading', { level: 1, name: reference, exact: true })
     ).toBeVisible()
+    await expect(main(page).locator('.govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
+    await expect(main(page).locator('.govuk-tag')).toHaveClass(
+      /govuk-tag--green/
+    )
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page).toHaveTitle(
+      `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+    )
+  })
+
+  test('dates the notification under its header', async ({ page }) => {
+    const submittedLines = new Set(
+      [submittedBefore, submittedAfter].map((instant) =>
+        copy.submittedHeader.dateSubmitted(notificationDateText(instant))
+      )
+    )
+    const alternatives = [...submittedLines].map(RegExp.escape).join('|')
+
+    await expect(page.getByText(/^Date submitted: /)).toHaveText(
+      new RegExp(`^(${alternatives})$`)
+    )
+  })
+
+  test('offers Amend this notification, a secondary Copy as new and a warning Delete in its header', async ({
+    page
+  }) => {
+    const controls = main(page)
+      .locator('.govuk-button-group')
+      .first()
+      .locator('> *')
+
+    await expect(controls).toHaveText([
+      copy.submittedHeader.amend,
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(controls.nth(0)).not.toHaveClass(/govuk-button--secondary/)
+    await expect(controls.nth(1)).toHaveClass(/govuk-button--secondary/)
+    await expect(controls.nth(2)).toHaveClass(/govuk-button--warning/)
     await expect(
       page.getByRole('button', { name: copy.submit.button })
     ).toHaveCount(0)
+  })
+
+  test('Amend this notification opens the amendment review', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.submittedHeader.amend }).click()
+
+    await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
   })
 
   test('submitted review has no serious or critical axe violations', async ({
@@ -950,6 +1018,58 @@ test.describe('check-answers feature submitted notification', () => {
     page
   }) => {
     await deleteFromReview(page, deleteCopy.title)
+  })
+
+  test('shows the import reference numbers with the warning, the reference and the customs document code', async ({
+    page
+  }) => {
+    const section = importReferences(page)
+
+    await expect(section.getByText(copy.importReferences.warning)).toBeVisible()
+    await expect(section.locator('.govuk-summary-list__key')).toHaveText([
+      copy.importReferences.notificationReference,
+      copy.importReferences.customsDocumentCode
+    ])
+    await expect(section.locator('.govuk-summary-list__value')).toHaveText([
+      reference,
+      'C640'
+    ])
+  })
+
+  test('shows the import reference numbers as text with no button when JavaScript is off', async ({
+    page,
+    browser
+  }) => {
+    await withoutJavaScript(page, browser, async (noJs) => {
+      const section = importReferences(noJs)
+
+      await expect(
+        section.getByText(copy.importReferences.warning)
+      ).toBeVisible()
+      await expect(section.locator('.govuk-summary-list__value')).toHaveText([
+        reference,
+        'C640'
+      ])
+      await expect(section.getByRole('button')).toHaveCount(0)
+    })
+  })
+})
+
+test.describe('check-answers feature notification that does not exist', () => {
+  test('opening its view goes to the notification list', async ({ page }) => {
+    await signIn(page)
+
+    await page.goto(
+      `${BASE}/notifications/GBN-0000-0000-0000/notification-view`
+    )
+
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: dashboardCopy.title,
+        exact: true
+      })
+    ).toBeVisible()
   })
 })
 

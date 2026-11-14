@@ -99,6 +99,18 @@ export const copy = {
   submit: {
     button: 'Parhau'
   },
+  submittedHeader: {
+    amend: 'Diwygio’r hysbysiad hwn',
+    dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`
+  },
+  importReferences: {
+    heading: 'Cyfeirnodau mewnforio',
+    warning:
+      'Rhaid i chi ddefnyddio’r cyfeirnod a’r cod cywir ar y datganiad tollau neu bydd oedi i’ch llwyth.',
+    warningIcon: 'Rhybudd',
+    notificationReference: 'Cyfeirnod yr hysbysiad',
+    customsDocumentCode: 'Cod dogfen tollau'
+  },
   errors: {
     prefix: 'Gwall:',
     cards: {

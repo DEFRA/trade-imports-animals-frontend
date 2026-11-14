@@ -1494,6 +1494,28 @@ export const amendFromList = async (page, reference) => {
     .click()
 }
 
+/**
+ * Opens the page's current URL in a new signed-in context with JavaScript
+ * switched off, hands that page to `use`, and closes the context afterwards.
+ *
+ * @param {import('@playwright/test').Page} page - the signed-in page to reopen
+ * @param {import('@playwright/test').Browser} browser
+ * @param {(plainPage: import('@playwright/test').Page) => Promise<void>} use
+ */
+export const withoutJavaScript = async (page, browser, use) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    storageState: await page.context().storageState()
+  })
+  try {
+    const plainPage = await context.newPage()
+    await plainPage.goto(page.url())
+    await use(plainPage)
+  } finally {
+    await context.close()
+  }
+}
+
 export const deleteFromReview = async (page, confirmationTitle) => {
   await page
     .getByRole('button', {

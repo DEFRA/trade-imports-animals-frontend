@@ -98,6 +98,18 @@ export const copy = {
   submit: {
     button: 'Continue'
   },
+  submittedHeader: {
+    amend: 'Amend this notification',
+    dateSubmitted: (date) => `Date submitted: ${date}`
+  },
+  importReferences: {
+    heading: 'Import reference numbers',
+    warning:
+      'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
+    warningIcon: 'Warning',
+    notificationReference: 'Notification reference',
+    customsDocumentCode: 'Customs document code'
+  },
   errors: {
     prefix: 'Error:',
     cards: {

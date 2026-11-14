@@ -1,4 +1,5 @@
 import Boom from '@hapi/boom'
+import { HTTP_STATUS_NOT_FOUND } from '../lib/http-status.js'
 import {
   journeyCookieNames,
   session,
@@ -98,6 +99,16 @@ export const currentJourney = async (request, h) => {
   memoWrite(request, loaded)
   return structuredClone(loaded)
 }
+
+/**
+ * Whether an error is the not-found that `currentJourney` raises for a
+ * notification that does not exist.
+ *
+ * @param {unknown} error - the error a journey read threw.
+ * @returns {boolean} true for a not-found Boom.
+ */
+export const isJourneyNotFound = (error) =>
+  Boom.isBoom(error, HTTP_STATUS_NOT_FOUND)
 
 export const replaceJourneyFulfilment = async (
   request,

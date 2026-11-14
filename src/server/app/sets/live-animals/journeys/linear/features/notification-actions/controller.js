@@ -9,6 +9,7 @@ import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-st
 import * as kit from '../../../../../../shared/kit.js'
 import { renderNotificationView } from '../check-answers/controller.js'
 import { renderDashboard } from '../dashboard/controller.js'
+import { notificationActionSlugs } from '../../flow/notification-action-slugs.js'
 import { notificationActionsPage } from './page.js'
 
 const originPath = (request) =>
@@ -57,7 +58,7 @@ const copyPost = async (request, h) => {
 export const routes = [
   {
     method: 'POST',
-    path: pageRoutePath('copy'),
+    path: pageRoutePath(notificationActionSlugs.copy),
     options: kit.pageRouteOptions(notificationActionsPage),
     handler: copyPost
   }

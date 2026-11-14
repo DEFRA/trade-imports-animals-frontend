@@ -75,6 +75,7 @@ A journey owns page identity, controllers, templates, copy, bindings, its one pa
 order, task rows and entry guard. The session holds no record of how a notification
 was started. The entry guard admits a notification that holds a committed user answer
 and sends any other notification on a guarded path to the journey's entry page.
+A notification that cannot be found is admitted, and its page answers it.
 Journeys may use their own set and L2 APIs. They do not import another journey or
 another set.
 
