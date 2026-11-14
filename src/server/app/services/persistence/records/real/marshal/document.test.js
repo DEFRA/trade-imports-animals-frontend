@@ -29,3 +29,16 @@ describe('marshal document', () => {
     expect(marshal(document('DRAFT'))).not.toHaveProperty('frozenParties')
   })
 })
+
+describe('marshal document answersDifferFromSubmitted', () => {
+  it('Should be true when the backend document says the answers differ', () => {
+    expect(
+      marshal({ ...document('AMEND'), answersDifferFromSubmitted: true })
+        .answersDifferFromSubmitted
+    ).toBe(true)
+  })
+
+  it('Should be false when the backend document leaves it out', () => {
+    expect(marshal(document('AMEND')).answersDifferFromSubmitted).toBe(false)
+  })
+})

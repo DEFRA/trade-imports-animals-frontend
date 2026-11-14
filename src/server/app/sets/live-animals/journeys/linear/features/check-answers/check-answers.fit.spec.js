@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
+  amendFromList,
+  changeOriginOnAmendment,
+  deleteFromReview,
   openDocuments,
+  submitCompleteNotification,
   BASE,
   DESKTOP_VIEWPORT,
   BISON_BISON_ROW,
@@ -19,7 +23,6 @@ import {
   expectStyle,
   govukVisuallyHiddenStyleOf,
   identifyAnimalsByMicrochip,
-  journeyIdFromPage,
   journeyUrl,
   notificationViewUrl,
   numberOfAnimalsFor,
@@ -32,6 +35,7 @@ import {
   partyPickerName,
   rowFor,
   saveAndContinue,
+  saveAndReturnToHub,
   signIn,
   startNotification,
   urlUnderBase,
@@ -41,6 +45,7 @@ import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
+import { copy as cancelAmendCopy } from '../cancel-amend/copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as contactCopy } from '../contact/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
@@ -280,7 +285,7 @@ test.describe('check-answers feature section structure', () => {
     ])
   })
 
-  test('ends with the Continue button and nothing above it', async ({
+  test('ends with Continue then a warning Delete in its last block, and nothing after it', async ({
     page
   }) => {
     await startNotification(page)
@@ -302,6 +307,22 @@ test.describe('check-answers feature section structure', () => {
     await expect(
       lastBlock.getByRole('button', { name: copy.submit.button })
     ).toBeVisible()
+    await expect(
+      lastBlock.locator('.govuk-button-group').locator('> *')
+    ).toHaveText([
+      copy.submit.button,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(
+      lastBlock.getByRole('button', {
+        name: sharedCopy.notificationActions.delete.text
+      })
+    ).toHaveAttribute('href', /\/delete$/)
+    await expect(
+      lastBlock.getByRole('button', {
+        name: sharedCopy.notificationActions.delete.text
+      })
+    ).toHaveClass(/govuk-button--warning/)
   })
 
   test('puts every card title straight under its section heading, with no other heading between them', async ({
@@ -644,6 +665,15 @@ test.describe('check-answers feature navigation and submission', () => {
     await expectNoSeriousOrCriticalViolations(page, 'Check answers')
   })
 
+  test('Delete on a draft review opens the delete confirmation', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await openNotificationView(page)
+
+    await deleteFromReview(page, deleteCopy.title)
+  })
+
   test('new journey shows no address error before a role has been answered', async ({
     page
   }) => {
@@ -887,15 +917,7 @@ test.describe('check-answers feature submitted notification', () => {
 
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: copy.submit.button }).click()
-    await page
-      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    const reference = journeyIdFromPage(page)
+    const reference = await submitCompleteNotification(page)
     await page.goto(BASE)
     await page
       .getByRole('link', {
@@ -927,15 +949,115 @@ test.describe('check-answers feature submitted notification', () => {
   test('Delete on the submitted view opens the delete confirmation', async ({
     page
   }) => {
-    await page
-      .getByRole('button', {
+    await deleteFromReview(page, deleteCopy.title)
+  })
+})
+
+test.describe('check-answers feature amendment review', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  const endControls = (page) =>
+    page
+      .getByRole('main')
+      .locator('form')
+      .last()
+      .locator('.govuk-button-group > *')
+
+  let reference
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    reference = await submitCompleteNotification(page)
+    await amendFromList(page, reference)
+    await openNotificationView(page)
+  })
+
+  test.describe('with the arrival date cleared', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
+      await page.getByLabel('Arrival date at port of entry').fill('')
+      await saveAndReturnToHub(page).click()
+      await openReviewFromHub(page)
+    })
+
+    test('an amendment with a missing answer opens with no error summary and no card errors', async ({
+      page
+    }) => {
+      await expect(
+        page.getByRole('heading', { level: 1, name: copy.resubmittingTitle })
+      ).toBeVisible()
+      await expect(
+        page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+      ).toHaveCount(0)
+      await expect(page.locator('.govuk-error-message')).toHaveCount(0)
+    })
+
+    test('Continue on an amendment with a missing answer shows the error summary naming the arrival date', async ({
+      page
+    }) => {
+      await page.getByRole('button', { name: copy.submit.button }).click()
+
+      await expect(
+        page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+      ).toBeVisible()
+      await expect(
+        page.getByRole('link', { name: copy.errors.cards.arrivalDetails })
+      ).toBeVisible()
+    })
+  })
+
+  test('ends with Continue, a secondary Cancel amend and a warning Delete', async ({
+    page
+  }) => {
+    await expect(endControls(page)).toHaveText([
+      copy.submit.button,
+      sharedCopy.journeyStrip.cancelAmend,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(
+      page
+        .getByRole('main')
+        .getByRole('button', { name: sharedCopy.journeyStrip.cancelAmend })
+    ).toHaveAttribute('href', /\/cancel-amend$/)
+    await expect(
+      page.getByRole('button', {
         name: sharedCopy.notificationActions.delete.text,
         exact: true
       })
+    ).toHaveClass(/govuk-button--warning/)
+  })
+
+  test('Cancel amend on the review opens the cancel-amendment confirmation', async ({
+    page
+  }) => {
+    await page
+      .getByRole('main')
+      .getByRole('button', { name: sharedCopy.journeyStrip.cancelAmend })
       .click()
 
     await expect(
-      page.getByRole('heading', { level: 1, name: deleteCopy.title })
+      page.getByRole('heading', { level: 1, name: cancelAmendCopy.title })
     ).toBeVisible()
+  })
+
+  test('Delete on the review opens the delete confirmation', async ({
+    page
+  }) => {
+    await deleteFromReview(page, deleteCopy.title)
+  })
+
+  test('is headed and titled for re-submitting once an answer changes', async ({
+    page
+  }) => {
+    await changeOriginOnAmendment(page, 'ChangedRef1')
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.resubmittingTitle })
+    ).toBeVisible()
+    await expect(page).toHaveTitle(new RegExp(`^${copy.resubmittingTitle}`))
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Amendment check answers')
   })
 })

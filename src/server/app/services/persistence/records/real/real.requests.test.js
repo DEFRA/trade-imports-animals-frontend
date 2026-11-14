@@ -93,7 +93,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       createdAt,
       submittedAt: null,
       concurrencyToken: 0,
-      fulfilment: {}
+      fulfilment: {},
+      answersDifferFromSubmitted: false
     })
   })
 

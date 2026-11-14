@@ -65,15 +65,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   hub and the design gives the add route its own way out of the journey.
   Saving either form returns to the transporter list with the new transporter
   chosen, and Back goes where the trader came from.
-- While a notification is being amended, a page ends exactly as it does on a
-  draft: Save and continue, then Save and return to overview, then Cancel and
+- While a notification is being amended, every page except check your answers
+  ends exactly as it does on a draft: Save and continue, then Save and return to overview, then Cancel and
   return to overview wherever the draft page shows it. Save and continue goes on
   through the journey to check your answers, Save and return to overview goes to
   the Overview, and Cancel and return to overview goes to the Overview without
   saving the page. Upload documents posts its own form from both buttons. The
   status strip shows the Amend status and its Cancel amend link. The two
   transporter details forms keep their own primary and cancel even
-  while amending.
+  while amending. Check your answers ends with its own controls instead:
+  Continue, Cancel amend, then Delete.
 
 ## Check your answers (review)
 
@@ -152,8 +153,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   links to an anchor the page carries.
 - Each card's Change link ends, for screen readers, with the card's title in
   lower-case words.
-- The review ends with the Continue button alone, because its label carries
-  the whole instruction, so no heading and no sentence stand above it.
+- The review's form ends with one button group, and no heading or sentence
+  stands above it. On a draft the group is Continue then a red Delete. While
+  amending it is Continue, a secondary Cancel amend, then a red Delete.
 - An unfinished card's line is the same in the error summary and in the card,
   so a trader reading either sees the same words.
 

@@ -24,6 +24,7 @@ describe('#copy', () => {
     expect(copy.errors.species.noCount('bos taurus')).toBe(
       'Enter the number of animals for bos taurus'
     )
+    expect(copy.resubmittingTitle).toBe('Review before re-submitting')
     expect(copy.documentN(1)).toBe('Document 1')
     expect(copy.hidden.commodity('0102')).toBe('commodity 0102')
     expect(copy.hidden.document(1)).toBe('document 1')

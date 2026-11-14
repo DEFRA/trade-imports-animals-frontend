@@ -6,6 +6,7 @@ import {
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
+  CANCEL_AMEND_SLUG,
   CYA_SLUG,
   errorSummary,
   journeyStrip,
@@ -96,6 +97,11 @@ const backLinkFor = (request, journey) =>
         : hubPath(journey.journeyId)
   })
 
+const reviewTitle = (journey) =>
+  journey.status === state.AMEND && journey.answersDifferFromSubmitted
+    ? copy.resubmittingTitle
+    : copy.title
+
 const renderCya = async (
   request,
   h,
@@ -130,9 +136,10 @@ const renderCya = async (
     }),
     cardErrors
   )
+  const title = reviewTitle(journey)
   return h.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
@@ -156,9 +163,10 @@ const renderCya = async (
       : null,
     recoverableError,
     copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
-    deleteHref:
-      readOnly && journey.status === state.SUBMITTED
-        ? pagePath(journey.journeyId, 'delete')
+    deleteHref: pagePath(journey.journeyId, 'delete'),
+    cancelAmendHref:
+      journey.status === state.AMEND
+        ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
         : null,
     backLink: backLinkFor(request, journey)
   })

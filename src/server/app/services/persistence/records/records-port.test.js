@@ -7,6 +7,7 @@ import {
   SUBMITTED
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -333,5 +334,68 @@ describe('records concurrency token', () => {
     )
 
     expect(saved.fulfilment).toEqual(originFulfilment('DE'))
+  })
+})
+
+describe('records answersDifferFromSubmitted', () => {
+  beforeEach(() => records.clear())
+
+  const submittedWithOrigin = async (value) => {
+    const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment(value))
+    await finaliseAtLoadedToken(journeyId)
+    return journeyId
+  }
+  const differs = async (journeyId) =>
+    (await records.load({ journeyId })).answersDifferFromSubmitted
+
+  it('Should be false when an amendment starts', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+
+    const amended = await records.amend(journeyId)
+
+    expect(amended.answersDifferFromSubmitted).toBe(false)
+  })
+
+  it('Should be true once a notification answer differs and false once it is put back', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    expect(await differs(journeyId)).toBe(false)
+  })
+
+  it('Should stay false when only the uploaded documents change', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+
+    await records.replaceFulfilment(
+      journeyId,
+      assembleFulfilments({
+        countryOfOrigin: 'FR',
+        documents: [
+          {
+            accompanyingDocumentType: 'ITAHC',
+            accompanyingDocumentAttachmentType: 'PDF',
+            accompanyingDocumentReference: 'GBHC1234567890',
+            accompanyingDocumentDateOfIssue: '2025-12-12'
+          }
+        ]
+      })
+    )
+
+    expect(await differs(journeyId)).toBe(false)
+  })
+
+  it('Should be false on a draft and on a submitted notification', async () => {
+    const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    expect(await differs(journeyId)).toBe(false)
+
+    await finaliseAtLoadedToken(journeyId)
+    expect(await differs(journeyId)).toBe(false)
   })
 })

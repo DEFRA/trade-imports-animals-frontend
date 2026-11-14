@@ -1,5 +1,6 @@
 export const copy = {
   title: 'Review your notification',
+  resubmittingTitle: 'Review before re-submitting',
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   change: 'Change',

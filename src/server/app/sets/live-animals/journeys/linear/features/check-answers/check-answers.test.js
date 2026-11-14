@@ -79,6 +79,18 @@ import {
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
+const renderedReviewOf = (view) =>
+  documentOf(
+    environment.render(
+      'live-animals/journeys/linear/features/check-answers/template.njk',
+      {
+        ...view.context,
+        userSession: { isAuthenticated: true, displayName: 'Sam Example' },
+        getAssetPath: (asset) => `/assets/${asset}`
+      }
+    )
+  )
+
 const getHandler = routes.find((route) => route.method === 'GET').handler
 
 const continueFromReview = async (seed, { submitted = false } = {}) => {
@@ -398,14 +410,14 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 
   it.each([DRAFT, AMEND])(
-    'Should retain Change hrefs for an editable %s journey',
+    'Should retain Change hrefs and offer the delete path for an editable %s journey',
     async (status) => {
       const view = await viewForStatus(status)
       const hrefs = cardChangeHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
       expect(view.context.copyAction).toBeNull()
-      expect(view.context.deleteHref).toBeNull()
+      expect(view.context.deleteHref).toMatch(/\/delete$/)
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(
         expect.arrayContaining([
@@ -2467,16 +2479,7 @@ describe(`${SUITE} — species still owing a count or an identifier`, () => {
         { numberOfAnimalsQuantity: '1' }
       )
     })
-    const document = documentOf(
-      environment.render(
-        'live-animals/journeys/linear/features/check-answers/template.njk',
-        {
-          ...view.context,
-          userSession: { isAuthenticated: true, displayName: 'Sam Example' },
-          getAssetPath: (asset) => `/assets/${asset}`
-        }
-      )
-    )
+    const document = renderedReviewOf(view)
     const block = document.getElementById(
       speciesBlockOf(view.context.sections, CATTLE_CODE, BOS_TAURUS_HEADING)
         .anchor
@@ -2659,5 +2662,118 @@ describe('#REVIEW_CARDS — the cards cover the task rows exactly', () => {
     for (const card of REVIEW_CARDS) {
       expect(typeof copyEn.errors.cards[card.id]).toBe('string')
     }
+  })
+})
+
+describe(`${SUITE} — amendment review end controls and title`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should offer the cancel-amend path only while amending', async () => {
+    const draft = await viewForStatus(DRAFT)
+    const submitted = await viewForStatus(SUBMITTED)
+    const amend = await viewForStatus(AMEND)
+
+    expect(draft.context.cancelAmendHref).toBeNull()
+    expect(submitted.context.cancelAmendHref).toBeNull()
+    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+  })
+
+  it('Should title an amendment as opened, then as re-submitting once an answer changes', async () => {
+    const journeyId = await journeyIdForStatus(AMEND, fullSeed)
+    const opened = await viewOfJourney(journeyId)
+    expect(opened.context.pageTitle).toBe(copyEn.title)
+    expect(opened.context.heading).toBe(copyEn.title)
+
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'AmendedRef'
+    })
+    const changed = await viewOfJourney(journeyId)
+
+    expect(changed.context.pageTitle).toBe(copyEn.resubmittingTitle)
+    expect(changed.context.heading).toBe(copyEn.resubmittingTitle)
+  })
+
+  it('Should keep the opened title when an amendment changes only its documents', async () => {
+    const journeyId = await journeyIdForStatus(AMEND, fullSeed)
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      documents: [
+        {
+          ...fullSeed.documents[0],
+          accompanyingDocumentReference: 'GBHC0000000001'
+        }
+      ]
+    })
+
+    const view = await viewOfJourney(journeyId)
+
+    expect(view.context.heading).toBe(copyEn.title)
+  })
+
+  it('Should keep the opened title on a draft whose answers change', async () => {
+    const journeyId = await journeyIdForStatus(DRAFT, fullSeed)
+    await store.seedAnswers(journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'EditedRef'
+    })
+
+    const view = await viewOfJourney(journeyId)
+
+    expect(view.context.heading).toBe(copyEn.title)
+  })
+
+  describe('end controls', () => {
+    const endControlsOf = async (status) => {
+      const view = await viewForStatus(status)
+      return { view, document: renderedReviewOf(view) }
+    }
+
+    const controlsIn = (group) =>
+      [...group.children].map((control) => ({
+        text: control.textContent.trim(),
+        href: control.getAttribute('href'),
+        classes: control.className
+      }))
+
+    it('Should end a draft review with Continue then a warning Delete to the delete path', async () => {
+      const { view, document } = await endControlsOf(DRAFT)
+
+      const controls = controlsIn(
+        document.querySelector('form[novalidate] .govuk-button-group')
+      )
+
+      expect(controls.map(({ text }) => text)).toEqual(['Continue', 'Delete'])
+      expect(controls[1].href).toBe(view.context.deleteHref)
+      expect(controls[1].classes).toContain('govuk-button--warning')
+    })
+
+    it('Should end an amendment review with Continue, a secondary Cancel amend to the cancel-amend path, then Delete', async () => {
+      const { view, document } = await endControlsOf(AMEND)
+
+      const controls = controlsIn(
+        document.querySelector('form[novalidate] .govuk-button-group')
+      )
+
+      expect(controls.map(({ text }) => text)).toEqual([
+        'Continue',
+        'Cancel amend',
+        'Delete'
+      ])
+      expect(controls[1].href).toBe(view.context.cancelAmendHref)
+      expect(controls[1].classes).toContain('govuk-button--secondary')
+      expect(controls[2].href).toBe(view.context.deleteHref)
+    })
+
+    it('Should offer a submitted review only Copy as new and Delete in its top group, with no Continue', async () => {
+      const { document } = await endControlsOf(SUBMITTED)
+
+      expect(document.querySelector('form[novalidate]')).toBeNull()
+      expect(
+        [...document.querySelectorAll('.govuk-button-group .govuk-button')].map(
+          (button) => button.textContent.trim()
+        )
+      ).toEqual(['Copy as new', 'Delete'])
+    })
   })
 })

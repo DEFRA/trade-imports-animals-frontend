@@ -1475,6 +1475,50 @@ export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
 }
 
+export const submitCompleteNotification = async (page) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  await openReviewFromHub(page)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page
+    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  return journeyIdFromPage(page)
+}
+
+export const amendFromList = async (page, reference) => {
+  await page.goto(BASE)
+  await page
+    .getByRole('button', { name: `Amend notification ${reference}` })
+    .click()
+}
+
+export const deleteFromReview = async (page, confirmationTitle) => {
+  await page
+    .getByRole('button', {
+      name: sharedAppCopy.notificationActions.delete.text,
+      exact: true
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: confirmationTitle })
+  ).toBeVisible()
+}
+
+export const changeOriginOnAmendment = async (page, internalReference) => {
+  await page.getByRole('link', { name: 'Change origin of import' }).click()
+  await chooseCountryOfOrigin(page, 'France')
+  await page
+    .getByLabel('Your internal reference for this consignment (optional)')
+    .fill(internalReference)
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await openNotificationView(page)
+}
+
 export const saveAndContinue = (page) =>
   page.getByRole('button', {
     name: sharedAppCopy.saveActions.saveAndContinue,

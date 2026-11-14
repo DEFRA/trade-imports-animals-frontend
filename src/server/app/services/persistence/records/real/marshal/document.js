@@ -10,6 +10,7 @@ export const marshal = (document) => {
     createdAt: document.created ?? null,
     submittedAt: status === SUBMITTED ? (document.submittedAt ?? null) : null,
     concurrencyToken: document.concurrencyToken ?? null,
-    fulfilment: decodePersistedFulfilment(document.fulfilments)
+    fulfilment: decodePersistedFulfilment(document.fulfilments),
+    answersDifferFromSubmitted: document.answersDifferFromSubmitted === true
   }
 }

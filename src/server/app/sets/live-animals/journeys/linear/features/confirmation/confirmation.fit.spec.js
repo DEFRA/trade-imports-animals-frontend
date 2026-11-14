@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test'
 import {
   BASE,
-  completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   journeyUrl,
-  openReviewFromHub,
   signIn,
   startNotification,
+  submitCompleteNotification,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
@@ -110,14 +109,7 @@ test.describe('submitted confirmation feature', () => {
   test.describe.configure({ timeout: 90000 })
 
   test.beforeEach(async ({ page }) => {
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page
-      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await submitCompleteNotification(page)
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/confirmation')
     )
