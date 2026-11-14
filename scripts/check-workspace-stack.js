@@ -23,7 +23,7 @@ if (!reachable) {
       '',
       `The E2E workspace stack check failed — ${backendUrl} did not answer.`,
       '',
-      '  Start it:  scripts/stack/run-stack.sh   (from the trade-imports-animals workspace)',
+      '  Start it:  tim docker up',
       '',
       'Start the backend, Mongo and Redis before running workspace-backed E2E checks.',
       ''
