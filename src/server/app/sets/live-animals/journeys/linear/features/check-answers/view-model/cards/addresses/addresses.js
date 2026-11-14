@@ -6,7 +6,7 @@ import { addressesPage } from '../../../../addresses/page.js'
 import { PARTIES } from '../../../../addresses/parties.js'
 import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
 import { cphApplies } from '../../applicability.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
 import { row } from '../../rows/summary-row.js'
 
@@ -44,7 +44,7 @@ export const addressesCard = ({
   title: copy.cards.addresses,
   ...editableActions({
     readOnly,
-    actions: cardAction(
+    actions: changeAction(
       { journeyId, changeLinkTrail },
       addressesPage.slug,
       copy.hidden.cards.addresses

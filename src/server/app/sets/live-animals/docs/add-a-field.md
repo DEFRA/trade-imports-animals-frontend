@@ -164,9 +164,11 @@ feature's own page already shows is read from that feature's label function
 into the check-answers copy. Value labels only the review shows go in the
 check-answers copy bundles.
 
-Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
-heading carries the one link for every answer inside it, so adding a field to
-an existing card needs no action work at all. Use a service label function when
+Use `row(key, value)` for a scalar. The card's heading carries the
+Change link for every answer inside it, so adding a field to an existing card
+needs no action work. The exception is a row in a headed group (`card.groups`)
+for a page the journey only sometimes asks, which carries its own link built
+with `changeAction`. Use a service label function when
 the stored value is a code. Show a conditional row only while the same
 obligation path is in scope.
 

@@ -23,15 +23,16 @@ export const copy = {
     mainImportReason: 'Prif reswm mewnforio',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
-    transitCountries: 'Gwledydd tramwy',
     transportDetails: 'Manylion cludo',
     addresses: 'Cyfeiriadau',
     contactAddress: 'Cyfeiriad cyswllt',
     documents: 'Dogfennau wedi’u huwchlwytho'
   },
+  groups: {
+    transitCountries: 'Gwledydd tramwy'
+  },
   rows: {
     countryOfOrigin: 'Gwlad tarddiad',
-    regionCodeRequired: 'Angen cod rhanbarth tarddiad',
     regionCode: 'Cod rhanbarth tarddiad',
     internalReference: 'Cyfeirnod mewnol',
     certifiedFor: 'Wedi’i ardystio ar gyfer',
@@ -41,13 +42,14 @@ export const copy = {
     destinationCountry: 'Gwlad gyrchfan',
     exitDate: 'Dyddiad ymadael',
     portOfExit: 'Porthladd ymadael',
+    exitBorderControlPost: 'Safle rheoli ffiniau ymadael',
     commodityCode: 'Cod nwyddau',
     speciesCommonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
     numberOfPackages: 'Nifer y pecynnau',
     portOfEntry: 'Porthladd mynediad',
-    arrivalDate: 'Dyddiad cyrraedd y porthladd mynediad',
+    arrivalDate: 'Dyddiad cyrraedd y gyrchfan',
     meansOfTransport: 'Cyfrwng cludo i’r porthladd mynediad',
     transitedCountries: 'Gwledydd y bydd y llwyth yn teithio drwyddynt',
     transportIdentification: 'Adnabod y cludiant',
@@ -82,11 +84,13 @@ export const copy = {
       mainImportReason: 'prif reswm mewnforio',
       additionalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
-      transitCountries: 'gwledydd tramwy',
       transportDetails: 'manylion cludo',
       addresses: 'cyfeiriadau',
       contactAddress: 'cyfeiriad cyswllt',
       documents: 'dogfennau wedi’u huwchlwytho'
+    },
+    rows: {
+      transitCountries: 'gwledydd tramwy'
     },
     commodity: (n) => `nwydd ${n}`
   },
@@ -101,7 +105,6 @@ export const copy = {
       additionalDetails: 'Cwblhewch y manylion ychwanegol',
       species: 'Cwblhewch fanylion y rhywogaeth',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
-      transitCountries: 'Cwblhewch y gwledydd tramwy',
       transportDetails: 'Cwblhewch y manylion cludo',
       addresses: 'Cwblhewch y rolau a’r cyfeiriadau',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',

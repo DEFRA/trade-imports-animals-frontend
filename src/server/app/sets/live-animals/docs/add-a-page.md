@@ -254,12 +254,14 @@ shows is read from that feature's label function (for example
 `meansOfTransportLabel`), never copied into the check-answers copy. Value
 labels only the review shows go in the check-answers copy bundles.
 
-Rows carry no Change link — `row(key, value)` is a
-key and a value. If the page's fields go into a NEW card, the card needs one
-`cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
+The card heading carries the Change link for the answers inside the card.
+The exception is a row in a headed group (`card.groups`) for a page the journey
+only sometimes asks, which carries its own link built with `changeAction`. If
+the page's fields go into a NEW card, the card needs one
+`changeAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
 `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf in BOTH
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
-the fit assertion "one Change link per card, named for its card, in card order, and none on a row"
+the fit assertion "one Change link per card, named for its card, in card order, and none on a row of a new notification"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
 fails. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).

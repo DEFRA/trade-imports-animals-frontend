@@ -4,6 +4,8 @@ import {
   DESKTOP_VIEWPORT,
   FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
+  cannedPrivateTransporter,
+  saveTransporterFromList,
   addPlaceOfDestination,
   answerPermanentAddressCard,
   chooseTypeAheadOption,
@@ -36,6 +38,7 @@ import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as contactCopy } from '../contact/copy/copy.en.js'
+import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -43,6 +46,9 @@ const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
+const ORIGIN_OF_IMPORT_ANCHOR = '#origin-of-import'
+const MAIN_IMPORT_REASON_ANCHOR = '#main-import-reason'
+const TRANSPORT_DETAILS_ANCHOR = '#transport-details'
 const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.portOfEntry,
   copy.rows.arrivalDate,
@@ -51,8 +57,11 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportDocumentReference
 ]
 
+const rowKeysOf = (page, cardAnchor) =>
+  page.locator(`${cardAnchor} .govuk-summary-list__key`)
+
 const answerCellFor = (page, label) =>
-  rowFor(page, label).getByRole('definition')
+  rowFor(page, label).getByRole('definition').first()
 
 const expectOnlyHiddenMissing = async (page, answerCell) => {
   await expect(answerCell).toHaveText(copy.missing)
@@ -99,9 +108,11 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.countryOfOrigin)).toContainText(
       'France'
     )
-    await expect(rowFor(page, copy.rows.regionCodeRequired)).toContainText(
-      copy.yesNo.yes
-    )
+    await expect(rowKeysOf(page, ORIGIN_OF_IMPORT_ANCHOR)).toHaveText([
+      copy.rows.countryOfOrigin,
+      copy.rows.regionCode,
+      copy.rows.internalReference
+    ])
     await expect(rowFor(page, copy.rows.regionCode)).toContainText('FR-IDF75')
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
@@ -327,7 +338,7 @@ test.describe('check-answers feature exit answers', () => {
     await signIn(page)
   })
 
-  test('shows the destination country and port of exit a transit collected, with the one Change link in the card heading', async ({
+  test('shows the exit border control post then the destination country a transit collected, with the one Change link in the card heading', async ({
     page
   }) => {
     await startNotification(page)
@@ -349,15 +360,17 @@ test.describe('check-answers feature exit answers', () => {
 
     await openNotificationView(page)
 
+    await expect(rowKeysOf(page, MAIN_IMPORT_REASON_ANCHOR)).toHaveText([
+      copy.rows.reasonForImport,
+      copy.rows.exitBorderControlPost,
+      copy.rows.destinationCountry
+    ])
+    await expect(rowFor(page, copy.rows.exitBorderControlPost)).toContainText(
+      EXIT_PORT_LABEL
+    )
     await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
       DESTINATION_COUNTRY_NAME
     )
-    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
-      EXIT_PORT_LABEL
-    )
-    await expect(
-      page.getByText(copy.rows.exitDate, { exact: true })
-    ).toHaveCount(0)
 
     await expect(
       rowFor(page, copy.rows.destinationCountry).getByRole('link')
@@ -464,7 +477,7 @@ test.describe('check-answers feature change links', () => {
     )
   })
 
-  test('has one Change link per card, named for its card, in card order, and none on a row', async ({
+  test('has one Change link per card, named for its card, in card order, and none on a row of a new notification', async ({
     page
   }) => {
     await startNotification(page)
@@ -568,18 +581,78 @@ test.describe('check-answers feature navigation and submission', () => {
     await completeAnswerSections(page, { skipTransitCountries: true })
     await openReviewFromHub(page)
 
+    await expect(answerCellFor(page, copy.rows.transitedCountries)).toHaveText(
+      sharedCopy.notApplicable
+    )
     await expect(
-      page.getByText(copy.errors.cards.transitCountries)
+      page
+        .locator(ARRIVAL_DETAILS_ANCHOR)
+        .getByText(copy.errors.cards.arrivalDetails)
     ).toHaveCount(0)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expect(
-      page.getByText(copy.errors.cards.transitCountries)
-    ).toHaveCount(0)
-    await expect(
       page.getByRole('heading', { level: 1, name: declarationCopy.title })
     ).toBeVisible()
+  })
+
+  test('reads the transit countries inside the arrival details card, with a Change link that opens the transit countries page', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+
+    const arrivalDetails = page.locator(ARRIVAL_DETAILS_ANCHOR)
+    await expect(
+      arrivalDetails.getByRole('heading', {
+        level: 4,
+        name: copy.groups.transitCountries
+      })
+    ).toBeVisible()
+    await expect(answerCellFor(page, copy.rows.transitedCountries)).toHaveText(
+      'France, Belgium'
+    )
+
+    const changeLink = arrivalDetails.getByRole('link', {
+      name: `${copy.change} ${copy.hidden.rows.transitCountries}`
+    })
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/transit-countries\?from=(?:[^#]*%2C)?notification-view$/
+    )
+    await changeLink.click()
+
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: transportCopy.transitCountries.title
+      })
+    ).toBeVisible()
+  })
+
+  test('shows Not applicable on the approval number of a saved private transporter that has none, and its stored country', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await saveTransporterFromList(page, cannedPrivateTransporter)
+    await openNotificationView(page)
+
+    await expect(rowKeysOf(page, TRANSPORT_DETAILS_ANCHOR)).toHaveText([
+      copy.rows.name,
+      copy.rows.address,
+      copy.rows.country,
+      copy.rows.approvalNumber,
+      copy.rows.type
+    ])
+    await expect(answerCellFor(page, copy.rows.country)).toHaveText(
+      cannedPrivateTransporter.address.country
+    )
+    await expect(answerCellFor(page, copy.rows.approvalNumber)).toHaveText(
+      sharedCopy.notApplicable
+    )
   })
 })
 

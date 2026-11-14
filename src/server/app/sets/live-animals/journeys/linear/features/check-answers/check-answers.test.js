@@ -11,6 +11,10 @@ import {
   SUBMITTED
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
+import {
+  PRIVATE,
+  TRANSPORTER_OPTIONS
+} from '../../../../../../services/transporters/records.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
@@ -149,7 +153,7 @@ const cardByTitle = (sections, title) =>
 const rowsOf = (sections) =>
   cardsOf(sections).flatMap((card) => [
     ...(card.rows ?? []),
-    ...(card.documents ?? []).flatMap((document) => document.rows)
+    ...(card.groups ?? []).flatMap((group) => group.rows)
   ])
 
 const rowByKey = (rows, key) => rows.find((row) => row.key.text === key)
@@ -158,22 +162,18 @@ const htmlOf = (rows, key) => rowByKey(rows, key)?.value.html
 const keysOf = (rows) => rows.map((row) => row.key.text)
 const cardChangeHrefOf = (sections, title) =>
   cardByTitle(sections, title)?.actions?.items[0].href
-const cardActionHrefsOf = (sections) =>
+const cardChangeHrefsOf = (sections) =>
   cardsOf(sections).flatMap((card) =>
     (card.actions?.items ?? []).map((action) => action.href)
   )
 const changeHrefsOf = (sections) => [
-  ...cardActionHrefsOf(sections),
-  ...cardsOf(sections).flatMap((card) =>
-    (card.rows ?? []).flatMap((entry) =>
-      (entry.actions?.items ?? []).map((action) => action.href)
-    )
-  )
+  ...cardChangeHrefsOf(sections),
+  ...actionsOfRows(sections).map((action) => action.href)
 ]
 const FROM_REVIEW = `?from=${CYA_SLUG}`
 const hrefEndingWithFromReview = (path) =>
   new RegExp(`${RegExp.escape(['/', path, FROM_REVIEW].join(''))}$`)
-const rowActionsOf = (sections) =>
+const actionsOfRows = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
 const NOT_APPLICABLE = 'Not applicable'
@@ -233,7 +233,6 @@ const ORIGIN_OF_IMPORT_CARD = 'Origin of import'
 const MAIN_IMPORT_REASON = 'Main import reason'
 const ADDITIONAL_DETAILS_CARD = 'Additional details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
-const TRANSIT_COUNTRIES_CARD = 'Transit countries'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ADDRESSES_CARD = 'Addresses'
 const CONTACT_ADDRESS_CARD = 'Contact address'
@@ -253,6 +252,9 @@ const DOCUMENT_TYPE_KEY = 'Document type'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
 const PORT_OF_EXIT_KEY = 'Port of exit'
+const EXIT_BORDER_CONTROL_POST_KEY = 'Exit border control post'
+const APPROVAL_NUMBER_KEY = 'Approval number'
+const FRANCE_AND_BELGIUM = 'France, Belgium'
 const PLACE_OF_ORIGIN_KEY = 'Place of origin'
 const PLACE_OF_DESTINATION_KEY = 'Place of destination'
 const DOMESTIC_CAT_1_LABEL = 'Domestic Cat 1'
@@ -351,7 +353,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     'Should retain Change hrefs for an editable %s journey',
     async (status) => {
       const view = await viewForStatus(status)
-      const hrefs = cardActionHrefsOf(view.context.sections)
+      const hrefs = cardChangeHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
       expect(view.context.copyAction).toBeNull()
@@ -487,7 +489,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
       const view = await viewOfJourney(journeyId, {
         from: TRAIL_START.dashboard
       })
-      const hrefs = cardActionHrefsOf(view.context.sections)
+      const hrefs = cardChangeHrefsOf(view.context.sections)
 
       expect(hrefs).not.toHaveLength(0)
       for (const href of hrefs) {
@@ -539,7 +541,6 @@ describe(`${SUITE} — section headings and cards`, () => {
       CATTLE_CARD_TITLE,
       ADDITIONAL_DETAILS_CARD,
       ARRIVAL_DETAILS_CARD,
-      TRANSIT_COUNTRIES_CARD,
       TRANSPORT_DETAILS_CARD,
       UPLOADED_DOCUMENTS_CARD,
       ADDRESSES_CARD,
@@ -563,7 +564,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       ],
       [
         TRANSPORT_AND_ARRIVAL_ANCHOR,
-        [ARRIVAL_DETAILS_CARD, TRANSIT_COUNTRIES_CARD, TRANSPORT_DETAILS_CARD]
+        [ARRIVAL_DETAILS_CARD, TRANSPORT_DETAILS_CARD]
       ],
       ['documents-section', [UPLOADED_DOCUMENTS_CARD]],
       ['consignment-addresses', [ADDRESSES_CARD]],
@@ -603,9 +604,8 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(rows, 'Certified for')).toBe('Slaughter')
   })
 
-  it('Should map yes/no coded answers to Yes/No labels', async () => {
+  it('Should map the unweaned yes/no answer to a No label', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
-    expect(valueOf(rows, 'Region of origin code required')).toBe('Yes')
     expect(valueOf(rows, UNWEANED_KEY)).toBe('No')
   })
 
@@ -635,11 +635,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
   })
 
-  it('Should include the transited-countries row for an overland means of transport, labelling each code', async () => {
-    const rows = rowsOf(await sectionsFor(fullSeed))
-    expect(valueOf(rows, TRANSITED_COUNTRIES_KEY)).toBe('France, Belgium')
-  })
-
   it('Should name a transited territory with its parent country', async () => {
     const rows = rowsOf(
       await sectionsFor({ ...fullSeed, transitedCountries: ['ES-CN', 'FR'] })
@@ -657,7 +652,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(card.rows, 'Name')).toBe('García Livestock Transport SL')
     expect(htmlOf(card.rows, 'Address')).toBe(ADDRESS_LINE_1)
     expect(valueOf(card.rows, 'Country')).toBe('Switzerland')
-    expect(valueOf(card.rows, 'Approval number')).toBe('ES-T2-45001294')
+    expect(valueOf(card.rows, APPROVAL_NUMBER_KEY)).toBe('ES-T2-45001294')
     expect(valueOf(card.rows, 'Type')).toBe('Commercial')
   })
 
@@ -695,9 +690,9 @@ describe(`${SUITE} — fully-populated notification`, () => {
       await sectionsFor(fullSeed),
       UPLOADED_DOCUMENTS_CARD
     )
-    expect(card.documents).toHaveLength(1)
+    expect(card.groups).toHaveLength(1)
     expect(card.emptyText).toBeNull()
-    const [document] = card.documents
+    const [document] = card.groups
     expect(document.heading).toBe('Document 1')
     expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
@@ -711,7 +706,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(
       valueOf(
         rowsOf(await sectionsFor(fullSeed)),
-        'Arrival date at port of entry'
+        'Arrival date at destination'
       )
     ).toBe('12/12/2026')
   })
@@ -744,16 +739,17 @@ describe(`${SUITE} — fully-populated notification`, () => {
     ).toContain('Address')
   })
 
-  it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address', async () => {
+  it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address and Change on the transit countries', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
       expect(card.actions.items, card.title).toHaveLength(1)
     }
-    const rowActions = rowActionsOf(sections)
-    expect(rowActions.map((action) => action.text)).toEqual(
-      Array(6).fill('Edit details')
-    )
+    const actionsOnRows = actionsOfRows(sections)
+    expect(actionsOnRows.map((action) => action.text)).toEqual([
+      'Change',
+      ...Array(6).fill('Edit details')
+    ])
   })
 
   it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
@@ -1030,7 +1026,7 @@ describe(`${SUITE} — document type labels`, () => {
         ]
       }
       const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
-      const [document] = card.documents
+      const [document] = card.groups
 
       expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(label)
       expect(documentsCopy.types[code]).toBe(label)
@@ -1041,62 +1037,103 @@ describe(`${SUITE} — document type labels`, () => {
 describe(`${SUITE} — transit countries`, () => {
   setupCheckAnswersEngine()
 
-  it('Should build the transit-countries card directly under the section when transited countries apply', async () => {
-    const sections = await sectionsFor(fullSeed)
-    const transport = sections.find(
-      (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
-    )
+  const transportCardTitlesOf = (sections) =>
+    sections
+      .find((section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR)
+      .cards.map((card) => card.title)
 
-    expect(transport.cards.map((card) => card.title)).toEqual([
+  it('Should hold the transport and arrival section to the arrival details and transport details cards for a road consignment', async () => {
+    expect(transportCardTitlesOf(await sectionsFor(fullSeed))).toEqual([
       ARRIVAL_DETAILS_CARD,
-      TRANSIT_COUNTRIES_CARD,
       TRANSPORT_DETAILS_CARD
     ])
-    expect(
-      valueOf(
-        cardByTitle(sections, TRANSIT_COUNTRIES_CARD).rows,
-        TRANSITED_COUNTRIES_KEY
-      )
-    ).toBe('France, Belgium')
   })
 
-  it('Should give the transit-countries card its own Change link to the page that collects it', async () => {
-    const items = cardByTitle(
-      await sectionsFor(fullSeed),
-      TRANSIT_COUNTRIES_CARD
-    ).actions.items
+  it('Should give the arrival details card one transit countries group holding France and Belgium', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), ARRIVAL_DETAILS_CARD)
 
-    expect(items).toHaveLength(1)
-    expect(items[0].href).toMatch(hrefEndingWithFromReview('transit-countries'))
-    expect(items[0].visuallyHiddenText).toBe(
-      copyEn.hidden.cards.transitCountries
+    expect(card.groups).toHaveLength(1)
+    expect(card.groups[0].heading).toBe('Transit countries')
+    expect(keysOf(card.groups[0].rows)).toEqual([TRANSITED_COUNTRIES_KEY])
+    expect(valueOf(card.groups[0].rows, TRANSITED_COUNTRIES_KEY)).toBe(
+      FRANCE_AND_BELGIUM
     )
   })
 
-  it('Should leave the arrival-details card one Change link and no transited-countries row', async () => {
+  it('Should give the transit countries row one Change action to the transit countries page carrying the review trail', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), ARRIVAL_DETAILS_CARD)
+    const items = card.groups[0].rows[0].actions.items
+
+    expect(items).toHaveLength(1)
+    expect(items[0].text).toBe('Change')
+    expect(items[0].href).toMatch(hrefEndingWithFromReview('transit-countries'))
+    expect(items[0].visuallyHiddenText).toBe(
+      copyEn.hidden.rows.transitCountries
+    )
+  })
+
+  it('Should keep the arrival details heading action on the port of entry page', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), ARRIVAL_DETAILS_CARD)
 
     expect(card.actions.items).toHaveLength(1)
     expect(card.actions.items[0].href).toMatch(
       hrefEndingWithFromReview('port-of-entry')
     )
-    expect(keysOf(card.rows)).not.toContain(TRANSITED_COUNTRIES_KEY)
+    expect(keysOf(card.rows)).toEqual([
+      copyEn.rows.portOfEntry,
+      copyEn.rows.arrivalDate,
+      copyEn.rows.meansOfTransport,
+      copyEn.rows.transportIdentification,
+      copyEn.rows.transportDocumentReference
+    ])
   })
 
-  it('Should drop the transit-countries card when transited countries do not apply', async () => {
+  it('Should give the arrival details card no group when transited countries do not apply', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       meansOfTransport: 'AIRPLANE'
     })
-    const transport = sections.find(
-      (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
-    )
 
-    expect(transport.cards.map((card) => card.title)).toEqual([
+    expect(transportCardTitlesOf(sections)).toEqual([
       ARRIVAL_DETAILS_CARD,
       TRANSPORT_DETAILS_CARD
     ])
-    expect(keysOf(rowsOf(sections))).not.toContain(TRANSITED_COUNTRIES_KEY)
+    expect(cardByTitle(sections, ARRIVAL_DETAILS_CARD).groups).toEqual([])
+  })
+
+  it('Should give a submitted notification a transit countries row with no action', async () => {
+    const view = await viewForStatus(SUBMITTED)
+    const card = cardByTitle(view.context.sections, ARRIVAL_DETAILS_CARD)
+
+    expect(valueOf(card.groups[0].rows, TRANSITED_COUNTRIES_KEY)).toBe(
+      FRANCE_AND_BELGIUM
+    )
+    expect(card.groups[0].rows[0].actions).toBeUndefined()
+  })
+})
+
+describe(`${SUITE} — origin-of-import card`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should key the origin of import card with exactly the country, region code and internal reference rows', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), ORIGIN_OF_IMPORT_CARD)
+    expect(keysOf(card.rows)).toEqual([
+      COUNTRY_OF_ORIGIN_KEY,
+      REGION_CODE_KEY,
+      INTERNAL_REFERENCE_KEY
+    ])
+  })
+
+  it('Should read Not applicable on the region of origin code when none is needed and none is stored', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCode: null
+      }),
+      ORIGIN_OF_IMPORT_CARD
+    )
+    expect(valueOf(card.rows, REGION_CODE_KEY)).toBe(NOT_APPLICABLE)
   })
 })
 
@@ -1185,14 +1222,49 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should expand the private transporter and omit the approval-number row when the type is private', async () => {
+  it('Should read Not applicable on the approval number of a saved private transporter that has none, and its stored country on Country', async () => {
+    const savedPrivate = TRANSPORTER_OPTIONS.find(
+      ({ type }) => type === PRIVATE
+    )
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        transporterType: PRIVATE,
+        privateTransporter: savedPrivate
+      }),
+      TRANSPORT_DETAILS_CARD
+    )
+    expect(valueOf(card.rows, 'Name')).toBe(savedPrivate.name)
+    expect(valueOf(card.rows, 'Country')).toBe(savedPrivate.address.country)
+    expect(valueOf(card.rows, APPROVAL_NUMBER_KEY)).toBe(NOT_APPLICABLE)
+    expect(valueOf(card.rows, 'Type')).toBe(PRIVATE)
+  })
+
+  it('Should keep the name, address, country, approval number and type rows when no transporter is chosen', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commercialTransporter: null,
+        transporterType: null
+      }),
+      TRANSPORT_DETAILS_CARD
+    )
+    expect(keysOf(card.rows)).toEqual([
+      'Name',
+      'Address',
+      'Country',
+      APPROVAL_NUMBER_KEY,
+      'Type'
+    ])
+  })
+
+  it('Should expand the private transporter name and type on an incomplete journey', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       TRANSPORT_DETAILS_CARD
     )
     expect(valueOf(card.rows, 'Name')).toBe(PRIVATE_TRANSPORTER_NAME)
     expect(valueOf(card.rows, 'Type')).toBe(PRIVATE_TRANSPORTER_TYPE)
-    expect(keysOf(card.rows)).not.toContain('Approval number')
   })
 
   it('Should omit the identifier table when the commodity holds no entry', async () => {
@@ -1206,7 +1278,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       '4. Uploaded documents'
     )
     const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
-    expect(card.documents).toEqual([])
+    expect(card.groups).toEqual([])
     expect(card.emptyText).toBe('You have not added any documents yet.')
   })
 
@@ -1236,7 +1308,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(
       htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
-        'Arrival date at port of entry'
+        'Arrival date at destination'
       )
     ).toBe(MISSING_HTML)
   })
@@ -1307,7 +1379,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
       documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
     })
     const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
-    const [document] = card.documents
+    const [document] = card.groups
 
     expect(card.error).toBe(DOCUMENTS_INCOMPLETE)
     expect(htmlOf(document.rows, 'Document reference')).toBe(MISSING_HTML)
@@ -1315,6 +1387,20 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(htmlOf(document.rows, 'Attachment type')).toBe(MISSING_HTML)
     expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Other veterinary certificate / veterinary declaration'
+    )
+  })
+
+  it('Should leave a blank transit countries row inside an unfinished arrival details card with only a visually hidden Missing', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      arrivalDateAtPort: null,
+      transitedCountries: []
+    })
+    const card = cardByTitle(sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(ARRIVAL_DETAILS_INCOMPLETE)
+    expect(htmlOf(card.groups[0].rows, TRANSITED_COUNTRIES_KEY)).toBe(
+      MISSING_HTML
     )
   })
 
@@ -1337,23 +1423,30 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
     ...answers
   })
 
-  it('Should show the destination country and port of exit for a transit, labelling both codes', async () => {
-    const rows = rowsOf(
+  it('Should show the exit border control post then the destination country for a transit, labelling both codes', async () => {
+    const card = cardByTitle(
       await sectionsFor(
         reasonSeed({
           reasonForImport: 'transit',
           destinationCountry: 'IE',
           portOfExit: 'GB DVR'
         })
-      )
+      ),
+      MAIN_IMPORT_REASON
     )
 
-    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
-    expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+    expect(keysOf(card.rows)).toEqual([
+      MAIN_IMPORT_REASON,
+      EXIT_BORDER_CONTROL_POST_KEY,
+      DESTINATION_COUNTRY_KEY
+    ])
+    expect(valueOf(card.rows, EXIT_BORDER_CONTROL_POST_KEY)).toBe(
+      'Port of Dover - GB DVR'
+    )
+    expect(valueOf(card.rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
   })
 
-  it('Should read the port of exit back exactly as the option the trader picked', async () => {
+  it('Should read the exit border control post back exactly as the option the trader picked', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'transit', portOfExit: 'GB DVR' })
@@ -1363,7 +1456,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
       ({ value }) => value === 'GB DVR'
     )
 
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
+    expect(valueOf(rows, EXIT_BORDER_CONTROL_POST_KEY)).toBe(picked.text)
   })
 
   it('Should name a destination territory with its parent country', async () => {
@@ -1380,44 +1473,51 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
   })
 
   it('Should show the destination country alone for a transhipment', async () => {
-    const rows = rowsOf(
+    const card = cardByTitle(
       await sectionsFor(
         reasonSeed({
           reasonForImport: 'transhipmentOrOnwardTravel',
           destinationCountry: 'IE'
         })
-      )
+      ),
+      MAIN_IMPORT_REASON
     )
 
-    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
-    expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
-    expect(keysOf(rows)).not.toContain(PORT_OF_EXIT_KEY)
+    expect(keysOf(card.rows)).toEqual([
+      MAIN_IMPORT_REASON,
+      DESTINATION_COUNTRY_KEY
+    ])
+    expect(valueOf(card.rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
   })
 
   it('Should show the exit date and port of exit for a temporary admission of horses', async () => {
-    const rows = rowsOf(
+    const card = cardByTitle(
       await sectionsFor(
         reasonSeed({
           reasonForImport: 'temporaryAdmissionHorses',
           exitDate: { day: '27', month: '3', year: '2026' },
           portOfExit: 'GB DVR'
         })
-      )
+      ),
+      MAIN_IMPORT_REASON
     )
 
-    expect(valueOf(rows, EXIT_DATE_KEY)).toBe('27/3/2026')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
-    expect(keysOf(rows)).not.toContain(DESTINATION_COUNTRY_KEY)
+    expect(keysOf(card.rows)).toEqual([
+      MAIN_IMPORT_REASON,
+      EXIT_DATE_KEY,
+      PORT_OF_EXIT_KEY
+    ])
+    expect(valueOf(card.rows, EXIT_DATE_KEY)).toBe('27/3/2026')
+    expect(valueOf(card.rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
   })
 
-  it('Should omit all three rows for a reason that asks none of them', async () => {
-    const keys = keysOf(
-      rowsOf(await sectionsFor(reasonSeed({ reasonForImport: 'reEntry' })))
+  it('Should show only the reason for a reason that asks none of the exit rows', async () => {
+    const card = cardByTitle(
+      await sectionsFor(reasonSeed({ reasonForImport: 'reEntry' })),
+      MAIN_IMPORT_REASON
     )
 
-    expect(keys).not.toContain(DESTINATION_COUNTRY_KEY)
-    expect(keys).not.toContain(EXIT_DATE_KEY)
-    expect(keys).not.toContain(PORT_OF_EXIT_KEY)
+    expect(keysOf(card.rows)).toEqual([MAIN_IMPORT_REASON])
   })
 
   it('Should leave a blank in-scope exit answer with only a visually hidden Missing', async () => {
@@ -1443,7 +1543,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
 
     expect(keysOf(card.rows)).toContain(EXIT_DATE_KEY)
     expect(keysOf(card.rows)).toContain(PORT_OF_EXIT_KEY)
-    expect(rowActionsOf(sections)).toEqual([])
+    expect(actionsOfRows(sections)).toEqual([])
     expect(cardChangeHrefOf(sections, MAIN_IMPORT_REASON)).toMatch(
       hrefEndingWithFromReview('import-reason')
     )

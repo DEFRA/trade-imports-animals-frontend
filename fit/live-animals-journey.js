@@ -38,7 +38,8 @@ import { copy as originCopy } from '../src/server/app/sets/live-animals/journeys
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 import {
   COMMERCIAL,
-  PRIVATE
+  PRIVATE,
+  parties
 } from '../src/server/app/services/transporters/index.js'
 
 import { signIn } from './sign-in.js'
@@ -1278,6 +1279,44 @@ export const openTransporterList = async (page) => {
   await expect(
     page.getByRole('heading', { name: transportCopy.transporters.title })
   ).toBeVisible()
+}
+
+export const cannedPrivateTransporter = parties().find(
+  (record) => record.type === PRIVATE
+)
+
+export const cannedCommercialTransporter = parties().find(
+  (record) => record.type === COMMERCIAL
+)
+
+/**
+ * Saves the transporter list with a pick, returns to the overview and expects
+ * the transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter picked.
+ */
+export const saveAndExpectTransporterChosen = async (page, transporter) => {
+  await saveAndReturnToHub(page).click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.goto(journeyUrl(page, 'transporters'))
+  await expect(
+    page.getByRole('radio', { name: transporter.name })
+  ).toBeChecked()
+}
+
+/**
+ * Picks a transporter from the transporter list of a fresh notification
+ * arriving by air, saves it, returns to the overview and expects the
+ * transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter to pick.
+ */
+export const saveTransporterFromList = async (page, transporter) => {
+  await openTransporterList(page)
+  await page.getByRole('radio', { name: transporter.name }).check()
+  await saveAndExpectTransporterChosen(page, transporter)
 }
 
 /**

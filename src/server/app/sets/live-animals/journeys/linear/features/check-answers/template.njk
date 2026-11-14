@@ -57,7 +57,7 @@
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
-      {% if card.identifierTable or card.documents or card.emptyText or card.error %}
+      {% if card.identifierTable or card.groups.length or card.emptyText or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
           <div class="govuk-summary-card__title-wrapper">
             <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
@@ -75,9 +75,9 @@
                 rows: card.identifierTable.rows
               }) }}
             {% endif %}
-            {% for document in card.documents %}
-              <h4 class="govuk-heading-s">{{ document.heading }}</h4>
-              {{ govukSummaryList({ rows: document.rows }) }}
+            {% for group in card.groups %}
+              <h4 class="govuk-heading-s">{{ group.heading }}</h4>
+              {{ govukSummaryList({ rows: group.rows }) }}
             {% endfor %}
             {% if card.emptyText %}
               <p class="govuk-body">{{ card.emptyText }}</p>

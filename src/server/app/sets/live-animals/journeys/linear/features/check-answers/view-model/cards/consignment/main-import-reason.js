@@ -8,39 +8,54 @@ import { importReasonPage } from '../../../../import-reason/page.js'
 import {
   destinationCountryApplies,
   exitDateApplies,
+  exitsAsTransit,
   portOfExitApplies,
   purposeApplies
 } from '../../applicability.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { dateText } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-// The exit answers the chosen reason for import asks for. Each row stands only
-// while its obligation is in scope, so the review shows an exit answer exactly
-// when one was asked for.
-const exitRows = async (answers, scope) => [
-  ...(destinationCountryApplies(answers, scope)
+const destinationCountryRows = async (answers, scope) =>
+  destinationCountryApplies(answers, scope)
     ? [
         row(
           copy.rows.destinationCountry,
           await countries.countryDisplayLabel(answers.destinationCountry)
         )
       ]
-    : []),
-  ...(exitDateApplies(answers, scope)
+    : []
+
+const exitDateRows = (answers, scope) =>
+  exitDateApplies(answers, scope)
     ? [row(copy.rows.exitDate, dateText(answers.exitDate))]
-    : []),
-  ...(portOfExitApplies(answers, scope)
-    ? [
-        row(
-          copy.rows.portOfExit,
-          (await ports.label(answers.portOfExit)) ?? answers.portOfExit
-        )
-      ]
-    : [])
+    : []
+
+const portLabelOf = async (answers) =>
+  (await ports.label(answers.portOfExit)) ?? answers.portOfExit
+
+const portRows = async (answers, scope, label) =>
+  portOfExitApplies(answers, scope)
+    ? [row(label, await portLabelOf(answers))]
+    : []
+
+const transitExitRows = async (answers, scope) => [
+  ...(await portRows(answers, scope, copy.rows.exitBorderControlPost)),
+  ...(await destinationCountryRows(answers, scope))
 ]
+
+const otherExitRows = async (answers, scope) => [
+  ...(await destinationCountryRows(answers, scope)),
+  ...exitDateRows(answers, scope),
+  ...(await portRows(answers, scope, copy.rows.portOfExit))
+]
+
+const exitRows = (answers, scope) =>
+  exitsAsTransit(answers)
+    ? transitExitRows(answers, scope)
+    : otherExitRows(answers, scope)
 
 export const mainImportReasonCard = async ({
   journeyId,
@@ -53,7 +68,7 @@ export const mainImportReasonCard = async ({
   title: copy.cards.mainImportReason,
   ...editableActions({
     readOnly,
-    actions: cardAction(
+    actions: changeAction(
       { journeyId, changeLinkTrail },
       importReasonPage.slug,
       copy.hidden.cards.mainImportReason

@@ -5,7 +5,7 @@ import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as documentsEn } from '../../../documents/copy/copy.en.js'
 import { copy as documentsCy } from '../../../documents/copy/copy.cy.js'
 import { documentsPage } from '../../../documents/page.js'
-import { cardAction, editableActions } from '../rows/change-link.js'
+import { changeAction, editableActions } from '../rows/change-link.js'
 import { row } from '../rows/summary-row.js'
 import { dateText } from '../rows/value-text.js'
 
@@ -19,7 +19,7 @@ export const documentsCard = ({
   evaluation,
   readOnly
 }) => {
-  const documents = state
+  const groups = state
     .collectionView(answers, ['documents'], evaluation)
     .map(({ index, entry }) => ({
       heading: copy.documentN(index + 1),
@@ -41,13 +41,13 @@ export const documentsCard = ({
     title: copy.cards.documents,
     ...editableActions({
       readOnly,
-      actions: cardAction(
+      actions: changeAction(
         { journeyId, changeLinkTrail },
         documentsPage.slug,
         copy.hidden.cards.documents
       )
     }),
-    emptyText: documents.length === 0 ? copy.documentsEmpty : null,
-    documents
+    emptyText: groups.length === 0 ? copy.documentsEmpty : null,
+    groups
   }
 }

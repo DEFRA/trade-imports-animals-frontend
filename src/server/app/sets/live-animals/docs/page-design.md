@@ -86,8 +86,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   differently from the hub's. Each card stands directly under its section
   heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except
-  "Edit details" on an address copied onto this notification. A page that is
-  only sometimes asked gets its own card and link.
+  "Edit details" on an address copied onto this notification and the transit
+  countries row. The transit countries read back in a "Transit countries"
+  subsection of the Arrival details card, with their own row-level Change
+  link, when they apply.
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
 - The Addresses card carries one row per animal that has a saved

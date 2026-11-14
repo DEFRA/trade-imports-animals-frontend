@@ -20,7 +20,6 @@ export const aboutConsignmentSection = async ({
       journeyId,
       changeLinkTrail,
       answers,
-      scope,
       readOnly
     }),
     await mainImportReasonCard({

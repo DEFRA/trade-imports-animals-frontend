@@ -31,12 +31,7 @@ export const REVIEW_CARDS = [
   {
     id: 'arrivalDetails',
     anchor: 'arrival-details',
-    rows: ['arrivalDetails']
-  },
-  {
-    id: 'transitCountries',
-    anchor: 'transit-countries',
-    rows: ['transitCountries']
+    rows: ['arrivalDetails', 'transitCountries']
   },
   {
     id: 'transportDetails',
@@ -96,11 +91,11 @@ const blankEmptyRows = (rows) =>
 const blankEmptyValues = (card) => ({
   ...card,
   rows: blankEmptyRows(card.rows),
-  ...(Array.isArray(card.documents)
+  ...(Array.isArray(card.groups)
     ? {
-        documents: card.documents.map((document) => ({
-          ...document,
-          rows: blankEmptyRows(document.rows)
+        groups: card.groups.map((group) => ({
+          ...group,
+          rows: blankEmptyRows(group.rows)
         }))
       }
     : {})

@@ -1,17 +1,16 @@
-import { isBlank } from '../../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { transportersPage } from '../../../../transport/page.js'
 import { addressLines } from '../../rows/party-row.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { escapeHtml } from '../../../../../../../../../../../shared/escape-html.js'
 import { notApplicableCell } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-export const activeTransporter = (answers, scope) => {
+const activeTransporter = (answers, scope) => {
   if (scope.has('commercialTransporter')) {
     return answers.commercialTransporter
   }
@@ -21,28 +20,20 @@ export const activeTransporter = (answers, scope) => {
   return null
 }
 
-export const transporterAddressRow = (party) => {
-  const lines = addressLines(party?.address).map(escapeHtml)
+const transporterAddressRow = (transporter) => {
+  const lines = addressLines(transporter?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : notApplicableCell()
   }
 }
 
-export const approvalNumberRow = (transporter) =>
-  isBlank(transporter?.approvalNumber)
-    ? []
-    : [row(copy.rows.approvalNumber, transporter.approvalNumber)]
-
-export const activeTransporterRows = (transporter) =>
-  transporter
-    ? [
-        row(copy.rows.name, transporter.name),
-        transporterAddressRow(transporter),
-        row(copy.rows.country, transporter.address?.country),
-        ...approvalNumberRow(transporter)
-      ]
-    : []
+const transporterRows = (transporter) => [
+  row(copy.rows.name, transporter?.name),
+  transporterAddressRow(transporter),
+  row(copy.rows.country, transporter?.address?.country),
+  row(copy.rows.approvalNumber, transporter?.approvalNumber)
+]
 
 export const transportDetailsCard = ({
   journeyId,
@@ -50,22 +41,19 @@ export const transportDetailsCard = ({
   answers,
   scope,
   readOnly
-}) => {
-  const transporter = activeTransporter(answers, scope)
-  return {
-    id: 'transportDetails',
-    title: copy.cards.transportDetails,
-    ...editableActions({
-      readOnly,
-      actions: cardAction(
-        { journeyId, changeLinkTrail },
-        transportersPage.slug,
-        copy.hidden.cards.transportDetails
-      )
-    }),
-    rows: [
-      ...activeTransporterRows(transporter),
-      row(copy.rows.type, answers.transporterType)
-    ]
-  }
-}
+}) => ({
+  id: 'transportDetails',
+  title: copy.cards.transportDetails,
+  ...editableActions({
+    readOnly,
+    actions: changeAction(
+      { journeyId, changeLinkTrail },
+      transportersPage.slug,
+      copy.hidden.cards.transportDetails
+    )
+  }),
+  rows: [
+    ...transporterRows(activeTransporter(answers, scope)),
+    row(copy.rows.type, answers.transporterType)
+  ]
+})

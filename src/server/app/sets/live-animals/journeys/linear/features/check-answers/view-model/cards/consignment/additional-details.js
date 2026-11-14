@@ -4,7 +4,7 @@ import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { additionalDetailsPage } from '../../../../additional-details/page.js'
 import { unweanedApplies } from '../../applicability.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
@@ -22,7 +22,7 @@ export const additionalDetailsCard = ({
   title: copy.cards.additionalDetails,
   ...editableActions({
     readOnly,
-    actions: cardAction(
+    actions: changeAction(
       { journeyId, changeLinkTrail },
       additionalDetailsPage.slug,
       copy.hidden.cards.additionalDetails

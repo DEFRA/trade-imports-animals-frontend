@@ -22,15 +22,16 @@ export const copy = {
     mainImportReason: 'Main import reason',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
     addresses: 'Addresses',
     contactAddress: 'Contact address',
     documents: 'Uploaded documents'
   },
+  groups: {
+    transitCountries: 'Transit countries'
+  },
   rows: {
     countryOfOrigin: 'Country of origin',
-    regionCodeRequired: 'Region of origin code required',
     regionCode: 'Region of origin code',
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
@@ -40,13 +41,14 @@ export const copy = {
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
+    exitBorderControlPost: 'Exit border control post',
     commodityCode: 'Commodity code',
     speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     numberOfPackages: 'Number of packages',
     portOfEntry: 'Port of entry',
-    arrivalDate: 'Arrival date at port of entry',
+    arrivalDate: 'Arrival date at destination',
     meansOfTransport: 'Means of transport to the port of entry',
     transitedCountries: 'Countries that the consignment will travel through',
     transportIdentification: 'Transport identification',
@@ -81,11 +83,13 @@ export const copy = {
       mainImportReason: 'main import reason',
       additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
-      transitCountries: 'transit countries',
       transportDetails: 'transport details',
       addresses: 'addresses',
       contactAddress: 'contact address',
       documents: 'uploaded documents'
+    },
+    rows: {
+      transitCountries: 'transit countries'
     },
     commodity: (n) => `commodity ${n}`
   },
@@ -100,7 +104,6 @@ export const copy = {
       additionalDetails: 'Complete additional details',
       species: 'Complete species details',
       arrivalDetails: 'Complete arrival details',
-      transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
       addresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
