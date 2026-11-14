@@ -21,7 +21,7 @@ which fits a dev tool.
 ## Prerequisites
 
 - Workspace compose stack running locally (`tim docker dev` or
-  `scripts/stack/run-stack.sh`). MongoDB, backend, and frontend up.
+  `tim docker up`). MongoDB, backend, and frontend up.
 - `MONGODB_URI` reachable at `mongodb://localhost:27017` (the compose
   stack default). Override with the env var if your Mongo is somewhere
   else.
