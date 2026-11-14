@@ -52,6 +52,7 @@ import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
+import { notApplicableCell } from './view-model/rows/value-text.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { documentOf } from '../../../../../../../common/test-helpers/document-of.js'
@@ -212,7 +213,6 @@ const withoutParty = (seed, partyId) => {
 const ADDRESS_LINE_1 = '43 East Hague Extension'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
-const STUB_TELEPHONE = '01632 960000'
 const PRIVATE_TRANSPORTER_TYPE = 'Private'
 const PRIVATE_TRANSPORTER_NAME = 'Jean Dupont'
 
@@ -256,7 +256,8 @@ const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ADDRESSES_CARD = 'Addresses'
 const CONTACT_ADDRESS_CARD = 'Contact address'
 const CONTACT_ADDRESS_KEY = 'Contact address'
-const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
+const DOCUMENT_1_CARD = 'Document 1'
+const DOCUMENT_2_CARD = 'Document 2'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
@@ -274,6 +275,11 @@ const NUMBER_OF_ANIMALS_KEY = 'Number of animals'
 const BOS_TAURUS_HEADING = 'Bos Taurus'
 const BISON_BISON_HEADING = 'Bison Bison'
 const DOCUMENT_TYPE_KEY = 'Document type'
+const DOCUMENT_REFERENCE_KEY = 'Document reference'
+const ATTACHMENT_KEY = 'Attachment'
+const DATE_OF_ISSUE_KEY = 'Date of issue'
+const ATTACHMENT_FILENAME = 'itahc-certificate.pdf'
+const DOCUMENTS_SLUG = 'accompanying-documents'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
 const PORT_OF_EXIT_KEY = 'Port of exit'
@@ -328,6 +334,7 @@ const fullSeed = {
     {
       accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
       accompanyingDocumentAttachmentType: 'PDF',
+      filename: ATTACHMENT_FILENAME,
       accompanyingDocumentReference: 'GBHC1234567890',
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
     }
@@ -408,14 +415,15 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   )
 
-  it('Should keep the documents card readable on a submitted journey with nothing uploaded', async () => {
+  it('Should read a single Document 1 card as not applicable on a submitted journey with nothing uploaded', async () => {
     const seed = { ...fullSeed }
     delete seed.documents
     const view = await viewForStatus(SUBMITTED, seed)
-    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
     expect(card.actions).toBeUndefined()
-    expect(card.emptyText).toBe('You have not added any documents yet.')
+    expect(keysOf(card.rows)).toEqual([DOCUMENT_REFERENCE_KEY])
+    expect(card.rows[0].value).toEqual(notApplicableCell())
   })
 
   it('Should expose Cancel amend in the strip only on an amending review', async () => {
@@ -584,7 +592,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       ADDITIONAL_DETAILS_CARD,
       ARRIVAL_DETAILS_CARD,
       TRANSPORT_DETAILS_CARD,
-      UPLOADED_DOCUMENTS_CARD,
+      DOCUMENT_1_CARD,
       ADDRESSES_CARD,
       CONTACT_ADDRESS_CARD
     ])
@@ -611,7 +619,7 @@ describe(`${SUITE} — section headings and cards`, () => {
         TRANSPORT_AND_ARRIVAL_ANCHOR,
         [ARRIVAL_DETAILS_CARD, TRANSPORT_DETAILS_CARD]
       ],
-      ['documents-section', [UPLOADED_DOCUMENTS_CARD]],
+      ['documents-section', [DOCUMENT_1_CARD]],
       ['consignment-addresses', [ADDRESSES_CARD]],
       ['contact-address-section', [CONTACT_ADDRESS_CARD]]
     ])
@@ -813,21 +821,50 @@ describe(`${SUITE} — commodity selection and species blocks`, () => {
 describe(`${SUITE} — fully-populated notification, documents and change links`, () => {
   setupCheckAnswersEngine()
 
-  it('Should render a document group with the design rows inside the uploaded-documents card', async () => {
-    const card = cardByTitle(
-      await sectionsFor(fullSeed),
-      UPLOADED_DOCUMENTS_CARD
-    )
-    expect(card.groups).toHaveLength(1)
-    expect(card.emptyText).toBeNull()
-    const [document] = card.groups
-    expect(document.heading).toBe('Document 1')
-    expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
-    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
+  it('Should render the Document 1 card with document reference, type, date of issue and the attachment file name', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), DOCUMENT_1_CARD)
+
+    expect(keysOf(card.rows)).toEqual([
+      DOCUMENT_REFERENCE_KEY,
+      DOCUMENT_TYPE_KEY,
+      DATE_OF_ISSUE_KEY,
+      ATTACHMENT_KEY
+    ])
+    expect(valueOf(card.rows, DOCUMENT_REFERENCE_KEY)).toBe('GBHC1234567890')
+    expect(valueOf(card.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Other veterinary certificate / veterinary declaration'
     )
-    expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
-    expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
+    expect(valueOf(card.rows, DATE_OF_ISSUE_KEY)).toBe('12/12/2025')
+    expect(valueOf(card.rows, ATTACHMENT_KEY)).toBe(ATTACHMENT_FILENAME)
+  })
+
+  it('Should give each of two uploaded documents its own card, in upload order, with a Change link naming it and the anchor only on the first', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      documents: [
+        ...fullSeed.documents,
+        { ...fullSeed.documents[0], filename: 'second.pdf' }
+      ]
+    })
+    const documentCards = [DOCUMENT_1_CARD, DOCUMENT_2_CARD].map((title) =>
+      cardByTitle(sections, title)
+    )
+
+    expect(
+      documentCards.map((card) => valueOf(card.rows, ATTACHMENT_KEY))
+    ).toEqual([ATTACHMENT_FILENAME, 'second.pdf'])
+    expect(
+      documentCards.map((card) => card.actions.items[0].visuallyHiddenText)
+    ).toEqual(['document 1', 'document 2'])
+    for (const card of documentCards) {
+      expect(card.actions.items[0].href).toMatch(
+        hrefEndingWithFromReview(DOCUMENTS_SLUG)
+      )
+    }
+    expect(documentCards.map((card) => card.anchor)).toEqual([
+      'documents',
+      undefined
+    ])
   })
 
   it('Should format the arrival date as day/month/year', async () => {
@@ -839,20 +876,20 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     ).toBe('12/12/2026')
   })
 
-  it('Should expand party rows to the stored name, address lines, telephone and email', async () => {
+  it('Should read party rows back as the stored name, address lines and country, each on its own line', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
     expect(htmlOf(card.rows, 'Consignor')).toBe(
-      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland<br>${STUB_TELEPHONE}<br>astra-rosales@example.com`
+      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
     )
     expect(htmlOf(card.rows, PLACE_OF_DESTINATION_KEY)).toBe(
-      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
+      '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
       CONTACT_ADDRESS_CARD
     )
     expect(htmlOf(contact.rows, CONTACT_ADDRESS_KEY)).toBe(
-      `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom<br>${STUB_TELEPHONE}<br>animal-and-plant-health-agency@example.com`
+      '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
     )
   })
 
@@ -959,14 +996,12 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     ).toBeUndefined()
   })
 
-  it('Should point the uploaded-documents card Change action at the documents page carrying the review on the trail', async () => {
-    const card = cardByTitle(
-      await sectionsFor(fullSeed),
-      UPLOADED_DOCUMENTS_CARD
-    )
+  it('Should point the Document 1 card Change action at the documents page carrying the review on the trail, naming the card for screen readers', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), DOCUMENT_1_CARD)
     expect(card.actions.items[0].href).toMatch(
-      hrefEndingWithFromReview('accompanying-documents')
+      hrefEndingWithFromReview(DOCUMENTS_SLUG)
     )
+    expect(card.actions.items[0].visuallyHiddenText).toBe('document 1')
   })
 })
 
@@ -1178,10 +1213,9 @@ describe(`${SUITE} — document type labels`, () => {
           { ...fullSeed.documents[0], accompanyingDocumentType: code }
         ]
       }
-      const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
-      const [document] = card.groups
+      const card = cardByTitle(await sectionsFor(seed), DOCUMENT_1_CARD)
 
-      expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(label)
+      expect(valueOf(card.rows, DOCUMENT_TYPE_KEY)).toBe(label)
       expect(documentsCopy.types[code]).toBe(label)
     }
   )
@@ -1429,23 +1463,20 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBeNull()
   })
 
-  it('Should keep the documents section and its card when nothing has been uploaded', async () => {
+  it('Should keep the documents section with one Document 1 card reading not applicable when nothing has been uploaded', async () => {
     const sections = await sectionsFor(gatedOffSeed)
     expect(sections.map((section) => section.heading)).toContain(
       '4. Uploaded documents'
     )
-    const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
-    expect(card.groups).toEqual([])
-    expect(card.emptyText).toBe('You have not added any documents yet.')
+    const card = cardByTitle(sections, DOCUMENT_1_CARD)
+    expect(keysOf(card.rows)).toEqual([DOCUMENT_REFERENCE_KEY])
+    expect(card.rows[0].value).toEqual(notApplicableCell())
   })
 
   it('Should still offer the Change route to the documents page when nothing has been uploaded', async () => {
-    const card = cardByTitle(
-      await sectionsFor(gatedOffSeed),
-      UPLOADED_DOCUMENTS_CARD
-    )
+    const card = cardByTitle(await sectionsFor(gatedOffSeed), DOCUMENT_1_CARD)
     expect(card.actions.items[0].href).toMatch(
-      hrefEndingWithFromReview('accompanying-documents')
+      hrefEndingWithFromReview(DOCUMENTS_SLUG)
     )
   })
 
@@ -1530,21 +1561,41 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
     expect(reference.value.html).toBeUndefined()
   })
 
-  it('Should leave the blank rows inside an unfinished documents card with only a visually hidden Missing', async () => {
+  it('Should leave the blank rows inside an unfinished Document 1 card with only a visually hidden Missing', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
     })
-    const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
-    const [document] = card.groups
+    const card = cardByTitle(sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBe(DOCUMENTS_INCOMPLETE)
-    expect(htmlOf(document.rows, 'Document reference')).toBe(MISSING_HTML)
-    expect(htmlOf(document.rows, 'Date of issue')).toBe(MISSING_HTML)
-    expect(htmlOf(document.rows, 'Attachment type')).toBe(MISSING_HTML)
-    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
+    expect(htmlOf(card.rows, DOCUMENT_REFERENCE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(card.rows, DATE_OF_ISSUE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(card.rows, ATTACHMENT_KEY)).toBe(MISSING_HTML)
+    expect(valueOf(card.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Other veterinary certificate / veterinary declaration'
     )
+  })
+
+  it('Should mark every document card unfinished and hide its blanks while a later document is unfinished, anchoring only the first', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      documents: [
+        ...fullSeed.documents,
+        { accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }
+      ]
+    })
+    const first = cardByTitle(sections, DOCUMENT_1_CARD)
+    const second = cardByTitle(sections, DOCUMENT_2_CARD)
+
+    expect([first.error, second.error]).toEqual([
+      DOCUMENTS_INCOMPLETE,
+      DOCUMENTS_INCOMPLETE
+    ])
+    expect([first.anchor, second.anchor]).toEqual(['documents', undefined])
+    expect(htmlOf(second.rows, DOCUMENT_REFERENCE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(second.rows, DATE_OF_ISSUE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(second.rows, ATTACHMENT_KEY)).toBe(MISSING_HTML)
   })
 
   it('Should leave a blank transit countries row inside an unfinished arrival details card with only a visually hidden Missing', async () => {
@@ -1732,7 +1783,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     expect(html).toContain(BROKEN_COPY.name)
   })
 
-  it('Should show the telephone and email of a copy refused only for its contact details', async () => {
+  it('Should show the error above a copy refused only for its contact details, reading back its name, address lines and country', async () => {
     const badEmail = {
       ...copyOf(CONSIGNOR_ADDRESS_ID),
       phone: '+44 7700 900123',
@@ -1744,9 +1795,13 @@ describe(`${SUITE} — copied party addresses`, () => {
     )
     const html = htmlOf(card.rows, 'Consignor')
 
+    const readBack = `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
+
     expect(html).toContain(CONSIGNOR_ERROR)
-    expect(html).toContain('+44 7700 900123')
-    expect(html).toContain('not-an-email')
+    expect(html).toContain(readBack)
+    expect(html.indexOf(CONSIGNOR_ERROR)).toBeLessThan(html.indexOf(readBack))
+    expect(html).not.toContain(badEmail.phone)
+    expect(html).not.toContain(badEmail.email)
   })
 
   it('Should give no copied role and no contact address row any action on a draft', async () => {
@@ -2514,18 +2569,18 @@ describe(`${SUITE} — document scan card errors`, () => {
     documents: [scanDoc({ filename })]
   })
 
-  it('Should name the uploaded-documents card when a stored document was rejected by the scan', async () => {
+  it('Should name the Document 1 card when a stored document was rejected by the scan', async () => {
     const card = cardByTitle(
       await sectionsFor(seedWithDoc(REJECTED_FILENAME)),
-      UPLOADED_DOCUMENTS_CARD
+      DOCUMENT_1_CARD
     )
 
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 
-  it('Should name the uploaded-documents card as still scanning when Continue is refused with a pending document', async () => {
+  it('Should name the Document 1 card as still scanning when Continue is refused with a pending document', async () => {
     const view = await reviewAfterRefusal(seedWithDoc(PENDING_FILENAME))
-    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBe(documentsEn.errors.someStillScanning)
   })
@@ -2534,15 +2589,15 @@ describe(`${SUITE} — document scan card errors`, () => {
     const { view } = await driveHandler(getHandler, {
       seed: seedWithDoc(PENDING_FILENAME)
     })
-    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBeNull()
     expect(view.context.errorSummary).toBeNull()
   })
 
-  it('Should keep the rejected message on the uploaded-documents card when Continue is refused with a rejected document', async () => {
+  it('Should keep the rejected message on the Document 1 card when Continue is refused with a rejected document', async () => {
     const view = await reviewAfterRefusal(seedWithDoc(REJECTED_FILENAME))
-    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
@@ -2555,9 +2610,31 @@ describe(`${SUITE} — document scan card errors`, () => {
         scanDoc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })
       ]
     })
-    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBe(documentsEn.errors.someRejected)
+    expect(cardByTitle(view.context.sections, DOCUMENT_2_CARD).error).toBe(
+      documentsEn.errors.someRejected
+    )
+  })
+
+  it('Should link the error summary to the first of two document cards that both carry a scan error', async () => {
+    const view = await reviewAfterRefusal({
+      ...fullSeed,
+      documents: [
+        scanDoc({ uploadId: 'upload-1', filename: REJECTED_FILENAME }),
+        scanDoc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })
+      ]
+    })
+    const first = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
+    const second = cardByTitle(view.context.sections, DOCUMENT_2_CARD)
+    const entries = view.context.errorSummary.errorList.filter(
+      (item) => item.text === documentsEn.errors.someRejected
+    )
+
+    expect(second.error).toBe(documentsEn.errors.someRejected)
+    expect(second.anchor).toBeUndefined()
+    expect(entries.map((item) => item.href)).toEqual([`#${first.anchor}`])
   })
 
   it('Should not carry any scan card error on a submitted notification', async () => {
@@ -2565,7 +2642,7 @@ describe(`${SUITE} — document scan card errors`, () => {
       SUBMITTED,
       seedWithDoc(REJECTED_FILENAME)
     )
-    const card = cardByTitle(context.sections, UPLOADED_DOCUMENTS_CARD)
+    const card = cardByTitle(context.sections, DOCUMENT_1_CARD)
 
     expect(card.error).toBeNull()
   })

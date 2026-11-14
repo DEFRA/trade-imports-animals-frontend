@@ -100,6 +100,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
+- Each party and the contact address read back as the name, then each non-empty
+  address line, town or city, county and postcode, then the country, each on
+  its own line, with no telephone or email.
 - The Addresses card carries a "Permanent address" subsection after the county
   parish holding row, with one entry per animal that has a saved permanent
   address. Each entry is keyed by the animal's species common name and number
@@ -123,8 +126,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Commodity cards carry no card id, so the error summary names commodity details
   without marking a card, and names each short species and links to its own
   block, which shows no message.
-- The documents card always shows, because documents are part of the
-  notification even when none are uploaded. With none, it says so.
+- The documents section always shows, because documents are part of the
+  notification even when none are uploaded. Each uploaded document has its own
+  card titled "Document n", with rows Document reference, Document type, Date
+  of issue and Attachment, which reads the uploaded file's name. With none
+  uploaded there is one "Document 1" card whose Document reference reads "Not
+  applicable".
+- Every document card carries the documents card id. Only the first carries
+  the anchor the error summary links to, because a page holds one id per
+  anchor. Every document card carries the documents error line and border, and
+  hides its blank cells: the documents answers are one unit of "unfinished"
+  that the review cannot split by document, and the border and line are the
+  only visible marking of hidden blanks.
 - A submitted notification's review shows no form, no Change links and no
   document scan errors.
 - The means of transport row reads the arrival page's own label for the

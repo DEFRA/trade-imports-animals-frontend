@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { insetAddressLines, pickerAddressLines } from './address-lines.js'
+import {
+  addressParts,
+  insetAddressLines,
+  pickerAddressLines
+} from './address-lines.js'
 
 const FULL_STREET_LINES = ['Dockside Business Park', 'Warehouse 3', 'East Quay']
 const SHORT_STREET_LINE = '41 Commerce Way'
@@ -52,6 +56,25 @@ describe('#insetAddressLines', () => {
     expect(insetAddressLines({ address: shortAddress })).toEqual([
       SHORT_STREET_LINE,
       'Bristol, BS11 9DQ, United Kingdom'
+    ])
+  })
+})
+
+describe('#addressParts', () => {
+  it('Should give every filled street and locality part on its own entry, without the country', () => {
+    expect(addressParts(fullAddress)).toEqual([
+      ...FULL_STREET_LINES,
+      'Hull',
+      'East Riding of Yorkshire',
+      'HU9 5PX'
+    ])
+  })
+
+  it('Should leave out blank parts', () => {
+    expect(addressParts(shortAddress)).toEqual([
+      SHORT_STREET_LINE,
+      'Bristol',
+      'BS11 9DQ'
     ])
   })
 })

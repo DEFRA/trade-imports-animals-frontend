@@ -345,7 +345,7 @@ test.describe('live-animals journey glue', () => {
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
-    await page.getByRole('link', { name: 'Change uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Change document 1' }).click()
     await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await addDocument(page, secondDocument)
     await expect(page).toHaveURL(documentsOnTheReviewTrail)

@@ -297,7 +297,11 @@ in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without th
 leaf the fit assertion "one Change link per card, named for its card, in card
 order, and none on a row of a new notification"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
-fails. Use `scope` to omit out-of-scope rows. Extend
+fails. A section with one card per collection entry has no `hidden.cards.<cardId>`
+leaf: each card's hidden suffix is built from its own title, as `copy.hidden.document(n)`
+does in
+[`check-answers/view-model/cards/documents.js`](../journeys/linear/features/check-answers/view-model/cards/documents.js).
+Use `scope` to omit out-of-scope rows. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
 for every value, and for the card's one Change target.
 

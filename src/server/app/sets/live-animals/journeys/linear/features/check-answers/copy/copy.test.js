@@ -26,6 +26,7 @@ describe('#copy', () => {
     )
     expect(copy.documentN(1)).toBe('Document 1')
     expect(copy.hidden.commodity('0102')).toBe('commodity 0102')
+    expect(copy.hidden.document(1)).toBe('document 1')
   })
 })
 

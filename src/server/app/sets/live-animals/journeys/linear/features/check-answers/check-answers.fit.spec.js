@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  addDocument,
+  openDocuments,
   BASE,
   DESKTOP_VIEWPORT,
   BISON_BISON_ROW,
@@ -321,7 +323,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.arrivalDetails,
       copy.cards.transportDetails,
       copy.sections.documents,
-      copy.cards.documents,
+      copy.documentN(1),
       copy.sections.consignmentAddresses,
       copy.cards.addresses,
       copy.sections.contactAddress,
@@ -351,7 +353,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.additionalDetails,
       copy.cards.arrivalDetails,
       copy.cards.transportDetails,
-      copy.cards.documents,
+      copy.documentN(1),
       copy.cards.addresses,
       copy.cards.contactAddress
     ])
@@ -373,11 +375,13 @@ test.describe('check-answers feature documents section', () => {
       page.getByRole('heading', { name: copy.sections.documents })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.cards.documents, exact: true })
+      page.getByRole('heading', { name: copy.documentN(1), exact: true })
     ).toBeVisible()
-    await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
+    await expect(
+      rowFor(page, copy.rows.documentReference).getByRole('definition')
+    ).toHaveText(sharedCopy.notApplicable)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.documents)
+    const changeLink = cardChangeLink(page, copy.hidden.document(1))
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
@@ -388,6 +392,24 @@ test.describe('check-answers feature documents section', () => {
     await expect(page).toHaveURL(
       /\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
     )
+  })
+
+  test('reads the uploaded file name back as the Attachment of the Document 1 card', async ({
+    page
+  }) => {
+    const filename = 'itahc-review.pdf'
+    await openDocuments(page)
+    await addDocument(page, {
+      accompanyingDocumentReference: 'GBHC0000000001',
+      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename
+    })
+    await openNotificationView(page)
+
+    await expect(
+      rowFor(page, copy.rows.attachment).getByRole('definition')
+    ).toHaveText(filename)
   })
 })
 
@@ -556,7 +578,7 @@ test.describe('check-answers feature change links', () => {
         copy.hidden.cards.additionalDetails,
         copy.hidden.cards.arrivalDetails,
         copy.hidden.cards.transportDetails,
-        copy.hidden.cards.documents,
+        copy.hidden.document(1),
         copy.hidden.cards.addresses,
         copy.hidden.cards.contactAddress
       ].map((hiddenText) => {

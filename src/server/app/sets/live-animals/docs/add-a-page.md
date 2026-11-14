@@ -265,7 +265,11 @@ the page's fields go into a NEW card, the card needs one
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
 the fit assertion "one Change link per card, named for its card, in card order, and none on a row of a new notification"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
-fails. Extend
+fails. A card repeated once per collection entry has no `hidden.cards.<cardId>`
+leaf: each card's hidden suffix is built from its own title, as `copy.hidden.document(n)`
+does in
+[`check-answers/view-model/cards/documents.js`](../journeys/linear/features/check-answers/view-model/cards/documents.js).
+Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).
 
 Canonical persistence is complete once the feature binding is registered. If

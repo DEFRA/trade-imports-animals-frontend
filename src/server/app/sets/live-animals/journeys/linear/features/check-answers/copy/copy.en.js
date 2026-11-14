@@ -24,8 +24,7 @@ export const copy = {
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
     addresses: 'Addresses',
-    contactAddress: 'Contact address',
-    documents: 'Uploaded documents'
+    contactAddress: 'Contact address'
   },
   groups: {
     transitCountries: 'Transit countries',
@@ -69,14 +68,13 @@ export const copy = {
     documentReference: 'Document reference',
     documentType: 'Document type',
     dateOfIssue: 'Date of issue',
-    attachmentType: 'Attachment type'
+    attachment: 'Attachment'
   },
   identificationDetails: {
     animalColumn: 'Animal',
     heading: 'Identification details'
   },
   documentN: (n) => `Document ${n}`,
-  documentsEmpty: 'You have not added any documents yet.',
   hidden: {
     cards: {
       originOfImport: 'origin of import',
@@ -86,9 +84,9 @@ export const copy = {
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
       addresses: 'addresses',
-      contactAddress: 'contact address',
-      documents: 'uploaded documents'
+      contactAddress: 'contact address'
     },
+    document: (n) => `document ${n}`,
     rows: {
       transitCountries: 'transit countries'
     },

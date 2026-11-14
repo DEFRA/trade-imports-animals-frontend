@@ -122,22 +122,35 @@ const blankEmptyValues = (card) => ({
     : {})
 })
 
-const decorateCard = (card, cardErrors) => {
+const decorateCard = (card, cardErrors, { carriesAnchor }) => {
   const known = cardById.get(card.id)
   if (!known) {
     return card
   }
   const decorated = {
     ...card,
-    anchor: known.anchor,
+    ...(carriesAnchor ? { anchor: known.anchor } : {}),
     error: cardErrors[card.id] ?? null
   }
   return decorated.error ? blankEmptyValues(decorated) : decorated
 }
 
-/** Give every card its anchor, and the unfinished ones their own message. */
-export const withCardErrors = (sections, cardErrors = {}) =>
-  sections.map((section) => ({
+/**
+ * Give each card with a known id that id's message when it is unfinished, and
+ * the first card of each id the anchor the error summary links to.
+ *
+ * @param {object[]} sections - the review sections, in page order.
+ * @param {object} [cardErrors] - map of card id to message.
+ * @returns {object[]} the sections with their cards decorated.
+ */
+export const withCardErrors = (sections, cardErrors = {}) => {
+  const anchored = new Set()
+  return sections.map((section) => ({
     ...section,
-    cards: section.cards.map((card) => decorateCard(card, cardErrors))
+    cards: section.cards.map((card) => {
+      const carriesAnchor = !anchored.has(card.id)
+      anchored.add(card.id)
+      return decorateCard(card, cardErrors, { carriesAnchor })
+    })
   }))
+}

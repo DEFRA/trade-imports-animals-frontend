@@ -2,7 +2,7 @@ import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { transportersPage } from '../../../../transport/page.js'
-import { addressLines } from '../../rows/party-row.js'
+import { addressParts } from '../../../../addresses/party-picker/view-model/address-lines.js'
 import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { escapeHtml } from '../../../../../../../../../../../shared/escape-html.js'
@@ -21,7 +21,7 @@ const activeTransporter = (answers, scope) => {
 }
 
 const transporterAddressRow = (transporter) => {
-  const lines = addressLines(transporter?.address).map(escapeHtml)
+  const lines = addressParts(transporter?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : notApplicableCell()

@@ -6,7 +6,7 @@ import { PARTIES } from '../../../../addresses/parties.js'
 import { cphNumberWithSlashes } from '../../../../cph-number/cph-number.js'
 import { cphApplies } from '../../applicability.js'
 import { changeAction, editableActions } from '../../rows/change-link.js'
-import { partyRow, permanentAddressRow } from '../../rows/party-row.js'
+import { partyRow } from '../../rows/party-row.js'
 import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
@@ -14,9 +14,7 @@ const copy = copyFor({ en, cy })
 const permanentAddressGroups = (permanentAddresses) => {
   const rows = permanentAddresses
     .filter(({ permanentAddress }) => permanentAddress)
-    .map(({ label, permanentAddress }) =>
-      permanentAddressRow(label, permanentAddress)
-    )
+    .map(({ label, permanentAddress }) => partyRow(label, permanentAddress))
   return rows.length > 0
     ? [{ heading: copy.groups.permanentAddress, rows }]
     : []

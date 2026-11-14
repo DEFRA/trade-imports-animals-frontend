@@ -25,8 +25,7 @@ export const copy = {
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
     addresses: 'Cyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt',
-    documents: 'Dogfennau wedi’u huwchlwytho'
+    contactAddress: 'Cyfeiriad cyswllt'
   },
   groups: {
     transitCountries: 'Gwledydd tramwy',
@@ -70,14 +69,13 @@ export const copy = {
     documentReference: 'Cyfeirnod y ddogfen',
     documentType: 'Math o ddogfen',
     dateOfIssue: 'Dyddiad cyhoeddi',
-    attachmentType: 'Math o atodiad'
+    attachment: 'Atodiad'
   },
   identificationDetails: {
     animalColumn: 'Anifail',
     heading: 'Manylion adnabod'
   },
   documentN: (n) => `Dogfen ${n}`,
-  documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   hidden: {
     cards: {
       originOfImport: 'tarddiad y mewnforio',
@@ -87,9 +85,9 @@ export const copy = {
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
       addresses: 'cyfeiriadau',
-      contactAddress: 'cyfeiriad cyswllt',
-      documents: 'dogfennau wedi’u huwchlwytho'
+      contactAddress: 'cyfeiriad cyswllt'
     },
+    document: (n) => `dogfen ${n}`,
     rows: {
       transitCountries: 'gwledydd tramwy'
     },
