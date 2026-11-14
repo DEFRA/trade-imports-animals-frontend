@@ -5,6 +5,7 @@ import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { addressesPage as page } from './page.js'
 import { cphNumberPage } from '../cph-number/page.js'
+import { cphNumberWithSlashes } from '../cph-number/cph-number.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import {
   anyLineNeedsPermanentAddress,
@@ -75,7 +76,10 @@ const cphSection = (request, journeyId, answers) => {
     title: copy.cph.title,
     hint: copy.cph.hint,
     add: { href, text: copy.cph.add },
-    chosen: cphNumber && { lines: [cphNumber], changeHref: href }
+    chosen: cphNumber && {
+      lines: [cphNumberWithSlashes(cphNumber)],
+      changeHref: href
+    }
   })
 }
 

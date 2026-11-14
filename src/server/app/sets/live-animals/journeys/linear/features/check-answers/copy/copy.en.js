@@ -3,7 +3,6 @@ export const copy = {
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   change: 'Change',
-  editDetails: 'Edit details',
   cancelAmend: {
     successTitle: 'Success',
     successBody:
@@ -29,7 +28,8 @@ export const copy = {
     documents: 'Uploaded documents'
   },
   groups: {
-    transitCountries: 'Transit countries'
+    transitCountries: 'Transit countries',
+    permanentAddress: 'Permanent address'
   },
   rows: {
     countryOfOrigin: 'Country of origin',

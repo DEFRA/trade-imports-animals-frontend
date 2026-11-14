@@ -8,7 +8,6 @@ const copy = copyFor({ en, cy })
 export const consignmentAddressesSection = ({
   journeyId,
   changeLinkTrail,
-  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
@@ -21,7 +20,6 @@ export const consignmentAddressesSection = ({
     addressesCard({
       journeyId,
       changeLinkTrail,
-      reviewPageTrail,
       answers,
       readOnly,
       parties,

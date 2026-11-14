@@ -287,8 +287,10 @@ A section id carries a suffix (`documents-section`,
 links to.
 
 The card heading carries the Change link for the answers inside the card.
-The exception is a row in a headed group (`card.groups`) for a page the journey
-only sometimes asks, which carries its own link built with `changeAction`. Each
+The exception is the transit countries row in the Arrival details card's headed
+group, which carries its own link built with `changeAction`. The Addresses
+card's Permanent address group carries none: the card's header Change link
+changes it. Each
 new card needs one `changeAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`,
 wrapped in `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf
 in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that

@@ -4,7 +4,6 @@ export const copy = {
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   change: 'Newid',
-  editDetails: 'Golygu manylion',
   cancelAmend: {
     successTitle: 'Llwyddiant',
     successBody:
@@ -30,7 +29,8 @@ export const copy = {
     documents: 'Dogfennau wedi’u huwchlwytho'
   },
   groups: {
-    transitCountries: 'Gwledydd tramwy'
+    transitCountries: 'Gwledydd tramwy',
+    permanentAddress: 'Cyfeiriad parhaol'
   },
   rows: {
     countryOfOrigin: 'Gwlad tarddiad',

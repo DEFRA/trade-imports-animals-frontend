@@ -145,12 +145,12 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
-test.describe('check-answers feature permanent address rows', () => {
+test.describe('check-answers feature Permanent address subsection of the Addresses card', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('renders one review row per cat, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
+  test('renders one entry per cat in the Addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -181,13 +181,22 @@ test.describe('check-answers feature permanent address rows', () => {
     await openReviewFromHub(page)
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    const catOneRow = rowFor(page, 'Domestic Cat 1')
-    await expect(catOneRow).toContainText(
-      partyPickerName(values.placeOfDestination)
+    const addressesCard = page.locator('#addresses')
+    await expect(
+      addressesCard.getByRole('heading', { name: 'Permanent address' })
+    ).toBeVisible()
+    const catOneEntry = addressesCard
+      .locator('.govuk-summary-list__row', { hasText: 'Domestic Cat 1' })
+      .getByRole('definition')
+    await expect(catOneEntry).toHaveText(
+      `${partyPickerName(values.placeOfDestination)} 18 Dockside Road London E14 9GE United Kingdom`,
+      { useInnerText: true }
     )
-    await expect(catOneRow).toContainText('18 Dockside Road')
-    await expect(catOneRow).toContainText('United Kingdom')
-    await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
+    await expect(
+      addressesCard.locator('.govuk-summary-list__row', {
+        hasText: 'Domestic Cat 2'
+      })
+    ).toContainText('Pet Owner')
 
     const speciesBlock = page.locator('[id^="species-block-"]', {
       has: page.getByRole('heading', { name: 'Felis Catus', exact: true })

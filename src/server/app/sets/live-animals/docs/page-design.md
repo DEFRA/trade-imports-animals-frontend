@@ -89,21 +89,26 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   - the first row of each species block: Change opens consignment details
   - each species block's Identification details table: Change opens animal
     identification
-  - "Edit details" on an address copied onto this notification
   - the transit countries row
+
+  The Addresses and Contact address cards carry no row link: a party row has
+  none. An address copied onto the notification that breaks the address-book
+  rules is reached from its error summary entry, which links to its edit page.
 
   The transit countries read back in a "Transit countries" subsection of the
   Arrival details card, with their own row-level Change link, when they apply.
 
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
-- The Addresses card carries one row per animal that has a saved
-  permanent address, after the county parish holding row, each keyed by the
-  animal's species common name and number and holding that animal's saved
-  address exactly as a party row reads. An animal that still owes one has no
-  row: the card that shows the answer is not the card that owes it. A line
-  that needs a permanent address with no animal counted carries no row
-  either.
+- The Addresses card carries a "Permanent address" subsection after the county
+  parish holding row, with one entry per animal that has a saved permanent
+  address. Each entry is keyed by the animal's species common name and number
+  and holds that animal's name, address lines and country, with no telephone or
+  email. An animal that still owes one has no entry: the card that shows the
+  answer is not the card that owes it. With no animal holding a saved address
+  there is no subsection.
+- The county parish holding number reads with slashes, such as 12/345/6789,
+  wherever it is shown. It is stored as nine digits.
 - Each species block's identifiers sit under an "Identification details"
   heading, in a table that heads only the identifiers the species was asked
   for; it carries no permanent address column.
@@ -344,8 +349,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
   which full address they chose, name and every address line. The county
-  parish holding number follows the same section shape, with its stored value
-  on one line and no Edit details.
+  parish holding number follows the same section shape, with its number read
+  with slashes on one line and no Edit details.
 - Each section is a region named by its heading, so a screen reader lists the
   parties. The add link names the party, so it needs no visually hidden
   suffix. Change and Edit details keep a visually hidden suffix naming the

@@ -123,7 +123,6 @@ const renderCya = async (
       evaluation,
       journeyId: journey.journeyId,
       changeLinkTrail,
-      reviewPageTrail,
       readOnly,
       parties,
       partyErrors,

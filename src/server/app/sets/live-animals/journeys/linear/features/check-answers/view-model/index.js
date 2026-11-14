@@ -11,7 +11,6 @@ export const buildSections = async ({
   evaluation,
   journeyId,
   changeLinkTrail,
-  reviewPageTrail,
   readOnly = false,
   parties = answers,
   partyErrors = {},
@@ -54,7 +53,6 @@ export const buildSections = async ({
     consignmentAddressesSection({
       journeyId,
       changeLinkTrail,
-      reviewPageTrail,
       answers,
       readOnly,
       parties,
@@ -64,7 +62,6 @@ export const buildSections = async ({
     contactAddressSection({
       journeyId,
       changeLinkTrail,
-      reviewPageTrail,
       answers,
       readOnly,
       parties,

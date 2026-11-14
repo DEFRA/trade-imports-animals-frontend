@@ -170,6 +170,9 @@ const rowsOf = (sections) =>
     ...(card.groups ?? []).flatMap((group) => group.rows)
   ])
 
+const groupRowsOf = (card, heading) =>
+  card.groups.find((group) => group.heading === heading)?.rows
+
 const rowByKey = (rows, key) => rows.find((row) => row.key.text === key)
 const valueOf = (rows, key) => rowByKey(rows, key)?.value.text
 const htmlOf = (rows, key) => rowByKey(rows, key)?.value.html
@@ -228,7 +231,7 @@ const PET_OWNER_ADDRESS = {
   }
 }
 const PET_OWNER_ADDRESS_HTML =
-  '<strong>Pet Owner</strong><br>1 Pet Lane<br>Leeds<br>LS1 1AA<br>United Kingdom<br>0113 555 0192<br>pet@example.co.uk'
+  '<strong>Pet Owner</strong><br>1 Pet Lane<br>Leeds<br>LS1 1AA<br>United Kingdom'
 
 const catsConsignmentSeed = (units, { numberOfAnimalsQuantity } = {}) => ({
   ...fullSeed,
@@ -279,6 +282,22 @@ const APPROVAL_NUMBER_KEY = 'Approval number'
 const FRANCE_AND_BELGIUM = 'France, Belgium'
 const PLACE_OF_ORIGIN_KEY = 'Place of origin'
 const PLACE_OF_DESTINATION_KEY = 'Place of destination'
+const PERMANENT_ADDRESS_HEADING = 'Permanent address'
+const PARTY_ROW_KEYS = [
+  PLACE_OF_ORIGIN_KEY,
+  'Consignor',
+  'Consignee',
+  'Importer',
+  PLACE_OF_DESTINATION_KEY
+]
+
+const addressesCardForCats = async (units, options) => {
+  const seed = catsConsignmentSeed(units, options)
+  return {
+    seed,
+    card: cardByTitle(await sectionsFor(seed), ADDRESSES_CARD)
+  }
+}
 const DOMESTIC_CAT_1_LABEL = 'Domestic Cat 1'
 const CAT_1_MICROCHIP = 'MICROCHIP-1'
 const CAT_2_MICROCHIP = 'MICROCHIP-2'
@@ -614,7 +633,7 @@ describe(`${SUITE} — section headings and cards`, () => {
     )
     expect(actionsOf(CONTACT_ADDRESS_CARD)).toHaveLength(1)
     expect(actionsOf(CONTACT_ADDRESS_CARD)[0].href).toMatch(
-      hrefEndingWithFromReview('consignment/contact/select')
+      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
     )
   })
 })
@@ -656,9 +675,9 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
   })
 
-  it('Should include the CPH row in the Addresses card when a line is a CPH-eligible commodity', async () => {
+  it('Should include the CPH row in the Addresses card, read with slashes, when a line is a CPH-eligible commodity', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
-    expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
+    expect(valueOf(card.rows, CPH_KEY)).toBe('12/345/6789')
   })
 
   it('Should name a transited territory with its parent country', async () => {
@@ -848,17 +867,14 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     ).toContain('Address')
   })
 
-  it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address and Change on the transit countries', async () => {
+  it('Should give every card a Change action in its heading and no row any action but Change on the transit countries', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
       expect(card.actions.items, card.title).toHaveLength(1)
     }
     const actionsOnRows = actionsOfRows(sections)
-    expect(actionsOnRows.map((action) => action.text)).toEqual([
-      'Change',
-      ...Array(6).fill('Edit details')
-    ])
+    expect(actionsOnRows.map((action) => action.text)).toEqual(['Change'])
   })
 
   it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
@@ -880,7 +896,7 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
       hrefEndingWithFromReview('addresses')
     )
     expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
-      hrefEndingWithFromReview('consignment/contact/select')
+      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
     )
   })
 
@@ -1088,11 +1104,11 @@ describe(`${SUITE} — species identification details`, () => {
   })
 })
 
-describe(`${SUITE} — permanent address rows on the addresses card`, () => {
+describe(`${SUITE} — Permanent address subsection of the Addresses card`, () => {
   setupCheckAnswersEngine()
 
-  it("Should list one row per animal after the party rows, each keyed by the animal's label and valued by its saved permanent address", async () => {
-    const seed = catsConsignmentSeed([
+  it("Should list one entry per animal in the subsection, keyed by the animal's label and valued by its name, address lines and country alone", async () => {
+    const { card } = await addressesCardForCats([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
         permanentAddressOrigin: 'placeOfDestination',
@@ -1104,25 +1120,18 @@ describe(`${SUITE} — permanent address rows on the addresses card`, () => {
         permanentAddress: PET_OWNER_ADDRESS
       }
     ])
-    const card = cardByTitle(await sectionsFor(seed), ADDRESSES_CARD)
 
-    expect(keysOf(card.rows)).toEqual([
-      PLACE_OF_ORIGIN_KEY,
-      'Consignor',
-      'Consignee',
-      'Importer',
-      PLACE_OF_DESTINATION_KEY,
-      DOMESTIC_CAT_1_LABEL,
-      'Domestic Cat 2'
-    ])
-    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(
-      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
+    expect(keysOf(card.rows)).toEqual(PARTY_ROW_KEYS)
+    const entries = groupRowsOf(card, PERMANENT_ADDRESS_HEADING)
+    expect(keysOf(entries)).toEqual([DOMESTIC_CAT_1_LABEL, 'Domestic Cat 2'])
+    expect(htmlOf(entries, DOMESTIC_CAT_1_LABEL)).toBe(
+      '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
     )
-    expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
+    expect(htmlOf(entries, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
-  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still name commodity details as outstanding', async () => {
-    const seed = catsConsignmentSeed([
+  it('Should list the answered animal alone in the subsection and still name commodity details as outstanding', async () => {
+    const { card, seed } = await addressesCardForCats([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
         permanentAddressOrigin: 'newAddress',
@@ -1130,34 +1139,24 @@ describe(`${SUITE} — permanent address rows on the addresses card`, () => {
       },
       { animalIdentifierMicrochip: CAT_2_MICROCHIP }
     ])
-    const card = cardByTitle(await sectionsFor(seed), ADDRESSES_CARD)
 
-    expect(keysOf(card.rows)).toEqual([
-      PLACE_OF_ORIGIN_KEY,
-      'Consignor',
-      'Consignee',
-      'Importer',
-      PLACE_OF_DESTINATION_KEY,
-      DOMESTIC_CAT_1_LABEL
-    ])
-    expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
+    expect(keysOf(card.rows)).toEqual(PARTY_ROW_KEYS)
+    const entries = groupRowsOf(card, PERMANENT_ADDRESS_HEADING)
+    expect(keysOf(entries)).toEqual([DOMESTIC_CAT_1_LABEL])
+    expect(htmlOf(entries, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
     expect(summary.errorList.map((entry) => entry.text)).toContain(
       COMMODITY_DETAILS_INCOMPLETE
     )
   })
 
-  it('Should list no permanent address row when a line needing one holds no animal identifier records', async () => {
-    const seed = catsConsignmentSeed([], { numberOfAnimalsQuantity: 2 })
-    const card = cardByTitle(await sectionsFor(seed), ADDRESSES_CARD)
+  it('Should show no Permanent address subsection when a line needing one holds no animal identifier records', async () => {
+    const { card } = await addressesCardForCats([], {
+      numberOfAnimalsQuantity: 2
+    })
 
-    expect(keysOf(card.rows)).toEqual([
-      PLACE_OF_ORIGIN_KEY,
-      'Consignor',
-      'Consignee',
-      'Importer',
-      PLACE_OF_DESTINATION_KEY
-    ])
+    expect(keysOf(card.rows)).toEqual(PARTY_ROW_KEYS)
+    expect(card.groups).toEqual([])
   })
 })
 
@@ -1750,48 +1749,34 @@ describe(`${SUITE} — copied party addresses`, () => {
     expect(html).toContain('not-an-email')
   })
 
-  it('Should give each copied role a link to edit its details, returning here', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: fullSeed
-    })
-    const card = cardByTitle(view.context.sections, ADDRESSES_CARD)
-    const consignorRow = card.rows.find((row) => row.key.text === 'Consignor')
+  it('Should give no copied role and no contact address row any action on a draft', async () => {
+    const sections = await sectionsFor(fullSeed)
 
-    expect(consignorRow.actions.items).toEqual([
-      {
-        href: `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`,
-        text: 'Edit details',
-        visuallyHiddenText: 'consignor'
-      }
-    ])
+    for (const title of [ADDRESSES_CARD, CONTACT_ADDRESS_CARD]) {
+      const { rows } = cardByTitle(sections, title)
+      expect(
+        rows.map((row) => row.actions),
+        title
+      ).toEqual(rows.map(() => undefined))
+    }
   })
 
-  it('Should give the contact address a link to edit its details too', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: fullSeed
-    })
-    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+  it('Should offer the Addresses card only its heading Change link, to the addresses page carrying the review on the trail', async () => {
+    const sections = await sectionsFor(fullSeed)
+    const items = cardByTitle(sections, ADDRESSES_CARD).actions.items
 
-    expect(card.rows[0].actions.items[0].href).toBe(
-      `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
+    expect(items.map((item) => item.text)).toEqual(['Change'])
+    expect(items[0].href).toMatch(hrefEndingWithFromReview('addresses'))
+  })
+
+  it('Should offer the Contact address card only its heading Change link, to the contact page carrying the review on the trail', async () => {
+    const sections = await sectionsFor(fullSeed)
+    const items = cardByTitle(sections, CONTACT_ADDRESS_CARD).actions.items
+
+    expect(items.map((item) => item.text)).toEqual(['Change'])
+    expect(items[0].href).toMatch(
+      hrefEndingWithFromReview(consignmentContactSelectPage.slug)
     )
-  })
-
-  it('Should give a role never answered no edit link', async () => {
-    const card = cardByTitle(
-      await sectionsFor(withoutParty(fullSeed, 'importer')),
-      ADDRESSES_CARD
-    )
-    const importerRow = card.rows.find((row) => row.key.text === 'Importer')
-
-    expect(importerRow.actions).toBeUndefined()
-  })
-
-  it('Should offer no edit links on a submitted notification', async () => {
-    const { context } = await viewForStatus(SUBMITTED, fullSeed)
-    const card = cardByTitle(context.sections, ADDRESSES_CARD)
-
-    expect(card.rows.every((row) => row.actions === undefined)).toBe(true)
   })
 
   it('Should render the copy for every status, never consulting the address book', async () => {
@@ -2201,7 +2186,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     expect(view.context.errorSummary.disableAutoFocus).toBe(true)
   })
 
-  it('Should not refuse a submitted notification carrying a deleted address', async () => {
+  it('Should not refuse a submitted notification whose copied address breaks the address-book rules', async () => {
     const { journeyId, response } = await continueFromReview(
       { ...fullSeed, consignor: BROKEN_COPY },
       { submitted: true }
