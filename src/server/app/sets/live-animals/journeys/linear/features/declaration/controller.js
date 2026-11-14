@@ -27,6 +27,7 @@ const STALE_CONCURRENCY_TOKEN = 'STALE_CONCURRENCY_TOKEN'
 
 export const DECLARATION_REFUSAL = Object.freeze({
   alreadySubmitted: 'already-submitted',
+  openedBeforeReview: 'opened-before-review',
   unknownStep: 'unknown-step',
   changedSinceReview: 'changed-since-review',
   reviewNotRecorded: 'review-not-recorded',
@@ -74,6 +75,7 @@ const logRefusalAndRedirect = (request, h, { journey, refusal, target }) => {
   request.logger.info(
     {
       journeyId: journey.journeyId,
+      status: journey.status,
       refusal,
       concurrencyToken: journey.concurrencyToken,
       postedConcurrencyToken: postedConcurrencyToken(request.payload ?? {})
@@ -85,10 +87,18 @@ const logRefusalAndRedirect = (request, h, { journey, refusal, target }) => {
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
-    return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
+  if (state.isSubmittedStatus(journey.status)) {
+    return logRefusalAndRedirect(request, h, {
+      journey,
+      refusal: DECLARATION_REFUSAL.alreadySubmitted,
+      target: pagePath(journey.journeyId, confirmationPage.slug)
+    })
   }
-  return h.redirect(reviewHref(journey.journeyId))
+  return logRefusalAndRedirect(request, h, {
+    journey,
+    refusal: DECLARATION_REFUSAL.openedBeforeReview,
+    target: reviewHref(journey.journeyId)
+  })
 }
 
 const submitDeclaration = async (
@@ -159,7 +169,7 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return logRefusalAndRedirect(request, h, {
       journey,
       refusal: DECLARATION_REFUSAL.alreadySubmitted,

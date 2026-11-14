@@ -18,15 +18,23 @@ const view = `${TEMPLATES}/features/confirmation/template`
 const copy = copyFor({ en, cy })
 
 const get = async (request, h) => {
-  const { journey, answers, evaluation } = await state.get(request, h)
-  if (journey.status !== state.SUBMITTED) {
+  const { journey } = await state.get(request, h)
+  if (!state.isSubmittedStatus(journey.status)) {
+    request.logger.info(
+      {
+        journeyId: journey.journeyId,
+        status: journey.status,
+        refusal: 'not-submitted'
+      },
+      'Confirmation refused'
+    )
     return h.redirect(hubPath(journey.journeyId))
   }
   return h.view(view, {
     ...base(copy.title, { journey, showJourneyStrip: false }),
     copy,
     referenceNumber: journey.journeyId,
-    outstandingItems: outstandingItems(answers, evaluation),
+    outstandingItems: outstandingItems(journey.status),
     dashboardHref: dashboardPath(),
     createAction: createPath()
   })

@@ -381,6 +381,28 @@ const happyPathValues = JSON.parse(
 /** A complete notification, a fresh copy of the happy-path fixture. */
 export const completeNotification = () => structuredClone(happyPathValues)
 
+/** The answers of a notification with an uploaded ITAHC, for a submission that is
+ * recorded as Submitted rather than Submitted action required. */
+export const itahcAnswers = () => ({
+  documents: [
+    {
+      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentAttachmentType: 'PDF',
+      accompanyingDocumentReference: 'GBHC1234567890',
+      accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
+    }
+  ]
+})
+
+/** The fulfilments of a notification with an uploaded ITAHC. */
+export const itahcFulfilment = () => assembleFulfilments(itahcAnswers())
+
+/** Seeds the journey with an uploaded ITAHC and submits it, so it is recorded as Submitted. */
+export const submitWithItahc = async (journeyId) => {
+  await store.seedAnswers(journeyId, itahcAnswers())
+  return store.submit(journeyId)
+}
+
 /** A commodity line with commodityCode and speciesLatinName, plus any further fields. */
 export const commodityLine = ({
   commodityCode = '0102',

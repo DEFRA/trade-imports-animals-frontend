@@ -918,6 +918,18 @@ test.describe('check-answers feature unfinished notification', () => {
   })
 })
 
+const openSubmittedViewFromList = async (page, reference) => {
+  await page.goto(BASE)
+  await page
+    .getByRole('link', {
+      name: `View ${dashboardCopy.actionHidden(reference)}`
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: reference, exact: true })
+  ).toBeVisible()
+}
+
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
 
@@ -933,17 +945,9 @@ test.describe('check-answers feature submitted notification', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     submittedBefore = Date.now()
-    reference = await submitCompleteNotification(page)
+    reference = await submitCompleteNotification(page, { withItahc: true })
     submittedAfter = Date.now()
-    await page.goto(BASE)
-    await page
-      .getByRole('link', {
-        name: `View ${dashboardCopy.actionHidden(reference)}`
-      })
-      .click()
-    await expect(
-      page.getByRole('heading', { level: 1, name: reference, exact: true })
-    ).toBeVisible()
+    await openSubmittedViewFromList(page, reference)
   })
 
   test('is headed by its reference with a green Submitted tag beside it, no status bar and a title naming the reference', async ({
@@ -1052,6 +1056,107 @@ test.describe('check-answers feature submitted notification', () => {
       ])
       await expect(section.getByRole('button')).toHaveCount(0)
     })
+  })
+})
+
+test.describe('check-answers feature submitted notification awaiting its health certificate', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  const main = (page) => page.getByRole('main')
+
+  let reference
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    reference = await submitCompleteNotification(page)
+    await openSubmittedViewFromList(page, reference)
+  })
+
+  test('is headed by an orange Submitted action required tag and the warning to upload a health certificate', async ({
+    page
+  }) => {
+    const tag = page.locator('main .govuk-tag')
+
+    await expect(tag).toHaveText(
+      sharedCopy.journeyStrip.submittedActionRequired
+    )
+    await expect(tag).toHaveClass(/govuk-tag--orange/)
+    await expect(
+      page.getByText(copy.submittedHeader.actionRequiredWarning)
+    ).toBeVisible()
+  })
+
+  test('dates the notification and shows the same date after a reload', async ({
+    page
+  }) => {
+    const dateLine = page.getByText(/^Date submitted: /)
+    const dateText = await dateLine.textContent()
+
+    await page.reload()
+
+    await expect(dateLine).toHaveText(dateText)
+  })
+
+  test('shows the health certificate error under the uploaded documents heading in place of document cards, with no error summary', async ({
+    page
+  }) => {
+    const documentsHeading = page.getByRole('heading', {
+      level: 2,
+      name: copy.sections.documents
+    })
+
+    await expect(documentsHeading).toBeVisible()
+    await expect(page.getByText(copy.errors.healthCertificate)).toHaveCount(1)
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(
+      page.getByRole('heading', { level: 3, name: copy.documentN(1) })
+    ).toHaveCount(0)
+  })
+
+  test('offers Amend this notification, Copy as new and Delete in its header, then Continue, and no Change links', async ({
+    page
+  }) => {
+    const headerButtons = main(page).getByRole('button')
+
+    await expect(headerButtons).toHaveText([
+      copy.submittedHeader.amend,
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text,
+      copy.submit.button
+    ])
+    await expect(page.getByRole('link', { name: copy.change })).toHaveCount(0)
+  })
+
+  test('shows the import reference numbers', async ({ page }) => {
+    const section = page.getByRole('region', {
+      name: copy.importReferences.heading
+    })
+
+    await expect(section.getByRole('definition')).toHaveText([
+      reference,
+      'C640'
+    ])
+  })
+
+  test('Continue starts an amendment and opens the overview, with JavaScript off', async ({
+    page,
+    browser
+  }) => {
+    await withoutJavaScript(page, browser, async (noJs) => {
+      await noJs.getByRole('button', { name: copy.submit.button }).click()
+
+      await expect(noJs).toHaveURL(urlUnderBase(`/notifications/${reference}$`))
+      await expect(noJs.locator('.app-journey-strip .govuk-tag')).toHaveText(
+        sharedCopy.journeyStrip.amend
+      )
+    })
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Submitted action required check answers'
+    )
   })
 })
 

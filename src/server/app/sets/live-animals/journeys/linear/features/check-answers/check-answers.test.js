@@ -8,7 +8,8 @@ import {
   configureRecords,
   DRAFT,
   records,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import {
@@ -20,6 +21,7 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import {
   amendmentOpened,
   driveHandler,
+  itahcAnswers,
   journeyRequest,
   postHandlerOf,
   stubH
@@ -140,10 +142,25 @@ const sectionsFor = async (seed) =>
 const summaryFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.errorSummary
 
+const withItahcUploaded = (seed) => ({
+  ...seed,
+  documents: [...(seed.documents ?? []), ...itahcAnswers().documents]
+})
+
+const noDocumentsSeed = () => {
+  const seed = { ...fullSeed }
+  delete seed.documents
+  return seed
+}
+
 const journeyIdForStatus = async (status, seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
-  if (status === SUBMITTED || status === AMEND) {
+  if (
+    status === SUBMITTED ||
+    status === SUBMITTED_ACTION_REQUIRED ||
+    status === AMEND
+  ) {
     await store.submit(journey.journeyId)
   }
   if (status === AMEND) {
@@ -161,8 +178,8 @@ const viewOfJourney = async (journeyId, query = {}) => {
 const viewForStatus = async (status, seed = fullSeed, query = {}) =>
   viewOfJourney(await journeyIdForStatus(status, seed), query)
 
-const viewAndJourneyIdForStatus = async (status) => {
-  const journeyId = await journeyIdForStatus(status, fullSeed)
+const viewAndJourneyIdForStatus = async (status, seed = fullSeed) => {
+  const journeyId = await journeyIdForStatus(status, seed)
   return { view: await viewOfJourney(journeyId), journeyId }
 }
 
@@ -401,14 +418,17 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   setupCheckAnswersEngine()
 
   it('Should omit every Change href for a submitted journey', async () => {
-    const view = await viewForStatus(SUBMITTED)
+    const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
   })
 
   it('Should head a submitted view with its reference, a header and no strip', async () => {
-    const { view, journeyId } = await viewAndJourneyIdForStatus(SUBMITTED)
+    const { view, journeyId } = await viewAndJourneyIdForStatus(
+      SUBMITTED,
+      withItahcUploaded(fullSeed)
+    )
 
     expect(view.context.pageTitle).toBe(journeyId)
     expect(view.context.heading).toBe(journeyId)
@@ -451,13 +471,10 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   )
 
-  it('Should read a single Document 1 card as not applicable on a submitted journey with nothing uploaded', async () => {
-    const seed = { ...fullSeed }
-    delete seed.documents
-    const view = await viewForStatus(SUBMITTED, seed)
+  it('Should read a single Document 1 card as not applicable on an amendment with nothing uploaded', async () => {
+    const view = await viewForStatus(AMEND, noDocumentsSeed())
     const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
-    expect(card.actions).toBeUndefined()
     expect(keysOf(card.rows)).toEqual([DOCUMENT_REFERENCE_KEY])
     expect(card.rows[0].value).toEqual(notApplicableCell())
   })
@@ -473,9 +490,13 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 
   it('Should show the cancel success indication only on the restored submitted view', async () => {
-    const submitted = await viewForStatus(SUBMITTED, fullSeed, {
-      cancelled: '1'
-    })
+    const submitted = await viewForStatus(
+      SUBMITTED,
+      withItahcUploaded(fullSeed),
+      {
+        cancelled: '1'
+      }
+    )
     const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
 
     expect(submitted.context.successBanner).toEqual({
@@ -486,7 +507,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 
   it('Should go Back to the dashboard from a submitted notification', async () => {
-    const view = await viewForStatus(SUBMITTED)
+    const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
 
     expect(view.context.backLink).toBe(dashboardPath())
   })
@@ -521,7 +542,10 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     'the Back link of a %s review',
     (status) => {
       const backFor = async (query) => {
-        const journeyId = await journeyIdForStatus(status, fullSeed)
+        const journeyId = await journeyIdForStatus(
+          status,
+          withItahcUploaded(fullSeed)
+        )
         const view = await viewOfJourney(journeyId, query)
         return { journeyId, backLink: view.context.backLink }
       }
@@ -1019,7 +1043,10 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
   })
 
   it('Should give a submitted notification no Change action on the commodity cards, species blocks or identification details', async () => {
-    const { context } = await viewForStatus(SUBMITTED)
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      withItahcUploaded(fullSeed)
+    )
     const card = cardByTitle(context.sections, CATTLE_CARD_TITLE)
     const [block] = card.speciesBlocks
     expect(card.actions).toBeUndefined()
@@ -1323,7 +1350,7 @@ describe(`${SUITE} — transit countries`, () => {
   })
 
   it('Should give a submitted notification a transit countries row with no action', async () => {
-    const view = await viewForStatus(SUBMITTED)
+    const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
     const card = cardByTitle(view.context.sections, ARRIVAL_DETAILS_CARD)
 
     expect(valueOf(card.groups[0].rows, TRANSITED_COUNTRIES_KEY)).toBe(
@@ -1649,7 +1676,7 @@ describe(`${SUITE} — empty values on a finished and an unfinished card`, () =>
   it('Should write every empty value out on a submitted notification', async () => {
     const { context } = await viewForStatus(
       SUBMITTED,
-      withoutInternalReference()
+      withItahcUploaded(withoutInternalReference())
     )
     const card = cardByTitle(context.sections, ORIGIN_OF_IMPORT_CARD)
 
@@ -1983,10 +2010,10 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
   })
 
   it('Should not flag a submitted notification', async () => {
-    const { context } = await viewForStatus(SUBMITTED, {
-      ...fullSeed,
-      consignor: BROKEN_COPY
-    })
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      withItahcUploaded({ ...fullSeed, consignor: BROKEN_COPY })
+    )
     expect(context.errorSummary).toBeNull()
   })
 
@@ -2356,7 +2383,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
   it('Should say nothing is outstanding on a submitted notification', async () => {
     const { context } = await viewForStatus(
       SUBMITTED,
-      withoutParty(fullSeed, 'importer')
+      withItahcUploaded(withoutParty(fullSeed, 'importer'))
     )
 
     expect(context.errorSummary).toBeNull()
@@ -2565,7 +2592,10 @@ describe(`${SUITE} — stale stored answers`, () => {
   })
 
   it('Should show neither a card error nor a summary entry for a stale answer on a submitted notification', async () => {
-    const { context } = await viewForStatus(SUBMITTED, staleSeed)
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      withItahcUploaded(staleSeed)
+    )
     const card = cardByTitle(context.sections, ARRIVAL_DETAILS_CARD)
 
     expect(card.error).toBeNull()
@@ -2665,7 +2695,7 @@ describe(`${SUITE} — document scan card errors`, () => {
   it('Should not carry any scan card error on a submitted notification', async () => {
     const { context } = await viewForStatus(
       SUBMITTED,
-      seedWithDoc(REJECTED_FILENAME)
+      withItahcUploaded(seedWithDoc(REJECTED_FILENAME))
     )
     const card = cardByTitle(context.sections, DOCUMENT_1_CARD)
 
@@ -2692,7 +2722,10 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
 
   it('Should offer the cancel-amend path only while amending', async () => {
     const draft = await viewForStatus(DRAFT)
-    const submitted = await viewForStatus(SUBMITTED)
+    const submitted = await viewForStatus(
+      SUBMITTED,
+      withItahcUploaded(fullSeed)
+    )
     const amend = await viewForStatus(AMEND)
 
     expect(draft.context.cancelAmendHref).toBeNull()
@@ -2746,8 +2779,8 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
   })
 
   describe('end controls', () => {
-    const endControlsOf = async (status) => {
-      const view = await viewForStatus(status)
+    const endControlsOf = async (status, seed = fullSeed) => {
+      const view = await viewForStatus(status, seed)
       return { view, document: renderedReviewOf(view) }
     }
 
@@ -2788,7 +2821,10 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
     })
 
     it('Should offer a submitted view Amend this notification, a secondary Copy as new and a warning Delete in its header, with no Continue form', async () => {
-      const { view, document } = await endControlsOf(SUBMITTED)
+      const { view, document } = await endControlsOf(
+        SUBMITTED,
+        withItahcUploaded(fullSeed)
+      )
       const { actions } = view.context.submittedHeader
 
       const controls = [
@@ -2812,5 +2848,92 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
       expect(controls[2].classes).toContain('govuk-button--warning')
       expect(document.querySelector('form[novalidate]')).toBeNull()
     })
+  })
+})
+
+describe(`${SUITE} — submitted notification awaiting its health certificate`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should be read-only with an orange tag and the warning to upload a health certificate', async () => {
+    const view = await viewForStatus(SUBMITTED_ACTION_REQUIRED)
+
+    expect(view.context.readOnly).toBe(true)
+    expect(view.context.submittedHeader.status).toEqual({
+      text: 'Submitted action required',
+      classes: 'govuk-tag--orange'
+    })
+    expect(view.context.submittedHeader.actionRequiredWarning).toEqual({
+      text: 'You need to upload a health certificate',
+      iconFallbackText: 'Warning'
+    })
+    expect(
+      renderedReviewOf(view).querySelector('.govuk-warning-text__text')
+        .textContent
+    ).toContain('You need to upload a health certificate')
+  })
+
+  it('Should show the health certificate error in place of document cards, with no error summary, when no document was uploaded', async () => {
+    const view = await viewForStatus(
+      SUBMITTED_ACTION_REQUIRED,
+      noDocumentsSeed()
+    )
+    const documentsSection = view.context.sections.find(
+      (section) => section.heading === copyEn.sections.documents
+    )
+    const document = renderedReviewOf(view)
+
+    expect(documentsSection.cards).toEqual([])
+    expect(documentsSection.error).toBe('Upload a valid health certificate')
+    expect(
+      document.querySelector('#documents-section + .govuk-error-message')
+        .textContent
+    ).toContain('Upload a valid health certificate')
+    expect(view.context.errorSummary).toBeNull()
+  })
+
+  it('Should show the document cards and no section error when a document other than an ITAHC was uploaded', async () => {
+    const view = await viewForStatus(SUBMITTED_ACTION_REQUIRED)
+    const documentsSection = view.context.sections.find(
+      (section) => section.heading === copyEn.sections.documents
+    )
+
+    expect(documentsSection.error).toBeUndefined()
+    expect(documentsSection.cards.map((card) => card.title)).toEqual([
+      DOCUMENT_1_CARD
+    ])
+  })
+
+  it('Should show the import reference numbers', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(
+      SUBMITTED_ACTION_REQUIRED
+    )
+
+    expect(
+      view.context.submittedHeader.importReferences.rows.map(
+        (row) => row.value.text
+      )
+    ).toEqual([journeyId, 'C640'])
+  })
+
+  it('Should end with a Continue form that posts the amend action and the hub exit', async () => {
+    const journeyId = await journeyIdForStatus(
+      SUBMITTED_ACTION_REQUIRED,
+      fullSeed
+    )
+    const view = await viewOfJourney(journeyId)
+    const form = renderedReviewOf(view).querySelector('form[novalidate]')
+    const button = form.querySelector('button')
+
+    expect(form.getAttribute('action')).toBe(pagePath(journeyId, 'amend'))
+    expect(button.textContent.trim()).toBe('Continue')
+    expect(button.getAttribute('name')).toBe('exit')
+    expect(button.getAttribute('value')).toBe('hub')
+  })
+
+  it('Should offer no Continue form on a Submitted notification', async () => {
+    const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
+
+    expect(view.context.continueAmendAction).toBeNull()
+    expect(view.context.submittedHeader.actionRequiredWarning).toBeNull()
   })
 })

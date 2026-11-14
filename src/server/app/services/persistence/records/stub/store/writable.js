@@ -1,11 +1,10 @@
 import { AMEND, DRAFT } from '../../../../../engine/persistence/records.js'
+import { writesBlockedError } from '../../writes-blocked-error.js'
 import { journeys } from './state.js'
 
 export const assertWritable = (journey) => {
   if (journey.status !== DRAFT && journey.status !== AMEND) {
-    throw new Error(
-      `Journey "${journey.id}" is ${journey.status} — writes blocked`
-    )
+    throw writesBlockedError(journey.id, journey.status)
   }
 }
 

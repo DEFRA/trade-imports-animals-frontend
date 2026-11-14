@@ -4,6 +4,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "shared/save-actions.njk" import hubExitButton %}
 
 {% macro cardError(text) %}
   {% if text %}
@@ -53,6 +54,10 @@
       </div>
     </form>
 
+    {% if submittedHeader.actionRequiredWarning %}
+      {{ govukWarningText(submittedHeader.actionRequiredWarning) }}
+    {% endif %}
+
     {% if submittedHeader.dateSubmitted %}
       <p class="govuk-body">{{ submittedHeader.dateSubmitted }}</p>
     {% endif %}
@@ -72,6 +77,7 @@
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
+    {{ cardError(section.error) }}
     {% for card in section.cards %}
       {% if card.speciesBlocks.length or card.groups.length or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
@@ -122,6 +128,15 @@
       {% endif %}
     {% endfor %}
   {% endfor %}
+
+  {% if continueAmendAction %}
+    <form method="post" action="{{ continueAmendAction }}" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      <div class="govuk-button-group">
+        {{ hubExitButton({ text: copy.submit.button }) }}
+      </div>
+    </form>
+  {% endif %}
 
   {% if not readOnly %}
     <form method="post" action="{{ declarationHref }}" novalidate>

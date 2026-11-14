@@ -23,8 +23,8 @@ const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
 const DESKTOP_BREAKPOINT_WIDTH = 769
 
-const stageSubmittedNotification = async (page) => {
-  const reference = await submitCompleteNotification(page)
+const stageSubmittedNotification = async (page, { withItahc = true } = {}) => {
+  const reference = await submitCompleteNotification(page, { withItahc })
   await page.goto(BASE)
   return reference
 }
@@ -120,6 +120,25 @@ test.describe('dashboard feature — notification rows and actions', () => {
       page.getByText(values.consignee.name, { exact: true })
     ).toBeVisible()
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
+    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
+    await expect(
+      actionFor(page, 'button', COPY_AS_NEW, reference)
+    ).toBeVisible()
+    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+  })
+
+  test('a notification submitted without its health certificate shows Submitted action required and the four submitted actions', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page, {
+      withItahc: false
+    })
+
+    await expect(
+      page.getByText('Submitted action required', { exact: true })
+    ).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
     await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
     await expect(

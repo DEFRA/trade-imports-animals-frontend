@@ -99,20 +99,22 @@ export const copy = {
   submit: {
     button: 'Parhau'
   },
+  warningIcon: 'Rhybudd',
   submittedHeader: {
     amend: 'Diwygio’r hysbysiad hwn',
+    actionRequiredWarning: 'Mae angen i chi uwchlwytho tystysgrif iechyd',
     dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`
   },
   importReferences: {
     heading: 'Cyfeirnodau mewnforio',
     warning:
       'Rhaid i chi ddefnyddio’r cyfeirnod a’r cod cywir ar y datganiad tollau neu bydd oedi i’ch llwyth.',
-    warningIcon: 'Rhybudd',
     notificationReference: 'Cyfeirnod yr hysbysiad',
     customsDocumentCode: 'Cod dogfen tollau'
   },
   errors: {
     prefix: 'Gwall:',
+    healthCertificate: 'Uwchlwythwch dystysgrif iechyd ddilys',
     cards: {
       originOfImport: 'Cwblhewch darddiad y mewnforio',
       mainImportReason: 'Cwblhewch y prif reswm mewnforio',

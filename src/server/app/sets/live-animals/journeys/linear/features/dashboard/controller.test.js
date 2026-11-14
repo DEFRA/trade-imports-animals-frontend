@@ -6,7 +6,8 @@ import {
   configureRecords,
   records,
   AMEND,
-  DELETED
+  DELETED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -18,6 +19,7 @@ import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   createRoutePath,
+  hubPath,
   startRoutePath
 } from '../../../../../../shared/paths.js'
 import { SET_BASE } from '../../../../set.js'
@@ -33,6 +35,7 @@ import { routes } from './controller.js'
 import {
   authenticatedActor,
   expectOneLogged,
+  itahcFulfilment,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -62,9 +65,19 @@ const startGet = routes.find(
 
 const startDraft = async () => records.create()
 
-const startSubmitted = async () => {
+const startSubmittedWithoutItahc = async () => {
   const journey = await records.create()
   await records.finalise(journey.journeyId, undefined, journey.concurrencyToken)
+  return records.load({ journeyId: journey.journeyId })
+}
+
+const startSubmitted = async () => {
+  const journey = await records.create()
+  const { concurrencyToken } = await records.replaceFulfilment(
+    journey.journeyId,
+    itahcFulfilment()
+  )
+  await records.finalise(journey.journeyId, undefined, concurrencyToken)
   return records.load({ journeyId: journey.journeyId })
 }
 
@@ -153,6 +166,25 @@ describe('dashboard notifications list', () => {
     )
     expect(row.actions[2].postAction).toBe(pageUrl(submitted.journeyId, 'copy'))
     expect(row.actions[3].href).toBe(pageUrl(submitted.journeyId, 'delete'))
+  })
+
+  it('Should list a notification submitted without its ITAHC with an orange Submitted action required tag and the submitted actions', async () => {
+    const submitted = await startSubmittedWithoutItahc()
+
+    const context = await renderList({ knownJourneyIds: [submitted.journeyId] })
+
+    const [row] = context.notificationRows
+    expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect(row.status).toEqual({
+      text: 'Submitted action required',
+      classes: 'govuk-tag--orange'
+    })
+    expect(row.actions.map((action) => action.text)).toEqual([
+      'View',
+      'Amend',
+      COPY_AS_NEW_ACTION,
+      'Delete'
+    ])
   })
 
   it('Should list ONLY session-known journeys — never the wider store', async () => {
@@ -487,10 +519,45 @@ describe('dashboard amend', () => {
       level: 'info',
       fields: {
         journeyId: submitted.journeyId,
-        organisationId: authenticatedActor.organisationId
+        organisationId: authenticatedActor.organisationId,
+        target: pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
       },
-      message: 'Amendment started, sent to the review page'
+      message: 'Amendment started'
     })
+  })
+
+  it('Should amend a submitted notification and open its overview when the hub exit is posted', async () => {
+    const submitted = await startSubmitted()
+
+    const { request, response } = await postAmend(submitted.journeyId, {
+      payload: { exit: 'hub' }
+    })
+
+    expect(response.redirect).toBe(hubPath(submitted.journeyId))
+    expect(
+      (await records.load({ journeyId: submitted.journeyId })).status
+    ).toBe(AMEND)
+    expectOneLogged(request.logger, {
+      level: 'info',
+      fields: {
+        journeyId: submitted.journeyId,
+        organisationId: authenticatedActor.organisationId,
+        target: hubPath(submitted.journeyId)
+      },
+      message: 'Amendment started'
+    })
+  })
+
+  it('Should open the review, as without a save choice, when the posted exit is not the hub exit', async () => {
+    const submitted = await startSubmittedWithoutItahc()
+
+    const { response } = await postAmend(submitted.journeyId, {
+      payload: { exit: 'elsewhere' }
+    })
+
+    expect(response.redirect).toBe(
+      pagePathFrom('dashboard', submitted.journeyId, CYA_SLUG)
+    )
   })
 })
 

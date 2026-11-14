@@ -66,6 +66,7 @@ export const copy = {
   journeyStrip: {
     draft: 'Draft',
     submitted: 'Submitted',
+    submittedActionRequired: 'Submitted action required',
     amend: 'Amend',
     cancelAmend: 'Cancel amend',
     deleted: 'Deleted'

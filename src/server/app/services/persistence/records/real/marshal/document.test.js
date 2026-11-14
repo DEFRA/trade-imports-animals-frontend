@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   AMEND,
   DRAFT,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../engine/persistence/records.js'
 import { marshal } from './document.js'
 
@@ -21,6 +22,13 @@ describe('marshal document', () => {
     const journey = marshal(document('SUBMITTED'))
     expect(journey).not.toHaveProperty('frozenParties')
     expect(journey.status).toBe(SUBMITTED)
+  })
+
+  it('Should keep the submission date of a Submitted action required notification', () => {
+    const journey = marshal(document('SUBMITTED_ACTION_REQUIRED'))
+
+    expect(journey.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect(journey.submittedAt).toBe('2026-01-02T00:00:00')
   })
 
   it('Should map draft and amend statuses without a freeze field', () => {

@@ -2,7 +2,7 @@ import { hubPath, pagePath } from '../../../../../../../../shared/paths.js'
 import {
   AMEND,
   DRAFT,
-  SUBMITTED
+  isSubmittedStatus
 } from '../../../../../../../../engine/index.js'
 import {
   CYA_SLUG,
@@ -30,7 +30,7 @@ export const rowActions = (journey) => {
     text: sharedCopy.notificationActions.delete.text,
     href: pagePath(journey.journeyId, notificationActionSlugs.delete)
   }
-  if (journey.status === SUBMITTED) {
+  if (isSubmittedStatus(journey.status)) {
     return [
       {
         text: copy.actions.view,

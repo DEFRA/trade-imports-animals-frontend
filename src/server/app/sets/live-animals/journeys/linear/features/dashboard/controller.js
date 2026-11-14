@@ -16,6 +16,7 @@ import {
   startJourney
 } from '../../../../../../engine/journey.js'
 import {
+  hubExitTarget,
   pageRouteOptions,
   routeOptions,
   sharedCopy,
@@ -133,18 +134,20 @@ const amendPost = async (request, h) => {
   if (!journey) {
     return h.redirect(`${dashboardPath()}?amendRefused=1`)
   }
-  request.logger.info(
-    {
-      journeyId: journey.journeyId,
-      organisationId: organisationIdOf(request)
-    },
-    'Amendment started, sent to the review page'
-  )
-  return h.redirect(
+  const target =
+    hubExitTarget(request) ??
     withTrail(pagePath(journey.journeyId, notificationViewPage.slug), [
       TRAIL_START.dashboard
     ])
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      organisationId: organisationIdOf(request),
+      target
+    },
+    'Amendment started'
   )
+  return h.redirect(target)
 }
 
 const openNewNotification = async (request, h, { startPlace }) => {

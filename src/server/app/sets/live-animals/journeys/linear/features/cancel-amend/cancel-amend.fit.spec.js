@@ -43,7 +43,9 @@ const amendAndOpenCancel = async (page, reference) => {
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    const reference = await submitCompleteNotification(page)
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
+    })
     await amendAndOpenCancel(page, reference)
   })
 
@@ -147,7 +149,9 @@ test.describe('amend review', () => {
     page
   }) => {
     await signIn(page)
-    const reference = await submitCompleteNotification(page)
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
+    })
     await amendFromList(page, reference)
     await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
     await page.getByLabel('Arrival date at port of entry').fill('')
@@ -180,7 +184,9 @@ test.describe('cancel-amend feature without JavaScript', () => {
     browser
   }) => {
     await signIn(page)
-    const reference = await submitCompleteNotification(page)
+    const reference = await submitCompleteNotification(page, {
+      withItahc: true
+    })
     await amendFromList(page, reference)
     await withoutJavaScript(page, browser, async (noJs) => {
       await noJs.goto(`${BASE}/notifications/${reference}/origin`)

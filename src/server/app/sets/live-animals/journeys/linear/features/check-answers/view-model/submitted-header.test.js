@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { SUBMITTED } from '../../../../../../../engine/index.js'
+import {
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
+} from '../../../../../../../engine/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { deleteButtonFor, submittedHeader } from './submitted-header.js'
 
@@ -23,6 +26,25 @@ describe('#submittedHeader', () => {
       text: 'Submitted',
       classes: 'govuk-tag--green'
     })
+  })
+
+  it('Should carry the warning to upload a health certificate and an orange tag when the status is Submitted action required', () => {
+    const header = submittedHeader(
+      submittedJourney({ status: SUBMITTED_ACTION_REQUIRED })
+    )
+
+    expect(header.status).toEqual({
+      text: 'Submitted action required',
+      classes: 'govuk-tag--orange'
+    })
+    expect(header.actionRequiredWarning).toEqual({
+      text: 'You need to upload a health certificate',
+      iconFallbackText: 'Warning'
+    })
+  })
+
+  it('Should carry no warning when the status is Submitted', () => {
+    expect(submittedHeader(submittedJourney()).actionRequiredWarning).toBeNull()
   })
 
   it('Should date the notification on the London day it was submitted, with the month in full', () => {

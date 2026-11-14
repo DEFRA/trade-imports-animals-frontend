@@ -98,20 +98,22 @@ export const copy = {
   submit: {
     button: 'Continue'
   },
+  warningIcon: 'Warning',
   submittedHeader: {
     amend: 'Amend this notification',
+    actionRequiredWarning: 'You need to upload a health certificate',
     dateSubmitted: (date) => `Date submitted: ${date}`
   },
   importReferences: {
     heading: 'Import reference numbers',
     warning:
       'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
-    warningIcon: 'Warning',
     notificationReference: 'Notification reference',
     customsDocumentCode: 'Customs document code'
   },
   errors: {
     prefix: 'Error:',
+    healthCertificate: 'Upload a valid health certificate',
     cards: {
       originOfImport: 'Complete origin of import',
       mainImportReason: 'Complete main import reason',

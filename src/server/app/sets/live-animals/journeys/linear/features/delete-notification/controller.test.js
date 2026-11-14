@@ -14,6 +14,7 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
   DELETED,
+  SUBMITTED_ACTION_REQUIRED,
   records
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
@@ -27,6 +28,9 @@ import { records as realRecords } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
+
+const DELETE_TEMPLATE =
+  'live-animals/journeys/linear/features/delete-notification/template'
 
 const get = routes.find((route) => route.method === 'GET').handler
 const post = routes.find((route) => route.method === 'POST').handler
@@ -52,9 +56,7 @@ describe('delete notification routes', () => {
 
     const response = await get(journeyRequest(journey.journeyId), stubH())
 
-    expect(response.view).toBe(
-      'live-animals/journeys/linear/features/delete-notification/template'
-    )
+    expect(response.view).toBe(DELETE_TEMPLATE)
     expect(response.context).toMatchObject({
       heading: 'Delete this notification?',
       deleteAction: pagePath(journey.journeyId, 'delete'),
@@ -75,6 +77,27 @@ describe('delete notification routes', () => {
     expect(
       (await records.list({ journeyIds: [journey.journeyId] })).rows
     ).toEqual([])
+  })
+
+  it('Should render the confirmation for, and soft-delete, a notification submitted without an ITAHC', async () => {
+    const journey = await records.create()
+    await records.finalise(
+      journey.journeyId,
+      undefined,
+      journey.concurrencyToken
+    )
+    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
+      SUBMITTED_ACTION_REQUIRED
+    )
+
+    const page = await get(journeyRequest(journey.journeyId), stubH())
+    const response = await post(journeyRequest(journey.journeyId), stubH())
+
+    expect(page.view).toBe(DELETE_TEMPLATE)
+    expect(response).toEqual({ redirect: `${dashboardPath()}?deleted=1` })
+    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
+      DELETED
+    )
   })
 
   it('Should handle an already-deleted journey without another transition', async () => {
@@ -111,8 +134,6 @@ describe('delete notification routes', () => {
 
     expect(response.statusCode).toBe(500)
     expect(response.context.recoverableError).toBe(true)
-    expect(response.view).toBe(
-      'live-animals/journeys/linear/features/delete-notification/template'
-    )
+    expect(response.view).toBe(DELETE_TEMPLATE)
   })
 })

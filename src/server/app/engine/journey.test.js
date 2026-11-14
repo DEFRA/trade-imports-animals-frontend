@@ -34,7 +34,8 @@ import {
   backendJourneyId,
   backendNotification,
   journeyRequest,
-  recordingH
+  recordingH,
+  submitWithItahc
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
@@ -47,7 +48,7 @@ const jsonOf = (request) => request.clone().json()
 
 const submittedJourney = async () => {
   const journey = await store.create()
-  await store.submit(journey.journeyId)
+  await submitWithItahc(journey.journeyId)
   return journey.journeyId
 }
 

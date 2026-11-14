@@ -16,7 +16,8 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
   records,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -25,6 +26,7 @@ import {
 import { store } from '../../../../../../engine/store.js'
 import {
   actWithSessionOrganisation,
+  itahcAnswers,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -43,7 +45,10 @@ const startAmend = async () => {
   const journey = await store.create()
   await records.replaceFulfilment(
     journey.journeyId,
-    assembleFulfilments({ internalReferenceNumber: 'SubmittedRef' })
+    assembleFulfilments({
+      internalReferenceNumber: 'SubmittedRef',
+      ...itahcAnswers()
+    })
   )
   await store.submit(journey.journeyId)
   await records.amend(journey.journeyId)
@@ -131,7 +136,7 @@ describe('cancel amendment routes', () => {
     )
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(SUBMITTED)
+    ).toBe(SUBMITTED_ACTION_REQUIRED)
   })
 
   it('Should reject an unknown journey at the known-journey gate', async () => {

@@ -27,6 +27,7 @@ describe('journey strip copy', () => {
     expect(sharedEn.journeyStrip).toEqual({
       draft: 'Draft',
       submitted: 'Submitted',
+      submittedActionRequired: 'Submitted action required',
       amend: 'Amend',
       cancelAmend: 'Cancel amend',
       deleted: 'Deleted'

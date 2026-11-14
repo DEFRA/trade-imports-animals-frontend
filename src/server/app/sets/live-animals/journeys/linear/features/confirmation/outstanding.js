@@ -5,9 +5,5 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-export const outstandingItems = (answers, evaluation) => {
-  const itahcUploaded = state
-    .collectionView(answers, ['documents'], evaluation)
-    .some(({ entry }) => entry.accompanyingDocumentType === 'ITAHC')
-  return itahcUploaded ? [] : [copy.outstanding.documents]
-}
+export const outstandingItems = (status) =>
+  status === state.SUBMITTED_ACTION_REQUIRED ? [copy.outstanding.documents] : []

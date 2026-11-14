@@ -69,7 +69,7 @@ describe('copy notification action', () => {
       })
     })
 
-    it('Should copy a source the session has not opened into a new draft at its hub', async () => {
+    it('Should copy a notification submitted without its ITAHC into a new draft at its hub and leave the source submittedActionRequired', async () => {
       const source = await records.create()
       await records.finalise(
         source.journeyId,
@@ -93,7 +93,7 @@ describe('copy notification action', () => {
         status: 'draft'
       })
       expect(await records.load({ journeyId: source.journeyId })).toMatchObject(
-        { status: 'submitted' }
+        { status: 'submittedActionRequired' }
       )
     })
 

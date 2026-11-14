@@ -139,12 +139,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   hides its blank cells: the documents answers are one unit of "unfinished"
   that the review cannot split by document, and the border and line are the
   only visible marking of hidden blanks.
-- A submitted notification's view is headed by its reference with a Submitted
-  tag and the date submitted, in place of the review heading and status bar.
-  Its header offers Amend this notification, Copy as new and Delete, and an
-  Import reference numbers section shows the notification reference and the
-  customs document code as selectable text. The view has no Continue form, no
-  Change links and no document scan errors.
+- A notification recorded as Submitted is viewed with its reference, a
+  Submitted tag and the date submitted, in place of the review heading and
+  status bar. Its header offers Amend this notification, Copy as new and
+  Delete, and an Import reference numbers section shows the notification
+  reference and the customs document code as selectable text. The view has no
+  Continue form, no Change links and no document scan errors.
+- A notification submitted without an ITAHC that has passed its virus scan is
+  recorded as Submitted action required and viewed with the same header, an
+  orange tag and the warning "You need to upload a health certificate" after
+  the header actions. When no document was uploaded, "4. Uploaded documents"
+  shows the error "Upload a valid health certificate" under its heading in
+  place of document cards, with no error summary. The view ends with a
+  Continue form that starts an amendment and opens the overview.
 - The view of a notification that cannot be found goes to the notification
   list.
 - The means of transport row reads the arrival page's own label for the
@@ -169,8 +176,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - The page goes from the reference panel straight to what the trader still
   owes. The declaration date is shown only on the declaration page.
-- Documents are not required to submit, so a notification with none lists
-  them as still owed.
+- Documents are not required to submit. The page lists the ITAHC as still owed
+  when the notification was submitted without an ITAHC that has passed its
+  virus scan.
 - The help links to HMRC open in a new tab. Their visible text is unchanged
   and a visually hidden "(opens in a new tab)" tells screen reader users.
 - The customs link goes to HMRC's customs, international trade and excise

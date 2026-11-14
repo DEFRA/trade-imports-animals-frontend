@@ -115,3 +115,8 @@ Each set's gateway — today
 [`routes.js`](../routes.js) re-exports — passes the mode-selected records and
 session adapters to `configureRecords()` and `configureSession()` under its own
 set id, then registers the configured journey cookie names before adding routes.
+
+In a set's context, a records call before `configureRecords()` has run throws
+`records not configured — call configureRecords() at boot`. With no set
+context, `currentSetId()` throws `No set context — …`, followed by whether no
+set is mounted or which sets are.

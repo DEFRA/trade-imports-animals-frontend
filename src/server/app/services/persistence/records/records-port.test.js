@@ -4,10 +4,12 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { itahcFulfilment } from '../../../engine/test-support.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -104,6 +106,7 @@ describe('records durable port', () => {
 
   it('Should re-finalise after an amend — the amend-and-resubmit cycle round-trips', async () => {
     const { journeyId } = await records.create()
+    await records.replaceFulfilment(journeyId, itahcFulfilment())
     await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
@@ -115,7 +118,10 @@ describe('records durable port', () => {
 
   it('Should cancel an amendment by restoring the submitted snapshot and freezing it again', async () => {
     const { journeyId } = await records.create()
-    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    await records.replaceFulfilment(journeyId, {
+      ...originFulfilment('FR'),
+      ...itahcFulfilment()
+    })
     const submitted = await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
     await records.replaceFulfilment(journeyId, originFulfilment('DE'))
@@ -125,7 +131,7 @@ describe('records durable port', () => {
     expect(restored).toMatchObject({
       status: SUBMITTED,
       submittedAt: submitted.submittedAt,
-      fulfilment: originFulfilment('FR')
+      fulfilment: { ...originFulfilment('FR'), ...itahcFulfilment() }
     })
     await expect(
       records.replaceFulfilment(journeyId, originFulfilment('NL'))
@@ -253,6 +259,23 @@ describe('records durable port', () => {
     expect(
       (await records.list({ journeyIds: [journey.journeyId] })).rows
     ).toEqual([])
+  })
+})
+
+describe('records copy of a submitted notification', () => {
+  beforeEach(() => records.clear())
+
+  it('Should copy a notification submitted without an ITAHC into a new draft and leave the source submitted action required', async () => {
+    const source = await records.create()
+    await finaliseAtLoadedToken(source.journeyId)
+
+    const copy = await records.copy(source.journeyId, 'copy-key')
+
+    expect(copy.status).toBe(DRAFT)
+    expect(copy.journeyId).not.toBe(source.journeyId)
+    expect((await records.load({ journeyId: source.journeyId })).status).toBe(
+      SUBMITTED_ACTION_REQUIRED
+    )
   })
 })
 
@@ -397,5 +420,50 @@ describe('records answersDifferFromSubmitted', () => {
 
     await finaliseAtLoadedToken(journeyId)
     expect(await differs(journeyId)).toBe(false)
+  })
+})
+
+describe('records durable port — submitted status', () => {
+  beforeEach(() => records.clear())
+
+  it('Should record Submitted action required when no ITAHC was uploaded, and Submitted once one is added in an amendment', async () => {
+    const { journeyId } = await records.create()
+    const submitted = await finaliseAtLoadedToken(journeyId)
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, itahcFulfilment())
+
+    const resubmitted = await finaliseAtLoadedToken(journeyId)
+
+    expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect(resubmitted.status).toBe(SUBMITTED)
+  })
+
+  it('Should amend a Submitted action required notification', async () => {
+    const { journeyId } = await records.create()
+    await finaliseAtLoadedToken(journeyId)
+
+    const amended = await records.amend(journeyId)
+
+    expect(amended.status).toBe(AMEND)
+  })
+
+  it('Should restore Submitted action required when cancelling an amendment of a notification submitted without an ITAHC', async () => {
+    const { journeyId } = await records.create()
+    await finaliseAtLoadedToken(journeyId)
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, itahcFulfilment())
+
+    const restored = await records.cancelAmend(journeyId)
+
+    expect(restored.status).toBe(SUBMITTED_ACTION_REQUIRED)
+  })
+
+  it('Should soft-delete a Submitted action required notification', async () => {
+    const { journeyId } = await records.create()
+    await finaliseAtLoadedToken(journeyId)
+
+    const deleted = await records.softDelete(journeyId)
+
+    expect(deleted.status).toBe(DELETED)
   })
 })

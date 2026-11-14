@@ -15,6 +15,23 @@
 {% endmacro %}
 
 {#
+  hubExitButton — a submit button that posts the hub exit (`exit=hub`).
+
+  Params:
+    text        (string) the button text
+    classes     (string) optional govukButton classes
+    attributes  (object) optional attributes added to the button
+#}
+{% macro hubExitButton(params) %}
+  {{ govukButton(withAttributes({
+    text: params.text,
+    classes: params.classes,
+    name: "exit",
+    value: "hub"
+  }, params.attributes or {})) }}
+{% endmacro %}
+
+{#
   saveActions — the Save and continue controls of a journey page.
 
   Params:
@@ -39,16 +56,14 @@
     name: secondary.name,
     value: secondary.value
   } if secondary %}
-  {% set hubExitButton = withAttributes({
-    text: copy.saveAndReturnToHub,
-    classes: "govuk-button--secondary",
-    name: "exit",
-    value: "hub"
-  }, fileAttributes) %}
   <div class="govuk-button-group">
     {{ govukButton(primaryButton) }}
     {% if showReturnControls %}
-      {{ govukButton(hubExitButton) }}
+      {{ hubExitButton({
+        text: copy.saveAndReturnToHub,
+        classes: "govuk-button--secondary",
+        attributes: fileAttributes
+      }) }}
     {% endif %}
     {% if secondary %}
       {{ govukButton(secondaryButton) }}

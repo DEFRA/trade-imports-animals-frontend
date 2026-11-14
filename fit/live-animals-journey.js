@@ -1475,9 +1475,43 @@ export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
 }
 
-export const submitCompleteNotification = async (page) => {
+const uploadItahc = async (page) => {
+  const itahc = {
+    accompanyingDocumentReference: 'GBHC0000000001',
+    accompanyingDocumentType: 'ITAHC',
+    accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+    filename: 'itahc.pdf'
+  }
+  await openFromOverviewRow(page, hubCopy.rows.documents.title)
+  await addDocument(page, itahc)
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
+  await openFromOverviewRow(page, hubCopy.rows.documents.title)
+  await expect(
+    documentRowFor(page, itahc.accompanyingDocumentReference)
+  ).toContainText(documentsCopy.scanTags.complete)
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
+}
+
+/**
+ * Answers every section, reviews and declares a new notification.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ withItahc?: boolean }} [options] - `withItahc` uploads an ITAHC
+ * first, so the notification is recorded as Submitted rather than Submitted
+ * action required.
+ * @returns {Promise<string>} the submitted notification's reference.
+ */
+export const submitCompleteNotification = async (
+  page,
+  { withItahc = false } = {}
+) => {
   await startNotification(page)
   await completeAnswerSections(page)
+  if (withItahc) {
+    await uploadItahc(page)
+  }
   await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page

@@ -1,3 +1,4 @@
+import { SUBMITTED_ACTION_REQUIRED } from '../../../../../../../engine/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { journeyStrip, sharedCopy } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -25,13 +26,21 @@ const dateSubmittedLine = ({ submittedAt }) =>
     ? copy.submittedHeader.dateSubmitted(notificationDateText(submittedAt))
     : null
 
+const actionRequiredWarning = ({ status }) =>
+  status === SUBMITTED_ACTION_REQUIRED
+    ? {
+        text: copy.submittedHeader.actionRequiredWarning,
+        iconFallbackText: copy.warningIcon
+      }
+    : null
+
 const importReferences = ({ journeyId }) => {
   const customsDocumentCode = 'C640'
   return {
     heading: copy.importReferences.heading,
     warning: {
       text: copy.importReferences.warning,
-      iconFallbackText: copy.importReferences.warningIcon
+      iconFallbackText: copy.warningIcon
     },
     rows: [
       {
@@ -47,17 +56,19 @@ const importReferences = ({ journeyId }) => {
 }
 
 /**
- * The header of a submitted notification's view.
+ * The header of a submitted notification's view, in either submitted status.
  *
  * @param {object} journey - a submitted journey.
  * @returns {object} the reference, the status tag, the date submitted line
- * (null without a stored submission instant), the Amend, Copy as new and
- * Delete actions, and the import reference numbers section.
+ * (null without a stored submission instant), the action-required warning
+ * (null unless the status is Submitted action required), the Amend, Copy as
+ * new and Delete actions, and the import reference numbers section.
  */
 export const submittedHeader = (journey) => ({
   reference: journey.journeyId,
   status: journeyStrip(journey).status,
   dateSubmitted: dateSubmittedLine(journey),
+  actionRequiredWarning: actionRequiredWarning(journey),
   actions: {
     amend: {
       text: copy.submittedHeader.amend,
