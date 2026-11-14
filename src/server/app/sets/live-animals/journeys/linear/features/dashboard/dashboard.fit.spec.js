@@ -2,13 +2,12 @@ import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   BASE,
-  completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
-  openReviewFromHub,
   signIn,
   startNotification,
+  submitCompleteNotification,
   urlUnderBase,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -24,20 +23,8 @@ const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
 const DESKTOP_BREAKPOINT_WIDTH = 769
 
-const submitNotification = async (page) => {
-  await completeAnswerSections(page)
-  await openReviewFromHub(page)
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await page
-    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-    .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
-}
-
 const stageSubmittedNotification = async (page) => {
-  await startNotification(page)
-  await submitNotification(page)
-  const reference = journeyIdFromPage(page)
+  const reference = await submitCompleteNotification(page)
   await page.goto(BASE)
   return reference
 }

@@ -1,15 +1,14 @@
 import { expect, test } from '@playwright/test'
 import {
+  amendFromList,
   BASE,
-  chooseCountryOfOrigin,
-  completeAnswerSections,
+  changeOriginOnAmendment,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
-  openNotificationView,
   openReviewFromHub,
   saveAndReturnToHub,
   signIn,
-  startNotification,
+  submitCompleteNotification,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
@@ -32,42 +31,17 @@ const expectAmendStrip = async (page) => {
   await expect(cancelAmendLink(page)).toBeVisible()
 }
 
-const submitNotification = async (page) => {
-  await startNotification(page)
-  await completeAnswerSections(page)
-  await openReviewFromHub(page)
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await page
-    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-    .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  return journeyIdFromPage(page)
-}
-
 const amendAndOpenCancel = async (page, reference) => {
-  await page.goto(BASE)
-  await page
-    .getByRole('button', { name: `Amend notification ${reference}` })
-    .click()
+  await amendFromList(page, reference)
   await expectAmendStrip(page)
-  await page.getByRole('link', { name: 'Change import details' }).click()
-  await expectAmendStrip(page)
-  await chooseCountryOfOrigin(page, 'France')
-  await page
-    .getByLabel('Your internal reference for this consignment (optional)')
-    .fill('DiscardMe99')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'What are you importing?' })
-  ).toBeVisible()
-  await openNotificationView(page)
+  await changeOriginOnAmendment(page, 'DiscardMe99')
   await cancelAmendLink(page).click()
 }
 
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
+    const reference = await submitCompleteNotification(page)
     await amendAndOpenCancel(page, reference)
   })
 
@@ -89,7 +63,7 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.noLink }).click()
 
     await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
+      page.getByRole('heading', { name: checkAnswersCopy.resubmittingTitle })
     ).toBeVisible()
     await expectAmendStrip(page)
     await expect(page.getByText('DiscardMe99', { exact: true })).toBeVisible()
@@ -167,11 +141,8 @@ test.describe('amend review', () => {
     page
   }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
-    await page.goto(BASE)
-    await page
-      .getByRole('button', { name: `Amend notification ${reference}` })
-      .click()
+    const reference = await submitCompleteNotification(page)
+    await amendFromList(page, reference)
     await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
     await page.getByLabel('Arrival date at port of entry').fill('')
     await saveAndReturnToHub(page).click()
@@ -203,11 +174,8 @@ test.describe('cancel-amend feature without JavaScript', () => {
     browser
   }) => {
     await signIn(page)
-    const reference = await submitNotification(page)
-    await page.goto(BASE)
-    await page
-      .getByRole('button', { name: `Amend notification ${reference}` })
-      .click()
+    const reference = await submitCompleteNotification(page)
+    await amendFromList(page, reference)
     const context = await browser.newContext({
       javaScriptEnabled: false,
       storageState: await page.context().storageState()

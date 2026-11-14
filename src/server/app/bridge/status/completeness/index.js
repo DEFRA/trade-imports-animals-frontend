@@ -12,7 +12,7 @@ import {
 } from './leaf.js'
 import {
   collectionCapExceeded,
-  emptyCollectionSatisfiesFloor,
+  emptyCollectionShortOfFloor,
   parentCountInvariantViolated
 } from './invariants.js'
 
@@ -38,7 +38,7 @@ const collectionSatisfied = (
     state
   )
   if (fulfilmentIndexes.length === 0) {
-    return emptyCollectionSatisfiesFloor(
+    return !emptyCollectionShortOfFloor(
       collection,
       obligation,
       parentFulfilmentIndex,

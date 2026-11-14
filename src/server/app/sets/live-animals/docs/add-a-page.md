@@ -254,15 +254,22 @@ shows is read from that feature's label function (for example
 `meansOfTransportLabel`), never copied into the check-answers copy. Value
 labels only the review shows go in the check-answers copy bundles.
 
-Rows carry no Change link — `row(key, value)` is a
-key and a value. If the page's fields go into a NEW card, the card needs one
-`cardAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
+The card heading carries the Change link for the answers inside the card.
+The exception is the transit countries row in the Arrival details card's headed
+group, which carries its own link built with `changeAction`. The Addresses
+card's Permanent address group carries none: the card's header Change link
+changes it. If
+the page's fields go into a NEW card, the card needs one
+`changeAction(changeContext, <page>.slug, copy.hidden.cards.<cardId>)`, where `changeContext` is the review's `{ journeyId, changeLinkTrail }`, wrapped in
 `editableActions({ readOnly, actions })`, plus a `hidden.cards.<cardId>` leaf in BOTH
 check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
-the fit assertion "every Change link sits in a card heading and no summary row
-carries one"
+the fit assertion "one Change link per card, named for its card, in card order, and none on a row of a new notification"
 ([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
-fails. Extend
+fails. A card repeated once per collection entry has no `hidden.cards.<cardId>`
+leaf: each card's hidden suffix is built from its own title, as `copy.hidden.document(n)`
+does in
+[`check-answers/view-model/cards/documents.js`](../journeys/linear/features/check-answers/view-model/cards/documents.js).
+Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).
 
 Canonical persistence is complete once the feature binding is registered. If

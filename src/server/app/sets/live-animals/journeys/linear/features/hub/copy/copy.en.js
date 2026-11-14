@@ -4,8 +4,10 @@ export const copy = {
     heading: 'Your commodities',
     animalsLabel: 'Animals',
     animalsCaption: 'Total number of animals in this consignment',
+    animalsRegionLabel: 'Animals summary',
     packagesLabel: 'Packages/boxes',
-    packagesCaption: 'Total number of packages in this consignment'
+    packagesCaption: 'Total number of packages in this consignment',
+    packagesRegionLabel: 'Packages summary'
   },
   reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',

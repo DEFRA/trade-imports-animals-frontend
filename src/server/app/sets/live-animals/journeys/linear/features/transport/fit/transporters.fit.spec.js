@@ -4,6 +4,8 @@ import {
   FORM_GROUP_ANCESTOR_XPATH,
   PHONE_VIEWPORT,
   answerTransporterType,
+  cannedCommercialTransporter,
+  cannedPrivateTransporter,
   cancelAndReturnToDashboard,
   chooseTransporterType,
   contentWidthOf,
@@ -26,6 +28,8 @@ import {
   openTransporterList,
   openTransporterType,
   rowFor,
+  saveAndExpectTransporterChosen,
+  saveTransporterFromList,
   saveAndContinue,
   saveAndReturnToHub,
   searchByPressingEnter,
@@ -68,12 +72,6 @@ const NO_MATCH_TERM = 'no such transporter'
 const INVALID_TRANSPORTER_ID = 'invalid-transporter'
 
 const transporterRecords = parties()
-const privateRecord = transporterRecords.find(
-  (record) => record.type === PRIVATE
-)
-const commercialRecord = transporterRecords.find(
-  (record) => record.type === COMMERCIAL
-)
 const approvedRecord = transporterRecords.find(
   (record) => record.status === APPROVED
 )
@@ -108,7 +106,7 @@ const tickAsUnknownTransporter = (radio) =>
 
 const submitTransporterNotOnTheList = async (page) => {
   await tickAsUnknownTransporter(
-    page.getByRole('radio', { name: commercialRecord.name })
+    page.getByRole('radio', { name: cannedCommercialTransporter.name })
   )
   await saveAndContinue(page).click()
   await expect(errorSummary(page)).toBeVisible()
@@ -423,38 +421,23 @@ test.describe('picking a transporter on the list', () => {
   test('picking a commercial transporter saves it with its type and persists', async ({
     page
   }) => {
-    await openTransporterList(page)
-    await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await saveAndReturnToHub(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-
-    await page.goto(journeyUrl(page, 'transporters'))
-    await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
-    ).toBeChecked()
+    await saveTransporterFromList(page, cannedCommercialTransporter)
   })
 
   test('picking a private transporter saves it with its type and persists', async ({
     page
   }) => {
-    await openTransporterList(page)
-    await page.getByRole('radio', { name: privateRecord.name }).check()
-    await saveAndReturnToHub(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await saveTransporterFromList(page, cannedPrivateTransporter)
 
-    await page.goto(journeyUrl(page, 'transporters'))
-    await expect(
-      page.getByRole('radio', { name: privateRecord.name })
-    ).toBeChecked()
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
     await expect(
       page.getByLabel(
         copy.privateTransporterDetails.fields.nameOrOrganisationName
       )
-    ).toHaveValue(privateRecord.name)
+    ).toHaveValue(cannedPrivateTransporter.name)
     await expect(
       page.getByLabel(copy.privateTransporterDetails.fields.townOrCity)
-    ).toHaveValue(privateRecord.address.townOrCity)
+    ).toHaveValue(cannedPrivateTransporter.address.townOrCity)
   })
 
   test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
@@ -568,9 +551,11 @@ test.describe('filtering the transporter list as the trader types', () => {
     await expect(
       page.getByRole('row').filter({ has: page.getByRole('radio') })
     ).toHaveCount(1)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(1)
     await expect(
-      transporterRow(page, commercialRecord.name).locator('strong', {
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name).locator('strong', {
         hasText: 'García'
       })
     ).toHaveText('García')
@@ -586,7 +571,7 @@ test.describe('filtering the transporter list as the trader types', () => {
   }) => {
     await openTransporterList(page)
 
-    await searchBoxOf(page).fill(privateRecord.name)
+    await searchBoxOf(page).fill(cannedPrivateTransporter.name)
 
     await expectNoSeriousOrCriticalViolations(page, 'Filtered transporter list')
   })
@@ -594,7 +579,7 @@ test.describe('filtering the transporter list as the trader types', () => {
   test('announces how many transporters are shown', async ({ page }) => {
     await openTransporterList(page)
 
-    await searchBoxOf(page).fill(privateRecord.name)
+    await searchBoxOf(page).fill(cannedPrivateTransporter.name)
 
     await expect(page.getByRole('status')).toHaveText(
       copy.transporters.shownCount(1)
@@ -616,14 +601,18 @@ test.describe('filtering the transporter list as the trader types', () => {
     await openTransporterList(page)
     const urlBefore = page.url()
     const searchBox = searchBoxOf(page)
-    await searchBox.fill(commercialRecord.name)
+    await searchBox.fill(cannedCommercialTransporter.name)
     await searchButtonOf(page).click()
     expect(page.url()).toBe(urlBefore)
 
-    await searchBox.fill(privateRecord.name)
+    await searchBox.fill(cannedPrivateTransporter.name)
 
-    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+    await expect(
+      transporterRow(page, cannedPrivateTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(0)
   })
 
   test('keeps the list narrowed to the term typed before a refused save', async ({
@@ -634,10 +623,10 @@ test.describe('filtering the transporter list as the trader types', () => {
     await submitTransporterNotOnTheList(page)
 
     await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
+      page.getByRole('radio', { name: cannedCommercialTransporter.name })
     ).toBeVisible()
     await expect(
-      page.getByRole('radio', { name: privateRecord.name })
+      page.getByRole('radio', { name: cannedPrivateTransporter.name })
     ).toHaveCount(0)
   })
 
@@ -672,17 +661,15 @@ test.describe('filtering the transporter list as the trader types', () => {
     page
   }) => {
     await openTransporterList(page)
-    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await page
+      .getByRole('radio', { name: cannedCommercialTransporter.name })
+      .check()
 
-    await searchBoxOf(page).fill(privateRecord.name)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
-    await saveAndReturnToHub(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-
-    await page.goto(journeyUrl(page, 'transporters'))
+    await searchBoxOf(page).fill(cannedPrivateTransporter.name)
     await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
-    ).toBeChecked()
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(0)
+    await saveAndExpectTransporterChosen(page, cannedCommercialTransporter)
   })
 })
 
@@ -700,48 +687,64 @@ test.describe('searching the transporter list without JavaScript', () => {
 
     await searchByPressingEnter(page, {
       search: copy.transporters.search,
-      term: privateRecord.name
+      term: cannedPrivateTransporter.name
     })
 
-    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+    await expect(
+      transporterRow(page, cannedPrivateTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(0)
   })
 
   test('searching by name leaves only the matching transporter on the list', async ({
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, privateRecord.name)
+    await searchTransporters(page, cannedPrivateTransporter.name)
 
-    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+    await expect(
+      transporterRow(page, cannedPrivateTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(0)
   })
 
   test('searching by approval number finds the transporter it belongs to', async ({
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, commercialRecord.approvalNumber)
+    await searchTransporters(page, cannedCommercialTransporter.approvalNumber)
 
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(1)
-    await expect(transporterRow(page, privateRecord.name)).toHaveCount(0)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedPrivateTransporter.name)
+    ).toHaveCount(0)
   })
 
   test('searching by address finds the transporter at it', async ({ page }) => {
     await openTransporterList(page)
-    await searchTransporters(page, privateRecord.address.postcode)
+    await searchTransporters(page, cannedPrivateTransporter.address.postcode)
 
-    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
-    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+    await expect(
+      transporterRow(page, cannedPrivateTransporter.name)
+    ).toHaveCount(1)
+    await expect(
+      transporterRow(page, cannedCommercialTransporter.name)
+    ).toHaveCount(0)
   })
 
   test('keeps the term in the box and stays on the list, saving nothing', async ({
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, privateRecord.name)
+    await searchTransporters(page, cannedPrivateTransporter.name)
 
-    await expect(searchBoxOf(page)).toHaveValue(privateRecord.name)
+    await expect(searchBoxOf(page)).toHaveValue(cannedPrivateTransporter.name)
     await expect(
       page.getByRole('heading', { name: copy.transporters.title })
     ).toBeVisible()
@@ -762,15 +765,11 @@ test.describe('searching the transporter list without JavaScript', () => {
     page
   }) => {
     await openTransporterList(page)
-    await searchTransporters(page, commercialRecord.name)
-    await page.getByRole('radio', { name: commercialRecord.name }).check()
-    await saveAndReturnToHub(page).click()
-
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await page.goto(journeyUrl(page, 'transporters'))
-    await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
-    ).toBeChecked()
+    await searchTransporters(page, cannedCommercialTransporter.name)
+    await page
+      .getByRole('radio', { name: cannedCommercialTransporter.name })
+      .check()
+    await saveAndExpectTransporterChosen(page, cannedCommercialTransporter)
   })
 })
 
@@ -1354,10 +1353,7 @@ test.describe('cancelling an add form', () => {
     page
   }) => {
     await signInWithOwnTransporterStore(page)
-    await openTransporterList(page)
-    await page.getByRole('radio', { name: privateRecord.name }).check()
-    await saveAndReturnToHub(page).click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await saveTransporterFromList(page, cannedPrivateTransporter)
 
     const transporterListUrl = journeyUrl(page, 'transporters')
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
@@ -1365,7 +1361,7 @@ test.describe('cancelling an add form', () => {
 
     await page.goto(transporterListUrl)
     await expect(
-      page.getByRole('radio', { name: privateRecord.name })
+      page.getByRole('radio', { name: cannedPrivateTransporter.name })
     ).toBeChecked()
     await expect(
       page.getByRole('radio', {
@@ -1385,7 +1381,9 @@ test.describe('cancelling an add form', () => {
 
     await signInWithOwnTransporterStore(page)
     await openTransporterList(page)
-    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await page
+      .getByRole('radio', { name: cannedCommercialTransporter.name })
+      .check()
     await saveAndReturnToHub(page).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(transportTaskRow()).toContainText(hubCopy.statuses.complete)
@@ -1398,7 +1396,7 @@ test.describe('cancelling an add form', () => {
 
     await page.goto(transporterListUrl)
     await expect(
-      page.getByRole('radio', { name: commercialRecord.name })
+      page.getByRole('radio', { name: cannedCommercialTransporter.name })
     ).toBeChecked()
     await expect(
       page.getByRole('radio', {

@@ -20,7 +20,7 @@ scope, service-backed options, validation, persistence and check-answers rows.
 - [`journeys/linear/features/origin/copy/copy.cy.js`](../journeys/linear/features/origin/copy/copy.cy.js)
 - [`journeys/linear/features/origin/controller.test.js`](../journeys/linear/features/origin/controller.test.js)
 - [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
-- [`journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js)
+- [`journeys/linear/features/check-answers/view-model/cards/consignment/origin-of-import.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/origin-of-import.js)
 - [`src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/origin.js`](../../../services/persistence/records/notification-mapper/mapper-a/sections/origin.js)
 
 Read [`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js)
@@ -164,9 +164,12 @@ feature's own page already shows is read from that feature's label function
 into the check-answers copy. Value labels only the review shows go in the
 check-answers copy bundles.
 
-Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
-heading carries the one link for every answer inside it, so adding a field to
-an existing card needs no action work at all. Use a service label function when
+Use `row(key, value)` for a scalar. The card's heading carries the
+Change link for every answer inside it, so adding a field to an existing card
+needs no action work. The exception is the transit countries row in the Arrival
+details card's headed group, which carries its own link built with
+`changeAction`. The Addresses card's Permanent address group carries none: the
+card's header Change link changes it. Use a service label function when
 the stored value is a code. Show a conditional row only while the same
 obligation path is in scope.
 

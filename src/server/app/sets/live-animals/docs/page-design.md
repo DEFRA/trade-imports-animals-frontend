@@ -28,6 +28,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
+- The commodities block, the task list and each numbered section are regions
+  named by their heading, and each total box is a region with a name of its
+  own, so a screen reader can list the regions and jump between them. Each
+  total box shows its label as a heading, but the region takes its name from
+  its own copy (Animals summary, Packages summary), so a screen reader lists
+  it apart from the label.
 - With no commodity chosen, the commodity details task is still a link: the
   consignment details page asks the commodity question rather than drawing an
   empty table, and a task opened from the overview goes on to the next page that applies
@@ -59,15 +65,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   hub and the design gives the add route its own way out of the journey.
   Saving either form returns to the transporter list with the new transporter
   chosen, and Back goes where the trader came from.
-- While a notification is being amended, a page ends exactly as it does on a
-  draft: Save and continue, then Save and return to overview, then Cancel and
+- While a notification is being amended, every page except check your answers
+  ends exactly as it does on a draft: Save and continue, then Save and return to overview, then Cancel and
   return to overview wherever the draft page shows it. Save and continue goes on
   through the journey to check your answers, Save and return to overview goes to
   the Overview, and Cancel and return to overview goes to the Overview without
   saving the page. Upload documents posts its own form from both buttons. The
   status strip shows the Amend status and its Cancel amend link. The two
   transporter details forms keep their own primary and cancel even
-  while amending.
+  while amending. Check your answers ends with its own controls instead:
+  Continue, Cancel amend, then Delete.
 
 ## Check your answers (review)
 
@@ -76,21 +83,39 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview on a draft or
   an amendment and to the dashboard on a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
-- The review has the same six numbered sections as the hub, with a
-  subsection heading over every card.
-- Each card has one Change link, in its heading. Rows carry none, except
-  "Edit details" on an address copied onto this notification. A page that is
-  only sometimes asked gets its own card and link.
+- The review has six numbered sections. Its fourth and fifth are worded
+  differently from the hub's. Each card stands directly under its section
+  heading, titled one heading level below it.
+- Each card has one Change link, in its heading. Rows carry none, except:
+  - the first row of each species block: Change opens consignment details
+  - each species block's Identification details table: Change opens animal
+    identification
+  - the transit countries row
+
+  The Addresses and Contact address cards carry no row link: a party row has
+  none. An address copied onto the notification that breaks the address-book
+  rules is reached from its error summary entry, which links to its edit page.
+
+  The transit countries read back in a "Transit countries" subsection of the
+  Arrival details card, with their own row-level Change link, when they apply.
+
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
-- The roles-and-addresses card carries one row per animal that has a saved
-  permanent address, after the county parish holding row, each keyed by the
-  animal's species common name and number and holding that animal's saved
-  address exactly as a party row reads. An animal that still owes one has no
-  row: the card that shows the answer is not the card that owes it. A line
-  that needs a permanent address with no animal counted carries no row
-  either. The species card's identifier table heads only the identifiers the
-  species was asked for; it carries no permanent address column.
+- Each party and the contact address read back as the name, then each non-empty
+  address line, town or city, county and postcode, then the country, each on
+  its own line, with no telephone or email.
+- The Addresses card carries a "Permanent address" subsection after the county
+  parish holding row, with one entry per animal that has a saved permanent
+  address. Each entry is keyed by the animal's species common name and number
+  and holds that animal's name, address lines and country, with no telephone or
+  email. An animal that still owes one has no entry: the card that shows the
+  answer is not the card that owes it. With no animal holding a saved address
+  there is no subsection.
+- The county parish holding number reads with slashes, such as 12/345/6789,
+  wherever it is shown. It is stored as nine digits.
+- Each species block's identifiers sit under an "Identification details"
+  heading, in a table that heads only the identifiers the species was asked
+  for; it carries no permanent address column.
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,
@@ -99,10 +124,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   and "Complete ..." line are the only visible marking.
 - Every task row belongs to exactly one card, so "no unfinished card" and
   `readyForCheckYourAnswers` give the same verdict.
-- Species cards carry no card id, so the error summary names outstanding
-  species answers but marks no species card.
-- The documents card always shows, because documents are part of the
-  notification even when none are uploaded. With none, it says so.
+- Commodity cards carry no card id, so the error summary names commodity details
+  without marking a card, and names each short species and links to its own
+  block, which shows no message.
+- The documents section always shows, because documents are part of the
+  notification even when none are uploaded. Each uploaded document has its own
+  card titled "Document n", with rows Document reference, Document type, Date
+  of issue and Attachment, which reads the uploaded file's name. With none
+  uploaded there is one "Document 1" card whose Document reference reads "Not
+  applicable".
+- Every document card carries the documents card id. Only the first carries
+  the anchor the error summary links to, because a page holds one id per
+  anchor. Every document card carries the documents error line and border, and
+  hides its blank cells: the documents answers are one unit of "unfinished"
+  that the review cannot split by document, and the border and line are the
+  only visible marking of hidden blanks.
 - A submitted notification's review shows no form, no Change links and no
   document scan errors.
 - The means of transport row reads the arrival page's own label for the
@@ -111,14 +147,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   the message its own page gives. An unfinished card says "complete" instead
   of the stale answer's message.
 - A party never answered raises no address error. Its card is unfinished.
-- The reason-for-import card carries the exit answers, and its one Change
+- The main-import-reason card carries the exit answers, and its one Change
   link reaches the page that collects them.
 - A summary entry for a card that is out of scope is absent, so every entry
   links to an anchor the page carries.
 - Each card's Change link ends, for screen readers, with the card's title in
   lower-case words.
-- The review ends with the Continue button alone, because its label carries
-  the whole instruction, so no heading and no sentence stand above it.
+- The review's form ends with one button group, and no heading or sentence
+  stands above it. On a draft the group is Continue then a red Delete. While
+  amending it is Continue, a secondary Cancel amend, then a red Delete.
 - An unfinished card's line is the same in the error summary and in the card,
   so a trader reading either sees the same words.
 
@@ -254,8 +291,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   button comes first in the form so that Enter never presses a Remove button
   or the visible "Save and continue".
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading, and no identifier field has a hint — the
-  identification-details and description fallback follows this too. Labels
+  saved-animals column heading, and no identifier field has a hint. Labels
   are regular weight.
 - The saved-animals table has one column per identifier that species' panel
   asks for, not per identifier the trader filled: the commodity's own
@@ -328,8 +364,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
   which full address they chose, name and every address line. The county
-  parish holding number follows the same section shape, with its stored value
-  on one line and no Edit details.
+  parish holding number follows the same section shape, with its number read
+  with slashes on one line and no Edit details.
 - Each section is a region named by its heading, so a screen reader lists the
   parties. The add link names the party, so it needs no visually hidden
   suffix. Change and Edit details keep a visually hidden suffix naming the

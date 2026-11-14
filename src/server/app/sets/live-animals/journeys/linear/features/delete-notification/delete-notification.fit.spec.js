@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test'
 
 import {
   BASE,
-  completeAnswerSections,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
-  openReviewFromHub,
   signIn,
-  startNotification
+  startNotification,
+  submitCompleteNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
@@ -84,15 +83,7 @@ test.describe('delete-notification feature', () => {
 test.describe('delete-notification feature (submitted)', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page
-      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    const reference = journeyIdFromPage(page)
+    const reference = await submitCompleteNotification(page)
     await page.goto(BASE)
     await page
       .getByRole('link', {

@@ -38,7 +38,8 @@ import { copy as originCopy } from '../src/server/app/sets/live-animals/journeys
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 import {
   COMMERCIAL,
-  PRIVATE
+  PRIVATE,
+  parties
 } from '../src/server/app/services/transporters/index.js'
 
 import { signIn } from './sign-in.js'
@@ -1003,6 +1004,27 @@ export const identifyAnimalsByMicrochip = async (
 }
 
 /**
+ * Reaches the review with each chosen species at its count and no animal
+ * identified.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Array<{ species: object, count: string }>} speciesCounts - the
+ * species rows to select and the number of animals each holds.
+ */
+export const openReviewWithSpeciesCounts = async (page, speciesCounts) => {
+  await openCommodityDetails(
+    page,
+    speciesCounts.map(({ species }) => species)
+  )
+  for (const { species, count } of speciesCounts) {
+    await (await numberOfAnimalsFor(page, species)).fill(count)
+  }
+  await saveAndContinue(page).click()
+  await openOverview(page)
+  await openReviewFromHub(page)
+}
+
+/**
  * The saved-animals table row for the numbered animal of a species.
  *
  * @param {import('@playwright/test').Page} page
@@ -1280,6 +1302,44 @@ export const openTransporterList = async (page) => {
   ).toBeVisible()
 }
 
+export const cannedPrivateTransporter = parties().find(
+  (record) => record.type === PRIVATE
+)
+
+export const cannedCommercialTransporter = parties().find(
+  (record) => record.type === COMMERCIAL
+)
+
+/**
+ * Saves the transporter list with a pick, returns to the overview and expects
+ * the transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter picked.
+ */
+export const saveAndExpectTransporterChosen = async (page, transporter) => {
+  await saveAndReturnToHub(page).click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.goto(journeyUrl(page, 'transporters'))
+  await expect(
+    page.getByRole('radio', { name: transporter.name })
+  ).toBeChecked()
+}
+
+/**
+ * Picks a transporter from the transporter list of a fresh notification
+ * arriving by air, saves it, returns to the overview and expects the
+ * transporter list to show that transporter chosen.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ name: string }} transporter - the listed transporter to pick.
+ */
+export const saveTransporterFromList = async (page, transporter) => {
+  await openTransporterList(page)
+  await page.getByRole('radio', { name: transporter.name }).check()
+  await saveAndExpectTransporterChosen(page, transporter)
+}
+
 /**
  * Opens the transporter type question from the transporter list.
  *
@@ -1413,6 +1473,50 @@ export const completeAnswerSections = async (
 
 export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
+}
+
+export const submitCompleteNotification = async (page) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  await openReviewFromHub(page)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page
+    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  return journeyIdFromPage(page)
+}
+
+export const amendFromList = async (page, reference) => {
+  await page.goto(BASE)
+  await page
+    .getByRole('button', { name: `Amend notification ${reference}` })
+    .click()
+}
+
+export const deleteFromReview = async (page, confirmationTitle) => {
+  await page
+    .getByRole('button', {
+      name: sharedAppCopy.notificationActions.delete.text,
+      exact: true
+    })
+    .click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: confirmationTitle })
+  ).toBeVisible()
+}
+
+export const changeOriginOnAmendment = async (page, internalReference) => {
+  await page.getByRole('link', { name: 'Change origin of import' }).click()
+  await chooseCountryOfOrigin(page, 'France')
+  await page
+    .getByLabel('Your internal reference for this consignment (optional)')
+    .fill(internalReference)
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await openNotificationView(page)
 }
 
 export const saveAndContinue = (page) =>

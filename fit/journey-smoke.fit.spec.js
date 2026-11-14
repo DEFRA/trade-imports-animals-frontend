@@ -239,7 +239,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
     const summary = errorSummary(page)
     await expect(summary).toContainText('There is a problem')
-    await expect(summary).toContainText('Complete reason for import')
+    await expect(summary).toContainText('Complete main import reason')
     await expect(summary).toContainText('Complete roles and addresses')
   })
 
@@ -345,7 +345,7 @@ test.describe('live-animals journey glue', () => {
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
-    await page.getByRole('link', { name: 'Change uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Change document 1' }).click()
     await expect(page).toHaveURL(documentsOnTheReviewTrail)
     await addDocument(page, secondDocument)
     await expect(page).toHaveURL(documentsOnTheReviewTrail)

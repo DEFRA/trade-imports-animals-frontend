@@ -1,6 +1,7 @@
 import { SET_ID } from '../../../sets/live-animals/set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { INDEX_DELIMITER } from '../../fulfilment-id.js'
 import { configureObligationSet } from '../../../model/obligations/manifest.js'
 import {
   allowListed,
@@ -8,7 +9,10 @@ import {
   equalsGate,
   moreThanOne
 } from '../../../model/obligations/helpers/index.js'
-import { emptyCollectionSatisfiesFloor } from './invariants.js'
+import {
+  emptyCollectionSatisfiesFloor,
+  emptyCollectionShortOfFloor
+} from './invariants.js'
 
 const line = { id: 'line-group', name: 'commodityLines' }
 
@@ -178,6 +182,46 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         stateWithCommodityAndSpecies('0101', 'Equus asinus')
       )
     ).toBe(true)
+  })
+
+  it('Should report an empty collection short of its floor when the floor asks the parent for a record', () => {
+    expect(
+      emptyCollectionShortOfFloor(
+        collection,
+        unitGroupWith([allowListedLeaf.id]),
+        LINE_1,
+        stateWithCommodity('0102')
+      )
+    ).toBe(true)
+  })
+
+  it('Should not report an empty collection short of its floor when the floor does not ask the parent for a record', () => {
+    expect(
+      emptyCollectionShortOfFloor(
+        collection,
+        unitGroupWith([allowListedLeaf.id]),
+        LINE_1,
+        stateWithCommodity('01063300')
+      )
+    ).toBe(false)
+  })
+
+  it('Should not report a collection short of its floor once it holds a record', () => {
+    expect(
+      emptyCollectionShortOfFloor(
+        collection,
+        unitGroupWith([allowListedLeaf.id]),
+        LINE_1,
+        {
+          ...stateWithCommodity('0102'),
+          obligations: {
+            [UNIT_GROUP_ID]: {
+              fulfilmentIndexes: [`${LINE_1}${INDEX_DELIMITER}0`]
+            }
+          }
+        }
+      )
+    ).toBe(false)
   })
 
   describe('the floorAppliesToParent gate', () => {

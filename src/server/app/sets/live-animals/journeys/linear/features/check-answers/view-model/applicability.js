@@ -6,14 +6,13 @@ export const anyLineApplies = (answers, name) =>
     appliesForGateValue(name, line?.commodityCode)
   )
 
-export const regionCodeApplies = (_answers, scope) =>
-  scope.has('regionOfOriginCode')
-
 export const purposeApplies = (_answers, scope) =>
   scope.has('purposeInInternalMarket')
 
 export const destinationCountryApplies = (_answers, scope) =>
   scope.has('destinationCountry')
+
+export const exitsAsTransit = (answers) => answers.reasonForImport === 'transit'
 
 export const exitDateApplies = (_answers, scope) => scope.has('exitDate')
 
