@@ -33,39 +33,41 @@
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
-  {% if submittedHeader %}
-    <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ submittedHeader.reference }}</h1>
-    {{ govukTag({ text: submittedHeader.status.text, classes: submittedHeader.status.classes }) }}
+  {% if viewHeader %}
+    <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ viewHeader.reference }}</h1>
+    {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
 
-    <form method="post" action="{{ submittedHeader.actions.copy.formAction }}">
+    <form method="post" action="{{ viewHeader.actions.copy.formAction }}">
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
       <input type="hidden" name="copyOrigin" value="notification-view" />
       <div class="govuk-button-group">
+        {% if viewHeader.actions.amend %}
+          {{ govukButton({
+            text: viewHeader.actions.amend.text,
+            attributes: { formaction: viewHeader.actions.amend.formAction }
+          }) }}
+        {% endif %}
         {{ govukButton({
-          text: submittedHeader.actions.amend.text,
-          attributes: { formaction: submittedHeader.actions.amend.formAction }
+          text: viewHeader.actions.copy.text,
+          classes: viewHeader.actions.copy.classes
         }) }}
-        {{ govukButton({
-          text: submittedHeader.actions.copy.text,
-          classes: "govuk-button--secondary"
-        }) }}
-        {{ govukButton(submittedHeader.actions.delete) }}
+        {{ govukButton(viewHeader.actions.delete) }}
       </div>
     </form>
 
-    {% if submittedHeader.actionRequiredWarning %}
-      {{ govukWarningText(submittedHeader.actionRequiredWarning) }}
+    {% if viewHeader.actionRequiredWarning %}
+      {{ govukWarningText(viewHeader.actionRequiredWarning) }}
     {% endif %}
 
-    {% if submittedHeader.dateSubmitted %}
-      <p class="govuk-body">{{ submittedHeader.dateSubmitted }}</p>
+    {% if viewHeader.dateLine %}
+      <p class="govuk-body">{{ viewHeader.dateLine }}</p>
     {% endif %}
 
     <section aria-labelledby="import-reference-numbers-heading">
-      <h2 class="govuk-heading-m" id="import-reference-numbers-heading">{{ submittedHeader.importReferences.heading }}</h2>
-      {{ govukWarningText(submittedHeader.importReferences.warning) }}
-      {{ govukSummaryList({ rows: submittedHeader.importReferences.rows }) }}
+      <h2 class="govuk-heading-m" id="import-reference-numbers-heading">{{ viewHeader.importReferences.heading }}</h2>
+      {{ govukWarningText(viewHeader.importReferences.warning) }}
+      {{ govukSummaryList({ rows: viewHeader.importReferences.rows }) }}
     </section>
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
   {% else %}
@@ -152,7 +154,9 @@
             classes: "govuk-button--secondary"
           }) }}
         {% endif %}
-        {{ govukButton(deleteButton) }}
+        {% if deleteButton %}
+          {{ govukButton(deleteButton) }}
+        {% endif %}
       </div>
     </form>
   {% endif %}

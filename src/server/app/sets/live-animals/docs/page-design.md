@@ -139,6 +139,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   hides its blank cells: the documents answers are one unit of "unfinished"
   that the review cannot split by document, and the border and line are the
   only visible marking of hidden blanks.
+- A draft is headed by its reference, a Draft tag and the date created, in
+  place of the review heading and status bar. Its header offers Copy as new
+  then a red Delete, and an Import reference numbers section as for a
+  submitted notification. It keeps its Change links, error summary and
+  Continue. An amendment keeps the review heading and status bar.
 - A notification recorded as Submitted is viewed with its reference, a
   Submitted tag and the date submitted, in place of the review heading and
   status bar. Its header offers Amend this notification, Copy as new and
@@ -167,8 +172,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Each card's Change link ends, for screen readers, with the card's title in
   lower-case words.
 - The review's form ends with one button group, and no heading or sentence
-  stands above it. On a draft the group is Continue then a red Delete. While
-  amending it is Continue, a secondary Cancel amend, then a red Delete.
+  stands above it. On a draft the group is Continue alone, its Delete sitting
+  in the header. While amending it is Continue, a secondary Cancel amend, then
+  a red Delete.
 - An unfinished card's line is the same in the error summary and in the card,
   so a trader reading either sees the same words.
 

@@ -100,8 +100,11 @@ These steps are shared because two or more tests use them:
 - `expectMainImportReasonAndAdditionalDetailsNamed` proves the refused review
   names the main import reason and additional details cards, in the error
   summary and on each card.
-- `expectReviewEndsWithDraftControls` proves a draft review ends with Continue
-  and Delete.
+- `expectDraftReviewEndsWithContinue` proves a draft review ends with Continue
+  alone, its Delete sitting in the header. `notificationReferenceHeading`
+  finds the reference heading that heads a notification's view, and
+  `expectDraftReview` proves the page is a draft review: that heading, the Draft
+  tag and a foot that ends with Continue.
 
 When a second test needs a local step, move it to
 `fit/live-animals-journey.js` in the same change and delete every local copy.

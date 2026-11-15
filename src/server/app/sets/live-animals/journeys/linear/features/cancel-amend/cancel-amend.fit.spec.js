@@ -19,7 +19,7 @@ import { copy } from './copy/copy.en.js'
 
 const TAG = '.govuk-tag'
 const strip = (page) => page.locator('.app-journey-strip')
-const submittedHeaderTag = (page) => page.locator(`main ${TAG}`)
+const viewHeaderTag = (page) => page.locator(`main ${TAG}`)
 const cancelAmendLink = (page) =>
   strip(page).getByRole('link', {
     name: sharedCopy.journeyStrip.cancelAmend,
@@ -97,7 +97,7 @@ test.describe('cancel-amend feature', () => {
     await expect(
       page.getByText(checkAnswersCopy.cancelAmend.successBody)
     ).toBeVisible()
-    await expect(submittedHeaderTag(page)).toHaveText(
+    await expect(viewHeaderTag(page)).toHaveText(
       sharedCopy.journeyStrip.submitted
     )
     await expect(page.getByText('DiscardMe99', { exact: true })).toHaveCount(0)
@@ -133,7 +133,7 @@ test.describe('cancel-amend feature', () => {
     page
   }) => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
-    await expect(submittedHeaderTag(page)).toHaveText(
+    await expect(viewHeaderTag(page)).toHaveText(
       sharedCopy.journeyStrip.submitted
     )
 
@@ -195,7 +195,7 @@ test.describe('cancel-amend feature without JavaScript', () => {
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-      await expect(submittedHeaderTag(noJs)).toHaveText(
+      await expect(viewHeaderTag(noJs)).toHaveText(
         sharedCopy.journeyStrip.submitted
       )
     })

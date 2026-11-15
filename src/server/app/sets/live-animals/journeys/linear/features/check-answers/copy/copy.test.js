@@ -30,8 +30,14 @@ describe('#copy', () => {
     expect(copy.hidden.document(1)).toBe('document 1')
   })
 
+  it('Should write the date created line with the supplied date', () => {
+    expect(copy.viewHeader.dateCreated('22 July 2026')).toBe(
+      'Date created: 22 July 2026'
+    )
+  })
+
   it('Should write the date submitted line with the supplied date', () => {
-    expect(copy.submittedHeader.dateSubmitted('22 July 2026')).toBe(
+    expect(copy.viewHeader.dateSubmitted('22 July 2026')).toBe(
       'Date submitted: 22 July 2026'
     )
   })
@@ -47,7 +53,7 @@ describe('GET check-answers — copy reaches the view', () => {
     await handler(journeyRequest(journey.journeyId), h)
     const { context } = h.captured.view
     expect(context.copy).toBe(copy)
-    expect(context.pageTitle).toBe(copy.title)
+    expect(context.pageTitle).toBe(journey.journeyId)
     expect(context.sharedCopy.layout.serviceName).toBe(
       'Import notification service'
     )

@@ -18,9 +18,9 @@ import {
   selectSpecies,
   signIn,
   startNotification,
-  backLink
+  backLink,
+  expectDraftReview
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -390,9 +390,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('leads the secondary Return to dashboard button, with no task shut as Cannot start yet', async ({
@@ -429,9 +427,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('a single-species notification reaches the review with no identifier saved', async ({
@@ -446,9 +442,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('hub with nothing but the origin answered has no serious or critical axe violations', async ({

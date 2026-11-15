@@ -479,7 +479,7 @@ export const expectMainImportReasonAndAdditionalDetailsNamed = async (page) => {
   }
 }
 
-export const expectReviewEndsWithDraftControls = (page) =>
+export const expectDraftReviewEndsWithContinue = (page) =>
   expect(
     page
       .getByRole('main')
@@ -487,10 +487,22 @@ export const expectReviewEndsWithDraftControls = (page) =>
       .last()
       .locator('.govuk-button-group')
       .locator('> *')
-  ).toHaveText([
-    checkAnswersCopy.submit.button,
-    sharedAppCopy.notificationActions.delete.text
-  ])
+  ).toHaveText([checkAnswersCopy.submit.button])
+
+export const notificationReferenceHeading = (page) =>
+  page.getByRole('heading', {
+    level: 1,
+    name: journeyIdFromPage(page),
+    exact: true
+  })
+
+export const expectDraftReview = async (page) => {
+  await expect(notificationReferenceHeading(page)).toBeVisible()
+  await expect(
+    page.getByRole('main').locator('.govuk-tag', { hasText: 'Draft' })
+  ).toHaveText('Draft')
+  await expectDraftReviewEndsWithContinue(page)
+}
 
 export const INFECTED_DOCUMENT_FILE_NAME = 'virus-invoice.pdf'
 export const STILL_SCANNING_DOCUMENT_FILE_NAME = 'never-scans.pdf'
@@ -953,7 +965,7 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-const save = async (page) => {
+export const save = async (page) => {
   await saveAndContinue(page).click()
 }
 
@@ -995,7 +1007,10 @@ export const LANDINGS = {
 export const expectLanding = async (page, { slug, title }) => {
   await expect(page).toHaveURL(urlUnderBase(`/notifications/[^/]+/${slug}`))
   await expect(
-    page.getByRole('heading', { name: title, exact: true })
+    page.getByRole('heading', {
+      name: title,
+      exact: true
+    })
   ).toBeVisible()
 }
 

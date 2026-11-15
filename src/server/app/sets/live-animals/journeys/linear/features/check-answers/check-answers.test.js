@@ -433,15 +433,28 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(view.context.pageTitle).toBe(journeyId)
     expect(view.context.heading).toBe(journeyId)
     expect(view.context.journeyStrip).toBeNull()
-    expect(view.context.submittedHeader.reference).toBe(journeyId)
+    expect(view.context.viewHeader.reference).toBe(journeyId)
   })
 
-  it('Should head a draft with its review title and the strip, and no submitted header', async () => {
-    const draft = await viewForStatus(DRAFT)
+  it('Should head a draft with its reference and a Draft tag in the header, and no strip', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
 
-    expect(draft.context.pageTitle).toBe(copyEn.title)
-    expect(draft.context.journeyStrip.status.text).toBe('Draft')
-    expect(draft.context.submittedHeader).toBeNull()
+    expect(view.context.pageTitle).toBe(journeyId)
+    expect(view.context.heading).toBe(journeyId)
+    expect(view.context.journeyStrip).toBeNull()
+    expect(view.context.viewHeader.reference).toBe(journeyId)
+    expect(view.context.viewHeader.status).toEqual({
+      text: 'Draft',
+      classes: 'govuk-tag--blue'
+    })
+  })
+
+  it('Should head an amendment with its review title and the strip, and no header', async () => {
+    const amendment = await viewForStatus(AMEND)
+
+    expect(amendment.context.pageTitle).toBe(copyEn.title)
+    expect(amendment.context.journeyStrip.status.text).toBe('Amend')
+    expect(amendment.context.viewHeader).toBeNull()
   })
 
   it('Should redirect the view of a notification that does not exist to the notification list', async () => {
@@ -453,23 +466,39 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(response).toEqual({ redirect: dashboardPath() })
   })
 
-  it.each([DRAFT, AMEND])(
-    'Should retain Change hrefs and offer the delete path for an editable %s journey',
-    async (status) => {
-      const view = await viewForStatus(status)
-      const hrefs = cardChangeHrefsOf(view.context.sections)
+  it('Should retain Change hrefs on a draft, with the header offering Delete and no Amend, and no foot Delete', async () => {
+    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
+    const hrefs = cardChangeHrefsOf(view.context.sections)
 
-      expect(view.context.readOnly).toBe(false)
-      expect(view.context.submittedHeader).toBeNull()
-      expect(view.context.deleteButton.href).toMatch(/\/delete$/)
-      expect(hrefs).not.toHaveLength(0)
-      expect(hrefs).toEqual(
-        expect.arrayContaining([
-          expect.stringMatching(hrefEndingWithFromReview('origin'))
-        ])
-      )
-    }
-  )
+    expect(view.context.readOnly).toBe(false)
+    expect(view.context.viewHeader.reference).toBe(journeyId)
+    expect(view.context.viewHeader.actions.amend).toBeNull()
+    expect(view.context.viewHeader.actions.delete.href).toBe(
+      pagePath(journeyId, 'delete')
+    )
+    expect(view.context.deleteButton).toBeNull()
+    expect(hrefs).not.toHaveLength(0)
+    expect(hrefs).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(hrefEndingWithFromReview('origin'))
+      ])
+    )
+  })
+
+  it('Should retain Change hrefs and offer the delete path in the foot for an amendment', async () => {
+    const view = await viewForStatus(AMEND)
+    const hrefs = cardChangeHrefsOf(view.context.sections)
+
+    expect(view.context.readOnly).toBe(false)
+    expect(view.context.viewHeader).toBeNull()
+    expect(view.context.deleteButton.href).toMatch(/\/delete$/)
+    expect(hrefs).not.toHaveLength(0)
+    expect(hrefs).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(hrefEndingWithFromReview('origin'))
+      ])
+    )
+  })
 
   it('Should read a single Document 1 card as not applicable on an amendment with nothing uploaded', async () => {
     const view = await viewForStatus(AMEND, noDocumentsSeed())
@@ -483,7 +512,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     const draft = await viewForStatus(DRAFT)
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(draft.context.journeyStrip).toBeNull()
     expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
       /\/cancel-amend$/
     )
@@ -526,10 +555,10 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(view.context.backLink).toBe(dashboardPath())
   })
 
-  it('Should go Back to the overview from the review of a draft notification', async () => {
-    const { view, journeyId } = await viewAndJourneyIdForStatus(DRAFT)
+  it("Should send a draft's review Back to the notification list", async () => {
+    const { view } = await viewAndJourneyIdForStatus(DRAFT)
 
-    expect(view.context.backLink).toBe(hubPath(journeyId))
+    expect(view.context.backLink).toBe(dashboardPath())
   })
 
   it('Should go Back to the overview from the review of a notification being amended', async () => {
@@ -550,7 +579,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
         return { journeyId, backLink: view.context.backLink }
       }
       const fallbackFor = (journeyId) =>
-        status === SUBMITTED ? dashboardPath() : hubPath(journeyId)
+        status === AMEND ? hubPath(journeyId) : dashboardPath()
 
       it('Should go Back to the last journey page when the trader pressed Save and continue on it', async () => {
         const { journeyId, backLink } = await backFor({
@@ -2766,7 +2795,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
     expect(view.context.heading).toBe(copyEn.title)
   })
 
-  it('Should keep the opened title on a draft whose answers change', async () => {
+  it('Should title a draft by its reference whose answers change', async () => {
     const journeyId = await journeyIdForStatus(DRAFT, fullSeed)
     await store.seedAnswers(journeyId, {
       ...fullSeed,
@@ -2775,7 +2804,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
 
     const view = await viewOfJourney(journeyId)
 
-    expect(view.context.heading).toBe(copyEn.title)
+    expect(view.context.heading).toBe(journeyId)
   })
 
   describe('end controls', () => {
@@ -2791,16 +2820,31 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         classes: control.className
       }))
 
-    it('Should end a draft review with Continue then a warning Delete to the delete path', async () => {
+    it('Should end a draft review with Continue alone and offer a primary Copy as new then a warning Delete in its header', async () => {
       const { view, document } = await endControlsOf(DRAFT)
+      const { actions } = view.context.viewHeader
 
-      const controls = controlsIn(
+      const footControls = controlsIn(
         document.querySelector('form[novalidate] .govuk-button-group')
       )
+      const headerControls = [
+        ...document.querySelectorAll(
+          'form:not([novalidate]) .govuk-button-group .govuk-button'
+        )
+      ].map((button) => ({
+        text: button.textContent.trim(),
+        href: button.getAttribute('href'),
+        classes: button.className
+      }))
 
-      expect(controls.map(({ text }) => text)).toEqual(['Continue', 'Delete'])
-      expect(controls[1].href).toBe(view.context.deleteButton.href)
-      expect(controls[1].classes).toContain('govuk-button--warning')
+      expect(footControls.map(({ text }) => text)).toEqual(['Continue'])
+      expect(headerControls.map(({ text }) => text)).toEqual([
+        'Copy as new',
+        'Delete'
+      ])
+      expect(headerControls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
+      expect(headerControls[1].href).toBe(actions.delete.href)
+      expect(headerControls[1].classes).toContain('govuk-button--warning')
     })
 
     it('Should end an amendment review with Continue, a secondary Cancel amend to the cancel-amend path, then Delete', async () => {
@@ -2825,7 +2869,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         SUBMITTED,
         withItahcUploaded(fullSeed)
       )
-      const { actions } = view.context.submittedHeader
+      const { actions } = view.context.viewHeader
 
       const controls = [
         ...document.querySelectorAll('.govuk-button-group .govuk-button')
@@ -2858,11 +2902,11 @@ describe(`${SUITE} — submitted notification awaiting its health certificate`, 
     const view = await viewForStatus(SUBMITTED_ACTION_REQUIRED)
 
     expect(view.context.readOnly).toBe(true)
-    expect(view.context.submittedHeader.status).toEqual({
+    expect(view.context.viewHeader.status).toEqual({
       text: 'Submitted action required',
       classes: 'govuk-tag--orange'
     })
-    expect(view.context.submittedHeader.actionRequiredWarning).toEqual({
+    expect(view.context.viewHeader.actionRequiredWarning).toEqual({
       text: 'You need to upload a health certificate',
       iconFallbackText: 'Warning'
     })
@@ -2909,9 +2953,7 @@ describe(`${SUITE} — submitted notification awaiting its health certificate`, 
     )
 
     expect(
-      view.context.submittedHeader.importReferences.rows.map(
-        (row) => row.value.text
-      )
+      view.context.viewHeader.importReferences.rows.map((row) => row.value.text)
     ).toEqual([journeyId, 'C640'])
   })
 
@@ -2934,6 +2976,6 @@ describe(`${SUITE} — submitted notification awaiting its health certificate`, 
     const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
 
     expect(view.context.continueAmendAction).toBeNull()
-    expect(view.context.submittedHeader.actionRequiredWarning).toBeNull()
+    expect(view.context.viewHeader.actionRequiredWarning).toBeNull()
   })
 })

@@ -1,0 +1,107 @@
+import {
+  DRAFT,
+  SUBMITTED_ACTION_REQUIRED,
+  isSubmittedStatus
+} from '../../../../../../../engine/index.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import { journeyStrip, sharedCopy } from '../../../../../../../shared/kit.js'
+import { copyFor } from '../../../../../../../shared/copy.js'
+import { notificationActionSlugs } from '../../../flow/notification-action-slugs.js'
+import { notificationDateText } from '../../review/notification-date.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
+
+const copy = copyFor({ en, cy })
+
+/**
+ * The Delete notification button of a journey's review.
+ *
+ * @param {object} journey - the journey being reviewed.
+ * @returns {object} the button's text, delete page and warning style.
+ */
+export const deleteButtonFor = (journey) => ({
+  text: sharedCopy.notificationActions.delete.text,
+  href: pagePath(journey.journeyId, notificationActionSlugs.delete),
+  classes: 'govuk-button--warning'
+})
+
+const dateLine = (journey) => {
+  const { dateText, instant } = isSubmittedStatus(journey.status)
+    ? { dateText: copy.viewHeader.dateSubmitted, instant: journey.submittedAt }
+    : { dateText: copy.viewHeader.dateCreated, instant: journey.createdAt }
+  return instant ? dateText(notificationDateText(instant)) : null
+}
+
+const actionRequiredWarning = ({ status }) =>
+  status === SUBMITTED_ACTION_REQUIRED
+    ? {
+        text: copy.viewHeader.actionRequiredWarning,
+        iconFallbackText: copy.warningIcon
+      }
+    : null
+
+const amendAction = (journey) =>
+  isSubmittedStatus(journey.status)
+    ? {
+        text: copy.viewHeader.amend,
+        formAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
+      }
+    : null
+
+const copyAction = (journey, { besideAmend }) => ({
+  text: sharedCopy.notificationActions.copy.text,
+  formAction: pagePath(journey.journeyId, notificationActionSlugs.copy),
+  classes: besideAmend ? 'govuk-button--secondary' : ''
+})
+
+const importReferences = ({ journeyId }) => {
+  const customsDocumentCode = 'C640'
+  return {
+    heading: copy.importReferences.heading,
+    warning: {
+      text: copy.importReferences.warning,
+      iconFallbackText: copy.warningIcon
+    },
+    rows: [
+      {
+        key: { text: copy.importReferences.notificationReference },
+        value: { text: journeyId }
+      },
+      {
+        key: { text: copy.importReferences.customsDocumentCode },
+        value: { text: customsDocumentCode }
+      }
+    ]
+  }
+}
+
+/**
+ * The header of a notification's view, for a draft and for either submitted
+ * status. An amendment has no header.
+ *
+ * @param {object} journey - the journey being viewed.
+ * @returns {object|null} null for an amendment. Otherwise the reference, the
+ * status tag, the date line (Date created for a draft, Date submitted for a
+ * submitted notification, null without the stored instant), the
+ * action-required warning (null unless the status is Submitted action
+ * required), the Amend action (null for a draft), the Copy as new and Delete
+ * actions, and the import reference numbers section.
+ */
+export const viewHeader = (journey) => {
+  if (journey.status !== DRAFT && !isSubmittedStatus(journey.status)) {
+    return null
+  }
+  const amend = amendAction(journey)
+  return {
+    reference: journey.journeyId,
+    status: journeyStrip(journey).status,
+    dateLine: dateLine(journey),
+    actionRequiredWarning: actionRequiredWarning(journey),
+    actions: {
+      amend,
+      copy: copyAction(journey, { besideAmend: amend !== null }),
+      delete: deleteButtonFor(journey)
+    },
+    importReferences: importReferences(journey)
+  }
+}

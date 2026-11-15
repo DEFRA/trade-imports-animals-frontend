@@ -7,9 +7,9 @@ import {
   signIn,
   startNotification,
   submitCompleteNotification,
-  urlUnderBase
+  urlUnderBase,
+  expectDraftReview
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -101,9 +101,7 @@ test.describe('confirmation feature', () => {
     await declarationRequest
 
     await expect(page).toHaveURL(reviewUrl)
-    await expect(
-      page.getByRole('heading', { level: 1, name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 })
 

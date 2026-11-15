@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   addDocument,
   amendFromList,
+  backLink,
   changeOriginOnAmendment,
   deleteFromReview,
   openDocuments,
@@ -23,6 +24,9 @@ import {
   expectStyle,
   govukVisuallyHiddenStyleOf,
   identifyAnimalsByMicrochip,
+  expectDraftReview,
+  expectDraftReviewEndsWithContinue,
+  journeyIdFromPage,
   journeyUrl,
   notificationViewUrl,
   numberOfAnimalsFor,
@@ -77,6 +81,7 @@ const SAVE_AND_CONTINUE = 'Save and continue'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 const ORIGIN_OF_IMPORT_ANCHOR = '#origin-of-import'
 const MAIN_IMPORT_REASON_ANCHOR = '#main-import-reason'
+const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
 const TRANSPORT_DETAILS_ANCHOR = '#transport-details'
 const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.portOfEntry,
@@ -85,6 +90,24 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportIdentification,
   copy.rows.transportDocumentReference
 ]
+
+const main = (page) => page.getByRole('main')
+
+const headerTag = (page) => main(page).locator('.govuk-tag')
+
+const importReferences = (page) =>
+  page.getByRole('region', { name: copy.importReferences.heading })
+
+const summaryValues = (section) => section.locator('.govuk-summary-list__value')
+
+const expectImportReferenceNumbers = async (section, reference) => {
+  await expect(section.getByText(copy.importReferences.warning)).toBeVisible()
+  await expect(section.locator('.govuk-summary-list__key')).toHaveText([
+    copy.importReferences.notificationReference,
+    copy.importReferences.customsDocumentCode
+  ])
+  await expect(summaryValues(section)).toHaveText([reference, 'C640'])
+}
 
 const rowKeysOf = (page, cardAnchor) =>
   page.locator(`${cardAnchor} .govuk-summary-list__key`)
@@ -137,7 +160,7 @@ test.describe('check-answers feature summary rows', () => {
 
     await openNotificationView(page)
 
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expectDraftReview(page)
     await expect(
       page.getByRole('heading', {
         name: copy.sections.aboutTheConsignment
@@ -214,7 +237,7 @@ test.describe('check-answers feature Permanent address subsection of the Address
 
     await openOverview(page)
     await openReviewFromHub(page)
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expectDraftReview(page)
 
     const addressesCard = page.locator('#addresses')
     await expect(
@@ -366,15 +389,17 @@ test.describe('check-answers feature section structure', () => {
     ])
   })
 
-  test('ends with Continue then a warning Delete in its last block, and nothing after it', async ({
+  test('ends with Continue alone in its last block, and nothing after it', async ({
     page
   }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(copy.title)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      journeyIdFromPage(page)
+    )
     await expect(page).toHaveTitle(
-      `${sharedCopy.layout.errorTitlePrefix}${copy.title} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+      `${sharedCopy.layout.errorTitlePrefix}${journeyIdFromPage(page)} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
     )
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
@@ -394,20 +419,7 @@ test.describe('check-answers feature section structure', () => {
     ).toBeVisible()
     await expect(
       lastBlock.locator('.govuk-button-group').locator('> *')
-    ).toHaveText([
-      copy.submit.button,
-      sharedCopy.notificationActions.delete.text
-    ])
-    await expect(
-      lastBlock.getByRole('button', {
-        name: sharedCopy.notificationActions.delete.text
-      })
-    ).toHaveAttribute('href', /\/delete$/)
-    await expect(
-      lastBlock.getByRole('button', {
-        name: sharedCopy.notificationActions.delete.text
-      })
-    ).toHaveClass(/govuk-button--warning/)
+    ).toHaveText([copy.submit.button])
   })
 
   test('puts every card title straight under its section heading, with no other heading between them', async ({
@@ -418,7 +430,8 @@ test.describe('check-answers feature section structure', () => {
 
     await expect(page.getByRole('main').getByRole('heading')).toHaveText([
       sharedCopy.errorSummary.title,
-      copy.title,
+      journeyIdFromPage(page),
+      copy.importReferences.heading,
       copy.sections.aboutTheConsignment,
       copy.cards.originOfImport,
       copy.cards.whatAreYouImporting,
@@ -438,11 +451,12 @@ test.describe('check-answers feature section structure', () => {
 
     await expect(
       page.getByRole('main').getByRole('heading', { level: 1 })
-    ).toHaveText([copy.title])
+    ).toHaveText([journeyIdFromPage(page)])
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 })
     ).toHaveText([
       sharedCopy.errorSummary.title,
+      copy.importReferences.heading,
       copy.sections.aboutTheConsignment,
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
@@ -777,14 +791,13 @@ test.describe('check-answers feature navigation and submission', () => {
     await signIn(page)
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
+  test('back link returns to the notification list', async ({ page }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
     await openNotificationView(page)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(urlUnderBase(''))
   })
 
   test('review has no serious or critical axe violations', async ({ page }) => {
@@ -1028,9 +1041,9 @@ test.describe('check-answers feature unfinished notification', () => {
     })
     await expect(importingEntry).toHaveAttribute(
       'href',
-      '#what-are-you-importing'
+      WHAT_ARE_YOU_IMPORTING_ANCHOR
     )
-    await expect(page.locator('#what-are-you-importing')).toContainText(
+    await expect(page.locator(WHAT_ARE_YOU_IMPORTING_ANCHOR)).toContainText(
       copy.errors.cards.whatAreYouImporting
     )
     await expect(
@@ -1049,6 +1062,154 @@ test.describe('check-answers feature unfinished notification', () => {
   })
 })
 
+test.describe('check-answers feature draft notification reached from Review and submit', () => {
+  const headerControls = (page) =>
+    main(page)
+      .locator('form:not([novalidate]) .govuk-button-group')
+      .locator('> *')
+
+  let createdBefore
+  let createdAfter
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    createdBefore = Date.now()
+    await startNotification(page)
+    createdAfter = Date.now()
+    await openReviewFromHub(page)
+  })
+
+  test('is headed by its reference with a blue Draft tag beside it, no status bar and a title naming the reference', async ({
+    page
+  }) => {
+    await expectDraftReview(page)
+    await expect(headerTag(page)).toHaveText(sharedCopy.journeyStrip.draft)
+    await expect(headerTag(page)).toHaveClass(/govuk-tag--blue/)
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page).toHaveTitle(
+      `${sharedCopy.layout.errorTitlePrefix}${journeyIdFromPage(page)} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+    )
+  })
+
+  test('dates the notification by its creation under its header', async ({
+    page
+  }) => {
+    const createdLines = new Set(
+      [createdBefore, createdAfter].map((instant) =>
+        copy.viewHeader.dateCreated(notificationDateText(instant))
+      )
+    )
+    const alternatives = [...createdLines].map(RegExp.escape).join('|')
+
+    await expect(page.getByText(/^Date created: /)).toHaveText(
+      new RegExp(`^(${alternatives})$`)
+    )
+  })
+
+  test('offers a primary Copy as new then a warning Delete in its header, and no Amend this notification', async ({
+    page
+  }) => {
+    const controls = headerControls(page)
+
+    await expect(controls).toHaveText([
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(controls.nth(0)).not.toHaveClass(/govuk-button--secondary/)
+    await expect(controls.nth(1)).toHaveClass(/govuk-button--warning/)
+  })
+
+  test('Copy as new opens a different draft notification overview', async ({
+    page
+  }) => {
+    const reference = journeyIdFromPage(page)
+
+    await headerControls(page)
+      .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
+      .click()
+
+    await expectOverview(page)
+    expect(journeyIdFromPage(page)).not.toBe(reference)
+  })
+
+  test('Delete in the header opens the delete confirmation', async ({
+    page
+  }) => {
+    await deleteFromReview(page, deleteCopy.title)
+  })
+
+  test('shows the import reference numbers as text with the warning, the reference and the customs document code', async ({
+    page
+  }) => {
+    const section = importReferences(page)
+
+    await expectImportReferenceNumbers(section, journeyIdFromPage(page))
+    await expect(section.getByRole('button')).toHaveCount(0)
+  })
+
+  test('keeps a Change link on every card', async ({ page }) => {
+    const cardTitles = page.locator('.govuk-summary-card__title')
+    const changeLinks = page.locator('.govuk-summary-card__actions .govuk-link')
+
+    await expect(changeLinks).toHaveCount(await cardTitles.count())
+    await expect(changeLinks.first()).toContainText(copy.change)
+  })
+
+  test('lists every unfinished card in the error summary, each linking to its card with its message on the card', async ({
+    page
+  }) => {
+    const unfinishedCards = [
+      ['whatAreYouImporting', WHAT_ARE_YOU_IMPORTING_ANCHOR],
+      ['mainImportReason', MAIN_IMPORT_REASON_ANCHOR],
+      ['commodityDetails', '#description-of-the-goods'],
+      ['additionalDetails', '#additional-details'],
+      ['arrivalDetails', ARRIVAL_DETAILS_ANCHOR],
+      ['transportDetails', TRANSPORT_DETAILS_ANCHOR],
+      ['addresses', '#addresses'],
+      ['contactAddress', '#contact-address']
+    ]
+    const cardsShowingTheirMessage = unfinishedCards.filter(
+      ([card]) => card !== 'commodityDetails'
+    )
+    const summaryEntries = page.locator('.govuk-error-summary__list li')
+
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(summaryEntries).toHaveText(
+      unfinishedCards.map(([card]) => copy.errors.cards[card])
+    )
+    for (const [card, anchor] of unfinishedCards) {
+      await expect(
+        errorSummaryLinks(page, copy.errors.cards[card], { exact: true })
+      ).toHaveAttribute('href', anchor)
+    }
+    for (const [card, anchor] of cardsShowingTheirMessage) {
+      await expect(
+        page.locator(`${anchor} .govuk-error-message`)
+      ).toContainText(copy.errors.cards[card])
+    }
+  })
+
+  test('ends with Continue', async ({ page }) => {
+    await expectDraftReviewEndsWithContinue(page)
+  })
+
+  test('sends Back to the notification list when opened without a trail', async ({
+    page
+  }) => {
+    await openNotificationView(page)
+
+    await expect(backLink(page)).toHaveAttribute('href', BASE)
+  })
+
+  test('draft headed by its reference has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalViolations(page, 'Draft review')
+  })
+})
+
 const openSubmittedViewFromList = async (page, reference) => {
   await page.goto(BASE)
   await page
@@ -1063,11 +1224,6 @@ const openSubmittedViewFromList = async (page, reference) => {
 
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
-
-  const main = (page) => page.getByRole('main')
-
-  const importReferences = (page) =>
-    page.getByRole('region', { name: copy.importReferences.heading })
 
   let reference
   let submittedBefore
@@ -1087,12 +1243,8 @@ test.describe('check-answers feature submitted notification', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: reference, exact: true })
     ).toBeVisible()
-    await expect(main(page).locator('.govuk-tag')).toHaveText(
-      sharedCopy.journeyStrip.submitted
-    )
-    await expect(main(page).locator('.govuk-tag')).toHaveClass(
-      /govuk-tag--green/
-    )
+    await expect(headerTag(page)).toHaveText(sharedCopy.journeyStrip.submitted)
+    await expect(headerTag(page)).toHaveClass(/govuk-tag--green/)
     await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     await expect(page).toHaveTitle(
       `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
@@ -1102,7 +1254,7 @@ test.describe('check-answers feature submitted notification', () => {
   test('dates the notification under its header', async ({ page }) => {
     const submittedLines = new Set(
       [submittedBefore, submittedAfter].map((instant) =>
-        copy.submittedHeader.dateSubmitted(notificationDateText(instant))
+        copy.viewHeader.dateSubmitted(notificationDateText(instant))
       )
     )
     const alternatives = [...submittedLines].map(RegExp.escape).join('|')
@@ -1121,7 +1273,7 @@ test.describe('check-answers feature submitted notification', () => {
       .locator('> *')
 
     await expect(controls).toHaveText([
-      copy.submittedHeader.amend,
+      copy.viewHeader.amend,
       sharedCopy.notificationActions.copy.text,
       sharedCopy.notificationActions.delete.text
     ])
@@ -1136,7 +1288,7 @@ test.describe('check-answers feature submitted notification', () => {
   test('Amend this notification opens the amendment review', async ({
     page
   }) => {
-    await page.getByRole('button', { name: copy.submittedHeader.amend }).click()
+    await page.getByRole('button', { name: copy.viewHeader.amend }).click()
 
     await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
       sharedCopy.journeyStrip.amend
@@ -1158,17 +1310,7 @@ test.describe('check-answers feature submitted notification', () => {
   test('shows the import reference numbers with the warning, the reference and the customs document code', async ({
     page
   }) => {
-    const section = importReferences(page)
-
-    await expect(section.getByText(copy.importReferences.warning)).toBeVisible()
-    await expect(section.locator('.govuk-summary-list__key')).toHaveText([
-      copy.importReferences.notificationReference,
-      copy.importReferences.customsDocumentCode
-    ])
-    await expect(section.locator('.govuk-summary-list__value')).toHaveText([
-      reference,
-      'C640'
-    ])
+    await expectImportReferenceNumbers(importReferences(page), reference)
   })
 
   test('shows the import reference numbers as text with no button when JavaScript is off', async ({
@@ -1181,10 +1323,7 @@ test.describe('check-answers feature submitted notification', () => {
       await expect(
         section.getByText(copy.importReferences.warning)
       ).toBeVisible()
-      await expect(section.locator('.govuk-summary-list__value')).toHaveText([
-        reference,
-        'C640'
-      ])
+      await expect(summaryValues(section)).toHaveText([reference, 'C640'])
       await expect(section.getByRole('button')).toHaveCount(0)
     })
   })
@@ -1192,8 +1331,6 @@ test.describe('check-answers feature submitted notification', () => {
 
 test.describe('check-answers feature submitted notification awaiting its health certificate', () => {
   test.describe.configure({ timeout: 90000 })
-
-  const main = (page) => page.getByRole('main')
 
   let reference
 
@@ -1213,7 +1350,7 @@ test.describe('check-answers feature submitted notification awaiting its health 
     )
     await expect(tag).toHaveClass(/govuk-tag--orange/)
     await expect(
-      page.getByText(copy.submittedHeader.actionRequiredWarning)
+      page.getByText(copy.viewHeader.actionRequiredWarning)
     ).toBeVisible()
   })
 
@@ -1250,7 +1387,7 @@ test.describe('check-answers feature submitted notification awaiting its health 
     const headerButtons = main(page).getByRole('button')
 
     await expect(headerButtons).toHaveText([
-      copy.submittedHeader.amend,
+      copy.viewHeader.amend,
       sharedCopy.notificationActions.copy.text,
       sharedCopy.notificationActions.delete.text,
       copy.submit.button

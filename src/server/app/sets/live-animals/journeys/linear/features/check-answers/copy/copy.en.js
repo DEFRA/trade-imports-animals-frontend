@@ -99,9 +99,10 @@ export const copy = {
     button: 'Continue'
   },
   warningIcon: 'Warning',
-  submittedHeader: {
+  viewHeader: {
     amend: 'Amend this notification',
     actionRequiredWarning: 'You need to upload a health certificate',
+    dateCreated: (date) => `Date created: ${date}`,
     dateSubmitted: (date) => `Date submitted: ${date}`
   },
   importReferences: {

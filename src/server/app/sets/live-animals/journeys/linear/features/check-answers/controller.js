@@ -23,10 +23,7 @@ import { copy as cy } from './copy/copy.cy.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { notificationActionSlugs } from '../../flow/notification-action-slugs.js'
 import { buildSections } from './view-model/index.js'
-import {
-  deleteButtonFor,
-  submittedHeader
-} from './view-model/submitted-header.js'
+import { deleteButtonFor, viewHeader } from './view-model/view-header.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import { speciesErrors } from './view-model/species-errors.js'
@@ -97,9 +94,10 @@ const reviewErrorSummary = (
 
 const backLinkFor = (request, journey) =>
   trailBackLink(request, {
-    fallback: state.isSubmittedStatus(journey.status)
-      ? dashboardPath()
-      : hubPath(journey.journeyId)
+    fallback:
+      journey.status === state.AMEND
+        ? hubPath(journey.journeyId)
+        : dashboardPath()
   })
 
 const reviewTitle = (journey) =>
@@ -142,7 +140,8 @@ const renderCya = async (
     }),
     cardErrors
   )
-  const title = readOnly ? journey.journeyId : reviewTitle(journey)
+  const header = viewHeader(journey)
+  const title = header ? header.reference : reviewTitle(journey)
   return h.view(view, {
     pageTitle: title,
     heading: title,
@@ -150,8 +149,8 @@ const renderCya = async (
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     declarationHref: pagePath(journey.journeyId, declarationPage.slug),
-    journeyStrip: readOnly ? null : journeyStrip(journey),
-    submittedHeader: readOnly ? submittedHeader(journey) : null,
+    journeyStrip: header ? null : journeyStrip(journey),
+    viewHeader: header,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       changeLinkTrail,
@@ -169,7 +168,8 @@ const renderCya = async (
         }
       : null,
     recoverableError,
-    deleteButton: deleteButtonFor(journey),
+    deleteButton:
+      journey.status === state.AMEND ? deleteButtonFor(journey) : null,
     continueAmendAction:
       journey.status === state.SUBMITTED_ACTION_REQUIRED
         ? pagePath(journey.journeyId, notificationActionSlugs.amend)

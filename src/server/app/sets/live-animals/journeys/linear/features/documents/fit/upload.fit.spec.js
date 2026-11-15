@@ -19,7 +19,8 @@ import {
   values,
   withinFullWidthColumn,
   withinTwoThirdsColumn,
-  backLink
+  backLink,
+  expectDraftReview
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { CYA_SLUG, withTrail } from '../../../../../../../shared/kit.js'
@@ -312,9 +313,7 @@ test.describe('document upload page', () => {
     )
     await backLink(page).click()
 
-    await expect(
-      page.getByRole('heading', { name: 'Review your notification' })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   describeCalendarPosition({

@@ -36,7 +36,8 @@ import {
   signIn,
   signInWithOwnTransporterStore,
   values,
-  backLink
+  backLink,
+  expectDraftReview
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -1297,9 +1298,7 @@ test.describe('saving an added transporter', () => {
       /\/notifications\/[^/]+\/notification-view$/
     )
     await backLink(page).click()
-    await expect(
-      page.getByRole('heading', { level: 1, name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('lands on the transporter list with the new transporter first and checked, under the named success banner', async ({

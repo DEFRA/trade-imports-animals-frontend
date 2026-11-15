@@ -100,9 +100,10 @@ export const copy = {
     button: 'Parhau'
   },
   warningIcon: 'Rhybudd',
-  submittedHeader: {
+  viewHeader: {
     amend: 'Diwygio’r hysbysiad hwn',
     actionRequiredWarning: 'Mae angen i chi uwchlwytho tystysgrif iechyd',
+    dateCreated: (date) => `Dyddiad creu: ${date}`,
     dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`
   },
   importReferences: {

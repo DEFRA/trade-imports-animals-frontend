@@ -6,7 +6,7 @@ import {
   completeAnswerSections,
   documentCardFor,
   documentNamed,
-  expectReviewEndsWithDraftControls,
+  expectDraftReviewEndsWithContinue,
   STILL_SCANNING_DOCUMENT_FILE_NAME,
   errorSummary,
   expectNoSeriousOrCriticalViolations,
@@ -224,7 +224,7 @@ test.describe('declaration feature', () => {
 
     await expectChangedBanner(page)
     await expect(page.getByText(EDITED_REFERENCE)).toBeVisible()
-    await expectReviewEndsWithDraftControls(page)
+    await expectDraftReviewEndsWithContinue(page)
   })
 
   test('shows the confirmation for the same notification when another tab submitted it first', async ({
@@ -298,7 +298,7 @@ test.describe('declaration reached only from the review', () => {
     await expect(
       documentCardFor(page, 1).locator(CARD_ERROR_SELECTOR)
     ).toContainText(documentsCopy.errors.someStillScanning)
-    await expectReviewEndsWithDraftControls(page)
+    await expectDraftReviewEndsWithContinue(page)
   })
 
   test('refuses a declaration ticked on an incomplete notification, and shows the review as a draft naming each unfinished card', async ({
@@ -316,7 +316,7 @@ test.describe('declaration reached only from the review', () => {
     await expect(errorSummary(page).getByRole('link')).toHaveText(
       UNFINISHED_CARD_MESSAGES
     )
-    await expectReviewEndsWithDraftControls(page)
+    await expectDraftReviewEndsWithContinue(page)
   })
 
   test('refuses Continue and shows the current notification when it changed after the review rendered', async ({
