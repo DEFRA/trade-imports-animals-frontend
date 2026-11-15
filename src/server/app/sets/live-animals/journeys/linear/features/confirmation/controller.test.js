@@ -4,16 +4,28 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   createPath,
   dashboardPath,
-  hubPath
+  pagePath
 } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
+import {
+  AMEND,
+  DRAFT,
+  configureRecords
+} from '../../../../../../engine/persistence/records.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
+import {
+  amendmentOpened,
+  authenticatedCredentials,
+  driveHandler,
+  expectOneLogged,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { declarationPage } from '../declaration/page.js'
 
 import * as confirmation from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -35,7 +47,7 @@ const submittedView = async (seed) => {
   await store.submit(journeyId)
   const h = stubH()
   await get(journeyRequest(journeyId), h)
-  return h.captured.view
+  return { journeyId, view: h.captured.view }
 }
 
 describe('GET /confirmation', () => {
@@ -47,38 +59,32 @@ describe('GET /confirmation', () => {
   beforeEach(() => store.clear())
 
   it('Should render the confirmation panel with the reference for a submitted notification', async () => {
-    const { journeyId } = await store.create()
-    await store.submit(journeyId)
-    const h = stubH()
+    const { journeyId, view } = await submittedView()
 
-    await get(journeyRequest(journeyId), h)
-
-    expect(h.captured.view.context.pageTitle).toBe(
-      'Import notification submitted'
-    )
-    expect(h.captured.view.context.referenceNumber).toBe(journeyId)
+    expect(view.context.pageTitle).toBe('Import notification submitted')
+    expect(view.context.referenceNumber).toBe(journeyId)
   })
 
   it('Should not supply a submission date to the submitted page', async () => {
-    const view = await submittedView()
+    const { view } = await submittedView()
 
     expect(view.context).not.toHaveProperty('submissionDate')
   })
 
   it('Should list the outstanding documents when nothing has been uploaded', async () => {
-    const view = await submittedView()
+    const { view } = await submittedView()
 
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
   it('Should list the outstanding documents when only a veterinary health certificate has been uploaded', async () => {
-    const view = await submittedView({ documents: [DOCUMENT] })
+    const { view } = await submittedView({ documents: [DOCUMENT] })
 
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
   it('Should list nothing outstanding when an ITAHC has been uploaded', async () => {
-    const view = await submittedView({
+    const { view } = await submittedView({
       documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
     })
 
@@ -86,17 +92,39 @@ describe('GET /confirmation', () => {
   })
 
   it('Should supply the create-a-notification action alongside the dashboard link', async () => {
-    const view = await submittedView()
+    const { view } = await submittedView()
 
     expect(view.context.dashboardHref).toBe(dashboardPath())
     expect(view.context.createAction).toBe(createPath())
   })
 
-  it('Should redirect a notification that is not submitted to the hub', async () => {
-    const { journeyId } = await store.create()
+  it.each([
+    { notification: 'a draft', startingFrom: [], status: DRAFT },
+    {
+      notification: 'an amendment',
+      startingFrom: [amendmentOpened()],
+      status: AMEND
+    }
+  ])(
+    'Should redirect $notification to its declaration and log the refusal',
+    async ({ startingFrom, status }) => {
+      const { journeyId, response, logger } = await driveHandler(get, {
+        startingFrom
+      })
 
-    const response = await get(journeyRequest(journeyId), stubH())
-
-    expect(response).toEqual({ redirect: hubPath(journeyId) })
-  })
+      expect(response).toEqual({
+        redirect: pagePath(journeyId, declarationPage.slug)
+      })
+      expectOneLogged(logger, {
+        level: 'info',
+        fields: {
+          journeyId,
+          status,
+          organisationId: authenticatedCredentials.organisationId,
+          refusal: 'not-submitted'
+        },
+        message: 'Confirmation refused'
+      })
+    }
+  )
 })
