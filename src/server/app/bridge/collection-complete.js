@@ -8,7 +8,7 @@ import { obligationFor } from './status/obligation-lookup.js'
 import { structuralOf } from './status/structure/index.js'
 
 const collectionNameOf = (collectionPath) =>
-  collectionPath.filter((segment) => typeof segment === 'string').at(-1)
+  collectionPath.findLast((segment) => typeof segment === 'string')
 
 const entryFulfilmentIndex = (group, collectionPath, index) =>
   fulfilmentIndexInstance(
