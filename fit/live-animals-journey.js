@@ -29,6 +29,7 @@ import {
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
+import { copy as checkAnswersCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/check-answers/copy/copy.en.js'
 import { copy as contactCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/contact/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js'
 import { copy as documentsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js'
@@ -413,6 +414,101 @@ export const JOURNEY_FORM_SELECTOR = 'form[method="post"]'
  * @returns {import('@playwright/test').Locator}
  */
 export const journeyFormOf = (page) => page.locator(JOURNEY_FORM_SELECTOR)
+
+/**
+ * Posts the page's journey form to the declaration, with each given field
+ * replacing the form's own field of that name. Every other field the form
+ * holds, the concurrency token included, is sent as the page rendered it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Record<string, string>} fields - the field names and values to send.
+ */
+export const postJourneyFormToDeclaration = async (page, fields) => {
+  const declarationPath = new URL(journeyUrl(page, 'declaration'), page.url())
+    .pathname
+  await page.evaluate(
+    ({ action, formSelector, sentFields }) => {
+      const form = document.querySelector(formSelector)
+      form.action = action
+      for (const [name, value] of Object.entries(sentFields)) {
+        for (const existing of form.querySelectorAll(`[name="${name}"]`)) {
+          existing.remove()
+        }
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = name
+        input.value = value
+        form.append(input)
+      }
+      form.submit()
+    },
+    {
+      action: declarationPath,
+      formSelector: JOURNEY_FORM_SELECTOR,
+      sentFields: fields
+    }
+  )
+}
+
+export const CARD_ERROR_SELECTOR = '.govuk-error-message'
+
+export const documentCardFor = (page, position) =>
+  page.locator('.govuk-summary-card').filter({
+    has: page.getByRole('heading', {
+      name: checkAnswersCopy.documentN(position),
+      exact: true
+    })
+  })
+
+export const expectMainImportReasonAndAdditionalDetailsNamed = async (page) => {
+  for (const { message, anchor } of [
+    {
+      message: checkAnswersCopy.errors.cards.mainImportReason,
+      anchor: '#main-import-reason'
+    },
+    {
+      message: checkAnswersCopy.errors.cards.additionalDetails,
+      anchor: '#additional-details'
+    }
+  ]) {
+    await expect(page.getByRole('link', { name: message })).toHaveAttribute(
+      'href',
+      anchor
+    )
+    await expect(page.locator(anchor).getByText(message)).toBeVisible()
+  }
+}
+
+export const expectReviewEndsWithDraftControls = (page) =>
+  expect(
+    page
+      .getByRole('main')
+      .locator('form')
+      .last()
+      .locator('.govuk-button-group')
+      .locator('> *')
+  ).toHaveText([
+    checkAnswersCopy.submit.button,
+    sharedAppCopy.notificationActions.delete.text
+  ])
+
+export const INFECTED_DOCUMENT_FILE_NAME = 'virus-invoice.pdf'
+export const STILL_SCANNING_DOCUMENT_FILE_NAME = 'never-scans.pdf'
+
+/**
+ * An ITAHC entry for the documents page, with the reference and file name the
+ * test chooses.
+ *
+ * @param {string} reference
+ * @param {string} filename
+ * @returns {{ accompanyingDocumentReference: string, accompanyingDocumentType: string, accompanyingDocumentDateOfIssue: { day: string, month: string, year: string }, filename: string }}
+ */
+export const documentNamed = (reference, filename) => ({
+  accompanyingDocumentReference: reference,
+  accompanyingDocumentType: 'ITAHC',
+  accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+  filename
+})
 
 export const rowFor = (page, label) =>
   page
@@ -1476,12 +1572,7 @@ export const openReviewFromHub = async (page) => {
 }
 
 const uploadItahc = async (page) => {
-  const itahc = {
-    accompanyingDocumentReference: 'GBHC0000000001',
-    accompanyingDocumentType: 'ITAHC',
-    accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
-    filename: 'itahc.pdf'
-  }
+  const itahc = documentNamed('GBHC0000000001', 'itahc.pdf')
   await openFromOverviewRow(page, hubCopy.rows.documents.title)
   await addDocument(page, itahc)
   await saveAndReturnToHub(page).click()

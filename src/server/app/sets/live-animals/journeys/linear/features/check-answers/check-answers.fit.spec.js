@@ -26,8 +26,18 @@ import {
   journeyUrl,
   notificationViewUrl,
   numberOfAnimalsFor,
+  documentNamed,
+  documentCardFor,
+  CARD_ERROR_SELECTOR,
+  INFECTED_DOCUMENT_FILE_NAME,
+  STILL_SCANNING_DOCUMENT_FILE_NAME,
+  expectMainImportReasonAndAdditionalDetailsNamed,
+  expectOverview,
   openCommodityDetails,
+  openFromOverviewRow,
   openNotificationView,
+  documentRowFor,
+  errorSummaryLinks,
   openOverview,
   openPermanentAddressFromAddLink,
   openReviewFromHub,
@@ -38,12 +48,15 @@ import {
   saveAndReturnToHub,
   signIn,
   startNotification,
+  unlockSections,
   urlUnderBase,
   values,
   withoutJavaScript
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
+import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
 import { copy as cancelAmendCopy } from '../cancel-amend/copy/copy.en.js'
@@ -54,6 +67,10 @@ import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { notificationDateText } from '../review/notification-date.js'
 import { copy } from './copy/copy.en.js'
 
+const SPECIES_BLOCK_SELECTOR = '[id^="species-block-"]'
+const BISON_BISON_HEADING = 'Bison Bison'
+const BOS_TAURUS_HEADING = 'Bos Taurus'
+const FELIS_CATUS_HEADING = 'Felis Catus'
 const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
@@ -85,6 +102,15 @@ const expectOnlyHiddenMissing = async (page, answerCell) => {
 
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
+
+const commodityCardFor = (page, commodityCode) =>
+  page.locator('.govuk-summary-card').filter({
+    has: page.getByRole('heading', {
+      level: 3,
+      name: commodityCode,
+      exact: true
+    })
+  })
 
 const openOrigin = (page) =>
   page
@@ -207,8 +233,8 @@ test.describe('check-answers feature Permanent address subsection of the Address
       })
     ).toContainText('Pet Owner')
 
-    const speciesBlock = page.locator('[id^="species-block-"]', {
-      has: page.getByRole('heading', { name: 'Felis Catus', exact: true })
+    const speciesBlock = page.locator(SPECIES_BLOCK_SELECTOR, {
+      has: page.getByRole('heading', { name: FELIS_CATUS_HEADING, exact: true })
     })
     await expect(
       speciesBlock.getByRole('heading', {
@@ -245,12 +271,12 @@ test.describe('check-answers feature species blocks', () => {
         .getByRole('heading', { level: 3, name: BOS_TAURUS_ROW.commodityCode })
     ).toHaveCount(1)
     await expect(
-      page.locator('[id^="species-block-"]').getByRole('heading', { level: 4 })
-    ).toHaveText(['Bison Bison', 'Bos Taurus'])
+      page.locator(SPECIES_BLOCK_SELECTOR).getByRole('heading', { level: 4 })
+    ).toHaveText([BISON_BISON_HEADING, BOS_TAURUS_HEADING])
 
     for (const [speciesName, heading] of [
-      ['bos taurus', 'Bos Taurus'],
-      ['bison bison', 'Bison Bison']
+      ['bos taurus', BOS_TAURUS_HEADING],
+      ['bison bison', BISON_BISON_HEADING]
     ]) {
       await page
         .getByRole('link', {
@@ -262,6 +288,59 @@ test.describe('check-answers feature species blocks', () => {
           name: heading
         })
       ).toBeVisible()
+    }
+  })
+
+  test('reads one commodity card per code back, each holding only its own species blocks with the counts entered', async ({
+    page
+  }) => {
+    test.slow()
+    const cardsInOrder = [
+      {
+        code: BOS_TAURUS_ROW.commodityCode,
+        blocks: [
+          { heading: BISON_BISON_HEADING, count: '2' },
+          { heading: BOS_TAURUS_HEADING, count: '3' }
+        ]
+      },
+      {
+        code: FELIS_CATUS_ROW.commodityCode,
+        blocks: [{ heading: FELIS_CATUS_HEADING, count: '4' }]
+      }
+    ]
+    await openReviewWithSpeciesCounts(page, [
+      { species: BISON_BISON_ROW, count: '2' },
+      { species: BOS_TAURUS_ROW, count: '3' },
+      { species: FELIS_CATUS_ROW, count: '4' }
+    ])
+
+    await expect(
+      page.getByRole('heading', { level: 3, name: /^\d{4,8}$/ })
+    ).toHaveText(cardsInOrder.map(({ code }) => code))
+    for (const { code, blocks } of cardsInOrder) {
+      const speciesBlocks = commodityCardFor(page, code).locator(
+        SPECIES_BLOCK_SELECTOR
+      )
+      await expect(speciesBlocks.getByRole('heading', { level: 4 })).toHaveText(
+        blocks.map(({ heading }) => heading)
+      )
+      for (const { heading, count } of blocks) {
+        const block = speciesBlocks.filter({
+          has: page.getByRole('heading', {
+            level: 4,
+            name: heading,
+            exact: true
+          })
+        })
+        await expect(
+          block
+            .getByRole('term')
+            .filter({ hasText: copy.rows.numberOfAnimals })
+            .locator('..')
+            .getByRole('definition')
+            .first()
+        ).toHaveText(count)
+      }
     }
   })
 })
@@ -437,6 +516,50 @@ test.describe('check-answers feature documents section', () => {
     await expect(
       rowFor(page, copy.rows.attachment).getByRole('definition')
     ).toHaveText(filename)
+  })
+
+  test('marks the Document 1 card as rejected as soon as the review opens, and links the error summary to it', async ({
+    page
+  }) => {
+    test.slow()
+    const infected = documentNamed('VIRUS-0001', INFECTED_DOCUMENT_FILE_NAME)
+    await openDocuments(page)
+    await addDocument(page, infected)
+    await expect(
+      documentRowFor(page, infected.accompanyingDocumentReference)
+    ).toContainText(documentsCopy.scanTags.virusFound)
+    await openNotificationView(page)
+
+    const card = documentCardFor(page, 1)
+    await expect(card.locator(CARD_ERROR_SELECTOR)).toContainText(
+      documentsCopy.errors.someRejected
+    )
+    await expect(
+      errorSummaryLinks(page, documentsCopy.errors.someRejected, {
+        exact: true
+      })
+    ).toHaveAttribute('href', `#${await card.getAttribute('id')}`)
+  })
+
+  test('leaves the Document 1 card unmarked for a document still being scanned until Continue is refused', async ({
+    page
+  }) => {
+    test.slow()
+    await openDocuments(page)
+    await addDocument(
+      page,
+      documentNamed('SCAN-0001', STILL_SCANNING_DOCUMENT_FILE_NAME)
+    )
+    await openNotificationView(page)
+
+    const card = documentCardFor(page, 1)
+    await expect(card.locator(CARD_ERROR_SELECTOR)).toHaveCount(0)
+
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(card.locator(CARD_ERROR_SELECTOR)).toContainText(
+      documentsCopy.errors.someStillScanning
+    )
   })
 })
 
@@ -849,22 +972,30 @@ test.describe('check-answers feature unfinished notification', () => {
     await startNotification(page)
     await openNotificationView(page)
 
-    for (const { message, anchor } of [
-      {
-        message: copy.errors.cards.mainImportReason,
-        anchor: '#main-import-reason'
-      },
-      {
-        message: copy.errors.cards.additionalDetails,
-        anchor: '#additional-details'
-      }
-    ]) {
-      await expect(page.getByRole('link', { name: message })).toHaveAttribute(
-        'href',
-        anchor
-      )
-      await expect(page.locator(anchor).getByText(message)).toBeVisible()
-    }
+    await expectMainImportReasonAndAdditionalDetailsNamed(page)
+  })
+
+  test('accepts the main import reason and additional details left blank by Save and return to overview, then names both cards when Continue is refused', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await unlockSections(page, BOS_TAURUS_ROW)
+
+    await openFromOverviewRow(page, hubCopy.rows.importReason.title)
+    await saveAndReturnToHub(page).click()
+    await expectOverview(page)
+
+    await openFromOverviewRow(page, hubCopy.rows.additionalDetails.title)
+    await saveAndReturnToHub(page).click()
+    await expectOverview(page)
+
+    const reviewUrl = notificationViewUrl(page)
+    await openReviewFromHub(page)
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
+    await expectMainImportReasonAndAdditionalDetailsNamed(page)
   })
 
   test('refuses Continue and keeps the trader on the review page', async ({

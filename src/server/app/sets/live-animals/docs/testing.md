@@ -72,7 +72,7 @@ live-animals helper uses
 - Ferrets are identified by microchip in law, so a chip number on its own is
   enough to save a ferret.
 
-These steps are shared because more than one spec uses them:
+These steps are shared because two or more tests use them:
 
 - `measureReferenceElement` reads computed properties of an element made only
   from GOV.UK classes and inline styles, then removes it.
@@ -88,10 +88,24 @@ These steps are shared because more than one spec uses them:
   assertion over the whole list.
 - `expectCaptionAboveHeading` proves a section caption sits above the level 1
   heading.
+- `postJourneyFormToDeclaration` sends the page's journey form to the
+  declaration with the fields a test chooses, and every other field as the
+  page rendered it, the concurrency token included.
+- `documentNamed` builds a document entry with a chosen reference and file
+  name. The stub uploader rejects a file name holding "virus" and never
+  settles one holding "never-scans". `INFECTED_DOCUMENT_FILE_NAME` and
+  `STILL_SCANNING_DOCUMENT_FILE_NAME` hold the two file names.
+- `documentCardFor` finds the review's summary card for the document at a
+  position, and `CARD_ERROR_SELECTOR` finds the error message inside a card.
+- `expectMainImportReasonAndAdditionalDetailsNamed` proves the refused review
+  names the main import reason and additional details cards, in the error
+  summary and on each card.
+- `expectReviewEndsWithDraftControls` proves a draft review ends with Continue
+  and Delete.
 
-When a second spec needs a local step, move it to
+When a second test needs a local step, move it to
 `fit/live-animals-journey.js` in the same change and delete every local copy.
-A step only one spec uses stays in that spec.
+A step only one test uses stays in its spec.
 
 ## Type-ahead style tests
 

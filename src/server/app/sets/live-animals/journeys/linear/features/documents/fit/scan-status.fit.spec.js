@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   addDocument,
+  documentNamed,
   documentRowFor,
   errorSummaryLinks,
   expectNoSeriousOrCriticalViolations,
@@ -17,15 +18,6 @@ import {
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
-
-const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
-
-const documentNamed = (reference, filename) => ({
-  accompanyingDocumentReference: reference,
-  accompanyingDocumentType: 'ITAHC',
-  accompanyingDocumentDateOfIssue: DATE_OF_ISSUE,
-  filename
-})
 
 test.describe('document scan-status rendering', () => {
   test.beforeEach(async ({ page }) => {
