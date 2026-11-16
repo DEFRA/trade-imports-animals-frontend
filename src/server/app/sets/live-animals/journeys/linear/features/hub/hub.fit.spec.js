@@ -5,17 +5,16 @@ import {
   PHONE_VIEWPORT,
   fillArrivalDetails,
   answerCountryOfOrigin,
+  answerWhatYouAreImportingFromOverview,
   completeAnswerSections,
   expectNoHorizontalOverflow,
   expectNoSeriousOrCriticalViolations,
   expectStyle,
   govukPrimaryButtonStyleOf,
   measureReferenceElement,
-  openOverview,
   openReviewFromHub,
   saveAndContinue,
   saveAndReturnToHub,
-  selectSpecies,
   signIn,
   startNotification,
   backLink,
@@ -57,10 +56,7 @@ const expectEveryTaskIsCompleteOrToDo = async (page) => {
 const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: copy.rows.commodities.title }).click()
-  await selectSpecies(page, [BOS_TAURUS_ROW])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await openOverview(page)
+  await answerWhatYouAreImportingFromOverview(page, BOS_TAURUS_ROW)
   await page
     .getByRole('link', {
       name: copy.rows.consignmentDetails.title,

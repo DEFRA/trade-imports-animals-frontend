@@ -21,6 +21,7 @@ export const OVIS_ARIES = 'Ovis aries'
 export const STRUTHIO = 'Struthio spp.'
 export const SUS_SCROFA_DOMESTICUS = 'Sus scrofa domesticus'
 export const OSTRICHES_CODE = '01063300'
+export const CATTLE_HEADING = `Cattle (${CATTLE_CODE})`
 
 export const BISON_BISON_ROW = {
   commodityCode: CATTLE_CODE,
