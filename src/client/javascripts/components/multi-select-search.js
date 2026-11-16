@@ -23,6 +23,17 @@ const fetchResults = async (url, body) => {
   return fresh
 }
 
+const tickKeyOf = ({ name, value }) => `${name}=${value}`
+
+const reapplyTicks = (fresh, ticks) => {
+  for (const box of fresh.querySelectorAll('input[type="checkbox"]')) {
+    const checked = ticks.get(tickKeyOf(box))
+    if (checked !== undefined) {
+      box.checked = checked
+    }
+  }
+}
+
 const noElementHasFocus = () =>
   !document.activeElement || document.activeElement === document.body
 
@@ -55,6 +66,7 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
   let refreshQueue = Promise.resolve()
   let refreshesWaiting = 0
   let submittingNatively = false
+  const ticksSinceLastRequest = new Map()
 
   const submitNatively = (submitter) => {
     let nativeSubmit
@@ -86,15 +98,18 @@ const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
     if (submittingNatively) {
       return
     }
-    const fresh = await fetchResults(
-      resultsUrl,
-      formBodyFor(form, refreshRequest.submitter)
-    )
+    const body = formBodyFor(form, refreshRequest.submitter)
+    ticksSinceLastRequest.clear()
+    const fresh = await fetchResults(resultsUrl, body)
+    reapplyTicks(fresh, ticksSinceLastRequest)
     showResults(fresh, refreshRequest)
   }
 
   return {
     isSubmittingNatively: () => submittingNatively,
+    noteTick: (box) => {
+      ticksSinceLastRequest.set(tickKeyOf(box), box.checked)
+    },
     hasRefreshesWaiting: () => refreshesWaiting > 0,
     refresh: (refreshRequest) => {
       refreshesWaiting += 1
@@ -144,6 +159,9 @@ const refreshOnTypingAndTicking = (
   )
 
   results.addEventListener('change', (event) => {
+    if (event.target.type === 'checkbox') {
+      refresher.noteTick(event.target)
+    }
     typedSearch.drop()
     refresher.refresh({
       submitter: searchButton,

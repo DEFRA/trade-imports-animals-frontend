@@ -174,6 +174,25 @@ describe('#MultiSelectSearch', () => {
     expect(document.activeElement).toBe(searchBox)
   })
 
+  it('Should keep a box ticked while a search is refreshing once that search lands, and post it with the next refresh', async () => {
+    const { searchButton, results } = mount()
+    const search = heldResponse()
+    const tick = heldResponse()
+    fetchMock
+      .mockReturnValueOnce(search.promise)
+      .mockReturnValueOnce(tick.promise)
+
+    searchButton.click()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    results().querySelector('#thing-a').click()
+    search.answer(answering(responseHtml('', resultsBodyHtml())))
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(results().querySelector('#thing-a').checked).toBe(true)
+    expect(postedBody(fetchMock.mock.calls[1]).getAll('thing')).toEqual(['a'])
+  })
+
   it('Should post the pressed Remove as the action, refresh in place and move focus to the search box', async () => {
     const { form, searchBox, results } = mount(
       resultsBodyHtml({ ticked: true, chosen: ['a'] })
