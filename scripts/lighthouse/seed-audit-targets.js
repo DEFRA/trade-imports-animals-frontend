@@ -12,7 +12,7 @@ import {
   urlsInShard
 } from './audit-targets.js'
 import { createJourneyClient } from './journey-client.js'
-import { ensureAddressBookHasAnAddress } from './seed-address-book.js'
+import { ensureAddressBookCoversEveryPartyPickerRole } from './seed-address-book.js'
 import {
   createNotification,
   fillNotification,
@@ -83,7 +83,7 @@ const write = (payload) => {
   writeFileSync(TARGETS_FILE, `${JSON.stringify(payload, null, 2)}\n`)
 }
 
-await ensureAddressBookHasAnAddress()
+await ensureAddressBookCoversEveryPartyPickerRole()
 const journeyIds = await seedNotifications(await signedInCookies())
 const allUrls = auditUrls(origin, journeyIds)
 const urls = urlsInShard(allUrls, shard)
