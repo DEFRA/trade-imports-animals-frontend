@@ -8,6 +8,10 @@ export const copy = {
     warning: 'Mae darparu cyfeiriad ffug yn weithred o dwyll',
     change: 'Newid',
     editDetails: 'Golygu manylion',
+    sameAs: {
+      placeOfOrigin: 'Yr un fath â man tarddiad',
+      consignee: 'Yr un fath â’r derbynnydd'
+    },
     cph: {
       title: 'Rhif daliad plwyf sirol (CPH)',
       hint: 'Mae’r rhif daliad plwyf sirol (CPH) yn adnabod y daliad lle bydd yr anifeiliaid yn cael eu cadw.',

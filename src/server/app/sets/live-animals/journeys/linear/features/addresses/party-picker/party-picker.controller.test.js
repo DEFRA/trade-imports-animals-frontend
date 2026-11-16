@@ -12,7 +12,7 @@ import {
   addressBookPage,
   expectOneLogged,
   expectOneRefusalLogged,
-  expectOneSaveFallbackLogged,
+  expectRecoverableSaveFallback,
   listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
@@ -22,7 +22,6 @@ import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpe
 import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
@@ -531,11 +530,8 @@ describe('POST /consignors/select — recoverable save failure', () => {
       startingFrom: [refusingSaves(failure)]
     })
 
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toBeUndefined()
-    expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
+    expectRecoverableSaveFallback(result, {
       err: failure,
       party: 'consignor',
       addressId: ALPINE_DAIRY_ID

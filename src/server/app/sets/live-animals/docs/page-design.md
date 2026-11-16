@@ -329,11 +329,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   in an inset text with Change and Edit details under it. The trader sees
   which full address they chose, name and every address line. The county
   parish holding number follows the same section shape, with its stored value
-  on one line and no Edit details.
+  on one line and no Edit details. A section with no address may also offer a
+  "Same as …" control that fills it from another party's address: place of
+  origin fills the consignor, and consignee fills both the importer and the
+  place of destination. No other pair offers one, and a section already
+  holding an address never offers one.
+- The page is one form, so a "Same as …" control posts it: pressing one shows
+  the page again with the target section filled and no success banner.
 - Each section is a region named by its heading, so a screen reader lists the
   parties. The add link names the party, so it needs no visually hidden
-  suffix. Change and Edit details keep a visually hidden suffix naming the
-  party, because two sections would otherwise offer the same link names.
+  suffix. Change, Edit details and a "Same as …" control keep a visually
+  hidden suffix naming the party, because two sections would otherwise offer
+  the same link or button name — both the importer and the place of
+  destination offer "Same as consignee".
 - The inset shows the name in bold, then each street line on its own line.
   The locality, county, postcode and country join into the last line, as in
   "Hull, HU9 5PX, United Kingdom". The country is the name held on the
@@ -351,9 +359,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The picker is one form. The search and Save and continue are told apart by
   their `action` value. A ticked row travels across a further search in a
   hidden field, with no client JavaScript.
-- Edit details is offered only for an address the picker has copied onto the
-  notification, so with no address picked the edit page sends the trader to the
-  picker.
+- Edit details follows a section's address whether the picker copied it onto
+  the notification or a "Same as …" control filled it from the paired party;
+  with no address held the edit page sends the trader to the picker.
+- Reopening a party's picker pre-ticks the record that party's address was
+  picked from, when the role's list still holds it. Nothing else on the page
+  reads that record.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
 - "Add a new address" is a secondary button beside the heading, shown only

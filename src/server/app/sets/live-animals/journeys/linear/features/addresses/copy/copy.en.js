@@ -7,6 +7,10 @@ export const copy = {
     warning: 'Providing a false address is an act of fraud',
     change: 'Change',
     editDetails: 'Edit details',
+    sameAs: {
+      placeOfOrigin: 'Same as place of origin',
+      consignee: 'Same as consignee'
+    },
     cph: {
       title: 'County parish holding (CPH) number',
       hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.',

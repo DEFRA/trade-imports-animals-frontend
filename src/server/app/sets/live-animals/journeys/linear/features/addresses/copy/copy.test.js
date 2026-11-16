@@ -91,6 +91,13 @@ describe('#copy', () => {
     expect(copyCy.hub.permanentAddress.title).toBe('Cyfeiriad parhaol')
   })
 
+  it('Should word the same-as control for place of origin and for consignee, in English and in Welsh', () => {
+    expect(copy.hub.sameAs.placeOfOrigin).toBe('Same as place of origin')
+    expect(copy.hub.sameAs.consignee).toBe('Same as consignee')
+    expect(copyCy.hub.sameAs.placeOfOrigin).toBe('Yr un fath â man tarddiad')
+    expect(copyCy.hub.sameAs.consignee).toBe('Yr un fath â’r derbynnydd')
+  })
+
   it('Should interpolate the number of animals into the count line, in English and in Welsh', () => {
     expect(copy.hub.permanentAddress.addedForAnimals(2)).toBe(
       'Permanent addresses added for 2 animals'

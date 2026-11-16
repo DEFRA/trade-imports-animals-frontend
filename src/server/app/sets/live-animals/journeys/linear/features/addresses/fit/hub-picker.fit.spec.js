@@ -47,6 +47,12 @@ const addressCountFor = (party) => listedFor(party.addressBookRole).length
 const NO_MATCH_QUERY = 'no such address'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
+const PLACE_OF_ORIGIN = PARTIES.find(({ id }) => id === 'placeOfOrigin')
+const CONSIGNEE = PARTIES.find(({ id }) => id === 'consignee')
+const IMPORTER = PARTIES.find(({ id }) => id === 'importer')
+const PLACE_OF_DESTINATION = PARTIES.find(
+  ({ id }) => id === 'placeOfDestination'
+)
 const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 
@@ -71,14 +77,35 @@ const chosenLinkNames = ({ title }) => [
 const partySectionTitles = (page) =>
   page.getByRole('main').getByRole('heading', { level: 2 })
 
+const pickParty = async (page, party) => {
+  await openPartyPicker(page, party)
+  await page
+    .getByRole('radio', { name: partyPickerName(values[party.id]) })
+    .check()
+  await saveAndContinue(page)
+}
+
 const pickEveryParty = async (page) => {
   for (const party of PARTIES) {
-    await openPartyPicker(page, party)
-    await page
-      .getByRole('radio', { name: partyPickerName(values[party.id]) })
-      .check()
-    await saveAndContinue(page)
+    await pickParty(page, party)
   }
+}
+
+const choosePlaceOfOriginAndConsignee = async (page) => {
+  await pickParty(page, PLACE_OF_ORIGIN)
+  await pickParty(page, CONSIGNEE)
+}
+
+const fillConsignorFromPlaceOfOrigin = async (page) => {
+  await addressesSection(page, CONSIGNOR.title)
+    .getByRole('button', { name: copy.hub.sameAs.placeOfOrigin })
+    .click()
+  await expect(
+    addressesSection(page, CONSIGNOR.title).getByText(
+      partyPickerName(values.placeOfOrigin),
+      { exact: true }
+    )
+  ).toBeVisible()
 }
 
 const openAddresses = async (page, species) => {
@@ -257,6 +284,120 @@ test.describe('addresses hub', () => {
   })
 })
 
+test.describe('addresses hub — same-as shortcut', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openAddresses(page, EQUUS_CABALUS_ROW)
+    await choosePlaceOfOriginAndConsignee(page)
+  })
+
+  test('shows a same-as button naming its source in the Consignor, Importer and Place of destination sections, with the two consignee buttons each naming the section they fill, and none in the Place of origin or Consignee sections', async ({
+    page
+  }) => {
+    const consignorButton = addressesSection(page, CONSIGNOR.title).getByRole(
+      'button',
+      { name: copy.hub.sameAs.placeOfOrigin }
+    )
+    await expect(consignorButton).toBeVisible()
+    await expect(consignorButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.placeOfOrigin} ${CONSIGNOR.title.toLowerCase()}`
+    )
+
+    const importerButton = addressesSection(page, IMPORTER.title).getByRole(
+      'button',
+      { name: copy.hub.sameAs.consignee }
+    )
+    await expect(importerButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.consignee} ${IMPORTER.title.toLowerCase()}`
+    )
+
+    const destinationButton = addressesSection(
+      page,
+      PLACE_OF_DESTINATION.title
+    ).getByRole('button', { name: copy.hub.sameAs.consignee })
+    await expect(destinationButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.consignee} ${PLACE_OF_DESTINATION.title.toLowerCase()}`
+    )
+
+    await expect(
+      addressesSection(page, PLACE_OF_ORIGIN.title).getByRole('button')
+    ).toHaveCount(0)
+    await expect(
+      addressesSection(page, CONSIGNEE.title).getByRole('button')
+    ).toHaveCount(0)
+  })
+
+  test('pressing a same-as button fills its target section with the source address, with no success banner, and the pressed button gone', async ({
+    page
+  }) => {
+    await addressesSection(page, CONSIGNOR.title)
+      .getByRole('button', { name: copy.hub.sameAs.placeOfOrigin })
+      .click()
+
+    await expectBackOnTheAddressesPage(page)
+    await expect(
+      page.locator('.govuk-notification-banner--success')
+    ).toHaveCount(0)
+    const consignorSection = addressesSection(page, CONSIGNOR.title)
+    await expect(
+      consignorSection.getByText(partyPickerName(values.placeOfOrigin), {
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(consignorSection.getByRole('link')).toHaveText(
+      chosenLinkNames(CONSIGNOR)
+    )
+    await expect(consignorSection.getByRole('button')).toHaveCount(0)
+
+    await addressesSection(page, IMPORTER.title)
+      .getByRole('button', { name: copy.hub.sameAs.consignee })
+      .click()
+    await addressesSection(page, PLACE_OF_DESTINATION.title)
+      .getByRole('button', { name: copy.hub.sameAs.consignee })
+      .click()
+
+    await expect(page.getByRole('button', { name: /^Same as /i })).toHaveCount(
+      0
+    )
+    for (const party of [CONSIGNOR, IMPORTER, PLACE_OF_DESTINATION]) {
+      await expect(
+        addressesSection(page, party.title).getByRole('link')
+      ).toHaveText(chosenLinkNames(party))
+    }
+  })
+
+  test('excludes the copied place-of-origin record from the consignor picker, with the Consignor section still showing it', async ({
+    page
+  }) => {
+    await fillConsignorFromPlaceOfOrigin(page)
+
+    await addressesSection(page, CONSIGNOR.title)
+      .getByRole('link', { name: copy.hub.change })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: CONSIGNOR.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: partyPickerName(values.placeOfOrigin) })
+    ).toHaveCount(0)
+    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+  })
+
+  test('has no serious or critical axe violations with the same-as buttons showing, at desktop and phone width', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Addresses with same-as buttons'
+    )
+    await page.setViewportSize(PHONE_VIEWPORT)
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Addresses with same-as buttons on a phone'
+    )
+  })
+})
+
 test.describe('addresses hub without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
 
@@ -273,6 +414,14 @@ test.describe('addresses hub without JavaScript', () => {
     )
 
     await openPartyPicker(page, CONSIGNOR)
+  })
+
+  test('fills the consignor section from the place of origin when its same-as button is pressed', async ({
+    page
+  }) => {
+    await pickParty(page, PLACE_OF_ORIGIN)
+
+    await fillConsignorFromPlaceOfOrigin(page)
   })
 })
 

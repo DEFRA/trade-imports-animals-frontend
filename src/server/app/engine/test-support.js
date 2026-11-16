@@ -10,6 +10,7 @@ import { catchAll } from '../../common/helpers/errors.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { currentSetId } from '../shared/set-context.js'
 import { pagePath } from '../shared/paths.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../lib/http-status.js'
 import { records as recordsReal } from '../services/persistence/records/real/index.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -550,6 +551,18 @@ export const saveFallbackEntry = ({ journeyId, err, ...ids }) => ({
 
 export const expectOneSaveFallbackLogged = (logger, fallback) =>
   expectOneLogged(logger, saveFallbackEntry(fallback))
+
+/** Asserts a save fallback: the page re-rendered with its recoverable
+ * banner at HTTP 500, having logged the fallback once with the ids the
+ * page passed. */
+export const expectRecoverableSaveFallback = (result, fallback) => {
+  expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  expect(result.view.context.recoverableError).toBe(true)
+  expectOneSaveFallbackLogged(result.logger, {
+    journeyId: result.journeyId,
+    ...fallback
+  })
+}
 
 export const useStubbedJourney = (setId, dispatchPages) => {
   beforeAll(() => {
