@@ -313,6 +313,10 @@ const ATTACHMENT_FILENAME = 'itahc-certificate.pdf'
 const DOCUMENTS_SLUG = 'accompanying-documents'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
+const PORT_OF_DOVER_TEXT = 'Port of Dover - GB DVR'
+const INTERNAL_MARKET_TEXT = 'Internal market'
+const TRANSIT_TEXT = 'Transit'
+const TEMPORARY_ADMISSION_HORSES_TEXT = 'Temporary admission horses'
 const PORT_OF_EXIT_KEY = 'Port of exit'
 const EXIT_BORDER_CONTROL_POST_KEY = 'Exit border control post'
 const APPROVAL_NUMBER_KEY = 'Approval number'
@@ -739,7 +743,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should resolve service-backed labels for coded answers', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
     expect(valueOf(rows, COUNTRY_OF_ORIGIN_KEY)).toBe('France')
-    expect(valueOf(rows, MAIN_IMPORT_REASON)).toBe('Internal market')
+    expect(valueOf(rows, MAIN_IMPORT_REASON)).toBe(INTERNAL_MARKET_TEXT)
     expect(valueOf(rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
     expect(valueOf(rows, 'Certified for')).toBe('Slaughter')
   })
@@ -1421,7 +1425,7 @@ describe(`${SUITE} — main-import-reason card`, () => {
     const card = cardByTitle(await sectionsFor(fullSeed), MAIN_IMPORT_REASON)
 
     expect(valueOf(card.rows, copyEn.rows.reasonForImport)).toBe(
-      'Internal market'
+      INTERNAL_MARKET_TEXT
     )
     expect(valueOf(card.rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
     expect(card.actions.items).toHaveLength(1)
@@ -1739,7 +1743,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
       DESTINATION_COUNTRY_KEY
     ])
     expect(valueOf(card.rows, EXIT_BORDER_CONTROL_POST_KEY)).toBe(
-      'Port of Dover - GB DVR'
+      PORT_OF_DOVER_TEXT
     )
     expect(valueOf(card.rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
   })
@@ -1806,7 +1810,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
       PORT_OF_EXIT_KEY
     ])
     expect(valueOf(card.rows, EXIT_DATE_KEY)).toBe('27/3/2026')
-    expect(valueOf(card.rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
+    expect(valueOf(card.rows, PORT_OF_EXIT_KEY)).toBe(PORT_OF_DOVER_TEXT)
   })
 
   it('Should show only the reason for a reason that asks none of the exit rows', async () => {
@@ -2341,6 +2345,66 @@ describe(`${SUITE} — Continue to the declaration`, () => {
   })
 })
 
+const MAIN_IMPORT_REASON_FOLLOW_UP_CASES = [
+  {
+    title: 'an internal market reason without its purpose',
+    reason: {
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: null
+    },
+    blank: [PURPOSE_IN_MARKET_KEY],
+    answered: [[MAIN_IMPORT_REASON, INTERNAL_MARKET_TEXT]]
+  },
+  {
+    title: 'a transit without its port of exit',
+    reason: {
+      reasonForImport: 'transit',
+      destinationCountry: 'IE'
+    },
+    blank: [EXIT_BORDER_CONTROL_POST_KEY],
+    answered: [
+      [MAIN_IMPORT_REASON, TRANSIT_TEXT],
+      [DESTINATION_COUNTRY_KEY, 'Ireland']
+    ]
+  },
+  {
+    title: 'a transit without its destination country',
+    reason: { reasonForImport: 'transit', portOfExit: 'GB DVR' },
+    blank: [DESTINATION_COUNTRY_KEY],
+    answered: [
+      [MAIN_IMPORT_REASON, TRANSIT_TEXT],
+      [EXIT_BORDER_CONTROL_POST_KEY, PORT_OF_DOVER_TEXT]
+    ]
+  },
+  {
+    title: 'a transhipment without its destination country',
+    reason: { reasonForImport: 'transhipmentOrOnwardTravel' },
+    blank: [DESTINATION_COUNTRY_KEY],
+    answered: [[MAIN_IMPORT_REASON, 'Transhipment or onward travel']]
+  },
+  {
+    title: 'a temporary admission of horses without its exit date',
+    reason: {
+      reasonForImport: 'temporaryAdmissionHorses',
+      portOfExit: 'GB DVR'
+    },
+    blank: [EXIT_DATE_KEY],
+    answered: [
+      [MAIN_IMPORT_REASON, TEMPORARY_ADMISSION_HORSES_TEXT],
+      [PORT_OF_EXIT_KEY, PORT_OF_DOVER_TEXT]
+    ]
+  },
+  {
+    title: 'a temporary admission of horses without its port of exit',
+    reason: {
+      reasonForImport: 'temporaryAdmissionHorses',
+      exitDate: { day: '27', month: '3', year: '2026' }
+    },
+    blank: [PORT_OF_EXIT_KEY],
+    answered: [[MAIN_IMPORT_REASON, TEMPORARY_ADMISSION_HORSES_TEXT]]
+  }
+]
+
 describe(`${SUITE} — the unfinished notification`, () => {
   setupCheckAnswersEngine()
 
@@ -2387,6 +2451,28 @@ describe(`${SUITE} — the unfinished notification`, () => {
       { text: ADDRESSES_INCOMPLETE, href: '#addresses' }
     ])
   })
+
+  describe.each(MAIN_IMPORT_REASON_FOLLOW_UP_CASES)(
+    'with $title',
+    ({ reason, blank, answered }) => {
+      const seed = { ...fullSeed, ...reason }
+
+      it('Should name only the main import reason card and leave the missing follow-up answer blank', async () => {
+        const summary = await summaryFor(seed)
+        const rows = rowsOf(await sectionsFor(seed))
+
+        expect(summary.errorList).toEqual([
+          { text: 'Complete main import reason', href: '#main-import-reason' }
+        ])
+        for (const key of blank) {
+          expect(htmlOf(rows, key)).toBe(MISSING_HTML)
+        }
+        for (const [key, value] of answered) {
+          expect(valueOf(rows, key)).toBe(value)
+        }
+      })
+    }
+  )
 
   it('Should title the summary There is a problem', async () => {
     expect((await summaryFor({})).titleText).toBe('There is a problem')

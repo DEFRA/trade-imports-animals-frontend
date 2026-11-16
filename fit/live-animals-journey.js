@@ -1021,6 +1021,11 @@ export const saveAndExpectLanding = async (page, landing) => {
   await expectLanding(page, landing)
 }
 
+export const saveAndExpectOverview = async (page) => {
+  await saveAndReturnToHub(page).click()
+  await expectOverview(page)
+}
+
 export const openOverview = async (page) => {
   await page.goto(journeyUrl(page))
   await expectOverview(page)
@@ -1169,26 +1174,46 @@ export const removeAnimalRow = async (page, chosen, number) => {
   return row
 }
 
-export const answerImportReason = async (page) => {
+export const answerImportReason = async (
+  page,
+  { leaveUnanswered = [] } = {}
+) => {
+  if (leaveUnanswered.includes('mainImportReason')) {
+    await saveAndExpectOverview(page)
+    return
+  }
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await page.getByRole('radio', { name: 'Breeding' }).check()
   await saveAndExpectLanding(page, LANDINGS.commodityDetails)
 }
 
-export const answerAdditionalDetails = async (page) => {
+export const answerAdditionalDetails = async (
+  page,
+  { leaveUnanswered = [] } = {}
+) => {
+  const leavesCertifiedFor = leaveUnanswered.includes('certifiedFor')
+  const leavesUnweaned = leaveUnanswered.includes('unweaned')
   await expect(
     page.getByRole('heading', {
       name: LANDINGS.additionalDetails.title,
       exact: true
     })
   ).toBeVisible()
-  await page.getByRole('radio', { name: 'Slaughter' }).check()
-  await page
-    .getByRole('group', {
-      name: 'Does the consignment contain any unweaned animals?'
-    })
-    .getByRole('radio', { name: 'No' })
-    .check()
+  if (!leavesCertifiedFor) {
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
+  }
+  if (!leavesUnweaned) {
+    await page
+      .getByRole('group', {
+        name: 'Does the consignment contain any unweaned animals?'
+      })
+      .getByRole('radio', { name: 'No' })
+      .check()
+  }
+  if (leavesCertifiedFor || leavesUnweaned) {
+    await saveAndExpectOverview(page)
+    return
+  }
   await saveAndExpectLanding(page, LANDINGS.arrivalDetails)
 }
 
@@ -1530,13 +1555,19 @@ export const answerContactAddress = async (page) => {
  * Answers the whole notification one task row at a time.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean }} [options] -
+ * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean, leaveUnanswered?: Array<'mainImportReason' | 'certifiedFor' | 'unweaned'> }} [options] -
  *   pass `skipAnimalIdentification` to leave the identification row
- *   untouched, and `skipTransitCountries` to add no transit country.
+ *   untouched, `skipTransitCountries` to add no transit country, and
+ *   `leaveUnanswered` to leave the named questions unchosen, leaving their
+ *   pages by Save and return to overview.
  */
 export const completeAnswerSections = async (
   page,
-  { skipAnimalIdentification = false, skipTransitCountries = false } = {}
+  {
+    skipAnimalIdentification = false,
+    skipTransitCountries = false,
+    leaveUnanswered = []
+  } = {}
 ) => {
   const task = (name) => page.getByRole('link', { name }).click()
 
@@ -1556,10 +1587,10 @@ export const completeAnswerSections = async (
   }
 
   await task(hubCopy.rows.importReason.title)
-  await answerImportReason(page)
+  await answerImportReason(page, { leaveUnanswered })
   await openOverview(page)
   await task('Additional details')
-  await answerAdditionalDetails(page)
+  await answerAdditionalDetails(page, { leaveUnanswered })
   await openOverview(page)
 
   await task('Roles and addresses')
@@ -1580,8 +1611,7 @@ export const completeAnswerSections = async (
 
   await task('Contact address for this consignment')
   await chooseContactAddress(page)
-  await saveAndReturnToHub(page).click()
-  await expectOverview(page)
+  await saveAndExpectOverview(page)
 }
 
 export const openReviewFromHub = async (page) => {
@@ -1592,14 +1622,12 @@ const uploadItahc = async (page) => {
   const itahc = documentNamed('GBHC0000000001', 'itahc.pdf')
   await openFromOverviewRow(page, hubCopy.rows.documents.title)
   await addDocument(page, itahc)
-  await saveAndReturnToHub(page).click()
-  await expectOverview(page)
+  await saveAndExpectOverview(page)
   await openFromOverviewRow(page, hubCopy.rows.documents.title)
   await expect(
     documentRowFor(page, itahc.accompanyingDocumentReference)
   ).toContainText(documentsCopy.scanTags.complete)
-  await saveAndReturnToHub(page).click()
-  await expectOverview(page)
+  await saveAndExpectOverview(page)
 }
 
 /**

@@ -17,6 +17,7 @@ import {
   openOverview,
   openReviewFromHub,
   postJourneyFormToDeclaration,
+  rowFor,
   signIn,
   startNotification,
   urlUnderBase,
@@ -318,6 +319,65 @@ test.describe('declaration reached only from the review', () => {
     )
     await expectDraftReviewEndsWithContinue(page)
   })
+
+  for (const {
+    question,
+    unanswered,
+    cardMessage,
+    blankRowLabel,
+    answeredRowLabel,
+    answeredRowValue
+  } of [
+    {
+      question: 'main import reason',
+      unanswered: 'mainImportReason',
+      cardMessage: checkAnswersCopy.errors.cards.mainImportReason,
+      blankRowLabel: checkAnswersCopy.rows.reasonForImport
+    },
+    {
+      question: 'certified-for answer',
+      unanswered: 'certifiedFor',
+      cardMessage: checkAnswersCopy.errors.cards.additionalDetails,
+      blankRowLabel: checkAnswersCopy.rows.certifiedFor,
+      answeredRowLabel: checkAnswersCopy.rows.unweaned,
+      answeredRowValue: 'No'
+    },
+    {
+      question: 'unweaned answer',
+      unanswered: 'unweaned',
+      cardMessage: checkAnswersCopy.errors.cards.additionalDetails,
+      blankRowLabel: checkAnswersCopy.rows.unweaned,
+      answeredRowLabel: checkAnswersCopy.rows.certifiedFor,
+      answeredRowValue: 'Slaughter'
+    }
+  ]) {
+    test(`refuses a declaration ticked on an otherwise complete notification whose ${question} was left blank, naming only its card`, async ({
+      page
+    }) => {
+      await startNotification(page)
+      await completeAnswerSections(page, { leaveUnanswered: [unanswered] })
+      await openNotificationView(page)
+
+      await postJourneyFormToDeclaration(page, {
+        step: 'declare',
+        declaration: 'confirmed'
+      })
+
+      await expect(page).toHaveURL(REFUSED_REVIEW_URL)
+      await expect(errorSummary(page).getByRole('link')).toHaveText([
+        cardMessage
+      ])
+      await expect(
+        rowFor(page, blankRowLabel).getByRole('definition').first()
+      ).toHaveText(checkAnswersCopy.missing)
+      if (answeredRowLabel) {
+        await expect(
+          rowFor(page, answeredRowLabel).getByRole('definition').first()
+        ).toHaveText(answeredRowValue)
+      }
+      await expectDraftReviewEndsWithContinue(page)
+    })
+  }
 
   test('refuses Continue and shows the current notification when it changed after the review rendered', async ({
     page
