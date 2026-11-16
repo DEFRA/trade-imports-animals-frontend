@@ -499,8 +499,10 @@ export const notificationReferenceHeading = (page) =>
 export const expectDraftReview = async (page) => {
   await expect(notificationReferenceHeading(page)).toBeVisible()
   await expect(
-    page.getByRole('main').locator('.govuk-tag', { hasText: 'Draft' })
-  ).toHaveText('Draft')
+    page.getByRole('main').locator('.govuk-tag', {
+      hasText: sharedAppCopy.journeyStrip.draft
+    })
+  ).toHaveText(sharedAppCopy.journeyStrip.draft)
   await expectDraftReviewEndsWithContinue(page)
 }
 

@@ -6,7 +6,7 @@ import {
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
-  CANCEL_AMEND_SLUG,
+  cancelAmendControl,
   CYA_SLUG,
   errorSummary,
   journeyStrip,
@@ -100,6 +100,13 @@ const backLinkFor = (request, journey) =>
         : dashboardPath()
   })
 
+const cancelAmendButtonFor = (journey) => {
+  const cancelAmend = cancelAmendControl(journey)
+  return cancelAmend
+    ? { ...cancelAmend, classes: 'govuk-button--secondary' }
+    : null
+}
+
 const reviewTitle = (journey) =>
   journey.status === state.AMEND && journey.answersDifferFromSubmitted
     ? copy.resubmittingTitle
@@ -177,10 +184,7 @@ const renderCya = async (
       journey.status === state.SUBMITTED_ACTION_REQUIRED
         ? pagePath(journey.journeyId, notificationActionSlugs.amend)
         : null,
-    cancelAmendHref:
-      journey.status === state.AMEND
-        ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
-        : null,
+    cancelAmendButton: cancelAmendButtonFor(journey),
     backLink: backLinkFor(request, journey)
   })
 }

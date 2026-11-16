@@ -2757,9 +2757,9 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
     )
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.cancelAmendHref).toBeNull()
-    expect(submitted.context.cancelAmendHref).toBeNull()
-    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    expect(draft.context.cancelAmendButton).toBeNull()
+    expect(submitted.context.cancelAmendButton).toBeNull()
+    expect(amend.context.cancelAmendButton.href).toMatch(/\/cancel-amend$/)
   })
 
   it('Should title an amendment as opened, then as re-submitting once an answer changes', async () => {
@@ -2859,7 +2859,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         'Cancel amend',
         'Delete'
       ])
-      expect(controls[1].href).toBe(view.context.cancelAmendHref)
+      expect(controls[1].href).toBe(view.context.cancelAmendButton.href)
       expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[2].href).toBe(view.context.deleteButton.href)
     })

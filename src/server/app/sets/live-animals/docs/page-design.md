@@ -80,8 +80,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 - The review's Back link goes to where the trader came from: the last journey
   page, the Overview or the dashboard, on a draft, an amendment and a submitted
-  notification alike. Reached any other way it goes to the Overview on a draft or
-  an amendment and to the dashboard on a submitted notification. See
+  notification alike. Reached any other way it goes to the Overview while
+  amending and to the notification list on a draft or a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
 - The review has six numbered sections. Its fourth and fifth are worded
   differently from the hub's. Each card stands directly under its section

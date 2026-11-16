@@ -381,8 +381,6 @@ const happyPathValues = JSON.parse(
 /** A complete notification, a fresh copy of the happy-path fixture. */
 export const completeNotification = () => structuredClone(happyPathValues)
 
-/** The answers of a notification with an uploaded ITAHC, for a submission that is
- * recorded as Submitted rather than Submitted action required. */
 export const itahcAnswers = () => ({
   documents: [
     {
@@ -394,10 +392,8 @@ export const itahcAnswers = () => ({
   ]
 })
 
-/** The fulfilments of a notification with an uploaded ITAHC. */
 export const itahcFulfilment = () => assembleFulfilments(itahcAnswers())
 
-/** Seeds the journey with an uploaded ITAHC and submits it, so it is recorded as Submitted. */
 export const submitWithItahc = async (journeyId) => {
   await store.seedAnswers(journeyId, itahcAnswers())
   return store.submit(journeyId)

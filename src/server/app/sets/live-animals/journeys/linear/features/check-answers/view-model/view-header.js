@@ -26,10 +26,13 @@ export const deleteButtonFor = (journey) => ({
 })
 
 const dateLine = (journey) => {
-  const { dateText, instant } = isSubmittedStatus(journey.status)
-    ? { dateText: copy.viewHeader.dateSubmitted, instant: journey.submittedAt }
-    : { dateText: copy.viewHeader.dateCreated, instant: journey.createdAt }
-  return instant ? dateText(notificationDateText(instant)) : null
+  const { datedLineFor, instant } = isSubmittedStatus(journey.status)
+    ? {
+        datedLineFor: copy.viewHeader.dateSubmitted,
+        instant: journey.submittedAt
+      }
+    : { datedLineFor: copy.viewHeader.dateCreated, instant: journey.createdAt }
+  return instant ? datedLineFor(notificationDateText(instant)) : null
 }
 
 const actionRequiredWarning = ({ status }) =>

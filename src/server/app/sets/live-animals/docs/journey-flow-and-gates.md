@@ -216,8 +216,8 @@ Coming back by Back from a page a check your answers Change link or error-summar
 opened, Back goes where it went before. After an amendment is cancelled, Back goes to
 the dashboard.
 
-Check your answers reached any other way goes Back to the Overview on a draft or an
-amendment and to the dashboard on a submitted notification. The other ways are: from
+Check your answers reached any other way goes Back to the Overview while amending
+and to the notification list on a draft or a submitted notification. The other ways are: from
 the declaration, including a refusal that comes back through it; from the confirmation
 page; by a typed address; in a new browser session; or by a link whose marker is
 missing or not allowed.

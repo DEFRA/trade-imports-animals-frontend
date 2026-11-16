@@ -147,12 +147,8 @@
       <input type="hidden" name="step" value="review" />
       <div class="govuk-button-group">
         {{ govukButton({ text: copy.submit.button }) }}
-        {% if cancelAmendHref %}
-          {{ govukButton({
-            text: sharedCopy.journeyStrip.cancelAmend,
-            href: cancelAmendHref,
-            classes: "govuk-button--secondary"
-          }) }}
+        {% if cancelAmendButton %}
+          {{ govukButton(cancelAmendButton) }}
         {% endif %}
         {% if deleteButton %}
           {{ govukButton(deleteButton) }}

@@ -80,7 +80,7 @@ export const CYA_SLUG = 'notification-view'
 
 export const CANCEL_AMEND_SLUG = 'cancel-amend'
 
-const cancelAmendControl = (journey) =>
+export const cancelAmendControl = (journey) =>
   journey.status === AMEND
     ? {
         href: pagePath(journey.journeyId, CANCEL_AMEND_SLUG),

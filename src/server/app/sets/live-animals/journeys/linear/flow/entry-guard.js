@@ -72,10 +72,6 @@ export const entryGuardTarget = async (request, h) => {
   }
   const notification = await findNotification(request, h)
   if (!notification) {
-    request.logger.info(
-      { journeyId: request.params.journeyId, path: request.path },
-      'No notification found, left to the page to answer'
-    )
     return null
   }
   const { journey, answers } = notification

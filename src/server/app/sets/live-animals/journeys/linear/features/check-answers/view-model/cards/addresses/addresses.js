@@ -24,7 +24,7 @@ const permanentAddressGroups = (permanentAddresses) => {
  * The addresses summary card: one row per party, a CPH row when CPH applies,
  * a "Permanent address" group with one row per animal holding a saved
  * permanent address and, unless read-only, a card Change action to the
- * addresses page. No row carries a link of its own.
+ * addresses page.
  *
  * @param {object} options
  * @param {string} options.journeyId - the journey the card belongs to.
