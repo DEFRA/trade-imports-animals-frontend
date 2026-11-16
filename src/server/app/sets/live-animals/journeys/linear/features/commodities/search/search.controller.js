@@ -5,6 +5,7 @@ import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
+import { pagePath, pageRoutePath } from '../../../../../../../shared/paths.js'
 import { commodityQuestionReturn } from '../commodity-question-detour.js'
 import { commoditiesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
@@ -28,28 +29,37 @@ import { selectedSummary } from './view-model/selected-summary.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search/search`
+const resultsView = `${TEMPLATES}/features/commodities/search/search-results`
 
 const copy = copyFor({ en, cy }).search
 
 export const SEARCH_FIELD = 'commoditySearch'
+export const RESULTS_SLUG = `${page.slug}/results`
+
+const SEARCH_ACTION = 'search'
+const CLEAR_ACTION = 'clear'
 
 const searchFor = (query) =>
   isSearchable(query) ? search(query, { size: 100 }) : null
 
 const rowsFor = (keys, rowsByKey) => keys.map((key) => rowsByKey.get(key))
 
-const render = (
-  request,
-  h,
-  current,
-  { selected, results = null, query = '', errorText = null }
-) => {
+const resultsContext = (current, { selected, results = null, query = '' }) => {
   const groups = commodityGroups(results, selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
+  return {
+    copy,
+    commodityGroups: groups,
+    noResults: isSearchable(query) && groups.length === 0,
+    carriedKeys: selected.filter((key) => !onScreen.has(key)),
+    selectedSummary: selectedSummary(rowsFor(selected, knownRowsByKey(current)))
+  }
+}
+
+const render = (request, h, current, { errorText = null, ...shown }) => {
   const errors = errorText ? { [SEARCH_FIELD]: errorText } : {}
-  const rowsByKey = knownRowsByKey(current)
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink:
@@ -59,13 +69,31 @@ const render = (
       page
     }),
     copy,
-    query,
-    commodityGroups: groups,
-    noResults: isSearchable(query) && groups.length === 0,
-    carriedKeys: selected.filter((key) => !onScreen.has(key)),
-    selectedSummary: selectedSummary(rowsFor(selected, rowsByKey)),
+    query: shown.query ?? '',
+    results: resultsContext(current, shown),
+    resultsUrl: pagePath(request.params.journeyId, RESULTS_SLUG),
     errors,
     errorSummary: kit.errorSummary(errors)
+  })
+}
+
+const speciesCountOf = (groups) =>
+  groups.reduce((count, group) => count + group.items.length, 0)
+
+const announcementFor = (query, { noResults, commodityGroups: groups }) => {
+  if (!isSearchable(query)) {
+    return ''
+  }
+  return noResults
+    ? copy.noResults
+    : copy.resultsAvailable(speciesCountOf(groups))
+}
+
+const renderResults = (_request, h, current, shown) => {
+  const results = resultsContext(current, shown)
+  return h.view(resultsView, {
+    results,
+    announcement: announcementFor(shown.query, results)
   })
 }
 
@@ -76,11 +104,11 @@ const get = async (request, h) => {
   })
 }
 
-const searchStoreRowsAndRender = async (
+const searchAndStoreRows = async (
   request,
   h,
   rowsByKey,
-  { selected, query, errorText }
+  { selected, query }
 ) => {
   const results = await searchFor(query)
   await replaceStoredSearchRows(request, h, [
@@ -88,62 +116,107 @@ const searchStoreRowsAndRender = async (
     ...resultRows(results)
   ])
   const current = await state.get(request, h)
-  return render(request, h, current, { selected, results, query, errorText })
+  return { current, shown: { selected, results, query } }
 }
 
-const post = async (request, h) => {
-  const SEARCH_ACTION = 'search'
-  const CLEAR_ACTION = 'clear'
-  const payload = request.payload ?? {}
-  const action = String(payload.action ?? '')
-  const query = normaliseQuery(payload[SEARCH_FIELD])
-  const rowsByKey = knownRowsByKey(await state.get(request, h))
-
-  if (action === CLEAR_ACTION) {
-    return searchStoreRowsAndRender(request, h, rowsByKey, {
-      selected: [],
-      query
-    })
-  }
-
-  const selected = mergedKeysFromPayload(payload, rowsByKey)
-  const droppedKeys = droppedKeysFromPayload(payload, rowsByKey)
+const logDroppedKeys = (request, { droppedKeys }) => {
   if (droppedKeys.length > 0) {
     request.logger.warn(
       { journeyId: request.params.journeyId, droppedKeys },
       'Commodity choices not in the stored search rows were dropped'
     )
   }
+}
 
-  if (action === SEARCH_ACTION) {
-    return searchStoreRowsAndRender(request, h, rowsByKey, {
-      selected,
-      query
-    })
+const readPost = async (request, h) => {
+  const payload = request.payload ?? {}
+  const action = String(payload.action ?? '')
+  const query = normaliseQuery(payload[SEARCH_FIELD])
+  const rowsByKey = knownRowsByKey(await state.get(request, h))
+  if (action === CLEAR_ACTION) {
+    return { action, query, rowsByKey, selected: [], droppedKeys: [] }
+  }
+  return {
+    action,
+    query,
+    rowsByKey,
+    selected: mergedKeysFromPayload(payload, rowsByKey),
+    droppedKeys: droppedKeysFromPayload(payload, rowsByKey)
+  }
+}
+
+const refreshesWithoutSaving = (action) =>
+  action === SEARCH_ACTION || action === CLEAR_ACTION || isRemoveAction(action)
+
+const selectionAfterRemoval = ({ action, selected }) =>
+  isRemoveAction(action)
+    ? selected.filter((key) => key !== removeKeyOf(action))
+    : selected
+
+const refuseUnknownRemoval = (request, { action, rowsByKey }) => {
+  if (!isRemoveAction(action) || rowsByKey.has(removeKeyOf(action))) {
+    return null
+  }
+  kit.logRefusal(request, {
+    reason: 'no-species-for-key',
+    key: removeKeyOf(action)
+  })
+  return Boom.badRequest()
+}
+
+const searchStoreRowsAndRender = async (request, h, posted, renderShown) => {
+  const { current, shown } = await searchAndStoreRows(
+    request,
+    h,
+    posted.rowsByKey,
+    { selected: selectionAfterRemoval(posted), query: posted.query }
+  )
+  return renderShown(request, h, current, shown)
+}
+
+const post = async (request, h) => {
+  const posted = await readPost(request, h)
+  logDroppedKeys(request, posted)
+
+  if (refreshesWithoutSaving(posted.action)) {
+    return (
+      refuseUnknownRemoval(request, posted) ??
+      searchStoreRowsAndRender(request, h, posted, render)
+    )
   }
 
-  if (isRemoveAction(action)) {
-    const removedKey = removeKeyOf(action)
-    if (!rowsByKey.has(removedKey)) {
-      kit.logRefusal(request, { reason: 'no-species-for-key', key: removedKey })
-      return Boom.badRequest()
-    }
-    return searchStoreRowsAndRender(request, h, rowsByKey, {
-      selected: selected.filter((key) => key !== removedKey),
-      query
-    })
-  }
-
-  if (selected.length === 0) {
-    const response = await searchStoreRowsAndRender(request, h, rowsByKey, {
-      selected,
-      query,
+  if (posted.selected.length === 0) {
+    const { current, shown } = await searchAndStoreRows(
+      request,
+      h,
+      posted.rowsByKey,
+      { selected: [], query: posted.query }
+    )
+    const response = render(request, h, current, {
+      ...shown,
       errorText: copy.errors.selectCommodity
     })
     return response.code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, rowsFor(selected, rowsByKey))
+  return commitSelection(request, h, rowsFor(posted.selected, posted.rowsByKey))
 }
 
-export const routes = kit.pageRoutes(page, { get, post })
+const postResults = async (request, h) => {
+  const posted = await readPost(request, h)
+  logDroppedKeys(request, posted)
+  return (
+    refuseUnknownRemoval(request, posted) ??
+    searchStoreRowsAndRender(request, h, posted, renderResults)
+  )
+}
+
+export const routes = [
+  ...kit.pageRoutes(page, { get, post }),
+  {
+    method: 'POST',
+    path: pageRoutePath(RESULTS_SLUG),
+    options: kit.pageRouteOptions(page),
+    handler: postResults
+  }
+]

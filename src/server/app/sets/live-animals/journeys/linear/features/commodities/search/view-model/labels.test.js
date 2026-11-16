@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest'
 
-import { legendHtmlFor, speciesLabelHtml } from './labels.js'
+import { commodityLabelHtml, speciesLabelHtml } from './labels.js'
 
-describe('#legendHtmlFor', () => {
-  it('Should bold the part of the commodity heading the query matched', () => {
-    expect(legendHtmlFor('0102', '01')).toBe(
-      '<strong class="govuk-!-font-weight-bold">01</strong>02'
+describe('#commodityLabelHtml', () => {
+  it('Should name the commodity with its code in brackets', () => {
+    expect(commodityLabelHtml('0102', '')).toBe('Cattle (0102)')
+  })
+
+  it('Should show the code alone for a commodity with no name', () => {
+    expect(commodityLabelHtml('01061900', '')).toBe('01061900')
+  })
+
+  it('Should bold a match in the commodity code', () => {
+    expect(commodityLabelHtml('0102', '01')).toBe(
+      'Cattle (<strong class="govuk-!-font-weight-bold">01</strong>02)'
+    )
+  })
+
+  it('Should bold a match in the commodity name', () => {
+    expect(commodityLabelHtml('0102', 'ca')).toBe(
+      '<strong class="govuk-!-font-weight-bold">Ca</strong>ttle (0102)'
     )
   })
 })
