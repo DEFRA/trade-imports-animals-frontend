@@ -91,13 +91,13 @@ const refusalOf = async (query, state = handshakeState()) => {
 
 const expectRefused = (
   { error, logger, journeyId, answersAfter },
-  { fulfilmentId, landing, role, reason }
+  { fulfilmentId, landing, party, reason }
 ) => {
   expect(error.output.statusCode).toBe(400)
   expect(answersAfter).toEqual(heldAnswers)
   expectOneLogged(logger, {
     level: 'warn',
-    fields: { journeyId, fulfilmentId, landing, role, reason },
+    fields: { journeyId, fulfilmentId, landing, party, reason },
     message: 'Address return refused'
   })
 }
@@ -115,7 +115,7 @@ describe('GET /address-return', () => {
       expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
       expectOneLogged(
         result.logger,
-        landedLog(result.journeyId, { role: 'consignor', landing: 'back' })
+        landedLog(result.journeyId, { party: 'consignor', landing: 'back' })
       )
     })
 
@@ -152,7 +152,7 @@ describe('GET /address-return', () => {
       expectOneLogged(
         result.logger,
         landedLog(result.journeyId, {
-          role: 'consignor',
+          party: 'consignor',
           landing: 'select',
           addressId: newAddressId
         })
@@ -246,7 +246,7 @@ describe('GET /address-return', () => {
       expectOneLogged(
         result.logger,
         landedLog(result.journeyId, {
-          role: 'consignor',
+          party: 'consignor',
           landing: 'return',
           addressId: newAddressId
         })
@@ -266,7 +266,7 @@ describe('GET /address-return', () => {
       expect(result.cookies).toEqual({})
       expectOneLogged(
         result.logger,
-        landedLog(result.journeyId, { role: 'consignor', landing: 'cancel' })
+        landedLog(result.journeyId, { party: 'consignor', landing: 'cancel' })
       )
     })
   })
@@ -314,7 +314,7 @@ function addressNotReadableTests() {
           level: 'info',
           fields: {
             journeyId: result.journeyId,
-            role: 'consignor',
+            party: 'consignor',
             addressId: 'missing-address',
             reason: 'address-not-found'
           },
@@ -359,7 +359,7 @@ function addressNotReadableTests() {
           level: 'warn',
           fields: {
             journeyId: result.journeyId,
-            role: 'consignor',
+            party: 'consignor',
             addressId: newAddressId,
             err: expect.objectContaining({ status: 503 })
           },
@@ -389,7 +389,7 @@ function refusalTests() {
       expectRefused(refused, {
         fulfilmentId: consignor.id,
         landing,
-        role: 'consignor',
+        party: 'consignor',
         reason: 'invalid-handshake'
       })
     })
@@ -403,7 +403,7 @@ function refusalTests() {
       expectRefused(refused, {
         fulfilmentId: consignor.id,
         landing,
-        role: 'consignor',
+        party: 'consignor',
         reason: 'invalid-handshake'
       })
     })
@@ -448,7 +448,7 @@ function refusalTests() {
       expectRefused(refused, {
         fulfilmentId: consignor.id,
         landing: 'elsewhere',
-        role: 'consignor',
+        party: 'consignor',
         reason: 'unknown-landing'
       })
     })
@@ -461,7 +461,7 @@ function refusalTests() {
       expectRefused(refused, {
         fulfilmentId: consignor.id,
         landing: 'back',
-        role: 'consignor',
+        party: 'consignor',
         reason: 'unknown-landing'
       })
       expect(refused.error.message).toBe('Unknown landing')
@@ -477,7 +477,7 @@ function refusalTests() {
         expectRefused(refused, {
           fulfilmentId: consignor.id,
           landing,
-          role: 'consignor',
+          party: 'consignor',
           reason: 'address-missing'
         })
       }

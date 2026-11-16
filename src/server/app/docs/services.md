@@ -60,11 +60,13 @@ is asked for.
 re-exports the active set id so the model can read it without crossing the
 `model-import-boundary` rule in `.dependency-cruiser.cjs`.
 
-The `address-book` client keeps three facts out of its code:
+The `address-book` client keeps four facts out of its code:
 
-- The address book takes a page size from 1 to 100 and serves 25 when none is
-  given. The client sends none, so the service re-slices the default page to
-  its own size and reads the size served back from each response.
+- A listed or fetched record carries its roles exactly as the book sends
+  them, role-less included: the client invents no role and drops none.
+- The address book takes a page size from 1 to 100. The service always asks
+  for the largest page size, 100, so it reads the organisation's whole
+  matching book in as few round trips as possible.
 - The organisation id in the path and in the organisation header always comes
   from the signed-in session, never from a payload or a stored field. A read
   without one is refused, not sent: the path would name an organisation

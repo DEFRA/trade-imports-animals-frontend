@@ -484,12 +484,13 @@ export const addressBookAnswering = (addressResponse) => {
   )
 }
 
-/** An address book row as its search and lookup return it, live unless
- * `overrides` says otherwise. */
+/** An address book row as its search and lookup return it, live and holding
+ * no role unless `overrides` says otherwise. */
 export const listedAddress = (id, name, overrides = {}) => ({
   id,
   name,
   deleted: false,
+  roles: [],
   addressLine1: '1 Test Lane',
   ...overrides
 })

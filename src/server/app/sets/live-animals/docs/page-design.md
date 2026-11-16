@@ -349,8 +349,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   screen readers and is the form's first submit, so Enter in the box runs the
   search. The box and button are half the content column wide.
 - The picker is one form. The search and Save and continue are told apart by
-  their `action` value. Paging is a link, so the selection travels in the
-  link's query string and in a hidden field, with no client JavaScript.
+  their `action` value. A ticked row travels across a further search in a
+  hidden field, with no client JavaScript.
 - Edit details is offered only for an address the picker has copied onto the
   notification, so with no address picked the edit page sends the trader to the
   picker.
@@ -360,7 +360,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   outside stub mode. It leaves the journey for the address book, so it sits
   with the page and not inside the search form.
 - The results sit under the heading "Select an address", with the count
-  "Showing 5 out of 13 results" straight under it. The table is one fieldset
+  straight under it: every address the role's list holds, on one page,
+  however many there are. The table is one fieldset
   whose visually hidden legend repeats the heading, so a screen reader names
   the group of addresses. With no matches the message takes the place of the
   count.

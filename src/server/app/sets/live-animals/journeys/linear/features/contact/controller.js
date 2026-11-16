@@ -101,7 +101,7 @@ const get = async (request, h) => {
   const current = await state.get(request, h)
   const { journey, answers } = current
   const orgId = organisationIdOf(request)
-  const options = [...(await addressBook.all(orgId))]
+  const options = [...(await addressBook.addresses(orgId))]
   const { errors } = await validation.onStored(answers, {
     addressOptions: options
   })
@@ -158,7 +158,7 @@ const post = async (request, h) => {
       h,
       current,
       {},
-      await addressBook.all(orgId),
+      await addressBook.addresses(orgId),
       issueAddAddressLink(request, h, journey),
       {
         errors,
@@ -187,7 +187,7 @@ const post = async (request, h) => {
         h,
         current,
         { selectedId: chosen?.id },
-        await addressBook.all(orgId),
+        await addressBook.addresses(orgId),
         issueAddAddressLink(request, h, journey),
         {
           recoverableError: true,

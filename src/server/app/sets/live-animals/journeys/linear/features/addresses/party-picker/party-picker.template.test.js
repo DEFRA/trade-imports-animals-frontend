@@ -22,7 +22,7 @@ const render = ({ addAddressHref } = {}) =>
         pickerCopy,
         sharedCopy,
         addAddressHref,
-        picker: { page: 1, rows: [], query: '' },
+        picker: { rows: [], query: '' },
         userSession: { isAuthenticated: true, displayName: 'Sam Example' },
         getAssetPath: (asset) => `/assets/${asset}`,
         hubHref: '/notifications/journey-1/addresses',

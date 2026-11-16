@@ -37,12 +37,12 @@ const partyPageHref = (journeyId, party, query = {}) => {
 
 const logAndRefuse = (
   request,
-  { journeyId, fulfilmentId, landing, role },
+  { journeyId, fulfilmentId, landing, party },
   reason,
   message
 ) => {
   request.logger.warn(
-    { journeyId, fulfilmentId, landing, role, reason },
+    { journeyId, fulfilmentId, landing, party, reason },
     'Address return refused'
   )
   return Boom.badRequest(message)
@@ -82,7 +82,7 @@ const readReturnedAddress = async (
   request,
   { journeyId, party, addressId }
 ) => {
-  const logged = { journeyId, role: party.id, addressId }
+  const logged = { journeyId, party: party.id, addressId }
   try {
     const chosen = await chosenPartyFor(organisationIdOf(request), addressId)
     if (chosen) {
@@ -135,7 +135,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
     return unsaved
   }
   setAddedAddressBanner(h, chosen.name)
-  logLanding(request, { journeyId, role: party.id, landing, addressId })
+  logLanding(request, { journeyId, party: party.id, landing, addressId })
   return h.redirect(pagePath(journeyId, party.returnSlug))
 }
 
@@ -145,7 +145,7 @@ const landOnPartyPageWithBanner = (
   { journeyId, party, addressId, landing, chosen }
 ) => {
   setAddedAddressBanner(h, chosen.name)
-  logLanding(request, { journeyId, role: party.id, landing, addressId })
+  logLanding(request, { journeyId, party: party.id, landing, addressId })
   return h.redirect(partyPageHref(journeyId, party))
 }
 
@@ -168,22 +168,22 @@ const get = async (request, h) => {
     )
   }
 
-  const returnedForRole = { ...returned, role: party.id }
-  const landing = validLandingOf(request, returnedForRole)
+  const returnedForParty = { ...returned, party: party.id }
+  const landing = validLandingOf(request, returnedForParty)
   if (landing === BACK_WITHOUT_LANDING) {
-    logLanding(request, { journeyId, role: party.id, landing })
+    logLanding(request, { journeyId, party: party.id, landing })
     return h.redirect(partyPageHref(journeyId, party))
   }
 
   consumeHandshakeToken(
     request,
     h,
-    returnedForRole,
+    returnedForParty,
     request.query['handshake-token'] ?? ''
   )
 
   if (landing === ADDRESS_LANDING.CANCEL) {
-    logLanding(request, { journeyId, role: party.id, landing })
+    logLanding(request, { journeyId, party: party.id, landing })
     return h.redirect(hubPath(journeyId))
   }
 

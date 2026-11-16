@@ -63,7 +63,6 @@ export const copy = {
       hint: 'Name, address or country',
       button: 'Search'
     },
-    selectedAddressPrefix: 'Selected address:',
     errorPrefix: 'Error:',
     noMatches: 'No addresses match your search.',
     resultsHeading: 'Select an address',

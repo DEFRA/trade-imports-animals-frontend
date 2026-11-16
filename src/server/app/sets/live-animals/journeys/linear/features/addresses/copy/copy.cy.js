@@ -64,7 +64,6 @@ export const copy = {
       hint: 'Enw, cyfeiriad neu wlad',
       button: 'Chwilio'
     },
-    selectedAddressPrefix: 'Cyfeiriad a ddewiswyd:',
     errorPrefix: 'Gwall:',
     noMatches: 'Nid oes unrhyw gyfeiriadau’n cyfateb i’ch chwiliad.',
     resultsHeading: 'Dewiswch gyfeiriad',
