@@ -35,6 +35,7 @@ import {
   CATTLE_CODE,
   OTHER_LIVE_MAMMALS_CODE
 } from '../../../../../services/commodities/rules.js'
+import { COMMODITY_GROUPS } from '../../../../../services/commodities/stub.js'
 
 const SEARCH_BOX_DESCRIPTION_WITH_ERROR = `${copy.search.searchHint} Error: ${copy.search.errors.selectCommodity}`
 
@@ -690,7 +691,10 @@ test.describe('commodity search results list', () => {
   test.beforeEach(async ({ page }) => {
     await signInAndOpenSelection({ page })
     await commoditySearchBox(page).fill(CATTLE_CODE)
-    await expect(speciesRows(page)).toHaveCount(15)
+    const { species } = COMMODITY_GROUPS.find(
+      (group) => group.code === CATTLE_CODE
+    )
+    await expect(speciesRows(page)).toHaveCount(species.length)
   })
 
   const speciesRows = (page) =>
