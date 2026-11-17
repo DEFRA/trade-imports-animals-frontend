@@ -55,17 +55,6 @@ describe('#saveActions', () => {
     expect(secondary).toContain(HUB_VALUE_ATTRIBUTE)
   })
 
-  it('Should render the hub exit alone with the text it is given, posting the hub exit field pair', () => {
-    const html = environment.renderString(
-      '{% from "shared/save-actions.njk" import hubExitButton %}{{ hubExitButton({ text: "Continue" }) }}'
-    )
-
-    expect(html).toMatch(/>\s*Continue\s*<\/button>/)
-    expect(html).toContain(EXIT_NAME_ATTRIBUTE)
-    expect(html).toContain(HUB_VALUE_ATTRIBUTE)
-    expect(html).not.toContain(SECONDARY_BUTTON)
-  })
-
   it('Should end a page reached from another page with the primary alone', () => {
     const html = renderActions(withoutReturnControls)
 

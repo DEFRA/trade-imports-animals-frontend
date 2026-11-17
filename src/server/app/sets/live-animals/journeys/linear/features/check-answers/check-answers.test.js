@@ -2961,13 +2961,13 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         ...document.querySelectorAll('.govuk-button-group .govuk-button')
       ].map((button) => ({
         text: button.textContent.trim(),
-        formAction: button.getAttribute('formaction'),
+        formaction: button.getAttribute('formaction'),
         href: button.getAttribute('href'),
         classes: button.className
       }))
 
       expect(controls.map(({ text }) => text)).toEqual(SUBMITTED_BUTTON_TEXTS)
-      expect(controls[0].formAction).toBe(actions.amend.formAction)
+      expect(controls[0].formaction).toBe(actions.amend.postAction)
       expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[2].href).toBe(actions.delete.href)

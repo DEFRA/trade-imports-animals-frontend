@@ -84,7 +84,7 @@ export const cancelAmendControl = (journey) =>
  * @param {object} [journey] - the journey, or none.
  * @param {object} [options]
  * @param {boolean} [options.offerCancelAmend] - offer Cancel amend while the
- * journey is being amended. False on the page Cancel amend leads to.
+ * journey is being amended. Defaults to true.
  * @returns {object|null} the strip view model, or null without a journey.
  */
 export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>

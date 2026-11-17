@@ -11,7 +11,7 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { stubH, journeyRequest, itahcAnswers } from './test-support.js'
+import { stubH, journeyRequest } from './test-support.js'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
@@ -27,8 +27,7 @@ describe('submit is finalise', () => {
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => true)
     await commit(buildRequest(), stubH(), {
-      countryOfOrigin: 'FR',
-      ...itahcAnswers()
+      countryOfOrigin: 'FR'
     })
     const { fulfilment: committed, concurrencyToken } = await records.load({
       journeyId

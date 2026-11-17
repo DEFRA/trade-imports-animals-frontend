@@ -36,7 +36,7 @@
     <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ viewHeader.reference }}</h1>
     {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
 
-    <form method="post" action="{{ viewHeader.actions.copy.formAction }}">
+    <form method="post" action="{{ viewHeader.actions.copy.postAction }}">
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
       <input type="hidden" name="copyOrigin" value="notification-view" />
@@ -44,7 +44,7 @@
         {% if viewHeader.actions.amend %}
           {{ govukButton({
             text: viewHeader.actions.amend.text,
-            attributes: { formaction: viewHeader.actions.amend.formAction }
+            attributes: { formaction: viewHeader.actions.amend.postAction }
           }) }}
         {% endif %}
         {{ govukButton({
@@ -76,7 +76,7 @@
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
       {% if card.speciesBlocks.length or card.groups.length or card.error %}
-        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
+        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}" role="group" aria-label="{{ card.title }}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
           <div class="govuk-summary-card__title-wrapper">
             <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
             {{ cardActions(card.actions) }}
@@ -117,7 +117,7 @@
           card: {
             title: { text: card.title, headingLevel: 3 },
             actions: card.actions,
-            attributes: { id: card.anchor, tabindex: "-1" } if card.anchor else null
+            attributes: { id: card.anchor, tabindex: "-1", role: "group", "aria-label": card.title } if card.anchor else { role: "group", "aria-label": card.title }
           },
           rows: card.rows
         }) }}

@@ -25,7 +25,6 @@ import {
 import { store } from '../../../../../../engine/store.js'
 import {
   actWithSessionOrganisation,
-  itahcAnswers,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -45,8 +44,7 @@ const startAmend = async () => {
   await records.replaceFulfilment(
     journey.journeyId,
     assembleFulfilments({
-      internalReferenceNumber: 'SubmittedRef',
-      ...itahcAnswers()
+      internalReferenceNumber: 'SubmittedRef'
     })
   )
   await store.submit(journey.journeyId)

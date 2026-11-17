@@ -8,7 +8,6 @@ import {
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
-import { itahcFulfilment } from '../../../engine/test-support.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -105,7 +104,6 @@ describe('records durable port', () => {
 
   it('Should re-finalise after an amend — the amend-and-resubmit cycle round-trips', async () => {
     const { journeyId } = await records.create()
-    await records.replaceFulfilment(journeyId, itahcFulfilment())
     await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
@@ -117,10 +115,7 @@ describe('records durable port', () => {
 
   it('Should cancel an amendment by restoring the submitted snapshot and freezing it again', async () => {
     const { journeyId } = await records.create()
-    await records.replaceFulfilment(journeyId, {
-      ...originFulfilment('FR'),
-      ...itahcFulfilment()
-    })
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
     const submitted = await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
     await records.replaceFulfilment(journeyId, originFulfilment('DE'))
@@ -130,7 +125,7 @@ describe('records durable port', () => {
     expect(restored).toMatchObject({
       status: SUBMITTED,
       submittedAt: submitted.submittedAt,
-      fulfilment: { ...originFulfilment('FR'), ...itahcFulfilment() }
+      fulfilment: originFulfilment('FR')
     })
     await expect(
       records.replaceFulfilment(journeyId, originFulfilment('NL'))
@@ -408,11 +403,10 @@ describe('records answersDifferFromSubmitted', () => {
 describe('records durable port — submitted status', () => {
   beforeEach(() => records.clear())
 
-  it('Should record Submitted with or without an ITAHC, and again when resubmitted after an amendment', async () => {
+  it('Should record Submitted, and again when resubmitted after an amendment', async () => {
     const { journeyId } = await records.create()
     const submitted = await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
-    await records.replaceFulfilment(journeyId, itahcFulfilment())
 
     const resubmitted = await finaliseAtLoadedToken(journeyId)
 
@@ -420,11 +414,10 @@ describe('records durable port — submitted status', () => {
     expect(resubmitted.status).toBe(SUBMITTED)
   })
 
-  it('Should restore Submitted when cancelling an amendment of a notification submitted without an ITAHC', async () => {
+  it('Should restore Submitted when cancelling an amendment of a submitted notification', async () => {
     const { journeyId } = await records.create()
     await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
-    await records.replaceFulfilment(journeyId, itahcFulfilment())
 
     const restored = await records.cancelAmend(journeyId)
 

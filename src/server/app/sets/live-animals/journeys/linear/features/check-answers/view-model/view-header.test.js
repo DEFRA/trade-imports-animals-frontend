@@ -53,11 +53,11 @@ describe('#viewHeader', () => {
     expect(viewHeader(submittedJourney()).actions).toEqual({
       amend: {
         text: 'Amend this notification',
-        formAction: pagePath(REFERENCE, 'amend')
+        postAction: pagePath(REFERENCE, 'amend')
       },
       copy: {
         text: 'Copy as new',
-        formAction: pagePath(REFERENCE, 'copy'),
+        postAction: pagePath(REFERENCE, 'copy'),
         classes: 'govuk-button--secondary'
       },
       delete: DELETE_BUTTON
@@ -114,7 +114,7 @@ describe('#viewHeader for a draft', () => {
       amend: null,
       copy: {
         text: 'Copy as new',
-        formAction: pagePath(REFERENCE, 'copy'),
+        postAction: pagePath(REFERENCE, 'copy'),
         classes: ''
       },
       delete: DELETE_BUTTON

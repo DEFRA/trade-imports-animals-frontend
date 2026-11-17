@@ -255,8 +255,9 @@ shows is read from that feature's label function (for example
 labels only the review shows go in the check-answers copy bundles.
 
 The card heading carries the Change link for the answers inside the card.
-The exception is the transit countries row in the Arrival details card's headed
-group, which carries its own link built with `changeAction`. The Addresses
+The exceptions carry their own link: the first row of each species block, each
+species block's Identification details, and the transit countries row in the
+Arrival details card. The Addresses
 card's Permanent address group carries none: the card's header Change link
 changes it. If
 the page's fields go into a NEW card, the card needs one

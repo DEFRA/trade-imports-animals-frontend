@@ -392,13 +392,6 @@ export const itahcAnswers = () => ({
   ]
 })
 
-export const itahcFulfilment = () => assembleFulfilments(itahcAnswers())
-
-export const submitWithItahc = async (journeyId) => {
-  await store.seedAnswers(journeyId, itahcAnswers())
-  return store.submit(journeyId)
-}
-
 /** A commodity line with commodityCode and speciesLatinName, plus any further fields. */
 export const commodityLine = ({
   commodityCode = '0102',

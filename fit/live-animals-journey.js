@@ -453,10 +453,11 @@ export const postJourneyFormToDeclaration = async (page, fields) => {
 
 export const CARD_ERROR_SELECTOR = '.govuk-error-message'
 
-export const documentCardFor = (page, position) =>
-  page.locator('.govuk-summary-card').filter({
+export const reviewCardFor = (page, headingName) =>
+  page.getByRole('group').filter({
     has: page.getByRole('heading', {
-      name: checkAnswersCopy.documentN(position),
+      level: 3,
+      name: headingName,
       exact: true
     })
   })
@@ -497,12 +498,13 @@ export const notificationReferenceHeading = (page) =>
     exact: true
   })
 
+export const viewHeaderTag = (page) =>
+  page.getByRole('main').locator('.govuk-tag')
+
 export const expectDraftReview = async (page) => {
   await expect(notificationReferenceHeading(page)).toBeVisible()
   await expect(
-    page.getByRole('main').locator('.govuk-tag', {
-      hasText: sharedAppCopy.journeyStrip.draft
-    })
+    viewHeaderTag(page).filter({ hasText: sharedAppCopy.journeyStrip.draft })
   ).toHaveText(sharedAppCopy.journeyStrip.draft)
   await expectDraftReviewEndsWithContinue(page)
 }

@@ -4,7 +4,7 @@ import {
   addDocument,
   CARD_ERROR_SELECTOR,
   completeAnswerSections,
-  documentCardFor,
+  reviewCardFor,
   documentNamed,
   expectDraftReviewEndsWithContinue,
   STILL_SCANNING_DOCUMENT_FILE_NAME,
@@ -297,7 +297,9 @@ test.describe('declaration reached only from the review', () => {
       })
     ).toBeVisible()
     await expect(
-      documentCardFor(page, 1).locator(CARD_ERROR_SELECTOR)
+      reviewCardFor(page, checkAnswersCopy.documentN(1)).locator(
+        CARD_ERROR_SELECTOR
+      )
     ).toContainText(documentsCopy.errors.someStillScanning)
     await expectDraftReviewEndsWithContinue(page)
   })

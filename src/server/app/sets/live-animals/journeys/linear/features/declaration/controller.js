@@ -7,6 +7,7 @@ import {
 } from '../../../../../../lib/http-status.js'
 import {
   compose,
+  formatMomentAsLongDay,
   requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
@@ -18,7 +19,6 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { isReviewRefused } from '../check-answers/refusal.js'
 import { reviewHref } from '../check-answers/review-href.js'
-import { notificationDateText } from '../review/notification-date.js'
 import { reviewedConcurrencyToken as reviewedConcurrencyTokenOf } from '../check-answers/reviewed.js'
 
 const STEP_REVIEW = 'review'
@@ -60,7 +60,7 @@ const render = (
     }),
     concurrencyToken: reviewedConcurrencyToken,
     copy,
-    submissionDate: notificationDateText(Date.now()),
+    submissionDate: formatMomentAsLongDay(new Date()),
     values,
     errors,
     errorSummary: kit.errorSummary(errors)

@@ -3,7 +3,7 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import { journeyStrip, sharedCopy } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { notificationActionSlugs } from '../../../flow/notification-action-slugs.js'
-import { notificationDateText } from '../../review/notification-date.js'
+import { formatMomentAsLongDay } from '../../../../../../../lib/validate/index.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -32,20 +32,20 @@ const dateLine = (journey) => {
           datedLineFor: copy.viewHeader.dateCreated,
           instant: journey.createdAt
         }
-  return instant ? datedLineFor(notificationDateText(instant)) : null
+  return instant ? datedLineFor(formatMomentAsLongDay(new Date(instant))) : null
 }
 
 const amendAction = (journey) =>
   journey.status === SUBMITTED
     ? {
         text: copy.viewHeader.amend,
-        formAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
+        postAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
       }
     : null
 
 const copyAction = (journey, { besideAmend }) => ({
   text: sharedCopy.notificationActions.copy.text,
-  formAction: pagePath(journey.journeyId, notificationActionSlugs.copy),
+  postAction: pagePath(journey.journeyId, notificationActionSlugs.copy),
   classes: besideAmend ? 'govuk-button--secondary' : ''
 })
 
@@ -72,10 +72,11 @@ const importReferences = ({ journeyId }) => {
 
 /**
  * The header of a notification's view, for a draft and for a submitted
- * notification. An amendment has no header.
+ * notification.
  *
  * @param {object} journey - the journey being viewed.
- * @returns {object|null} null for an amendment. Otherwise the reference, the
+ * @returns {object|null} null unless the journey is a draft or submitted.
+ * Otherwise the reference, the
  * status tag, the date line (Date created for a draft, Date submitted for a
  * submitted notification, null without the stored instant), the Amend action
  * (null for a draft), the Copy as new and Delete actions, and the import

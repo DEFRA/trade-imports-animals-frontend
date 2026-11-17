@@ -18,7 +18,6 @@ import {
   recordingLogger,
   resetMocksAndConfigAfterTests,
   stubH,
-  submitWithItahc,
   actWithSessionOrganisation,
   expectOneSaveFallbackLogged,
   unavailableBackendError,
@@ -124,9 +123,9 @@ describe('#declaration', () => {
       expect(response).toEqual({ redirect: reviewPath(journeyId) })
     })
 
-    it('Should redirect a GET on a journey submitted with its ITAHC to the confirmation page', async () => {
+    it('Should redirect a GET on a journey submitted to the confirmation page', async () => {
       const { journeyId } = await store.create()
-      await submitWithItahc(journeyId)
+      await store.submit(journeyId)
 
       const response = await get(journeyRequest(journeyId), stubH())
 

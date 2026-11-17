@@ -31,7 +31,8 @@ import {
   notificationViewUrl,
   numberOfAnimalsFor,
   documentNamed,
-  documentCardFor,
+  reviewCardFor,
+  viewHeaderTag,
   CARD_ERROR_SELECTOR,
   INFECTED_DOCUMENT_FILE_NAME,
   STILL_SCANNING_DOCUMENT_FILE_NAME,
@@ -68,7 +69,7 @@ import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as contactCopy } from '../contact/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
-import { notificationDateText } from '../review/notification-date.js'
+import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
 import { copy } from './copy/copy.en.js'
 
 const SPECIES_BLOCK_SELECTOR = '[id^="species-block-"]'
@@ -92,8 +93,6 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
 ]
 
 const main = (page) => page.getByRole('main')
-
-const headerTag = (page) => main(page).locator('.govuk-tag')
 
 const importReferences = (page) =>
   page.getByRole('region', { name: copy.importReferences.heading })
@@ -125,15 +124,6 @@ const expectOnlyHiddenMissing = async (page, answerCell) => {
 
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
-
-const commodityCardFor = (page, commodityCode) =>
-  page.locator('.govuk-summary-card').filter({
-    has: page.getByRole('heading', {
-      level: 3,
-      name: commodityCode,
-      exact: true
-    })
-  })
 
 const openOrigin = (page) =>
   page
@@ -341,7 +331,7 @@ test.describe('check-answers feature species blocks', () => {
       page.getByRole('heading', { level: 3, name: /^\d{4,8}$/ })
     ).toHaveText(cardsInOrder.map(({ code }) => code))
     for (const { code, blocks } of cardsInOrder) {
-      const speciesBlocks = commodityCardFor(page, code).locator(
+      const speciesBlocks = reviewCardFor(page, code).locator(
         SPECIES_BLOCK_SELECTOR
       )
       await expect(speciesBlocks.getByRole('heading', { level: 4 })).toHaveText(
@@ -544,7 +534,7 @@ test.describe('check-answers feature documents section', () => {
     ).toContainText(documentsCopy.scanTags.virusFound)
     await openNotificationView(page)
 
-    const card = documentCardFor(page, 1)
+    const card = reviewCardFor(page, copy.documentN(1))
     await expect(card.locator(CARD_ERROR_SELECTOR)).toContainText(
       documentsCopy.errors.someRejected
     )
@@ -566,7 +556,7 @@ test.describe('check-answers feature documents section', () => {
     )
     await openNotificationView(page)
 
-    const card = documentCardFor(page, 1)
+    const card = reviewCardFor(page, copy.documentN(1))
     await expect(card.locator(CARD_ERROR_SELECTOR)).toHaveCount(0)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
@@ -1083,8 +1073,8 @@ test.describe('check-answers feature draft notification reached from Review and 
     page
   }) => {
     await expectDraftReview(page)
-    await expect(headerTag(page)).toHaveText(sharedCopy.journeyStrip.draft)
-    await expect(headerTag(page)).toHaveClass(/govuk-tag--blue/)
+    await expect(viewHeaderTag(page)).toHaveText(sharedCopy.journeyStrip.draft)
+    await expect(viewHeaderTag(page)).toHaveClass(/govuk-tag--blue/)
     await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     await expect(page).toHaveTitle(
       `${sharedCopy.layout.errorTitlePrefix}${journeyIdFromPage(page)} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
@@ -1096,7 +1086,7 @@ test.describe('check-answers feature draft notification reached from Review and 
   }) => {
     const createdLines = new Set(
       [createdBefore, createdAfter].map((instant) =>
-        copy.viewHeader.dateCreated(notificationDateText(instant))
+        copy.viewHeader.dateCreated(formatMomentAsLongDay(new Date(instant)))
       )
     )
     const alternatives = [...createdLines].map(RegExp.escape).join('|')
@@ -1148,11 +1138,18 @@ test.describe('check-answers feature draft notification reached from Review and 
   })
 
   test('keeps a Change link on every card', async ({ page }) => {
-    const cardTitles = page.locator('.govuk-summary-card__title')
-    const changeLinks = page.locator('.govuk-summary-card__actions .govuk-link')
+    const cardHeadings = await page
+      .getByRole('heading', { level: 3 })
+      .allTextContents()
 
-    await expect(changeLinks).toHaveCount(await cardTitles.count())
-    await expect(changeLinks.first()).toContainText(copy.change)
+    expect(cardHeadings).not.toHaveLength(0)
+    for (const heading of cardHeadings) {
+      await expect(
+        reviewCardFor(page, heading).getByRole('link', {
+          name: new RegExp(`^${copy.change}`)
+        })
+      ).not.toHaveCount(0)
+    }
   })
 
   test('lists every unfinished card in the error summary, each linking to its card with its message on the card', async ({
@@ -1232,7 +1229,7 @@ test.describe('check-answers feature submitted notification', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     submittedBefore = Date.now()
-    reference = await submitCompleteNotification(page, { withItahc: true })
+    reference = await submitCompleteNotification(page)
     submittedAfter = Date.now()
     await openSubmittedViewFromList(page, reference)
   })
@@ -1243,8 +1240,10 @@ test.describe('check-answers feature submitted notification', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: reference, exact: true })
     ).toBeVisible()
-    await expect(headerTag(page)).toHaveText(sharedCopy.journeyStrip.submitted)
-    await expect(headerTag(page)).toHaveClass(/govuk-tag--green/)
+    await expect(viewHeaderTag(page)).toHaveText(
+      sharedCopy.journeyStrip.submitted
+    )
+    await expect(viewHeaderTag(page)).toHaveClass(/govuk-tag--green/)
     await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     await expect(page).toHaveTitle(
       `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
@@ -1254,7 +1253,7 @@ test.describe('check-answers feature submitted notification', () => {
   test('dates the notification under its header', async ({ page }) => {
     const submittedLines = new Set(
       [submittedBefore, submittedAfter].map((instant) =>
-        copy.viewHeader.dateSubmitted(notificationDateText(instant))
+        copy.viewHeader.dateSubmitted(formatMomentAsLongDay(new Date(instant)))
       )
     )
     const alternatives = [...submittedLines].map(RegExp.escape).join('|')
@@ -1327,34 +1326,14 @@ test.describe('check-answers feature submitted notification', () => {
       await expect(section.getByRole('button')).toHaveCount(0)
     })
   })
-})
 
-test.describe('check-answers feature notification submitted without an ITAHC', () => {
-  test.describe.configure({ timeout: 90000 })
-
-  let reference
-
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    reference = await submitCompleteNotification(page)
-    await openSubmittedViewFromList(page, reference)
-  })
-
-  test('is headed by a green Submitted tag and the import references warning alone', async ({
-    page
-  }) => {
-    const tag = page.locator('main .govuk-tag')
-
-    await expect(tag).toHaveText(sharedCopy.journeyStrip.submitted)
-    await expect(tag).toHaveClass(/govuk-tag--green/)
+  test('is headed by the import references warning alone', async ({ page }) => {
     await expect(main(page).locator('.govuk-warning-text__text')).toHaveText([
       `Warning ${copy.importReferences.warning}`
     ])
   })
 
-  test('dates the notification and shows the same date after a reload', async ({
-    page
-  }) => {
+  test('shows the same submitted date after a reload', async ({ page }) => {
     const dateLine = page.getByText(/^Date submitted: /)
     const dateText = await dateLine.textContent()
 
@@ -1363,7 +1342,7 @@ test.describe('check-answers feature notification submitted without an ITAHC', (
     await expect(dateLine).toHaveText(dateText)
   })
 
-  test('shows the uploaded document as a card under the uploaded documents heading', async ({
+  test('shows a single Document 1 card when no document is uploaded', async ({
     page
   }) => {
     const documentsHeading = page.getByRole('heading', {
@@ -1375,37 +1354,13 @@ test.describe('check-answers feature notification submitted without an ITAHC', (
     await expect(
       page.getByRole('heading', { level: 3, name: copy.documentN(1) })
     ).toBeVisible()
+    await expect(
+      rowFor(page, copy.rows.documentReference).getByRole('definition')
+    ).toHaveText(sharedCopy.notApplicable)
   })
 
-  test('offers exactly Amend this notification, Copy as new and Delete, and no Change links', async ({
-    page
-  }) => {
-    const headerButtons = main(page).getByRole('button')
-
-    await expect(headerButtons).toHaveText([
-      copy.viewHeader.amend,
-      sharedCopy.notificationActions.copy.text,
-      sharedCopy.notificationActions.delete.text
-    ])
+  test('offers no Change links', async ({ page }) => {
     await expect(page.getByRole('link', { name: copy.change })).toHaveCount(0)
-  })
-
-  test('shows the import reference numbers', async ({ page }) => {
-    const section = page.getByRole('region', {
-      name: copy.importReferences.heading
-    })
-
-    await expect(section.getByRole('definition')).toHaveText([
-      reference,
-      'C640'
-    ])
-  })
-
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalViolations(
-      page,
-      'Submitted without an ITAHC check answers'
-    )
   })
 })
 

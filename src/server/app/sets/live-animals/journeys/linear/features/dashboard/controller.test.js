@@ -6,8 +6,7 @@ import {
   configureRecords,
   records,
   AMEND,
-  DELETED,
-  SUBMITTED
+  DELETED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -34,7 +33,6 @@ import { routes } from './controller.js'
 import {
   authenticatedActor,
   expectOneLogged,
-  itahcFulfilment,
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
@@ -64,19 +62,9 @@ const startGet = routes.find(
 
 const startDraft = async () => records.create()
 
-const startSubmittedWithoutItahc = async () => {
-  const journey = await records.create()
-  await records.finalise(journey.journeyId, undefined, journey.concurrencyToken)
-  return records.load({ journeyId: journey.journeyId })
-}
-
 const startSubmitted = async () => {
   const journey = await records.create()
-  const { concurrencyToken } = await records.replaceFulfilment(
-    journey.journeyId,
-    itahcFulfilment()
-  )
-  await records.finalise(journey.journeyId, undefined, concurrencyToken)
+  await records.finalise(journey.journeyId, undefined, journey.concurrencyToken)
   return records.load({ journeyId: journey.journeyId })
 }
 
@@ -165,25 +153,6 @@ describe('dashboard notifications list', () => {
     )
     expect(row.actions[2].postAction).toBe(pageUrl(submitted.journeyId, 'copy'))
     expect(row.actions[3].href).toBe(pageUrl(submitted.journeyId, 'delete'))
-  })
-
-  it('Should list a notification submitted without its ITAHC with a green Submitted tag and the submitted actions', async () => {
-    const submitted = await startSubmittedWithoutItahc()
-
-    const context = await renderList({ knownJourneyIds: [submitted.journeyId] })
-
-    const [row] = context.notificationRows
-    expect(submitted.status).toBe(SUBMITTED)
-    expect(row.status).toEqual({
-      text: 'Submitted',
-      classes: 'govuk-tag--green'
-    })
-    expect(row.actions.map((action) => action.text)).toEqual([
-      'View',
-      'Amend',
-      COPY_AS_NEW_ACTION,
-      'Delete'
-    ])
   })
 
   it('Should list ONLY session-known journeys — never the wider store', async () => {

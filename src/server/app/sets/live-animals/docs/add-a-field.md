@@ -166,9 +166,9 @@ check-answers copy bundles.
 
 Use `row(key, value)` for a scalar. The card's heading carries the
 Change link for every answer inside it, so adding a field to an existing card
-needs no action work. The exception is the transit countries row in the Arrival
-details card's headed group, which carries its own link built with
-`changeAction`. The Addresses card's Permanent address group carries none: the
+needs no action work. The exceptions carry their own link: the first row of each
+species block, each species block's Identification details, and the transit
+countries row in the Arrival details card. The Addresses card's Permanent address group carries none: the
 card's header Change link changes it. Use a service label function when
 the stored value is a code. Show a conditional row only while the same
 obligation path is in scope.
