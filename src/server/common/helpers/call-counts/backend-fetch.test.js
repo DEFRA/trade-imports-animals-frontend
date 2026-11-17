@@ -7,6 +7,7 @@ import { createBackendFetch } from './backend-fetch.js'
 import { callCounts } from './call-counts.js'
 import { callCountsRoutes } from './call-counts-routes.js'
 import { clearCallCountTotals } from './call-count-totals.js'
+import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
 
 const loggedLines = []
 const logDestination = new Writable({
@@ -17,6 +18,7 @@ const logDestination = new Writable({
 })
 const backendFetch = createBackendFetch(pino({ level: 'warn' }, logDestination))
 
+const OPERATION = 'replace-notification'
 const BACKEND_URL = 'http://backend.test/notifications'
 const INIT = { method: 'PUT', headers: { 'content-type': 'application/json' } }
 
@@ -70,7 +72,7 @@ describe('backendFetch', () => {
       method: 'GET',
       path: '/page',
       handler: async () => {
-        received = await backendFetch(BACKEND_URL, INIT)
+        received = await backendFetch(OPERATION, BACKEND_URL, INIT)
         return 'page'
       }
     })
@@ -88,7 +90,7 @@ describe('backendFetch', () => {
   })
 
   test('still calls fetch outside a request', async () => {
-    await expect(backendFetch(BACKEND_URL, INIT)).resolves.toEqual({
+    await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toEqual({
       ok: true
     })
   })
@@ -100,7 +102,9 @@ describe('backendFetch', () => {
         .mockRejectedValueOnce(connectTimedOut())
         .mockResolvedValueOnce(response)
 
-      await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
+      await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toBe(
+        response
+      )
     })
 
     test('logs one warning with the failed connection, the method and the URL', async () => {
@@ -108,7 +112,7 @@ describe('backendFetch', () => {
         .mockRejectedValueOnce(connectTimedOut())
         .mockResolvedValueOnce({ ok: true })
 
-      await backendFetch(BACKEND_URL, INIT)
+      await backendFetch(OPERATION, BACKEND_URL, INIT)
 
       expect(loggedLines).toEqual([
         expect.objectContaining({
@@ -130,7 +134,9 @@ describe('backendFetch', () => {
         .mockRejectedValueOnce(everyAddressTimedOut())
         .mockResolvedValueOnce(response)
 
-      await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
+      await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toBe(
+        response
+      )
     })
 
     test('throws the second failure when the retry cannot connect either', async () => {
@@ -139,7 +145,9 @@ describe('backendFetch', () => {
         .mockRejectedValueOnce(connectTimedOut())
         .mockRejectedValueOnce(second)
 
-      await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(second)
+      await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).rejects.toBe(
+        second
+      )
     })
 
     test('counts the call once, however many attempts it took', async () => {
@@ -150,7 +158,7 @@ describe('backendFetch', () => {
         method: 'GET',
         path: '/stalled',
         handler: async () => {
-          await backendFetch(BACKEND_URL, INIT)
+          await backendFetch(OPERATION, BACKEND_URL, INIT)
           return 'page'
         }
       })
@@ -161,26 +169,13 @@ describe('backendFetch', () => {
     })
   })
 
-  test.each(['UND_ERR_SOCKET', 'ETIMEDOUT'])(
-    'throws a %s socket failure without sending the request again',
-    async (code) => {
-      const socketFailed = fetchFailedBecause(errorWithCode(code))
-      global.fetch
-        .mockRejectedValueOnce(socketFailed)
-        .mockResolvedValueOnce({ ok: true })
-
-      await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketFailed)
-      expect(loggedLines).toEqual([])
-    }
-  )
-
   test('counts every backend call a request makes', async () => {
     server.route({
       method: 'GET',
       path: '/two',
       handler: async () => {
-        await backendFetch(BACKEND_URL, INIT)
-        await backendFetch(BACKEND_URL, INIT)
+        await backendFetch(OPERATION, BACKEND_URL, INIT)
+        await backendFetch(OPERATION, BACKEND_URL, INIT)
         return 'page'
       }
     })
@@ -197,7 +192,7 @@ describe('backendFetch', () => {
       path: '/failing',
       handler: async () => {
         try {
-          await backendFetch(BACKEND_URL, INIT)
+          await backendFetch(OPERATION, BACKEND_URL, INIT)
         } catch {
           // the page still renders when the backend is down
         }
@@ -221,7 +216,7 @@ describe('backendFetch', () => {
     })
     const callBackendInterleaved = async (times) => {
       for (let call = 0; call < times; call++) {
-        await backendFetch(BACKEND_URL, INIT)
+        await backendFetch(OPERATION, BACKEND_URL, INIT)
         await Promise.resolve()
       }
     }
@@ -261,4 +256,104 @@ describe('backendFetch', () => {
       expect.objectContaining({ backendCalls: 3, pageRequests: 1 })
     )
   })
+})
+
+describe('backendFetch records one external call', () => {
+  const originalFetch = global.fetch
+  let logSpy
+
+  const callDocuments = () =>
+    readEmfDocuments(logSpy).filter(
+      (document) => 'external.call.duration' in document
+    )
+
+  beforeEach(() => {
+    global.fetch = vi.fn()
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    logSpy.mockRestore()
+  })
+
+  test('is one animals-backend call under the operation named', async () => {
+    global.fetch.mockResolvedValue(new Response(null, { status: 200 }))
+
+    await backendFetch(OPERATION, BACKEND_URL, INIT)
+
+    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
+    expect(callDocuments()[0]).toEqual(
+      expect.objectContaining({
+        dependency: 'animals-backend',
+        operation: OPERATION,
+        'external.call.failure': 0
+      })
+    )
+  })
+
+  test('is one call timed from the first attempt when the connection is retried', async () => {
+    const firstAttemptMs = 40
+    global.fetch
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) =>
+            setTimeout(() => reject(connectTimedOut()), firstAttemptMs)
+          )
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+    await backendFetch(OPERATION, BACKEND_URL, INIT)
+
+    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
+    expect(callDocuments()[0]['external.call.duration']).toBeGreaterThanOrEqual(
+      firstAttemptMs - 5
+    )
+  })
+
+  test('is a failure when the backend answers with a 5xx status', async () => {
+    global.fetch.mockResolvedValue(new Response(null, { status: 502 }))
+
+    await backendFetch(OPERATION, BACKEND_URL, INIT)
+
+    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
+    expect(callDocuments()[0]['external.call.failure']).toBe(1)
+  })
+
+  test('is a success when the backend refuses a stale write with 409', async () => {
+    global.fetch.mockResolvedValue(new Response(null, { status: 409 }))
+
+    await backendFetch(OPERATION, BACKEND_URL, INIT)
+
+    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
+    expect(callDocuments()[0]['external.call.failure']).toBe(0)
+  })
+})
+
+describe('backendFetch on a socket failure', () => {
+  const originalFetch = global.fetch
+
+  beforeEach(() => {
+    loggedLines.length = 0
+    global.fetch = vi.fn()
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  test.each(['UND_ERR_SOCKET', 'ETIMEDOUT'])(
+    'throws a %s socket failure without sending the request again',
+    async (code) => {
+      const socketFailed = fetchFailedBecause(errorWithCode(code))
+      global.fetch
+        .mockRejectedValueOnce(socketFailed)
+        .mockResolvedValueOnce({ ok: true })
+
+      await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).rejects.toBe(
+        socketFailed
+      )
+      expect(loggedLines).toEqual([])
+    }
+  )
 })

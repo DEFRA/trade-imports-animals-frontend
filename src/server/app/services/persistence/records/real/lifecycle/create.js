@@ -6,14 +6,18 @@ import { backendFetch } from '../../../../../../common/helpers/call-counts/backe
 
 // Backend mints the reference number; response carries the created notification.
 export const create = async (actor) => {
-  const notificationResponse = await backendFetch(notificationsUrl, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({
-      notification: { fulfilments: [] },
-      ...(actor ? { actor } : {})
-    })
-  })
+  const notificationResponse = await backendFetch(
+    'create-notification',
+    notificationsUrl,
+    {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({
+        notification: { fulfilments: [] },
+        ...(actor ? { actor } : {})
+      })
+    }
+  )
   if (!notificationResponse.ok) {
     throw await failed('create notification', notificationResponse)
   }
@@ -22,7 +26,7 @@ export const create = async (actor) => {
 
 export const copy = async (journeyId, concurrencyToken, actor) => {
   const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
-  const response = await backendFetch(url, {
+  const response = await backendFetch('copy-notification', url, {
     method: 'POST',
     headers: headers(),
     body: actor ? JSON.stringify(actor) : undefined

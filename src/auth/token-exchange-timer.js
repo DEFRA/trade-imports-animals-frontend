@@ -1,4 +1,4 @@
-import { recordExternalCallInBackground } from '../server/common/helpers/external-call-metrics.js'
+import { recordExternalCallInBackground } from '../server/common/helpers/metrics/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
 const STARTED_AT = 'defraIdTokenExchangeStartedAt'

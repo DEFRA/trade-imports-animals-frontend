@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 
-import { Engine as CatboxRedis } from '@hapi/catbox-redis'
+import { MeasuredRedisEngine } from './measured-redis-engine.js'
 import { Engine as CatboxMemory } from '@hapi/catbox-memory'
 
 import { getCacheEngine } from './cache-engine.js'
@@ -29,12 +29,14 @@ vi.mock('../logging/logger.js', () => ({
 
 describe('#getCacheEngine', () => {
   describe('When Redis cache engine has been requested', () => {
+    let engine
+
     beforeEach(() => {
-      getCacheEngine('redis')
+      engine = getCacheEngine('redis')
     })
 
-    test('Should setup Redis cache', () => {
-      expect(CatboxRedis).toHaveBeenCalledWith(expect.any(Object))
+    test('Should setup the measured Redis cache', () => {
+      expect(engine).toBeInstanceOf(MeasuredRedisEngine)
     })
 
     test('Should log expected Redis message', () => {

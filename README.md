@@ -96,10 +96,10 @@ Running totals are kept per route and served at `GET /call-counts`. `DELETE
 }
 ```
 
-| Variable                       | Default                        | Effect                                                                                                |
-| ------------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `CALL_COUNTS_ENDPOINT_ENABLED` | `true` locally, `false` on CDP | Serves `GET` and `DELETE /call-counts`, which need no sign-in                                         |
-| `CALL_COUNTS_METRICS_ENABLED`  | `false` locally, `true` on CDP | Writes one EMF document per page request: `BackendCalls` and `SessionResolutions`, `RequestKind=page` |
+| Variable                       | Default                        | Effect                                                                                                                             |
+| ------------------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `CALL_COUNTS_ENDPOINT_ENABLED` | `true` locally, `false` on CDP | Serves `GET` and `DELETE /call-counts`, which need no sign-in                                                                      |
+| `CALL_COUNTS_METRICS_ENABLED`  | `false` locally, `true` on CDP | Writes one EMF document per page request: `page.request.backend.calls` and `page.request.session.resolutions`, `request.kind=page` |
 
 The performance-test suite reads these counts and reports the ratios; see Call
 ratios in the trade-imports-performance-tests README.

@@ -53,11 +53,12 @@ describe('getOidcConfig', () => {
 
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.Dependency).toBe('defra-id')
-    expect(document.Operation).toBe('openid-configuration')
-    expect(document.ExternalCallFailure).toBe(0)
-    expect(document.Outcome).toBe('success')
-    expect(document).not.toHaveProperty('Interface')
+    expect(document.dependency).toBe('defra-id')
+    expect(document.operation).toBe('openid-configuration')
+    expect(document['external.call.failure']).toBe(0)
+    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
+      ['dependency', 'operation']
+    ])
   })
 
   test('fetches discovery document with tracing header', async () => {
@@ -113,7 +114,6 @@ describe('getOidcConfig', () => {
     await expect(getOidcConfig()).rejects.toThrow('discovery failed')
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.ExternalCallFailure).toBe(1)
-    expect(document.Outcome).toBe('failure')
+    expect(document['external.call.failure']).toBe(1)
   })
 })

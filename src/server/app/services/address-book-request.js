@@ -1,4 +1,5 @@
 import { config } from '../../../config/config.js'
+import { measureExternalResponse } from '../../common/helpers/metrics/external-call-metrics.js'
 import {
   ORGANISATION_ID_HEADER,
   organisationScopedHeaders
@@ -41,6 +42,20 @@ export const addressBookResourceUrl = (
  */
 export const addressBookHeaders = (organisationId) =>
   organisationScopedHeaders(organisationId)
+
+/**
+ * Makes one call to the address book, recorded as one external call under the
+ * operation it names.
+ *
+ * @param {string} operation the address-book operation, a fixed name such as `list-addresses`
+ * @param {string} url the request URL
+ * @param {RequestInit} init the fetch options, passed through unchanged
+ * @returns {Promise<Response>} the address book's response
+ */
+export const addressBookFetch = (operation, url, init) =>
+  measureExternalResponse({ dependency: 'address-book', operation }, () =>
+    fetch(url, init)
+  )
 
 /**
  * Raises the backend's failure for an address-book response that was not ok.

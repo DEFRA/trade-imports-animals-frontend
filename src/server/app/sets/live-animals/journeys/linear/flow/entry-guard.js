@@ -12,6 +12,7 @@ import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
 import { obligationByName } from '../../../../../model/obligations/manifest.js'
 import { originPage } from '../features/origin/page.js'
 import { buildInsFrontendUrl } from '../../../../../../common/helpers/frontend-url.js'
+import { countEvent } from '../../../../../../common/helpers/metrics/publish-metrics.js'
 import { SET_ID } from '../../../set.js'
 
 const journeyPrefix = () => `${setBase()}/notifications/`
@@ -67,5 +68,6 @@ export const entryGuardTarget = async (request, h) => {
     { journeyId: journey.journeyId, path: request.path },
     'No answer entered, sent to the first page'
   )
+  countEvent('journey.entry.redirect')
   return pagePath(request.params.journeyId, originPage.slug)
 }

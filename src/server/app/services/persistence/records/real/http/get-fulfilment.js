@@ -8,6 +8,7 @@ import { logger } from '../logger.js'
 
 export const getFulfilment = async (journeyId) => {
   const response = await backendFetch(
+    'get-fulfilment',
     `${notificationsUrl}/${journeyId}/fulfilments`,
     {
       method: 'GET',

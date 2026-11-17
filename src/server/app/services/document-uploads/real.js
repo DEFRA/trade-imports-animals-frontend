@@ -12,6 +12,7 @@ const rejectionReasonOf = (files) =>
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
     const response = await backendFetch(
+      'register-document-upload',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
       {
         method: 'POST',
@@ -26,6 +27,7 @@ export const documentUploads = {
 
   claim: async ({ uploadId, documentType, documentReference, dateOfIssue }) => {
     const response = await backendFetch(
+      'claim-document-upload',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/claim`,
       {
         method: 'POST',
@@ -40,6 +42,7 @@ export const documentUploads = {
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const response = await backendFetch(
+      'get-document-upload-session',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
       { method: 'GET', headers: headers() }
     )
@@ -54,6 +57,7 @@ export const documentUploads = {
 
   listByNotification: async ({ journeyId }) => {
     const response = await backendFetch(
+      'list-document-uploads',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
       { method: 'GET', headers: headers() }
     )
@@ -70,6 +74,7 @@ export const documentUploads = {
 
   scanStatus: async ({ uploadId }) => {
     const response = await backendFetch(
+      'get-document-upload-status',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
       { method: 'GET', headers: headers() }
     )
@@ -82,6 +87,7 @@ export const documentUploads = {
 
   remove: async (uploadId) => {
     const response = await backendFetch(
+      'delete-document-upload',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
       { method: 'DELETE', headers: headers() }
     )
@@ -92,6 +98,7 @@ export const documentUploads = {
 
   streamFile: async (uploadId) => {
     const response = await backendFetch(
+      'stream-document-file',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/file`,
       { method: 'GET', headers: headers() }
     )
