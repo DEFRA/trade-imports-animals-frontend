@@ -21,8 +21,7 @@ export const copy = {
     'description-of-the-goods': '2. Description of the goods',
     'transport-and-arrival': '3. Transport and arrival',
     documents: '4. Documents',
-    'consignment-parties': '5. Addresses',
-    'contact-address': '6. Contact address'
+    'consignment-parties': '5. Addresses'
   },
   rows: {
     origin: {
@@ -55,9 +54,6 @@ export const copy = {
     addresses: {
       title: 'Consignment addresses',
       hint: 'Consignor or Exporter, Consignee, Importer and Place of Destination'
-    },
-    contact: {
-      title: 'Contact address for this consignment'
     },
     documents: {
       title: 'Upload documents'

@@ -50,8 +50,7 @@ export const REVIEW_CARDS = [
     id: 'consignmentAddresses',
     anchor: 'addresses',
     rows: ['addresses']
-  },
-  { id: 'contactAddress', anchor: 'contact-address', rows: ['contact'] }
+  }
 ]
 
 const cardById = new Map(REVIEW_CARDS.map((card) => [card.id, card]))

@@ -146,8 +146,7 @@ describe('#handler — Overview lists the journey in its page order', () => {
         ]
       ],
       [copy.groups.documents, [copy.rows.documents.title]],
-      [copy.groups['consignment-parties'], [copy.rows.addresses.title]],
-      [copy.groups['contact-address'], [copy.rows.contact.title]]
+      [copy.groups['consignment-parties'], [copy.rows.addresses.title]]
     ])
   })
 })

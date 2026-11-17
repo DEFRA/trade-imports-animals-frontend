@@ -61,7 +61,7 @@
       },
       "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
       "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
-        "name": "García Livestock Transport SL",
+        "name": "Garc\u00eda Livestock Transport SL",
         "approvalNumber": "ES-T2-45001294",
         "address": {
           "addressLine1": "43 East Hague Extension",
@@ -241,7 +241,7 @@
         },
         "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
         "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
-          "name": "García Livestock Transport SL",
+          "name": "Garc\u00eda Livestock Transport SL",
           "approvalNumber": "ES-T2-45001294",
           "address": {
             "addressLine1": "43 East Hague Extension",
@@ -673,7 +673,7 @@
       },
       "transporterType": "Commercial",
       "commercialTransporter": {
-        "name": "García Livestock Transport SL",
+        "name": "Garc\u00eda Livestock Transport SL",
         "approvalNumber": "ES-T2-45001294",
         "address": {
           "addressLine1": "43 East Hague Extension",
@@ -705,17 +705,6 @@
         "year": "2026"
       },
       "portOfEntry": "GB ABD",
-      "contactAddress": {
-        "name": "Animal and Plant Health Agency",
-        "phone": "01632 960000",
-        "email": "animal-and-plant-health-agency@example.com",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
-        }
-      },
       "internalReferenceNumber": "",
       "animalsCertifiedFor": "slaughter",
       "commodityLines": [
@@ -863,7 +852,7 @@
         "portOfEntry": "GB ABD",
         "arrivalDate": "2026-12-12",
         "transporter": {
-          "name": "García Livestock Transport SL",
+          "name": "Garc\u00eda Livestock Transport SL",
           "address": {
             "addressLine1": "43 East Hague Extension",
             "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
