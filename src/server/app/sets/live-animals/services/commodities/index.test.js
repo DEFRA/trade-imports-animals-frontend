@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  cphExemptCommodityCodes,
+  cphRequiredCommodityCodes,
   earTagCommodityCodes,
   horseNameCodeSpecies,
   identifiedCommodityCodes,
@@ -140,12 +140,29 @@ describe('the identifier allowlists', () => {
   })
 })
 
-describe('the CPH exemption', () => {
-  it('Should exempt exactly the horse and cat/dog/ferret codes', () => {
-    expect([...cphExemptCommodityCodes()].sort()).toEqual([
-      HORSES_CODE,
-      OTHER_LIVE_MAMMALS_CODE
-    ])
+describe('the CPH-required list', () => {
+  it('Should list exactly the cattle, pig, sheep, goat and poultry codes', () => {
+    expect([...cphRequiredCommodityCodes()].sort()).toEqual(
+      [
+        CATTLE_CODE,
+        SWINE_CODE,
+        SHEEP_CODE,
+        GOAT_CODE,
+        '01051111',
+        '01051200',
+        '01051300',
+        '01051400',
+        '01051500',
+        '01059400',
+        '01059910',
+        '01059920',
+        '01059930',
+        '01059950',
+        '04071100',
+        '04071911',
+        '04071919'
+      ].sort()
+    )
   })
 })
 

@@ -50,9 +50,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
-- A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page, the permanent address
-  page, the role address pickers and the transporter type question. The two
+- A page reached from another page ends with the primary alone: the permanent
+  address page, the role address pickers and the transporter type question
+  leave the way the trader came in, while the CPH number page always leaves to
+  the consignment addresses page, however it was reached. The two
   transporter details forms are
   the one exception: each ends with the primary and a secondary "Cancel and
   return to dashboard", because a trader who opened one did not come from the
@@ -349,8 +350,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
   here, and Save and continue here goes on to the contact address.
-  The county parish holding link carries the trail and the `return=addresses`
-  marker.
+  The county parish holding link carries the trail alone: its page's Back and
+  Save and continue always answer this page, with no marker needed.
 - Each party picker searches the address book from the submitted search box:
   a medium "Search" label, the hint "Name, address or country", and a square
   GOV.UK blue icon button joined to the box. The button is named "Search" for
@@ -399,18 +400,23 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The three part labels stay on screen. Three unlabelled boxes under one
   legend would be harder to use than the single field they replace.
 - A CPH number is two digits of county, three of parish and four of holding,
-  so the example hint shows that 2/3/4 grouping.
-- The help names APHA documents only. A link to GOV.UK holding details waits
-  for a real destination.
+  so the example hint shows that 2/3/4 grouping, with no comma and no full
+  stop.
+- The help names APHA documents, then links to the GOV.UK guidance for checking
+  a holding's details.
 - The boxes set no character limit, so nothing typed or pasted is cut short.
   When the county box holds nine digits, with or without spaces or slashes,
   and parish and holding are empty, the number is split into its three parts
   on save. Anything else, such as `1234` in the county box, goes through the
-  per-part checks unchanged and every box keeps what was typed.
+  per-part checks unchanged and every box keeps what was typed. Each box turns
+  the browser's saved values off and asks for a digit keypad.
 - Nothing moves focus between the boxes (WCAG 3.2.2; GOV.UK forms do not
   auto-advance).
 - One error message belongs to the group, not to each box. The date-input row
   classes only sit the boxes side by side.
+- The page can be saved with every box empty: no number is saved, any number
+  saved before is cleared, and the gap is held at submission rather than
+  refused here.
 
 ## Permanent address
 

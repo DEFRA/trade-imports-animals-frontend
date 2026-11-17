@@ -516,8 +516,8 @@
           "status": "mandatory",
           "reasons": [
             {
-              "code": "obligation.cph.applicable.becauseNotCphExempt",
-              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
+              "code": "obligation.cph.applicable.becauseCphRequiredCommodity",
+              "explanation": "CPH applies when any commodity line has a commodityCode in the CPH-required list"
             }
           ]
         },
@@ -1116,8 +1116,8 @@
           "status": "mandatory",
           "reasons": [
             {
-              "code": "obligation.cph.applicable.becauseNotCphExempt",
-              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
+              "code": "obligation.cph.applicable.becauseCphRequiredCommodity",
+              "explanation": "CPH applies when any commodity line has a commodityCode in the CPH-required list"
             }
           ]
         },
@@ -1630,8 +1630,8 @@
           "status": "mandatory",
           "reasons": [
             {
-              "code": "obligation.cph.applicable.becauseNotCphExempt",
-              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
+              "code": "obligation.cph.applicable.becauseCphRequiredCommodity",
+              "explanation": "CPH applies when any commodity line has a commodityCode in the CPH-required list"
             }
           ]
         },
@@ -1959,14 +1959,7 @@
           "inScope": false
         },
         "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
-          "inScope": true,
-          "status": "mandatory",
-          "reasons": [
-            {
-              "code": "obligation.cph.applicable.becauseNotCphExempt",
-              "explanation": "CPH applies when any commodity line has a commodityCode that is not CPH-exempt"
-            }
-          ]
+          "inScope": false
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,

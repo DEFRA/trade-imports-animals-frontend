@@ -18,7 +18,7 @@ import {
   speciesLatinName
 } from './index.js'
 import {
-  cphExemptCommodityCodes,
+  cphRequiredCommodityCodes,
   earTagCommodityCodes,
   horseNameCodeSpecies,
   identifiedCommodityCodes,
@@ -101,33 +101,47 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
   })
 })
 
-describe('CPH exemptions → cph (top-level anyNotInUnionOf)', () => {
-  for (const code of cphExemptCommodityCodes()) {
-    it(`Should not put cph in scope for a consignment of code '${code}' alone`, () => {
+describe('CPH-required list → cph (top-level anyAllowListed)', () => {
+  for (const code of cphRequiredCommodityCodes()) {
+    it(`Should put cph in scope for a consignment of code '${code}' alone`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: code }
       })
-      expect(state.obligations[cph.id].inScope).toBe(false)
+      expect(state.obligations[cph.id].inScope).toBe(true)
     })
   }
 
-  it('Should not put cph in scope when every line is exempt', () => {
+  it('Should not put cph in scope for a consignment of horses alone', () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: '0101', line2: '01061900' }
+      [commodityCode.id]: { line1: '0101' }
     })
     expect(state.obligations[cph.id].inScope).toBe(false)
   })
 
-  it('Should put cph in scope when any line is not exempt', () => {
+  it('Should not put cph in scope for a consignment of the other-live-mammals code alone', () => {
     const state = evaluate({
-      [commodityCode.id]: { line1: '0101', line2: '0103' }
+      [commodityCode.id]: { line1: '01061900' }
     })
-    expect(state.obligations[cph.id].inScope).toBe(true)
+    expect(state.obligations[cph.id].inScope).toBe(false)
   })
 
-  it('Should put cph in scope for a code on no list at all', () => {
+  it('Should not put cph in scope for a consignment of the ostriches code alone', () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: OSTRICHES_CODE }
+    })
+    expect(state.obligations[cph.id].inScope).toBe(false)
+  })
+
+  it('Should not put cph in scope for a code on no list at all', () => {
     const state = evaluate({
       [commodityCode.id]: { line1: UNLISTED_VALUE }
+    })
+    expect(state.obligations[cph.id].inScope).toBe(false)
+  })
+
+  it('Should put cph in scope when any line is listed', () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: '0101', line2: '0103' }
     })
     expect(state.obligations[cph.id].inScope).toBe(true)
   })
@@ -331,7 +345,25 @@ const EXPECTED = {
     '01064100',
     '01064900'
   ],
-  'CPH exemptions': ['0101', '01061900'],
+  'CPH-required list': [
+    '0102',
+    '0103',
+    '010410',
+    '010420',
+    '01051111',
+    '01051200',
+    '01051300',
+    '01051400',
+    '01051500',
+    '01059400',
+    '01059910',
+    '01059920',
+    '01059930',
+    '01059950',
+    '04071100',
+    '04071911',
+    '04071919'
+  ],
   'unweaned list': ['0101', '0102', '0103', '010410', '010420'],
   'microchip list': ['0101', '01061900'],
   'passport list': ['0101', '0102', '01061900'],
@@ -347,7 +379,7 @@ const EXPECTED = {
 
 const ALLOWLISTS_UNDER_TEST = [
   { name: 'package-count list', values: packageCountCommodityCodes() },
-  { name: 'CPH exemptions', values: cphExemptCommodityCodes() },
+  { name: 'CPH-required list', values: cphRequiredCommodityCodes() },
   { name: 'unweaned list', values: unweanedCommodityCodes() },
   { name: 'microchip list', values: microchipCommodityCodes() },
   { name: 'passport list', values: passportCommodityCodes() },

@@ -1,25 +1,22 @@
 import {
-  cphExemptCommodityCodes,
+  cphRequiredCommodityCodes,
   unweanedCommodityCodes
 } from '../../../services/commodities/index.js'
-import {
-  anyAllowListed,
-  anyNotInUnionOf
-} from '../../../../../model/obligations/helpers/index.js'
+import { anyAllowListed } from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode } from './lines.js'
 
 const cphReason = {
-  code: 'obligation.cph.applicable.becauseNotCphExempt',
+  code: 'obligation.cph.applicable.becauseCphRequiredCommodity',
   explanation:
-    'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
+    'CPH applies when any commodity line has a commodityCode in the CPH-required list'
 }
 
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'countyParishHoldingCph',
-  applyTo: anyNotInUnionOf(
+  applyTo: anyAllowListed(
     commodityCode,
-    cphExemptCommodityCodes,
+    cphRequiredCommodityCodes,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
   )

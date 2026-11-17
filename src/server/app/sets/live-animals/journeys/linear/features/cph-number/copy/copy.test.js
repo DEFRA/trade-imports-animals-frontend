@@ -38,9 +38,9 @@ describe('cph-number copy module', () => {
     expect(copyCy.cph.holding).toBe('Rhif daliad')
   })
 
-  it('Should give an example in the real 2/3/4 grouping', () => {
-    expect(copy.cph.hint).toBe('For example, 12/345/6789.')
-    expect(copyCy.cph.hint).toBe('Er enghraifft, 12/345/6789.')
+  it('Should give an example in the real 2/3/4 grouping, with no punctuation', () => {
+    expect(copy.cph.hint).toBe('For example 12/345/6789')
+    expect(copyCy.cph.hint).toBe('Er enghraifft 12/345/6789')
   })
 
   it('Should explain what a CPH number is and where to find one', () => {
@@ -48,19 +48,36 @@ describe('cph-number copy module', () => {
     expect(copy.help.definition).toBe(
       'A county parish holding (CPH) number is a unique 9-digit number used to identify land and buildings where livestock are kept, moved or handled.'
     )
-    expect(copy.help.whereToFind).toBe(
-      'You can find your CPH number on documents from the Animal and Plant Health Agency (APHA).'
+    expect(copy.help.whereToFindPrefix).toBe(
+      'You can find your CPH number on documents from the Animal and Plant Health Agency (APHA) or by'
+    )
+    expect(copy.help.whereToFindLink).toBe(
+      'checking your holding details on GOV.UK'
+    )
+    expect(copy.help.whereToFindHref).toBe(
+      'https://www.gov.uk/guidance/get-a-county-parish-holding-cph-number'
     )
     expect(copyCy.help.summary).toBe('Beth yw rhif CPH?')
+    expect(copyCy.help.whereToFindPrefix).toBe(
+      "Gallwch ddod o hyd i'ch rhif CPH ar ddogfennau gan yr Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA) neu drwy"
+    )
+    expect(copyCy.help.whereToFindLink).toBe(
+      'wirio manylion eich daliad ar GOV.UK'
+    )
+    expect(copyCy.help.whereToFindHref).toBe(
+      'https://www.gov.uk/guidance/get-a-county-parish-holding-cph-number'
+    )
   })
 })
 
 describe('GET cph-number — copy reaches the view', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
+  const seed = () => ({ commodityLines: [{ commodityCode: '0102' }] })
+
   it('Should supply the feature copy module and the shared chrome copy', async () => {
     const get = cphNumber.routes.find((route) => route.method === 'GET').handler
-    const result = await driveHandler(get)
+    const result = await driveHandler(get, { seed: seed() })
     expect(result.view.context.copy).toBe(copy)
     expect(result.view.context.pageTitle).toBe(copy.title)
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(

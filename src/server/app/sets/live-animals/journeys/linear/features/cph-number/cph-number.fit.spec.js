@@ -2,20 +2,21 @@ import { expect, test } from '@playwright/test'
 
 import {
   BOS_TAURUS_ROW,
-  answerOriginEntry,
+  EQUUS_CABALUS_ROW,
+  addressesSection,
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
+  journeyUrl,
+  openAddresses,
   openCphNumberFromAddLink,
-  selectSpecies,
-  startNotificationAtOrigin,
-  urlUnderBase,
   errorSummary,
   followErrorLinkToField,
   govukColourOf
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../flow/section-captions/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -68,21 +69,8 @@ const enterInCountyAndExpectSavedSplit = async (page, number, enterText) => {
 }
 
 const startAtCphNumber = async (page) => {
-  await startNotificationAtOrigin(page)
-
-  const commodityUrl = page.url().replace(/\/origin(?:\?.*)?$/, '/commodities')
-  await answerOriginEntry(page)
-
-  await page.goto(commodityUrl)
-  await selectSpecies(page, [BOS_TAURUS_ROW])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(page).toHaveURL(
-    urlUnderBase('/notifications/[^/]+/import-reason')
-  )
-
-  await page.goto(commodityUrl.replace(/\/commodities$/, '/addresses'))
+  await openAddresses(page, BOS_TAURUS_ROW)
   await openCphNumberFromAddLink(page)
-  await expect(page).toHaveURL(/\/cph-number\?return=addresses$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
@@ -123,6 +111,8 @@ test.describe('cph-number feature', () => {
 
     for (const box of Object.values(boxes)) {
       await expect(box).toHaveAttribute('inputmode', 'numeric')
+      await expect(box).toHaveAttribute('autocomplete', 'off')
+      await expect(box).toHaveAttribute('pattern', '[0-9]*')
     }
 
     for (const [id, text] of [
@@ -164,14 +154,15 @@ test.describe('cph-number feature', () => {
     await enterInCountyAndExpectSavedSplit(page, SLASHED_NUMBER, insertInOneGo)
   })
 
-  test('keeps the CPH help collapsed above the field until it is opened', async ({
+  test('keeps the CPH help collapsed above the field until it is opened, then offers its GOV.UK link in the same tab', async ({
     page
   }) => {
     const summary = page.getByText(copy.help.summary, { exact: true })
     await expect(summary).toBeVisible()
 
     await expect(page.getByText(copy.help.definition)).toBeHidden()
-    await expect(page.getByText(copy.help.whereToFind)).toBeHidden()
+    const link = page.getByRole('link', { name: copy.help.whereToFindLink })
+    await expect(link).toBeHidden()
 
     await expect(
       page.locator('details').filter({ hasText: copy.help.summary })
@@ -181,7 +172,12 @@ test.describe('cph-number feature', () => {
     await summary.click()
 
     await expect(page.getByText(copy.help.definition)).toBeVisible()
-    await expect(page.getByText(copy.help.whereToFind)).toBeVisible()
+    await expect(
+      page.getByText(copy.help.whereToFindPrefix, { exact: false })
+    ).toBeVisible()
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute('href', copy.help.whereToFindHref)
+    await expect(link).not.toHaveAttribute('target')
   })
 
   test('ends with the primary alone, being reached from the addresses page', async ({
@@ -198,6 +194,16 @@ test.describe('cph-number feature', () => {
     await expect(page).toHaveURL(
       /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
     )
+  })
+
+  test('back link returns to the consignment addresses page with no trail, when opened by its own address', async ({
+    page
+  }) => {
+    await page.goto(journeyUrl(page, 'cph-number'))
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
   })
 
   test('joins the parts, saves the nine digits, returns to the consignment addresses page and comes back split', async ({
@@ -272,14 +278,19 @@ test.describe('cph-number validation', () => {
     await startAtCphNumber(page)
   })
 
-  test('CPH validation: an untouched page asks the whole question at the first box', async ({
+  test('CPH validation: saving an untouched page lands on the consignment addresses page, offering the add link again', async ({
     page
   }) => {
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    const boxes = partBoxes(page)
-    await followErrorLinkToField(page, copy.errors.cphRequired, boxes.county)
-    await expect(boxes.county).toHaveValue('')
+    await expect(page).toHaveURL(
+      /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
+    )
+    const section = addressesSection(page, addressesCopy.hub.cph.title)
+    await expect(section.getByRole('link')).toHaveText([
+      addressesCopy.hub.cph.add
+    ])
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
   })
 
   test('CPH validation: a short part names that part and keeps every value', async ({
@@ -370,6 +381,7 @@ test.describe('cph-number validation', () => {
   test('has no serious or critical axe violations in the error state', async ({
     page
   }) => {
+    await fillCph(page, { county: '1', parish: '34', holding: '678' })
     await page.locator(SUBMIT_BUTTON).first().click()
     await expect(errorSummary(page)).toBeVisible()
 
@@ -377,5 +389,22 @@ test.describe('cph-number validation', () => {
       page,
       'CPH number in its error state'
     )
+  })
+})
+
+test.describe('cph-number out of scope', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('shows the consignment addresses page when opened by its own address for a horses-only consignment', async ({
+    page
+  }) => {
+    await openAddresses(page, EQUUS_CABALUS_ROW)
+    await page.goto(journeyUrl(page, 'cph-number'))
+
+    await expect(
+      page.getByRole('heading', { name: addressesCopy.hub.title })
+    ).toBeVisible()
   })
 })

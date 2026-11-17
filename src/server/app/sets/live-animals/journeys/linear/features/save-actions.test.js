@@ -224,25 +224,28 @@ describe('save actions — hub exit semantics', () => {
     ).toEqual(['GBHC1111111111'])
   })
 
-  it('Should let the hub exit win over a return-to-addresses entry context', async () => {
-    const cphInScope = { commodityLines: [BOS_TAURUS_ROW] }
+  it('Should return to the consignment addresses page from both posts, because the page offers no overview-return control', async () => {
+    const cphInScope = {
+      countryOfOrigin: 'FR',
+      commodityLines: [BOS_TAURUS_ROW]
+    }
     const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
-    const returned = await driveHandler(postHandlerOf(cphNumber), {
+    const saved = await driveHandler(postHandlerOf(cphNumber), {
       payload: cphParts,
-      query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(returned.response).toEqual({
-      redirect: pagePath(returned.journeyId, 'addresses')
+    expect(saved.response).toEqual({
+      redirect: pagePath(saved.journeyId, 'addresses')
     })
 
-    const exit = await driveHandler(postHandlerOf(cphNumber), {
+    const posingAsHubExit = await driveHandler(postHandlerOf(cphNumber), {
       payload: { ...cphParts, exit: 'hub' },
-      query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
-    expect(exit.after.countyParishHoldingCph).toBe('123456789')
+    expect(posingAsHubExit.response).toEqual({
+      redirect: pagePath(posingAsHubExit.journeyId, 'addresses')
+    })
+    expect(posingAsHubExit.after.countyParishHoldingCph).toBe('123456789')
   })
 })
 

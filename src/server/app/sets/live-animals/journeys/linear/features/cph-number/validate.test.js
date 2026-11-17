@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { validation } from './validate.js'
 
 describe('#validation for cph-number — onSubmit', () => {
-  it('Should collapse an all-blank submission to a single required message', async () => {
-    const { errors } = await validation.onSubmit({
+  it('Should accept an all-blank submission and commit it as an empty number', async () => {
+    const { answers, errors } = await validation.onSubmit({
       cphCounty: '',
       cphParish: '',
       cphHolding: ''
     })
-    expect(errors).toEqual({ cphCounty: 'Enter a CPH number' })
+    expect(errors).toEqual({})
+    expect(answers).toEqual({ countyParishHoldingCph: '' })
   })
 
   it('Should name each blank part when the submission is not all-blank', async () => {

@@ -1150,7 +1150,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keys).not.toContain(UNWEANED_KEY)
   })
 
-  it('Should omit the CPH row for an exempt commodity', async () => {
+  it('Should omit the CPH row for a commodity not on the CPH-required list', async () => {
     const keys = keysOf(
       rowsOf(
         await sectionsFor({
@@ -1769,7 +1769,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
       commodityCode: OSTRICHES_CODE,
       packages: false,
       unweaned: false,
-      cph: true
+      cph: false
     }
   ]
 

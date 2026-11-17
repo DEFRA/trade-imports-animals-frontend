@@ -2,23 +2,25 @@ import { expect, test } from '@playwright/test'
 import {
   BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
+  GALLUS_GALLUS_ROW,
   STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
   PHONE_VIEWPORT,
+  LANDINGS,
   addressesSection,
   contentWidthOf,
   errorSummaryLinks,
+  expectLanding,
   followErrorLinkToField,
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
+  openAddresses,
   openOverview,
   partyPickerName,
   searchByPressingEnter,
   signIn,
-  startNotification,
-  unlockSections,
   values,
   withinFullWidthColumn,
   backLink
@@ -56,14 +58,8 @@ const PLACE_OF_DESTINATION = PARTIES.find(
 const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 
-const expectBackOnTheAddressesPage = async (page) => {
-  await expect(
-    page.getByRole('heading', { name: copy.hub.title })
-  ).toBeVisible()
-}
-
 const expectConsignorOffersOnlyItsAddLink = async (page) => {
-  await expectBackOnTheAddressesPage(page)
+  await expectLanding(page, LANDINGS.addresses)
   await expect(
     addressesSection(page, CONSIGNOR.title).getByRole('link')
   ).toHaveText([CONSIGNOR.add])
@@ -106,13 +102,6 @@ const fillConsignorFromPlaceOfOrigin = async (page) => {
       { exact: true }
     )
   ).toBeVisible()
-}
-
-const openAddresses = async (page, species) => {
-  await startNotification(page)
-  await unlockSections(page, species)
-  await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
-  await expectBackOnTheAddressesPage(page)
 }
 
 const openPartyPicker = async (page, party) => {
@@ -334,7 +323,7 @@ test.describe('addresses hub — same-as shortcut', () => {
       .getByRole('button', { name: copy.hub.sameAs.placeOfOrigin })
       .click()
 
-    await expectBackOnTheAddressesPage(page)
+    await expectLanding(page, LANDINGS.addresses)
     await expect(
       page.locator('.govuk-notification-banner--success')
     ).toHaveCount(0)
@@ -430,8 +419,8 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await signIn(page)
   })
 
-  test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, STRUTHIO_ROW)
+  test('asks a consignment of poultry for a CPH number', async ({ page }) => {
+    await openAddresses(page, GALLUS_GALLUS_ROW)
 
     const section = addressesSection(page, copy.hub.cph.title)
     await expect(
@@ -444,6 +433,16 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     page
   }) => {
     await openAddresses(page, EQUUS_CABALUS_ROW)
+
+    await expect(partySectionTitles(page)).toHaveText(
+      PARTIES.map(({ title }) => title)
+    )
+  })
+
+  test('does not ask a consignment of ostriches for a CPH number', async ({
+    page
+  }) => {
+    await openAddresses(page, STRUTHIO_ROW)
 
     await expect(partySectionTitles(page)).toHaveText(
       PARTIES.map(({ title }) => title)
@@ -554,7 +553,7 @@ test.describe('party picker per role', () => {
       const selectedName = partyPickerName(selected)
       await page.getByRole('radio', { name: selectedName }).check()
       await saveAndContinue(page)
-      await expectBackOnTheAddressesPage(page)
+      await expectLanding(page, LANDINGS.addresses)
       await expect(
         section.getByText(selectedName, { exact: true })
       ).toBeVisible()

@@ -1,3 +1,4 @@
+import { pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -7,6 +8,8 @@ import {
 import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { commodityCodesOf, linesOf } from '../commodities/lines.js'
+import { addressesPage } from '../addresses/page.js'
 import { cphNumberPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -21,7 +24,30 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
-const ADDRESSES_HUB_SLUGS = ['addresses']
+const addressesBackLink = (request) =>
+  kit.carryTrail(
+    request,
+    pagePath(request.params.journeyId, addressesPage.slug)
+  )
+
+const redirectOnward = (request, h, scope) =>
+  h.redirect(
+    kit.nextTargetKeepingTrail(request, page, scope, {
+      saveChoice: { hubExit: false }
+    })
+  )
+
+const isOutOfScope = (scope) => !scope.has('countyParishHoldingCph')
+
+const logOutOfScope = (request, answers, evaluation) =>
+  request.logger.info(
+    {
+      journeyId: request.params.journeyId,
+      reason: 'cph-number-not-in-scope',
+      commodityCodes: commodityCodesOf(linesOf(answers, evaluation))
+    },
+    'County parish holding number skipped: no commodity on this consignment needs one'
+  )
 
 const render = (
   request,
@@ -32,9 +58,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink:
-        kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
-        kit.trailBackLink(request),
+      backLink: addressesBackLink(request),
       journey,
       page,
       recoverableError
@@ -46,12 +70,22 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, evaluation, scope, answers } = await state.get(request, h)
+  if (isOutOfScope(scope)) {
+    logOutOfScope(request, answers, evaluation)
+    return redirectOnward(request, h, scope)
+  }
   const { values, errors } = await validation.onStored(answers)
   return render(request, h, journey, values, { errors })
 }
 
 const post = async (request, h) => {
+  const { evaluation, scope, storedAnswers } = await state.get(request, h)
+  if (isOutOfScope(scope)) {
+    logOutOfScope(request, storedAnswers, evaluation)
+    return redirectOnward(request, h, scope)
+  }
+
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {}
   )
@@ -76,12 +110,8 @@ const post = async (request, h) => {
     return failure
   }
 
-  const { scope } = committed
-  return h.redirect(
-    kit.hubExitTarget(request) ??
-      kit.hubEntryReturn(request, ADDRESSES_HUB_SLUGS) ??
-      kit.nextTarget(request, page, scope)
-  )
+  const { scope: savedScope } = committed
+  return redirectOnward(request, h, savedScope)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

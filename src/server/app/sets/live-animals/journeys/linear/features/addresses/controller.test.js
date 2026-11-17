@@ -28,6 +28,7 @@ import {
   withTrail
 } from '../../../../../../shared/kit.js'
 import { addressesPage } from './page.js'
+import { cphNumberPage } from '../cph-number/page.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { consignmentContactSelectPage } from '../contact/page.js'
@@ -55,7 +56,6 @@ const sectionTitled = (sections, title) =>
   sections.find((section) => section.title === title)
 const PLACE_OF_ORIGIN_TITLE = 'Place of origin'
 const SWITZERLAND = 'Switzerland'
-const CPH_PATH_RETURNING_TO_ADDRESSES = 'cph-number?return=addresses'
 const CPH_TITLE = 'County parish holding (CPH) number'
 const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
@@ -319,7 +319,7 @@ describe('GET addresses — conditional CPH section', () => {
       hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.',
       hiddenSuffix: CPH_TITLE.toLowerCase(),
       addLink: {
-        href: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES),
+        href: pagePath(result.journeyId, cphNumberPage.slug),
         text: 'Add a CPH number'
       }
     })
@@ -333,7 +333,7 @@ describe('GET addresses — conditional CPH section', () => {
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).chosen).toEqual({
       lines: ['123456789'],
-      changeHref: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
+      changeHref: pagePath(result.journeyId, cphNumberPage.slug)
     })
   })
 })
@@ -519,13 +519,13 @@ describe('GET addresses — the trail', () => {
     })
   })
 
-  it('Should join the trail to the query string the CPH link already has', async () => {
+  it('Should carry the trail onto the CPH link', async () => {
     const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES }, [
       { query: reviewChangeLinkQuery() }
     ])
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).addLink.href).toBe(
-      `${pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)}&from=${CYA_SLUG}`
+      withTrail(pagePath(result.journeyId, cphNumberPage.slug), [CYA_SLUG])
     )
   })
 

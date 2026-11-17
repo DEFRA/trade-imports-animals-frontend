@@ -84,9 +84,6 @@ const fields = (values, { stored } = {}) => {
 }
 
 const checks = (values, { stored } = {}) => {
-  if (!stored && isBlank(values)) {
-    return { [COUNTY_FIELD]: copy.errors.cphRequired }
-  }
   if (stored && !isBlank(values) && !NINE_DIGITS.test(joinParts(values))) {
     return { [COUNTY_FIELD]: copy.errors.cphNoLongerValid }
   }

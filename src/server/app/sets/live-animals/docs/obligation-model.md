@@ -26,9 +26,9 @@ knowledge.
 
 ## Commodity rules in the manifest
 
-The CPH question is asked unless every commodity line's code is exempt; a line
-with no code yet is ignored rather than counted as outside the exemptions
-(`anyNotInUnionOf`). The animal identifiers floor asks for a record per commodity
+The CPH question is asked when any commodity line's code is on the CPH-required
+list; a line with no code yet is ignored rather than counted as a match
+(`anyAllowListed`). The animal identifiers floor asks for a record per commodity
 line only on a consignment carrying more than one identified commodity line
 (`moreThanOne` over the identified-commodity allowlist).
 

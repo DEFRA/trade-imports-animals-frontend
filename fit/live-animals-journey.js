@@ -912,6 +912,13 @@ export const openOverview = async (page) => {
   await expectOverview(page)
 }
 
+export const openAddresses = async (page, species) => {
+  await startNotification(page)
+  await unlockSections(page, species)
+  await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
+  await expectLanding(page, LANDINGS.addresses)
+}
+
 export const fillOriginDetails = async (
   page,
   {

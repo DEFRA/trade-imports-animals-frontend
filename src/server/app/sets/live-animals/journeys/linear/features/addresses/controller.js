@@ -85,10 +85,7 @@ const partySectionBuilder = (request, journeyId, parties) => (party) => {
 }
 
 const cphSection = (request, journeyId, answers) => {
-  const href = kit.carryTrail(
-    request,
-    kit.withReturnMarker(pagePath(journeyId, cphNumberPage.slug), page.slug)
-  )
+  const href = kit.carryTrail(request, pagePath(journeyId, cphNumberPage.slug))
   const cphNumber = answers.countyParishHoldingCph
   return hubSection({
     id: 'cph',
