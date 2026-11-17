@@ -7,7 +7,9 @@ export const copy = {
   outstanding: {
     heading: 'Before the consignment is imported',
     intro: 'You still need to:',
-    documents: 'upload the ITAHC and any other required documents'
+    documents: 'upload the ITAHC and any other required documents',
+    completeIdentifiers:
+      'complete the animal identifier information in the notification'
   },
   transporting: {
     heading: 'Transporting the consignment',

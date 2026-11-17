@@ -8,7 +8,9 @@ export const copy = {
   outstanding: {
     heading: 'Cyn i’r llwyth gael ei fewnforio',
     intro: 'Mae angen i chi o hyd:',
-    documents: 'uwchlwytho’r ITAHC ac unrhyw ddogfennau gofynnol eraill'
+    documents: 'uwchlwytho’r ITAHC ac unrhyw ddogfennau gofynnol eraill',
+    completeIdentifiers:
+      'cwblhau’r wybodaeth adnabod anifeiliaid yn yr hysbysiad'
   },
   transporting: {
     heading: 'Cludo’r llwyth',

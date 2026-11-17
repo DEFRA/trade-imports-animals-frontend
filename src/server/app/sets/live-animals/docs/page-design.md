@@ -177,6 +177,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   owes. The declaration date is shown only on the declaration page.
 - Documents are not required to submit. The page lists the ITAHC as still owed
   unless an ITAHC is among the journey's documents, whatever its scan state.
+- After the ITAHC item, the page lists "complete the animal identifier
+  information in the notification" when a line whose species asks for
+  identifiers holds fewer identified animals than it declares. One filled
+  identifier identifies an animal.
 - The help links to HMRC open in a new tab. Their visible text is unchanged
   and a visually hidden "(opens in a new tab)" tells screen reader users.
 - The customs link goes to HMRC's customs, international trade and excise

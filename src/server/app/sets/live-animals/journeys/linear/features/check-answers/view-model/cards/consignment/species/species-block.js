@@ -11,7 +11,7 @@ import { changeAction, editableActions } from '../../../rows/change-link.js'
 import { row } from '../../../rows/summary-row.js'
 import { speciesBlockAnchor } from '../../../species-errors.js'
 import { identificationDetailsTable } from './identification-details-table.js'
-import { unitsForCommodityLine } from './units-for-commodity-line.js'
+import { unitsForCommodityLine } from '../../../../../commodities/animal-identification/units-for-commodity-line.js'
 
 const copy = copyFor({ en, cy })
 

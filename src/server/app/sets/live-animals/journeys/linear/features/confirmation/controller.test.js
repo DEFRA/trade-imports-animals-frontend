@@ -27,6 +27,20 @@ import {
 import { dispatchPages } from '../index.js'
 import { declarationPage } from '../declaration/page.js'
 
+import {
+  BOS_TAURUS_ROW,
+  GALLUS_GALLUS_ROW,
+  SUS_SCROFA_DOMESTICUS_ROW,
+  lineOf
+} from '../commodities/search/test-support.js'
+import { blankValuesFor } from '../commodities/animal-identification/identifier/fields.js'
+import {
+  cattleLine,
+  seedFromFranceWithCattle,
+  seedFromFranceWithOneEarTaggedCattle,
+  withOriginSaved
+} from '../../../../test-support.js'
+
 import * as confirmation from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -83,12 +97,106 @@ describe('GET /confirmation', () => {
     expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
   })
 
-  it('Should list nothing outstanding when an ITAHC has been uploaded', async () => {
+  it('Should list nothing outstanding when an ITAHC has been uploaded and no commodity line is recorded', async () => {
     const { view } = await submittedView({
       documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
     })
 
     expect(view.context.outstandingItems).toEqual([])
+  })
+
+  it('Should list the identifier item after the certificate item when a line holds fewer identified animals than it declares', async () => {
+    const { view } = await submittedView(
+      seedFromFranceWithCattle({ animals: 2, earTags: 1 })
+    )
+
+    expect(view.context.outstandingItems).toEqual([
+      copy.outstanding.documents,
+      copy.outstanding.completeIdentifiers
+    ])
+  })
+
+  it('Should list the identifier item when a line declaring 2 animals holds one identified record and one blank record', async () => {
+    const { view } = await submittedView(
+      withOriginSaved({
+        commodityLines: [
+          lineOf(BOS_TAURUS_ROW, {
+            numberOfAnimalsQuantity: '2',
+            animalIdentifiers: [
+              { animalIdentifierEarTag: 'UK1' },
+              blankValuesFor(
+                BOS_TAURUS_ROW.commodityCode,
+                BOS_TAURUS_ROW.speciesLatinName
+              )
+            ]
+          })
+        ]
+      })
+    )
+
+    expect(view.context.outstandingItems).toEqual([
+      copy.outstanding.documents,
+      copy.outstanding.completeIdentifiers
+    ])
+  })
+
+  it('Should list the identifier item when a single-animal line has no identifier saved', async () => {
+    const { view } = await submittedView(
+      seedFromFranceWithCattle({ animals: 1, earTags: 0 })
+    )
+
+    expect(view.context.outstandingItems).toEqual([
+      copy.outstanding.documents,
+      copy.outstanding.completeIdentifiers
+    ])
+  })
+
+  it('Should list the identifier item when only a later line is short of identified animals', async () => {
+    const { view } = await submittedView(
+      withOriginSaved({
+        commodityLines: [
+          cattleLine({ animals: 1, earTags: 1 }),
+          lineOf(SUS_SCROFA_DOMESTICUS_ROW, {
+            numberOfAnimalsQuantity: '3',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK9' }]
+          })
+        ]
+      })
+    )
+
+    expect(view.context.outstandingItems).toEqual([
+      copy.outstanding.documents,
+      copy.outstanding.completeIdentifiers
+    ])
+  })
+
+  it('Should list only the certificate item when every declared animal is identified', async () => {
+    const { view } = await submittedView(seedFromFranceWithOneEarTaggedCattle())
+
+    expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
+  })
+
+  it('Should list only the certificate item for a line whose species is not asked for identifiers', async () => {
+    const { view } = await submittedView(
+      withOriginSaved({
+        commodityLines: [
+          lineOf(GALLUS_GALLUS_ROW, { numberOfAnimalsQuantity: '2' })
+        ]
+      })
+    )
+
+    expect(view.context.outstandingItems).toEqual([copy.outstanding.documents])
+  })
+
+  it('Should list only the identifier item when an ITAHC has been uploaded and a line is short of identified animals', async () => {
+    const { view } = await submittedView({
+      ...seedFromFranceWithCattle({ animals: 2, earTags: 0 }),
+      documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
+    })
+
+    expect(view.context.outstandingItems).toEqual([
+      copy.outstanding.completeIdentifiers
+    ])
   })
 
   it('Should supply the create-a-notification action alongside the dashboard link', async () => {
