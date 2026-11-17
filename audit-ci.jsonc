@@ -2,5 +2,13 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "high": true,
   "report-type": "summary",
-  "allowlist": []
+  "allowlist": [
+    {
+      "GHSA-fc5q-39xc-vjpf": {
+        "active": true,
+        "notes": "picomatch ReDoS through single-branch repeated extglobs; no fixed version published (all versions <=4.0.7 affected). Owner: Ian Griffiths",
+        "expiry": "2027-02-17"
+      }
+    }
+  ]
 }
