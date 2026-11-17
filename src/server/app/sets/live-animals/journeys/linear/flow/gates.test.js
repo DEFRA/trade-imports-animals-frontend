@@ -107,8 +107,7 @@ describe('#sectionGatePasses — sections open in mandate order', () => {
       'description-of-the-goods',
       'transport-and-arrival',
       'documents',
-      'consignment-parties',
-      'contact-address'
+      'consignment-parties'
     ]
     const originOnly = { countryOfOrigin: 'FR' }
     const blankLine = { countryOfOrigin: 'FR', commodityLines: [{}] }
@@ -123,14 +122,13 @@ describe('#sectionGatePasses — sections open in mandate order', () => {
     }
   })
 
-  it('Should open the transport, parties and contact sections before any document is answered', () => {
+  it('Should open the transport and parties sections before any document is answered', () => {
     const noDocuments = {
       countryOfOrigin: 'FR',
       commodityLines: [{ commodityCode: '0102' }]
     }
     expect(gatePasses('consignment-parties', noDocuments)).toBe(true)
     expect(gatePasses('transport-and-arrival', noDocuments)).toBe(true)
-    expect(gatePasses('contact-address', noDocuments)).toBe(true)
   })
 })
 

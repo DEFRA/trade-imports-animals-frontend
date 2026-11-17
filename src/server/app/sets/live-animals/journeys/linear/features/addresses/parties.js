@@ -1,12 +1,8 @@
 import { copyFor } from '../../../../../../shared/copy.js'
-import { consignmentContactSelectPage } from '../contact/page.js'
-import { copy as contactEn } from '../contact/copy/copy.en.js'
-import { copy as contactCy } from '../contact/copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
 const partyCopy = copyFor({ en, cy }).parties
-const contactCopy = copyFor({ en: contactEn, cy: contactCy })
 
 export const PARTIES = [
   {
@@ -51,16 +47,4 @@ export const PARTIES = [
   }
 ]
 
-export const CONTACT_PARTY = {
-  id: 'contactAddress',
-  addressBookRole: 'BRANCH_ADDRESS',
-  slug: consignmentContactSelectPage.slug,
-  editSlug: 'consignment/contact/edit',
-  returnSlug: consignmentContactSelectPage.slug,
-  title: contactCopy.title,
-  error: contactCopy.errors.contactRequired
-}
-
-export const partyOf = (id) =>
-  PARTIES.find((party) => party.id === id) ??
-  (CONTACT_PARTY.id === id ? CONTACT_PARTY : undefined)
+export const partyOf = (id) => PARTIES.find((party) => party.id === id)

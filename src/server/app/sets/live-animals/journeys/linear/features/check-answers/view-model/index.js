@@ -1,6 +1,5 @@
 import { aboutConsignmentSection } from './sections/about-consignment.js'
 import { consignmentPartiesSection } from './sections/consignment-parties.js'
-import { contactAddressSection } from './sections/contact-address.js'
 import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
 import { transportAndArrivalSection } from './sections/transport-and-arrival.js'
@@ -59,15 +58,6 @@ export const buildSections = async ({
       parties,
       partyErrors,
       permanentAddresses
-    }),
-    contactAddressSection({
-      journeyId,
-      changeLinkTrail,
-      reviewPageTrail,
-      answers,
-      readOnly,
-      parties,
-      partyErrors
     })
   ]
 }

@@ -17,7 +17,6 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
   const {
     consignee,
     consignor,
-    contactAddress,
     cph,
     importer,
     placeOfDestination,
@@ -36,7 +35,6 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
     consignee: toParty(reader.scalar(consignee)),
     importer: toParty(reader.scalar(importer)),
     destination: toParty(reader.scalar(placeOfDestination)),
-    consignment: toParty(reader.scalar(contactAddress)),
     cphNumber: reader.scalar(cph),
     purposeInInternalMarket: reader.scalar(purposeInInternalMarket),
     destinationCountry: parentCountryCode(reader.scalar(destinationCountry)),
