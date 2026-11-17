@@ -236,7 +236,6 @@ describe('co-residency — each set answers with its own configuration', () => {
       'additional-details',
       'addresses',
       'transport',
-      'contact',
       'cph-number',
       'commodities',
       'documents'

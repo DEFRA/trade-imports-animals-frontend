@@ -21,8 +21,7 @@ const stored = {
     }
   },
   consignor: { name: 'Frozen Consignor' },
-  placeOfDestination: { name: 'Frozen Destination' },
-  contactAddress: { name: 'Frozen Contact' }
+  placeOfDestination: { name: 'Frozen Destination' }
 }
 
 describe('partiesFromStoredAnswers', () => {
@@ -32,7 +31,6 @@ describe('partiesFromStoredAnswers', () => {
     expect(parties.placeOfDestination).toMatchObject({
       name: 'Frozen Destination'
     })
-    expect(parties.contactAddress).toMatchObject({ name: 'Frozen Contact' })
     expect(parties.placeOfOrigin).toMatchObject({ name: 'Origin Farm' })
     expect(parties.consignor).toMatchObject({ name: 'Frozen Consignor' })
   })

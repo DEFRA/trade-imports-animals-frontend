@@ -61,7 +61,7 @@
       },
       "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
       "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
-        "name": "Garc\u00eda Livestock Transport SL",
+        "name": "García Livestock Transport SL",
         "approvalNumber": "ES-T2-45001294",
         "address": {
           "addressLine1": "43 East Hague Extension",
@@ -93,17 +93,6 @@
         "year": "2026"
       },
       "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
-      "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-        "name": "Animal and Plant Health Agency",
-        "phone": "01632 960000",
-        "email": "animal-and-plant-health-agency@example.com",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
-        }
-      },
       "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
       "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
@@ -241,7 +230,7 @@
         },
         "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
         "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
-          "name": "Garc\u00eda Livestock Transport SL",
+          "name": "García Livestock Transport SL",
           "approvalNumber": "ES-T2-45001294",
           "address": {
             "addressLine1": "43 East Hague Extension",
@@ -260,17 +249,6 @@
           "year": "2026"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-          "name": "Animal and Plant Health Agency",
-          "phone": "01632 960000",
-          "email": "animal-and-plant-health-agency@example.com",
-          "address": {
-            "addressLine1": "Woodham Lane",
-            "townOrCity": "Addlestone",
-            "postcode": "KT15 3NB",
-            "countryCode": "GB"
-          }
-        },
         "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
         "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
@@ -461,10 +439,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -673,7 +647,7 @@
       },
       "transporterType": "Commercial",
       "commercialTransporter": {
-        "name": "Garc\u00eda Livestock Transport SL",
+        "name": "García Livestock Transport SL",
         "approvalNumber": "ES-T2-45001294",
         "address": {
           "addressLine1": "43 East Hague Extension",
@@ -822,17 +796,6 @@
           "country": "United Kingdom"
         }
       },
-      "consignment": {
-        "name": "Animal and Plant Health Agency",
-        "email": "animal-and-plant-health-agency@example.com",
-        "phone": "01632 960000",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
-        }
-      },
       "cphNumber": "12/345/6789",
       "purposeInInternalMarket": "breeding",
       "destinationCountry": "IE",
@@ -852,7 +815,7 @@
         "portOfEntry": "GB ABD",
         "arrivalDate": "2026-12-12",
         "transporter": {
-          "name": "Garc\u00eda Livestock Transport SL",
+          "name": "García Livestock Transport SL",
           "address": {
             "addressLine1": "43 East Hague Extension",
             "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
@@ -1050,10 +1013,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1299,10 +1258,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1564,10 +1519,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1905,10 +1856,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },

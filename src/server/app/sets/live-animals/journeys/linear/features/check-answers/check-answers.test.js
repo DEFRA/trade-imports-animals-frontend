@@ -40,7 +40,7 @@ import {
   TRAIL_START,
   withTrail
 } from '../../../../../../shared/kit.js'
-import { consignmentContactSelectPage } from '../contact/page.js'
+import { addressesPage } from '../addresses/page.js'
 import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -180,7 +180,6 @@ const rowActionsOf = (sections) =>
 const NOT_APPLICABLE = 'Not applicable'
 const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
-const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
@@ -237,7 +236,6 @@ const ARRIVAL_DETAILS_CARD = 'Arrival details'
 const TRANSIT_COUNTRIES_CARD = 'Transit countries'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
-const CONTACT_ADDRESS_CARD = 'Contact address for this consignment'
 const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
@@ -309,8 +307,7 @@ const fullSeed = {
       addressLine1: ADDRESS_LINE_1,
       country: 'Switzerland'
     }
-  },
-  contactAddress: copyOf('animal-and-plant-health-agency')
+  }
 }
 
 const privateTransporterSeed = {
@@ -445,11 +442,11 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
       it('Should go Back to the last journey page when the trader pressed Save and continue on it', async () => {
         const { journeyId, backLink } = await backFor({
-          from: `${TRAIL_START.overview},${consignmentContactSelectPage.slug}`
+          from: `${TRAIL_START.overview},${addressesPage.slug}`
         })
 
         expect(backLink).toBe(
-          withTrail(pagePath(journeyId, consignmentContactSelectPage.slug), [
+          withTrail(pagePath(journeyId, addressesPage.slug), [
             TRAIL_START.overview
           ])
         )
@@ -509,8 +506,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Documents',
-      '5. Consignment parties',
-      '6. Contact address'
+      '5. Consignment parties'
     ])
   })
 
@@ -541,8 +537,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
       TRANSIT_COUNTRIES_CARD,
       TRANSPORT_DETAILS_CARD,
       'Upload documents',
-      ROLES_AND_ADDRESSES_CARD,
-      CONTACT_ADDRESS_CARD
+      ROLES_AND_ADDRESSES_CARD
     ])
   })
 
@@ -565,8 +560,7 @@ describe(`${SUITE} — section and subsection headings`, () => {
         [ARRIVAL_DETAILS_CARD, TRANSIT_COUNTRIES_CARD, TRANSPORT_DETAILS_CARD]
       ],
       ['documents-section', ['Upload documents']],
-      ['consignment-parties', [ROLES_AND_ADDRESSES_CARD]],
-      ['contact-address-section', [CONTACT_ADDRESS_CARD]]
+      ['consignment-parties', [ROLES_AND_ADDRESSES_CARD]]
     ])
   })
 })
@@ -709,24 +703,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(htmlOf(card.rows, PLACE_OF_DESTINATION_KEY)).toBe(
       `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
     )
-    const contact = cardByTitle(
-      await sectionsFor(fullSeed),
-      CONTACT_ADDRESS_CARD
-    )
-    expect(htmlOf(contact.rows, 'Contact address')).toBe(
-      `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom<br>${STUB_TELEPHONE}<br>animal-and-plant-health-agency@example.com`
-    )
-  })
-
-  it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
-    const sections = await sectionsFor(fullSeed)
-
-    expect(keysOf(cardByTitle(sections, CONTACT_ADDRESS_CARD).rows)).toEqual([
-      'Contact address'
-    ])
-    expect(
-      keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
-    ).toContain('Address')
   })
 
   it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address', async () => {
@@ -737,7 +713,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     }
     const rowActions = rowActionsOf(sections)
     expect(rowActions.map((action) => action.text)).toEqual(
-      Array(6).fill('Edit details')
+      Array(5).fill('Edit details')
     )
   })
 
@@ -758,9 +734,6 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
     expect(cardChangeHrefOf(sections, ROLES_AND_ADDRESSES_CARD)).toMatch(
       hrefEndingWithFromReview('addresses')
-    )
-    expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
-      hrefEndingWithFromReview('consignment/contact/select')
     )
   })
 
@@ -1497,17 +1470,6 @@ describe(`${SUITE} — copied party addresses`, () => {
     ])
   })
 
-  it('Should give the contact address a link to edit its details too', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: fullSeed
-    })
-    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
-
-    expect(card.rows[0].actions.items[0].href).toBe(
-      `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
-    )
-  })
-
   it('Should give a role never answered no edit link', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
@@ -1556,17 +1518,6 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     ])
   })
 
-  it('Should name a contact address that breaks the rules', async () => {
-    const summary = await summaryFor({
-      ...fullSeed,
-      contactAddress: BROKEN_COPY
-    })
-
-    expect(summary.errorList.map((entry) => entry.text)).toEqual([
-      CONTACT_ERROR
-    ])
-  })
-
   it('Should not raise a role error for a role that has never been answered', async () => {
     const summary = await summaryFor(withoutParty(fullSeed, 'importer'))
 
@@ -1598,21 +1549,6 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(view.context.errorSummary.errorList[0].href).toBe(
       `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`
     )
-  })
-
-  it('Should link a contact address in error to its edit page, not its card', async () => {
-    const { view, journeyId } = await driveHandler(getHandler, {
-      seed: { ...fullSeed, contactAddress: BROKEN_COPY }
-    })
-
-    expect(view.context.errorSummary.errorList).toEqual([
-      {
-        text: CONTACT_ERROR,
-        href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
-      }
-    ])
-    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
-    expect(card.rows[0].value.html).toContain(CONTACT_ERROR)
   })
 
   it('Should leave focus where it is when the page is merely visited', async () => {
@@ -1959,8 +1895,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       'Complete additional animal details',
       ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
-      'Complete roles and addresses',
-      'Complete contact address for this consignment'
+      'Complete roles and addresses'
     ])
   })
 

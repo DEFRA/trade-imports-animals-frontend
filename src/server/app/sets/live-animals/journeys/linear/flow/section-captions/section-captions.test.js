@@ -30,7 +30,6 @@ const CAPTIONED = [
 ]
 
 const PAGES_WITHOUT_A_CAPTION = [
-  'consignment-contact-select',
   'notification-view',
   'declaration',
   'confirmation'

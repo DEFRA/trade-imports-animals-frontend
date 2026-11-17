@@ -82,8 +82,7 @@ const UNLOCKED_ROW_TITLES_BY_GROUP = [
   ],
   [ARRIVAL_ROW_TITLE, 'Transport details'],
   ['Upload documents'],
-  [ADDRESSES_ROW_TITLE],
-  ['Contact address for this consignment']
+  [ADDRESSES_ROW_TITLE]
 ]
 
 const owingExitQuestionsSeed = {
@@ -156,7 +155,6 @@ describe('#copy', () => {
       transitCountries: 'Gwledydd tramwy',
       transporter: 'Manylion cludo',
       addresses: 'Rolau a chyfeiriadau',
-      contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Uwchlwytho dogfennau'
     })
   })
@@ -187,19 +185,18 @@ describe('#hubHandler', () => {
     expect(context.progressLine).toBeUndefined()
   })
 
-  it('Should render the six numbered design sections in order and nothing after them', async () => {
+  it('Should render the five numbered design sections in order and nothing after them', async () => {
     const { groups } = await renderHub()
     expect(groups.map((group) => group.caption)).toEqual([
       '1. About the consignment',
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Documents',
-      '5. Consignment parties',
-      '6. Contact address'
+      '5. Consignment parties'
     ])
   })
 
-  it('Should render the eleven page-level rows in their groups on an unlocked journey (transit stays absent)', async () => {
+  it('Should render the ten page-level rows in their groups on an unlocked journey (transit stays absent)', async () => {
     const { groups } = await renderHub(unlockedSeed)
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
@@ -279,11 +276,6 @@ describe('#hubHandler', () => {
     )
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePathFrom('overview', context.journeyId, 'port-of-entry')
-    )
-    expect(
-      rowByTitle(context, 'Contact address for this consignment').href
-    ).toBe(
-      pagePathFrom('overview', context.journeyId, 'consignment/contact/select')
     )
   })
 

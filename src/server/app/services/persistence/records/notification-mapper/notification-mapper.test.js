@@ -46,7 +46,6 @@ const mappedAnswers = () => ({
   consignee: address('Consignee Ltd', '3 Dock Street'),
   importer: address('Importer Ltd', '4 Port Way'),
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
-  contactAddress: address('Animal and Plant Health Agency', '6 Woodham Lane'),
   commercialTransporter: {
     name: TRANSPORTER_NAME,
     approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -216,9 +215,7 @@ describe('Mapper A — backend notification', () => {
     expect(notification.destination).toEqual(
       address('Destination Farm', '5 Field Lane')
     )
-    expect(notification.consignment).toEqual(
-      address('Animal and Plant Health Agency', '6 Woodham Lane')
-    )
+    expect(notification).not.toHaveProperty('consignment')
     expect(notification.cphNumber).toBe('12/345/6789')
     expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
     expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)
@@ -277,7 +274,6 @@ describe('Mapper A — backend notification', () => {
       'additionalDetails',
       'commodities',
       'consignee',
-      'consignment',
       'consignor',
       'cphNumber',
       'destination',

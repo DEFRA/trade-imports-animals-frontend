@@ -189,7 +189,7 @@ test.describe('check-answers feature section structure', () => {
     await signIn(page)
   })
 
-  test('numbers the six sections in order', async ({ page }) => {
+  test('numbers the five sections in order', async ({ page }) => {
     await startNotification(page)
     await openNotificationView(page)
 
@@ -200,8 +200,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.consignmentParties,
-      copy.sections.contactAddress
+      copy.sections.consignmentParties
     ])
   })
 
@@ -213,7 +212,7 @@ test.describe('check-answers feature section structure', () => {
 
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
-    ).toHaveText(copy.sections.contactAddress)
+    ).toHaveText(copy.sections.consignmentParties)
 
     const lastBlock = page.getByRole('main').locator('form').last()
     await expect(lastBlock.locator('xpath=following-sibling::*')).toHaveCount(0)
@@ -221,7 +220,7 @@ test.describe('check-answers feature section structure', () => {
     await expect(
       lastBlock
         .locator('xpath=preceding-sibling::*[1]')
-        .getByRole('heading', { name: copy.groups.contactAddress })
+        .getByRole('heading', { name: copy.groups.rolesAndAddresses })
     ).toBeVisible()
 
     await expect(
@@ -240,8 +239,7 @@ test.describe('check-answers feature section structure', () => {
       copy.groups.arrivalDetails,
       copy.groups.transportDetails,
       copy.groups.uploadDocuments,
-      copy.groups.rolesAndAddresses,
-      copy.groups.contactAddress
+      copy.groups.rolesAndAddresses
     ])
     await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
       await page.locator(SUMMARY_CARD_SELECTOR).count()
