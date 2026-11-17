@@ -14,7 +14,6 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
   DELETED,
-  SUBMITTED_ACTION_REQUIRED,
   records
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
@@ -77,27 +76,6 @@ describe('delete notification routes', () => {
     expect(
       (await records.list({ journeyIds: [journey.journeyId] })).rows
     ).toEqual([])
-  })
-
-  it('Should render the confirmation for, and soft-delete, a notification submitted without an ITAHC', async () => {
-    const journey = await records.create()
-    await records.finalise(
-      journey.journeyId,
-      undefined,
-      journey.concurrencyToken
-    )
-    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
-      SUBMITTED_ACTION_REQUIRED
-    )
-
-    const page = await get(journeyRequest(journey.journeyId), stubH())
-    const response = await post(journeyRequest(journey.journeyId), stubH())
-
-    expect(page.view).toBe(DELETE_TEMPLATE)
-    expect(response).toEqual({ redirect: `${dashboardPath()}?deleted=1` })
-    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
-      DELETED
-    )
   })
 
   it('Should handle an already-deleted journey without another transition', async () => {

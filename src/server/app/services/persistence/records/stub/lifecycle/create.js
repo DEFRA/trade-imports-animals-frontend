@@ -1,7 +1,7 @@
 import {
   DRAFT,
   AMEND,
-  isSubmittedStatus
+  SUBMITTED
 } from '../../../../../engine/persistence/records.js'
 import { copiesBySourceAndKey, journeys } from '../store/state.js'
 import { mintReferenceNumber } from '../reference-number.js'
@@ -34,7 +34,7 @@ export const copy = async (journeyId, idempotencyKey, _actor) => {
   }
   if (
     source.status !== DRAFT &&
-    !isSubmittedStatus(source.status) &&
+    source.status !== SUBMITTED &&
     source.status !== AMEND
   ) {
     throw new Error(`Journey "${journeyId}" is ${source.status} — cannot copy`)

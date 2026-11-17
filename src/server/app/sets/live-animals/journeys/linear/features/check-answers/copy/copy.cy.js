@@ -102,7 +102,6 @@ export const copy = {
   warningIcon: 'Rhybudd',
   viewHeader: {
     amend: 'Diwygio’r hysbysiad hwn',
-    actionRequiredWarning: 'Mae angen i chi uwchlwytho tystysgrif iechyd',
     dateCreated: (date) => `Dyddiad creu: ${date}`,
     dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`
   },
@@ -115,7 +114,6 @@ export const copy = {
   },
   errors: {
     prefix: 'Gwall:',
-    healthCertificate: 'Uwchlwythwch dystysgrif iechyd ddilys',
     cards: {
       originOfImport: 'Cwblhewch darddiad y mewnforio',
       mainImportReason: 'Cwblhewch y prif reswm mewnforio',

@@ -105,7 +105,7 @@ export const documentScanCardErrors = async (
 
 export const isReviewRefused = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
-  if (state.isSubmittedStatus(journey.status)) {
+  if (journey.status === state.SUBMITTED) {
     return false
   }
   if (!scope.readyForCheckYourAnswers) {

@@ -22,7 +22,7 @@ const cyaPath = (journeyId) => pagePath(journeyId, kit.CYA_SLUG)
 const cancelPath = (journeyId) => pagePath(journeyId, CANCEL_AMEND_SLUG)
 
 const nonAmendTarget = (journey) =>
-  state.isSubmittedStatus(journey.status)
+  journey.status === state.SUBMITTED
     ? cyaPath(journey.journeyId)
     : dashboardPath()
 

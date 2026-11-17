@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  AMEND,
-  DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
-} from '../../../../../../../engine/index.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../../../../../../engine/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { deleteButtonFor, viewHeader } from './view-header.js'
 
@@ -33,25 +28,6 @@ describe('#viewHeader', () => {
       text: 'Submitted',
       classes: 'govuk-tag--green'
     })
-  })
-
-  it('Should carry the warning to upload a health certificate and an orange tag when the status is Submitted action required', () => {
-    const header = viewHeader(
-      submittedJourney({ status: SUBMITTED_ACTION_REQUIRED })
-    )
-
-    expect(header.status).toEqual({
-      text: 'Submitted action required',
-      classes: 'govuk-tag--orange'
-    })
-    expect(header.actionRequiredWarning).toEqual({
-      text: 'You need to upload a health certificate',
-      iconFallbackText: 'Warning'
-    })
-  })
-
-  it('Should carry no warning when the status is Submitted', () => {
-    expect(viewHeader(submittedJourney()).actionRequiredWarning).toBeNull()
   })
 
   it('Should date the notification on the London day it was submitted, with the month in full', () => {
@@ -151,10 +127,6 @@ describe('#viewHeader for a draft', () => {
         (row) => row.value.text
       )
     ).toEqual([REFERENCE, 'C640'])
-  })
-
-  it('Should carry no action-required warning', () => {
-    expect(viewHeader(draftJourney()).actionRequiredWarning).toBeNull()
   })
 })
 

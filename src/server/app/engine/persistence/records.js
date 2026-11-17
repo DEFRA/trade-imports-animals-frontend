@@ -2,12 +2,8 @@ import { currentSetId, setKeyed } from '../../shared/set-context.js'
 
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
-export const SUBMITTED_ACTION_REQUIRED = 'submittedActionRequired'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
-
-export const isSubmittedStatus = (status) =>
-  status === SUBMITTED || status === SUBMITTED_ACTION_REQUIRED
 
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')

@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AMEND,
   DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../../../engine/persistence/records.js'
 import { marshal } from './document.js'
 
@@ -24,10 +23,10 @@ describe('marshal document', () => {
     expect(journey.status).toBe(SUBMITTED)
   })
 
-  it('Should keep the submission date of a Submitted action required notification', () => {
-    const journey = marshal(document('SUBMITTED_ACTION_REQUIRED'))
+  it('Should keep the submission date of a submitted notification', () => {
+    const journey = marshal(document('SUBMITTED'))
 
-    expect(journey.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect(journey.status).toBe(SUBMITTED)
     expect(journey.submittedAt).toBe('2026-01-02T00:00:00')
   })
 

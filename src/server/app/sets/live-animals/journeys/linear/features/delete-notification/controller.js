@@ -19,7 +19,7 @@ const copy = copyFor({ en, cy })
 const deletePath = (journeyId) => pagePath(journeyId, page.slug)
 const deletable = (journey) =>
   journey.status === state.DRAFT ||
-  state.isSubmittedStatus(journey.status) ||
+  journey.status === state.SUBMITTED ||
   journey.status === state.AMEND
 
 const render = (h, journey, { recoverableError = false } = {}) =>

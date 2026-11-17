@@ -8,8 +8,7 @@ import {
   configureRecords,
   DRAFT,
   records,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import {
@@ -82,6 +81,11 @@ import {
 const environment = nunjucksConfig.options.compileOptions.environment
 
 const SECONDARY_BUTTON_CLASS = 'govuk-button--secondary'
+const SUBMITTED_BUTTON_TEXTS = [
+  'Amend this notification',
+  'Copy as new',
+  'Delete'
+]
 
 const renderedReviewOf = (view) =>
   documentOf(
@@ -156,11 +160,7 @@ const noDocumentsSeed = () => {
 const journeyIdForStatus = async (status, seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
-  if (
-    status === SUBMITTED ||
-    status === SUBMITTED_ACTION_REQUIRED ||
-    status === AMEND
-  ) {
+  if (status === SUBMITTED || status === AMEND) {
     await store.submit(journey.journeyId)
   }
   if (status === AMEND) {
@@ -2966,11 +2966,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         classes: button.className
       }))
 
-      expect(controls.map(({ text }) => text)).toEqual([
-        'Amend this notification',
-        'Copy as new',
-        'Delete'
-      ])
+      expect(controls.map(({ text }) => text)).toEqual(SUBMITTED_BUTTON_TEXTS)
       expect(controls[0].formAction).toBe(actions.amend.formAction)
       expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
@@ -2981,87 +2977,28 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
   })
 })
 
-describe(`${SUITE} — submitted notification awaiting its health certificate`, () => {
+describe(`${SUITE} — submitted notification without an ITAHC`, () => {
   setupCheckAnswersEngine()
 
-  it('Should be read-only with an orange tag and the warning to upload a health certificate', async () => {
-    const view = await viewForStatus(SUBMITTED_ACTION_REQUIRED)
+  it('Should be read-only with the Submitted tag, offer exactly Amend, Copy as new and Delete, and show the document card', async () => {
+    const view = await viewForStatus(SUBMITTED)
+    const buttonTexts = [
+      ...renderedReviewOf(view).querySelectorAll(
+        'main button, main .govuk-button'
+      )
+    ].map((button) => button.textContent.trim())
+    const documentsSection = view.context.sections.find(
+      (section) => section.heading === copyEn.sections.documents
+    )
 
     expect(view.context.readOnly).toBe(true)
     expect(view.context.viewHeader.status).toEqual({
-      text: 'Submitted action required',
-      classes: 'govuk-tag--orange'
+      text: 'Submitted',
+      classes: 'govuk-tag--green'
     })
-    expect(view.context.viewHeader.actionRequiredWarning).toEqual({
-      text: 'You need to upload a health certificate',
-      iconFallbackText: 'Warning'
-    })
-    expect(
-      renderedReviewOf(view).querySelector('.govuk-warning-text__text')
-        .textContent
-    ).toContain('You need to upload a health certificate')
-  })
-
-  it('Should show the health certificate error in place of document cards, with no error summary, when no document was uploaded', async () => {
-    const view = await viewForStatus(
-      SUBMITTED_ACTION_REQUIRED,
-      noDocumentsSeed()
-    )
-    const documentsSection = view.context.sections.find(
-      (section) => section.heading === copyEn.sections.documents
-    )
-    const document = renderedReviewOf(view)
-
-    expect(documentsSection.cards).toEqual([])
-    expect(documentsSection.error).toBe('Upload a valid health certificate')
-    expect(
-      document.querySelector('#documents-section + .govuk-error-message')
-        .textContent
-    ).toContain('Upload a valid health certificate')
-    expect(view.context.errorSummary).toBeNull()
-  })
-
-  it('Should show the document cards and no section error when a document other than an ITAHC was uploaded', async () => {
-    const view = await viewForStatus(SUBMITTED_ACTION_REQUIRED)
-    const documentsSection = view.context.sections.find(
-      (section) => section.heading === copyEn.sections.documents
-    )
-
-    expect(documentsSection.error).toBeUndefined()
+    expect(buttonTexts).toEqual(SUBMITTED_BUTTON_TEXTS)
     expect(documentsSection.cards.map((card) => card.title)).toEqual([
       DOCUMENT_1_CARD
     ])
-  })
-
-  it('Should show the import reference numbers', async () => {
-    const { view, journeyId } = await viewAndJourneyIdForStatus(
-      SUBMITTED_ACTION_REQUIRED
-    )
-
-    expect(
-      view.context.viewHeader.importReferences.rows.map((row) => row.value.text)
-    ).toEqual([journeyId, 'C640'])
-  })
-
-  it('Should end with a Continue form that posts the amend action and the hub exit', async () => {
-    const journeyId = await journeyIdForStatus(
-      SUBMITTED_ACTION_REQUIRED,
-      fullSeed
-    )
-    const view = await viewOfJourney(journeyId)
-    const form = renderedReviewOf(view).querySelector('form[novalidate]')
-    const button = form.querySelector('button')
-
-    expect(form.getAttribute('action')).toBe(pagePath(journeyId, 'amend'))
-    expect(button.textContent.trim()).toBe('Continue')
-    expect(button.getAttribute('name')).toBe('exit')
-    expect(button.getAttribute('value')).toBe('hub')
-  })
-
-  it('Should offer no Continue form on a Submitted notification', async () => {
-    const view = await viewForStatus(SUBMITTED, withItahcUploaded(fullSeed))
-
-    expect(view.context.continueAmendAction).toBeNull()
-    expect(view.context.viewHeader.actionRequiredWarning).toBeNull()
   })
 })

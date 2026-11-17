@@ -2,14 +2,12 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../../engine/persistence/records.js'
 
 const STATUS_BY_BACKEND_STATUS = Object.freeze({
   DRAFT,
   SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED,
   AMEND,
   DELETED
 })

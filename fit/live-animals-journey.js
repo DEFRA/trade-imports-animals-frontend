@@ -1656,8 +1656,7 @@ const uploadItahc = async (page) => {
  *
  * @param {import('@playwright/test').Page} page
  * @param {{ withItahc?: boolean }} [options] - `withItahc` uploads an ITAHC
- * first, so the notification is recorded as Submitted rather than Submitted
- * action required.
+ * before the review.
  * @returns {Promise<string>} the submitted notification's reference.
  */
 export const submitCompleteNotification = async (

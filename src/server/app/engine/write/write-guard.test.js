@@ -1,11 +1,7 @@
 import { SET_ID } from '../../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, appendEntryAt, submitJourney } from './index.js'
-import {
-  records,
-  configureRecords,
-  SUBMITTED_ACTION_REQUIRED
-} from '../persistence/records.js'
+import { records, configureRecords, SUBMITTED } from '../persistence/records.js'
 import { configureSession } from '../persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
@@ -65,8 +61,6 @@ describe('engine write — answer-key guard', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect((await records.load({ journeyId })).status).toBe(
-      SUBMITTED_ACTION_REQUIRED
-    )
+    expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 })

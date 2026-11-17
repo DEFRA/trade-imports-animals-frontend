@@ -4,8 +4,7 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { obligationSet } from '../../../../model/obligations/manifest.js'
@@ -69,9 +68,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
   it('Should map every backend lifecycle status and reject contract drift', () => {
     expect(mapStatus('DRAFT')).toBe(DRAFT)
     expect(mapStatus('SUBMITTED')).toBe(SUBMITTED)
-    expect(mapStatus('SUBMITTED_ACTION_REQUIRED')).toBe(
-      SUBMITTED_ACTION_REQUIRED
-    )
     expect(mapStatus('AMEND')).toBe(AMEND)
     expect(mapStatus('DELETED')).toBe(DELETED)
     expect(() => mapStatus('UNKNOWN')).toThrow(
@@ -305,7 +301,6 @@ describe('real records adapter — fulfilment writes', () => {
 
   it.each([
     [SUBMITTED, 'submitted'],
-    [SUBMITTED_ACTION_REQUIRED, 'submitted'],
     [DELETED, 'deleted']
   ])('Should block writes to a %s journey', async (status, label) => {
     await expect(

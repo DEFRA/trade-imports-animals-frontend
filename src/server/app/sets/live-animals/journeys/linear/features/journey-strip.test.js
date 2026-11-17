@@ -9,7 +9,6 @@ import {
   DELETED,
   DRAFT,
   SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED,
   configureRecords
 } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
@@ -80,21 +79,6 @@ describe('journey reference strip', () => {
     })
   })
 
-  it('Should map a submitted journey awaiting its health certificate to an orange Submitted action required tag', () => {
-    expect(
-      journeyStrip({
-        journeyId: JOURNEY_REFERENCE,
-        status: SUBMITTED_ACTION_REQUIRED
-      })
-    ).toEqual({
-      reference: JOURNEY_REFERENCE,
-      status: {
-        text: 'Submitted action required',
-        classes: 'govuk-tag--orange'
-      }
-    })
-  })
-
   it('Should map an amend journey to a yellow Amend tag with Cancel amend', () => {
     expect(
       journeyStrip({ journeyId: JOURNEY_REFERENCE, status: AMEND })
@@ -109,12 +93,7 @@ describe('journey reference strip', () => {
   })
 
   it('Should offer no Cancel amend on a draft, submitted or deleted journey', () => {
-    for (const status of [
-      DRAFT,
-      SUBMITTED,
-      SUBMITTED_ACTION_REQUIRED,
-      DELETED
-    ]) {
+    for (const status of [DRAFT, SUBMITTED, DELETED]) {
       expect(
         journeyStrip({ journeyId: JOURNEY_REFERENCE, status }).cancelAmend
       ).toBeUndefined()

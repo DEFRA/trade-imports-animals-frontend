@@ -1,8 +1,4 @@
-import {
-  DRAFT,
-  SUBMITTED_ACTION_REQUIRED,
-  isSubmittedStatus
-} from '../../../../../../../engine/index.js'
+import { DRAFT, SUBMITTED } from '../../../../../../../engine/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { journeyStrip, sharedCopy } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -26,25 +22,21 @@ export const deleteButtonFor = (journey) => ({
 })
 
 const dateLine = (journey) => {
-  const { datedLineFor, instant } = isSubmittedStatus(journey.status)
-    ? {
-        datedLineFor: copy.viewHeader.dateSubmitted,
-        instant: journey.submittedAt
-      }
-    : { datedLineFor: copy.viewHeader.dateCreated, instant: journey.createdAt }
+  const { datedLineFor, instant } =
+    journey.status === SUBMITTED
+      ? {
+          datedLineFor: copy.viewHeader.dateSubmitted,
+          instant: journey.submittedAt
+        }
+      : {
+          datedLineFor: copy.viewHeader.dateCreated,
+          instant: journey.createdAt
+        }
   return instant ? datedLineFor(notificationDateText(instant)) : null
 }
 
-const actionRequiredWarning = ({ status }) =>
-  status === SUBMITTED_ACTION_REQUIRED
-    ? {
-        text: copy.viewHeader.actionRequiredWarning,
-        iconFallbackText: copy.warningIcon
-      }
-    : null
-
 const amendAction = (journey) =>
-  isSubmittedStatus(journey.status)
+  journey.status === SUBMITTED
     ? {
         text: copy.viewHeader.amend,
         formAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
@@ -79,19 +71,18 @@ const importReferences = ({ journeyId }) => {
 }
 
 /**
- * The header of a notification's view, for a draft and for either submitted
- * status. An amendment has no header.
+ * The header of a notification's view, for a draft and for a submitted
+ * notification. An amendment has no header.
  *
  * @param {object} journey - the journey being viewed.
  * @returns {object|null} null for an amendment. Otherwise the reference, the
  * status tag, the date line (Date created for a draft, Date submitted for a
- * submitted notification, null without the stored instant), the
- * action-required warning (null unless the status is Submitted action
- * required), the Amend action (null for a draft), the Copy as new and Delete
- * actions, and the import reference numbers section.
+ * submitted notification, null without the stored instant), the Amend action
+ * (null for a draft), the Copy as new and Delete actions, and the import
+ * reference numbers section.
  */
 export const viewHeader = (journey) => {
-  if (journey.status !== DRAFT && !isSubmittedStatus(journey.status)) {
+  if (journey.status !== DRAFT && journey.status !== SUBMITTED) {
     return null
   }
   const amend = amendAction(journey)
@@ -99,7 +90,6 @@ export const viewHeader = (journey) => {
     reference: journey.journeyId,
     status: journeyStrip(journey).status,
     dateLine: dateLine(journey),
-    actionRequiredWarning: actionRequiredWarning(journey),
     actions: {
       amend,
       copy: copyAction(journey, { besideAmend: amend !== null }),

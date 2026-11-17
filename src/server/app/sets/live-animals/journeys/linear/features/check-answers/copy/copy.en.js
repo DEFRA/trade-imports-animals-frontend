@@ -101,7 +101,6 @@ export const copy = {
   warningIcon: 'Warning',
   viewHeader: {
     amend: 'Amend this notification',
-    actionRequiredWarning: 'You need to upload a health certificate',
     dateCreated: (date) => `Date created: ${date}`,
     dateSubmitted: (date) => `Date submitted: ${date}`
   },
@@ -114,7 +113,6 @@ export const copy = {
   },
   errors: {
     prefix: 'Error:',
-    healthCertificate: 'Upload a valid health certificate',
     cards: {
       originOfImport: 'Complete origin of import',
       mainImportReason: 'Complete main import reason',

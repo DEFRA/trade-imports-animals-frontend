@@ -1,12 +1,7 @@
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { commit, submitJourney } from './index.js'
-import {
-  records,
-  configureRecords,
-  DRAFT,
-  SUBMITTED_ACTION_REQUIRED
-} from './persistence/records.js'
+import { commit, submitJourney, DRAFT, SUBMITTED } from './index.js'
+import { records, configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -48,10 +43,8 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     )
     expect(result.ok).toBe(true)
     expect(result.journey.journeyId).toBe(journeyId)
-    expect(result.journey.status).toBe(SUBMITTED_ACTION_REQUIRED)
-    expect((await records.load({ journeyId })).status).toBe(
-      SUBMITTED_ACTION_REQUIRED
-    )
+    expect(result.journey.status).toBe(SUBMITTED)
+    expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 
   it('Should refuse to finalise at a token the journey has moved on from', async () => {

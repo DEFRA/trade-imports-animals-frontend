@@ -2,9 +2,8 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  isSubmittedStatus
+  SUBMITTED
 } from '../../../../../engine/persistence/records.js'
-import { submittedStatusFor } from './submitted-status.js'
 import { journeys } from '../store/state.js'
 import { loadWritable } from '../store/writable.js'
 import { marshal } from '../marshal/document.js'
@@ -17,7 +16,7 @@ export const finalise = async (journeyId, _actor, concurrencyToken) => {
   const journey = loadWritable(journeyId)
   assertConcurrencyToken(journey, concurrencyToken, 'submit notification')
   advanceConcurrencyToken(journey)
-  journey.status = submittedStatusFor(journey.fulfilment)
+  journey.status = SUBMITTED
   journey.submittedAt = new Date().toISOString()
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
@@ -28,11 +27,10 @@ export const amend = async (journeyId, _actor) => {
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }
-  if (!isSubmittedStatus(journey.status)) {
+  if (journey.status !== SUBMITTED) {
     throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
   }
   journey.submittedSnapshot = {
-    status: journey.status,
     fulfilment: structuredClone(journey.fulfilment),
     submittedAt: journey.submittedAt
   }
@@ -55,7 +53,7 @@ export const cancelAmend = async (journeyId, _actor) => {
   journey.fulfilment = structuredClone(journey.submittedSnapshot.fulfilment)
   journey.submittedAt = journey.submittedSnapshot.submittedAt
   advanceConcurrencyToken(journey)
-  journey.status = journey.submittedSnapshot.status
+  journey.status = SUBMITTED
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
 }
@@ -67,7 +65,7 @@ export const softDelete = async (journeyId, _actor) => {
   }
   if (
     journey.status !== DRAFT &&
-    !isSubmittedStatus(journey.status) &&
+    journey.status !== SUBMITTED &&
     journey.status !== AMEND &&
     journey.status !== DELETED
   ) {

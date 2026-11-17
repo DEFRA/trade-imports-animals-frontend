@@ -16,8 +16,7 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
   records,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -136,7 +135,7 @@ describe('cancel amendment routes', () => {
     )
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(SUBMITTED_ACTION_REQUIRED)
+    ).toBe(SUBMITTED)
   })
 
   it('Should reject an unknown journey at the known-journey gate', async () => {

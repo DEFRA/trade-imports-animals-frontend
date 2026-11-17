@@ -67,7 +67,6 @@ export const copy = {
   journeyStrip: {
     draft: 'Drafft',
     submitted: "Wedi'i gyflwyno",
-    submittedActionRequired: "Wedi'i gyflwyno – mae angen gweithredu",
     amend: 'Diwygio',
     cancelAmend: 'Canslo diwygio',
     deleted: "Wedi'i ddileu"

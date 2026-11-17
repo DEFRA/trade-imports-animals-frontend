@@ -21,7 +21,6 @@ import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
-import { notificationActionSlugs } from '../../flow/notification-action-slugs.js'
 import { buildSections } from './view-model/index.js'
 import { deleteButtonFor, viewHeader } from './view-model/view-header.js'
 import { changeHref } from './view-model/rows/change-link.js'
@@ -148,7 +147,6 @@ const renderCya = async (
       journeyId: journey.journeyId,
       changeLinkTrail,
       readOnly,
-      status: journey.status,
       parties,
       partyErrors,
       permanentAddresses
@@ -180,10 +178,6 @@ const renderCya = async (
     recoverableError,
     deleteButton:
       journey.status === state.AMEND ? deleteButtonFor(journey) : null,
-    continueAmendAction:
-      journey.status === state.SUBMITTED_ACTION_REQUIRED
-        ? pagePath(journey.journeyId, notificationActionSlugs.amend)
-        : null,
     cancelAmendButton: cancelAmendButtonFor(journey),
     backLink: backLinkFor(request, journey)
   })
@@ -210,7 +204,7 @@ export const renderNotificationView = async (
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
-  const readOnly = state.isSubmittedStatus(journey.status)
+  const readOnly = journey.status === state.SUBMITTED
   const refused = request.query.refused === '1'
   const hidesAnswerErrors =
     readOnly || (journey.status === state.AMEND && !refused)
@@ -255,7 +249,7 @@ export const renderNotificationView = async (
 const renderAndRecordReviewed = async (request, h) => {
   const response = await renderNotificationView(request, h)
   const { journey } = await state.get(request, h)
-  if (!state.isSubmittedStatus(journey.status)) {
+  if (journey.status !== state.SUBMITTED) {
     await recordReviewed(request, h, journey)
   }
   return response

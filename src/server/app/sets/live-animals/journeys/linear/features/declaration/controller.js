@@ -87,7 +87,7 @@ const logRefusalAndRedirect = (request, h, { journey, refusal, target }) => {
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (state.isSubmittedStatus(journey.status)) {
+  if (journey.status === state.SUBMITTED) {
     return logRefusalAndRedirect(request, h, {
       journey,
       refusal: DECLARATION_REFUSAL.alreadySubmitted,
@@ -169,7 +169,7 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (state.isSubmittedStatus(journey.status)) {
+  if (journey.status === state.SUBMITTED) {
     return logRefusalAndRedirect(request, h, {
       journey,
       refusal: DECLARATION_REFUSAL.alreadySubmitted,

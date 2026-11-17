@@ -1,11 +1,5 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
-import {
-  AMEND,
-  DELETED,
-  DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
-} from '../engine/index.js'
+import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextStepLanding } from '../flow/navigation.js'
 import { journeyLayout, journeySectionCaption } from '../flow/journey-flow.js'
 import { copyFor } from './copy.js'
@@ -61,10 +55,6 @@ const STRIP_STATUS = {
   [SUBMITTED]: {
     text: sharedCopy.journeyStrip.submitted,
     classes: 'govuk-tag--green'
-  },
-  [SUBMITTED_ACTION_REQUIRED]: {
-    text: sharedCopy.journeyStrip.submittedActionRequired,
-    classes: 'govuk-tag--orange'
   },
   [AMEND]: {
     text: sharedCopy.journeyStrip.amend,

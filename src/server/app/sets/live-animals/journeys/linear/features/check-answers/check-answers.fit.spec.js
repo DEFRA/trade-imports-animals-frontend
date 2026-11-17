@@ -1329,7 +1329,7 @@ test.describe('check-answers feature submitted notification', () => {
   })
 })
 
-test.describe('check-answers feature submitted notification awaiting its health certificate', () => {
+test.describe('check-answers feature notification submitted without an ITAHC', () => {
   test.describe.configure({ timeout: 90000 })
 
   let reference
@@ -1340,18 +1340,16 @@ test.describe('check-answers feature submitted notification awaiting its health 
     await openSubmittedViewFromList(page, reference)
   })
 
-  test('is headed by an orange Submitted action required tag and the warning to upload a health certificate', async ({
+  test('is headed by a green Submitted tag and the import references warning alone', async ({
     page
   }) => {
     const tag = page.locator('main .govuk-tag')
 
-    await expect(tag).toHaveText(
-      sharedCopy.journeyStrip.submittedActionRequired
-    )
-    await expect(tag).toHaveClass(/govuk-tag--orange/)
-    await expect(
-      page.getByText(copy.viewHeader.actionRequiredWarning)
-    ).toBeVisible()
+    await expect(tag).toHaveText(sharedCopy.journeyStrip.submitted)
+    await expect(tag).toHaveClass(/govuk-tag--green/)
+    await expect(main(page).locator('.govuk-warning-text__text')).toHaveText([
+      `Warning ${copy.importReferences.warning}`
+    ])
   })
 
   test('dates the notification and shows the same date after a reload', async ({
@@ -1365,7 +1363,7 @@ test.describe('check-answers feature submitted notification awaiting its health 
     await expect(dateLine).toHaveText(dateText)
   })
 
-  test('shows the health certificate error under the uploaded documents heading in place of document cards, with no error summary', async ({
+  test('shows the uploaded document as a card under the uploaded documents heading', async ({
     page
   }) => {
     const documentsHeading = page.getByRole('heading', {
@@ -1374,14 +1372,12 @@ test.describe('check-answers feature submitted notification awaiting its health 
     })
 
     await expect(documentsHeading).toBeVisible()
-    await expect(page.getByText(copy.errors.healthCertificate)).toHaveCount(1)
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
     await expect(
       page.getByRole('heading', { level: 3, name: copy.documentN(1) })
-    ).toHaveCount(0)
+    ).toBeVisible()
   })
 
-  test('offers Amend this notification, Copy as new and Delete in its header, then Continue, and no Change links', async ({
+  test('offers exactly Amend this notification, Copy as new and Delete, and no Change links', async ({
     page
   }) => {
     const headerButtons = main(page).getByRole('button')
@@ -1389,8 +1385,7 @@ test.describe('check-answers feature submitted notification awaiting its health 
     await expect(headerButtons).toHaveText([
       copy.viewHeader.amend,
       sharedCopy.notificationActions.copy.text,
-      sharedCopy.notificationActions.delete.text,
-      copy.submit.button
+      sharedCopy.notificationActions.delete.text
     ])
     await expect(page.getByRole('link', { name: copy.change })).toHaveCount(0)
   })
@@ -1406,24 +1401,10 @@ test.describe('check-answers feature submitted notification awaiting its health 
     ])
   })
 
-  test('Continue starts an amendment and opens the overview, with JavaScript off', async ({
-    page,
-    browser
-  }) => {
-    await withoutJavaScript(page, browser, async (noJs) => {
-      await noJs.getByRole('button', { name: copy.submit.button }).click()
-
-      await expect(noJs).toHaveURL(urlUnderBase(`/notifications/${reference}$`))
-      await expect(noJs.locator('.app-journey-strip .govuk-tag')).toHaveText(
-        sharedCopy.journeyStrip.amend
-      )
-    })
-  })
-
   test('has no serious or critical axe violations', async ({ page }) => {
     await expectNoSeriousOrCriticalViolations(
       page,
-      'Submitted action required check answers'
+      'Submitted without an ITAHC check answers'
     )
   })
 })

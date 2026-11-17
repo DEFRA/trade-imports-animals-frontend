@@ -6,12 +6,7 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
-import {
-  AMEND,
-  DRAFT,
-  isSubmittedStatus,
-  records
-} from './persistence/records.js'
+import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 
 /**
@@ -150,7 +145,7 @@ export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 const editableFromStatus = async (journey, journeyId, actor) => {
-  if (isSubmittedStatus(journey.status)) {
+  if (journey.status === SUBMITTED) {
     return records.amend(journeyId, actor)
   }
   if (journey.status === DRAFT || journey.status === AMEND) {

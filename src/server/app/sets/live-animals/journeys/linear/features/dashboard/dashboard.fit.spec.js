@@ -32,6 +32,14 @@ const stageSubmittedNotification = async (page, { withItahc = true } = {}) => {
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
 
+const expectSubmittedRowActions = async (page, reference) => {
+  await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+  await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
+  await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
+  await expect(actionFor(page, 'button', COPY_AS_NEW, reference)).toBeVisible()
+  await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+}
+
 const expectDashboardNotToOverflow = (page) =>
   expectNoHorizontalOverflow(page.locator('html'), 'Dashboard')
 
@@ -119,16 +127,10 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(
       page.getByText(values.consignee.name, { exact: true })
     ).toBeVisible()
-    await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
-    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
-    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
-    await expect(
-      actionFor(page, 'button', COPY_AS_NEW, reference)
-    ).toBeVisible()
-    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+    await expectSubmittedRowActions(page, reference)
   })
 
-  test('a notification submitted without its health certificate shows Submitted action required and the four submitted actions', async ({
+  test('a notification submitted without an ITAHC shows Submitted and the four submitted actions', async ({
     page
   }) => {
     test.slow()
@@ -136,15 +138,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
       withItahc: false
     })
 
-    await expect(
-      page.getByText('Submitted action required', { exact: true })
-    ).toBeVisible()
-    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
-    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
-    await expect(
-      actionFor(page, 'button', COPY_AS_NEW, reference)
-    ).toBeVisible()
-    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+    await expectSubmittedRowActions(page, reference)
   })
 
   test('dashboard does not overflow horizontally at desktop', async ({

@@ -124,17 +124,6 @@ describe('#declaration', () => {
       expect(response).toEqual({ redirect: reviewPath(journeyId) })
     })
 
-    it('Should redirect a GET on a journey submitted without its ITAHC to the confirmation page', async () => {
-      const { journeyId } = await store.create()
-      await store.submit(journeyId)
-
-      const response = await get(journeyRequest(journeyId), stubH())
-
-      expect(response).toEqual({
-        redirect: pagePath(journeyId, 'confirmation')
-      })
-    })
-
     it('Should redirect a GET on a journey submitted with its ITAHC to the confirmation page', async () => {
       const { journeyId } = await store.create()
       await submitWithItahc(journeyId)
@@ -268,15 +257,13 @@ describe('#declaration submit', () => {
       })
     })
 
-    it('Should submit the notification as Submitted action required and redirect to the confirmation page when the declaration is confirmed with no ITAHC uploaded', async () => {
+    it('Should submit the notification as Submitted and redirect to the confirmation page when the declaration is confirmed with no ITAHC uploaded', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'confirmation')
       })
-      expect((await store.get(result.journeyId)).status).toBe(
-        'submittedActionRequired'
-      )
+      expect((await store.get(result.journeyId)).status).toBe('submitted')
     })
 
     it('Should refuse the submit when the notification changed after the declaration rendered', async () => {
@@ -363,27 +350,21 @@ describe('#declaration submit', () => {
       expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
-    it.each([
-      ['with', submitWithItahc],
-      ['without', (journeyId) => store.submit(journeyId)]
-    ])(
-      'Should redirect a POST retry on a journey submitted %s its ITAHC to confirmation',
-      async (_name, submit) => {
-        const { journeyId } = await store.create()
-        await submit(journeyId)
+    it('Should redirect a POST retry on a submitted journey to confirmation', async () => {
+      const { journeyId } = await store.create()
+      await store.submit(journeyId)
 
-        const response = await post(
-          journeyRequest(journeyId, {
-            payload: { step: 'declare', declaration: 'confirmed' }
-          }),
-          stubH()
-        )
+      const response = await post(
+        journeyRequest(journeyId, {
+          payload: { step: 'declare', declaration: 'confirmed' }
+        }),
+        stubH()
+      )
 
-        expect(response).toEqual({
-          redirect: pagePath(journeyId, 'confirmation')
-        })
-      }
-    )
+      expect(response).toEqual({
+        redirect: pagePath(journeyId, 'confirmation')
+      })
+    })
   })
 })
 

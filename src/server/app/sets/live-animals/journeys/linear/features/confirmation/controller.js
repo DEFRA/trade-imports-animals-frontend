@@ -20,8 +20,8 @@ const view = `${TEMPLATES}/features/confirmation/template`
 const copy = copyFor({ en, cy })
 
 const get = async (request, h) => {
-  const { journey } = await state.get(request, h)
-  if (!state.isSubmittedStatus(journey.status)) {
+  const { journey, answers, evaluation } = await state.get(request, h)
+  if (journey.status !== state.SUBMITTED) {
     request.logger.info(
       {
         journeyId: journey.journeyId,
@@ -37,7 +37,7 @@ const get = async (request, h) => {
     ...base(copy.title, { journey, showJourneyStrip: false }),
     copy,
     referenceNumber: journey.journeyId,
-    outstandingItems: outstandingItems(journey.status),
+    outstandingItems: outstandingItems(answers, evaluation),
     dashboardHref: dashboardPath(),
     createAction: createPath()
   })

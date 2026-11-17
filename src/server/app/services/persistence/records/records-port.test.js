@@ -4,8 +4,7 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED,
-  SUBMITTED_ACTION_REQUIRED
+  SUBMITTED
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
@@ -262,23 +261,6 @@ describe('records durable port', () => {
   })
 })
 
-describe('records copy of a submitted notification', () => {
-  beforeEach(() => records.clear())
-
-  it('Should copy a notification submitted without an ITAHC into a new draft and leave the source submitted action required', async () => {
-    const source = await records.create()
-    await finaliseAtLoadedToken(source.journeyId)
-
-    const copy = await records.copy(source.journeyId, 'copy-key')
-
-    expect(copy.status).toBe(DRAFT)
-    expect(copy.journeyId).not.toBe(source.journeyId)
-    expect((await records.load({ journeyId: source.journeyId })).status).toBe(
-      SUBMITTED_ACTION_REQUIRED
-    )
-  })
-})
-
 describe('records concurrency token', () => {
   beforeEach(() => records.clear())
 
@@ -426,7 +408,7 @@ describe('records answersDifferFromSubmitted', () => {
 describe('records durable port — submitted status', () => {
   beforeEach(() => records.clear())
 
-  it('Should record Submitted action required when no ITAHC was uploaded, and Submitted once one is added in an amendment', async () => {
+  it('Should record Submitted with or without an ITAHC, and again when resubmitted after an amendment', async () => {
     const { journeyId } = await records.create()
     const submitted = await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
@@ -434,20 +416,11 @@ describe('records durable port — submitted status', () => {
 
     const resubmitted = await finaliseAtLoadedToken(journeyId)
 
-    expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect(submitted.status).toBe(SUBMITTED)
     expect(resubmitted.status).toBe(SUBMITTED)
   })
 
-  it('Should amend a Submitted action required notification', async () => {
-    const { journeyId } = await records.create()
-    await finaliseAtLoadedToken(journeyId)
-
-    const amended = await records.amend(journeyId)
-
-    expect(amended.status).toBe(AMEND)
-  })
-
-  it('Should restore Submitted action required when cancelling an amendment of a notification submitted without an ITAHC', async () => {
+  it('Should restore Submitted when cancelling an amendment of a notification submitted without an ITAHC', async () => {
     const { journeyId } = await records.create()
     await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
@@ -455,15 +428,6 @@ describe('records durable port — submitted status', () => {
 
     const restored = await records.cancelAmend(journeyId)
 
-    expect(restored.status).toBe(SUBMITTED_ACTION_REQUIRED)
-  })
-
-  it('Should soft-delete a Submitted action required notification', async () => {
-    const { journeyId } = await records.create()
-    await finaliseAtLoadedToken(journeyId)
-
-    const deleted = await records.softDelete(journeyId)
-
-    expect(deleted.status).toBe(DELETED)
+    expect(restored.status).toBe(SUBMITTED)
   })
 })
