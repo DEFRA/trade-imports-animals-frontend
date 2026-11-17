@@ -1,22 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
-  addDocument,
-  answerContactAddress,
-  amendChangeOriginAndOpenCancel,
-  amendFromList,
-  backLink,
-  changeOriginOnAmendment,
-  deleteFromReview,
-  openDocuments,
-  submitCompleteNotification,
   BASE,
   DESKTOP_VIEWPORT,
-  BISON_BISON_ROW,
-  BOS_TAURUS_ROW,
   FELIS_CATUS_ROW,
   PHONE_VIEWPORT,
-  cannedPrivateTransporter,
-  saveTransporterFromList,
   addPlaceOfDestination,
   answerPermanentAddressCard,
   chooseTypeAheadOption,
@@ -26,69 +13,35 @@ import {
   expectStyle,
   govukVisuallyHiddenStyleOf,
   identifyAnimalsByMicrochip,
-  expectDraftReview,
-  expectDraftReviewEndsWithContinue,
   journeyIdFromPage,
-  journeyStripStatus,
   journeyUrl,
   notificationViewUrl,
   numberOfAnimalsFor,
-  documentNamed,
-  reviewCardFor,
-  viewHeaderTag,
-  formControls,
-  formSubmittedBy,
-  reviewFootControls,
-  INFECTED_DOCUMENT_FILE_NAME,
-  STILL_SCANNING_DOCUMENT_FILE_NAME,
-  expectMainImportReasonAndAdditionalDetailsNamed,
-  expectOverview,
   openCommodityDetails,
-  openFromOverviewRow,
   openNotificationView,
-  documentRowFor,
-  errorSummaryLinks,
   openOverview,
   openPermanentAddressFromAddLink,
   openReviewFromHub,
-  openReviewWithSpeciesCounts,
   partyPickerName,
   rowFor,
   saveAndContinue,
-  saveAndReturnToHub,
   signIn,
   startNotification,
-  unlockSections,
   urlUnderBase,
-  values,
-  withoutJavaScript
+  values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
-import { copy as hubCopy } from '../hub/copy/copy.en.js'
-import { copy as documentsCopy } from '../documents/copy/copy.en.js'
 import { copy as declarationCopy } from '../declaration/copy/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
-import { copy as cancelAmendCopy } from '../cancel-amend/copy/copy.en.js'
-import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
-import { copy as contactCopy } from '../contact/copy/copy.en.js'
-import { copy as partyEditCopy } from '../addresses/party-edit/copy/copy.en.js'
-import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
-import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
 import { copy } from './copy/copy.en.js'
 
-const SPECIES_BLOCK_SELECTOR = '[id^="species-block-"]'
-const BISON_BISON_HEADING = 'Bison bison'
-const BOS_TAURUS_HEADING = 'Bos taurus'
-const FELIS_CATUS_HEADING = 'Felis catus'
 const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
-const MAIN_IMPORT_REASON_ANCHOR = '#main-import-reason'
-const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
-const TRANSPORT_DETAILS_ANCHOR = '#transport-details'
+const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
 const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.portOfEntry,
   copy.rows.arrivalDate,
@@ -97,80 +50,19 @@ const ARRIVAL_DETAILS_ROW_LABELS = [
   copy.rows.transportDocumentReference
 ]
 
-const main = (page) => page.getByRole('main')
-
-const expectReviewShowing = (page) =>
-  expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: journeyIdFromPage(page),
-      exact: true
-    })
-  ).toBeVisible()
-
-const headerButtonGroup = (page) =>
-  main(page).locator('.govuk-button-group').first()
-
-const headerControls = (page) => formControls(headerButtonGroup(page))
-
-const headerFormSubmittedBy = (page, buttonName) =>
-  formSubmittedBy(
-    headerButtonGroup(page).getByRole('button', {
-      name: buttonName,
-      exact: true
-    })
-  )
-
-const fieldNamesOf = (form) =>
-  form.locator('input').evaluateAll((inputs) => inputs.map(({ name }) => name))
-
-const importReferences = (page) =>
-  page.getByRole('region', { name: copy.importReferences.heading })
-
-const summaryValues = (section) => section.getByRole('definition')
-
-const expectImportReferenceNumbers = async (section, reference) => {
-  await expect(section.getByText(copy.importReferences.warning)).toBeVisible()
-  await expect(section.getByRole('term')).toHaveText([
-    copy.importReferences.notificationReference,
-    copy.importReferences.customsDocumentCode
-  ])
-  await expect(summaryValues(section)).toHaveText([reference, 'C640'])
-}
-
-const rowKeysOf = (page, cardTitle) =>
-  reviewCardFor(page, cardTitle).getByRole('term')
-
 const answerCellFor = (page, label) =>
-  rowFor(page, label).getByRole('definition').first()
+  rowFor(page, label).getByRole('definition')
 
 const expectOnlyHiddenMissing = async (page, answerCell) => {
   await expect(answerCell).toHaveText(copy.missing)
   await expectStyle(
-    answerCell.getByText(copy.missing, { exact: true }),
+    answerCell.locator('xpath=./*'),
     await govukVisuallyHiddenStyleOf(page)
   )
 }
 
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
-
-const expectCopyAsNewOpensDifferentDraftWithoutJavaScript = (
-  page,
-  browser,
-  reference
-) =>
-  withoutJavaScript(page, browser, async (noJs) => {
-    await noJs
-      .getByRole('button', {
-        name: sharedCopy.notificationActions.copy.text,
-        exact: true
-      })
-      .click()
-
-    await expectOverview(noJs)
-    expect(journeyIdFromPage(noJs)).not.toBe(reference)
-  })
 
 const openOrigin = (page) =>
   page
@@ -197,7 +89,7 @@ test.describe('check-answers feature summary rows', () => {
 
     await openNotificationView(page)
 
-    await expectDraftReview(page)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(
       page.getByRole('heading', {
         name: copy.sections.aboutTheConsignment
@@ -206,11 +98,9 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.countryOfOrigin)).toContainText(
       'France'
     )
-    await expect(rowKeysOf(page, copy.cards.originOfImport)).toHaveText([
-      copy.rows.countryOfOrigin,
-      copy.rows.regionCode,
-      copy.rows.internalReference
-    ])
+    await expect(rowFor(page, copy.rows.regionCodeRequired)).toContainText(
+      copy.yesNo.yes
+    )
     await expect(rowFor(page, copy.rows.regionCode)).toContainText('FR-IDF75')
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
@@ -240,12 +130,12 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
-test.describe('check-answers feature Permanent address subsection of the Consignment addresses card', () => {
+test.describe('check-answers feature permanent address rows', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('renders one entry per cat in the Consignment addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details with a small heading one level under the species heading, over the identifiers alone', async ({
+  test('renders one review row per cat, keyed by its common name and number, and heads the species card with identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -255,7 +145,7 @@ test.describe('check-answers feature Permanent address subsection of the Consign
     await identifyAnimalsByMicrochip(page, ['MICROCHIP-1', 'MICROCHIP-2'])
 
     await openOverview(page)
-    await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
     await addPlaceOfDestination(page)
     await openPermanentAddressFromAddLink(page)
     await expect(
@@ -274,137 +164,23 @@ test.describe('check-answers feature Permanent address subsection of the Consign
 
     await openOverview(page)
     await openReviewFromHub(page)
-    await expectDraftReview(page)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
-    const addressesCard = reviewCardFor(page, copy.cards.consignmentAddresses)
-    const permanentAddressRow = (animal) =>
-      addressesCard.getByRole('term').filter({ hasText: animal }).locator('..')
-    await expect(
-      addressesCard.getByRole('heading', { name: 'Permanent address' })
-    ).toBeVisible()
-    const catOneEntry =
-      permanentAddressRow('Domestic Cat 1').getByRole('definition')
-    await expect(catOneEntry).toHaveText(
-      `${partyPickerName(values.placeOfDestination)} 18 Dockside Road London E14 9GE United Kingdom`,
-      { useInnerText: true }
+    const catOneRow = rowFor(page, 'Domestic Cat 1')
+    await expect(catOneRow).toContainText(
+      partyPickerName(values.placeOfDestination)
     )
-    await expect(permanentAddressRow('Domestic Cat 2')).toContainText(
-      'Pet Owner'
-    )
+    await expect(catOneRow).toContainText('18 Dockside Road')
+    await expect(catOneRow).toContainText('United Kingdom')
+    await expect(rowFor(page, 'Domestic Cat 2')).toContainText('Pet Owner')
 
-    const speciesBlock = page.locator(SPECIES_BLOCK_SELECTOR, {
-      has: page.getByRole('heading', { name: FELIS_CATUS_HEADING, exact: true })
+    const speciesCard = page.locator(SUMMARY_CARD_SELECTOR, {
+      hasText: `${FELIS_CATUS_ROW.commodityCode} — ${FELIS_CATUS_ROW.speciesLatinName}`
     })
-    await expect(speciesBlock.getByRole('heading', { level: 4 })).toHaveText(
-      FELIS_CATUS_HEADING
-    )
-    const identificationHeading = speciesBlock.getByRole('heading', {
-      level: 5,
-      name: copy.identificationDetails.heading
-    })
-    await expect(identificationHeading).toBeVisible()
-    await expect(identificationHeading).toHaveClass(/govuk-heading-s/)
-    await expect(speciesBlock.getByRole('columnheader')).toHaveText([
+    await expect(speciesCard.getByRole('columnheader')).toHaveText([
       'Animal',
       'Microchip'
     ])
-    await expect(speciesBlock.getByRole('cell').first()).toHaveText(
-      'Felis catus 1'
-    )
-  })
-})
-
-test.describe('check-answers feature species blocks', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-  })
-
-  test('groups two cattle species under one commodity card and names each one short of an identifier, linking to its block', async ({
-    page
-  }) => {
-    test.slow()
-    await openReviewWithSpeciesCounts(page, [
-      { species: BOS_TAURUS_ROW, count: '1' },
-      { species: BISON_BISON_ROW, count: '1' }
-    ])
-
-    await expect(
-      page
-        .getByRole('main')
-        .getByRole('heading', { level: 3, name: BOS_TAURUS_ROW.commodityCode })
-    ).toHaveCount(1)
-    await expect(
-      page.locator(SPECIES_BLOCK_SELECTOR).getByRole('heading', { level: 4 })
-    ).toHaveText([BISON_BISON_HEADING, BOS_TAURUS_HEADING])
-
-    for (const [speciesName, heading] of [
-      ['bos taurus', BOS_TAURUS_HEADING],
-      ['bison bison', BISON_BISON_HEADING]
-    ]) {
-      await page
-        .getByRole('link', {
-          name: copy.errors.species.noIdentifier(speciesName)
-        })
-        .click()
-      await expect(
-        page.locator('[id^="species-block-"]:focus').getByRole('heading', {
-          name: heading
-        })
-      ).toBeVisible()
-    }
-  })
-
-  test('reads one commodity card per code back, each holding only its own species blocks with the counts entered', async ({
-    page
-  }) => {
-    test.slow()
-    const cardsInOrder = [
-      {
-        code: BOS_TAURUS_ROW.commodityCode,
-        blocks: [
-          { heading: BISON_BISON_HEADING, count: '2' },
-          { heading: BOS_TAURUS_HEADING, count: '3' }
-        ]
-      },
-      {
-        code: FELIS_CATUS_ROW.commodityCode,
-        blocks: [{ heading: FELIS_CATUS_HEADING, count: '4' }]
-      }
-    ]
-    await openReviewWithSpeciesCounts(page, [
-      { species: BISON_BISON_ROW, count: '2' },
-      { species: BOS_TAURUS_ROW, count: '3' },
-      { species: FELIS_CATUS_ROW, count: '4' }
-    ])
-
-    await expect(
-      page.getByRole('heading', { level: 3, name: /^\d{4,8}$/ })
-    ).toHaveText(cardsInOrder.map(({ code }) => code))
-    for (const { code, blocks } of cardsInOrder) {
-      const speciesBlocks = reviewCardFor(page, code).locator(
-        SPECIES_BLOCK_SELECTOR
-      )
-      await expect(speciesBlocks.getByRole('heading', { level: 4 })).toHaveText(
-        blocks.map(({ heading }) => heading)
-      )
-      for (const { heading, count } of blocks) {
-        const block = speciesBlocks.filter({
-          has: page.getByRole('heading', {
-            level: 4,
-            name: heading,
-            exact: true
-          })
-        })
-        await expect(
-          block
-            .getByRole('term')
-            .filter({ hasText: copy.rows.numberOfAnimals })
-            .locator('..')
-            .getByRole('definition')
-            .first()
-        ).toHaveText(count)
-      }
-    }
   })
 })
 
@@ -413,7 +189,7 @@ test.describe('check-answers feature section structure', () => {
     await signIn(page)
   })
 
-  test('numbers the six sections in order', async ({ page }) => {
+  test('numbers the five sections in order', async ({ page }) => {
     await startNotification(page)
     await openNotificationView(page)
 
@@ -424,26 +200,19 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.addresses,
-      copy.sections.contactAddress
+      copy.sections.consignmentParties
     ])
   })
 
-  test('ends with Continue alone in its last block, and nothing after it', async ({
+  test('ends with the Continue button and nothing above it', async ({
     page
   }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      journeyIdFromPage(page)
-    )
-    await expect(page).toHaveTitle(
-      `${sharedCopy.layout.errorTitlePrefix}${journeyIdFromPage(page)} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
-    )
     await expect(
       page.getByRole('main').getByRole('heading', { level: 2 }).last()
-    ).toHaveText(copy.sections.contactAddress)
+    ).toHaveText(copy.sections.consignmentParties)
 
     const lastBlock = page.getByRole('main').locator('form').last()
     await expect(lastBlock.locator('xpath=following-sibling::*')).toHaveCount(0)
@@ -451,70 +220,30 @@ test.describe('check-answers feature section structure', () => {
     await expect(
       lastBlock
         .locator('xpath=preceding-sibling::*[1]')
-        .getByRole('heading', { name: copy.cards.contactAddress, level: 3 })
+        .getByRole('heading', { name: copy.groups.rolesAndAddresses })
     ).toBeVisible()
 
     await expect(
       lastBlock.getByRole('button', { name: copy.submit.button })
     ).toBeVisible()
-    await expect(formControls(lastBlock)).toHaveText([copy.submit.button])
   })
 
-  test('puts every card title straight under its section heading, with no other heading between them', async ({
-    page
-  }) => {
+  test('heads every card with its own subsection heading', async ({ page }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expect(page.getByRole('main').getByRole('heading')).toHaveText([
-      sharedCopy.errorSummary.title,
-      journeyIdFromPage(page),
-      copy.importReferences.heading,
-      copy.sections.aboutTheConsignment,
-      copy.cards.originOfImport,
-      copy.cards.whatAreYouImporting,
-      copy.cards.mainImportReason,
-      copy.sections.descriptionOfTheGoods,
-      copy.cards.additionalDetails,
-      copy.sections.transportAndArrival,
-      copy.cards.arrivalDetails,
-      copy.cards.transportDetails,
-      copy.sections.documents,
-      copy.documentN(1),
-      copy.sections.addresses,
-      copy.cards.consignmentAddresses,
-      copy.sections.contactAddress,
-      copy.cards.contactAddress
+    await expect(page.getByRole('heading', { level: 3 })).toHaveText([
+      copy.groups.whereFrom,
+      copy.groups.mainImportReason,
+      copy.groups.additionalDetails,
+      copy.groups.arrivalDetails,
+      copy.groups.transportDetails,
+      copy.groups.uploadDocuments,
+      copy.groups.rolesAndAddresses
     ])
-
-    await expect(
-      page.getByRole('main').getByRole('heading', { level: 1 })
-    ).toHaveText([journeyIdFromPage(page)])
-    await expect(
-      page.getByRole('main').getByRole('heading', { level: 2 })
-    ).toHaveText([
-      sharedCopy.errorSummary.title,
-      copy.importReferences.heading,
-      copy.sections.aboutTheConsignment,
-      copy.sections.descriptionOfTheGoods,
-      copy.sections.transportAndArrival,
-      copy.sections.documents,
-      copy.sections.addresses,
-      copy.sections.contactAddress
-    ])
-    await expect(
-      page.getByRole('main').getByRole('heading', { level: 3 })
-    ).toHaveText([
-      copy.cards.originOfImport,
-      copy.cards.whatAreYouImporting,
-      copy.cards.mainImportReason,
-      copy.cards.additionalDetails,
-      copy.cards.arrivalDetails,
-      copy.cards.transportDetails,
-      copy.documentN(1),
-      copy.cards.consignmentAddresses,
-      copy.cards.contactAddress
-    ])
+    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
+      await page.locator(SUMMARY_CARD_SELECTOR).count()
+    )
   })
 })
 
@@ -533,13 +262,11 @@ test.describe('check-answers feature documents section', () => {
       page.getByRole('heading', { name: copy.sections.documents })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.documentN(1), exact: true })
+      page.getByRole('heading', { name: copy.cards.documents })
     ).toBeVisible()
-    await expect(
-      rowFor(page, copy.rows.documentReference).getByRole('definition')
-    ).toHaveText(sharedCopy.notApplicable)
+    await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
 
-    const changeLink = cardChangeLink(page, copy.hidden.document(1))
+    const changeLink = cardChangeLink(page, copy.hidden.cards.documents)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
@@ -550,70 +277,6 @@ test.describe('check-answers feature documents section', () => {
     await expect(page).toHaveURL(
       /\/accompanying-documents\?from=(?:[^#]*%2C)?notification-view$/
     )
-  })
-
-  test('reads the uploaded file name back as the Attachment of the Document 1 card', async ({
-    page
-  }) => {
-    const filename = 'itahc-review.pdf'
-    await openDocuments(page)
-    await addDocument(page, {
-      accompanyingDocumentReference: 'GBHC0000000001',
-      accompanyingDocumentType: 'ITAHC',
-      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
-      filename
-    })
-    await openNotificationView(page)
-
-    await expect(
-      rowFor(page, copy.rows.attachment).getByRole('definition')
-    ).toHaveText(filename)
-  })
-
-  test('marks the Document 1 card as rejected as soon as the review opens, and links the error summary to it', async ({
-    page
-  }) => {
-    test.slow()
-    const infected = documentNamed('VIRUS-0001', INFECTED_DOCUMENT_FILE_NAME)
-    await openDocuments(page)
-    await addDocument(page, infected)
-    await expect(
-      documentRowFor(page, infected.accompanyingDocumentReference)
-    ).toContainText(documentsCopy.scanTags.virusFound)
-    await openNotificationView(page)
-
-    const card = reviewCardFor(page, copy.documentN(1))
-    await expect(
-      card.getByText(documentsCopy.errors.someRejected)
-    ).toBeVisible()
-    await expect(
-      errorSummaryLinks(page, documentsCopy.errors.someRejected, {
-        exact: true
-      })
-    ).toHaveAttribute('href', `#${await card.getAttribute('id')}`)
-  })
-
-  test('leaves the Document 1 card unmarked for a document still being scanned until Continue is refused', async ({
-    page
-  }) => {
-    test.slow()
-    await openDocuments(page)
-    await addDocument(
-      page,
-      documentNamed('SCAN-0001', STILL_SCANNING_DOCUMENT_FILE_NAME)
-    )
-    await openNotificationView(page)
-
-    const card = reviewCardFor(page, copy.documentN(1))
-    await expect(
-      card.getByText(documentsCopy.errors.someStillScanning)
-    ).toHaveCount(0)
-
-    await page.getByRole('button', { name: copy.submit.button }).click()
-
-    await expect(
-      card.getByText(documentsCopy.errors.someStillScanning)
-    ).toBeVisible()
   })
 })
 
@@ -627,7 +290,7 @@ test.describe('check-answers feature exit answers', () => {
     await signIn(page)
   })
 
-  test('shows the port of exit then the destination country a transit collected, with the one Change link in the card heading', async ({
+  test('shows the destination country and port of exit a transit collected, with the one Change link in the card heading', async ({
     page
   }) => {
     await startNotification(page)
@@ -649,23 +312,21 @@ test.describe('check-answers feature exit answers', () => {
 
     await openNotificationView(page)
 
-    await expect(rowKeysOf(page, copy.cards.mainImportReason)).toHaveText([
-      copy.rows.mainImportReason,
-      copy.rows.portOfExit,
-      copy.rows.destinationCountry
-    ])
-    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
-      EXIT_PORT_LABEL
-    )
     await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
       DESTINATION_COUNTRY_NAME
     )
+    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
+      EXIT_PORT_LABEL
+    )
+    await expect(
+      page.getByText(copy.rows.exitDate, { exact: true })
+    ).toHaveCount(0)
 
     await expect(
       rowFor(page, copy.rows.destinationCountry).getByRole('link')
     ).toHaveCount(0)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.mainImportReason)
+    const changeLink = cardChangeLink(page, copy.hidden.cards.reasonForImport)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/import-reason\?from=(?:[^#]*%2C)?notification-view$/
@@ -743,7 +404,7 @@ test.describe('check-answers feature change links', () => {
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await openNotificationView(page)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.originOfImport)
+    const changeLink = cardChangeLink(page, copy.hidden.cards.importDetails)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/origin\?from=(?:[^#]*%2C)?notification-view$/
@@ -766,98 +427,26 @@ test.describe('check-answers feature change links', () => {
     )
   })
 
-  test('has one Change link per card, named for its card, in card order, and none on a row of a new notification', async ({
+  test('every Change link sits in a card heading and no summary row carries one', async ({
     page
   }) => {
     await startNotification(page)
     await openNotificationView(page)
 
-    await expect(
-      page.getByRole('link', { name: new RegExp(`^${copy.change}\\b`) })
-    ).toHaveText(
-      [
-        copy.hidden.cards.originOfImport,
-        copy.hidden.cards.whatAreYouImporting,
-        copy.hidden.cards.mainImportReason,
-        copy.hidden.cards.additionalDetails,
-        copy.hidden.cards.arrivalDetails,
-        copy.hidden.cards.transportDetails,
-        copy.hidden.document(1),
-        copy.hidden.cards.consignmentAddresses,
-        copy.hidden.cards.contactAddress
-      ].map((hiddenText) => {
-        const name = RegExp.escape(`${copy.change} ${hiddenText}`)
-        return new RegExp(`^${name}( \\(.+\\))?$`)
-      })
+    const cards = page.locator(SUMMARY_CARD_SELECTOR)
+    const cardCount = await cards.count()
+
+    expect(cardCount).toBeGreaterThan(0)
+    await expect(page.getByRole('link', { name: copy.change })).toHaveCount(
+      cardCount
     )
-  })
+    await expect(page.locator('.govuk-summary-list__actions')).toHaveCount(0)
 
-  test('opens the consignment addresses page from the Consignment addresses card', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await openNotificationView(page)
-
-    const changeLink = cardChangeLink(
-      page,
-      copy.hidden.cards.consignmentAddresses
-    )
-    await expect(changeLink).toHaveAttribute('href', /\/addresses\?from=/)
-    await changeLink.click()
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: addressesCopy.hub.title })
-    ).toBeVisible()
-  })
-
-  test('opens the contact address page from the contact address card', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await openNotificationView(page)
-
-    const changeLink = cardChangeLink(page, copy.hidden.cards.contactAddress)
-    await expect(changeLink).toHaveAttribute(
-      'href',
-      /\/consignment\/contact\/select\?from=/
-    )
-    await changeLink.click()
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: contactCopy.title })
-    ).toBeVisible()
-  })
-
-  test('edits a chosen contact address from the review, returning to the review showing the edit, or unchanged when cancelled', async ({
-    page
-  }) => {
-    const editedTown = 'Editedtown'
-    await startNotification(page)
-    await page.goto(journeyUrl(page, 'consignment/contact/select'))
-    await answerContactAddress(page)
-    await openNotificationView(page)
-    const editLink = reviewCardFor(page, copy.cards.contactAddress).getByRole(
-      'link',
-      { name: `${copy.editDetails} contact address` }
-    )
-    const contactRow = reviewCardFor(page, copy.cards.contactAddress)
-      .getByRole('definition')
-      .first()
-    const addressBefore = await contactRow.innerText()
-
-    await editLink.click()
-    await expect(
-      page.getByRole('heading', { level: 1, name: partyEditCopy.title })
-    ).toBeVisible()
-    await page.getByRole('button', { name: partyEditCopy.cancel }).click()
-    await expectReviewShowing(page)
-    await expect(contactRow).toHaveText(addressBefore, { useInnerText: true })
-
-    await editLink.click()
-    await page.getByLabel(partyEditCopy.fields.townOrCity).fill(editedTown)
-    await page.getByRole('button', { name: partyEditCopy.save }).click()
-    await expectReviewShowing(page)
-    await expect(contactRow).toContainText(editedTown)
+    for (let index = 0; index < cardCount; index += 1) {
+      await expect(
+        cards.nth(index).locator('.govuk-summary-card__actions a')
+      ).toHaveCount(1)
+    }
   })
 })
 
@@ -866,13 +455,14 @@ test.describe('check-answers feature navigation and submission', () => {
     await signIn(page)
   })
 
-  test('back link returns to the notification list', async ({ page }) => {
+  test('back link returns to the notification hub', async ({ page }) => {
     await startNotification(page)
+    const hubUrl = journeyUrl(page)
     await openNotificationView(page)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(urlUnderBase(''))
+    await expect(page).toHaveURL(hubUrl)
   })
 
   test('review has no serious or critical axe violations', async ({ page }) => {
@@ -880,15 +470,6 @@ test.describe('check-answers feature navigation and submission', () => {
     await openNotificationView(page)
 
     await expectNoSeriousOrCriticalViolations(page, 'Check answers')
-  })
-
-  test('Delete on a draft review opens the delete confirmation', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await openNotificationView(page)
-
-    await deleteFromReview(page, deleteCopy.title)
   })
 
   test('new journey shows no address error before a role has been answered', async ({
@@ -914,78 +495,18 @@ test.describe('check-answers feature navigation and submission', () => {
     await completeAnswerSections(page, { skipTransitCountries: true })
     await openReviewFromHub(page)
 
-    await expect(answerCellFor(page, copy.rows.transitedCountries)).toHaveText(
-      sharedCopy.notApplicable
-    )
     await expect(
-      page
-        .locator(ARRIVAL_DETAILS_ANCHOR)
-        .getByText(copy.errors.cards.arrivalDetails)
+      page.getByText(copy.errors.cards.transitCountries)
     ).toHaveCount(0)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expect(
+      page.getByText(copy.errors.cards.transitCountries)
+    ).toHaveCount(0)
+    await expect(
       page.getByRole('heading', { level: 1, name: declarationCopy.title })
     ).toBeVisible()
-  })
-
-  test('reads the transit countries inside the arrival details card, with a Change link that opens the transit countries page', async ({
-    page
-  }) => {
-    test.slow()
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-
-    const arrivalDetails = page.locator(ARRIVAL_DETAILS_ANCHOR)
-    await expect(
-      arrivalDetails.getByRole('heading', {
-        level: 4,
-        name: copy.groups.transitCountries
-      })
-    ).toBeVisible()
-    await expect(answerCellFor(page, copy.rows.transitedCountries)).toHaveText(
-      'France, Belgium'
-    )
-
-    const changeLink = arrivalDetails.getByRole('link', {
-      name: `${copy.change} ${copy.hidden.rows.transitCountries}`
-    })
-    await expect(changeLink).toHaveAttribute(
-      'href',
-      /\/transit-countries\?from=(?:[^#]*%2C)?notification-view$/
-    )
-    await changeLink.click()
-
-    await expect(
-      page.getByRole('heading', {
-        level: 1,
-        name: transportCopy.transitCountries.title
-      })
-    ).toBeVisible()
-  })
-
-  test('shows Not applicable on the approval number of a saved private transporter that has none, and its stored country', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await saveTransporterFromList(page, cannedPrivateTransporter)
-    await openNotificationView(page)
-
-    await expect(rowKeysOf(page, copy.cards.transportDetails)).toHaveText([
-      copy.rows.name,
-      copy.rows.address,
-      copy.rows.country,
-      copy.rows.approvalNumber,
-      copy.rows.type
-    ])
-    await expect(answerCellFor(page, copy.rows.country)).toHaveText(
-      cannedPrivateTransporter.address.country
-    )
-    await expect(answerCellFor(page, copy.rows.approvalNumber)).toHaveText(
-      sharedCopy.notApplicable
-    )
   })
 })
 
@@ -1020,9 +541,9 @@ test.describe('check-answers feature unfinished notification', () => {
     for (const viewport of [DESKTOP_VIEWPORT, PHONE_VIEWPORT]) {
       await page.setViewportSize(viewport)
       await expect(
-        reviewCardFor(page, copy.cards.arrivalDetails).getByText(
-          copy.errors.cards.arrivalDetails
-        )
+        page
+          .locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
+          .getByText(copy.errors.cards.arrivalDetails)
       ).toBeVisible()
       await expectOnlyHiddenMissing(
         page,
@@ -1045,42 +566,13 @@ test.describe('check-answers feature unfinished notification', () => {
     })
     await expect(entry).toHaveAttribute('href', ARRIVAL_DETAILS_ANCHOR)
     await expect(
-      reviewCardFor(page, copy.cards.arrivalDetails).getByText(
-        copy.errors.cards.arrivalDetails
-      )
+      page
+        .locator(ARRIVAL_DETAILS_ANCHOR)
+        .getByText(copy.errors.cards.arrivalDetails)
+    ).toBeVisible()
+    await expect(
+      page.locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
     ).toContainText(copy.errors.prefix)
-  })
-
-  test('names the unfinished main import reason and additional details cards in the error summary and on each card', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await openNotificationView(page)
-
-    await expectMainImportReasonAndAdditionalDetailsNamed(page)
-  })
-
-  test('accepts the main import reason and additional details left blank by Save and return to overview, then names both cards when Continue is refused', async ({
-    page
-  }) => {
-    test.slow()
-    await startNotification(page)
-    await unlockSections(page, BOS_TAURUS_ROW)
-
-    await openFromOverviewRow(page, hubCopy.rows.importReason.title)
-    await saveAndReturnToHub(page).click()
-    await expectOverview(page)
-
-    await openFromOverviewRow(page, hubCopy.rows.additionalDetails.title)
-    await saveAndReturnToHub(page).click()
-    await expectOverview(page)
-
-    const reviewUrl = notificationViewUrl(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: copy.submit.button }).click()
-
-    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
-    await expectMainImportReasonAndAdditionalDetailsNamed(page)
   })
 
   test('refuses Continue and keeps the trader on the review page', async ({
@@ -1098,7 +590,7 @@ test.describe('check-answers feature unfinished notification', () => {
     ).toBeVisible()
   })
 
-  test('refuses submit of a notification with no commodity line and names what is missing from the commodity selection and the commodity details', async ({
+  test('refuses submit of a notification with no commodity line and names the missing species details', async ({
     page
   }) => {
     await startNotification(page)
@@ -1108,19 +600,14 @@ test.describe('check-answers feature unfinished notification', () => {
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
-    const importingEntry = page.getByRole('link', {
-      name: copy.errors.cards.whatAreYouImporting
+    const speciesEntry = page.getByRole('link', {
+      name: copy.errors.cards.species
     })
-    await expect(importingEntry).toHaveAttribute(
+    await expect(speciesEntry).toBeVisible()
+    await expect(speciesEntry).toHaveAttribute(
       'href',
-      WHAT_ARE_YOU_IMPORTING_ANCHOR
+      '#description-of-the-goods'
     )
-    await expect(page.locator(WHAT_ARE_YOU_IMPORTING_ANCHOR)).toContainText(
-      copy.errors.cards.whatAreYouImporting
-    )
-    await expect(
-      page.getByRole('link', { name: copy.errors.cards.commodityDetails })
-    ).toHaveAttribute('href', '#description-of-the-goods')
   })
 
   test('unfinished review has no serious or critical axe violations', async ({
@@ -1134,337 +621,40 @@ test.describe('check-answers feature unfinished notification', () => {
   })
 })
 
-test.describe('check-answers feature draft notification reached from Review and submit', () => {
-  let createdBefore
-  let createdAfter
-
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    createdBefore = Date.now()
-    await startNotification(page)
-    createdAfter = Date.now()
-    await openReviewFromHub(page)
-  })
-
-  test('is headed by its reference with a Draft tag beside it and a title naming the reference', async ({
-    page
-  }) => {
-    await expectDraftReview(page)
-    await expect(page).toHaveTitle(
-      `${sharedCopy.layout.errorTitlePrefix}${journeyIdFromPage(page)} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
-    )
-  })
-
-  test('dates the notification by its creation under its header', async ({
-    page
-  }) => {
-    const createdLines = new Set(
-      [createdBefore, createdAfter].map((instant) =>
-        copy.viewHeader.dateCreated(formatMomentAsLongDay(new Date(instant)))
-      )
-    )
-    const alternatives = [...createdLines].map(RegExp.escape).join('|')
-
-    await expect(page.getByText(/^Date created: /)).toHaveText(
-      new RegExp(`^(${alternatives})$`)
-    )
-  })
-
-  test('offers Copy as new then Delete in its header, and no Amend this notification', async ({
-    page
-  }) => {
-    await expect(headerControls(page)).toHaveText([
-      sharedCopy.notificationActions.copy.text,
-      sharedCopy.notificationActions.delete.text
-    ])
-  })
-
-  test('posts Copy as new from a form of its own holding only the crumb, concurrency token and copy origin', async ({
-    page
-  }) => {
-    const { form, submitButtons } = await headerFormSubmittedBy(
-      page,
-      sharedCopy.notificationActions.copy.text
-    )
-
-    await expect(form).toHaveAttribute('action', /\/copy$/)
-    expect(await fieldNamesOf(form)).toEqual([
-      'crumb',
-      'concurrencyToken',
-      'copyOrigin'
-    ])
-    await expect(submitButtons).toHaveText([
-      sharedCopy.notificationActions.copy.text
-    ])
-  })
-
-  test('Copy as new opens a different draft notification overview', async ({
-    page
-  }) => {
-    const reference = journeyIdFromPage(page)
-
-    await headerControls(page)
-      .getByText(sharedCopy.notificationActions.copy.text, { exact: true })
-      .click()
-
-    await expectOverview(page)
-    expect(journeyIdFromPage(page)).not.toBe(reference)
-  })
-
-  test('Delete in the header opens the delete confirmation', async ({
-    page
-  }) => {
-    await deleteFromReview(page, deleteCopy.title)
-  })
-
-  test('Copy as new opens a different draft overview and Delete opens the delete confirmation when JavaScript is off', async ({
-    page,
-    browser
-  }) => {
-    const reference = journeyIdFromPage(page)
-
-    await expectCopyAsNewOpensDifferentDraftWithoutJavaScript(
-      page,
-      browser,
-      reference
-    )
-    await withoutJavaScript(page, browser, async (noJs) => {
-      await deleteFromReview(noJs, deleteCopy.title)
-    })
-  })
-
-  test('shows the import reference numbers as text with the warning, the reference and the customs document code', async ({
-    page
-  }) => {
-    const section = importReferences(page)
-
-    await expectImportReferenceNumbers(section, journeyIdFromPage(page))
-    await expect(section.getByRole('button')).toHaveCount(0)
-  })
-
-  test('keeps a Change link on every card', async ({ page }) => {
-    const cardHeadings = await page
-      .getByRole('heading', { level: 3 })
-      .allTextContents()
-
-    expect(cardHeadings).not.toHaveLength(0)
-    for (const heading of cardHeadings) {
-      await expect(
-        reviewCardFor(page, heading).getByRole('link', {
-          name: new RegExp(`^${copy.change}`)
-        })
-      ).not.toHaveCount(0)
-    }
-  })
-
-  test('lists every unfinished card in the error summary, each linking to its card with its message on the card', async ({
-    page
-  }) => {
-    const unfinishedCards = [
-      ['whatAreYouImporting', WHAT_ARE_YOU_IMPORTING_ANCHOR],
-      ['mainImportReason', MAIN_IMPORT_REASON_ANCHOR],
-      ['commodityDetails', '#description-of-the-goods'],
-      ['additionalDetails', '#additional-details'],
-      ['arrivalDetails', ARRIVAL_DETAILS_ANCHOR],
-      ['transportDetails', TRANSPORT_DETAILS_ANCHOR],
-      ['consignmentAddresses', '#addresses'],
-      ['contactAddress', '#contact-address']
-    ]
-    const cardsShowingTheirMessage = unfinishedCards.filter(
-      ([card]) => card !== 'commodityDetails'
-    )
-    const summaryEntries = errorSummaryLinks(page)
-
-    await expect(
-      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
-    ).toBeVisible()
-    await expect(summaryEntries).toHaveText(
-      unfinishedCards.map(([card]) => copy.errors.cards[card])
-    )
-    for (const [card, anchor] of unfinishedCards) {
-      await expect(
-        errorSummaryLinks(page, copy.errors.cards[card], { exact: true })
-      ).toHaveAttribute('href', anchor)
-    }
-    for (const [card] of cardsShowingTheirMessage) {
-      await expect(
-        reviewCardFor(page, copy.cards[card]).getByText(copy.errors.cards[card])
-      ).toBeVisible()
-    }
-  })
-
-  test('ends with Continue', async ({ page }) => {
-    await expectDraftReviewEndsWithContinue(page)
-  })
-
-  test('sends Back to the notification list when opened without a trail', async ({
-    page
-  }) => {
-    await openNotificationView(page)
-
-    await expect(backLink(page)).toHaveAttribute('href', BASE)
-  })
-
-  test('draft headed by its reference has no serious or critical axe violations', async ({
-    page
-  }) => {
-    await expectNoSeriousOrCriticalViolations(page, 'Draft review')
-  })
-})
-
-const openSubmittedViewFromList = async (page, reference) => {
-  await page.goto(BASE)
-  await page
-    .getByRole('link', {
-      name: `View ${dashboardCopy.actionHidden(reference)}`
-    })
-    .click()
-  await expect(
-    page.getByRole('heading', { level: 1, name: reference, exact: true })
-  ).toBeVisible()
-}
-
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
 
-  let reference
-  let submittedBefore
-  let submittedAfter
-
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    submittedBefore = Date.now()
-    reference = await submitCompleteNotification(page)
-    submittedAfter = Date.now()
-    await openSubmittedViewFromList(page, reference)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+    await page.getByRole('button', { name: copy.submit.button }).click()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    const reference = journeyIdFromPage(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('link', {
+        name: `View ${dashboardCopy.actionHidden(reference)}`
+      })
+      .click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })
 
-  test('is headed by its reference with a Submitted tag beside it and a title naming the reference', async ({
+  test('ends with the last card and offers no way to submit again', async ({
     page
   }) => {
     await expect(
-      page.getByRole('heading', { level: 1, name: reference, exact: true })
+      page.getByRole('button', {
+        name: sharedCopy.notificationActions.copy.text
+      })
     ).toBeVisible()
-    await expect(
-      viewHeaderTag(page, sharedCopy.journeyStrip.submitted)
-    ).toBeVisible()
-    await expect(page).toHaveTitle(
-      `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
-    )
-  })
-
-  test('dates the notification under its header', async ({ page }) => {
-    const submittedLines = new Set(
-      [submittedBefore, submittedAfter].map((instant) =>
-        copy.viewHeader.dateSubmitted(formatMomentAsLongDay(new Date(instant)))
-      )
-    )
-    const alternatives = [...submittedLines].map(RegExp.escape).join('|')
-
-    await expect(page.getByText(/^Date submitted: /)).toHaveText(
-      new RegExp(`^(${alternatives})$`)
-    )
-  })
-
-  test('offers Amend this notification, Copy as new and Delete in its header', async ({
-    page
-  }) => {
-    await expect(headerControls(page)).toHaveText([
-      copy.viewHeader.amend,
-      sharedCopy.notificationActions.copy.text,
-      sharedCopy.notificationActions.delete.text
-    ])
     await expect(
       page.getByRole('button', { name: copy.submit.button })
     ).toHaveCount(0)
-  })
-
-  test('posts Amend this notification from a form of its own holding only the crumb, and Copy as new from another', async ({
-    page
-  }) => {
-    const amend = await headerFormSubmittedBy(page, copy.viewHeader.amend)
-    const copyAsNew = await headerFormSubmittedBy(
-      page,
-      sharedCopy.notificationActions.copy.text
-    )
-
-    await expect(amend.form).toHaveAttribute('action', /\/amend$/)
-    expect(await fieldNamesOf(amend.form)).toEqual(['crumb'])
-    await expect(amend.submitButtons).toHaveText([copy.viewHeader.amend])
-    await expect(copyAsNew.form).toHaveAttribute('action', /\/copy$/)
-    expect(await fieldNamesOf(copyAsNew.form)).toEqual([
-      'crumb',
-      'concurrencyToken',
-      'copyOrigin'
-    ])
-    await expect(copyAsNew.submitButtons).toHaveText([
-      sharedCopy.notificationActions.copy.text
-    ])
-    await expect(
-      headerButtonGroup(page).getByRole('button', {
-        name: sharedCopy.notificationActions.delete.text,
-        exact: true
-      })
-    ).toHaveAttribute('href', /\/delete$/)
-  })
-
-  test('Amend this notification opens the amendment review', async ({
-    page
-  }) => {
-    await page.getByRole('button', { name: copy.viewHeader.amend }).click()
-
-    await expect(
-      journeyStripStatus(page, sharedCopy.journeyStrip.amend)
-    ).toBeVisible()
-  })
-
-  test('Amend this notification opens the amendment review when JavaScript is off', async ({
-    page,
-    browser
-  }) => {
-    await withoutJavaScript(page, browser, async (noJs) => {
-      await noJs.getByRole('button', { name: copy.viewHeader.amend }).click()
-
-      await expect(
-        journeyStripStatus(noJs, sharedCopy.journeyStrip.amend)
-      ).toBeVisible()
-    })
-  })
-
-  test('Copy as new opens a new draft overview when JavaScript is off', async ({
-    page,
-    browser
-  }) => {
-    await expectCopyAsNewOpensDifferentDraftWithoutJavaScript(
-      page,
-      browser,
-      reference
-    )
-  })
-
-  test('Delete opens the delete confirmation when JavaScript is off', async ({
-    page,
-    browser
-  }) => {
-    await withoutJavaScript(page, browser, async (noJs) => {
-      await deleteFromReview(noJs, deleteCopy.title)
-    })
-  })
-
-  test('names every card as a region by its own title', async ({ page }) => {
-    const titles = await page
-      .locator('.govuk-summary-card__title')
-      .allTextContents()
-
-    expect(titles).not.toHaveLength(0)
-    for (const title of titles) {
-      await expect(reviewCardFor(page, title)).toHaveCount(1)
-    }
-    await expect(
-      main(page)
-        .getByRole('region')
-        .filter({ has: page.locator('.govuk-summary-card__title') })
-    ).toHaveCount(titles.length)
   })
 
   test('submitted review has no serious or critical axe violations', async ({
@@ -1476,210 +666,15 @@ test.describe('check-answers feature submitted notification', () => {
   test('Delete on the submitted view opens the delete confirmation', async ({
     page
   }) => {
-    await deleteFromReview(page, deleteCopy.title)
-  })
-
-  test('shows the import reference numbers with the warning, the reference and the customs document code', async ({
-    page
-  }) => {
-    await expectImportReferenceNumbers(importReferences(page), reference)
-  })
-
-  test('shows the import reference numbers as text with no button when JavaScript is off', async ({
-    page,
-    browser
-  }) => {
-    await withoutJavaScript(page, browser, async (noJs) => {
-      const section = importReferences(noJs)
-
-      await expect(
-        section.getByText(copy.importReferences.warning)
-      ).toBeVisible()
-      await expect(summaryValues(section)).toHaveText([reference, 'C640'])
-      await expect(section.getByRole('button')).toHaveCount(0)
-    })
-  })
-
-  test('is headed by the import references warning alone', async ({ page }) => {
-    await expect(
-      main(page).getByText(copy.importReferences.warning)
-    ).toHaveCount(1)
-  })
-
-  test('shows the same submitted date after a reload', async ({ page }) => {
-    const dateLine = page.getByText(/^Date submitted: /)
-    const dateText = await dateLine.textContent()
-
-    await page.reload()
-
-    await expect(dateLine).toHaveText(dateText)
-  })
-
-  test('shows a single Document 1 card when no document is uploaded', async ({
-    page
-  }) => {
-    const documentsHeading = page.getByRole('heading', {
-      level: 2,
-      name: copy.sections.documents
-    })
-
-    await expect(documentsHeading).toBeVisible()
-    await expect(
-      page.getByRole('heading', { level: 3, name: copy.documentN(1) })
-    ).toBeVisible()
-    await expect(
-      rowFor(page, copy.rows.documentReference).getByRole('definition')
-    ).toHaveText(sharedCopy.notApplicable)
-  })
-
-  test('offers no Change links', async ({ page }) => {
-    await expect(page.getByRole('link', { name: copy.change })).toHaveCount(0)
-  })
-})
-
-test.describe('check-answers feature notification that does not exist', () => {
-  test('opening its view shows the standard page not found with status 404', async ({
-    page
-  }) => {
-    await signIn(page)
-
-    const response = await page.goto(
-      `${BASE}/notifications/GBN-0000-0000-0000/notification-view`
-    )
-
-    expect(response.status()).toBe(404)
-    await expect(
-      page.getByRole('heading', { level: 1, name: '404', exact: true })
-    ).toBeVisible()
-    await expect(page.getByText('Page not found')).toBeVisible()
-  })
-})
-
-test.describe('check-answers feature amendment review', () => {
-  test.describe.configure({ timeout: 90000 })
-
-  let reference
-
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    reference = await submitCompleteNotification(page)
-    await amendFromList(page, reference)
-    await openNotificationView(page)
-  })
-
-  test.describe('with the arrival date cleared', () => {
-    test.beforeEach(async ({ page }) => {
-      await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
-      await page.getByLabel('Arrival date at port of entry').fill('')
-      await saveAndReturnToHub(page).click()
-      await openReviewFromHub(page)
-    })
-
-    test('an amendment with a missing answer opens with no error summary and no card errors', async ({
-      page
-    }) => {
-      await expect(
-        page.getByRole('heading', { level: 1, name: copy.resubmittingTitle })
-      ).toBeVisible()
-      await expect(
-        page.getByRole('heading', { name: sharedCopy.errorSummary.title })
-      ).toHaveCount(0)
-      await expect(main(page).getByText(copy.errors.prefix)).toHaveCount(0)
-    })
-
-    test('Continue on an amendment with a missing answer shows the error summary naming the arrival date', async ({
-      page
-    }) => {
-      await page.getByRole('button', { name: copy.submit.button }).click()
-
-      await expect(
-        page.getByRole('heading', { name: sharedCopy.errorSummary.title })
-      ).toBeVisible()
-      await expect(
-        page.getByRole('link', { name: copy.errors.cards.arrivalDetails })
-      ).toBeVisible()
-    })
-  })
-
-  test('ends with Continue, Cancel amend and Delete', async ({ page }) => {
-    await expect(reviewFootControls(page)).toHaveText([
-      copy.submit.button,
-      sharedCopy.journeyStrip.cancelAmend,
-      sharedCopy.notificationActions.delete.text
-    ])
-    await expect(
-      page
-        .getByRole('main')
-        .getByRole('button', { name: sharedCopy.journeyStrip.cancelAmend })
-    ).toHaveAttribute('href', /\/cancel-amend$/)
-  })
-
-  test('Cancel amend on the review opens the cancel-amendment confirmation', async ({
-    page
-  }) => {
     await page
-      .getByRole('main')
-      .getByRole('button', { name: sharedCopy.journeyStrip.cancelAmend })
+      .getByRole('button', {
+        name: sharedCopy.notificationActions.delete.text,
+        exact: true
+      })
       .click()
 
     await expect(
-      page.getByRole('heading', { level: 1, name: cancelAmendCopy.title })
+      page.getByRole('heading', { level: 1, name: deleteCopy.title })
     ).toBeVisible()
-  })
-
-  test('Delete on the review opens the delete confirmation', async ({
-    page
-  }) => {
-    await deleteFromReview(page, deleteCopy.title)
-  })
-
-  test('is headed and titled for re-submitting once an answer changes', async ({
-    page
-  }) => {
-    await changeOriginOnAmendment(page, 'ChangedRef1')
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: copy.resubmittingTitle })
-    ).toBeVisible()
-    await expect(page).toHaveTitle(new RegExp(`^${copy.resubmittingTitle}`))
-  })
-
-  test('is headed and titled for reviewing again once the changed answer is put back', async ({
-    page
-  }) => {
-    await changeOriginOnAmendment(page, 'ChangedRef1')
-    await changeOriginOnAmendment(page, values.internalReferenceNumber)
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: copy.title })
-    ).toBeVisible()
-    await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
-  })
-
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await expectNoSeriousOrCriticalViolations(page, 'Amendment check answers')
-  })
-})
-
-test.describe('check-answers feature amendment review after a cancelled amendment', () => {
-  test.describe.configure({ timeout: 90000 })
-
-  test('a new amendment is headed and titled for reviewing, not re-submitting', async ({
-    page
-  }) => {
-    await signIn(page)
-    const reference = await submitCompleteNotification(page)
-    await amendChangeOriginAndOpenCancel(page, reference)
-    await page
-      .getByRole('button', { name: cancelAmendCopy.confirmButton })
-      .click()
-
-    await amendFromList(page, reference)
-    await openNotificationView(page)
-
-    await expect(
-      page.getByRole('heading', { level: 1, name: copy.title })
-    ).toBeVisible()
-    await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
   })
 })

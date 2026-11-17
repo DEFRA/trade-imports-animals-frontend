@@ -127,16 +127,6 @@ describe('#isReviewRefused', () => {
     expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
-  it('Should refuse a notification whose copied contact address breaks the rules', async () => {
-    const journey = await seedAnd(
-      fullyAnswered({
-        contactAddress: { ...VALID_COPY, email: 'not-an-email' }
-      })
-    )
-
-    expect(await askRefused(journey.journeyId)).toBe(true)
-  })
-
   it('Should not refuse a notification whose answers all pass', async () => {
     const journey = await seedAnd(fullyAnswered())
 

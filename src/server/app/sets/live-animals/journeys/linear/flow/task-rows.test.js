@@ -612,7 +612,6 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
       ...happyPath,
       documents: [{ accompanyingDocumentType: 'ITAHC' }]
     },
-    'the happy path without a contact': { ...happyPath, contactAddress: null },
     'the happy path without an importer': { ...happyPath, importer: null },
     'a second identified species carrying no identifier': {
       ...happyPath,

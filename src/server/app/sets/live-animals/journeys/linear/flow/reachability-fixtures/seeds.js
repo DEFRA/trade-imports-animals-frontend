@@ -63,10 +63,6 @@ export const submitReadySeed = {
     },
     approvalNumber: 'ES-T2-45001294'
   },
-  contactAddress: {
-    name: 'Animal and Plant Health Agency',
-    address: { addressLine1: 'Woodham Lane', country: UNITED_KINGDOM }
-  },
   declaration: 'confirmed'
 }
 

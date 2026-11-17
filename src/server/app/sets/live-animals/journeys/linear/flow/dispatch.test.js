@@ -135,7 +135,6 @@ describe('#buildDispatch', () => {
 
 describe('#nextStepLanding — where Save and continue lands', () => {
   const JOURNEY_ID = 'journey-1'
-  const CONTACT_SLUG = 'consignment/contact/select'
   const ARRIVAL_DETAILS_ID = 'port-of-entry'
   const IMPORT_REASON = 'import-reason'
   const TRANSIT_COUNTRIES = 'transit-countries'
@@ -176,8 +175,7 @@ describe('#nextStepLanding — where Save and continue lands', () => {
       TRANSIT_COUNTRIES,
       TRANSPORTERS_SLUG,
       'accompanying-documents',
-      'addresses',
-      CONTACT_SLUG
+      'addresses'
     ])
   })
 
@@ -251,18 +249,8 @@ describe('#nextStepLanding — where Save and continue lands', () => {
     }
   )
 
-  it('Should go from Consignment addresses to Contact address even when every other task is complete', () => {
-    expect(nextSlug('addresses', completeAnswers)).toBe(CONTACT_SLUG)
-  })
-
-  it('Should go from the CPH number page on to Consignment addresses', () => {
+  it('Should go from the CPH number page on to Roles and addresses', () => {
     expect(nextSlug('cphNumber', completeAnswers)).toBe('addresses')
-  })
-
-  it('Should go on from Contact address to nothing, the review page being the fallback', () => {
-    expect(
-      nextSlug('consignment-contact-select', completeAnswers)
-    ).toBeUndefined()
   })
 
   it('Should refuse a page that belongs to no section', () => {
@@ -292,8 +280,7 @@ describe('#taskRowsOfSection — what Overview lists under a caption', () => {
         ['arrivalDetails', 'transitCountries', 'transporter']
       ],
       ['documents', ['documents']],
-      ['consignment-parties', ['addresses']],
-      ['contact-address', ['contact']]
+      ['consignment-parties', ['addresses']]
     ])
   })
 })
