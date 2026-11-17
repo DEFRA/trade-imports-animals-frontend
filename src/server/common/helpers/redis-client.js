@@ -1,6 +1,7 @@
 import { Cluster, Redis } from 'ioredis'
 
 import { createLogger } from './logging/logger.js'
+import { trackRedisAvailability } from './redis-availability.js'
 
 /**
  * Setup Redis and provide a redis client
@@ -67,6 +68,8 @@ export function buildRedisClient(redisConfig) {
   redisClient.on('error', (error) => {
     logger.error({ err: error }, 'Redis connection error')
   })
+
+  trackRedisAvailability(redisClient)
 
   return redisClient
 }

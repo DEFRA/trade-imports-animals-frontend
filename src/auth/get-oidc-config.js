@@ -1,7 +1,7 @@
 import Wreck from '@hapi/wreck'
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../config/config.js'
-import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { measureExternalCall } from '../server/common/helpers/metrics/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 import { withServerSideEndpointsAtDiscoveryHostname } from './defra-id-hostnames.js'
 

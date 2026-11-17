@@ -1,4 +1,5 @@
 import {
+  addressBookFetch,
   addressBookHeaders,
   addressBookResourceUrl,
   throwOnAddressBookError
@@ -15,7 +16,7 @@ const transportersPage = async (orgId, page) => {
   url.searchParams.set('pageSize', String(MAX_PAGE_SIZE))
   url.searchParams.set('page', String(page))
 
-  const response = await fetch(url.toString(), {
+  const response = await addressBookFetch('list-transporters', url.toString(), {
     method: 'GET',
     headers: headers(orgId)
   })
@@ -44,11 +45,15 @@ export const listTransporters = async (orgId) => {
 
 /** Creates a transporter in the organisation's address book. */
 export const createTransporter = async (orgId, transporter) => {
-  const response = await fetch(transportersUrl(orgId), {
-    method: 'POST',
-    headers: headers(orgId),
-    body: JSON.stringify(transporter)
-  })
+  const response = await addressBookFetch(
+    'create-transporter',
+    transportersUrl(orgId),
+    {
+      method: 'POST',
+      headers: headers(orgId),
+      body: JSON.stringify(transporter)
+    }
+  )
 
   throwOnAddressBookError('create transporter', response)
 

@@ -1,6 +1,7 @@
 import { addressBookCountryName } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import {
+  addressBookFetch,
   addressBookHeaders,
   addressBookResourceUrl,
   throwOnAddressBookError
@@ -46,7 +47,7 @@ export const listAddresses = async (
     url.searchParams.set('q', query)
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await addressBookFetch('list-addresses', url.toString(), {
     method: 'GET',
     headers: headers(orgId)
   })
@@ -65,10 +66,14 @@ export const listAddresses = async (
 
 /** The address with the given id, a deleted one included and marked deleted, or nothing when the address book has none. */
 export const getAddress = async (orgId, addressId) => {
-  const response = await fetch(addressesUrl(orgId, addressId), {
-    method: 'GET',
-    headers: headers(orgId)
-  })
+  const response = await addressBookFetch(
+    'get-address',
+    addressesUrl(orgId, addressId),
+    {
+      method: 'GET',
+      headers: headers(orgId)
+    }
+  )
 
   if (response.status === HTTP_STATUS_NOT_FOUND) {
     return undefined

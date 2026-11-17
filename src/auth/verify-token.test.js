@@ -80,10 +80,12 @@ describe('verifyToken', () => {
 
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.Dependency).toBe('defra-id')
-    expect(document.Operation).toBe('jwks')
-    expect(document.Interface).toBe('SYN-12')
-    expect(document.ExternalCallFailure).toBe(0)
+    expect(document.dependency).toBe('defra-id')
+    expect(document.operation).toBe('jwks')
+    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
+      ['dependency', 'operation']
+    ])
+    expect(document['external.call.failure']).toBe(0)
   })
 
   test('verifies token using first JWK', async () => {
@@ -156,9 +158,8 @@ describe('verifyToken', () => {
 
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.Operation).toBe('jwks')
-    expect(document.ExternalCallFailure).toBe(1)
-    expect(document.Outcome).toBe('failure')
+    expect(document.operation).toBe('jwks')
+    expect(document['external.call.failure']).toBe(1)
   })
 
   test('throws if JWKS has no keys', async () => {

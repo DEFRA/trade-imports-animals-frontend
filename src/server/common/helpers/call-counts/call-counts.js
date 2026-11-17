@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { config } from '../../../../config/config.js'
 import { addPageRequest, isPageRequest } from './call-count-totals.js'
 import { recordPageRequestInBackground } from './page-request-metrics.js'
+import { recordRequestInBackground } from '../metrics/request-metrics.js'
 
 const PLUGIN_NAME = 'call-counts'
 
@@ -27,16 +28,13 @@ export const newCallCounts = () => ({
  */
 export const callCountsOf = (request) => request?.plugins?.[PLUGIN_NAME]
 
-/** Counts one call to the journey backend against the request in progress. */
-export const countBackendCall = () => {
-  const counts = storage.getStore()
-  if (counts) {
-    counts.backendCalls += 1
-  }
-}
+/** The `dependency` name of the journey backend. */
+export const BACKEND_DEPENDENCY = 'animals-backend'
 
 /**
- * Counts one call to a system outside the INS boundary against the request in progress.
+ * Counts one call to a dependency against the request in progress, by
+ * dependency and operation, and as a backend call when it went to the journey
+ * backend.
  *
  * @param {{ dependency: string, operation: string }} externalCall - the call, as the metric contract names it
  */
@@ -49,6 +47,9 @@ export const countExternalCall = ({ dependency, operation }) => {
   counts.externalCalls[dependency] = {
     ...operations,
     [operation]: (operations[operation] ?? 0) + 1
+  }
+  if (dependency === BACKEND_DEPENDENCY) {
+    counts.backendCalls += 1
   }
 }
 
@@ -85,6 +86,7 @@ const totalFinishedRequest = (request) => {
   if (!counts || !isPageRequest(request.route.path)) {
     return
   }
+  recordRequestInBackground(request)
   addPageRequest({
     method: request.method,
     path: request.route.path,

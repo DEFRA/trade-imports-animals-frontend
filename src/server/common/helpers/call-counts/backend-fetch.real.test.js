@@ -24,6 +24,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
+        'replace-notification',
         `http://127.0.0.1:${port}/notifications`,
         { method: 'PUT', headers: { 'content-type': 'application/json' } }
       )
@@ -58,10 +59,14 @@ describe('backendFetch over a real connection', () => {
     )
 
     try {
-      await backendFetch(`http://127.0.0.1:${port}/document-uploads/u-1/file`, {
-        method: 'POST',
-        body: formData
-      })
+      await backendFetch(
+        'stream-document-file',
+        `http://127.0.0.1:${port}/document-uploads/u-1/file`,
+        {
+          method: 'POST',
+          body: formData
+        }
+      )
 
       expect({
         multipart: received.contentType.startsWith('multipart/form-data'),
@@ -88,6 +93,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
+        'stream-document-file',
         `http://127.0.0.1:${port}/document-uploads/u-1/file`,
         { method: 'GET' }
       )
@@ -121,6 +127,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
+        'replace-notification',
         `http://127.0.0.1:${port}/notifications`
       )
 

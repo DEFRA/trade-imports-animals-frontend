@@ -29,6 +29,7 @@ export const replaceFulfilment = async (
   }
 
   const response = await put(
+    'replace-notification',
     `${notificationsUrl}/${journeyId}`,
     body,
     'save notification'

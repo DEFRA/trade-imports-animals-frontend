@@ -67,10 +67,12 @@ describe('refreshTokens', () => {
 
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.Dependency).toBe('defra-id')
-    expect(document.Operation).toBe('token-refresh')
-    expect(document.Interface).toBe('SYN-13')
-    expect(document.ExternalCallFailure).toBe(0)
+    expect(document.dependency).toBe('defra-id')
+    expect(document.operation).toBe('token-refresh')
+    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
+      ['dependency', 'operation']
+    ])
+    expect(document['external.call.failure']).toBe(0)
   })
 
   test('posts refresh token to token endpoint and returns payload', async () => {
@@ -169,8 +171,7 @@ describe('refreshTokens', () => {
 
     await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
     const [document] = readEmfDocuments(logSpy)
-    expect(document.Operation).toBe('token-refresh')
-    expect(document.ExternalCallFailure).toBe(1)
-    expect(document.Outcome).toBe('failure')
+    expect(document.operation).toBe('token-refresh')
+    expect(document['external.call.failure']).toBe(1)
   })
 })

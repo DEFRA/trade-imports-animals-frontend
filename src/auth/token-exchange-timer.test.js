@@ -55,10 +55,12 @@ describe('token exchange timer', () => {
 
       await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
       const [document] = readEmfDocuments(logSpy)
-      expect(document.Dependency).toBe('defra-id')
-      expect(document.Operation).toBe('token-exchange')
-      expect(document.Interface).toBe('SYN-11')
-      expect(document.ExternalCallFailure).toBe(expectedFailure)
+      expect(document.dependency).toBe('defra-id')
+      expect(document.operation).toBe('token-exchange')
+      expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
+        ['dependency', 'operation']
+      ])
+      expect(document['external.call.failure']).toBe(expectedFailure)
     }
   )
 

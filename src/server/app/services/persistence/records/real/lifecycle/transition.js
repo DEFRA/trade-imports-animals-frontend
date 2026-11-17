@@ -4,8 +4,8 @@ import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
-const postTransition = async (url, action, body) => {
-  const response = await backendFetch(url, {
+const postTransition = async (operation, url, action, body) => {
+  const response = await backendFetch(operation, url, {
     method: 'POST',
     headers: headers(),
     body: body === undefined ? undefined : JSON.stringify(body)
@@ -24,6 +24,7 @@ export const finalise = async (journeyId, actor, concurrencyToken) => {
   }
   const query = new URLSearchParams({ concurrencyToken })
   const response = await postTransition(
+    'submit-notification',
     `${notificationsUrl}/${journeyId}/submit?${query}`,
     'submit notification',
     actor
@@ -33,6 +34,7 @@ export const finalise = async (journeyId, actor, concurrencyToken) => {
 
 export const amend = async (journeyId, actor) => {
   const response = await postTransition(
+    'amend-notification',
     `${notificationsUrl}/${journeyId}/amend`,
     'amend notification',
     actor
@@ -42,6 +44,7 @@ export const amend = async (journeyId, actor) => {
 
 export const cancelAmend = async (journeyId, actor) => {
   const response = await postTransition(
+    'cancel-amend-notification',
     `${notificationsUrl}/${journeyId}/cancel-amend`,
     'cancel notification amendment',
     actor
@@ -51,6 +54,7 @@ export const cancelAmend = async (journeyId, actor) => {
 
 export const softDelete = async (journeyId, actor) => {
   const response = await postTransition(
+    'soft-delete-notification',
     `${notificationsUrl}/${journeyId}/soft-delete`,
     'soft-delete notification',
     actor

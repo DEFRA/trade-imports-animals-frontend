@@ -1,5 +1,5 @@
 import { config } from '../../../../config/config.js'
-import { measureExternalCall } from '../../../common/helpers/external-call-metrics.js'
+import { measureExternalCall } from '../../../common/helpers/metrics/external-call-metrics.js'
 import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 
 const uploaderBaseUrl = () => config.get('cdpUploader.baseUrl')

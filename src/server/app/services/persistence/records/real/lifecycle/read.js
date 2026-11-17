@@ -27,6 +27,7 @@ export const list = async ({
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
   const response = await backendFetch(
+    'list-notifications',
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',

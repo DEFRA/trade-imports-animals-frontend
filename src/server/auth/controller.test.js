@@ -197,6 +197,11 @@ describe('#authController', () => {
   describe('Defra ID token exchange metrics', () => {
     let logSpy
 
+    const externalCallDocuments = () =>
+      readEmfDocuments(logSpy).filter(
+        (document) => 'external.call.failure' in document
+      )
+
     beforeEach(() => {
       logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     })
@@ -218,14 +223,14 @@ describe('#authController', () => {
 
       expect(statusCode).toBe(HTTP_STATUS_FOUND)
       expect(headers.location).toBe('/')
-      await vi.waitFor(() => {
-        const [document] = readEmfDocuments(logSpy)
-        expect(readEmfDocuments(logSpy)).toHaveLength(1)
-        expect(document.Dependency).toBe('defra-id')
-        expect(document.Operation).toBe('token-exchange')
-        expect(document.Interface).toBe('SYN-11')
-        expect(document.ExternalCallFailure).toBe(0)
-      })
+      await vi.waitFor(() => expect(externalCallDocuments()).toHaveLength(1))
+      const [document] = externalCallDocuments()
+      expect(document.dependency).toBe('defra-id')
+      expect(document.operation).toBe('token-exchange')
+      expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
+        ['dependency', 'operation']
+      ])
+      expect(document['external.call.failure']).toBe(0)
     })
 
     test('GET /auth/sign-in-oidc records the Defra ID token exchange as failed when sign-in is not authenticated', async () => {
@@ -237,11 +242,11 @@ describe('#authController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(payload).toContain(sharedEn.unauthorised.heading)
-      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-      const [document] = readEmfDocuments(logSpy)
-      expect(document.Dependency).toBe('defra-id')
-      expect(document.Operation).toBe('token-exchange')
-      expect(document.ExternalCallFailure).toBe(1)
+      await vi.waitFor(() => expect(externalCallDocuments()).toHaveLength(1))
+      const [document] = externalCallDocuments()
+      expect(document.dependency).toBe('defra-id')
+      expect(document.operation).toBe('token-exchange')
+      expect(document['external.call.failure']).toBe(1)
     })
   })
 })

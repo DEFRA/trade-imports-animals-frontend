@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../set.js'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createPath,
@@ -13,6 +13,7 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../engine/test-support.js'
+import { readEmfDocuments } from '../../../../../../common/test-helpers/emf-documents.js'
 import { dispatchPages } from '../features/index.js'
 import {
   entryGuardTarget,
@@ -82,6 +83,36 @@ describe('entry guard', () => {
   it('Should let a journey with an entered answer straight through', async () => {
     const { response } = await guardFor({ seed: ANSWERED })
     expect(response).toBeNull()
+  })
+
+  describe('journey.entry.redirect', () => {
+    let logSpy
+
+    const redirectCounts = () =>
+      readEmfDocuments(logSpy)
+        .filter((document) => 'journey.entry.redirect' in document)
+        .map((document) => document['journey.entry.redirect'])
+
+    beforeEach(() => {
+      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      logSpy.mockRestore()
+    })
+
+    it('Should count one redirect for a notification with no entered answer', async () => {
+      await guardFor()
+
+      await vi.waitFor(() => expect(redirectCounts()).toEqual([1]))
+    })
+
+    it('Should count no redirect for a journey with an entered answer', async () => {
+      await guardFor({ seed: ANSWERED })
+      await guardFor()
+
+      await vi.waitFor(() => expect(redirectCounts()).toEqual([1]))
+    })
   })
 
   it('Should treat a journey whose only answer is a flow-only key as having none', async () => {
