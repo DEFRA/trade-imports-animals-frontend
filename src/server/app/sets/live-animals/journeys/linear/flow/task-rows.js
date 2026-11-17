@@ -23,6 +23,7 @@ import {
   transitCountriesPage,
   transportersPage
 } from '../features/transport/page.js'
+
 export const taskRows = [
   { id: 'origin', pages: [originPage] },
   {
@@ -66,7 +67,7 @@ export const taskRows = [
     id: 'addresses',
     pages: [addressesPage, cphNumberPage],
     extraAnswerGiven: everyAddressableAnimalHasPermanentAddress
-  },
+  }
 ]
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)

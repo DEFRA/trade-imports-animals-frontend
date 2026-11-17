@@ -1,16 +1,13 @@
-import {
-  PARTIES,
-  CONTACT_PARTY
-} from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
-
+/**
+ * Lighthouse walks party pickers by scraping the first `party` radio. Those
+ * radios only render when the signed-in org has at least one address in the
+ * real address-book service (stack). Create one via the API when the book is
+ * empty — same approach as the tests-repo e2e globalSetup, but one record only.
+ */
 const ORGANISATION_ID = '5900001'
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 const HTTP_CREATED = 201
 const HTTP_OK = 200
-
-const SELECTABLE_ADDRESS_ROLES = [...PARTIES, CONTACT_PARTY]
-  .map(({ addressBookRole }) => addressBookRole)
-  .filter(Boolean)
 
 const addressBookBase = () =>
   process.env.TRADE_IMPORTS_ADDRESS_BOOK_URL ?? 'http://localhost:8089'
@@ -23,47 +20,35 @@ const headers = () => ({
   [ORGANISATION_ID_HEADER]: ORGANISATION_ID
 })
 
-const existingAddresses = async () => {
-  const listed = await fetch(`${addressesUrl()}?page=1&pageSize=100`, {
-    headers: headers()
-  })
+export const ensureAddressBookHasAnAddress = async () => {
+  const listed = await fetch(`${addressesUrl()}?page=1`, { headers: headers() })
   if (listed.status !== HTTP_OK) {
     throw new Error(
       `Could not list address book for Lighthouse seed (${listed.status})`
     )
   }
-  return (await listed.json()).items ?? []
-}
+  const body = await listed.json()
+  if ((body.totalItems ?? body.items?.length ?? 0) > 0) {
+    return
+  }
 
-const rolesAlreadyCovered = (addresses) =>
-  new Set(addresses.flatMap((address) => address.roles ?? []))
-
-const createAddressHoldingRole = async (role) => {
   const created = await fetch(addressesUrl(), {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-      name: `Lighthouse Seed ${role}`,
+      name: 'Lighthouse Seed Address',
       addressLine1: '1 Test Street',
       townOrCity: 'London',
       postcode: 'SW1A 1AA',
       countryCode: 'GB',
       phone: '01632 960000',
       email: 'lighthouse@example.com',
-      roles: [role]
+      roles: ['PLACE_OF_ORIGIN']
     })
   })
   if (created.status !== HTTP_CREATED && created.status !== HTTP_OK) {
     throw new Error(
-      `Could not create a "${role}" address for Lighthouse seed (${created.status})`
+      `Could not create address for Lighthouse seed (${created.status})`
     )
   }
-}
-
-export const ensureAddressBookCoversEverySelectableRole = async () => {
-  const covered = rolesAlreadyCovered(await existingAddresses())
-  const uncovered = SELECTABLE_ADDRESS_ROLES.filter(
-    (role) => !covered.has(role)
-  )
-  await Promise.all(uncovered.map(createAddressHoldingRole))
 }
