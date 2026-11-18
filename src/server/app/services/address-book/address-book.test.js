@@ -248,6 +248,24 @@ describe('the role rule', () => {
 
     expect(found).toHaveLength(2)
   })
+
+  test('Should hold a single record whose roles include the role asked for', async () => {
+    const { holdsRole } = await addressBook()
+
+    expect(holdsRole({ roles: ['CONSIGNOR'] }, 'CONSIGNOR')).toBe(true)
+  })
+
+  test('Should not hold a single record whose roles belong to another role', async () => {
+    const { holdsRole } = await addressBook()
+
+    expect(holdsRole({ roles: ['CONSIGNEE'] }, 'CONSIGNOR')).toBe(false)
+  })
+
+  test('Should hold a single record whose roles list is empty, whatever role is asked for', async () => {
+    const { holdsRole } = await addressBook()
+
+    expect(holdsRole({ roles: [] }, 'CONSIGNOR')).toBe(true)
+  })
 })
 
 describe('mapping the wire onto the journey', () => {
@@ -371,11 +389,13 @@ describe('#party', () => {
 
 describe('writes', () => {
   test('Should expose no way to add, change or remove a record', async () => {
-    // The journey reads the book and never writes to it — creating and
-    // maintaining addresses belongs to the INS frontend.
     const book = await addressBook()
 
-    expect(Object.keys(book).sort()).toEqual(['addresses', 'party'])
+    expect(Object.keys(book).sort()).toEqual([
+      'addresses',
+      'holdsRole',
+      'party'
+    ])
   })
 })
 

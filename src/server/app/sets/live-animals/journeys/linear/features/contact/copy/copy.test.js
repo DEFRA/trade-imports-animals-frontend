@@ -24,6 +24,23 @@ describe('contact copy module', () => {
       'Dyma gyfeiriad cyswllt y person sy’n gyfrifol am y llwyth o’r adeg y mae’n cyrraedd Prydain Fawr hyd nes bod yr awdurdodau wedi cwblhau eu gwiriadau.'
     )
   })
+
+  it('Should hold the add-a-branch sentence as the design source sets it, in both locales', () => {
+    expect(copy.addNewBranchAddress.before).toBe(
+      'If the correct address is not shown, '
+    )
+    expect(copy.addNewBranchAddress.linkText).toBe('add a new branch address')
+    expect(copy.addNewBranchAddress.after).toBe(', then return to this page.')
+    expect(cy.addNewBranchAddress.before).toBe(
+      'Os nad yw’r cyfeiriad cywir yn cael ei ddangos, '
+    )
+    expect(cy.addNewBranchAddress.linkText).toBe(
+      'ychwanegwch gyfeiriad cangen newydd'
+    )
+    expect(cy.addNewBranchAddress.after).toBe(
+      ', ac yna dewch yn ôl i’r dudalen hon.'
+    )
+  })
 })
 
 describe('GET contact — copy reaches the view', () => {

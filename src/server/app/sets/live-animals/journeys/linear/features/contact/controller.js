@@ -11,7 +11,10 @@ import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { addressSummaryEndingAtPostcode } from '../addresses/address-summary.js'
-import { answerFor } from '../addresses/party-picker/selection.js'
+import {
+  answerFor,
+  chosenPartyFor
+} from '../addresses/party-picker/selection.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
   issueInsAddAddressUrl,
@@ -73,7 +76,6 @@ const render = (
     errors,
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
-    addNewAddressLabel: kit.sharedCopy.addressHandshake.addNewAddress,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
@@ -82,11 +84,21 @@ const render = (
     }))
   })
 
+const offeredAddresses = (orgId) =>
+  addressBook.addresses(orgId, { role: CONTACT_PARTY.addressBookRole })
+
+const offeredAddress = async (orgId, addressId) => {
+  const chosen = await chosenPartyFor(orgId, addressId)
+  return chosen && addressBook.holdsRole(chosen, CONTACT_PARTY.addressBookRole)
+    ? chosen
+    : undefined
+}
+
 const get = async (request, h) => {
   const current = await state.get(request, h)
   const { journey, answers } = current
   const orgId = organisationIdOf(request)
-  const options = [...(await addressBook.addresses(orgId))]
+  const options = [...(await offeredAddresses(orgId))]
   const { errors } = await validation.onStored(answers, {
     addressOptions: options
   })
@@ -116,16 +128,11 @@ const get = async (request, h) => {
   )
 }
 
-const loadLiveAddress = async (orgId, addressId) => {
-  const record = await addressBook.party(orgId, addressId)
-  return record?.deleted ? undefined : record
-}
-
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const orgId = organisationIdOf(request)
   const chosen = payload.contactAddress
-    ? await loadLiveAddress(orgId, payload.contactAddress)
+    ? await offeredAddress(orgId, payload.contactAddress)
     : undefined
   const { errors } = await validation.onSubmit(payload, {
     addressOptions: chosen ? [chosen] : []
@@ -137,7 +144,7 @@ const post = async (request, h) => {
       h,
       current,
       {},
-      await addressBook.addresses(orgId),
+      await offeredAddresses(orgId),
       issueAddAddressLink(request, h, current.journey),
       { errors }
     ).code(HTTP_STATUS_BAD_REQUEST)
@@ -158,7 +165,7 @@ const post = async (request, h) => {
         h,
         current,
         { selectedId: chosen?.id },
-        await addressBook.addresses(orgId),
+        await offeredAddresses(orgId),
         issueAddAddressLink(request, h, current.journey),
         { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)

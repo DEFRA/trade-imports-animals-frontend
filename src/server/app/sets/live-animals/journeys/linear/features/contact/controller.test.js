@@ -28,6 +28,8 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
+import { recordsHoldingRole } from '../../../../../../services/address-book/stub/test-support.js'
+import { CONTACT_PARTY } from '../addresses/parties.js'
 
 import * as contact from './controller.js'
 
@@ -49,7 +51,6 @@ describe('GET contact — select an address from the book', () => {
     const result = await driveHandler(get)
 
     expect(result.view.context.addAddressHref).toBeFalsy()
-    expect(result.view.context.addNewAddressLabel).toBe('Add a new address')
   })
 
   it('Should surface a not-found handshake error', async () => {
@@ -97,14 +98,17 @@ describe('GET contact — select an address from the book', () => {
     ).toEqual([CONTACT.id])
   })
 
-  it('Should hint each option with its address ending at the postcode, never the country', async () => {
+  it("Should offer only the organisation's branch addresses, each hinted with its address ending at the postcode, and no other party from the book", async () => {
     const result = await driveHandler(get)
 
-    const hints = result.view.context.contactOptions.map(
-      (option) => option.hint.text
-    )
-    expect(hints).toEqual(
-      STUB_BOOK.map((record) => addressLineEndingAtPostcode(record.address))
+    const branchRecords = recordsHoldingRole(CONTACT_PARTY.addressBookRole)
+    expect(result.view.context.contactOptions).toEqual(
+      branchRecords.map((record) => ({
+        value: record.id,
+        text: record.name,
+        hint: { text: addressLineEndingAtPostcode(record.address) },
+        checked: false
+      }))
     )
   })
 
@@ -250,6 +254,23 @@ describe('POST contact — against the address book', () => {
 
     const result = await driveHandler(post, {
       payload: { contactAddress: BOOK_CONTACT.id }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should answer 400 and commit nothing when the picked address is held for a consignment role, not the contact role', async () => {
+    const CONSIGNOR_CONTACT = listedAddress(
+      'held-as-consignor',
+      'Held As Consignor',
+      { countryCode: 'GB', roles: ['CONSIGNOR'] }
+    )
+    answeringOneAddress(CONSIGNOR_CONTACT)
+
+    const result = await driveHandler(post, {
+      payload: { contactAddress: CONSIGNOR_CONTACT.id }
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)

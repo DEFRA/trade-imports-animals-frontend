@@ -26,7 +26,7 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
 import { expectAddedAddressBannerShownOnce } from '../test-support.js'
-import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
+import { recordsHoldingRole } from '../../../../../../../services/address-book/stub/test-support.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
@@ -38,10 +38,7 @@ const JUTLAND_SWINE_ID = 'jutland-swine-aps'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
-const listedFor = (role) =>
-  STUB_BOOK.filter(
-    (record) => record.roles.length === 0 || record.roles.includes(role)
-  ).map((record) => record.id)
+const listedFor = (role) => recordsHoldingRole(role).map((record) => record.id)
 
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(

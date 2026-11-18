@@ -53,6 +53,7 @@ export const PARTIES = [
 
 export const CONTACT_PARTY = {
   id: 'contactAddress',
+  addressBookRole: 'BRANCH_ADDRESS',
   slug: consignmentContactSelectPage.slug,
   editSlug: 'consignment/contact/edit',
   returnSlug: consignmentContactSelectPage.slug,

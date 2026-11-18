@@ -32,6 +32,7 @@ import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
+import { recordsHoldingRole as listedFor } from '../../../../../../../services/address-book/stub/test-support.js'
 
 const addressBookInsetText = (party) => {
   const {
@@ -40,11 +41,6 @@ const addressBookInsetText = (party) => {
   } = STUB_BOOK.find((record) => record.name === partyPickerName(party))
   return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
 }
-
-const listedFor = (role) =>
-  STUB_BOOK.filter(
-    (record) => record.roles.length === 0 || record.roles.includes(role)
-  )
 
 const addressCountFor = (party) => listedFor(party.addressBookRole).length
 

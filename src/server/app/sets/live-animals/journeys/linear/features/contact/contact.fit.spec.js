@@ -13,6 +13,8 @@ import {
   saveAndReturnToHub
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
+import { recordsHoldingRole } from '../../../../../../services/address-book/stub/test-support.js'
+import { CONTACT_PARTY } from '../addresses/parties.js'
 import { copy } from './copy/copy.en.js'
 import { copy as addressesCopy } from '../addresses/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
@@ -67,21 +69,31 @@ test.describe('contact feature', () => {
     ).toBeVisible()
   })
 
-  test('renders the address-book contacts, each hinted with its address ending at the postcode', async ({
+  test('renders the branch-listed address-book contacts, each hinted with its address ending at the postcode, and offers no other party from the book', async ({
     page
   }) => {
+    const branchRecords = recordsHoldingRole(CONTACT_PARTY.addressBookRole)
     const group = page.getByRole('group', { name: resultsHeadingText })
     const renderedValues = await group
       .locator(CONTACT_ADDRESS_INPUT)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
-    expect(renderedValues).toEqual(STUB_BOOK.map(({ id }) => id))
-    for (const option of STUB_BOOK) {
+    expect(renderedValues).toEqual(branchRecords.map(({ id }) => id))
+    for (const option of branchRecords) {
       const radio = page.getByRole('radio', { name: option.name, exact: true })
       await expect(radio).toBeVisible()
       await expect(radio).toHaveAccessibleDescription(
         addressLineEndingAtPostcode(option.address)
       )
     }
+
+    const consignmentRoleRecord = STUB_BOOK.find(
+      (record) =>
+        record.roles.length > 0 &&
+        !record.roles.includes(CONTACT_PARTY.addressBookRole)
+    )
+    await expect(
+      page.getByRole('radio', { name: consignmentRoleRecord.name })
+    ).toHaveCount(0)
   })
 
   test('offers no way to add an address', async ({ page }) => {
@@ -172,7 +184,7 @@ test.describe('contact feature', () => {
     page
   }) => {
     const contactUrl = page.url()
-    const selected = STUB_BOOK[0]
+    const selected = recordsHoldingRole(CONTACT_PARTY.addressBookRole)[0]
 
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await saveAndContinue(page).click()

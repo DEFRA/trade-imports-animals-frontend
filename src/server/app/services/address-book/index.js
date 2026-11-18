@@ -2,12 +2,6 @@ import { isStubMode } from '../../../common/services/mode.js'
 import * as client from './client.js'
 import { STUB_BOOK } from './stub/index.js'
 
-/** Addresses are read-only here: the notification journey selects from the
- * organisation's book, and adding, changing and removing an address belongs
- * to the INS frontend. A transporter the journey adds is written here
- * instead, through `services/transporters`, because the journey is where it
- * is entered. */
-
 const haystack = (record) =>
   [record.name, ...Object.values(record.address ?? {})]
     .filter(Boolean)
@@ -17,7 +11,10 @@ const haystack = (record) =>
 const matchesSearch = (record, query) =>
   haystack(record).includes(query.trim().toLowerCase())
 
-const holdsRole = (record, role) =>
+/** Whether a record holds a role a list offers: a record holding that role,
+ * or holding no role at all, holds it; with no role given, every record
+ * holds it. */
+export const holdsRole = (record, role) =>
   !role || record.roles.length === 0 || record.roles.includes(role)
 
 const pageNumbersFrom = (first, last) =>
