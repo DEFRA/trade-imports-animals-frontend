@@ -1,7 +1,4 @@
-import {
-  COUNT,
-  publishMetricsInBackground
-} from '../metrics/publish-metrics.js'
+import { COUNT, publishMetricsInBackground } from './publish-metrics.js'
 
 /**
  * Publishes one finished page request's counts, `page.request.backend.calls`

@@ -1,3 +1,7 @@
+import { config } from '../../../../config/config.js'
+import { callCountsOf } from '../call-counts/call-counts.js'
+import { isPageRequest } from '../call-counts/call-count-totals.js'
+import { recordPageRequestInBackground } from './page-request-metrics.js'
 import {
   countEvent,
   MILLISECONDS,
@@ -62,15 +66,7 @@ const isRefusedAnswer = (request) =>
   request.response?.variety === 'view' &&
   Boolean(request.response.source?.context?.errorSummary)
 
-/**
- * Publishes a finished request as `http.server.requests` (its time from
- * received to completed, tagged `method`, `section` and `status.class`) and,
- * for a posted answer the page showed again with an error summary, counts
- * `journey.validation.failure` tagged `page`.
- *
- * @param {import('@hapi/hapi').Request} request - the finished request
- */
-export const recordRequestInBackground = (request) => {
+const recordRequestInBackground = (request) => {
   const routePath = request.route.path
   publishMetricsInBackground(
     {
@@ -88,5 +84,33 @@ export const recordRequestInBackground = (request) => {
   )
   if (isRefusedAnswer(request)) {
     countEvent('journey.validation.failure', { page: routePage(routePath) })
+  }
+}
+
+const publishFinishedPageRequestMetrics = (request) => {
+  if (!isPageRequest(request.route.path)) {
+    return
+  }
+  recordRequestInBackground(request)
+  if (config.get('callCounts.metrics.enabled')) {
+    recordPageRequestInBackground(callCountsOf(request))
+  }
+}
+
+/**
+ * Publishes, without making the request wait, every finished page request as
+ * `http.server.requests` (its time from received to completed, tagged
+ * `method`, `section` and `status.class`); for a posted answer the page showed
+ * again with an error summary, a `journey.validation.failure` count tagged
+ * `page`; and, when `callCounts.metrics.enabled` is on, the request's call
+ * counts as `page.request.backend.calls` and `page.request.session.resolutions`.
+ */
+export const requestMetrics = {
+  plugin: {
+    name: 'request-metrics',
+    dependencies: 'call-counts',
+    register(server) {
+      server.events.on('response', publishFinishedPageRequestMetrics)
+    }
   }
 }

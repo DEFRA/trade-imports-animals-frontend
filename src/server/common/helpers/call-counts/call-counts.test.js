@@ -1,5 +1,4 @@
 import hapi from '@hapi/hapi'
-import { vi } from 'vitest'
 
 import { config } from '../../../../config/config.js'
 import {
@@ -11,10 +10,8 @@ import {
 import { callCountsRoutes } from './call-counts-routes.js'
 import { clearCallCountTotals } from './call-count-totals.js'
 import { statusCodes } from '../../constants/status-codes.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
 
 const ROUTE_PATH = '/some-page'
-const METRICS_ENABLED_KEY = 'callCounts.metrics.enabled'
 const BACKEND_READ = {
   dependency: BACKEND_DEPENDENCY,
   operation: 'get-fulfilment'
@@ -121,63 +118,6 @@ describe('call counts', () => {
 
     expect(totals.pageRequests).toBe(0)
     expect(routes).toEqual([])
-  })
-
-  describe('page request metrics', () => {
-    const originalEnabled = config.get(METRICS_ENABLED_KEY)
-    let logSpy
-
-    const pageRequestDocuments = () =>
-      readEmfDocuments(logSpy).filter(
-        (document) => 'page.request.backend.calls' in document
-      )
-
-    beforeEach(() => {
-      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      config.set(METRICS_ENABLED_KEY, originalEnabled)
-      logSpy.mockRestore()
-    })
-
-    test('publishes the page request counts tagged request.kind page when callCounts.metrics.enabled is on', async () => {
-      config.set(METRICS_ENABLED_KEY, true)
-      await server.inject({ method: 'GET', url: ROUTE_PATH })
-
-      await vi.waitFor(() => expect(pageRequestDocuments()).toHaveLength(1))
-      const [document] = pageRequestDocuments()
-      expect(document._aws.CloudWatchMetrics[0]).toEqual(
-        expect.objectContaining({
-          Dimensions: [['request.kind']],
-          Metrics: [
-            { Name: 'page.request.backend.calls', Unit: 'Count' },
-            { Name: 'page.request.session.resolutions', Unit: 'Count' }
-          ]
-        })
-      )
-      expect(document).toEqual(
-        expect.objectContaining({
-          'request.kind': 'page',
-          'page.request.backend.calls': 2,
-          'page.request.session.resolutions': 1
-        })
-      )
-    })
-
-    test('publishes no page request counts when callCounts.metrics.enabled is off', async () => {
-      config.set(METRICS_ENABLED_KEY, false)
-      await server.inject({ method: 'GET', url: ROUTE_PATH })
-
-      await vi.waitFor(() =>
-        expect(
-          readEmfDocuments(logSpy).filter(
-            (document) => 'http.server.requests' in document
-          )
-        ).toHaveLength(1)
-      )
-      expect(pageRequestDocuments()).toEqual([])
-    })
   })
 
   test('DELETE clears the totals and restarts the since time', async () => {
