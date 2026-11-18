@@ -4,7 +4,7 @@ import { config } from '../../config/config.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { sessionAuth } from '../common/test-helpers/session-auth.js'
-import { readEmfDocuments } from '../common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../common/test-helpers/emf-documents.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { copy as sharedEn } from '../app/shared/copy.en.js'
@@ -195,20 +195,11 @@ describe('#authController', () => {
   })
 
   describe('Defra ID token exchange metrics', () => {
-    let logSpy
-
-    const externalCallDocuments = () =>
-      readEmfDocuments(logSpy).filter(
-        (document) => 'external.call.failure' in document
-      )
-
-    beforeEach(() => {
-      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      logSpy.mockRestore()
-    })
+    const emf = recordEmfDocuments()
+    const tokenExchange = {
+      dependency: 'defra-id',
+      operation: 'token-exchange'
+    }
 
     test('GET /auth/sign-in-oidc records the Defra ID token exchange it completed', async () => {
       verifyToken.mockResolvedValue(undefined)
@@ -223,14 +214,10 @@ describe('#authController', () => {
 
       expect(statusCode).toBe(HTTP_STATUS_FOUND)
       expect(headers.location).toBe('/')
-      await vi.waitFor(() => expect(externalCallDocuments()).toHaveLength(1))
-      const [document] = externalCallDocuments()
-      expect(document.dependency).toBe('defra-id')
-      expect(document.operation).toBe('token-exchange')
-      expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
-        ['dependency', 'operation']
-      ])
-      expect(document['external.call.failure']).toBe(0)
+      expect(await emf.onlyExternalCall()).toEqual({
+        ...tokenExchange,
+        failure: 0
+      })
     })
 
     test('GET /auth/sign-in-oidc records the Defra ID token exchange as failed when sign-in is not authenticated', async () => {
@@ -242,11 +229,10 @@ describe('#authController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(payload).toContain(sharedEn.unauthorised.heading)
-      await vi.waitFor(() => expect(externalCallDocuments()).toHaveLength(1))
-      const [document] = externalCallDocuments()
-      expect(document.dependency).toBe('defra-id')
-      expect(document.operation).toBe('token-exchange')
-      expect(document['external.call.failure']).toBe(1)
+      expect(await emf.onlyExternalCall()).toEqual({
+        ...tokenExchange,
+        failure: 1
+      })
     })
   })
 })

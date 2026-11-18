@@ -1,13 +1,12 @@
 import hapi from '@hapi/hapi'
 import { Writable } from 'node:stream'
 import { pino } from 'pino'
-import { vi } from 'vitest'
 
 import { createBackendFetch } from './backend-fetch.js'
 import { callCounts } from '../call-counts/call-counts.js'
 import { callCountsRoutes } from '../call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
 import {
   fetchMock,
   resetMocksAndConfigAfterTests
@@ -264,32 +263,19 @@ describe('backendFetch', () => {
 })
 
 describe('backendFetch records one external call', () => {
-  let logSpy
-
-  const callDocuments = () =>
-    readEmfDocuments(logSpy).filter(
-      (document) => 'external.call.duration' in document
-    )
-
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
-  })
+  const emf = recordEmfDocuments()
+  const animalsBackendCall = {
+    dependency: 'animals-backend',
+    operation: OPERATION
+  }
 
   test('is one animals-backend call under the operation named', async () => {
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
-    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
-    expect(callDocuments()[0]).toEqual(
-      expect.objectContaining({
-        dependency: 'animals-backend',
-        operation: OPERATION,
-        'external.call.failure': 0
-      })
-    )
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...animalsBackendCall,
+      failure: 0
+    })
   })
 
   test('is one call timed from the first attempt when the connection is retried', async () => {
@@ -303,10 +289,9 @@ describe('backendFetch records one external call', () => {
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
-    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
-    expect(callDocuments()[0]['external.call.duration']).toBeGreaterThanOrEqual(
-      firstAttemptMs - 5
-    )
+    await emf.onlyExternalCall()
+    const [durationMs] = emf.valuesOf('external.call.duration')
+    expect(durationMs).toBeGreaterThanOrEqual(firstAttemptMs - 5)
   })
 
   test('is a failure when the backend answers with a 5xx status', async () => {
@@ -314,8 +299,10 @@ describe('backendFetch records one external call', () => {
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
-    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
-    expect(callDocuments()[0]['external.call.failure']).toBe(1)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...animalsBackendCall,
+      failure: 1
+    })
   })
 
   test('is a success when the backend refuses a stale write with 409', async () => {
@@ -323,8 +310,10 @@ describe('backendFetch records one external call', () => {
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
-    await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
-    expect(callDocuments()[0]['external.call.failure']).toBe(0)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...animalsBackendCall,
+      failure: 0
+    })
   })
 })
 

@@ -8,7 +8,7 @@ import {
 } from './records.js'
 import { store } from '../store.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { readEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
 
 const JOURNEY_EVENTS = Object.freeze({
   started: 'journey.started',
@@ -19,31 +19,20 @@ const JOURNEY_EVENTS = Object.freeze({
   conflict: 'journey.concurrency.conflict'
 })
 
-const journeyCounts = (logSpy) =>
-  readEmfDocuments(logSpy).flatMap((document) =>
-    Object.values(JOURNEY_EVENTS)
-      .filter((name) => name in document)
-      .map((name) => ({
-        name,
-        value: document[name],
-        dimensions: document._aws.CloudWatchMetrics[0].Dimensions
-      }))
-  )
-
 const counted = (...names) =>
-  names.map((name) => ({ name, value: 1, dimensions: [[]] }))
+  names.map((name) => ({ name, value: 1, unit: 'Count', dimensions: {} }))
 
 describe('records journey counters', () => {
-  let logSpy
+  const emf = recordEmfDocuments()
+
+  const journeyCounts = () =>
+    Object.values(JOURNEY_EVENTS).flatMap((name) =>
+      emf.publishesOf(name).map((publish) => ({ name, ...publish }))
+    )
 
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)
     await store.clear()
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
   })
 
   test('starting, submitting, amending, copying and deleting a journey each count one event with no dimensions', async () => {
@@ -58,7 +47,7 @@ describe('records journey counters', () => {
     await records.softDelete(started.journeyId)
 
     await vi.waitFor(() =>
-      expect(journeyCounts(logSpy)).toEqual(
+      expect(journeyCounts()).toEqual(
         counted(
           JOURNEY_EVENTS.started,
           JOURNEY_EVENTS.submitted,
@@ -79,7 +68,7 @@ describe('records journey counters', () => {
     ).rejects.toMatchObject({ code: STALE_CONCURRENCY_TOKEN })
 
     await vi.waitFor(() =>
-      expect(journeyCounts(logSpy)).toEqual(
+      expect(journeyCounts()).toEqual(
         counted(JOURNEY_EVENTS.started, JOURNEY_EVENTS.conflict)
       )
     )
@@ -93,7 +82,7 @@ describe('records journey counters', () => {
     ).rejects.toMatchObject({ code: STALE_CONCURRENCY_TOKEN })
 
     await vi.waitFor(() =>
-      expect(journeyCounts(logSpy)).toEqual(
+      expect(journeyCounts()).toEqual(
         counted(JOURNEY_EVENTS.started, JOURNEY_EVENTS.conflict)
       )
     )

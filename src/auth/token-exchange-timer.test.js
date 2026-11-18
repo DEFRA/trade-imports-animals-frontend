@@ -5,7 +5,7 @@ import {
   recordTokenExchange,
   timeTokenExchange
 } from './token-exchange-timer.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
 vi.mock('../server/common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -16,17 +16,15 @@ vi.mock('../server/common/helpers/logging/logger.js', () => ({
 }))
 
 describe('token exchange timer', () => {
-  let logSpy
+  const emf = recordEmfDocuments()
   let getMetricsLoggerSpy
 
   beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     getMetricsLoggerSpy = vi.spyOn(Metrics.prototype, 'getMetricsLogger')
   })
 
   afterEach(() => {
     getMetricsLoggerSpy.mockRestore()
-    logSpy.mockRestore()
   })
 
   test('timeTokenExchange returns the token endpoint and stamps the start', () => {
@@ -53,14 +51,11 @@ describe('token exchange timer', () => {
 
       recordTokenExchange(request)
 
-      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-      const [document] = readEmfDocuments(logSpy)
-      expect(document.dependency).toBe('defra-id')
-      expect(document.operation).toBe('token-exchange')
-      expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
-        ['dependency', 'operation']
-      ])
-      expect(document['external.call.failure']).toBe(expectedFailure)
+      expect(await emf.onlyExternalCall()).toEqual({
+        dependency: 'defra-id',
+        operation: 'token-exchange',
+        failure: expectedFailure
+      })
     }
   )
 
@@ -68,6 +63,6 @@ describe('token exchange timer', () => {
     recordTokenExchange({ app: {}, auth: { isAuthenticated: false } })
 
     expect(getMetricsLoggerSpy).not.toHaveBeenCalled()
-    expect(readEmfDocuments(logSpy)).toHaveLength(0)
+    expect(emf.documents()).toEqual([])
   })
 })

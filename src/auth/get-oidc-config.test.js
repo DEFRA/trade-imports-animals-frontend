@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 import { config } from '../config/config.js'
 import { getOidcConfig } from './get-oidc-config.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 import {
   setStackDefraIdRewrite,
@@ -28,13 +28,16 @@ describe('getOidcConfig', () => {
     ...STACK_DEFRA_ID_REWRITE_KEYS
   ])
 
-  let logSpy
+  const emf = recordEmfDocuments()
+  const discoveryCall = {
+    dependency: 'defra-id',
+    operation: 'openid-configuration'
+  }
   let tracingHeader
 
   beforeEach(() => {
     wreckGetMock.mockReset()
     getTraceIdMock.mockReset()
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     setStackDefraIdRewrite()
     config.set('defraId.oidcDiscoveryUrl', discoveryUrl)
@@ -42,23 +45,15 @@ describe('getOidcConfig', () => {
     getTraceIdMock.mockReturnValue(traceId)
   })
 
-  afterEach(() => {
-    logSpy.mockRestore()
-  })
-
   test('measures the discovery call as defra-id openid-configuration', async () => {
     wreckGetMock.mockResolvedValue({ payload: {} })
 
     await getOidcConfig()
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.dependency).toBe('defra-id')
-    expect(document.operation).toBe('openid-configuration')
-    expect(document['external.call.failure']).toBe(0)
-    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
-      ['dependency', 'operation']
-    ])
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...discoveryCall,
+      failure: 0
+    })
   })
 
   test('fetches discovery document with tracing header', async () => {
@@ -112,8 +107,9 @@ describe('getOidcConfig', () => {
     wreckGetMock.mockRejectedValue(new Error('discovery failed'))
 
     await expect(getOidcConfig()).rejects.toThrow('discovery failed')
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document['external.call.failure']).toBe(1)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...discoveryCall,
+      failure: 1
+    })
   })
 })

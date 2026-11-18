@@ -1,6 +1,8 @@
 import { vi } from 'vitest'
 import { refreshTokens } from './refresh-tokens.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { config } from '../config/config.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckPostMock = vi.hoisted(() => vi.fn())
 vi.mock('@hapi/wreck', () => ({
@@ -12,13 +14,6 @@ vi.mock('@hapi/wreck', () => ({
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
 vi.mock('./get-oidc-config.js', () => ({
   getOidcConfig: getOidcConfigMock
-}))
-
-const configGetMock = vi.hoisted(() => vi.fn())
-vi.mock('../config/config.js', () => ({
-  config: {
-    get: configGetMock
-  }
 }))
 
 const getTraceIdMock = vi.hoisted(() => vi.fn())
@@ -34,70 +29,45 @@ vi.mock('../server/common/helpers/logging/logger.js', () => ({
   })
 }))
 
-describe('refreshTokens', () => {
-  const tracingHeader = 'x-cdp-request-id'
-  const traceId = 'test-trace-id'
+const DEFRA_ID_CONFIG = {
+  'defraId.clientId': 'client-id',
+  'defraId.clientSecret': 'client-secret',
+  'defraId.redirectUrl': 'http://localhost/callback'
+}
 
-  let logSpy
+describe('refreshTokens', () => {
+  const tokenEndpoint = 'https://mock-auth-server/oauth/token'
+  const traceId = 'test-trace-id'
+  const tokenRefresh = { dependency: 'defra-id', operation: 'token-refresh' }
+
+  const emf = recordEmfDocuments()
+  restoreConfigAfterEach(Object.keys(DEFRA_ID_CONFIG))
+  let tracingHeader
 
   beforeEach(() => {
     wreckPostMock.mockReset()
     getOidcConfigMock.mockReset()
-    configGetMock.mockReset()
     getTraceIdMock.mockReset()
     getTraceIdMock.mockReturnValue(traceId)
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
+    getOidcConfigMock.mockResolvedValue({ token_endpoint: tokenEndpoint })
+    for (const [key, value] of Object.entries(DEFRA_ID_CONFIG)) {
+      config.set(key, value)
+    }
+    tracingHeader = config.get('tracing.header')
   })
 
   test('measures the refresh as defra-id token-refresh', async () => {
-    getOidcConfigMock.mockResolvedValue({
-      token_endpoint: 'https://mock-auth-server/oauth/token'
-    })
-    configGetMock.mockImplementation((key) => {
-      if (key === 'tracing.header') return tracingHeader
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-    })
     wreckPostMock.mockResolvedValue({ payload: {} })
 
     await refreshTokens('rt')
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.dependency).toBe('defra-id')
-    expect(document.operation).toBe('token-refresh')
-    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
-      ['dependency', 'operation']
-    ])
-    expect(document['external.call.failure']).toBe(0)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...tokenRefresh,
+      failure: 0
+    })
   })
 
   test('posts refresh token to token endpoint and returns payload', async () => {
-    const tokenEndpoint = 'https://mock-auth-server/oauth/token'
-    getOidcConfigMock.mockResolvedValue({ token_endpoint: tokenEndpoint })
-
-    const clientId = 'client-id'
-    const clientSecret = 'client-secret'
-    const redirectUrl = 'http://localhost/callback'
-
-    configGetMock.mockImplementation((key) => {
-      switch (key) {
-        case 'defraId.clientId':
-          return clientId
-        case 'defraId.clientSecret':
-          return clientSecret
-        case 'defraId.redirectUrl':
-          return redirectUrl
-        case 'tracing.header':
-          return tracingHeader
-        default:
-          return undefined
-      }
-    })
-
     const refreshToken = 'REFRESH_TOKEN_123'
     const payload = {
       access_token: 'NEW_ACCESS',
@@ -111,12 +81,12 @@ describe('refreshTokens', () => {
     expect(result).toEqual(payload)
 
     const expectedBody = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: DEFRA_ID_CONFIG['defraId.clientId'],
+      client_secret: DEFRA_ID_CONFIG['defraId.clientSecret'],
       grant_type: 'refresh_token',
-      scope: `openid offline_access ${clientId}`,
+      scope: `openid offline_access ${DEFRA_ID_CONFIG['defraId.clientId']}`,
       refresh_token: refreshToken,
-      redirect_uri: redirectUrl
+      redirect_uri: DEFRA_ID_CONFIG['defraId.redirectUrl']
     }).toString()
 
     expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
@@ -134,12 +104,6 @@ describe('refreshTokens', () => {
 
   test('sends an empty tracing header when the request has no trace id', async () => {
     getTraceIdMock.mockReturnValue(undefined)
-    getOidcConfigMock.mockResolvedValue({
-      token_endpoint: 'https://mock-auth-server/oauth/token'
-    })
-    configGetMock.mockImplementation((key) =>
-      key === 'tracing.header' ? tracingHeader : undefined
-    )
     wreckPostMock.mockResolvedValue({ payload: {} })
 
     await refreshTokens('rt')
@@ -153,25 +117,13 @@ describe('refreshTokens', () => {
   })
 
   test('propagates errors from Wreck.post', async () => {
-    const tokenEndpoint = 'https://mock-auth-server/oauth/token'
-    getOidcConfigMock.mockResolvedValue({ token_endpoint: tokenEndpoint })
-
-    configGetMock.mockImplementation((key) => {
-      if (key === 'defraId.clientId') return 'client-id'
-      if (key === 'defraId.clientSecret') return 'client-secret'
-      if (key === 'defraId.redirectUrl') return 'http://localhost/callback'
-      if (key === 'tracing.header') return tracingHeader
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-      return undefined
-    })
-
     wreckPostMock.mockRejectedValue(new Error('post failed'))
 
     await expect(refreshTokens('rt')).rejects.toThrow('post failed')
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.operation).toBe('token-refresh')
-    expect(document['external.call.failure']).toBe(1)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...tokenRefresh,
+      failure: 1
+    })
   })
 })

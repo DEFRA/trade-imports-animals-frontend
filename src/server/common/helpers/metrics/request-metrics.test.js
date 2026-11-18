@@ -16,23 +16,20 @@ import {
   countSessionResolution
 } from '../call-counts/call-counts.js'
 import { config } from '../../../../config/config.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
+import { restoreConfigAfterEach } from '../../test-helpers/restore-config-after-each.js'
 
-const NAMESPACE_KEY = 'metrics.namespace'
 const PAGE_REQUEST_METRICS_ENABLED_KEY = 'callCounts.metrics.enabled'
-const TEST_NAMESPACE = 'test-namespace'
 const REQUEST_TIMER = 'http.server.requests'
 const VALIDATION_FAILURE = 'journey.validation.failure'
 const PAGE_REQUEST_BACKEND_CALLS = 'page.request.backend.calls'
+const PAGE_REQUEST_SESSION_RESOLUTIONS = 'page.request.session.resolutions'
 const ORIGIN_URL = '/live-animals/notifications/j-1/origin'
 const ORIGIN_HANDLER_DELAY_MS = 20
 const CONTACT_ROUTE_PATH =
   '/live-animals/notifications/{journeyId}/consignment/contact/edit'
 const CONTACT_URL = '/live-animals/notifications/j-1/consignment/contact/edit'
 const CONTACT_TEMPLATE = 'contact.html'
-
-const documentsHolding = (logSpy, metricName) =>
-  readEmfDocuments(logSpy).filter((document) => metricName in document)
 
 const routePages = (server) =>
   server.route([
@@ -102,13 +99,10 @@ describe('route section and page', () => {
 })
 
 describe('request metrics', () => {
-  const originalNamespace = config.get(NAMESPACE_KEY)
-  const originalPageRequestMetricsEnabled = config.get(
-    PAGE_REQUEST_METRICS_ENABLED_KEY
-  )
+  const emf = recordEmfDocuments()
+  restoreConfigAfterEach([PAGE_REQUEST_METRICS_ENABLED_KEY])
   let templateDirectory
   let server
-  let logSpy
 
   beforeAll(async () => {
     templateDirectory = await mkdtemp(join(tmpdir(), 'request-metrics-'))
@@ -120,8 +114,6 @@ describe('request metrics', () => {
   })
 
   beforeEach(async () => {
-    config.set(NAMESPACE_KEY, TEST_NAMESPACE)
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     server = hapi.server()
     await server.register([callCounts, requestMetrics, vision])
     server.views({
@@ -132,46 +124,34 @@ describe('request metrics', () => {
   })
 
   afterEach(async () => {
-    config.set(NAMESPACE_KEY, originalNamespace)
-    config.set(
-      PAGE_REQUEST_METRICS_ENABLED_KEY,
-      originalPageRequestMetricsEnabled
-    )
-    logSpy.mockRestore()
     await server.stop({ timeout: 0 })
   })
+
+  const requestTimesPublished = (count) =>
+    vi.waitFor(() =>
+      expect(emf.documentsWith(REQUEST_TIMER)).toHaveLength(count)
+    )
 
   test('a page request publishes its time from received to completed tagged method, section and status class', async () => {
     const { request } = await server.inject({ method: 'GET', url: ORIGIN_URL })
     const elapsedMs = request.info.completed - request.info.received
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    const [document] = documentsHolding(logSpy, REQUEST_TIMER)
-    expect(document._aws.CloudWatchMetrics[0]).toEqual({
-      Namespace: TEST_NAMESPACE,
-      Dimensions: [['method', 'section', 'status.class']],
-      Metrics: [{ Name: REQUEST_TIMER, Unit: 'Milliseconds' }]
-    })
-    expect(document).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        section: 'origin',
-        'status.class': '2xx',
-        [REQUEST_TIMER]: elapsedMs
-      })
-    )
+    await requestTimesPublished(1)
+    expect(emf.publishesOf(REQUEST_TIMER)).toEqual([
+      {
+        value: elapsedMs,
+        unit: 'Milliseconds',
+        dimensions: { method: 'GET', section: 'origin', 'status.class': '2xx' }
+      }
+    ])
     expect(elapsedMs).toBeGreaterThan(0)
   })
 
   test('a request no route matches is published in section unmatched with status class 4xx', async () => {
     await server.inject({ method: 'GET', url: '/nowhere' })
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    const [document] = documentsHolding(logSpy, REQUEST_TIMER)
+    await requestTimesPublished(1)
+    const [document] = emf.documentsWith(REQUEST_TIMER)
     expect(document.section).toBe('unmatched')
     expect(document['status.class']).toBe('4xx')
   })
@@ -202,22 +182,16 @@ describe('request metrics', () => {
     clientRequest.destroy()
     await clientHangUp
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    expect(documentsHolding(logSpy, REQUEST_TIMER)[0]['status.class']).toBe(
-      '4xx'
-    )
+    await requestTimesPublished(1)
+    expect(emf.documentsWith(REQUEST_TIMER)[0]['status.class']).toBe('4xx')
   })
 
   test('a health check is not published', async () => {
     await server.inject({ method: 'GET', url: '/health' })
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    expect(documentsHolding(logSpy, REQUEST_TIMER)[0].section).toBe('origin')
+    await requestTimesPublished(1)
+    expect(emf.documentsWith(REQUEST_TIMER)[0].section).toBe('origin')
   })
 
   test('a posted answer shown again with an error summary counts one validation failure for its page', async () => {
@@ -228,12 +202,14 @@ describe('request metrics', () => {
     })
 
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, VALIDATION_FAILURE)).toHaveLength(1)
+      expect(emf.publishesOf(VALIDATION_FAILURE)).toEqual([
+        {
+          value: 1,
+          unit: 'Count',
+          dimensions: { page: 'consignment/contact/edit' }
+        }
+      ])
     )
-    const [document] = documentsHolding(logSpy, VALIDATION_FAILURE)
-    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([['page']])
-    expect(document.page).toBe('consignment/contact/edit')
-    expect(document[VALIDATION_FAILURE]).toBe(1)
   })
 
   test('a posted answer shown with no error summary counts no validation failure', async () => {
@@ -243,10 +219,8 @@ describe('request metrics', () => {
       payload: {}
     })
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    expect(documentsHolding(logSpy, VALIDATION_FAILURE)).toEqual([])
+    await requestTimesPublished(1)
+    expect(emf.documentsWith(VALIDATION_FAILURE)).toEqual([])
   })
 
   test('a page viewed with an error summary counts no validation failure', async () => {
@@ -255,10 +229,8 @@ describe('request metrics', () => {
       url: CONTACT_URL
     })
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    expect(documentsHolding(logSpy, VALIDATION_FAILURE)).toEqual([])
+    await requestTimesPublished(1)
+    expect(emf.documentsWith(VALIDATION_FAILURE)).toEqual([])
   })
 
   test('publishes the page request counts tagged request.kind page when callCounts.metrics.enabled is on', async () => {
@@ -266,36 +238,22 @@ describe('request metrics', () => {
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)).toHaveLength(
-        1
-      )
+      expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toHaveLength(1)
     )
-    const [document] = documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)
-    expect(document._aws.CloudWatchMetrics[0]).toEqual(
-      expect.objectContaining({
-        Dimensions: [['request.kind']],
-        Metrics: [
-          { Name: PAGE_REQUEST_BACKEND_CALLS, Unit: 'Count' },
-          { Name: 'page.request.session.resolutions', Unit: 'Count' }
-        ]
-      })
-    )
-    expect(document).toEqual(
-      expect.objectContaining({
-        'request.kind': 'page',
-        [PAGE_REQUEST_BACKEND_CALLS]: 2,
-        'page.request.session.resolutions': 1
-      })
-    )
+    const pageRequestKind = { 'request.kind': 'page' }
+    expect(emf.publishesOf(PAGE_REQUEST_BACKEND_CALLS)).toEqual([
+      { value: 2, unit: 'Count', dimensions: pageRequestKind }
+    ])
+    expect(emf.publishesOf(PAGE_REQUEST_SESSION_RESOLUTIONS)).toEqual([
+      { value: 1, unit: 'Count', dimensions: pageRequestKind }
+    ])
   })
 
   test('publishes no page request counts when callCounts.metrics.enabled is off', async () => {
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, false)
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
-    await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
-    )
-    expect(documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
+    await requestTimesPublished(1)
+    expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
   })
 })

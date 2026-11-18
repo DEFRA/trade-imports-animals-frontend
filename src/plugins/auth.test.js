@@ -13,6 +13,7 @@ import {
 import { callCountsRoutes } from '../server/common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../server/common/helpers/call-counts/call-count-totals.js'
 import { createLogger } from '../server/common/helpers/logging/logger.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
@@ -81,11 +82,8 @@ describe('auth plugin', () => {
 
   restoreConfigAfterEach(Object.keys(configValues))
 
-  let logSpy
-
   beforeEach(() => {
     vi.resetAllMocks()
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     for (const [key, value] of Object.entries(configValues)) {
       config.set(key, value)
@@ -93,8 +91,9 @@ describe('auth plugin', () => {
     wreckGetMock.mockResolvedValue({ payload: oidcConfig })
   })
 
+  recordEmfDocuments()
+
   afterEach(() => {
-    logSpy.mockRestore()
     vi.useRealTimers()
   })
 
