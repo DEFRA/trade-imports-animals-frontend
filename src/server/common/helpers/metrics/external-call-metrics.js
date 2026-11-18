@@ -84,6 +84,23 @@ export const recordExternalCallInBackground = (externalCall, result) => {
   )
 }
 
+const outcomeOfStatus = (statusCode) => ({
+  failed: statusCode >= FIRST_SERVER_ERROR_STATUS,
+  statusCode
+})
+
+const statusAnsweredWith = (error) =>
+  error?.data?.isResponseError ? error.data.res.statusCode : error?.status
+
+const outcomeOfThrown = (error) => {
+  const statusCode = statusAnsweredWith(error)
+  if (statusCode === undefined) {
+    return { failed: true, error }
+  }
+  const outcome = outcomeOfStatus(statusCode)
+  return outcome.failed ? { ...outcome, error } : outcome
+}
+
 const measure = async (externalCall, call, outcomeOf) => {
   const startedAt = performance.now()
   const recordSince = (outcome) =>
@@ -95,7 +112,7 @@ const measure = async (externalCall, call, outcomeOf) => {
   try {
     result = await call()
   } catch (error) {
-    recordSince({ failed: true, error })
+    recordSince(outcomeOfThrown(error))
     throw error
   }
   recordSince(outcomeOf(result))
@@ -103,8 +120,11 @@ const measure = async (externalCall, call, outcomeOf) => {
 }
 
 /**
- * Runs a call to a dependency, records it, and returns its result. The call
- * failed when it throws.
+ * Runs a call to a dependency, records it, and returns its result. A call that
+ * throws an error carrying the HTTP status the dependency answered with
+ * (`error.status`, or a Wreck response error) is judged by that status as
+ * {@link measureExternalResponse} judges a response, and logged with it; any
+ * other throw is a failure. A thrown error is always rethrown.
  *
  * @template T
  * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it
@@ -124,7 +144,4 @@ export const measureExternalCall = (externalCall, call) =>
  * @returns {Promise<Response>} the dependency's response
  */
 export const measureExternalResponse = (externalCall, send) =>
-  measure(externalCall, send, (response) => ({
-    failed: response.status >= FIRST_SERVER_ERROR_STATUS,
-    statusCode: response.status
-  }))
+  measure(externalCall, send, (response) => outcomeOfStatus(response.status))
