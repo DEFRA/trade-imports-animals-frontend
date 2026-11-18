@@ -5,6 +5,7 @@ import {
   MILLISECONDS,
   publishMetricsInBackground
 } from './publish-metrics.js'
+import { recordDependencyCallOutcome } from './dependency-availability.js'
 
 const logger = createLogger()
 
@@ -54,9 +55,10 @@ const logExternalCall = (
 
 /**
  * Records a finished call to a dependency: counts it against the request in
- * progress, logs one external-call line, and publishes `external.call.duration`
+ * progress, logs one external-call line, publishes `external.call.duration`
  * and `external.call.failure` tagged `dependency` and `operation` without
- * making the caller wait for the publish.
+ * making the caller wait for the publish, and keeps its outcome as the
+ * dependency's availability, published every minute.
  *
  * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it; `interfaceId` names it in its log line only
  * @param {{ durationMs: number, failed: boolean, error?: Error, statusCode?: number }} result - how long it took, whether it failed, and the error or HTTP status it ended with
@@ -64,6 +66,7 @@ const logExternalCall = (
 export const recordExternalCallInBackground = (externalCall, result) => {
   countExternalCall(externalCall)
   logExternalCall(externalCall, result)
+  recordDependencyCallOutcome(externalCall.dependency, result.failed)
   publishMetricsInBackground(
     {
       dependency: externalCall.dependency,
