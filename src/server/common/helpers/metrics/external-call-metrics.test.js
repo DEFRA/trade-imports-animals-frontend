@@ -45,7 +45,7 @@ const recordExternalCallOutput = () => {
 
   afterEach(() => {
     config.set(NAMESPACE_KEY, originalNamespace)
-    logSpy.mockRestore()
+    vi.restoreAllMocks()
   })
 
   return {
@@ -183,14 +183,13 @@ describe('external call metrics', () => {
       putMetric: vi.fn(() => metricsLogger),
       flush: vi.fn(() => new Promise(() => {}))
     }
-    const getMetricsLogger = vi
-      .spyOn(Metrics.prototype, 'getMetricsLogger')
-      .mockReturnValue(metricsLogger)
+    vi.spyOn(Metrics.prototype, 'getMetricsLogger').mockReturnValue(
+      metricsLogger
+    )
 
     const result = await measureExternalCall(JWKS_CALL, async () => 'keys')
 
     expect(result).toBe('keys')
-    getMetricsLogger.mockRestore()
   })
 
   test('a call recorded in the background with a known duration publishes that duration', async () => {
