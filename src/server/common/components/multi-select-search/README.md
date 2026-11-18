@@ -68,7 +68,7 @@ chips. The page puts its results in the classes it styles, each prefixed
   `__clear`, `__selected-list`, `__selected-group`, `__selected-group-label`,
   `__chips`, `__chip`, `__chip-label` and `__chip-remove`.
 - `__update` is a button under the results for use without JavaScript, such as
-  "Update selected" posting `action=search`. A tick cannot post the form
+  "Add selection" posting `action=search`. A tick cannot post the form
   without a script, so this is how the chips catch up. The script adds
   `app-multi-select-search--enhanced` to the component once it is wired, and
   that class hides the button, because with JavaScript a tick refreshes the

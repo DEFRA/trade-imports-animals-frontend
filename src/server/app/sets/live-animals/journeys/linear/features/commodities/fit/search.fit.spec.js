@@ -50,8 +50,8 @@ const GALLUS_GALLUS_SECOND_CODE_ROW = {
   commodityCode: '01059400'
 }
 
-const updateSelectedButton = (page) =>
-  page.getByRole('button', { name: copy.search.updateSelected })
+const addSelectionButton = (page) =>
+  page.getByRole('button', { name: copy.search.addSelection })
 
 const resultsDropdown = (page) =>
   page.locator('[data-multi-select-search-dropdown]')
@@ -768,10 +768,10 @@ test.describe('commodity search results list', () => {
     }
   })
 
-  test('offers no Update selected button with JavaScript on', async ({
+  test('offers no Add selection button with JavaScript on', async ({
     page
   }) => {
-    await expect(updateSelectedButton(page)).toBeHidden()
+    await expect(addSelectionButton(page)).toBeHidden()
   })
 
   test('draws no ring round a hovered tick box', async ({ page }) => {
@@ -806,14 +806,14 @@ test.describe('commodity search without JavaScript', () => {
     await expect(selectedSummary(page)).toHaveCount(0)
   })
 
-  test('updates what is chosen when Update selected is pressed, keeping the search and its results', async ({
+  test('updates what is chosen when Add selection is pressed, keeping the search and its results', async ({
     page
   }) => {
     await searchCommodities(page, 'buffalo')
     await tickSpecies(page, BUBALUS_BUBALIS_ROW)
     await expect(selectedSummary(page)).toHaveCount(0)
 
-    await updateSelectedButton(page).click()
+    await addSelectionButton(page).click()
 
     await expectSelectedHeading(page, 1)
     await expectSpeciesSelected(page, BUBALUS_BUBALIS_ROW)
