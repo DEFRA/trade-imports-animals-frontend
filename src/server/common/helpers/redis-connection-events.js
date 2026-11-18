@@ -14,8 +14,8 @@ const DEPENDENCY_DIMENSIONS = Object.freeze({ dependency: REDIS_DEPENDENCY })
  * (1 once ready, 0 once closed or ended) on each change and every minute
  * after, logs each change once, counts each change from ready to closed as
  * `external.dependency.connection.lost`, and logs and counts each client
- * error as `external.dependency.error`. Nothing is published before the
- * first event.
+ * error, and each error a Cluster client reports from one of its nodes, as
+ * `external.dependency.error`. Nothing is published before the first event.
  *
  * @param {import('ioredis').Redis | import('ioredis').Cluster} client - the client to report on
  */
@@ -63,5 +63,6 @@ export const reportRedisConnectionEvents = (client) => {
   client.on('close', () => changeAvailabilityTo(false))
   client.on('end', () => changeAvailabilityTo(false))
   client.on('error', recordError)
+  client.on('node error', recordError)
   setInterval(publishAvailability, publishEveryMs).unref()
 }
