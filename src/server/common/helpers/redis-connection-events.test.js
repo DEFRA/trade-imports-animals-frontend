@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { vi } from 'vitest'
 
-import { trackRedisAvailability } from './redis-availability.js'
+import { reportRedisConnectionEvents } from './redis-connection-events.js'
 import { readEmfDocuments } from '../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
@@ -18,7 +18,16 @@ const availabilityLines = (lines) =>
     .filter((line) => line.message?.startsWith('Redis is '))
     .map((line) => ({ level: line['log.level'], message: line.message }))
 
-describe('trackRedisAvailability', () => {
+const errorLines = (lines) =>
+  lines
+    .filter((line) => line.message === 'Redis connection error')
+    .map((line) => ({
+      level: line['log.level'],
+      dependency: line.dependency,
+      error: line.error?.message
+    }))
+
+describe('reportRedisConnectionEvents', () => {
   const ecsLog = recordEcsLogLines()
   let logSpy
   let client
@@ -29,7 +38,7 @@ describe('trackRedisAvailability', () => {
     vi.useFakeTimers({ toFake: ['setInterval'] })
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     client = new EventEmitter()
-    trackRedisAvailability(client)
+    reportRedisConnectionEvents(client)
   })
 
   afterEach(() => {
@@ -86,12 +95,18 @@ describe('trackRedisAvailability', () => {
     expect(valuesOf(logSpy, 'external.dependency.connection.lost')).toEqual([])
   })
 
-  test('each client error is counted', async () => {
+  test('each client error is logged with its error and counted, tagged dependency redis', async () => {
     client.emit('error', new Error('ECONNREFUSED'))
     client.emit('error', new Error('ECONNREFUSED'))
 
     await eventually(() =>
       expect(valuesOf(logSpy, 'external.dependency.error')).toEqual([1, 1])
     )
+    const refusedLine = {
+      level: 'error',
+      dependency: 'redis',
+      error: 'ECONNREFUSED'
+    }
+    expect(errorLines(ecsLog.lines())).toEqual([refusedLine, refusedLine])
   })
 })
