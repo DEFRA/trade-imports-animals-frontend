@@ -6,7 +6,7 @@ import { statusCodes } from '../constants/status-codes.js'
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 import { restoreConfigAfterEach } from '../test-helpers/restore-config-after-each.js'
 import { config } from '../../../config/config.js'
-import { recordModuleLoggerInfo } from '../test-helpers/module-logger-lines.js'
+import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -27,6 +27,9 @@ vi.mock('../../server.js', async (importOriginal) => {
 
 import { startServer } from './start-server.js'
 import { createServer } from '../../server.js'
+
+const linesWithMessage = (ecsLog, message) =>
+  ecsLog.lines().filter((line) => line.message === message)
 
 describe('#startServer', () => {
   describe('When server starts', () => {
@@ -60,7 +63,7 @@ describe('#startServer', () => {
   })
 
   describe('When no HTTP proxy is configured', () => {
-    const infoLines = recordModuleLoggerInfo()
+    const ecsLog = recordEcsLogLines()
     restoreConfigAfterEach(['httpProxy'])
 
     test('logs once that the retrying keep-alive agent is installed', async () => {
@@ -70,20 +73,18 @@ describe('#startServer', () => {
       await server.stop({ timeout: 0 })
 
       expect(
-        infoLines.entriesWith(
+        linesWithMessage(
+          ecsLog,
           'Wreck plain-HTTP calls use the retrying keep-alive agent'
         )
       ).toEqual([
-        {
-          fields: { keepAliveAgent: true },
-          message: 'Wreck plain-HTTP calls use the retrying keep-alive agent'
-        }
+        expect.objectContaining({ 'log.level': 'info', keepAliveAgent: true })
       ])
     })
   })
 
   describe('When an HTTP proxy is configured', () => {
-    const infoLines = recordModuleLoggerInfo()
+    const ecsLog = recordEcsLogLines()
     restoreConfigAfterEach(['httpProxy'])
 
     test('logs once that Wreck keeps its own agent, without the proxy URL', async () => {
@@ -92,16 +93,18 @@ describe('#startServer', () => {
       const server = await startServer()
       await server.stop({ timeout: 0 })
 
-      const entries = infoLines.entriesWith(
+      const lines = linesWithMessage(
+        ecsLog,
         'HTTP proxy configured; Wreck keeps its own agent'
       )
-      expect(entries).toEqual([
-        {
-          fields: { keepAliveAgent: false, reason: 'httpProxy' },
-          message: 'HTTP proxy configured; Wreck keeps its own agent'
-        }
+      expect(lines).toEqual([
+        expect.objectContaining({
+          'log.level': 'info',
+          keepAliveAgent: false,
+          reason: 'httpProxy'
+        })
       ])
-      expect(JSON.stringify(entries)).not.toContain('proxy.test')
+      expect(JSON.stringify(lines)).not.toContain('proxy.test')
     })
   })
 
