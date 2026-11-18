@@ -71,12 +71,11 @@ const isRefusedAnswer = (request) =>
   request.response?.variety === 'view' &&
   Boolean(request.response.source?.context?.errorSummary)
 
-const recordRequestInBackground = (request) => {
-  const routePath = request.route.path
+const recordRequestTimeInBackground = (request) =>
   publishMetricsInBackground(
     {
       method: request.method.toUpperCase(),
-      section: routeSection(routePath),
+      section: routeSection(request.route.path),
       'status.class': statusClassOf(statusCodeOf(request))
     },
     [
@@ -87,8 +86,12 @@ const recordRequestInBackground = (request) => {
       }
     ]
   )
+
+const countRefusedAnswerInBackground = (request) => {
   if (isRefusedAnswer(request)) {
-    countEvent('journey.validation.failure', { page: routePage(routePath) })
+    countEvent('journey.validation.failure', {
+      page: routePage(request.route.path)
+    })
   }
 }
 
@@ -96,7 +99,8 @@ const publishFinishedPageRequestMetrics = (request) => {
   if (!isPageRequest(request.route.path)) {
     return
   }
-  recordRequestInBackground(request)
+  recordRequestTimeInBackground(request)
+  countRefusedAnswerInBackground(request)
   if (config.get('callCounts.metrics.enabled')) {
     recordPageRequestInBackground(callCountsOf(request))
   }
