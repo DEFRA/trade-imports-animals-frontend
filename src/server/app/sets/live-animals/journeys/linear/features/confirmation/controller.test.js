@@ -20,6 +20,7 @@ import {
   amendmentOpened,
   authenticatedCredentials,
   driveHandler,
+  itahcAnswers,
   expectOneLogged,
   journeyRequest,
   stubH
@@ -99,7 +100,7 @@ describe('GET /confirmation', () => {
 
   it('Should list nothing outstanding when an ITAHC has been uploaded and no commodity line is recorded', async () => {
     const { view } = await submittedView({
-      documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
+      ...itahcAnswers()
     })
 
     expect(view.context.outstandingItems).toEqual([])
@@ -191,7 +192,7 @@ describe('GET /confirmation', () => {
   it('Should list only the identifier item when an ITAHC has been uploaded and a line is short of identified animals', async () => {
     const { view } = await submittedView({
       ...seedFromFranceWithCattle({ animals: 2, earTags: 0 }),
-      documents: [{ ...DOCUMENT, accompanyingDocumentType: 'ITAHC' }]
+      ...itahcAnswers()
     })
 
     expect(view.context.outstandingItems).toEqual([

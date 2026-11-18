@@ -99,7 +99,7 @@ These steps are shared because two or more tests use them:
   name. The stub uploader rejects a file name holding "virus" and never
   settles one holding "never-scans". `INFECTED_DOCUMENT_FILE_NAME` and
   `STILL_SCANNING_DOCUMENT_FILE_NAME` hold the two file names.
-- `reviewCardFor` finds the review's summary card by its level-3 heading name, and `CARD_ERROR_SELECTOR` finds the error message inside a card.
+- `reviewCardFor` finds the review's summary card by its level-3 heading name; a card's error message is found inside it with `getByText`.
 - `expectMainImportReasonAndAdditionalDetailsNamed` proves the refused review
   names the main import reason and additional details cards, in the error
   summary and on each card.
@@ -107,7 +107,9 @@ These steps are shared because two or more tests use them:
   alone, its Delete sitting in the header. `notificationReferenceHeading`
   finds the reference heading that heads a notification's view, and
   `expectDraftReview` proves the page is a draft review: that heading, the Draft
-  tag and a foot that ends with Continue.
+  tag and a foot that ends with Continue. `reviewFootControls` lists the buttons
+  and links of the review's last form, `formControls` those of any form, and
+  `viewHeaderTag` finds the header's status tag by its text.
 
 When a second test needs a local step, move it to
 `fit/live-animals-journey.js` in the same change and delete every local copy.

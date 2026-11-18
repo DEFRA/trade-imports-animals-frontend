@@ -25,7 +25,7 @@ export const copy = {
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
-    addresses: 'Cyfeiriadau’r llwyth',
+    consignmentAddresses: 'Cyfeiriadau’r llwyth',
     contactAddress: 'Cyfeiriad cyswllt'
   },
   groups: {
@@ -84,7 +84,7 @@ export const copy = {
       additionalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
-      addresses: 'cyfeiriadau’r llwyth',
+      consignmentAddresses: 'cyfeiriadau’r llwyth',
       contactAddress: 'cyfeiriad cyswllt'
     },
     document: (n) => `dogfen ${n}`,
@@ -121,7 +121,7 @@ export const copy = {
       commodityDetails: 'Cwblhewch fanylion y nwyddau',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transportDetails: 'Cwblhewch y manylion cludo',
-      addresses: 'Cwblhewch gyfeiriadau’r llwyth',
+      consignmentAddresses: 'Cwblhewch gyfeiriadau’r llwyth',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
     },

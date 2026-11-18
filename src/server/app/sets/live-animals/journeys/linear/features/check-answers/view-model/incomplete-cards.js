@@ -47,7 +47,7 @@ export const REVIEW_CARDS = [
   },
   { id: 'documents', anchor: 'documents', rows: ['documents'] },
   {
-    id: 'addresses',
+    id: 'consignmentAddresses',
     anchor: 'addresses',
     rows: ['addresses']
   },

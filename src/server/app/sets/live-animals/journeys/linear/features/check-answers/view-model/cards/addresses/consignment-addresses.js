@@ -37,7 +37,7 @@ const permanentAddressGroups = (permanentAddresses) => {
  * an animal with no saved address contributes no row, and none at all leaves out the group.
  * @returns {object} the summary card.
  */
-export const addressesCard = ({
+export const consignmentAddressesCard = ({
   journeyId,
   changeLinkTrail,
   answers,
@@ -46,14 +46,14 @@ export const addressesCard = ({
   partyErrors = {},
   permanentAddresses = []
 }) => ({
-  id: 'addresses',
-  title: copy.cards.addresses,
+  id: 'consignmentAddresses',
+  title: copy.cards.consignmentAddresses,
   ...editableActions({
     readOnly,
     actions: changeAction(
       { journeyId, changeLinkTrail },
       addressesPage.slug,
-      copy.hidden.cards.addresses
+      copy.hidden.cards.consignmentAddresses
     )
   }),
   rows: [

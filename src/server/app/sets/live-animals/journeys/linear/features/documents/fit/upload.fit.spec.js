@@ -721,7 +721,7 @@ test.describe('document upload saved rows', () => {
     await expect(row).toContainText(copy.scanTags.complete)
   })
 
-  test('Save and add another stays on Upload documents with the row listed, and Save and continue then opens Roles and addresses', async ({
+  test('Save and add another stays on Upload documents with the row listed, and Save and continue then opens Consignment addresses', async ({
     page
   }) => {
     test.slow()

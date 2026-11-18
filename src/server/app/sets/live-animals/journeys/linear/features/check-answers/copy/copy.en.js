@@ -24,7 +24,7 @@ export const copy = {
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
-    addresses: 'Consignment addresses',
+    consignmentAddresses: 'Consignment addresses',
     contactAddress: 'Contact address'
   },
   groups: {
@@ -83,7 +83,7 @@ export const copy = {
       additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
-      addresses: 'consignment addresses',
+      consignmentAddresses: 'consignment addresses',
       contactAddress: 'contact address'
     },
     document: (n) => `document ${n}`,
@@ -120,7 +120,7 @@ export const copy = {
       commodityDetails: 'Complete commodity details',
       arrivalDetails: 'Complete arrival details',
       transportDetails: 'Complete transport details',
-      addresses: 'Complete consignment addresses',
+      consignmentAddresses: 'Complete consignment addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },

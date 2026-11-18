@@ -2478,7 +2478,9 @@ describe(`${SUITE} — the unfinished notification`, () => {
   it('Should repeat the message inside the card it names', async () => {
     const sections = await sectionsFor(withoutParty(fullSeed, 'importer'))
 
-    expect(cardById(sections, 'addresses').error).toBe(ADDRESSES_INCOMPLETE)
+    expect(cardById(sections, 'consignmentAddresses').error).toBe(
+      ADDRESSES_INCOMPLETE
+    )
   })
 
   it('Should leave a finished card unmarked', async () => {
@@ -2499,7 +2501,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     )
 
     expect(context.errorSummary).toBeNull()
-    expect(cardById(context.sections, 'addresses').error).toBeNull()
+    expect(cardById(context.sections, 'consignmentAddresses').error).toBeNull()
   })
 
   it('Should link commodity details to the section heading when no commodity card stands', async () => {

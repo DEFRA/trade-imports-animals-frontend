@@ -4,6 +4,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "govuk/macros/attributes.njk" import govukAttributes %}
 
 {% macro cardError(text) %}
   {% if text %}
@@ -75,8 +76,14 @@
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
+      {% set cardAttributes = {
+        id: { value: card.anchor, optional: true },
+        tabindex: { value: '-1' if card.anchor else false, optional: true },
+        role: 'group',
+        'aria-label': card.title
+      } %}
       {% if card.speciesBlocks.length or card.groups.length or card.error %}
-        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}" role="group" aria-label="{{ card.title }}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
+        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{{ govukAttributes(cardAttributes) }}>
           <div class="govuk-summary-card__title-wrapper">
             <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
             {{ cardActions(card.actions) }}
@@ -117,7 +124,7 @@
           card: {
             title: { text: card.title, headingLevel: 3 },
             actions: card.actions,
-            attributes: { id: card.anchor, tabindex: "-1", role: "group", "aria-label": card.title } if card.anchor else { role: "group", "aria-label": card.title }
+            attributes: cardAttributes
           },
           rows: card.rows
         }) }}

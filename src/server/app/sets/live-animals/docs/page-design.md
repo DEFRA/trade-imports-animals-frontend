@@ -83,16 +83,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview while
   amending and to the notification list on a draft or a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
-- The review has six numbered sections. Its fourth and fifth are worded
-  differently from the hub's. Each card stands directly under its section
-  heading, titled one heading level below it.
+- The review has six numbered sections. Each card stands directly under its
+  section heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except:
   - the first row of each species block: Change opens consignment details
   - each species block's Identification details table: Change opens animal
     identification
   - the transit countries row
 
-  The Addresses and Contact address cards carry no row link: a party row has
+  The Consignment addresses and Contact address cards carry no row link: a party row has
   none. An address copied onto the notification that breaks the address-book
   rules is reached from its error summary entry, which links to its edit page.
 

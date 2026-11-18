@@ -1,11 +1,11 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { addressesCard } from '../cards/addresses/addresses.js'
+import { consignmentAddressesCard } from '../cards/addresses/consignment-addresses.js'
 
 const copy = copyFor({ en, cy })
 
-export const consignmentAddressesSection = ({
+export const addressesSection = ({
   journeyId,
   changeLinkTrail,
   answers,
@@ -17,7 +17,7 @@ export const consignmentAddressesSection = ({
   anchor: 'consignment-addresses',
   heading: copy.sections.addresses,
   cards: [
-    addressesCard({
+    consignmentAddressesCard({
       journeyId,
       changeLinkTrail,
       answers,

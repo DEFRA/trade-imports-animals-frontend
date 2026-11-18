@@ -8,6 +8,7 @@ import {
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { itahcAnswers } from '../../../engine/test-support.js'
 
 const { countryOfOrigin } = obligationSet()
 
@@ -376,14 +377,7 @@ describe('records answersDifferFromSubmitted', () => {
       journeyId,
       assembleFulfilments({
         countryOfOrigin: 'FR',
-        documents: [
-          {
-            accompanyingDocumentType: 'ITAHC',
-            accompanyingDocumentAttachmentType: 'PDF',
-            accompanyingDocumentReference: 'GBHC1234567890',
-            accompanyingDocumentDateOfIssue: '2025-12-12'
-          }
-        ]
+        ...itahcAnswers()
       })
     )
 

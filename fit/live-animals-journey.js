@@ -451,8 +451,6 @@ export const postJourneyFormToDeclaration = async (page, fields) => {
   )
 }
 
-export const CARD_ERROR_SELECTOR = '.govuk-error-message'
-
 export const reviewCardFor = (page, headingName) =>
   page.getByRole('group').filter({
     has: page.getByRole('heading', {
@@ -481,15 +479,13 @@ export const expectMainImportReasonAndAdditionalDetailsNamed = async (page) => {
   }
 }
 
+export const formControls = (form) => form.getByRole('button')
+
+export const reviewFootControls = (page) =>
+  formControls(page.getByRole('main').locator('form').last())
+
 export const expectDraftReviewEndsWithContinue = (page) =>
-  expect(
-    page
-      .getByRole('main')
-      .locator('form')
-      .last()
-      .locator('.govuk-button-group')
-      .locator('> *')
-  ).toHaveText([checkAnswersCopy.submit.button])
+  expect(reviewFootControls(page)).toHaveText([checkAnswersCopy.submit.button])
 
 export const notificationReferenceHeading = (page) =>
   page.getByRole('heading', {
@@ -498,14 +494,17 @@ export const notificationReferenceHeading = (page) =>
     exact: true
   })
 
-export const viewHeaderTag = (page) =>
-  page.getByRole('main').locator('.govuk-tag')
+export const viewHeaderTag = (page, statusText) =>
+  page.getByRole('main').getByText(statusText, { exact: true })
+
+export const journeyStripTag = (page) =>
+  page.getByText(sharedAppCopy.journeyStrip.amend, { exact: true })
 
 export const expectDraftReview = async (page) => {
   await expect(notificationReferenceHeading(page)).toBeVisible()
   await expect(
-    viewHeaderTag(page).filter({ hasText: sharedAppCopy.journeyStrip.draft })
-  ).toHaveText(sharedAppCopy.journeyStrip.draft)
+    viewHeaderTag(page, sharedAppCopy.journeyStrip.draft)
+  ).toBeVisible()
   await expectDraftReviewEndsWithContinue(page)
 }
 
@@ -1479,8 +1478,7 @@ export const cannedCommercialTransporter = parties().find(
  * @param {{ name: string }} transporter - the listed transporter picked.
  */
 export const saveAndExpectTransporterChosen = async (page, transporter) => {
-  await saveAndReturnToHub(page).click()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await saveAndExpectOverview(page)
   await page.goto(journeyUrl(page, 'transporters'))
   await expect(
     page.getByRole('radio', { name: transporter.name })
@@ -1639,6 +1637,9 @@ export const completeAnswerSections = async (
 
 export const openReviewFromHub = async (page) => {
   await page.getByRole('button', { name: 'Review and submit' }).click()
+  await expect(page).toHaveURL(
+    urlUnderBase('/notifications/[^/]+/notification-view')
+  )
 }
 
 const uploadItahc = async (page) => {

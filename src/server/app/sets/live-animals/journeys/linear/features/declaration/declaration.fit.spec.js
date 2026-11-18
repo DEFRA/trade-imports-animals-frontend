@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 
 import {
   addDocument,
-  CARD_ERROR_SELECTOR,
   completeAnswerSections,
   reviewCardFor,
   documentNamed,
@@ -49,7 +48,7 @@ const UNFINISHED_CARD_MESSAGES = [
   checkAnswersCopy.errors.cards.additionalDetails,
   checkAnswersCopy.errors.cards.arrivalDetails,
   checkAnswersCopy.errors.cards.transportDetails,
-  checkAnswersCopy.errors.cards.addresses,
+  checkAnswersCopy.errors.cards.consignmentAddresses,
   checkAnswersCopy.errors.cards.contactAddress
 ]
 
@@ -297,10 +296,10 @@ test.describe('declaration reached only from the review', () => {
       })
     ).toBeVisible()
     await expect(
-      reviewCardFor(page, checkAnswersCopy.documentN(1)).locator(
-        CARD_ERROR_SELECTOR
+      reviewCardFor(page, checkAnswersCopy.documentN(1)).getByText(
+        documentsCopy.errors.someStillScanning
       )
-    ).toContainText(documentsCopy.errors.someStillScanning)
+    ).toBeVisible()
     await expectDraftReviewEndsWithContinue(page)
   })
 
