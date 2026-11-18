@@ -48,7 +48,7 @@ const writeCountingConflicts = async (write) => {
   }
 }
 
-const writeCounting = async (metric, write) => {
+const writeCountingSuccessAndConflicts = async (metric, write) => {
   const written = await writeCountingConflicts(write)
   countEvent(metric)
   return written
@@ -56,20 +56,30 @@ const writeCounting = async (metric, write) => {
 
 export const records = {
   create: async (...args) =>
-    writeCounting('journey.started', () => impl().create(...args)),
+    writeCountingSuccessAndConflicts('journey.started', () =>
+      impl().create(...args)
+    ),
   load: async (...args) => impl().load(...args),
   list: async (...args) => impl().list(...args),
   has: async (...args) => impl().has(...args),
   replaceFulfilment: async (...args) =>
     writeCountingConflicts(() => impl().replaceFulfilment(...args)),
   finalise: async (...args) =>
-    writeCounting('journey.submitted', () => impl().finalise(...args)),
+    writeCountingSuccessAndConflicts('journey.submitted', () =>
+      impl().finalise(...args)
+    ),
   amend: async (...args) =>
-    writeCounting('journey.amended', () => impl().amend(...args)),
+    writeCountingSuccessAndConflicts('journey.amended', () =>
+      impl().amend(...args)
+    ),
   cancelAmend: async (...args) => impl().cancelAmend(...args),
   copy: async (...args) =>
-    writeCounting('journey.copied', () => impl().copy(...args)),
+    writeCountingSuccessAndConflicts('journey.copied', () =>
+      impl().copy(...args)
+    ),
   softDelete: async (...args) =>
-    writeCounting('journey.deleted', () => impl().softDelete(...args)),
+    writeCountingSuccessAndConflicts('journey.deleted', () =>
+      impl().softDelete(...args)
+    ),
   clear: async (...args) => impl().clear(...args)
 }
