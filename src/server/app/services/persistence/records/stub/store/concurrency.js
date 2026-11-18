@@ -1,3 +1,4 @@
+import { STALE_CONCURRENCY_TOKEN } from '../../../../../engine/persistence/records.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_BAD_REQUEST, HTTP_CONFLICT } from '../../real/config.js'
 
@@ -27,7 +28,7 @@ export const assertConcurrencyToken = (
       status: HTTP_CONFLICT,
       statusText: 'Conflict'
     })
-    error.code = 'STALE_CONCURRENCY_TOKEN'
+    error.code = STALE_CONCURRENCY_TOKEN
     throw error
   }
 }
