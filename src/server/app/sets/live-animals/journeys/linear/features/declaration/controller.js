@@ -23,7 +23,6 @@ import { reviewedConcurrencyToken as reviewedConcurrencyTokenOf } from '../check
 
 const STEP_REVIEW = 'review'
 const STEP_DECLARE = 'declare'
-const STALE_CONCURRENCY_TOKEN = 'STALE_CONCURRENCY_TOKEN'
 
 export const DECLARATION_REFUSAL = Object.freeze({
   alreadySubmitted: 'already-submitted',
@@ -123,7 +122,7 @@ const submitDeclaration = async (
         }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     )
   } catch (error) {
-    if (error?.code === STALE_CONCURRENCY_TOKEN) {
+    if (state.isStaleConcurrencyRefusal(error)) {
       return {
         failure: logRefusalAndRedirect(request, h, {
           journey,

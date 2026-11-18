@@ -6,6 +6,11 @@ export const SUBMITTED = 'submitted'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
 
+export const STALE_CONCURRENCY_TOKEN = 'STALE_CONCURRENCY_TOKEN'
+
+export const isStaleConcurrencyRefusal = (error) =>
+  error?.code === STALE_CONCURRENCY_TOKEN
+
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')
 }
@@ -36,7 +41,7 @@ const writeCountingConflicts = async (write) => {
   try {
     return await write()
   } catch (error) {
-    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+    if (isStaleConcurrencyRefusal(error)) {
       countEvent('journey.concurrency.conflict')
     }
     throw error
