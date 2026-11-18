@@ -1,4 +1,4 @@
-import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
+import { backendFetch } from '../../../common/helpers/backend-client/backend-fetch.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { failedResponse } from '../http/trace-headers.js'
 import { notificationBackendHeaders as headers } from '../http/organisation-headers.js'

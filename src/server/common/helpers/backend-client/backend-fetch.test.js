@@ -4,9 +4,9 @@ import { pino } from 'pino'
 import { vi } from 'vitest'
 
 import { createBackendFetch } from './backend-fetch.js'
-import { callCounts } from './call-counts.js'
-import { callCountsRoutes } from './call-counts-routes.js'
-import { clearCallCountTotals } from './call-count-totals.js'
+import { callCounts } from '../call-counts/call-counts.js'
+import { callCountsRoutes } from '../call-counts/call-counts-routes.js'
+import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
 import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
 
 const loggedLines = []

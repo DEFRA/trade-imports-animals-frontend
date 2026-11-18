@@ -1,9 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
-import { config } from '../../../../config/config.js'
 import { addPageRequest, isPageRequest } from './call-count-totals.js'
-import { recordPageRequestInBackground } from './page-request-metrics.js'
-import { recordRequestInBackground } from '../metrics/request-metrics.js'
 
 const PLUGIN_NAME = 'call-counts'
 
@@ -86,15 +83,11 @@ const totalFinishedRequest = (request) => {
   if (!counts || !isPageRequest(request.route.path)) {
     return
   }
-  recordRequestInBackground(request)
   addPageRequest({
     method: request.method,
     path: request.route.path,
     counts
   })
-  if (config.get('callCounts.metrics.enabled')) {
-    recordPageRequestInBackground(counts)
-  }
 }
 
 export const callCounts = {

@@ -1,6 +1,6 @@
 import { failed } from './failed.js'
 import { headers } from './headers.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
+import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 
 export const put = async (operation, url, body, action) => {
   const response = await backendFetch(operation, url, {

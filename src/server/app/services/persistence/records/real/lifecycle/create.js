@@ -2,7 +2,7 @@ import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
+import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 
 // Backend mints the reference number; response carries the created notification.
 export const create = async (actor) => {

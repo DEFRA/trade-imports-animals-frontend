@@ -1,5 +1,5 @@
 import { statusCodes } from '../../../../../../common/constants/status-codes.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
+import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 import { currentOrganisationId } from '../../../../../../common/helpers/organisation-id.js'
 import { notificationsUrl } from '../config.js'
 import { failed } from './failed.js'

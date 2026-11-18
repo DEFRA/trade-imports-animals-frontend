@@ -5,15 +5,23 @@ import hapi from '@hapi/hapi'
 import vision from '@hapi/vision'
 import { vi } from 'vitest'
 
-import { routePage, routeSection } from './request-metrics.js'
-import { callCounts } from '../call-counts/call-counts.js'
+import { requestMetrics, routePage, routeSection } from './request-metrics.js'
+import {
+  BACKEND_DEPENDENCY,
+  callCounts,
+  countExternalCall,
+  countSessionResolution
+} from '../call-counts/call-counts.js'
 import { config } from '../../../../config/config.js'
 import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
 
 const NAMESPACE_KEY = 'metrics.namespace'
+const PAGE_REQUEST_METRICS_ENABLED_KEY = 'callCounts.metrics.enabled'
 const TEST_NAMESPACE = 'test-namespace'
 const REQUEST_TIMER = 'http.server.requests'
 const VALIDATION_FAILURE = 'journey.validation.failure'
+const PAGE_REQUEST_BACKEND_CALLS = 'page.request.backend.calls'
+const ORIGIN_URL = '/live-animals/notifications/j-1/origin'
 
 const documentsHolding = (logSpy, metricName) =>
   readEmfDocuments(logSpy).filter((document) => metricName in document)
@@ -54,6 +62,9 @@ describe('route section and page', () => {
 
 describe('request metrics', () => {
   const originalNamespace = config.get(NAMESPACE_KEY)
+  const originalPageRequestMetricsEnabled = config.get(
+    PAGE_REQUEST_METRICS_ENABLED_KEY
+  )
   let templateDirectory
   let server
   let logSpy
@@ -71,7 +82,7 @@ describe('request metrics', () => {
     config.set(NAMESPACE_KEY, TEST_NAMESPACE)
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     server = hapi.server()
-    await server.register([callCounts, vision])
+    await server.register([callCounts, requestMetrics, vision])
     server.views({
       engines: { html: { compile: () => () => 'page' } },
       path: templateDirectory
@@ -80,7 +91,15 @@ describe('request metrics', () => {
       {
         method: 'GET',
         path: '/live-animals/notifications/{journeyId}/origin',
-        handler: () => 'origin'
+        handler: (request) => {
+          countExternalCall({
+            dependency: BACKEND_DEPENDENCY,
+            operation: 'get-fulfilment'
+          })
+          countExternalCall({ dependency: 'defra-id', operation: 'jwks' })
+          countSessionResolution(request)
+          return 'origin'
+        }
       },
       {
         method: 'POST',
@@ -96,15 +115,16 @@ describe('request metrics', () => {
 
   afterEach(async () => {
     config.set(NAMESPACE_KEY, originalNamespace)
+    config.set(
+      PAGE_REQUEST_METRICS_ENABLED_KEY,
+      originalPageRequestMetricsEnabled
+    )
     logSpy.mockRestore()
     await server.stop({ timeout: 0 })
   })
 
   test('a page request publishes its time tagged method, section and status class', async () => {
-    await server.inject({
-      method: 'GET',
-      url: '/live-animals/notifications/j-1/origin'
-    })
+    await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await vi.waitFor(() =>
       expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
@@ -138,10 +158,7 @@ describe('request metrics', () => {
 
   test('a health check is not published', async () => {
     await server.inject({ method: 'GET', url: '/health' })
-    await server.inject({
-      method: 'GET',
-      url: '/live-animals/notifications/j-1/origin'
-    })
+    await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await vi.waitFor(() =>
       expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
@@ -176,5 +193,43 @@ describe('request metrics', () => {
       expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
     )
     expect(documentsHolding(logSpy, VALIDATION_FAILURE)).toEqual([])
+  })
+
+  test('publishes the page request counts tagged request.kind page when callCounts.metrics.enabled is on', async () => {
+    config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
+    await server.inject({ method: 'GET', url: ORIGIN_URL })
+
+    await vi.waitFor(() =>
+      expect(documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)).toHaveLength(
+        1
+      )
+    )
+    const [document] = documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)
+    expect(document._aws.CloudWatchMetrics[0]).toEqual(
+      expect.objectContaining({
+        Dimensions: [['request.kind']],
+        Metrics: [
+          { Name: PAGE_REQUEST_BACKEND_CALLS, Unit: 'Count' },
+          { Name: 'page.request.session.resolutions', Unit: 'Count' }
+        ]
+      })
+    )
+    expect(document).toEqual(
+      expect.objectContaining({
+        'request.kind': 'page',
+        [PAGE_REQUEST_BACKEND_CALLS]: 1,
+        'page.request.session.resolutions': 1
+      })
+    )
+  })
+
+  test('publishes no page request counts when callCounts.metrics.enabled is off', async () => {
+    config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, false)
+    await server.inject({ method: 'GET', url: ORIGIN_URL })
+
+    await vi.waitFor(() =>
+      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
+    )
+    expect(documentsHolding(logSpy, PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
   })
 })
