@@ -64,8 +64,9 @@ The Redis client pins the RESP2 wire protocol (`protocol: 2` in `buildRedisClien
 
 For every page request it handles, the service counts the calls that request
 made to its journey backend, the times it read the signed-in session record
-from the session store, and the calls it made to systems outside the INS
-boundary. A page request is every request except `GET /health`,
+from the session store, and every call it made to a dependency, by dependency
+and operation (the journey backend and the session store included). A page
+request is every request except `GET /health`,
 `GET /favicon.ico`, the static asset route and `/call-counts` itself: form
 posts, redirects, rendered pages, the 404 page and the document scan-status
 poll all count. A backend call is one `fetch` to the journey backend, made
