@@ -105,7 +105,7 @@ describe('MeasuredRedisEngine', () => {
     )
   })
 
-  test('a get the client fails is rethrown and recorded as a failed redis get', async () => {
+  test('a get the client fails is rethrown, recorded as a failed redis get and counted as neither hit nor miss', async () => {
     const lost = new Error('Connection is closed.')
     const failing = new MeasuredRedisEngine({
       client: {
@@ -121,6 +121,14 @@ describe('MeasuredRedisEngine', () => {
     await vi.waitFor(() =>
       expect(documentsHolding(logSpy, CALL_FAILURE)).toHaveLength(1)
     )
-    expect(documentsHolding(logSpy, CALL_FAILURE)[0][CALL_FAILURE]).toBe(1)
+    expect(documentsHolding(logSpy, CALL_FAILURE)).toEqual([
+      expect.objectContaining({
+        dependency: 'redis',
+        operation: 'get',
+        [CALL_FAILURE]: 1
+      })
+    ])
+    expect(documentsHolding(logSpy, CACHE_HIT)).toEqual([])
+    expect(documentsHolding(logSpy, CACHE_MISS)).toEqual([])
   })
 })
