@@ -3,10 +3,7 @@ import { pino } from 'pino'
 import { afterEach, beforeEach, vi } from 'vitest'
 
 import { createLogger } from '../helpers/logging/logger.js'
-import {
-  ecsFormatOptions,
-  traceMixin
-} from '../helpers/logging/logger-options.js'
+import { buildEcsPinoOptions } from '../helpers/logging/logger-options.js'
 
 /**
  * Sends the lines the module-level logger writes during each test of the
@@ -18,7 +15,7 @@ import {
 export const recordEcsLogLines = () => {
   const lines = []
   const ecsLogger = pino(
-    { ...ecsFormatOptions, mixin: traceMixin, level: 'info' },
+    buildEcsPinoOptions({ level: 'info' }),
     new Writable({
       write(chunk, _encoding, done) {
         lines.push(JSON.parse(chunk))
