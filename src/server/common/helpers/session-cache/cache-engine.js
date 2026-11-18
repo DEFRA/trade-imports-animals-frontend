@@ -5,10 +5,10 @@ import { buildRedisClient } from '../redis-client.js'
 import { config } from '../../../../config/config.js'
 import { MeasuredRedisEngine } from './measured-redis-engine.js'
 
-export function getCacheEngine(engine) {
+export function getCacheEngine(engineName) {
   const logger = createLogger()
 
-  if (engine === 'redis') {
+  if (engineName === 'redis') {
     logger.info('Using Redis session cache')
     const redisClient = buildRedisClient(config.get('redis'))
     return new MeasuredRedisEngine({ client: redisClient })
