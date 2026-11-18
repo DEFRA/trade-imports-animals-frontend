@@ -25,7 +25,6 @@ import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
 import { secureContext } from '@defra/hapi-secure-context'
 import { contentSecurityPolicy } from './common/helpers/content-security-policy.js'
 import { setContextExtension } from './app/shared/set-context.js'
-import { metrics } from '@defra/cdp-metrics'
 
 export async function createServer() {
   setupProxy()
@@ -71,7 +70,6 @@ export async function createServer() {
     requestTracing,
     callCounts,
     requestMetrics,
-    metrics,
     secureContext,
     pulse,
     sessionCache,
