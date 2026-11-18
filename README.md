@@ -64,8 +64,9 @@ The Redis client pins the RESP2 wire protocol (`protocol: 2` in `buildRedisClien
 
 For every page request it handles, the service counts the calls that request
 made to its journey backend, the times it read the signed-in session record
-from the session store, and every call it made to a dependency, by dependency
-and operation (the journey backend and the session store included). A page
+from the session store, and every call it made to an HTTP dependency, by
+dependency and operation (the journey backend included). Commands sent to the
+session store are not counted there. A page
 request is every request except `GET /health`,
 `GET /favicon.ico`, the static asset route and `/call-counts` itself: form
 posts, redirects, rendered pages, the 404 page and the document scan-status
@@ -92,7 +93,7 @@ Running totals are kept per route and served at `GET /call-counts`. `DELETE
     "sessionResolutions": 4,
     "externalCalls": {
       "animals-backend": { "get-fulfilment": 2, "replace-notification": 1 },
-      "redis": { "get": 4, "set": 2 }
+      "address-book": { "list-addresses": 1 }
     }
   },
   "routes": [
@@ -104,7 +105,7 @@ Running totals are kept per route and served at `GET /call-counts`. `DELETE
       "sessionResolutions": 4,
       "externalCalls": {
         "animals-backend": { "get-fulfilment": 2, "replace-notification": 1 },
-        "redis": { "get": 4, "set": 2 }
+        "address-book": { "list-addresses": 1 }
       }
     }
   ]
