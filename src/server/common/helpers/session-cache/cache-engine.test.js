@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis'
 import { vi } from 'vitest'
 
-import { MeasuredRedisEngine } from './measured-redis-engine.js'
+import { HitCountingRedisEngine } from './hit-counting-redis-engine.js'
 import { Engine as CatboxMemory } from '@hapi/catbox-memory'
 
 import { getCacheEngine } from './cache-engine.js'
@@ -35,9 +35,9 @@ describe('#getCacheEngine', () => {
       engine = getCacheEngine('redis')
     })
 
-    test('Should setup the measured Redis cache on the built Redis client', () => {
+    test('Should setup the hit-counting Redis cache on the built Redis client', () => {
       const [builtClient] = vi.mocked(Redis).mock.results
-      expect(engine).toBeInstanceOf(MeasuredRedisEngine)
+      expect(engine).toBeInstanceOf(HitCountingRedisEngine)
       expect(engine.settings.client).toBe(builtClient.value)
     })
 

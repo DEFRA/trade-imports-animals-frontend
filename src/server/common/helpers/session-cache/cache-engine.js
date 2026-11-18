@@ -3,7 +3,7 @@ import { Engine as CatboxMemory } from '@hapi/catbox-memory'
 import { createLogger } from '../logging/logger.js'
 import { buildRedisClient } from '../redis-client.js'
 import { config } from '../../../../config/config.js'
-import { MeasuredRedisEngine } from './measured-redis-engine.js'
+import { HitCountingRedisEngine } from './hit-counting-redis-engine.js'
 
 export function getCacheEngine(engineName) {
   const logger = createLogger()
@@ -11,7 +11,7 @@ export function getCacheEngine(engineName) {
   if (engineName === 'redis') {
     logger.info('Using Redis session cache')
     const redisClient = buildRedisClient(config.get('redis'))
-    return new MeasuredRedisEngine({ client: redisClient })
+    return new HitCountingRedisEngine({ client: redisClient })
   }
 
   if (config.get('isProduction')) {

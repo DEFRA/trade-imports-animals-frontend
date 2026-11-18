@@ -24,11 +24,6 @@ const statusFields = (statusCode) =>
     ? {}
     : { http: { response: { status_code: statusCode } } }
 
-const cacheFields = (cache) => (cache ? { cache } : {})
-
-const callLabelOf = ({ interfaceId, cache }) =>
-  interfaceId ?? (cache ? `cache ${cache}` : undefined)
-
 const logExternalCall = (
   externalCall,
   { durationMs, failed, error, statusCode }
@@ -43,12 +38,12 @@ const logExternalCall = (
       outcome,
       duration: Math.round(durationMs * nanosecondsPerMillisecond)
     },
-    ...cacheFields(externalCall.cache),
     ...statusFields(statusCode),
     ...errorFields(error)
   }
-  const callLabel = callLabelOf(externalCall)
-  const callName = callLabel ? `${action} (${callLabel})` : action
+  const callName = externalCall.interfaceId
+    ? `${action} (${externalCall.interfaceId})`
+    : action
   const message = `External call ${callName} ${outcome} in ${Math.round(durationMs)} ms`
   if (failed) {
     logger.warn(fields, message)
@@ -63,7 +58,7 @@ const logExternalCall = (
  * and `external.call.failure` tagged `dependency` and `operation` without
  * making the caller wait for the publish.
  *
- * @param {{ dependency: string, operation: string, interfaceId?: string, cache?: string }} externalCall - the call, as the metric contract names it; `interfaceId` and `cache` name it in its log line only
+ * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it; `interfaceId` names it in its log line only
  * @param {{ durationMs: number, failed: boolean, error?: Error, statusCode?: number }} result - how long it took, whether it failed, and the error or HTTP status it ended with
  */
 export const recordExternalCallInBackground = (externalCall, result) => {
@@ -132,7 +127,7 @@ const measure = async (externalCall, call, outcomeOf) => {
  * other throw is a failure. A thrown error is always rethrown.
  *
  * @template T
- * @param {{ dependency: string, operation: string, interfaceId?: string, cache?: string }} externalCall - the call, as the metric contract names it; `interfaceId` and `cache` name it in its log line only
+ * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it; `interfaceId` names it in its log line only
  * @param {() => Promise<T>} call - the call to run
  * @returns {Promise<T>} the call's result
  */
