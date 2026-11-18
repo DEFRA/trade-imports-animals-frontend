@@ -24,18 +24,54 @@ const REQUEST_TIMER = 'http.server.requests'
 const VALIDATION_FAILURE = 'journey.validation.failure'
 const PAGE_REQUEST_BACKEND_CALLS = 'page.request.backend.calls'
 const ORIGIN_URL = '/live-animals/notifications/j-1/origin'
+const CONTACT_ROUTE_PATH =
+  '/live-animals/notifications/{journeyId}/consignment/contact/edit'
+const CONTACT_URL = '/live-animals/notifications/j-1/consignment/contact/edit'
+const CONTACT_TEMPLATE = 'contact.html'
 
 const documentsHolding = (logSpy, metricName) =>
   readEmfDocuments(logSpy).filter((document) => metricName in document)
 
+const routePages = (server) =>
+  server.route([
+    {
+      method: 'GET',
+      path: '/live-animals/notifications/{journeyId}/origin',
+      handler: (request) => {
+        countExternalCall({
+          dependency: BACKEND_DEPENDENCY,
+          operation: 'get-fulfilment'
+        })
+        countExternalCall({
+          dependency: BACKEND_DEPENDENCY,
+          operation: 'replace-notification'
+        })
+        countExternalCall({ dependency: 'defra-id', operation: 'jwks' })
+        countSessionResolution(request)
+        return 'origin'
+      }
+    },
+    {
+      method: 'POST',
+      path: CONTACT_ROUTE_PATH,
+      handler: (request, h) =>
+        h.view(CONTACT_TEMPLATE, {
+          errorSummary: request.payload.refused ? { errorList: [] } : null
+        })
+    },
+    {
+      method: 'GET',
+      path: CONTACT_ROUTE_PATH,
+      handler: (_request, h) =>
+        h.view(CONTACT_TEMPLATE, { errorSummary: { errorList: [] } })
+    },
+    { method: 'GET', path: '/health', handler: () => 'ok' }
+  ])
+
 describe('route section and page', () => {
   test.each([
     ['/live-animals/notifications/{journeyId}/origin', 'origin', 'origin'],
-    [
-      '/live-animals/notifications/{journeyId}/consignment/contact/edit',
-      'consignment',
-      'consignment/contact/edit'
-    ],
+    [CONTACT_ROUTE_PATH, 'consignment', 'consignment/contact/edit'],
     [
       '/live-animals/notifications/{journeyId}/accompanying-documents/{uploadId}/file',
       'accompanying-documents',
@@ -73,7 +109,7 @@ describe('request metrics', () => {
 
   beforeAll(async () => {
     templateDirectory = await mkdtemp(join(tmpdir(), 'request-metrics-'))
-    await writeFile(join(templateDirectory, 'contact.html'), 'page')
+    await writeFile(join(templateDirectory, CONTACT_TEMPLATE), 'page')
   })
 
   afterAll(async () => {
@@ -89,34 +125,7 @@ describe('request metrics', () => {
       engines: { html: { compile: () => () => 'page' } },
       path: templateDirectory
     })
-    server.route([
-      {
-        method: 'GET',
-        path: '/live-animals/notifications/{journeyId}/origin',
-        handler: (request) => {
-          countExternalCall({
-            dependency: BACKEND_DEPENDENCY,
-            operation: 'get-fulfilment'
-          })
-          countExternalCall({
-            dependency: BACKEND_DEPENDENCY,
-            operation: 'replace-notification'
-          })
-          countExternalCall({ dependency: 'defra-id', operation: 'jwks' })
-          countSessionResolution(request)
-          return 'origin'
-        }
-      },
-      {
-        method: 'POST',
-        path: '/live-animals/notifications/{journeyId}/consignment/contact/edit',
-        handler: (request, h) =>
-          h.view('contact.html', {
-            errorSummary: request.payload.refused ? { errorList: [] } : null
-          })
-      },
-      { method: 'GET', path: '/health', handler: () => 'ok' }
-    ])
+    routePages(server)
   })
 
   afterEach(async () => {
@@ -209,7 +218,7 @@ describe('request metrics', () => {
   test('a posted answer shown again with an error summary counts one validation failure for its page', async () => {
     await server.inject({
       method: 'POST',
-      url: '/live-animals/notifications/j-1/consignment/contact/edit',
+      url: CONTACT_URL,
       payload: { refused: 'yes' }
     })
 
@@ -225,8 +234,20 @@ describe('request metrics', () => {
   test('a posted answer shown with no error summary counts no validation failure', async () => {
     await server.inject({
       method: 'POST',
-      url: '/live-animals/notifications/j-1/consignment/contact/edit',
+      url: CONTACT_URL,
       payload: {}
+    })
+
+    await vi.waitFor(() =>
+      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
+    )
+    expect(documentsHolding(logSpy, VALIDATION_FAILURE)).toEqual([])
+  })
+
+  test('a page viewed with an error summary counts no validation failure', async () => {
+    await server.inject({
+      method: 'GET',
+      url: CONTACT_URL
     })
 
     await vi.waitFor(() =>
