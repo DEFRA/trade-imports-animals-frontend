@@ -2,5 +2,14 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "high": true,
   "report-type": "summary",
-  "allowlist": []
+  "allowlist": [
+    {
+      // picomatch ReDoS: no patched release yet. Expires so the audit re-checks for one.
+      "GHSA-fc5q-39xc-vjpf": {
+        "active": true,
+        "notes": "picomatch <= 4.0.7, no fixed version published",
+        "expiry": "2026-11-25"
+      }
+    }
+  ]
 }
