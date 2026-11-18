@@ -178,7 +178,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     }
   )
 
-  it('Should log the reference and organisation when the fulfilment GET returns 403', async () => {
+  it('Should log the reference, organisation and status as fields when the fulfilment GET returns 403', async () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     fetchMocker.mockResponse('Forbidden', { status: 403 })
 
@@ -188,7 +188,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
     expect(loaded).toBeUndefined()
     expect(warn).toHaveBeenCalledWith(
-      'Backend refused fulfilment read for notification GBN-AG-26-ABC123, organisation 5900001'
+      {
+        journeyId: 'GBN-AG-26-ABC123',
+        organisationId: '5900001',
+        status: 403
+      },
+      'Backend refused fulfilment read'
     )
     warn.mockRestore()
   })
