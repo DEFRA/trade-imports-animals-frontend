@@ -6,11 +6,10 @@ import {
 
 const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
 
-const MAX_PAGE_SIZE = 100
-
 const transportersPage = async (orgId, page) => {
+  const maxPageSize = 100
   const url = new URL(transportersUrl(orgId))
-  url.searchParams.set('pageSize', String(MAX_PAGE_SIZE))
+  url.searchParams.set('pageSize', String(maxPageSize))
   url.searchParams.set('page', String(page))
 
   const response = await sendToAddressBook(

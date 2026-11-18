@@ -5,9 +5,8 @@ import { config } from '../config/config.js'
 import { measureExternalCall } from '../server/common/helpers/metrics/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
-const TOKEN_ENDPOINT_TIMEOUT_MS = 3000
-
 async function refreshTokens(refreshToken) {
+  const tokenEndpointTimeoutMs = 3000
   const { token_endpoint: url } = await getOidcConfig()
 
   const payload = new URLSearchParams({
@@ -29,7 +28,7 @@ async function refreshTokens(refreshToken) {
         },
         payload: payload.toString(),
         json: true,
-        timeout: TOKEN_ENDPOINT_TIMEOUT_MS
+        timeout: tokenEndpointTimeoutMs
       })
   )
 

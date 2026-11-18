@@ -8,9 +8,6 @@ import {
 
 const logger = createLogger()
 
-const NANOSECONDS_PER_MILLISECOND = 1_000_000
-const FIRST_SERVER_ERROR_STATUS = 500
-
 const errorFields = (error) =>
   error
     ? {
@@ -31,6 +28,7 @@ const logExternalCall = (
   { dependency, operation, interfaceId },
   { durationMs, failed, error, statusCode }
 ) => {
+  const nanosecondsPerMillisecond = 1_000_000
   const action = `${dependency}/${operation}`
   const outcome = failed ? 'failure' : 'success'
   const fields = {
@@ -38,7 +36,7 @@ const logExternalCall = (
       category: 'external-call',
       action,
       outcome,
-      duration: Math.round(durationMs * NANOSECONDS_PER_MILLISECOND)
+      duration: Math.round(durationMs * nanosecondsPerMillisecond)
     },
     ...statusFields(statusCode),
     ...errorFields(error)
@@ -84,10 +82,10 @@ export const recordExternalCallInBackground = (externalCall, result) => {
   )
 }
 
-const outcomeOfStatus = (statusCode) => ({
-  failed: statusCode >= FIRST_SERVER_ERROR_STATUS,
-  statusCode
-})
+const outcomeOfStatus = (statusCode) => {
+  const firstServerErrorStatus = 500
+  return { failed: statusCode >= firstServerErrorStatus, statusCode }
+}
 
 const statusAnsweredWith = (error) =>
   error?.data?.isResponseError ? error.data.res.statusCode : error?.status
