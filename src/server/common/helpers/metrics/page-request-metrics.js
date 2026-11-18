@@ -1,3 +1,4 @@
+import { backendCallsOf } from '../call-counts/call-counts.js'
 import { COUNT, publishMetricsInBackground } from './publish-metrics.js'
 
 /**
@@ -5,17 +6,18 @@ import { COUNT, publishMetricsInBackground } from './publish-metrics.js'
  * and `page.request.session.resolutions`, tagged `request.kind` `page`, without
  * making the request wait for the publish.
  *
- * @param {{ backendCalls: number, sessionResolutions: number }} counts - what the request made
+ * @param {ReturnType<typeof import('../call-counts/call-counts.js').newCallCounts>} counts - what the request made
  */
-export const recordPageRequestInBackground = ({
-  backendCalls,
-  sessionResolutions
-}) =>
+export const recordPageRequestInBackground = (counts) =>
   publishMetricsInBackground({ 'request.kind': 'page' }, [
-    { name: 'page.request.backend.calls', value: backendCalls, unit: COUNT },
+    {
+      name: 'page.request.backend.calls',
+      value: backendCallsOf(counts),
+      unit: COUNT
+    },
     {
       name: 'page.request.session.resolutions',
-      value: sessionResolutions,
+      value: counts.sessionResolutions,
       unit: COUNT
     }
   ])

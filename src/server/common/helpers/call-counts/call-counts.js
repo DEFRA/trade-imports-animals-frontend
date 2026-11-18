@@ -9,10 +9,9 @@ const storage = new AsyncLocalStorage()
 /**
  * Starts the counts for one request.
  *
- * @returns {{ backendCalls: number, sessionResolutions: number, externalCalls: Record<string, Record<string, number>> }} zeroed counts
+ * @returns {{ sessionResolutions: number, externalCalls: Record<string, Record<string, number>> }} zeroed counts
  */
 export const newCallCounts = () => ({
-  backendCalls: 0,
   sessionResolutions: 0,
   externalCalls: {}
 })
@@ -29,9 +28,20 @@ export const callCountsOf = (request) => request?.plugins?.[PLUGIN_NAME]
 export const BACKEND_DEPENDENCY = 'animals-backend'
 
 /**
+ * Adds up a request's calls to the journey backend, across every operation.
+ *
+ * @param {ReturnType<typeof newCallCounts>} counts - the request's counts
+ * @returns {number} the number of backend calls
+ */
+export const backendCallsOf = (counts) =>
+  Object.values(counts.externalCalls[BACKEND_DEPENDENCY] ?? {}).reduce(
+    (sum, calls) => sum + calls,
+    0
+  )
+
+/**
  * Counts one call to a dependency against the request in progress, by
- * dependency and operation, and as a backend call when it went to the journey
- * backend.
+ * dependency and operation.
  *
  * @param {{ dependency: string, operation: string }} externalCall - the call, as the metric contract names it
  */
@@ -44,9 +54,6 @@ export const countExternalCall = ({ dependency, operation }) => {
   counts.externalCalls[dependency] = {
     ...operations,
     [operation]: (operations[operation] ?? 0) + 1
-  }
-  if (dependency === BACKEND_DEPENDENCY) {
-    counts.backendCalls += 1
   }
 }
 
@@ -86,6 +93,7 @@ const totalFinishedRequest = (request) => {
   addPageRequest({
     method: request.method,
     path: request.route.path,
+    backendCalls: backendCallsOf(counts),
     counts
   })
 }

@@ -61,15 +61,15 @@ const byPathThenMethod = (first, second) =>
 /**
  * Adds one finished page request to its route's running totals.
  *
- * @param {{ method: string, path: string, counts: { backendCalls: number, sessionResolutions: number, externalCalls: Record<string, Record<string, number>> } }} pageRequest - the request's route and counts
+ * @param {{ method: string, path: string, backendCalls: number, counts: { sessionResolutions: number, externalCalls: Record<string, Record<string, number>> } }} pageRequest - the request's route, its backend calls and its counts
  */
-export const addPageRequest = ({ method, path, counts }) => {
+export const addPageRequest = ({ method, path, backendCalls, counts }) => {
   const key = `${method} ${path}`
   const existing = routeTotals.get(key) ?? { method, path, ...emptyTotals() }
   routeTotals.set(key, {
     ...existing,
     pageRequests: existing.pageRequests + 1,
-    backendCalls: existing.backendCalls + counts.backendCalls,
+    backendCalls: existing.backendCalls + backendCalls,
     sessionResolutions: existing.sessionResolutions + counts.sessionResolutions,
     externalCalls: mergeExternalCalls(
       existing.externalCalls,
