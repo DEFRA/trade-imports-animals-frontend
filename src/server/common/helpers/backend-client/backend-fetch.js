@@ -34,11 +34,7 @@ const fetchRetryingConnection = async (logger, url, init) => {
 }
 
 /**
- * Builds a backend fetch: each use makes one call to the journey backend,
- * recorded as one external call under the operation it names, timed from the
- * first attempt. A connection that is refused, or has not opened within two
- * seconds, is logged at warn on the given logger and tried once more; any other
- * failure is thrown to the caller.
+ * Builds a {@link backendFetch} that writes its retry warning to the given logger.
  *
  * @param {import('pino').Logger} logger - where the retry warning is written
  * @returns {(operation: string, url: string | URL, init?: RequestInit) => Promise<Response>} the backend fetch
