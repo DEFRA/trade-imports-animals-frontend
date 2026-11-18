@@ -21,7 +21,7 @@ const publishMetrics = async (dimensions, metrics) => {
 /**
  * Writes one EMF document holding the given metrics, all with the same
  * dimensions, without making the caller wait for the flush. A document that
- * cannot be written is logged at warn with the metric names.
+ * cannot be written is logged at warn with its dimensions and metric names.
  *
  * @param {Record<string, string>} dimensions - the dimensions every metric is published with
  * @param {Array<{ name: string, value: number, unit: string }>} metrics - the metrics, by their dot-case names
@@ -29,7 +29,7 @@ const publishMetrics = async (dimensions, metrics) => {
 export const publishMetricsInBackground = (dimensions, metrics) => {
   publishMetrics(dimensions, metrics).catch((error) => {
     logger.warn(
-      { err: error, metrics: metrics.map(({ name }) => name) },
+      { err: error, dimensions, metrics: metrics.map(({ name }) => name) },
       'Could not publish metrics'
     )
   })
