@@ -2,5 +2,13 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "high": true,
   "report-type": "summary",
-  "allowlist": []
+  "allowlist": [
+    {
+      "GHSA-fc5q-39xc-vjpf": {
+        "active": true,
+        "notes": "picomatch ReDoS: every version up to 4.0.7 is affected and no fix is published. Owner: Sam Farrington",
+        "expiry": "2026-11-25"
+      }
+    }
+  ]
 }
