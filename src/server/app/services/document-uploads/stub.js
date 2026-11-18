@@ -77,7 +77,7 @@ export const documentUploads = {
     const refusedField = refusedClaimField(claim)
     if (refusedField) {
       const error = new Error(
-        `Failed to claim document upload: ${HTTP_STATUS_BAD_REQUEST} Bad Request`
+        `Failed to claim-document-upload: ${HTTP_STATUS_BAD_REQUEST} Bad Request`
       )
       error.status = HTTP_STATUS_BAD_REQUEST
       error.field = refusedField

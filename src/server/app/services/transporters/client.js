@@ -1,8 +1,7 @@
 import {
-  addressBookFetch,
   addressBookHeaders,
   addressBookResourceUrl,
-  throwOnAddressBookError
+  sendToAddressBook
 } from '../address-book-request.js'
 
 const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
@@ -16,12 +15,14 @@ const transportersPage = async (orgId, page) => {
   url.searchParams.set('pageSize', String(MAX_PAGE_SIZE))
   url.searchParams.set('page', String(page))
 
-  const response = await addressBookFetch('list-transporters', url.toString(), {
-    method: 'GET',
-    headers: headers(orgId)
-  })
-
-  throwOnAddressBookError('list transporters', response)
+  const response = await sendToAddressBook(
+    'list-transporters',
+    url.toString(),
+    {
+      method: 'GET',
+      headers: headers(orgId)
+    }
+  )
 
   return response.json()
 }
@@ -45,7 +46,7 @@ export const listTransporters = async (orgId) => {
 
 /** Creates a transporter in the organisation's address book. */
 export const createTransporter = async (orgId, transporter) => {
-  const response = await addressBookFetch(
+  const response = await sendToAddressBook(
     'create-transporter',
     transportersUrl(orgId),
     {
@@ -54,8 +55,6 @@ export const createTransporter = async (orgId, transporter) => {
       body: JSON.stringify(transporter)
     }
   )
-
-  throwOnAddressBookError('create transporter', response)
 
   return response.json()
 }

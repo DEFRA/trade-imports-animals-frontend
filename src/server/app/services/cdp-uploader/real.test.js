@@ -129,12 +129,12 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when a session cannot be opened', async () => {
+    it('Should throw naming the operation and the status when a session cannot be opened', async () => {
       fetchMocker.mockResponse(() => ({ status: 503, body: 'Unavailable' }))
 
       await expect(openSession()).rejects.toMatchObject({
         status: 503,
-        message: expect.stringContaining('open an upload session')
+        message: expect.stringContaining('Failed to initiate: 503')
       })
     })
   })
@@ -171,14 +171,14 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when the session cannot be read', async () => {
+    it('Should throw naming the operation and the status when the session cannot be read', async () => {
       fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
 
       await expect(
         documentUploadSessions.read(UPLOAD_ID)
       ).rejects.toMatchObject({
         status: 404,
-        message: expect.stringContaining('read an upload session')
+        message: expect.stringContaining('Failed to status: 404')
       })
     })
   })

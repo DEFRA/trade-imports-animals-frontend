@@ -56,7 +56,7 @@ export const documentUploadSessions = {
           })
         })
         if (!response.ok) {
-          throw failedResponse('open an upload session', response)
+          throw failedResponse(UPLOADER_CALLS.openSession.operation, response)
         }
         return response.json()
       }
@@ -82,7 +82,7 @@ export const documentUploadSessions = {
         headers: traceHeaders()
       })
       if (!response.ok) {
-        throw failedResponse('read an upload session', response)
+        throw failedResponse(UPLOADER_CALLS.readSession.operation, response)
       }
       return response.json()
     })

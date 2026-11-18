@@ -9,14 +9,14 @@ export const advanceConcurrencyToken = (journey) => {
 export const assertConcurrencyToken = (
   journey,
   expectedConcurrencyToken,
-  action
+  operation
 ) => {
   // Checked before coercion: Number(null) is 0, which would match a fresh journey.
   if (
     expectedConcurrencyToken === undefined ||
     expectedConcurrencyToken === null
   ) {
-    const error = new BackendRequestError(action, {
+    const error = new BackendRequestError(operation, {
       status: HTTP_BAD_REQUEST,
       statusText: 'Bad Request'
     })
@@ -24,7 +24,7 @@ export const assertConcurrencyToken = (
     throw error
   }
   if (Number(expectedConcurrencyToken) !== (journey.concurrencyToken ?? 0)) {
-    const error = new BackendRequestError(action, {
+    const error = new BackendRequestError(operation, {
       status: HTTP_CONFLICT,
       statusText: 'Conflict'
     })

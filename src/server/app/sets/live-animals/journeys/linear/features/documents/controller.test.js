@@ -820,7 +820,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   const claimRefusal = () =>
     Object.assign(
-      new Error('Failed to claim document upload: 503 Service Unavailable'),
+      new Error('Failed to claim-document-upload: 503 Service Unavailable'),
       { status: SERVICE_UNAVAILABLE }
     )
 
@@ -1419,7 +1419,7 @@ describe('documents — scan-status poll and view context', () => {
     const uploadId = await registeredUpload('itahc.pdf')
     const err = Object.assign(
       new Error(
-        'Failed to get document upload status: 500 Internal Server Error'
+        'Failed to get-document-upload-status: 500 Internal Server Error'
       ),
       { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
     )
@@ -1806,14 +1806,13 @@ describe('documents — the add form when no upload session can be opened', () =
     'Documents cannot be uploaded at the moment. Reload the page or come back later.'
 
   const uploaderError = () =>
-    Object.assign(
-      new Error('Failed to open an upload session: 503 Service Unavailable'),
-      { status: SERVICE_UNAVAILABLE }
-    )
+    Object.assign(new Error('Failed to initiate: 503 Service Unavailable'), {
+      status: SERVICE_UNAVAILABLE
+    })
 
   it('Should log the ids of a session it opened but could not record against the notification, and still refuse only the add form', async () => {
     const err = Object.assign(
-      new Error('Failed to register document upload: 503 Service Unavailable'),
+      new Error('Failed to register-document-upload: 503 Service Unavailable'),
       { status: SERVICE_UNAVAILABLE }
     )
     const register = vi

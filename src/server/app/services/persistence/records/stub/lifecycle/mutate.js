@@ -37,7 +37,11 @@ export const replaceFulfilment = async (
 ) => {
   const journey = loadWritable(journeyId)
   if (known?.concurrencyToken != null) {
-    assertConcurrencyToken(journey, known.concurrencyToken, 'save notification')
+    assertConcurrencyToken(
+      journey,
+      known.concurrencyToken,
+      'replace-notification'
+    )
   }
   journey.fulfilment = structuredClone(
     encodeEvaluatorFulfilments(fulfilment ?? {})

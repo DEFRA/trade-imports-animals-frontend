@@ -1,8 +1,8 @@
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
 
-export const failed = async (action, response) => {
-  const error = new BackendRequestError(action, response)
+export const failed = async (operation, response) => {
+  const error = new BackendRequestError(operation, response)
   if (response.status === HTTP_CONFLICT) {
     try {
       const body = await response.clone().json()

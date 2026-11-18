@@ -43,7 +43,9 @@ describe('countries client', () => {
   it('Should throw on a non-ok response', async () => {
     stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
     const { fetchCountries } = await import('./countries/client.js')
-    await expect(fetchCountries()).rejects.toThrow('Failed to get countries')
+    await expect(fetchCountries()).rejects.toThrow(
+      'Failed to get-countries: 503 Down'
+    )
   })
 })
 
@@ -60,7 +62,7 @@ describe('ports client', () => {
     stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
     const { fetchPortsOfEntry } = await import('./ports/client.js')
     await expect(fetchPortsOfEntry()).rejects.toThrow(
-      'Failed to get ports of entry'
+      'Failed to get-ports-of-entry: 500 Boom'
     )
   })
 })
