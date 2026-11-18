@@ -4,6 +4,7 @@ import {
   answerOriginEntry,
   expectNoSeriousOrCriticalViolations,
   expectStyle,
+  expectThreeSaveControls,
   govukVisuallyHiddenStyleOf,
   startNotificationAtOrigin,
   urlUnderBase,
@@ -143,12 +144,21 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('Save and return to overview with nothing chosen does the same and goes nowhere', async ({
+  test('ends with Save and continue, Save and return to hub side by side and Cancel and return to hub on its own line below them', async ({
+    page
+  }) => {
+    await expectThreeSaveControls(page, {
+      saveAndReturnToHubLabel: copy.saveActions.saveAndReturnToHub,
+      cancelAndReturnToHubLabel: copy.saveActions.cancelAndReturnToHub
+    })
+  })
+
+  test('Save and return to hub with nothing chosen does the same and goes nowhere', async ({
     page
   }) => {
     const contactUrl = page.url()
 
-    await saveAndReturnToHub(page).click()
+    await saveAndReturnToHub(page, copy.saveActions.saveAndReturnToHub).click()
 
     await expect(
       errorSummaryLinks(page, copy.errors.contactRequired)
@@ -159,7 +169,7 @@ test.describe('contact feature', () => {
     await expect(page).toHaveURL(contactUrl)
   })
 
-  test('Save and return to overview with a value the book does not hold is refused the same way, with no option left chosen', async ({
+  test('Save and return to hub with a value the book does not hold is refused the same way, with no option left chosen', async ({
     page
   }) => {
     await page
@@ -169,7 +179,7 @@ test.describe('contact feature', () => {
         input.value = 'not-a-real-contact'
         input.checked = true
       })
-    await saveAndReturnToHub(page).click()
+    await saveAndReturnToHub(page, copy.saveActions.saveAndReturnToHub).click()
 
     const contactError = errorSummaryLinks(page, copy.errors.contactRequired)
     await expect(contactError).toBeVisible()

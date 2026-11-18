@@ -9,5 +9,9 @@ export const copy = {
   },
   errors: {
     contactRequired: 'Select a contact address'
+  },
+  saveActions: {
+    saveAndReturnToHub: 'Save and return to hub',
+    cancelAndReturnToHub: 'Cancel and return to hub'
   }
 }

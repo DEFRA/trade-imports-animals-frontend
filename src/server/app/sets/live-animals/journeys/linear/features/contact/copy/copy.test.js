@@ -41,6 +41,19 @@ describe('contact copy module', () => {
       ', ac yna dewch yn ôl i’r dudalen hon.'
     )
   })
+
+  it('Should hold the two return-control words as the design source sets them, with a Welsh draft that differs', () => {
+    expect(copy.saveActions.saveAndReturnToHub).toBe('Save and return to hub')
+    expect(copy.saveActions.cancelAndReturnToHub).toBe(
+      'Cancel and return to hub'
+    )
+    expect(cy.saveActions.saveAndReturnToHub).not.toBe(
+      copy.saveActions.saveAndReturnToHub
+    )
+    expect(cy.saveActions.cancelAndReturnToHub).not.toBe(
+      copy.saveActions.cancelAndReturnToHub
+    )
+  })
 })
 
 describe('GET contact — copy reaches the view', () => {
@@ -54,8 +67,14 @@ describe('GET contact — copy reaches the view', () => {
     expect(result.view.context.resultsHeading).toBe(
       addressesCopy.picker.resultsHeading
     )
-    expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
+    expect(result.view.context.saveActionsCopy.saveAndContinue).toBe(
       'Save and continue'
+    )
+    expect(result.view.context.saveActionsCopy.saveAndReturnToHub).toBe(
+      'Save and return to hub'
+    )
+    expect(result.view.context.saveActionsCopy.cancelAndReturnToHub).toBe(
+      'Cancel and return to hub'
     )
   })
 })

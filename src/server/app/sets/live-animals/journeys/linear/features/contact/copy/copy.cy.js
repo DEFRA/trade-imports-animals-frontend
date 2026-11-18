@@ -10,5 +10,9 @@ export const copy = {
   },
   errors: {
     contactRequired: 'Dewiswch gyfeiriad cyswllt'
+  },
+  saveActions: {
+    saveAndReturnToHub: "Cadw a dychwelyd i'r hwb",
+    cancelAndReturnToHub: "Canslo a dychwelyd i'r hwb"
   }
 }

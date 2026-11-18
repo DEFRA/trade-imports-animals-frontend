@@ -34,6 +34,7 @@ const view = `${TEMPLATES}/features/contact/template`
 const copy = copyFor({ en, cy })
 const resultsHeading = copyFor({ en: addressesEn, cy: addressesCy }).picker
   .resultsHeading
+const saveActionsCopy = { ...kit.sharedCopy.saveActions, ...copy.saveActions }
 
 const handshakeErrorSummary = (error) =>
   error
@@ -73,6 +74,7 @@ const render = (
     }),
     copy,
     resultsHeading,
+    saveActionsCopy,
     errors,
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,

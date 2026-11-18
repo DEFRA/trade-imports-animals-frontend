@@ -15,6 +15,7 @@ import {
   followErrorLinkToField,
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
+  expectPageEndsWithPrimaryAlone,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
   openAddresses,
@@ -619,6 +620,12 @@ test.describe('party picker layout', () => {
     await searchAddresses(page, NO_MATCH_QUERY)
 
     await expect(resultsSummary(page)).toHaveText(copy.picker.noMatches)
+  })
+
+  test('ends with Save and continue alone, offering no return control', async ({
+    page
+  }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 })
 
