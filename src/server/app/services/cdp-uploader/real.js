@@ -70,8 +70,6 @@ export const documentUploadSessions = {
   /**
    * Reads back what the browser submitted, including the text fields sent alongside the file.
    *
-   * The path is built on the configured base URL rather than taken from the session.
-   *
    * @param {string} uploadId - the session's id
    * @returns {Promise<{uploadStatus: string, form: object}>} the submitted form and its state
    */

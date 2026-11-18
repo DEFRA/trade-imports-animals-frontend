@@ -39,7 +39,9 @@ Uploading a document takes both upload services. `cdp-uploader` opens the
 upload session the browser posts the file to and reads back what it submitted;
 `document-uploads` registers that session against the notification on the
 backend and claims it once the trader has answered the document's own
-questions.
+questions. A session's status is read from `cdpUploader.baseUrl`, never from a
+URL the session hands back, so a session cannot point the server at another
+host.
 
 A return link naming a handle the notification never opened is an ordinary
 outcome — a stale or hand-edited link — so the session lookup answers nothing
