@@ -6,8 +6,6 @@ import {
 
 const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
 
-const headers = addressBookHeaders
-
 const MAX_PAGE_SIZE = 100
 
 const transportersPage = async (orgId, page) => {
@@ -20,7 +18,7 @@ const transportersPage = async (orgId, page) => {
     url.toString(),
     {
       method: 'GET',
-      headers: headers(orgId)
+      headers: addressBookHeaders(orgId)
     }
   )
 
@@ -51,7 +49,7 @@ export const createTransporter = async (orgId, transporter) => {
     transportersUrl(orgId),
     {
       method: 'POST',
-      headers: headers(orgId),
+      headers: addressBookHeaders(orgId),
       body: JSON.stringify(transporter)
     }
   )

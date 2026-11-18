@@ -11,8 +11,6 @@ import {
 const addressesUrl = (orgId, addressId) =>
   addressBookResourceUrl('addresses', orgId, addressId)
 
-const headers = addressBookHeaders
-
 const toRecord = async (operator) => ({
   id: operator.id,
   name: operator.name,
@@ -50,7 +48,7 @@ export const listAddresses = async (
 
   const response = await sendToAddressBook('list-addresses', url.toString(), {
     method: 'GET',
-    headers: headers(orgId)
+    headers: addressBookHeaders(orgId)
   })
 
   const body = await response.json()
@@ -71,7 +69,7 @@ export const getAddress = async (orgId, addressId) => {
     addressesUrl(orgId, addressId),
     {
       method: 'GET',
-      headers: headers(orgId)
+      headers: addressBookHeaders(orgId)
     }
   )
 
