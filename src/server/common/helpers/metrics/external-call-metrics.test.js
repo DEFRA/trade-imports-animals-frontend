@@ -203,32 +203,28 @@ describe('external call metrics', () => {
 describe('the status a dependency answers with', () => {
   const { onlyLine, onlyDocument } = recordExternalCallOutput()
 
-  test('a response with a 5xx status is a failure, logged with its status code', async () => {
-    const response = new Response(null, { status: 503 })
+  test.each([
+    { status: 404, outcome: 'success', failure: 0, level: 'info' },
+    { status: 499, outcome: 'success', failure: 0, level: 'info' },
+    { status: 500, outcome: 'failure', failure: 1, level: 'warn' },
+    { status: 503, outcome: 'failure', failure: 1, level: 'warn' }
+  ])(
+    'a response with status $status is returned, is a $outcome and is logged with its status code and no error',
+    async ({ status, outcome, failure, level }) => {
+      const response = new Response(null, { status })
 
-    await expect(
-      measureExternalResponse(LIST_ADDRESSES, async () => response)
-    ).resolves.toBe(response)
+      await expect(
+        measureExternalResponse(LIST_ADDRESSES, async () => response)
+      ).resolves.toBe(response)
 
-    expect((await onlyDocument())['external.call.failure']).toBe(1)
-    const line = onlyLine()
-    expect(line['log.level']).toBe('warn')
-    expect(line.event.outcome).toBe('failure')
-    expect(line.http).toEqual({ response: { status_code: 503 } })
-    expect(line).not.toHaveProperty('error')
-  })
-
-  test('a response with a 4xx status is the dependency answering, so a success', async () => {
-    await measureExternalResponse(
-      LIST_ADDRESSES,
-      async () => new Response(null, { status: 404 })
-    )
-
-    expect((await onlyDocument())['external.call.failure']).toBe(0)
-    const line = onlyLine()
-    expect(line.event.outcome).toBe('success')
-    expect(line.http).toEqual({ response: { status_code: 404 } })
-  })
+      expect((await onlyDocument())['external.call.failure']).toBe(failure)
+      const line = onlyLine()
+      expect(line['log.level']).toBe(level)
+      expect(line.event.outcome).toBe(outcome)
+      expect(line.http).toEqual({ response: { status_code: status } })
+      expect(line).not.toHaveProperty('error')
+    }
+  )
 
   test.each([
     { status: 404, outcome: 'success', failure: 0, level: 'info' },
