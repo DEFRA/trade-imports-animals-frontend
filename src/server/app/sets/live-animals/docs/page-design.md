@@ -329,7 +329,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   announced, because the box and the tally already show it.
 - After a Remove or Clear all, the button pressed has gone, so focus moves to
   the search box. After a tick, focus stays on the tick box.
-- Without JavaScript a tick cannot refresh the tally, so an "Update selected"
+- Without JavaScript a tick cannot refresh the tally, so an "Add selection"
   secondary button sits under the results. It runs the search again, keeping
   the term and the ticks, and the tally catches up. With JavaScript
   the button is hidden, because a tick refreshes the tally itself. The button and

@@ -21,7 +21,7 @@ export const copy = {
       clearAll: 'Clirio’r cyfan',
       remove: (species, commodity) => `Tynnu ${species} o ${commodity}`
     },
-    updateSelected: 'Diweddaru’r dewis',
+    addSelection: 'Ychwanegu’r dewis',
     help: {
       summary: 'Help gyda chodau nwyddau',
       reference:

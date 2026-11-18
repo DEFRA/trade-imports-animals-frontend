@@ -64,8 +64,22 @@ jobs:
           tag="${tag:0:128}"
           echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
 
+      - name: Set up Node for tim
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tim/package-lock.json
+
+      - name: Install tim
+        working-directory: tim
+        run: npm ci
+
       - name: Start stack
-        run: ./scripts/stack/run-stack.sh --branch "${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}"
+        env:
+          BRANCH: ${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}
+          TIM_NO_AUTO_PULL: '1'
+        run: node tim/src/cli.js docker up --workspace "$GITHUB_WORKSPACE" --branch "$BRANCH"
 
       - name: Checkout frontend
         uses: actions/checkout@v7
