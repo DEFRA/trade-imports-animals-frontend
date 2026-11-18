@@ -12,7 +12,8 @@ const DEPENDENCY_DIMENSIONS = Object.freeze({ dependency: REDIS_DEPENDENCY })
  * Reports a Redis client's connection events as log lines and metrics, all
  * tagged `dependency` `redis`. Publishes `external.dependency.available`
  * (1 once ready, 0 once closed or ended) on each change and every minute
- * after, logs each change once, counts each change from ready to closed as
+ * after, logs each change once, logs at error when the client stops
+ * reconnecting, counts each change from ready to closed as
  * `external.dependency.connection.lost`, and logs and counts each client
  * error, and each error a Cluster client reports from one of its nodes, as
  * `external.dependency.error`. Nothing is published before the first event.
@@ -61,7 +62,10 @@ export const reportRedisConnectionEvents = (client) => {
 
   client.on('ready', () => changeAvailabilityTo(true))
   client.on('close', () => changeAvailabilityTo(false))
-  client.on('end', () => changeAvailabilityTo(false))
+  client.on('end', () => {
+    logger.error(DEPENDENCY_DIMENSIONS, 'Redis client stopped reconnecting')
+    changeAvailabilityTo(false)
+  })
   client.on('error', recordError)
   client.on('node error', recordError)
   setInterval(publishAvailability, publishEveryMs).unref()
