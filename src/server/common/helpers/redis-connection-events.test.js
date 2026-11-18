@@ -8,6 +8,9 @@ import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 const ONE_MINUTE_MS = 60_000
 const AVAILABLE = 'external.dependency.available'
 const ERROR = 'external.dependency.error'
+const CONNECTION_LOST = 'external.dependency.connection.lost'
+const AVAILABLE_LINE = { level: 'info', message: 'Redis is available' }
+const UNAVAILABLE_LINE = { level: 'warn', message: 'Redis is unavailable' }
 
 const valuesOf = (logSpy, metricName) =>
   readEmfDocuments(logSpy)
@@ -77,13 +80,27 @@ describe('reportRedisConnectionEvents', () => {
 
     await eventually(() => {
       expect(valuesOf(logSpy, AVAILABLE)).toEqual([1, 0])
-      expect(valuesOf(logSpy, 'external.dependency.connection.lost')).toEqual([
-        1
-      ])
+      expect(valuesOf(logSpy, CONNECTION_LOST)).toEqual([1])
     })
     expect(availabilityLines(ecsLog.lines())).toEqual([
-      { level: 'info', message: 'Redis is available' },
-      { level: 'warn', message: 'Redis is unavailable' }
+      AVAILABLE_LINE,
+      UNAVAILABLE_LINE
+    ])
+  })
+
+  test('a ready client that closes and becomes ready again publishes 1, 0, 1, logs each change and counts one lost connection', async () => {
+    client.emit('ready')
+    client.emit('close')
+    client.emit('ready')
+
+    await eventually(() => {
+      expect(valuesOf(logSpy, AVAILABLE)).toEqual([1, 0, 1])
+      expect(valuesOf(logSpy, CONNECTION_LOST)).toEqual([1])
+    })
+    expect(availabilityLines(ecsLog.lines())).toEqual([
+      AVAILABLE_LINE,
+      UNAVAILABLE_LINE,
+      AVAILABLE_LINE
     ])
   })
 
@@ -107,7 +124,7 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('close')
 
     await eventually(() => expect(valuesOf(logSpy, AVAILABLE)).toEqual([0]))
-    expect(valuesOf(logSpy, 'external.dependency.connection.lost')).toEqual([])
+    expect(valuesOf(logSpy, CONNECTION_LOST)).toEqual([])
   })
 
   test('each client error is logged with its error and counted, tagged dependency redis', async () => {
