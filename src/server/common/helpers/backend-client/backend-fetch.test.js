@@ -8,6 +8,10 @@ import { callCounts } from '../call-counts/call-counts.js'
 import { callCountsRoutes } from '../call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
 import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import {
+  fetchMock,
+  resetMocksAndConfigAfterTests
+} from '../../../app/engine/test-support.js'
 
 const loggedLines = []
 const logDestination = new Writable({
@@ -19,7 +23,7 @@ const logDestination = new Writable({
 const backendFetch = createBackendFetch(pino({ level: 'warn' }, logDestination))
 
 const OPERATION = 'replace-notification'
-const BACKEND_URL = 'http://backend.test/notifications'
+const BACKEND_URL = 'http://backend.test/notifications/j-1'
 const INIT = { method: 'PUT', headers: { 'content-type': 'application/json' } }
 
 const fetchFailedBecause = (cause) => new TypeError('fetch failed', { cause })
@@ -38,9 +42,16 @@ const everyAddressTimedOut = () =>
       )
     })
   )
+const backendAnswered = (status = 200) => new Response(null, { status })
+
+resetMocksAndConfigAfterTests()
+
+beforeEach(() => {
+  loggedLines.length = 0
+  fetchMock.enableMocks()
+})
 
 describe('backendFetch', () => {
-  const originalFetch = global.fetch
   let server
 
   const readRoute = async (path) => {
@@ -53,20 +64,17 @@ describe('backendFetch', () => {
 
   beforeEach(async () => {
     clearCallCountTotals()
-    loggedLines.length = 0
-    global.fetch = vi.fn().mockResolvedValue({ ok: true })
     server = hapi.server()
     await server.register([callCounts, callCountsRoutes])
   })
 
   afterEach(async () => {
-    global.fetch = originalFetch
     await server.stop({ timeout: 0 })
   })
 
   test("returns fetch's response and counts one backend call", async () => {
-    const response = { ok: true, status: 200 }
-    global.fetch.mockResolvedValue(response)
+    const response = backendAnswered()
+    fetchMock.mockResponseOnce(response)
     let received
     server.route({
       method: 'GET',
@@ -90,17 +98,18 @@ describe('backendFetch', () => {
   })
 
   test('still calls fetch outside a request', async () => {
-    await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toEqual({
-      ok: true
-    })
+    const response = backendAnswered()
+    fetchMock.mockResponseOnce(response)
+
+    await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toBe(
+      response
+    )
   })
 
   describe('when the connection to the backend does not open', () => {
     test('tries once more and returns the second response', async () => {
-      const response = { ok: true, status: 200 }
-      global.fetch
-        .mockRejectedValueOnce(connectTimedOut())
-        .mockResolvedValueOnce(response)
+      const response = backendAnswered()
+      fetchMock.mockRejectOnce(connectTimedOut()).mockResponseOnce(response)
 
       await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toBe(
         response
@@ -108,9 +117,7 @@ describe('backendFetch', () => {
     })
 
     test('logs one warning with the failed connection, the method and the URL', async () => {
-      global.fetch
-        .mockRejectedValueOnce(connectTimedOut())
-        .mockResolvedValueOnce({ ok: true })
+      fetchMock.mockRejectOnce(connectTimedOut())
 
       await backendFetch(OPERATION, BACKEND_URL, INIT)
 
@@ -129,10 +136,10 @@ describe('backendFetch', () => {
     })
 
     test('tries once more when every address of the host timed out', async () => {
-      const response = { ok: true, status: 200 }
-      global.fetch
-        .mockRejectedValueOnce(everyAddressTimedOut())
-        .mockResolvedValueOnce(response)
+      const response = backendAnswered()
+      fetchMock
+        .mockRejectOnce(everyAddressTimedOut())
+        .mockResponseOnce(response)
 
       await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).resolves.toBe(
         response
@@ -141,9 +148,7 @@ describe('backendFetch', () => {
 
     test('throws the second failure when the retry cannot connect either', async () => {
       const second = fetchFailedBecause(errorWithCode('ECONNREFUSED'))
-      global.fetch
-        .mockRejectedValueOnce(connectTimedOut())
-        .mockRejectedValueOnce(second)
+      fetchMock.mockRejectOnce(connectTimedOut()).mockRejectOnce(second)
 
       await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).rejects.toBe(
         second
@@ -151,9 +156,7 @@ describe('backendFetch', () => {
     })
 
     test('counts the call once, however many attempts it took', async () => {
-      global.fetch
-        .mockRejectedValueOnce(connectTimedOut())
-        .mockResolvedValueOnce({ ok: true })
+      fetchMock.mockRejectOnce(connectTimedOut())
       server.route({
         method: 'GET',
         path: '/stalled',
@@ -186,22 +189,24 @@ describe('backendFetch', () => {
   })
 
   test('counts a backend call whose fetch rejects', async () => {
-    global.fetch.mockRejectedValueOnce(new Error('down'))
+    fetchMock.mockRejectOnce(new Error('down'))
     server.route({
       method: 'GET',
       path: '/failing',
       handler: async () => {
-        try {
-          await backendFetch(OPERATION, BACKEND_URL, INIT)
-        } catch {
-          // the page still renders when the backend is down
-        }
+        await expect(
+          backendFetch(OPERATION, BACKEND_URL, INIT)
+        ).rejects.toThrow('down')
         return 'page'
       }
     })
 
-    await server.inject({ method: 'GET', url: '/failing' })
+    const { statusCode } = await server.inject({
+      method: 'GET',
+      url: '/failing'
+    })
 
+    expect(statusCode).toBe(200)
     expect((await readRoute('/failing')).backendCalls).toBe(1)
   })
 
@@ -259,7 +264,6 @@ describe('backendFetch', () => {
 })
 
 describe('backendFetch records one external call', () => {
-  const originalFetch = global.fetch
   let logSpy
 
   const callDocuments = () =>
@@ -268,18 +272,14 @@ describe('backendFetch records one external call', () => {
     )
 
   beforeEach(() => {
-    global.fetch = vi.fn()
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    global.fetch = originalFetch
     logSpy.mockRestore()
   })
 
   test('is one animals-backend call under the operation named', async () => {
-    global.fetch.mockResolvedValue(new Response(null, { status: 200 }))
-
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
     await vi.waitFor(() => expect(callDocuments()).toHaveLength(1))
@@ -294,14 +294,12 @@ describe('backendFetch records one external call', () => {
 
   test('is one call timed from the first attempt when the connection is retried', async () => {
     const firstAttemptMs = 40
-    global.fetch
-      .mockImplementationOnce(
-        () =>
-          new Promise((_resolve, reject) =>
-            setTimeout(() => reject(connectTimedOut()), firstAttemptMs)
-          )
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+    fetchMock.mockResponseOnce(
+      () =>
+        new Promise((_resolve, reject) =>
+          setTimeout(() => reject(connectTimedOut()), firstAttemptMs)
+        )
+    )
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
@@ -312,7 +310,7 @@ describe('backendFetch records one external call', () => {
   })
 
   test('is a failure when the backend answers with a 5xx status', async () => {
-    global.fetch.mockResolvedValue(new Response(null, { status: 502 }))
+    fetchMock.mockResponseOnce(backendAnswered(502))
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
@@ -321,7 +319,7 @@ describe('backendFetch records one external call', () => {
   })
 
   test('is a success when the backend refuses a stale write with 409', async () => {
-    global.fetch.mockResolvedValue(new Response(null, { status: 409 }))
+    fetchMock.mockResponseOnce(backendAnswered(409))
 
     await backendFetch(OPERATION, BACKEND_URL, INIT)
 
@@ -331,29 +329,19 @@ describe('backendFetch records one external call', () => {
 })
 
 describe('backendFetch on a socket failure', () => {
-  const originalFetch = global.fetch
-
-  beforeEach(() => {
-    loggedLines.length = 0
-    global.fetch = vi.fn()
-  })
-
-  afterEach(() => {
-    global.fetch = originalFetch
-  })
-
   test.each(['UND_ERR_SOCKET', 'ETIMEDOUT'])(
     'throws a %s socket failure without sending the request again',
     async (code) => {
       const socketFailed = fetchFailedBecause(errorWithCode(code))
-      global.fetch
-        .mockRejectedValueOnce(socketFailed)
-        .mockResolvedValueOnce({ ok: true })
+      fetchMock.mockRejectOnce(socketFailed)
 
       await expect(backendFetch(OPERATION, BACKEND_URL, INIT)).rejects.toBe(
         socketFailed
       )
-      expect(loggedLines).toEqual([])
+      expect({ warnings: loggedLines, fetches: fetchMock.mock.calls }).toEqual({
+        warnings: [],
+        fetches: [expect.anything()]
+      })
     }
   )
 })
