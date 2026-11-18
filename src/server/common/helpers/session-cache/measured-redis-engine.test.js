@@ -74,22 +74,35 @@ describe('MeasuredRedisEngine', () => {
     expect(documentsHolding(logSpy, CACHE_MISS)[0].cache).toBe('auth-sessions')
   })
 
-  test('a set and a drop are each recorded as one redis call with an external-call line', async () => {
+  test('a set, a get and a drop are each recorded as one redis call with an external-call line naming the segment', async () => {
     await engine.set(SESSION_KEY, { user: 'u-1' }, 60_000)
+    await engine.get(SESSION_KEY)
     await engine.drop(SESSION_KEY)
 
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, CALL_DURATION)).toHaveLength(2)
+      expect(documentsHolding(logSpy, CALL_DURATION)).toHaveLength(3)
     )
     expect(
       documentsHolding(logSpy, CALL_DURATION).map(({ operation }) => operation)
-    ).toEqual(['set', 'drop'])
+    ).toEqual(['set', 'get', 'drop'])
     expect(
       ecsLog
         .lines()
         .filter((line) => line.event?.category === 'external-call')
-        .map((line) => line.event.action)
-    ).toEqual(['redis/set', 'redis/drop'])
+        .map(({ event, cache, message }) => ({
+          action: event.action,
+          cache,
+          message
+        }))
+    ).toEqual(
+      ['set', 'get', 'drop'].map((operation) => ({
+        action: `redis/${operation}`,
+        cache: 'session',
+        message: expect.stringMatching(
+          `^External call redis/${operation} \\(cache session\\) success in`
+        )
+      }))
+    )
   })
 
   test('a get the client fails is rethrown and recorded as a failed redis get', async () => {
