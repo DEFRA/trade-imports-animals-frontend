@@ -7,8 +7,9 @@ import { headers } from './headers.js'
 import { logger } from '../logger.js'
 
 export const getFulfilment = async (journeyId) => {
+  const operation = 'get-fulfilment'
   const response = await backendFetch(
-    'get-fulfilment',
+    operation,
     `${notificationsUrl}/${journeyId}/fulfilments`,
     {
       method: 'GET',
@@ -25,7 +26,7 @@ export const getFulfilment = async (journeyId) => {
     return undefined
   }
   if (!response.ok) {
-    throw await failed('get fulfilment', response)
+    throw await failed(operation, response)
   }
   return response.json()
 }

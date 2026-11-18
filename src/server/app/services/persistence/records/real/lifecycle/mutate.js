@@ -1,7 +1,7 @@
 import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../../mapper.js'
 import { notificationsUrl } from '../config.js'
-import { put } from '../http/put.js'
+import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
 import { assertWritable } from '../write-guards/assert-writable.js'
 import { resolveStatus } from '../write-guards/resolve-status.js'
@@ -28,11 +28,10 @@ export const replaceFulfilment = async (
     ...(actor ? { actor } : {})
   }
 
-  const response = await put(
+  const response = await send(
     'replace-notification',
     `${notificationsUrl}/${journeyId}`,
-    body,
-    'save notification'
+    { method: 'PUT', body }
   )
   return marshal(await response.json())
 }

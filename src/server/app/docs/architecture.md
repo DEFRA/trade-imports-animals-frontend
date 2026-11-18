@@ -201,7 +201,7 @@ and [`copy-parity.test.js`](../copy-parity.test.js) allowlists it as identical.
 
 Each backend or reference-data call lives in its own module under `services/`,
 for example [`services/ports/client.js`](../services/ports/client.js) and
-[`services/persistence/records/real/http/`](../services/persistence/records/real/http/put.js).
+[`services/persistence/records/real/http/`](../services/persistence/records/real/http/send.js).
 A controller calls the service, never `fetch`. Call counting and metrics
 helpers wrap a client; they do not hold one.
 

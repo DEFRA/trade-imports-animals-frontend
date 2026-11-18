@@ -8,18 +8,12 @@ export const fetchCommodities = (term, { page, size }) => {
   url.searchParams.set('q', term)
   url.searchParams.set('page', String(page))
   url.searchParams.set('size', String(size))
-  return requestReferenceData(
-    'search-commodities',
-    url,
-    { method: 'GET' },
-    'Failed to search commodities'
-  )
+  return requestReferenceData('search-commodities', url, { method: 'GET' })
 }
 
 export const checkSpecies = (lines) =>
   requestReferenceData(
     'check-species',
     referenceDataUrl('/commodities/species-check'),
-    { method: 'POST', body: JSON.stringify({ lines }) },
-    'Failed to check species'
+    { method: 'POST', body: JSON.stringify({ lines }) }
   )

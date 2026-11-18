@@ -2,18 +2,13 @@ import Boom from '@hapi/boom'
 
 import { config } from '../../../../config/config.js'
 import { measureExternalResponse } from '../../../common/helpers/metrics/external-call-metrics.js'
-import { traceHeaders } from '../http/trace-headers.js'
+import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 
 const baseUrl = () => config.get('tradeImportsReferenceDataApi.baseUrl')
 
 export const referenceDataUrl = (path) => new URL(`${baseUrl()}${path}`)
 
-export const requestReferenceData = async (
-  operation,
-  url,
-  init,
-  failureMessage
-) => {
+export const requestReferenceData = async (operation, url, init) => {
   const response = await measureExternalResponse(
     { dependency: 'reference-data', operation },
     () =>
@@ -28,9 +23,7 @@ export const requestReferenceData = async (
   )
 
   if (!response.ok) {
-    throw Object.assign(new Error(failureMessage), {
-      status: response.status,
-      statusText: response.statusText,
+    throw Object.assign(failedResponse(operation, response), {
       url: url.toString()
     })
   }

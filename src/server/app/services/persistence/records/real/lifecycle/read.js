@@ -1,10 +1,8 @@
 import { notificationsUrl } from '../config.js'
-import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
-import { headers } from '../http/headers.js'
+import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
-import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 
 export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
@@ -26,17 +24,11 @@ export const list = async ({
   const referenceQuery = referenceNumber
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
-  const response = await backendFetch(
+  const response = await send(
     'list-notifications',
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
-    {
-      method: 'GET',
-      headers: headers()
-    }
+    { method: 'GET' }
   )
-  if (!response.ok) {
-    throw await failed('list notifications', response)
-  }
   const result = await response.json()
   return {
     rows: result.content.map(marshalListItem),

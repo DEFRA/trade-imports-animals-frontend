@@ -8,10 +8,5 @@ export const fetchCountries = (blocks) => {
   for (const block of blocks ?? []) {
     url.searchParams.append('blocks', block)
   }
-  return requestReferenceData(
-    'get-countries',
-    url,
-    { method: 'GET' },
-    'Failed to get countries'
-  )
+  return requestReferenceData('get-countries', url, { method: 'GET' })
 }
