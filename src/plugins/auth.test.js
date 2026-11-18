@@ -4,6 +4,7 @@ import hapiCookie from '@hapi/cookie'
 import Jwt from '@hapi/jwt'
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
+import { TOKEN_EXCHANGE_STARTED_AT } from '../auth/token-exchange-timer.js'
 import { config } from '../config/config.js'
 import {
   callCounts,
@@ -196,9 +197,7 @@ describe('auth plugin', () => {
       const token = getBellOptions(oidcConfig).provider.token(request)
 
       expect(token).toBe(oidcConfig.token_endpoint)
-      expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
-        expect.any(Number)
-      )
+      expect(request.app[TOKEN_EXCHANGE_STARTED_AT]).toEqual(expect.any(Number))
     })
 
     test('sets the configured SameSite on the Bell state cookie', () => {

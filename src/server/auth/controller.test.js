@@ -7,6 +7,7 @@ import { sessionAuth } from '../common/test-helpers/session-auth.js'
 import { recordEmfDocuments } from '../common/test-helpers/emf-documents.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
+import { TOKEN_EXCHANGE_STARTED_AT } from '../../auth/token-exchange-timer.js'
 import { copy as sharedEn } from '../app/shared/copy.en.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
@@ -209,7 +210,7 @@ describe('#authController', () => {
         method: 'GET',
         url: SIGN_IN_OIDC_URL,
         auth: defraIdAuth(),
-        app: { defraIdTokenExchangeStartedAt: performance.now() }
+        app: { [TOKEN_EXCHANGE_STARTED_AT]: performance.now() }
       })
 
       expect(statusCode).toBe(HTTP_STATUS_FOUND)
@@ -224,7 +225,7 @@ describe('#authController', () => {
       const { statusCode, payload } = await server.inject({
         method: 'GET',
         url: `${SIGN_IN_OIDC_URL}?code=unused&state=unmatched&refresh=1`,
-        app: { defraIdTokenExchangeStartedAt: performance.now() }
+        app: { [TOKEN_EXCHANGE_STARTED_AT]: performance.now() }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
