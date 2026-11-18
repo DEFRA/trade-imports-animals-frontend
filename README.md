@@ -90,7 +90,10 @@ Running totals are kept per route and served at `GET /call-counts`. `DELETE
     "pageRequests": 2,
     "backendCalls": 3,
     "sessionResolutions": 4,
-    "externalCalls": {}
+    "externalCalls": {
+      "animals-backend": { "get-fulfilment": 2, "replace-notification": 1 },
+      "redis": { "get": 4, "set": 2 }
+    }
   },
   "routes": [
     {
@@ -99,7 +102,10 @@ Running totals are kept per route and served at `GET /call-counts`. `DELETE
       "pageRequests": 2,
       "backendCalls": 3,
       "sessionResolutions": 4,
-      "externalCalls": {}
+      "externalCalls": {
+        "animals-backend": { "get-fulfilment": 2, "replace-notification": 1 },
+        "redis": { "get": 4, "set": 2 }
+      }
     }
   ]
 }
