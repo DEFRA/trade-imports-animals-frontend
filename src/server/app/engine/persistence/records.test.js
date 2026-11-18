@@ -1,29 +1,33 @@
 import { SET_ID } from '../../../../../test/fixtures/index.js'
 import { vi } from 'vitest'
 
-import { configureRecords, records } from './records.js'
+import {
+  configureRecords,
+  records,
+  STALE_CONCURRENCY_TOKEN
+} from './records.js'
 import { store } from '../store.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { readEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
 
-const STARTED = 'journey.started'
-const CONFLICT = 'journey.concurrency.conflict'
-const JOURNEY_METRICS = [
-  STARTED,
-  'journey.submitted',
-  'journey.amended',
-  'journey.copied',
-  'journey.deleted',
-  CONFLICT
-]
+const JOURNEY_EVENTS = Object.freeze({
+  started: 'journey.started',
+  submitted: 'journey.submitted',
+  amended: 'journey.amended',
+  copied: 'journey.copied',
+  deleted: 'journey.deleted',
+  conflict: 'journey.concurrency.conflict'
+})
 
 const journeyCounts = (logSpy) =>
   readEmfDocuments(logSpy).flatMap((document) =>
-    JOURNEY_METRICS.filter((name) => name in document).map((name) => ({
-      name,
-      value: document[name],
-      dimensions: document._aws.CloudWatchMetrics[0].Dimensions
-    }))
+    Object.values(JOURNEY_EVENTS)
+      .filter((name) => name in document)
+      .map((name) => ({
+        name,
+        value: document[name],
+        dimensions: document._aws.CloudWatchMetrics[0].Dimensions
+      }))
   )
 
 const counted = (...names) =>
@@ -56,11 +60,11 @@ describe('records journey counters', () => {
     await vi.waitFor(() =>
       expect(journeyCounts(logSpy)).toEqual(
         counted(
-          STARTED,
-          'journey.submitted',
-          'journey.amended',
-          'journey.copied',
-          'journey.deleted'
+          JOURNEY_EVENTS.started,
+          JOURNEY_EVENTS.submitted,
+          JOURNEY_EVENTS.amended,
+          JOURNEY_EVENTS.copied,
+          JOURNEY_EVENTS.deleted
         )
       )
     )
@@ -72,10 +76,12 @@ describe('records journey counters', () => {
 
     await expect(
       records.replaceFulfilment(started.journeyId, {}, { known: started })
-    ).rejects.toMatchObject({ code: 'STALE_CONCURRENCY_TOKEN' })
+    ).rejects.toMatchObject({ code: STALE_CONCURRENCY_TOKEN })
 
     await vi.waitFor(() =>
-      expect(journeyCounts(logSpy)).toEqual(counted(STARTED, CONFLICT))
+      expect(journeyCounts(logSpy)).toEqual(
+        counted(JOURNEY_EVENTS.started, JOURNEY_EVENTS.conflict)
+      )
     )
   })
 
@@ -84,10 +90,12 @@ describe('records journey counters', () => {
 
     await expect(
       records.finalise(started.journeyId, undefined, 99)
-    ).rejects.toMatchObject({ code: 'STALE_CONCURRENCY_TOKEN' })
+    ).rejects.toMatchObject({ code: STALE_CONCURRENCY_TOKEN })
 
     await vi.waitFor(() =>
-      expect(journeyCounts(logSpy)).toEqual(counted(STARTED, CONFLICT))
+      expect(journeyCounts(logSpy)).toEqual(
+        counted(JOURNEY_EVENTS.started, JOURNEY_EVENTS.conflict)
+      )
     )
   })
 })
