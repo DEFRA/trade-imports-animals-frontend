@@ -96,6 +96,10 @@ describe('request metrics', () => {
             dependency: BACKEND_DEPENDENCY,
             operation: 'get-fulfilment'
           })
+          countExternalCall({
+            dependency: BACKEND_DEPENDENCY,
+            operation: 'replace-notification'
+          })
           countExternalCall({ dependency: 'defra-id', operation: 'jwks' })
           countSessionResolution(request)
           return 'origin'
@@ -217,7 +221,7 @@ describe('request metrics', () => {
     expect(document).toEqual(
       expect.objectContaining({
         'request.kind': 'page',
-        [PAGE_REQUEST_BACKEND_CALLS]: 1,
+        [PAGE_REQUEST_BACKEND_CALLS]: 2,
         'page.request.session.resolutions': 1
       })
     )

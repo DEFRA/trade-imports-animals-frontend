@@ -361,8 +361,10 @@ describe('auth plugin', () => {
         sessionId: sessionIdInCache
       })
 
-      expect(callCountsOf(request).sessionResolutions).toBe(1)
-      expect(callCountsOf(request).backendCalls).toBe(0)
+      expect(callCountsOf(request)).toEqual({
+        sessionResolutions: 1,
+        externalCalls: {}
+      })
     })
 
     test('a request with a valid session cookie resolves the session once in a counted route', async () => {
