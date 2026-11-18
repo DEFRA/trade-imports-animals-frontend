@@ -47,7 +47,7 @@ describe('records journey counters', () => {
     const submitted = await records.finalise(
       started.journeyId,
       undefined,
-      started.concurrencyToken ?? 0
+      started.concurrencyToken
     )
     await records.amend(started.journeyId)
     await records.copy(started.journeyId, submitted.concurrencyToken)
