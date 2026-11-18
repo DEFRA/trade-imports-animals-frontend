@@ -47,7 +47,7 @@ describe('reportRedisConnectionEvents', () => {
     logSpy.mockRestore()
   })
 
-  test('publishes nothing before the client reports a state', async () => {
+  test('publishes no availability before the client is ready or closes, even after a minute', async () => {
     vi.advanceTimersByTime(ONE_MINUTE_MS)
     client.emit('error', new Error('ECONNREFUSED'))
 
