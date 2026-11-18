@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { get } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { setTimeout } from 'node:timers/promises'
 import hapi from '@hapi/hapi'
 import vision from '@hapi/vision'
 import { vi } from 'vitest'
@@ -24,6 +25,7 @@ const REQUEST_TIMER = 'http.server.requests'
 const VALIDATION_FAILURE = 'journey.validation.failure'
 const PAGE_REQUEST_BACKEND_CALLS = 'page.request.backend.calls'
 const ORIGIN_URL = '/live-animals/notifications/j-1/origin'
+const ORIGIN_HANDLER_DELAY_MS = 20
 const CONTACT_ROUTE_PATH =
   '/live-animals/notifications/{journeyId}/consignment/contact/edit'
 const CONTACT_URL = '/live-animals/notifications/j-1/consignment/contact/edit'
@@ -37,7 +39,8 @@ const routePages = (server) =>
     {
       method: 'GET',
       path: '/live-animals/notifications/{journeyId}/origin',
-      handler: (request) => {
+      handler: async (request) => {
+        await setTimeout(ORIGIN_HANDLER_DELAY_MS)
         countExternalCall({
           dependency: BACKEND_DEPENDENCY,
           operation: 'get-fulfilment'
@@ -138,8 +141,9 @@ describe('request metrics', () => {
     await server.stop({ timeout: 0 })
   })
 
-  test('a page request publishes its time tagged method, section and status class', async () => {
-    await server.inject({ method: 'GET', url: ORIGIN_URL })
+  test('a page request publishes its time from received to completed tagged method, section and status class', async () => {
+    const { request } = await server.inject({ method: 'GET', url: ORIGIN_URL })
+    const elapsedMs = request.info.completed - request.info.received
 
     await vi.waitFor(() =>
       expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
@@ -155,9 +159,10 @@ describe('request metrics', () => {
         method: 'GET',
         section: 'origin',
         'status.class': '2xx',
-        [REQUEST_TIMER]: expect.any(Number)
+        [REQUEST_TIMER]: elapsedMs
       })
     )
+    expect(elapsedMs).toBeGreaterThan(0)
   })
 
   test('a request no route matches is published in section unmatched with status class 4xx', async () => {
