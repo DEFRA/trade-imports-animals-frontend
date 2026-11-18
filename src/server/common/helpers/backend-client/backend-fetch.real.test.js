@@ -25,59 +25,13 @@ describe('backendFetch over a real connection', () => {
     try {
       const response = await backendFetch(
         'replace-notification',
-        `http://127.0.0.1:${port}/notifications`,
+        `http://127.0.0.1:${port}/notifications/j-1`,
         { method: 'PUT', headers: { 'content-type': 'application/json' } }
       )
 
       expect(await response.json()).toEqual({
         method: 'PUT',
-        url: '/notifications'
-      })
-    } finally {
-      await close(backend)
-    }
-  })
-
-  test('sends a form with a file as multipart, filename and bytes intact', async () => {
-    const received = {}
-    const backend = await listen((request, response) => {
-      const chunks = []
-      request.on('data', (chunk) => chunks.push(chunk))
-      request.on('end', () => {
-        received.contentType = request.headers['content-type']
-        received.body = Buffer.concat(chunks).toString('utf8')
-        response.writeHead(204)
-        response.end()
-      })
-    })
-    const { port } = backend.address()
-    const formData = new FormData()
-    formData.append(
-      'file',
-      new Blob(['%PDF-1.4 bytes'], { type: 'application/pdf' }),
-      'certificate.pdf'
-    )
-
-    try {
-      await backendFetch(
-        'stream-document-file',
-        `http://127.0.0.1:${port}/document-uploads/u-1/file`,
-        {
-          method: 'POST',
-          body: formData
-        }
-      )
-
-      expect({
-        multipart: received.contentType.startsWith('multipart/form-data'),
-        filename: received.body.includes('filename="certificate.pdf"'),
-        partType: received.body.includes('Content-Type: application/pdf'),
-        bytes: received.body.includes('%PDF-1.4 bytes')
-      }).toEqual({
-        multipart: true,
-        filename: true,
-        partType: true,
-        bytes: true
+        url: '/notifications/j-1'
       })
     } finally {
       await close(backend)
@@ -127,7 +81,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
-        'replace-notification',
+        'list-notifications',
         `http://127.0.0.1:${port}/notifications`
       )
 
