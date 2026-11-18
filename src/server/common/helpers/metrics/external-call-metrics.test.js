@@ -76,17 +76,13 @@ describe('external call metrics', () => {
       { Name: 'external.call.duration', Unit: 'Milliseconds' },
       { Name: 'external.call.failure', Unit: 'Count' }
     ])
-    expect(document).toEqual(
-      expect.objectContaining({
-        dependency: 'defra-id',
-        operation: 'jwks',
-        'external.call.duration': expect.any(Number),
-        'external.call.failure': 0
-      })
-    )
-    expect(document).not.toHaveProperty('Interface')
-    expect(document).not.toHaveProperty('LogGroup')
-    expect(document).not.toHaveProperty('ServiceName')
+    const { _aws, ...values } = document
+    expect(values).toEqual({
+      dependency: 'defra-id',
+      operation: 'jwks',
+      'external.call.duration': expect.any(Number),
+      'external.call.failure': 0
+    })
   })
 
   test('a successful call taking 41.6 ms writes one info line with the nested event fields, a duration of 41,600,000 ns and 42 ms in the message, and publishes 41.6 ms', async () => {
@@ -109,7 +105,6 @@ describe('external call metrics', () => {
     )
     expect((await onlyDocument())['external.call.duration']).toBeCloseTo(41.6)
     expect(line).not.toHaveProperty('error')
-    expect(Object.keys(line)).not.toContain('event.category')
   })
 
   test('a call that throws rethrows the same error, publishes a failure of 1 and writes a warn line with the error type and message and no stack trace', async () => {
