@@ -21,7 +21,12 @@ export const getFulfilment = async (journeyId) => {
   }
   if (response.status === statusCodes.forbidden) {
     logger.warn(
-      `Backend refused fulfilment read for notification ${journeyId}, organisation ${currentOrganisationId()}`
+      {
+        journeyId,
+        organisationId: currentOrganisationId(),
+        status: response.status
+      },
+      'Backend refused fulfilment read'
     )
     return undefined
   }
