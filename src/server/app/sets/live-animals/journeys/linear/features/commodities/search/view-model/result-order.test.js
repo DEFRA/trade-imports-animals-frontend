@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { inLegendOrder, inSpeciesLabelOrder } from './result-order.js'
+import { inCodeOrder, inSpeciesLabelOrder } from './result-order.js'
 
-describe('#inLegendOrder', () => {
-  it('Should return commodity codes given out of order sorted into commodity-heading order', () => {
-    expect(inLegendOrder(['01061900', '0101', '0102'])).toEqual([
+describe('#inCodeOrder', () => {
+  it('Should return commodity codes given out of order sorted into commodity-code order', () => {
+    expect(inCodeOrder(['01061900', '0101', '0102'])).toEqual([
       '0101',
       '0102',
       '01061900'

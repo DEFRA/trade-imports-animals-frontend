@@ -6,8 +6,8 @@
     {
       "GHSA-fc5q-39xc-vjpf": {
         "active": true,
-        "notes": "picomatch ReDoS through single-branch repeated extglobs; no fixed version published (all versions <=4.0.7 affected). Owner: Ian Griffiths",
-        "expiry": "2027-02-17"
+        "notes": "picomatch ReDoS: every version up to 4.0.7 is affected and no fix is published. Owner: Sam Farrington",
+        "expiry": "2026-11-25"
       }
     }
   ]

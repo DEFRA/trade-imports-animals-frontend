@@ -1,10 +1,8 @@
 import { speciesLabel } from '../../species-label.js'
-import { legendFor } from '../../commodity-legend.js'
 
-const byLegend = (leftCode, rightCode) =>
-  legendFor(leftCode).localeCompare(legendFor(rightCode))
+const byCode = (leftCode, rightCode) => leftCode.localeCompare(rightCode)
 
-export const inLegendOrder = (codes) => [...codes].sort(byLegend)
+export const inCodeOrder = (codes) => [...codes].sort(byCode)
 
 const bySpeciesLabel = (left, right) =>
   speciesLabel(left).localeCompare(speciesLabel(right))

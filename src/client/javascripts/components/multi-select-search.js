@@ -1,0 +1,259 @@
+const RESULTS_SELECTOR = '[data-multi-select-search-results]'
+
+const formBodyFor = (form, submitter) => {
+  const body = new URLSearchParams(new FormData(form))
+  if (submitter.name) {
+    body.append(submitter.name, submitter.value)
+  }
+  return body
+}
+
+const resultsIn = (html) => {
+  const template = document.createElement('template')
+  template.innerHTML = html
+  return template.content.querySelector(RESULTS_SELECTOR)
+}
+
+const fetchResults = async (url, body) => {
+  const response = await fetch(url, { method: 'POST', body })
+  const fresh = response.ok ? resultsIn(await response.text()) : null
+  if (!fresh) {
+    throw new Error(`No results came back from ${url}`)
+  }
+  return fresh
+}
+
+const tickKeyOf = ({ name, value }) => `${name}=${value}`
+
+const reapplyTicks = (fresh, ticks) => {
+  for (const box of fresh.querySelectorAll('input[type="checkbox"]')) {
+    const checked = ticks.get(tickKeyOf(box))
+    if (checked !== undefined) {
+      box.checked = checked
+    }
+  }
+}
+
+const noElementHasFocus = () =>
+  !document.activeElement || document.activeElement === document.body
+
+const focusTriggerReplacementOrSearchBoxIfSwapLostFocus = (
+  trigger,
+  searchBox
+) => {
+  if (trigger.isConnected || !noElementHasFocus()) {
+    return
+  }
+  const replacement = trigger.id ? document.getElementById(trigger.id) : null
+  ;(replacement ?? searchBox).focus()
+}
+
+const partsOf = ($module) => {
+  const form = $module.closest('form')
+  const results = $module.querySelector(RESULTS_SELECTOR)
+  const status = $module.querySelector('[data-multi-select-search-status]')
+  const searchBox =
+    results && $module.querySelector(`[aria-controls="${results.id}"]`)
+  const searchButton = searchBox
+    ?.closest('.govuk-form-group')
+    ?.querySelector('button')
+  const { resultsUrl } = $module.dataset
+  const parts = { form, results, status, searchBox, searchButton, resultsUrl }
+  return Object.values(parts).every(Boolean) ? parts : null
+}
+
+const resultsRefresher = ({ form, results, status, searchBox, resultsUrl }) => {
+  let refreshQueue = Promise.resolve()
+  let refreshesWaiting = 0
+  let submittingNatively = false
+  const ticksSinceLastRequest = new Map()
+
+  const submitNatively = (submitter) => {
+    let nativeSubmit
+    const noteNativeSubmit = (event) => {
+      nativeSubmit = event
+    }
+    submittingNatively = true
+    form.addEventListener('submit', noteNativeSubmit, { once: true })
+    form.requestSubmit(submitter)
+    form.removeEventListener('submit', noteNativeSubmit)
+    submittingNatively = nativeSubmit?.defaultPrevented === false
+  }
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      submittingNatively = false
+    }
+  })
+
+  const showResults = (fresh, { trigger, announce }) => {
+    results.replaceChildren(...fresh.childNodes)
+    focusTriggerReplacementOrSearchBoxIfSwapLostFocus(trigger, searchBox)
+    if (announce) {
+      status.textContent = fresh.dataset.announcement ?? ''
+    }
+  }
+
+  const fetchAndShowResults = async (refreshRequest) => {
+    if (submittingNatively) {
+      return
+    }
+    const body = formBodyFor(form, refreshRequest.submitter)
+    ticksSinceLastRequest.clear()
+    const fresh = await fetchResults(resultsUrl, body)
+    reapplyTicks(fresh, ticksSinceLastRequest)
+    showResults(fresh, refreshRequest)
+  }
+
+  return {
+    isSubmittingNatively: () => submittingNatively,
+    noteTick: (box) => {
+      ticksSinceLastRequest.set(tickKeyOf(box), box.checked)
+    },
+    hasRefreshesWaiting: () => refreshesWaiting > 0,
+    refresh: (refreshRequest) => {
+      refreshesWaiting += 1
+      refreshQueue = refreshQueue
+        .then(() => fetchAndShowResults(refreshRequest))
+        .catch(() => submitNatively(refreshRequest.submitter))
+        .finally(() => {
+          refreshesWaiting -= 1
+        })
+    },
+    submitOnceRefreshesLand: (submitter) => {
+      refreshQueue = refreshQueue.then(() => {
+        if (!submittingNatively) {
+          submitNatively(submitter)
+        }
+      })
+    }
+  }
+}
+
+const typedSearchDelay = () => {
+  const typingDelayMs = 250
+  let typingTimer
+
+  return {
+    restart: (refreshTypedSearch) => {
+      clearTimeout(typingTimer)
+      typingTimer = setTimeout(refreshTypedSearch, typingDelayMs)
+    },
+    drop: () => clearTimeout(typingTimer)
+  }
+}
+
+const refreshOnTypingAndTicking = (
+  { results, searchBox, searchButton },
+  refresher,
+  typedSearch
+) => {
+  searchBox.addEventListener('input', () =>
+    typedSearch.restart(() =>
+      refresher.refresh({
+        submitter: searchButton,
+        trigger: searchBox,
+        announce: true
+      })
+    )
+  )
+
+  results.addEventListener('change', (event) => {
+    if (event.target.type === 'checkbox') {
+      refresher.noteTick(event.target)
+    }
+    typedSearch.drop()
+    refresher.refresh({
+      submitter: searchButton,
+      trigger: event.target,
+      announce: false
+    })
+  })
+}
+
+const refreshInPlaceOfModuleSubmitsAndHoldOutsideSubmits = (
+  $module,
+  { form, searchButton },
+  refresher,
+  typedSearch
+) => {
+  form.addEventListener('submit', (event) => {
+    if (refresher.isSubmittingNatively()) {
+      return
+    }
+    typedSearch.drop()
+    const { submitter } = event
+    if (!submitter || !$module.contains(submitter)) {
+      if (refresher.hasRefreshesWaiting()) {
+        event.preventDefault()
+        refresher.submitOnceRefreshesLand(submitter)
+      }
+      return
+    }
+    event.preventDefault()
+    refresher.refresh({
+      submitter,
+      trigger: submitter,
+      announce: submitter === searchButton
+    })
+  })
+}
+
+const dropdownIn = (results) =>
+  results.querySelector('[data-multi-select-search-dropdown]')
+
+const showDropdown = (results) => {
+  const dropdown = dropdownIn(results)
+  if (dropdown) {
+    dropdown.hidden = false
+  }
+}
+
+const hideDropdown = (results) => {
+  const dropdown = dropdownIn(results)
+  if (dropdown) {
+    dropdown.hidden = true
+  }
+}
+
+const showDropdownOnFocusAndHideOnEscapeOrClickAway = (
+  $module,
+  { results, searchBox }
+) => {
+  searchBox.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      hideDropdown(results)
+    }
+  })
+  searchBox.addEventListener('focus', () => showDropdown(results))
+  searchBox.addEventListener('click', () => showDropdown(results))
+  document.addEventListener('click', (event) => {
+    if (!$module.contains(event.target)) {
+      hideDropdown(results)
+    }
+  })
+}
+
+class MultiSelectSearch {
+  static moduleName = 'app-multi-select-search'
+
+  constructor($module) {
+    const parts = $module ? partsOf($module) : null
+    if (parts) {
+      const refresher = resultsRefresher(parts)
+      const typedSearch = typedSearchDelay()
+      refreshOnTypingAndTicking(parts, refresher, typedSearch)
+      refreshInPlaceOfModuleSubmitsAndHoldOutsideSubmits(
+        $module,
+        parts,
+        refresher,
+        typedSearch
+      )
+      showDropdownOnFocusAndHideOnEscapeOrClickAway($module, parts)
+      $module.classList.add('app-multi-select-search--enhanced')
+    }
+  }
+}
+
+export default MultiSelectSearch

@@ -4,6 +4,7 @@ export const SWINE_CODE = '0103'
 export const SHEEP_CODE = '010410'
 export const GOAT_CODE = '010420'
 export const OTHER_LIVE_MAMMALS_CODE = '01061900'
+export const LIVE_FISH_CODE = '0301'
 
 const HORSE_NAME_SPECIES = 'Equus cabalus'
 
@@ -136,11 +137,11 @@ export const COMMODITY_DESCRIPTIONS = {
   [HORSES_CODE]: 'Live horses, asses, mules and hinnies',
   [CATTLE_CODE]: 'Live bovine animals',
   [OTHER_LIVE_MAMMALS_CODE]: 'Other live animals',
-  '0301': 'Live fish'
+  [LIVE_FISH_CODE]: 'Live fish'
 }
 
 export const COMMODITY_NAMES_BY_CODE = {
   [HORSES_CODE]: 'Horse',
-  [CATTLE_CODE]: 'Cow',
-  '0301': 'Fish'
+  [CATTLE_CODE]: 'Cattle',
+  [LIVE_FISH_CODE]: 'Fish'
 }

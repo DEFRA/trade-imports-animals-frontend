@@ -19,6 +19,7 @@ import {
   OSTRICHES_CODE,
   STRUTHIO
 } from '../search/test-support.js'
+import { welshResultsAvailable } from '../../../../../../../../../client/common/helpers/welsh-results-available.js'
 
 describe('#copy', () => {
   itHoldsCopyAtEveryLeaf(copy, copyCy, ['sample', 2, 3, 4])
@@ -97,6 +98,10 @@ describe('#copy', () => {
     expect(copyCy.consignmentDetails.errors.animalsAboveMax(2147483647)).toBe(
       'Rhaid i nifer yr anifeiliaid fod yn 2,147,483,647 neu lai'
     )
+  })
+
+  it('Should announce the Welsh result count with the shared Welsh results rule', () => {
+    expect(copyCy.search.resultsAvailable).toBe(welshResultsAvailable)
   })
 
   it('Should interpolate counter', () => {

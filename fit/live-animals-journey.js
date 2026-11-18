@@ -26,6 +26,7 @@ import {
   SUS_SCROFA_DOMESTICUS_ROW,
   labelFor
 } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
+import { commodityLabel } from '../src/server/app/sets/live-animals/journeys/linear/features/commodities/commodity-label.js'
 import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 import { copy as additionalDetailsCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/additional-details/copy/copy.en.js'
 import { copy as addressesCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/addresses/copy/copy.en.js'
@@ -722,12 +723,15 @@ export const answerCountryOfOrigin = async (page) => {
   await openOverview(page)
 }
 
+export const commoditySearchBox = (page) =>
+  page.getByLabel(commoditiesCopy.search.searchLabel)
+
 export const searchCommodities = async (page, query) => {
-  await page.getByLabel('Search for a commodity').fill(query)
+  await commoditySearchBox(page).fill(query)
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 }
 
-const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
+export const tickSpecies = (page, { commodityCode, speciesLatinName }) =>
   page
     .getByRole('group', { name: commodityCode })
     .getByRole('checkbox', { name: labelFor(speciesLatinName), exact: true })
@@ -738,6 +742,11 @@ export const selectSpecies = async (page, speciesToSelect) => {
     await searchCommodities(page, chosen.speciesLatinName)
     await tickSpecies(page, chosen)
   }
+}
+
+export const typeAndTickSpecies = async (page, chosen) => {
+  await commoditySearchBox(page).fill(chosen.speciesLatinName)
+  await tickSpecies(page, chosen)
 }
 
 export const numberOfAnimalsFor = async (page, { speciesLatinName }) => {
@@ -787,23 +796,35 @@ export const expectSpeciesSelected = async (
   page,
   { commodityCode, speciesLatinName }
 ) => {
+  const commodityLine = page.getByText(`${commodityLabel(commodityCode)}:`, {
+    exact: true
+  })
   const group = selectedSummary(page)
-    .locator('div')
-    .filter({ hasText: `${commodityCode}:` })
+    .getByRole('listitem')
+    .filter({ has: commodityLine })
+  await expect(group.locator(commodityLine)).toBeVisible()
   await expect(
-    group.getByText(`${commodityCode}:`, { exact: true })
-  ).toBeVisible()
-  await expect(
-    group.getByRole('listitem').filter({ hasText: labelFor(speciesLatinName) })
+    group
+      .getByRole('listitem')
+      .filter({ has: page.getByText(speciesLatinName, { exact: true }) })
   ).toBeVisible()
 }
 
-export const pressSpeciesRemove = (page, { speciesLatinName }) =>
-  selectedSummary(page)
-    .getByRole('button', {
-      name: `Remove ${labelFor(speciesLatinName)}`,
-      exact: true
-    })
+const speciesRemoveButton = (page, { commodityCode, speciesLatinName }) =>
+  selectedSummary(page).getByRole('button', {
+    name: commoditiesCopy.search.selected.remove(
+      speciesLatinName,
+      commodityLabel(commodityCode)
+    ),
+    exact: true
+  })
+
+export const pressSpeciesRemove = (page, row) =>
+  speciesRemoveButton(page, row).click()
+
+export const pressClearAll = (page) =>
+  page
+    .getByRole('button', { name: commoditiesCopy.search.selected.clearAll })
     .click()
 
 export const unlockSections = async (page, chosen = FELIS_CATUS_ROW) => {

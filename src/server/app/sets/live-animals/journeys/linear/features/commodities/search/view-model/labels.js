@@ -1,9 +1,9 @@
 import { escapeAndBoldMatches } from '../../../../../../../../../../client/common/helpers/bold-matches.js'
 import { speciesLabel } from '../../species-label.js'
-import { legendFor } from '../../commodity-legend.js'
+import { commodityLabel } from '../../commodity-label.js'
 
-export const legendHtmlFor = (commodityCode, query) =>
-  escapeAndBoldMatches(legendFor(commodityCode), query)
+export const commodityLabelHtml = (commodityCode, query) =>
+  escapeAndBoldMatches(commodityLabel(commodityCode), query)
 
 export const speciesLabelHtml = (row, query) =>
   escapeAndBoldMatches(speciesLabel(row), query)
