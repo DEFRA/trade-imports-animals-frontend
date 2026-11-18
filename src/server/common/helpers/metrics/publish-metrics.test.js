@@ -58,7 +58,7 @@ describe('publish metrics', () => {
     expect(document['journey.started']).toBe(1)
   })
 
-  test('a document that cannot be written is logged at warn with the error and the metric names', async () => {
+  test('a document that cannot be written is logged at warn with the error, its dimensions and the metric names', async () => {
     const metricsLogger = {
       setNamespace: vi.fn(() => metricsLogger),
       putMetric: vi.fn(() => metricsLogger),
@@ -68,15 +68,22 @@ describe('publish metrics', () => {
       metricsLogger
     )
 
-    publishMetricsInBackground({ dependency: 'redis' }, [
-      { name: 'external.call.duration', value: 2, unit: 'Milliseconds' },
-      { name: 'external.call.failure', value: 0, unit: 'Count' }
-    ])
+    publishMetricsInBackground(
+      { dependency: 'address-book', operation: 'list-addresses' },
+      [
+        { name: 'external.call.duration', value: 2, unit: 'Milliseconds' },
+        { name: 'external.call.failure', value: 0, unit: 'Count' }
+      ]
+    )
 
     await vi.waitFor(() => expect(ecsLog.lines()).toHaveLength(1))
     const [line] = ecsLog.lines()
     expect(line['log.level']).toBe('warn')
     expect(line.message).toBe('Could not publish metrics')
+    expect(line.dimensions).toEqual({
+      dependency: 'address-book',
+      operation: 'list-addresses'
+    })
     expect(line.metrics).toEqual([
       'external.call.duration',
       'external.call.failure'
