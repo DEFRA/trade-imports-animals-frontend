@@ -45,6 +45,7 @@ const publishOf = (document, metricName) => {
  *   valuesOf: (metricName: string) => number[],
  *   publishesOf: (metricName: string) => Array<{ value: number, unit: string, dimensions: Record<string, string> }>,
  *   onlyDocument: () => Promise<object>,
+ *   externalCalls: () => Array<{ dependency: string, operation: string, failure: number }>,
  *   onlyExternalCall: () => Promise<{ dependency: string, operation: string, failure: number }>,
  *   earlierPublishesFlushed: () => Promise<void>
  * }} readers of the documents captured so far, each in the order published
@@ -78,16 +79,16 @@ export const recordEmfDocuments = () => {
     return documents()[0]
   }
 
-  const onlyExternalCall = async () => {
-    await vi.waitFor(() =>
-      expect(documentsWith(EXTERNAL_CALL_FAILURE)).toHaveLength(1)
-    )
-    const [document] = documentsWith(EXTERNAL_CALL_FAILURE)
-    return {
+  const externalCalls = () =>
+    documentsWith(EXTERNAL_CALL_FAILURE).map((document) => ({
       dependency: document.dependency,
       operation: document.operation,
       failure: document[EXTERNAL_CALL_FAILURE]
-    }
+    }))
+
+  const onlyExternalCall = async () => {
+    await vi.waitFor(() => expect(externalCalls()).toHaveLength(1))
+    return externalCalls()[0]
   }
 
   const earlierPublishesFlushed = async () => {
@@ -101,6 +102,7 @@ export const recordEmfDocuments = () => {
     valuesOf,
     publishesOf,
     onlyDocument,
+    externalCalls,
     onlyExternalCall,
     earlierPublishesFlushed
   }

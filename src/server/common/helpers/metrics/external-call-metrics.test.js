@@ -30,9 +30,6 @@ const LIST_ADDRESSES = {
   operation: 'list-addresses'
 }
 
-const externalCallLines = (lines) =>
-  lines.filter((line) => line.event?.category === 'external-call')
-
 const recordExternalCallOutput = () => {
   const ecsLog = recordEcsLogLines()
   const emf = recordEmfDocuments()
@@ -42,11 +39,7 @@ const recordExternalCallOutput = () => {
   })
 
   return {
-    onlyLine: () => {
-      const [line, ...others] = externalCallLines(ecsLog.lines())
-      expect(others).toEqual([])
-      return line
-    },
+    onlyLine: ecsLog.onlyExternalCallLine,
     onlyDocument: emf.onlyDocument
   }
 }
