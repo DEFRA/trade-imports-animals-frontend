@@ -4,10 +4,9 @@
   "report-type": "summary",
   "allowlist": [
     {
-      // picomatch ReDoS: no patched release yet. Expires so the audit re-checks for one.
       "GHSA-fc5q-39xc-vjpf": {
         "active": true,
-        "notes": "picomatch <= 4.0.7, no fixed version published",
+        "notes": "picomatch ReDoS: every version up to 4.0.7 is affected and no fix is published. Owner: Sam Farrington",
         "expiry": "2026-11-25"
       }
     }
