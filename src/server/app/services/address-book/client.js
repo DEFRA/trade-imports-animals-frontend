@@ -11,21 +11,21 @@ import {
 const addressesUrl = (orgId, addressId) =>
   addressBookResourceUrl('addresses', orgId, addressId)
 
-const toRecord = async (operator) => ({
-  id: operator.id,
-  name: operator.name,
-  deleted: Boolean(operator.deleted),
-  roles: operator.roles,
+const toRecord = async (addressItem) => ({
+  id: addressItem.id,
+  name: addressItem.name,
+  deleted: Boolean(addressItem.deleted),
+  roles: addressItem.roles,
   address: {
-    addressLine1: operator.addressLine1,
-    addressLine2: operator.addressLine2,
-    townOrCity: operator.townOrCity,
-    county: operator.county,
-    postcode: operator.postcode,
-    countryCode: operator.countryCode,
-    country: await addressBookCountryName(operator.countryCode),
-    phone: operator.phone,
-    email: operator.email
+    addressLine1: addressItem.addressLine1,
+    addressLine2: addressItem.addressLine2,
+    townOrCity: addressItem.townOrCity,
+    county: addressItem.county,
+    postcode: addressItem.postcode,
+    countryCode: addressItem.countryCode,
+    country: await addressBookCountryName(addressItem.countryCode),
+    phone: addressItem.phone,
+    email: addressItem.email
   }
 })
 
