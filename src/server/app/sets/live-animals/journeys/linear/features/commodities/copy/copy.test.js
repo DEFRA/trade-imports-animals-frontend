@@ -1,12 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 import {
   driveHandler,
-  sampleText,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { dispatchPages } from '../../index.js'
 import { identifiedCommodityCodes } from '../../../../../services/commodities/index.js'
 import { HORSES_CODE } from '../../../../../services/commodities/rules.js'
@@ -22,21 +21,7 @@ import {
 } from '../search/test-support.js'
 
 describe('#copy', () => {
-  it.each([
-    ['English', copy],
-    ['Welsh', copyCy]
-  ])(
-    'Should have a non-empty string (or string-returning function) at every %s leaf',
-    (_language, block) => {
-      for (const { path, value } of leaves(block)) {
-        const text = sampleText(value, ['sample', 2, 3, 4])
-        expect(typeof text, `${path} must resolve to a string`).toBe('string')
-        expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(
-          0
-        )
-      }
-    }
-  )
+  itHoldsCopyAtEveryLeaf(copy, copyCy, ['sample', 2, 3, 4])
 
   it('Should point the commodity-code lookup at the Trade Tariff tool', () => {
     expect(copy.search.help.lookupHref).toBe('https://www.gov.uk/trade-tariff')

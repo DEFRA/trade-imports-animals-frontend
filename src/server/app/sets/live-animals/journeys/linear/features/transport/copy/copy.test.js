@@ -1,12 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, test } from 'vitest'
 
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 import {
   driveHandler,
-  sampleText,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { dispatchPages } from '../../index.js'
 import { transitAppliesSeed } from '../test-support.js'
 
@@ -19,13 +18,7 @@ import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 
 describe('transport copy module', () => {
-  test('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text = sampleText(value, ['sample', 'sample'])
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy, ['sample', 'sample'])
 
   test('Should interpolate transitCountries.errors.maxCountries', () => {
     expect(copy.transitCountries.errors.maxCountries(12)).toBe(

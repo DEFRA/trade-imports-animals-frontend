@@ -1,12 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 import {
   driveHandler,
-  sampleText,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import { copy as sectionCaptionsEn } from '../../../flow/section-captions/copy/copy.en.js'
@@ -17,13 +16,7 @@ import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text = sampleText(value, ['sample', 'sample'])
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy, ['sample', 'sample'])
 
   it('Should word the results heading and interpolate the results count', () => {
     expect(copy.picker.resultsHeading).toBe('Select an address')

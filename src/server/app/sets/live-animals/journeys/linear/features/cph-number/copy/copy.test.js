@@ -1,11 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
 import {
   driveHandler,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { dispatchPages } from '../../index.js'
 
 import * as cphNumber from '../controller.js'
@@ -13,14 +13,7 @@ import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
 describe('cph-number copy module', () => {
-  it('Should have a non-empty string at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      expect(typeof value, `${path} must be a string`).toBe('string')
-      expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
-        0
-      )
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   it('Should head the page with an instruction and name the group short', () => {
     expect(copy.title).toBe('Add the county parish holding number (CPH)')

@@ -57,7 +57,6 @@ export const CONTACT_PARTY = {
   editSlug: 'consignment/contact/edit',
   returnSlug: consignmentContactSelectPage.slug,
   title: contactCopy.title,
-  hint: contactCopy.hint,
   error: contactCopy.errors.contactRequired
 }
 

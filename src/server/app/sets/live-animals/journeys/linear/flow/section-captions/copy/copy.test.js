@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
 
 describe('section-caption copy modules', () => {
-  it.each([
-    ['en', en],
-    ['cy', cy]
-  ])('Should keep every %s leaf valid copy', (locale, copy) => {
-    for (const { path, value } of leaves(copy)) {
-      expect(isCopyLeaf(value), `${locale}: ${path} must be copy`).toBe(true)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(en, cy)
 
   it('Should name every journey section', () => {
     expect(en.sections).toEqual({

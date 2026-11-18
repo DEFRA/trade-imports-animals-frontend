@@ -19,6 +19,7 @@ import {
   journeyFormOf,
   openAddresses,
   openOverview,
+  paragraphFollowing,
   partyPickerName,
   searchByPressingEnter,
   signIn,
@@ -131,8 +132,7 @@ const saveAndContinue = (page) =>
 const resultsHeading = (page) =>
   page.getByRole('heading', { name: copy.picker.resultsHeading, level: 2 })
 
-const resultsSummary = (page) =>
-  resultsHeading(page).locator('xpath=following-sibling::*[1][self::p]')
+const resultsSummary = (page) => paragraphFollowing(resultsHeading(page))
 
 const expectNothingBetweenSearchAndResultsHeading = async (page) => {
   await expect(

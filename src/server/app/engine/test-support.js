@@ -187,11 +187,6 @@ export const journeyRequest = (
   }
 }
 
-/** The text a copy leaf gives: the string itself, or what the copy function
- * returns for the sample arguments. */
-export const sampleText = (value, sampleArguments) =>
-  typeof value === 'function' ? value(...sampleArguments) : value
-
 export const recordingH = () => cookieRecorder()
 
 export const backendJourneyId = 'GBN-AG-26-ABC123'

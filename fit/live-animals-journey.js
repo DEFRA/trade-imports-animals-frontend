@@ -258,6 +258,15 @@ export const backLink = (page) =>
   page.getByRole('link', { name: 'Back', exact: true })
 
 /**
+ * The paragraph directly after a heading.
+ *
+ * @param {import('@playwright/test').Locator} heading
+ * @returns {import('@playwright/test').Locator}
+ */
+export const paragraphFollowing = (heading) =>
+  heading.locator('xpath=following-sibling::*[1][self::p]')
+
+/**
  * Follows the error summary link named `message` and expects focus to land on
  * the field the link points to.
  *

@@ -6,19 +6,16 @@ import {
   journeyRequest,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { store } from '../../../../../../../engine/store.js'
 import { dispatchPages } from '../../index.js'
-import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
-  it('Should have a non-empty string or copy function at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   it('Should interpolate the parameterised leaves', () => {
     expect(copy.identifierTable.animalN(2)).toBe('Animal 2')

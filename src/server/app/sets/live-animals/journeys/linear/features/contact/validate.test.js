@@ -7,9 +7,6 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// The membership rule ("this id is one the org's book still has") can only
-// fire where a book was fetched, so these options are the minimal shape
-// `fields` reads from `addressOptions` — an id, nothing else.
 const addressOptionsOf = (...ids) => ids.map((id) => ({ id }))
 
 const STORED_COPY = {
@@ -71,9 +68,9 @@ describe('#validation — tampered submit', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should raise no error on a submission with no selection', async () => {
+  it('Should raise "select a contact address" on a submission with no selection', async () => {
     const { errors } = await validation.onSubmit({}, { addressOptions })
 
-    expect(errors).toEqual({})
+    expect(errors.contactAddress).toBe(copy.errors.contactRequired)
   })
 })

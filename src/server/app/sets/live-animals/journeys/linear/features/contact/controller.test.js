@@ -8,7 +8,6 @@ import {
   authenticatedCredentials,
   driveHandler,
   listedAddress,
-  reviewChangeLinkQuery,
   refusingSaves,
   resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
@@ -23,9 +22,7 @@ import {
   itSendsBackToWhereTheTraderCameFromOnRefusal
 } from '../../test-support.js'
 import { expectAddedAddressBannerShownOnce } from '../addresses/test-support.js'
-import { CYA_SLUG } from '../../../../../../shared/kit.js'
 import { addressesPage } from '../addresses/page.js'
-import { pagePath } from '../../../../../../shared/paths.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
@@ -42,8 +39,8 @@ const CONTACT = STUB_BOOK.find(
 )
 const NOT_IN_THE_BOOK = 'not-a-real-contact'
 const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
-const editHrefOf = (journeyId) =>
-  `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
+const addressLineEndingAtPostcode = ({ addressLine1, townOrCity, postcode }) =>
+  [addressLine1, townOrCity, postcode].join(', ')
 
 describe('GET contact — select an address from the book', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -80,7 +77,7 @@ describe('GET contact — select an address from the book', () => {
     expect(result.view.context.recoverableError).toBe(true)
   })
 
-  it('Should commit a copy of the picked address, then show it as the current contact and still selected', async () => {
+  it('Should commit a copy of the picked address and show that option chosen on return', async () => {
     const postResult = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id }
     })
@@ -92,16 +89,23 @@ describe('GET contact — select an address from the book', () => {
     expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
-    const { contactOptions, currentContact } = getResult.view.context
+    const { contactOptions } = getResult.view.context
     expect(
       contactOptions
         .filter((option) => option.checked)
         .map(({ value }) => value)
     ).toEqual([CONTACT.id])
-    expect(currentContact).toMatchObject({
-      name: CONTACT.name,
-      editHref: editHrefOf(getResult.journeyId)
-    })
+  })
+
+  it('Should hint each option with its address ending at the postcode, never the country', async () => {
+    const result = await driveHandler(get)
+
+    const hints = result.view.context.contactOptions.map(
+      (option) => option.hint.text
+    )
+    expect(hints).toEqual(
+      STUB_BOOK.map((record) => addressLineEndingAtPostcode(record.address))
+    )
   })
 
   it('Should select nothing when the record the contact was picked from is gone', async () => {
@@ -124,30 +128,25 @@ describe('GET contact — select an address from the book', () => {
     ).toBe(true)
   })
 
-  it('Should carry the trail onto the current contact edit link', async () => {
-    const result = await driveHandler(get, {
-      seed: { contactAddress: HELD_CONTACT },
-      startingFrom: [{ query: reviewChangeLinkQuery() }]
-    })
-
-    expect(result.view.context.currentContact.editHref).toBe(
-      `${editHrefOf(result.journeyId)}&from=${CYA_SLUG}`
-    )
-  })
-
-  it('Should show no current contact when none has been picked', async () => {
-    const result = await driveHandler(get)
-
-    expect(result.view.context.currentContact).toBeNull()
-  })
-
-  it('Should keep the copy already held when saved with nothing selected', async () => {
+  it('Should answer 400 and re-render with the choice in error when nothing is selected, leaving a held contact address as it was', async () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
       payload: {}
     })
 
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after.contactAddress).toEqual(HELD_CONTACT)
+  })
+
+  it('Should answer 400 with the choice in error and commit nothing when nothing is selected and no contact address is held', async () => {
+    const result = await driveHandler(post, {
+      payload: { exit: 'hub' }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
+    expect(result.after.contactAddress).toBeUndefined()
   })
 })
 
@@ -170,27 +169,6 @@ describe('POST contact — invalid payload', () => {
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
     expectNoRefusalLogged(result.logger)
-  })
-
-  it('Should keep the current contact card on a 400 re-render', async () => {
-    const result = await driveHandler(post, {
-      seed: { contactAddress: HELD_CONTACT },
-      payload: { contactAddress: NOT_IN_THE_BOOK }
-    })
-
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.currentContact).toMatchObject({
-      name: HELD_CONTACT.name,
-      editHref: editHrefOf(result.journeyId)
-    })
-  })
-
-  it('Should leave the page without committing when no contact is selected', async () => {
-    const result = await driveHandler(post, {
-      payload: {}
-    })
-    expect(result.view).toBeUndefined()
-    expect(result.after.contactAddress).toBeUndefined()
   })
 
   it('Should treat a dangling contact addressId as unselected on GET and reject it on POST', async () => {
@@ -294,7 +272,7 @@ describe('POST contact — recoverable save failure', () => {
     expect(result.after.contactAddress).toBeUndefined()
   })
 
-  it('Should keep the current contact card when saving the selection fails', async () => {
+  it('Should keep a held contact address when saving the selection fails', async () => {
     const result = await driveHandler(post, {
       seed: { contactAddress: HELD_CONTACT },
       payload: { contactAddress: CONTACT.id },
@@ -302,9 +280,7 @@ describe('POST contact — recoverable save failure', () => {
     })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.view.context.currentContact).toMatchObject({
-      name: HELD_CONTACT.name
-    })
+    expect(result.after.contactAddress).toEqual(HELD_CONTACT)
   })
 })
 

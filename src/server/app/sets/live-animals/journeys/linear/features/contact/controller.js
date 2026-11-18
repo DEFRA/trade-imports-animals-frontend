@@ -10,10 +10,8 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
-import { addressSummary } from '../addresses/address-summary.js'
+import { addressSummaryEndingAtPostcode } from '../addresses/address-summary.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
-import { toDisplayParty } from '../addresses/frozen-parties.js'
-import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
   issueInsAddAddressUrl,
@@ -23,12 +21,16 @@ import {
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { copy as addressesEn } from '../addresses/copy/copy.en.js'
+import { copy as addressesCy } from '../addresses/copy/copy.cy.js'
 import { validation } from './validate.js'
 
 export const meta = { ...page, collects: ['contactAddress'], validation }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
+const resultsHeading = copyFor({ en: addressesEn, cy: addressesCy }).picker
+  .resultsHeading
 
 const handshakeErrorSummary = (error) =>
   error
@@ -40,22 +42,6 @@ const handshakeErrorSummary = (error) =>
 
 const resolveErrorSummary = (errors, handshakeError) =>
   kit.errorSummary(errors) ?? handshakeErrorSummary(handshakeError)
-
-const currentContactOf = async (request, journeyId, answers) => {
-  const display = await toDisplayParty(answers.contactAddress)
-  return display
-    ? {
-        name: display.name,
-        summary: addressSummary(display.address),
-        editHref: partyEditHref(
-          journeyId,
-          CONTACT_PARTY,
-          page.slug,
-          kit.requestTrail(request)
-        )
-      }
-    : null
-}
 
 const issueAddAddressLink = (request, h, journey) =>
   !isStubMode() &&
@@ -72,7 +58,6 @@ const render = (
     errors = {},
     recoverableError = false,
     handshakeError,
-    currentContact = null,
     successBanner = null
   } = {}
 ) =>
@@ -84,15 +69,15 @@ const render = (
       successBanner
     }),
     copy,
+    resultsHeading,
     errors,
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
     addNewAddressLabel: kit.sharedCopy.addressHandshake.addNewAddress,
-    currentContact,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
-      hint: { text: addressSummary(option.address) },
+      hint: { text: addressSummaryEndingAtPostcode(option.address) },
       checked: option.id === values.selectedId
     }))
   })
@@ -126,11 +111,6 @@ const get = async (request, h) => {
       errors,
       recoverableError,
       handshakeError,
-      currentContact: await currentContactOf(
-        request,
-        journey.journeyId,
-        answers
-      ),
       successBanner: takeAddedAddressBanner(request, h)
     }
   )
@@ -152,22 +132,14 @@ const post = async (request, h) => {
   })
   if (hasErrors(errors)) {
     const current = await state.get(request, h)
-    const { journey, answers } = current
     return render(
       request,
       h,
       current,
       {},
       await addressBook.addresses(orgId),
-      issueAddAddressLink(request, h, journey),
-      {
-        errors,
-        currentContact: await currentContactOf(
-          request,
-          journey.journeyId,
-          answers
-        )
-      }
+      issueAddAddressLink(request, h, current.journey),
+      { errors }
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -181,22 +153,14 @@ const post = async (request, h) => {
         : state.get(request, h),
     async () => {
       const current = await state.get(request, h)
-      const { journey, answers } = current
       return render(
         request,
         h,
         current,
         { selectedId: chosen?.id },
         await addressBook.addresses(orgId),
-        issueAddAddressLink(request, h, journey),
-        {
-          recoverableError: true,
-          currentContact: await currentContactOf(
-            request,
-            journey.journeyId,
-            answers
-          )
-        }
+        issueAddAddressLink(request, h, current.journey),
+        { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

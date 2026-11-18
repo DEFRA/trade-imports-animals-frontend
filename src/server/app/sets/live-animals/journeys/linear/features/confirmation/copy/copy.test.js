@@ -1,27 +1,21 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
 import {
   journeyRequest,
   stubH,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { store } from '../../../../../../../engine/store.js'
 import { dispatchPages } from '../../index.js'
 
 import * as confirmation from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 describe('confirmation copy module', () => {
-  it('Should have a non-empty string at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      expect(typeof value, `${path} must be a string`).toBe('string')
-      expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
-        0
-      )
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 })
 
 describe('GET /confirmation', () => {
