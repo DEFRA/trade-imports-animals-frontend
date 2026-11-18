@@ -89,7 +89,11 @@ describe('external call metrics', () => {
     expect(document).not.toHaveProperty('ServiceName')
   })
 
-  test('a successful call writes one info line with the nested event fields and an integral duration in nanoseconds', async () => {
+  test('a successful call taking 41.6 ms writes one info line with the nested event fields, a duration of 41,600,000 ns and 42 ms in the message, and publishes 41.6 ms', async () => {
+    vi.spyOn(performance, 'now')
+      .mockReturnValueOnce(1000)
+      .mockReturnValueOnce(1041.6)
+
     await measureExternalCall(JWKS_CALL, async () => 'keys')
 
     const line = onlyLine()
@@ -98,12 +102,12 @@ describe('external call metrics', () => {
       category: 'external-call',
       action: 'defra-id/jwks',
       outcome: 'success',
-      duration: expect.any(Number)
+      duration: 41_600_000
     })
-    expect(Number.isInteger(line.event.duration)).toBe(true)
-    expect(line.message).toMatch(
-      /^External call defra-id\/jwks \(SYN-12\) success in \d+ ms$/
+    expect(line.message).toBe(
+      'External call defra-id/jwks (SYN-12) success in 42 ms'
     )
+    expect((await onlyDocument())['external.call.duration']).toBeCloseTo(41.6)
     expect(line).not.toHaveProperty('error')
     expect(Object.keys(line)).not.toContain('event.category')
   })
