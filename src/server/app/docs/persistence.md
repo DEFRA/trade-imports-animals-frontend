@@ -18,7 +18,9 @@ defines lifecycle constants and delegates these operations to a configured adapt
 selects the stub or real implementation. Both expose the same operation names.
 
 The real adapter leaves the reference number to the backend: create posts an
-empty notification and returns the notification the backend created.
+empty notification and returns the notification the backend created. list
+reads the dashboard's display fields from `/notifications`; load reads one
+notification's fulfilments from `/notifications/{ref}/fulfilments`.
 
 Canonical fulfilment is the durable answer source. Writes replace a whole evaluated
 and purged snapshot. Reads rebuild projected answers, scope and status, so derived
