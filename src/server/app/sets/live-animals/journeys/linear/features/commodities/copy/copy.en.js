@@ -18,7 +18,7 @@ export const copy = {
       clearAll: 'Clear all',
       remove: (species, commodity) => `Remove ${species} from ${commodity}`
     },
-    updateSelected: 'Update selected',
+    addSelection: 'Add selection',
     help: {
       summary: 'Help with commodity codes',
       reference:
