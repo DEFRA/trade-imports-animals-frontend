@@ -1,16 +1,20 @@
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
-import { identifierCell } from './identifier-cell.js'
+import { valueText } from '../../../rows/value-text.js'
 import { filledIdentifierColumns } from './identifier-columns.js'
 
 const copy = copyFor({ en, cy })
 
-export const identifierTable = (units, commodityCode) => {
+export const identifierTable = (units, commodityCode, speciesLatinName) => {
   if (units.length === 0) {
     return null
   }
-  const columns = filledIdentifierColumns(units, commodityCode)
+  const columns = filledIdentifierColumns(
+    units,
+    commodityCode,
+    speciesLatinName
+  )
   return {
     head: [
       { text: copy.identifierTable.animalColumn },
@@ -18,7 +22,7 @@ export const identifierTable = (units, commodityCode) => {
     ],
     rows: units.map((unit, unitIndex) => [
       { text: copy.identifierTable.animalN(unitIndex + 1) },
-      ...columns.map(([id]) => ({ text: identifierCell(unit, id) }))
+      ...columns.map(([id]) => ({ text: valueText(unit[id]) }))
     ])
   }
 }

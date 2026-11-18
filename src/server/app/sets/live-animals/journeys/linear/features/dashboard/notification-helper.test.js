@@ -7,11 +7,23 @@ import {
   listRowCommodityLabel,
   formatDisplayCalendarDate,
   formatDisplayMoment,
+  NOTIFICATION_SORT_OPTIONS,
   normalizePageNumber,
   parseNotificationSort
 } from './notification-helper.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+
+const CREATED_AT_DESCENDING_SORT = 'createdAt,desc'
+
+const ARRIVAL_DATE_DESCENDING_SORT = 'arrivalDate,desc'
+
+const LISTED_SORTS = [
+  ARRIVAL_DATE_DESCENDING_SORT,
+  'arrivalDate,asc',
+  CREATED_AT_DESCENDING_SORT,
+  CREATED_AT_ASCENDING_SORT
+]
 
 const ZONE_WEST_OF_UTC_GUARDING_MOMENTS = 'America/New_York'
 
@@ -22,11 +34,23 @@ const ARRIVAL_DATE = '2026-07-21'
 const ARRIVAL_DAY = '21 Jul 2026'
 
 describe('dashboard notification helpers', () => {
-  it('Should accept the four listed sort options and default anything else to arrivalDate,desc', () => {
-    expect(parseNotificationSort(CREATED_AT_ASCENDING_SORT)).toBe(
-      CREATED_AT_ASCENDING_SORT
+  it('Should list the four sort options', () => {
+    expect(NOTIFICATION_SORT_OPTIONS.map(({ value }) => value)).toEqual(
+      LISTED_SORTS
     )
-    expect(parseNotificationSort('reference,desc')).toBe('arrivalDate,desc')
+  })
+
+  it.each(LISTED_SORTS)(
+    'Should accept the listed sort %s unchanged',
+    (sort) => {
+      expect(parseNotificationSort(sort)).toBe(sort)
+    }
+  )
+
+  it('Should default an unlisted sort to arrivalDate,desc', () => {
+    expect(parseNotificationSort('reference,desc')).toBe(
+      ARRIVAL_DATE_DESCENDING_SORT
+    )
   })
 
   it('Should normalize invalid pages and clamp pages against the response', () => {
@@ -58,10 +82,10 @@ describe('dashboard notification helpers', () => {
     expect(formatDisplayMoment('not-a-date')).toBe('')
     expect(formatDisplayMoment(null)).toBe('')
     expect(listRowCommodityLabel({ commodityCode: '0102' })).toBe('0102')
-    expect(listRowCommodityLabel({ name: 'Cow' })).toBe('Cow')
-    expect(listRowCommodityLabel({ name: 'Cow', commodityCode: '0102' })).toBe(
-      'Cow'
-    )
+    expect(listRowCommodityLabel({ name: 'Cattle' })).toBe('Cattle')
+    expect(
+      listRowCommodityLabel({ name: 'Cattle', commodityCode: '0102' })
+    ).toBe('Cattle')
     expect(listRowCommodityLabel(null)).toBe('')
   })
 
@@ -100,17 +124,24 @@ describe('dashboard notification helpers', () => {
     expect(buildPageResultsRangeLabel(page, 20)).toBe(
       'Showing 21 to 40 of 45 Results'
     )
-    expect(buildPaginationLinks(page, '/', 'createdAt,desc')).toEqual({
-      previous: {
-        href: '/?sort=createdAt%2Cdesc'
-      },
-      next: {
-        href: '/?page=3&sort=createdAt%2Cdesc'
+    expect(buildPaginationLinks(page, '/', CREATED_AT_DESCENDING_SORT)).toEqual(
+      {
+        previous: {
+          href: '/?sort=createdAt%2Cdesc'
+        },
+        next: {
+          href: '/?page=3&sort=createdAt%2Cdesc'
+        }
       }
-    })
+    )
     expect(
-      buildPaginationLinks(page, '/', 'createdAt,desc', {}, 'GBN-AG-26-ABC123')
-        .next.href
+      buildPaginationLinks(
+        page,
+        '/',
+        CREATED_AT_DESCENDING_SORT,
+        {},
+        'GBN-AG-26-ABC123'
+      ).next.href
     ).toBe('/?page=3&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123')
   })
 })

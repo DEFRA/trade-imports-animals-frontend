@@ -12,6 +12,7 @@ import { importReasonPage } from '../../features/import-reason/page.js'
 import { additionalDetailsPage } from '../../features/additional-details/page.js'
 import { addressesPage } from '../../features/addresses/page.js'
 import { cphNumberPage } from '../../features/cph-number/page.js'
+import { permanentAddressPage } from '../../features/permanent-address/page.js'
 import {
   commercialTransporterDetailsPage,
   portOfEntryPage,
@@ -37,7 +38,10 @@ export const captionSections = [
   },
   { id: 'descriptionOfTheGoods', pages: [consignmentDetailsPage] },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
-  { id: 'consignmentParties', pages: [addressesPage, cphNumberPage] },
+  {
+    id: 'consignmentParties',
+    pages: [addressesPage, cphNumberPage, permanentAddressPage]
+  },
   { id: 'movement', pages: [transitCountriesPage] },
   { id: 'transportAndArrival', pages: [portOfEntryPage, transportersPage] },
   {

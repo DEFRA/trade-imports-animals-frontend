@@ -3,6 +3,9 @@ import * as state from '../../../../../../engine/index.js'
 export const linesOf = (answers, evaluation) =>
   state.collectionView(answers, ['commodityLines'], evaluation)
 
+export const hasAnyCommodityLine = (answers, evaluation) =>
+  linesOf(answers, evaluation).length > 0
+
 export const hasAnimalCount = ({ entry }) =>
   String(entry.numberOfAnimalsQuantity ?? '') !== ''
 

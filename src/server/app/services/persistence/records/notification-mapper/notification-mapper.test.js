@@ -108,14 +108,15 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
+          permanentAddressOrigin: 'newAddress',
           permanentAddress: {
             name: 'Owner',
+            phone: '01234 567890',
+            email: 'owner@example.com',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
               postcode: 'AB1 2CD',
-              countryCode: 'FR',
-              phone: '01234 567890',
-              email: 'owner@example.com'
+              countryCode: 'FR'
             }
           }
         },
@@ -163,7 +164,7 @@ describe('Mapper A — backend notification', () => {
     const { commodities } = currentNotificationFrom(mappedAnswers())
     expect(commodities).toEqual([
       {
-        name: 'Cow',
+        name: 'Cattle',
         commodityCode: '0102',
         description: LIVE_BOVINE_DESCRIPTION,
         totalNoOfAnimals: 25,
@@ -311,7 +312,7 @@ describe('Mapper A — backend notification', () => {
       transitedCountries: ['France', 'Belgium']
     })
     expect(notification.commodities[0].commodityCode).toBe('0102')
-    expect(notification.commodities[0].name).toBe('Cow')
+    expect(notification.commodities[0].name).toBe('Cattle')
   })
 })
 
@@ -322,18 +323,21 @@ describe('Mapper A — commodities array from lines', () => {
     })
     expect(commodities).toHaveLength(2)
 
-    const [cow, cat] = commodities
-    expect(cow.name).toBe('Cow')
-    expect(cow.commodityCode).toBe('0102')
+    const [cattle, cat] = commodities
+    expect(cattle.name).toBe('Cattle')
+    expect(cattle.commodityCode).toBe('0102')
     expect(cat.name).toBe(DOMESTIC_CAT)
     expect(cat.commodityCode).toBe('01061900')
-    expect(cow.totalNoOfAnimals).toBe(35)
-    expect(cow.totalNoOfPackages).toBe(7)
-    expect(cow.species.map((entry) => entry.value)).toEqual([
+    expect(cattle.totalNoOfAnimals).toBe(35)
+    expect(cattle.totalNoOfPackages).toBe(7)
+    expect(cattle.species.map((entry) => entry.value)).toEqual([
       BOS_TAURUS,
       BISON_BISON
     ])
-    expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
+    expect(cattle.species.map((entry) => entry.noOfAnimals)).toEqual([
+      '25',
+      '10'
+    ])
     expect(cat.totalNoOfAnimals).toBe(2)
     expect(cat.species).toEqual([
       {
@@ -365,7 +369,7 @@ describe('Mapper A — commodities array from lines', () => {
       ])
     ).toEqual([
       {
-        name: 'Cow',
+        name: 'Cattle',
         commodityCode: '0102',
         description: LIVE_BOVINE_DESCRIPTION,
         totalNoOfAnimals: 1,
@@ -426,6 +430,16 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
   })
 
+  test('Should carry no record of which option the trader chose for a permanent address', () => {
+    const notification = currentNotificationFrom(answersWithGaps())
+    const [firstUnit] = notification.commodities[0].species[0].animalIdentifiers
+
+    expect(firstUnit.permanentAddress).not.toHaveProperty(
+      'permanentAddressOrigin'
+    )
+    expect(firstUnit).not.toHaveProperty('permanentAddressOrigin')
+  })
+
   test('Should carry a unit identified only by its microchip onto the species entry', () => {
     const notification = currentNotificationFrom({
       commodityLines: [
@@ -449,6 +463,33 @@ describe('Mapper A — per-unit animal identifiers', () => {
       microchip: '900987654321098',
       animalIdentifiers: [{ microchip: '900987654321098' }]
     })
+  })
+
+  test('Should carry a unit holding only the two free-text fallback answers onto the species entry', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commodityCode: OSTRICHES_CODE,
+          speciesLatinName: STRUTHIO,
+          speciesCommonName: 'Ostriches',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '40',
+          animalIdentifiers: [
+            {
+              identificationDetails: 'Scar on left wing',
+              description: 'Dark plumage'
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(notification.commodities[0].species[0].animalIdentifiers).toEqual([
+      {
+        identificationDetails: 'Scar on left wing',
+        description: 'Dark plumage'
+      }
+    ])
   })
 
   test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {

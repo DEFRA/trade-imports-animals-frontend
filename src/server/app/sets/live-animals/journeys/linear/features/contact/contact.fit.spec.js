@@ -10,7 +10,10 @@ import {
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressSummary } from '../addresses/address-summary.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
@@ -73,6 +76,9 @@ test.describe('contact feature', () => {
     await expect(page.locator(CONTACT_ADDRESS_INPUT).first()).toBeFocused()
     await expect(page.locator(`${CONTACT_ADDRESS_INPUT}:checked`)).toHaveCount(
       0
+    )
+    await expect(page).toHaveTitle(
+      `${errorTitlePrefix}${copy.title} - ${serviceName} - ${govukSuffix}`
     )
   })
 

@@ -20,6 +20,7 @@ const CAPTIONED = [
   ['additional-details', 'Commodity details'],
   ['addresses', CONSIGNMENT_PARTIES],
   ['cphNumber', CONSIGNMENT_PARTIES],
+  ['permanentAddress', CONSIGNMENT_PARTIES],
   ['transit-countries', 'Movement'],
   ['port-of-entry', TRANSPORT_AND_ARRIVAL],
   ['transporters', TRANSPORT_AND_ARRIVAL],

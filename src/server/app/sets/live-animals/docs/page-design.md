@@ -16,10 +16,11 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every task is a link from the moment the notification exists, so a trader
   can work in any order. A task that does not apply to the consignment is
   left off the list rather than shown shut.
-- The identification task appears only once a chosen commodity carries an
-  identifier. Its part, `commodityLines`, is always in scope, so `statusOf`
-  never reaches Not applicable for it; the row carries its own applicability
-  test, the same one the identification page uses.
+- The identification task appears for any consignment that holds a chosen
+  commodity line, and is Not applicable only when the notification holds
+  none. Its part, `commodityLines`, is always in scope, so `statusOf` never
+  reaches Not applicable for it; the row carries its own applicability test,
+  the same one the identification page uses.
 - The commodity details task comes first in the second section, then
   identification, then additional details: the journey's page order, which
   Save and continue follows.
@@ -50,8 +51,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The two return controls name the page they lead to, which is headed
   "Overview". "Hub" is the internal name for it and never appears on screen.
 - A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page, the role address pickers
-  and the transporter type question. The two transporter details forms are
+  leaves the way they came in: the CPH number page, the permanent address
+  page, the role address pickers and the transporter type question. The two
+  transporter details forms are
   the one exception: each ends with the primary and a secondary "Cancel and
   return to dashboard", because a trader who opened one did not come from the
   hub and the design gives the add route its own way out of the journey.
@@ -81,6 +83,14 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   only sometimes asked gets its own card and link.
 - The contact address row is keyed "Contact address", not "Address": the
   page lists several addresses.
+- The roles-and-addresses card carries one row per animal that has a saved
+  permanent address, after the county parish holding row, each keyed by the
+  animal's species common name and number and holding that animal's saved
+  address exactly as a party row reads. An animal that still owes one has no
+  row: the card that shows the answer is not the card that owes it. A line
+  that needs a permanent address with no animal counted carries no row
+  either. The species card's identifier table heads only the identifiers the
+  species was asked for; it carries no permanent address column.
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,
@@ -222,7 +232,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   class so long unbroken identifiers and commodity names wrap inside table
   cells at 390px.
 - A species with no number of animals has no card, and a consignment whose
-  identified species all lack a count shows the summary and no cards.
+  species all lack a count shows the summary and no cards.
 - The card title is the species name, with "Change number of animals" beside
   it naming the species. The link pushes this page onto the trail, so Back on the count page returns here and Continue on
   Commodity details goes on to the next page that applies.
@@ -244,35 +254,73 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   button comes first in the form so that Enter never presses a Remove button
   or the visible "Save and continue".
 - An identifier has one name, used both on the entry field and as the
-  saved-animals column heading, and no identifier field has a hint. Labels
+  saved-animals column heading, and no identifier field has a hint — the
+  identification-details and description fallback follows this too. Labels
   are regular weight.
-- The saved-animals table has one column per identifier the commodity
-  declares, not per identifier the trader filled. The header row says which
-  identifiers the line expects, and an empty cell shows which are still
-  missing.
+- The saved-animals table has one column per identifier that species' panel
+  asks for, not per identifier the trader filled: the commodity's own
+  identifiers, or the two free-text fallback answers for a commodity that
+  declares none. The header row says which identifiers the line expects, and
+  an empty cell shows which are still missing.
 - Removing an identifier record is a POST on the card form with no GET, so a
   link cannot trigger it.
-- A consignment with nothing to identify skips the page.
-- The phone field is the one permanent-address field with a hint. A trader
-  giving an address outside the UK cannot otherwise know the number is dialled
-  from here.
+- The page is skipped only when the notification holds no commodity line.
 
 ## Commodity pages
 
 - A choice made under an earlier search has no tick box on screen, so it is
   sent back with the form as a hidden value.
+- With JavaScript the results refresh in place as the trader types, ticks,
+  removes or clears, through the shared multi-select search. The results are
+  the ones the page renders without JavaScript, so the ordering, labelling and
+  selection rules below hold on both paths. A polite status message gives the number of species a typed
+  search lists, or "No results found". A tick, a Remove or Clear all is not
+  announced, because the box and the tally already show it.
+- After a Remove or Clear all, the button pressed has gone, so focus moves to
+  the search box. After a tick, focus stays on the tick box.
+- Without JavaScript a tick cannot refresh the tally, so an "Update selected"
+  secondary button sits under the results. It runs the search again, keeping
+  the term and the ticks, and the tally catches up. With JavaScript
+  the button is hidden, because a tick refreshes the tally itself. The button and
+  its copy are agreed for now, and will be revisited when the designers pick
+  up their no-JavaScript ticket.
+- The results are a list joined to the bottom of the search box, as the
+  design draws it: one heading row per commodity, its species beneath, striped
+  rows ruled the full width of the list (the first species under each heading
+  shaded), no ring round a hovered tick box, and a scroll once the list is taller
+  than about six rows. Each commodity stays a fieldset whose legend is its
+  heading, so a screen reader hears the species grouped by commodity.
+- A commodity's heading in the results, and in the tally, reads as
+  its name with its code in round brackets, such as "Cattle (0102)", where the
+  service knows a name for the code, and as the code alone where it does not.
+  The names come from `commodityNameFor` in the set's commodities service; the
+  Commodity details page still names a commodity by its code.
+- With JavaScript, Escape in the search box or a click outside the search hides
+  the list, keeping the term and every choice, and focusing or clicking the
+  search box shows it again. The list hides once the click has landed, so a
+  click on a button below the list is not moved out from under the pointer.
+- The tally, the panel of what has been chosen, shows a chip per species,
+  under its commodity's heading,
+  as the design draws it: the species' Latin name and a cross named "Remove"
+  and that Latin name. Clear all sits beside the count, as a form
+  button styled as a link that posts the page form.
+- If the results cannot be fetched, the page is posted as it is without
+  JavaScript, so the trader still gets the results.
+- One result is announced as "1 result available". The design announces
+  "1 results available"; the singular is open with the designer.
 - A search's results are listed in order: the commodity groups by their
-  heading, and each group's species by the label they are offered under, over
+  code, and each group's species by the label they are offered under, over
   the page of results the search returned.
 - A species reads as its Latin name with its common name in round
-  brackets wherever it is listed or named — the search results, the selected
-  panel, Commodity details, the Selected commodities tables and
-  Identification details — and as its Latin name alone where the
+  brackets wherever it is listed or named — the search results, Commodity
+  details, the Selected commodities tables and Identification details, but
+  not the tally's chips, which the design gives the Latin name
+  alone — and as its Latin name alone where the
   reference data holds no common name for it. The permanent-address rule and
   the identifier-column rule read the line's stored Latin name rather
   than that label, so a species whose common name changes what it reads as
   still gates the same way.
-- The selected panel offers a removal per chosen species, posting the page
+- The tally offers a removal per chosen species, posting the page
   form with the species' key in the button value so the entry pressed is the
   entry removed however the panel is ordered — the same rule the Transport
   section states at the Transit countries bullet below.
@@ -304,7 +352,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   actions. Each Remove carries the entry it removes — the
   commodity's code on a code row, the line's key on a species row — so a
   repeated or stale removal is refused rather than taking another row, the
-  same rule this doc states above for the selected panel and below for
+  same rule this doc states above for the tally and below for
   transit countries. A removal that empties the selection still goes to the
   commodity question, because that is where the next answer comes from. A
   removal is a POST on the page form with no GET, so a link cannot trigger
@@ -360,6 +408,18 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   in the book, or no longer in it, is refused with the role's error. A
   missing or deleted selection travels as no selection, and a Change link's
   context is kept on every way out of the picker.
+- The permanent address section is a third section shape, for a consignment
+  carrying a cat, dog or ferret line, alongside the party sections and the
+  county parish holding section. Its hint is a lead-in sentence followed by
+  two bullets, not the party sections' single-line hint. Once every animal
+  that needs one has a permanent address, the section shows one address —
+  every addressable animal saved against the place of destination, or only
+  one animal needing one — or otherwise the one line "Permanent addresses
+  added for N animals", N being the number of animals that need one. Either
+  shape carries a "Change" link and no "Edit details": the address was
+  hand-entered or copied from the place of destination on the permanent
+  address page, never picked from the address book, so there is no record
+  there to edit.
 
 ## CPH number
 
@@ -378,6 +438,42 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   auto-advance).
 - One error message belongs to the group, not to each box. The date-input row
   classes only sit the boxes side by side.
+
+## Permanent address
+
+- Reached only from the consignment addresses page's Permanent address
+  section, for a consignment carrying a cat, dog or ferret line.
+- Its cards come from the animal identifier records already entered, one per
+  animal, never from the line's animal count: the permanent address is
+  stored on the animal identifier record, so a card can only exist once that
+  record does.
+- A line that needs a permanent address with no animal identified yet shows
+  no cards; the "Add the number of animals on consignment details before you
+  can continue." message takes their place, and the save control still
+  renders but writes nothing.
+- Each card asks once, as its own radio group legend, whether the animal
+  lives at the place of destination or at a new address. The page carries no
+  second question above the cards.
+- Choosing "Enter a new address" requires the name or organisation name,
+  address line 1, town or city, postcode or Zip code, email address and
+  phone number; address line 2 and county may be left blank. Every field's
+  character limit and over-long message are the ones the owning
+  `address-rules.js` already builds for the party-edit page; this page
+  states only its own required messages, and no format check on email,
+  phone or postcode.
+- Choosing "Same as the place of destination (POD)" before the notification
+  has one is refused on that card's radio group, naming no animal, on the
+  field or in the summary.
+- The error summary names the card's animal for an address field's refusal
+  ("Enter address line 1 for Felis catus 1"); the message on the field itself
+  stays plain ("Enter address line 1").
+- The new-address fields ask no country; a hand-entered address always
+  records the United Kingdom.
+- The phone field is the one new-address field with a hint. A trader giving
+  an address outside the UK cannot otherwise know the number is dialled from
+  here.
+- An animal left with neither option chosen saves with no permanent address;
+  the save still succeeds for the others.
 
 ## Documents
 

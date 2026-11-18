@@ -7,6 +7,8 @@ const IDENTIFIER_KEYS = [
   'tattoo',
   'earTag',
   'horseName',
+  'identificationDetails',
+  'description',
   'permanentAddress'
 ]
 
@@ -23,6 +25,11 @@ const unitFrom = (valueAt, identifiers, unitIndex) =>
     animalIdentifierTattoo: valueAt(identifiers.tattoo, unitIndex),
     animalIdentifierEarTag: valueAt(identifiers.earTag, unitIndex),
     horseName: valueAt(identifiers.horseName, unitIndex),
+    identificationDetails: valueAt(
+      identifiers.identificationDetails,
+      unitIndex
+    ),
+    description: valueAt(identifiers.description, unitIndex),
     permanentAddress: valueAt(identifiers.permanentAddress, unitIndex)
   })
 

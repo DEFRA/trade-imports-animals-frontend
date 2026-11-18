@@ -14,7 +14,8 @@ export const buildSections = async ({
   reviewPageTrail,
   readOnly = false,
   parties = answers,
-  partyErrors = {}
+  partyErrors = {},
+  permanentAddresses = []
 }) => {
   const [aboutConsignment, transportAndArrival] = await Promise.all([
     aboutConsignmentSection({
@@ -56,7 +57,8 @@ export const buildSections = async ({
       answers,
       readOnly,
       parties,
-      partyErrors
+      partyErrors,
+      permanentAddresses
     }),
     contactAddressSection({
       journeyId,

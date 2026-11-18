@@ -35,9 +35,7 @@ describe('#appendLineRecords', () => {
     const request = journeyRequest(journey.journeyId)
     const formHoldingData = {
       holdsData: true,
-      values: { animalIdentifierPassport: 'UK2' },
-      showAddress: false,
-      addressValues: {}
+      values: { animalIdentifierPassport: 'UK2' }
     }
 
     const cardErrors = await appendLineRecords(

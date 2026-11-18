@@ -10,7 +10,6 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
-/** Copied from the INS address book (features/address-book/fields.js). */
 export const FIELD_RULES = {
   name: { maxLength: 255, required: true },
   addressLine1: { maxLength: 255, required: true },
@@ -25,6 +24,29 @@ export const FIELD_RULES = {
 
 export const FIELDS = Object.keys(FIELD_RULES)
 
+export const AUTOCOMPLETE_TOKENS = {
+  name: 'organization',
+  addressLine1: 'address-line1',
+  addressLine2: 'address-line2',
+  townOrCity: 'address-level2',
+  postcode: 'postal-code',
+  phone: 'tel',
+  email: 'email'
+}
+
+const TWO_THIRDS_WIDTH = 'govuk-!-width-two-thirds'
+
+export const FIELD_CLASSES = {
+  name: TWO_THIRDS_WIDTH,
+  addressLine1: TWO_THIRDS_WIDTH,
+  addressLine2: TWO_THIRDS_WIDTH,
+  townOrCity: TWO_THIRDS_WIDTH,
+  county: TWO_THIRDS_WIDTH,
+  postcode: 'govuk-input--width-10',
+  phone: TWO_THIRDS_WIDTH,
+  email: TWO_THIRDS_WIDTH
+}
+
 const { errors } = copyFor({ en, cy })
 
 const maxLengthOf = (field) => FIELD_RULES[field].maxLength
@@ -32,14 +54,40 @@ const maxLengthOf = (field) => FIELD_RULES[field].maxLength
 const maxLengthMessageFor = (field) =>
   errors[field].maxLength(maxLengthOf(field))
 
-const requiredTextRule = (field) =>
-  requiredMaxText(field, maxLengthOf(field), {
-    required: errors[field].required,
+/**
+ * The required-with-cap rule for an address field: blank refuses with
+ * `required`, over the cap `FIELD_RULES` sets for `field` refuses with this
+ * feature's over-long message for `field`.
+ *
+ * @param {string} field - a key of `FIELD_RULES` whose limit and over-long
+ * message the rule reads.
+ * @param {object} [options]
+ * @param {string} [options.key] - the key the rule reports its error under,
+ * defaulting to `field`.
+ * @param {string} [options.required] - the message shown when the value is
+ * blank, defaulting to this feature's own required message for `field`.
+ */
+export const requiredTextRule = (
+  field,
+  { key = field, required = errors[field].required } = {}
+) =>
+  requiredMaxText(key, maxLengthOf(field), {
+    required,
     maxLength: maxLengthMessageFor(field)
   })
 
-const optionalTextRule = (field) =>
-  maxText(field, maxLengthOf(field), maxLengthMessageFor(field))
+/**
+ * The optional-with-cap rule for an address field, keyed the same way as
+ * `requiredTextRule`.
+ *
+ * @param {string} field - a key of `FIELD_RULES` whose limit and over-long
+ * message the rule reads.
+ * @param {object} [options]
+ * @param {string} [options.key] - the key the rule reports its error under,
+ * defaulting to `field`.
+ */
+export const optionalTextRule = (field, { key = field } = {}) =>
+  maxText(key, maxLengthOf(field), maxLengthMessageFor(field))
 
 export const addressRules = (countryCodes) =>
   compose(

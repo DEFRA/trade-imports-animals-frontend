@@ -6,7 +6,8 @@ import { createObligationEvaluator } from '../../model/obligations/evaluator.js'
 import { obligationSet } from '../../model/obligations/manifest.js'
 import {
   BISON_BISON,
-  BOS_TAURUS
+  BOS_TAURUS,
+  EQUUS_CABALUS
 } from '../../sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 
 const {
@@ -87,6 +88,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
         {
           commodityCode: '0101',
           numberOfAnimalsQuantity: '2',
+          speciesLatinName: EQUUS_CABALUS,
           animalIdentifiers: [{ horseName: 'Silver' }]
         }
       ]

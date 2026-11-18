@@ -6,8 +6,11 @@
     id             (string)  the box's id
     name           (string)  the box's name
     value          (string)  the term to show in the box
+    type           (string)  optional: the box's input type, such as "search"
     label.text     (string)  the medium label
     hint.text      (string)  optional: the hint under the label
+    errorMessage   (object)  optional: the govukInput error message
+    attributes     (object)  optional: extra attributes on the box
     button.text    (string)  the button's accessible name
     wrapperClasses (string)  classes on the box and button together, such as
                              "govuk-!-width-one-half"
@@ -40,8 +43,11 @@
     id: params.id,
     name: params.name,
     value: params.value,
+    type: params.type,
     label: { text: params.label.text, classes: "govuk-label--m" },
     hint: ({ text: params.hint.text } if params.hint else undefined),
+    errorMessage: params.errorMessage,
+    attributes: params.attributes,
     inputWrapper: {
       classes: "moj-search__input-wrapper " + (params.wrapperClasses | default(""))
     },

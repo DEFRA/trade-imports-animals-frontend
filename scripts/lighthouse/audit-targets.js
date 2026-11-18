@@ -45,6 +45,10 @@ export const SKIPPED = new Map([
     'INS handshake return endpoint — redirects to the party picker, not a page'
   ],
   [
+    '/notifications/{journeyId}/permanent-address',
+    'only renders for a line whose species needs a permanent address — every seeded shape is a cattle consignment, which never does'
+  ],
+  [
     '/notifications/{journeyId}/declaration',
     'reached only by posting the review’s Continue — a GET redirects to the review; declaration.fit.spec.js audits the page with axe'
   ]

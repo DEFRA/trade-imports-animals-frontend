@@ -3,23 +3,26 @@ import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { lineKey } from '../selection/line-key.js'
 import { removeActionFor } from '../selection/remove-action.js'
-import { speciesLabel } from '../../species-label.js'
-import { legendFor } from '../../commodity-legend.js'
+import { commodityLabel } from '../../commodity-label.js'
 
 const copy = copyFor({ en, cy }).search
 
-const itemFor = (row) => ({
-  label: speciesLabel(row),
+const itemFor = (row, label) => ({
+  label: row.speciesLatinName,
+  removeLabel: copy.selected.remove(row.speciesLatinName, label),
   removeAction: removeActionFor(lineKey(row))
 })
 
+const groupFor = ([commodityCode, rowsForCode]) => {
+  const label = commodityLabel(commodityCode)
+  return {
+    label,
+    items: rowsForCode.map((row) => itemFor(row, label))
+  }
+}
+
 const groupsFor = (rows) =>
-  [...Map.groupBy(rows, (row) => row.commodityCode)].map(
-    ([commodityCode, rowsForCode]) => ({
-      legend: legendFor(commodityCode),
-      items: rowsForCode.map(itemFor)
-    })
-  )
+  [...Map.groupBy(rows, (row) => row.commodityCode)].map(groupFor)
 
 export const selectedSummary = (rows) => ({
   count: rows.length,

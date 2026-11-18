@@ -24,13 +24,24 @@ so generic notification-mapper code does not import the set.
   identification page asks for them. The order belongs to the code: `0102`
   (cattle) is asked for its ear tag first, `0101` (equines: horses, asses,
   mules and hinnies) for its microchip.
-- The per-identifier allow-lists are derived from that map, so an identifier's
-  gate and its place on the page cannot drift apart. Adding an identifier to a
-  code is one edit. `IDENTIFIED_CODES` is derived from the same map, so whether
-  a code is asked to identify at all is part of that edit.
-- A code with no identifiers, such as poultry (`01051111`), is asked for none.
-  There is no free-text identifier, so its line gets no identification card and
-  no animal records.
+- An identifier on a code may name the species on that code it applies to;
+  where it names none, it applies to every species the catalogue serves under
+  the code. The horse name is the one identifier that names a species: `0101`
+  serves five equine species, and the horse name applies to the horse species
+  alone.
+- The per-identifier allow-lists are derived from that map: a code-wide
+  identifier's allow-list is codes, gated with `allowListed`; a
+  species-named identifier's allow-list is `[code, species]` pairs, gated with
+  `allowListedPairs`, the same mechanism the permanent address uses. Either
+  way an identifier's gate and its place on the page cannot drift apart.
+  Adding an identifier to a code is one edit. `IDENTIFIED_CODES` is derived
+  from the same map, so whether a code is asked to identify at all is part of
+  that edit.
+- A code with no identifiers, such as poultry (`01051111`), is asked for
+  "Identification details" and "Description" instead: two optional free-text
+  answers the identification page offers every line whose commodity declares
+  none of the typed identifiers. Such a line still gets an identification card
+  and animal records.
 - Animal identifiers are optional unless more than one commodity line carries a
   code with identifiers. Then each such line needs at least one complete
   identifier record, never one per animal. `moreThanOne` on the unit-record
@@ -56,7 +67,8 @@ so generic notification-mapper code does not import the set.
   rules live in [`rules.js`](../services/commodities/rules.js). A rule keyed by
   a Latin name matches MDM's spelling exactly: if MDM corrects a spelling, the
   rule stops matching until it is confirmed against MDM and corrected to
-  follow it.
+  follow it. This covers the horse name's species as well as the
+  permanent-address species below.
 - `PERMANENT_ADDRESS_SPECIES` gates on the code and the species together, as
   above. `01061900` holds the domestic cats, dogs and ferrets that need one
   alongside many mammals that do not, and MDM lists one species under several
@@ -83,10 +95,11 @@ so generic notification-mapper code does not import the set.
   reference-data supplies names for every CN code.
 - The search page saves only a species a search showed it, so it keeps the
   rows shown since it last saved as the flow-only answer
-  `commoditySearchRows`. They are never sent to the backend. The chosen species
+  `commoditySearchRows`. Its results route stores them in the same way. They
+  are never sent to the backend. The chosen species
   also ride back as hidden `selection` values, so a choice made under an earlier
   query survives a new search. The page lists the results it received in
-  commodity-heading then species-label order, and the selected panel offers a
+  commodity-code then species-label order, and the tally offers a
   removal per chosen species.
 - The stub reads
   [`_capture/fixtures/commodities.json`](../../../services/_capture/fixtures/commodities.json):
@@ -105,9 +118,10 @@ so generic notification-mapper code does not import the set.
   the fixture against the codes, Latin names and common names it lists, and
   nothing outside this repo; in the tests repo, the stack test
   `trade-imports-ins-tests` `tests/animals/e2e/pages/commodities.spec.ts`
-  asserts the species checkbox accessible names and the selected panel
-  against `speciesLabel(commodityLines.cattle)` (`commodities.spec.ts:69`
-  and `:109`), so it fails if the MDM stub's common name changes.
+  asserts the species checkbox accessible names against
+  `speciesLabel(commodityLines.cattle)` (`commodities.spec.ts:69`), so it
+  fails if the MDM stub's common name changes. Its tally checks find each
+  chosen species by its Latin name alone, so they do not pin the common name.
   Whoever recaptures the stub must update this fixture by hand to match,
   because no automated check compares the two files.
 - The species check at submission reads a renamed species as a removed one:

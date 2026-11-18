@@ -2,17 +2,10 @@ import { validate } from '../../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import {
-  addressChecksFor,
-  addressRecordProvided,
-  addressValuesFromPayload,
-  missingAddressErrors
-} from '../address/fields.js'
 import { fieldName } from '../fields.js'
 import {
   identifierChecksFor,
   identifierValuesFromPayload,
-  permanentAddressApplies,
   scopedFields
 } from '../identifier/fields.js'
 import { holdsOneAnimal, identifierCapOf, isAtCap } from '../line-cap.js'
@@ -37,44 +30,23 @@ export const staysOnIdentification = (action, forms, answers) =>
       ([index, form]) => form.holdsData && !lineHoldsOneAnimal(answers, index)
     ))
 
-const formHoldsData = (showAddress, values, addressValues) =>
-  identifierProvided(values) ||
-  (showAddress && addressRecordProvided(addressValues))
-
-const addressErrorsFor = (showAddress, addressValues, index, payload) => {
-  if (!showAddress) {
-    return {}
-  }
-  const { errors: addrFormatErrors } = addressRecordProvided(addressValues)
-    ? validate(addressChecksFor(index), payload)
-    : { errors: null }
-  return {
-    ...missingAddressErrors(addressValues, index),
-    ...addrFormatErrors
-  }
-}
-
 const buildLineForm = (payload, entry, index) => {
-  const { commodityCode } = entry
-  const values = identifierValuesFromPayload(payload, commodityCode, index)
-  const addressValues = addressValuesFromPayload(payload, index)
-  const showAddress = permanentAddressApplies(
+  const { commodityCode, speciesLatinName } = entry
+  const values = identifierValuesFromPayload(
+    payload,
     commodityCode,
-    entry.speciesLatinName
+    speciesLatinName,
+    index
   )
-  const holdsData = formHoldsData(showAddress, values, addressValues)
+  const holdsData = identifierProvided(values)
 
-  const { errors: idErrors } = validate(
-    identifierChecksFor(commodityCode, index),
+  const { errors } = validate(
+    identifierChecksFor(commodityCode, speciesLatinName, index),
     payload
   )
-  const errors = {
-    ...idErrors,
-    ...addressErrorsFor(showAddress, addressValues, index, payload)
-  }
 
   return {
-    form: { commodityCode, values, addressValues, showAddress, holdsData },
+    form: { commodityCode, speciesLatinName, values, holdsData },
     errors
   }
 }
@@ -135,8 +107,8 @@ export const withEmptyFormGuard = (errors, forms, addIndex) => {
   if (addIndex === null || anyData || !forms.has(addIndex)) {
     return errors
   }
-  const { commodityCode } = forms.get(addIndex)
-  const [first] = scopedFields(commodityCode)
+  const { commodityCode, speciesLatinName } = forms.get(addIndex)
+  const [first] = scopedFields(commodityCode, speciesLatinName)
   return {
     ...errors,
     [fieldName(first.id, addIndex)]: copy.errors.atLeastOneIdentifier

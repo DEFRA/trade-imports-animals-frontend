@@ -30,6 +30,7 @@ import {
 } from './view-model/incomplete-cards.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
+import { permanentAddressesFromStoredAnswers } from '../permanent-address/saved-addresses.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
@@ -96,6 +97,7 @@ const renderCya = async (
     recoverableError = false,
     parties = answers,
     partyErrors = {},
+    permanentAddresses = [],
     cardErrors = {},
     disableAutoFocus = true
   }
@@ -112,7 +114,8 @@ const renderCya = async (
       reviewPageTrail,
       readOnly,
       parties,
-      partyErrors
+      partyErrors,
+      permanentAddresses
     }),
     cardErrors
   )
@@ -173,7 +176,10 @@ export const renderNotificationView = async (
   const refused = request.query.refused === '1'
   const hidesAnswerErrors =
     readOnly || (journey.status === state.AMEND && !refused)
-  const parties = await partiesFromStoredAnswers(answers)
+  const [parties, permanentAddresses] = await Promise.all([
+    partiesFromStoredAnswers(answers),
+    permanentAddressesFromStoredAnswers(answers, evaluation)
+  ])
   const invalidCardErrors = hidesAnswerErrors
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
@@ -193,6 +199,7 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
+    permanentAddresses,
     partyErrors: hidesAnswerErrors ? {} : await invalidPartyErrors(answers),
     cardErrors: hidesAnswerErrors
       ? {}

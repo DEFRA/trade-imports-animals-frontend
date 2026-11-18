@@ -48,10 +48,10 @@ const suggestionAfterTyping = (config, query, suggestion) => {
   return config.templates.suggestion(suggestion)
 }
 
-const countChangeEvents = (form) => {
-  const changes = []
-  form.addEventListener('change', (event) => changes.push(event.target))
-  return changes
+const recordChangeTargets = (form) => {
+  const changeTargets = []
+  form.addEventListener('change', (event) => changeTargets.push(event.target))
+  return changeTargets
 }
 
 describe('AccessibleAutocomplete', () => {
@@ -72,13 +72,22 @@ describe('AccessibleAutocomplete', () => {
   })
 
   describe('suggestions', () => {
-    it('Should list only the options that have a value, matching what was typed in any case', () => {
+    it('Should list the options matching what was typed in any case', () => {
       const { config } = enhanceCountrySelect()
       const listed = []
 
       config.source('  FR ', (results) => listed.push(...results))
 
       expect(listed).toEqual(['France'])
+    })
+
+    it('Should not offer the option that has no value', () => {
+      const { config } = enhanceCountrySelect()
+      const listed = []
+
+      config.source('select', (results) => listed.push(...results))
+
+      expect(listed).toEqual([])
     })
 
     it('Should offer an accented option for plain letters and bold its accented letters', () => {
@@ -152,47 +161,47 @@ describe('AccessibleAutocomplete', () => {
   describe('confirming a choice', () => {
     it('Should select the option and send one bubbling change when a suggestion is chosen', () => {
       const { select, form, config } = enhanceCountrySelect()
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
 
       config.onConfirm('France')
 
       expect(select.value).toBe('FR')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should select the option the box holds when the box is left on an exact match', () => {
       const { select, form, input, config } = enhanceCountrySelect()
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Germany'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('DE')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should send a change when the box is left on text that matches nothing and the choice clears', () => {
       const { select, form, input, config } = enhanceCountrySelect()
       config.onConfirm('France')
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Fran'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('')
-      expect(changes).toEqual([select])
+      expect(changeTargets).toEqual([select])
     })
 
     it('Should send nothing when the box is left with the choice unchanged', () => {
       const { select, form, input, config } = enhanceCountrySelect()
       config.onConfirm('Germany')
-      const changes = countChangeEvents(form)
+      const changeTargets = recordChangeTargets(form)
       input.value = 'Germany'
 
       config.onConfirm(undefined)
 
       expect(select.value).toBe('DE')
-      expect(changes).toEqual([])
+      expect(changeTargets).toEqual([])
     })
   })
 
@@ -215,6 +224,20 @@ describe('AccessibleAutocomplete', () => {
 
       expect(document.activeElement).toBe(input)
     })
+  })
+
+  describe('Welsh status', () => {
+    it.each([
+      [1, '1 canlyniad ar gael. France 1 o 1'],
+      [3, '3 o ganlyniadau ar gael. France 1 o 3']
+    ])(
+      'Should announce %i results in Welsh when the page is in Welsh',
+      (count, status) => {
+        const { config } = enhanceCountrySelect({ language: 'cy' })
+
+        expect(config.tStatusResults(count, `France 1 o ${count}`)).toBe(status)
+      }
+    )
   })
 
   describe('aria-describedby', () => {

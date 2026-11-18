@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { configureObligationSet } from '../../../model/obligations/manifest.js'
 import {
   allowListed,
+  allowListedPairs,
   equalsGate,
   moreThanOne
 } from '../../../model/obligations/helpers/index.js'
@@ -18,11 +19,13 @@ const commodityCode = {
   status: 'mandatory'
 }
 
+const UNIT_GROUP_ID = 'unit-group'
+
 const allowListedLeaf = {
   id: 'allow-listed-leaf',
   name: 'allowListedLeaf',
   status: 'optional',
-  applyTo: allowListed(commodityCode, ['0102'], { id: 'unit-group' })
+  applyTo: allowListed(commodityCode, ['0102'], { id: UNIT_GROUP_ID })
 }
 
 const unreadableGateLeaf = {
@@ -44,8 +47,27 @@ const leafGatedOnOtherGroup = {
   applyTo: allowListed(commodityCode, ['0102'], { id: 'other-group' })
 }
 
+const speciesLatinName = {
+  id: 'species-latin-name',
+  name: 'speciesLatinName',
+  within: line,
+  status: 'mandatory'
+}
+
+const pairGatedLeaf = {
+  id: 'pair-gated-leaf',
+  name: 'pairGatedLeaf',
+  status: 'optional',
+  applyTo: allowListedPairs(
+    commodityCode,
+    speciesLatinName,
+    [['0101', 'Equus cabalus']],
+    { id: UNIT_GROUP_ID }
+  )
+}
+
 const unitGroupWith = (anyOfIds) => ({
-  id: 'unit-group',
+  id: UNIT_GROUP_ID,
   name: 'animalIdentifiers',
   within: line,
   requires: { anyOfIds, errorCode: 'unit.identifierRequired' }
@@ -59,6 +81,13 @@ const stateWithCommodity = (value) => ({
   fulfilments: { [commodityCode.id]: { [LINE_1]: value } }
 })
 
+const stateWithCommodityAndSpecies = (code, species) => ({
+  fulfilments: {
+    [commodityCode.id]: { [LINE_1]: code },
+    [speciesLatinName.id]: { [LINE_1]: species }
+  }
+})
+
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
     configureObligationSet(SET_ID, {
@@ -66,7 +95,9 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         commodityCode,
         allowListedLeaf,
         unreadableGateLeaf,
-        leafGatedOnOtherGroup
+        leafGatedOnOtherGroup,
+        speciesLatinName,
+        pairGatedLeaf
       ],
       groups: [line]
     })
@@ -125,6 +156,28 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         stateWithCommodity('01063300')
       )
     ).toBe(false)
+  })
+
+  it("Should report an empty collection unsatisfied when a pair gate admits the line's commodity code and species", () => {
+    expect(
+      emptyCollectionSatisfiesFloor(
+        collection,
+        unitGroupWith([pairGatedLeaf.id]),
+        LINE_1,
+        stateWithCommodityAndSpecies('0101', 'Equus cabalus')
+      )
+    ).toBe(false)
+  })
+
+  it("Should report an empty collection satisfied when a pair gate does not admit the line's species", () => {
+    expect(
+      emptyCollectionSatisfiesFloor(
+        collection,
+        unitGroupWith([pairGatedLeaf.id]),
+        LINE_1,
+        stateWithCommodityAndSpecies('0101', 'Equus asinus')
+      )
+    ).toBe(true)
   })
 
   describe('the floorAppliesToParent gate', () => {

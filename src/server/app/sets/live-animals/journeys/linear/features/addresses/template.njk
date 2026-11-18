@@ -17,6 +17,12 @@
       <h2 class="govuk-heading-m" id="{{ section.id }}-heading">{{ section.title }}</h2>
       <p class="govuk-hint">{{ section.hint }}</p>
 
+      {% if section.bullets %}
+        <ul class="govuk-list govuk-list--bullet">
+          {% for bullet in section.bullets %}<li>{{ bullet }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+
       {% if section.chosen %}
         {% call govukInsetText() %}
           {% if section.chosen.name %}<strong>{{ section.chosen.name }}</strong><br>{% endif %}

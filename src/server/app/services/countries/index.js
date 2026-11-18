@@ -48,7 +48,7 @@ export const ensureLoaded = async () => {
 }
 
 export const UNITED_KINGDOM = 'United Kingdom'
-const UNITED_KINGDOM_CODE = 'GB'
+export const UNITED_KINGDOM_CODE = 'GB'
 
 export const isSubdivisionCode = (code) =>
   code != null && Object.hasOwn(subdivisionLabels, code)

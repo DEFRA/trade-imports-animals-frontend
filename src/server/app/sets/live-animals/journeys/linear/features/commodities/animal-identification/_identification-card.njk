@@ -1,6 +1,5 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_saved-animals-table.njk" import savedAnimalsTable %}
 
 {% macro identificationCard(card, copy) %}
@@ -29,33 +28,6 @@
                 errorMessage: field.error and { text: field.error }
               }) }}
             {% endfor %}
-
-            {% if card.showAddress %}
-              {{ govukWarningText({ text: copy.permanentAddress.warning }) }}
-
-              <p class="govuk-body">{{ copy.permanentAddress.definitionLeadIn }}</p>
-              <ul class="govuk-list govuk-list--bullet">
-                {% for item in copy.permanentAddress.definitionItems %}
-                  <li>{{ item }}</li>
-                {% endfor %}
-              </ul>
-
-              <h4 class="govuk-heading-s">{{ copy.permanentAddress.question }}</h4>
-
-              {% for field in card.addressFields %}
-                {{ govukInput({
-                  id: field.id,
-                  name: field.id,
-                  label: { text: field.label },
-                  hint: field.hint and { text: field.hint },
-                  type: field.type,
-                  classes: field.classes,
-                  autocomplete: field.autocomplete,
-                  value: field.value,
-                  errorMessage: field.error and { text: field.error }
-                }) }}
-              {% endfor %}
-            {% endif %}
 
             {% if card.saveButtonText %}
               {{ govukButton({

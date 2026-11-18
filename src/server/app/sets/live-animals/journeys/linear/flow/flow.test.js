@@ -21,7 +21,10 @@ const SECTION_ORDER = [
     pageIds: ['port-of-entry', 'transit-countries', 'transporters']
   },
   { id: 'documents', pageIds: ['accompanying-documents'] },
-  { id: 'consignment-parties', pageIds: ['cphNumber', 'addresses'] },
+  {
+    id: 'consignment-parties',
+    pageIds: ['cphNumber', 'permanentAddress', 'addresses']
+  },
   { id: 'contact-address', pageIds: ['consignment-contact-select'] },
   {
     id: 'review',

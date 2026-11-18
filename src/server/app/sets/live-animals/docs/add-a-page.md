@@ -58,7 +58,8 @@ Keep the browser spec in that group's `fit/` folder.
 
 `page.js` exports `{ id, slug, maturity }`, an authored `gate` where the derived gate
 cannot express the page, and `subPage: true` on a page reached only from the
-page that opens it (the CPH number page), and imports nothing. `maturity` is the
+page that opens it (the CPH number page, the permanent address page), and
+imports nothing. `maturity` is the
 page's level in the phase banner, as a level id from
 [`page-maturity/levels.js`](../../../page-maturity/levels.js); a new page in a
 notification journey takes the level its section's pages have

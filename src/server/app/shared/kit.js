@@ -6,7 +6,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
-import { carryTrail, pushTrail } from './trail.js'
+import { carryTrail, pushTrail, readReturnMarker } from './trail.js'
 
 export {
   carryTrail,
@@ -188,6 +188,22 @@ export const hubExitTarget = (
   request,
   { saveChoice = requestSaveChoice(request) } = {}
 ) => (saveChoice.hubExit ? hubPath(request.params.journeyId) : null)
+
+/**
+ * Where a sub-page sends the trader back to the page that opened it.
+ *
+ * @param {object} request - the request being answered.
+ * @param {string[]} allowedSlugs - the page slugs allowed to open this
+ * sub-page.
+ * @returns {string|null} the path of the page the request's return marker
+ * names, carrying the request's trail, else null.
+ */
+export const hubEntryReturn = (request, allowedSlugs) => {
+  const { honouredSlug } = readReturnMarker(request, allowedSlugs)
+  return honouredSlug
+    ? carryTrail(request, pagePath(request.params.journeyId, honouredSlug))
+    : null
+}
 
 const nextPagePath = (request, page, scope) => {
   const { journeyId } = request.params

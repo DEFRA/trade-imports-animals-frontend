@@ -1,0 +1,6 @@
+{% from "multi-select-search/macro.njk" import appMultiSelectSearchResults %}
+{% from "live-animals/journeys/linear/features/commodities/search/_results.njk" import commoditySearchResults %}
+
+{% call appMultiSelectSearchResults({ announcement: announcement }) %}
+  {{ commoditySearchResults(results) }}
+{% endcall %}

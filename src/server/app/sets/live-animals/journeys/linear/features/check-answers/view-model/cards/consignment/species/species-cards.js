@@ -24,6 +24,7 @@ export const speciesCards = ({
       rows: speciesCardRows(entry),
       identifierTable: identifierTable(
         unitsForCommodityLine(answers, evaluation, index),
-        entry.commodityCode
+        entry.commodityCode,
+        entry.speciesLatinName
       )
     }))

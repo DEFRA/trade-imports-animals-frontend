@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
   STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
@@ -75,9 +76,9 @@ const pickEveryParty = async (page) => {
   }
 }
 
-const openAddresses = async (page, species, unlockOptions) => {
+const openAddresses = async (page, species) => {
   await startNotification(page)
-  await unlockSections(page, species, unlockOptions)
+  await unlockSections(page, species)
   await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
   await expectBackOnTheAddressesPage(page)
 }
@@ -139,7 +140,7 @@ const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
 test.describe('addresses hub', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await openAddresses(page)
+    await openAddresses(page, EQUUS_CABALUS_ROW)
   })
 
   test('renders the intro, the warning and a headed section per party with its hint and named add link', async ({
@@ -250,7 +251,7 @@ test.describe('addresses hub without JavaScript', () => {
 
   test.beforeEach(async ({ page }) => {
     await signIn(page)
-    await openAddresses(page)
+    await openAddresses(page, EQUUS_CABALUS_ROW)
   })
 
   test('renders its sections and opens the consignor picker from the add link', async ({
@@ -270,7 +271,7 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
   })
 
   test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, STRUTHIO_ROW, { identificationApplies: false })
+    await openAddresses(page, STRUTHIO_ROW)
 
     const section = addressesSection(page, copy.hub.cph.title)
     await expect(
@@ -287,6 +288,39 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await expect(partySectionTitles(page)).toHaveText(
       PARTIES.map(({ title }) => title)
     )
+  })
+})
+
+test.describe('addresses hub — the permanent address section', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('shows its heading, lead-in, bullets and add link for a cat consignment', async ({
+    page
+  }) => {
+    await openAddresses(page)
+
+    const section = addressesSection(page, copy.hub.permanentAddress.title)
+    await expect(
+      section.getByText(copy.hub.permanentAddress.leadIn)
+    ).toBeVisible()
+    for (const bullet of copy.hub.permanentAddress.bullets) {
+      await expect(
+        section.getByRole('listitem').filter({ hasText: bullet })
+      ).toBeVisible()
+    }
+    await expect(section.getByRole('link')).toHaveText([
+      copy.hub.permanentAddress.add
+    ])
+  })
+
+  test('is not on the page for a cattle consignment', async ({ page }) => {
+    await openAddresses(page, BOS_TAURUS_ROW)
+
+    await expect(
+      page.getByRole('heading', { name: copy.hub.permanentAddress.title })
+    ).toHaveCount(0)
   })
 })
 

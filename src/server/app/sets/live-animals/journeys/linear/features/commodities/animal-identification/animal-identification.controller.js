@@ -13,7 +13,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import { summaryOf } from './card/error-summary.js'
 import { buildSections } from './card/view-model.js'
-import { commodityCodesOf, linesOf } from '../lines.js'
+import { hasAnyCommodityLine, linesOf } from '../lines.js'
 import { buildChangeableCommoditiesTable } from '../view-model/selected-commodity-rows.js'
 import { capAllowsEntry, identifierCapOf } from './line-cap.js'
 import {
@@ -27,9 +27,7 @@ import { appendLineRecords } from './records/append.js'
 import { isRemoveAction, postRemove } from './remove/post-remove.js'
 import { buildSelectedCommodities } from './summary/selected-commodities.js'
 import { scopedFields } from './identifier/fields.js'
-import { needsIdentifying } from '../../../../../services/commodities/index.js'
 
-export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
 
 export const meta = { ...page, collects: [] }
@@ -39,11 +37,8 @@ const localisedCopy = copyFor({ en, cy })
 const copy = localisedCopy.identification
 const selectedCommoditiesCopy = localisedCopy.selectedCommodities
 
-const identifiedLines = (answers, evaluation) =>
-  linesOf(answers, evaluation).filter(({ entry }) => needsIdentifying(entry))
-
 const cardLines = (answers, evaluation) =>
-  identifiedLines(answers, evaluation).filter(({ index }) =>
+  linesOf(answers, evaluation).filter(({ index }) =>
     capAllowsEntry(identifierCapOf(answers, index))
   )
 
@@ -107,16 +102,13 @@ const logCapRefusalsAndRender = (request, h, current, options) => {
   return renderRefused(request, h, current, options)
 }
 
-const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
-  if (identifiedLines(answers, evaluation).length > 0) {
+const noCommodityLineTarget = async (request, answers, evaluation, scope) => {
+  if (hasAnyCommodityLine(answers, evaluation)) {
     return null
   }
   request.logger.info(
-    {
-      journeyId: request.params.journeyId,
-      commodityCodes: commodityCodesOf(linesOf(answers, evaluation))
-    },
-    'Animal identification skipped: nothing on the consignment carries an identifier'
+    { journeyId: request.params.journeyId },
+    'Animal identification skipped: the notification holds no commodity line to identify'
   )
   return kit.nextTargetKeepingTrail(request, page, scope)
 }
@@ -124,7 +116,12 @@ const noIdentifiersTarget = async (request, answers, evaluation, scope) => {
 const get = async (request, h) => {
   const current = await state.get(request, h)
   const { answers, evaluation, scope } = current
-  const onwards = await noIdentifiersTarget(request, answers, evaluation, scope)
+  const onwards = await noCommodityLineTarget(
+    request,
+    answers,
+    evaluation,
+    scope
+  )
   if (onwards) {
     return h.redirect(onwards)
   }
@@ -134,7 +131,12 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const current = await state.get(request, h)
   const { answers, evaluation, scope } = current
-  const onwards = await noIdentifiersTarget(request, answers, evaluation, scope)
+  const onwards = await noCommodityLineTarget(
+    request,
+    answers,
+    evaluation,
+    scope
+  )
   if (onwards) {
     return h.redirect(onwards)
   }

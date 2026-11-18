@@ -1,8 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 
+import { welshResultsAvailable } from '../../../../../../../../../client/common/helpers/welsh-results-available.js'
 import { withThousandsSeparators } from './thousands-separators.js'
-
-const plural = (count, noun) => `${count} ${noun}`
 
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
@@ -16,11 +15,13 @@ export const copy = {
       'Gallwch chwilio yn ôl enw cyffredin (er enghraifft, gwartheg), cod nwyddau (0102), neu enw Lladin (Bos taurus).',
     searchButton: 'Chwilio',
     noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
+    resultsAvailable: welshResultsAvailable,
     selected: {
       heading: (count) => `${count} wedi’u dewis`,
       clearAll: 'Clirio’r cyfan',
-      remove: 'Tynnu'
+      remove: (species, commodity) => `Tynnu ${species} o ${commodity}`
     },
+    updateSelected: 'Diweddaru’r dewis',
     help: {
       summary: 'Help gyda chodau nwyddau',
       reference:
@@ -65,7 +66,7 @@ export const copy = {
       packagesAboveMax: (max) =>
         `Rhaid i nifer y pecynnau fod yn ${withThousandsSeparators(max)} neu lai`,
       countDrop: (records, species, entered) =>
-        `Mae gennych ${plural(records, 'cofnod dynodwr')} ar gyfer ${species} ond fe wnaethoch nodi ${plural(entered, 'anifail')}. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`
+        `Mae gennych ${records} cofnod dynodwr ar gyfer ${species} ond fe wnaethoch nodi ${entered} anifail. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`
     }
   },
   identification: {
@@ -82,11 +83,12 @@ export const copy = {
       animalIdentifierPassport: 'Pasbort',
       animalIdentifierTattoo: 'Tatŵ',
       animalIdentifierEarTag: 'Tag clust',
-      horseName: 'Enw’r ceffyl'
+      horseName: 'Enw’r ceffyl',
+      identificationDetails: 'Manylion adnabod',
+      description: 'Disgrifiad'
     },
     table: {
       animalColumn: 'Anifail',
-      permanentAddressColumn: 'Cyfeiriad parhaol',
       actionsHidden: ACTIONS_HIDDEN
     },
     counter: (species, next, cap) =>
@@ -97,30 +99,8 @@ export const copy = {
     animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Tynnu',
     removeRowAria: (number) => `anifail ${number}`,
-    permanentAddress: {
-      warning: 'Mae darparu cyfeiriad ffug yn weithred o dwyll',
-      definitionLeadIn: 'Cyfeiriad parhaol yw lle bydd anifail:',
-      definitionItems: [
-        'yn preswylio’n barhaol',
-        'yn gallu cael ei wirio gan yr Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA)'
-      ],
-      question: 'Ble bydd eu cyfeiriad parhaol?'
-    },
     saveAndAddAnother: 'Cadw ac ychwanegu un arall',
     saveAndFinish: 'Cadw a gorffen',
-    address: {
-      nameOrOrganisationName: 'Enw neu enw’r sefydliad',
-      addressLine1: 'Llinell gyfeiriad 1',
-      addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
-      townOrCity: 'Tref neu ddinas',
-      county: 'Sir (dewisol)',
-      postcode: 'Cod post neu god zip',
-      phone: 'Rhif ffôn',
-      email: 'Cyfeiriad e-bost'
-    },
-    addressHints: {
-      phone: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
-    },
     errors: {
       identifierMax: {
         animalIdentifierMicrochip:
@@ -128,26 +108,10 @@ export const copy = {
         animalIdentifierPassport: 'Rhaid i’r pasbort fod yn 58 nod neu lai',
         animalIdentifierTattoo: 'Rhaid i’r tatŵ fod yn 58 nod neu lai',
         animalIdentifierEarTag: 'Rhaid i’r tag clust fod yn 58 nod neu lai',
-        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai'
-      },
-      addressMandatory: {
-        nameOrOrganisationName: 'Rhowch enw neu enw sefydliad',
-        addressLine1: 'Rhowch linell gyfeiriad 1',
-        townOrCity: 'Rhowch dref neu ddinas',
-        postcode: 'Rhowch god post neu god zip',
-        phone: 'Rhowch rif ffôn',
-        email: 'Rhowch gyfeiriad e-bost'
-      },
-      addressFormat: {
-        nameOrOrganisationName:
-          'Rhaid i’r enw neu enw’r sefydliad fod yn 255 nod neu lai',
-        addressLine1: 'Rhaid i linell gyfeiriad 1 fod yn 255 nod neu lai',
-        addressLine2: 'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
-        townOrCity: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
-        county: 'Rhaid i’r sir fod yn 100 nod neu lai',
-        postcode: 'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
-        phone: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
-        email: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
+        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai',
+        identificationDetails:
+          'Rhaid i’r manylion adnabod fod yn 58 nod neu lai',
+        description: 'Rhaid i’r disgrifiad fod yn 58 nod neu lai'
       },
       atLeastOneIdentifier: 'Rhowch o leiaf un dynodwr ar gyfer yr anifail hwn',
       capReached: (cap) =>

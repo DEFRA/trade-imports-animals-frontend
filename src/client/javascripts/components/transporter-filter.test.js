@@ -109,6 +109,8 @@ const shownNames = (rows) =>
 const boldTextIn = (cell) =>
   [...cell.querySelectorAll(`.${BOLD_CLASS}`)].map((bold) => bold.textContent)
 
+const JSDOM_MOUNT_TIMEOUT = 15000
+
 describe('TransporterFilter', () => {
   it.each(['garcia', 'switzerland es-t2', 'private', 'new', 'HARBOUR'])(
     'Should show the rows the server search keeps for "%s"',
@@ -120,7 +122,8 @@ describe('TransporterFilter', () => {
       expect(shownNames(rows)).toEqual(
         matchingTransporters(records, term).map((record) => record.name)
       )
-    }
+    },
+    JSDOM_MOUNT_TIMEOUT
   )
 
   it('Should bold all six letters of an accented name found from plain letters', () => {
