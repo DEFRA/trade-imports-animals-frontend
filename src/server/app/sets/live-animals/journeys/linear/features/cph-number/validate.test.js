@@ -52,6 +52,25 @@ describe('#validation for cph-number — onSubmit', () => {
     }
   )
 
+  it.each(['12-345-6789', 'A12/345/6789B'])(
+    'Should name each part when the county box holds %s, written with separators the page does not accept',
+    async (typed) => {
+      const { errors, values } = await validation.onSubmit({
+        cphCounty: typed,
+        cphParish: '',
+        cphHolding: ''
+      })
+      expect(errors).toHaveProperty('cphCounty')
+      expect(errors).toHaveProperty('cphParish')
+      expect(errors).toHaveProperty('cphHolding')
+      expect(values).toEqual({
+        cphCounty: typed,
+        cphParish: '',
+        cphHolding: ''
+      })
+    }
+  )
+
   it('Should name each part when the county box holds fewer than nine digits and the others are empty', async () => {
     const { errors, values } = await validation.onSubmit({
       cphCounty: '1234',

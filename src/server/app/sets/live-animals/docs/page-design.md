@@ -417,6 +417,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The page can be saved with every box empty: no number is saved, any number
   saved before is cleared, and the gap is held at submission rather than
   refused here.
+- The number is stored as nine bare digits.
 
 ## Permanent address
 

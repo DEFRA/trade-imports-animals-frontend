@@ -270,6 +270,18 @@ test.describe('cph-number without JavaScript', () => {
     ).toBeVisible()
     await expect(partBoxes(page).county).toHaveValue('1234')
   })
+
+  test('shows the saved number in its slashed form in the addresses section', async ({
+    page
+  }) => {
+    await partBoxes(page).county.fill(WHOLE_NUMBER)
+    await saveAndExpectAddresses(page)
+
+    const section = addressesSection(page, addressesCopy.hub.cph.title)
+    await expect(
+      section.getByText(SLASHED_NUMBER, { exact: true })
+    ).toBeVisible()
+  })
 })
 
 test.describe('cph-number validation', () => {

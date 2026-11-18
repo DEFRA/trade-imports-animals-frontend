@@ -8,6 +8,7 @@ import {
   PHONE_VIEWPORT,
   LANDINGS,
   addressesSection,
+  answerCphNumberFromAddLink,
   contentWidthOf,
   errorSummaryLinks,
   expectLanding,
@@ -57,6 +58,7 @@ const PLACE_OF_DESTINATION = PARTIES.find(
 )
 const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
+const SLASHED_CPH_NUMBER = '12/345/6789'
 
 const expectConsignorOffersOnlyItsAddLink = async (page) => {
   await expectLanding(page, LANDINGS.addresses)
@@ -65,8 +67,10 @@ const expectConsignorOffersOnlyItsAddLink = async (page) => {
   ).toHaveText([CONSIGNOR.add])
 }
 
+const changeLinkNameFor = (title) => `${copy.hub.change} ${title.toLowerCase()}`
+
 const chosenLinkNames = ({ title }) => [
-  `${copy.hub.change} ${title.toLowerCase()}`,
+  changeLinkNameFor(title),
   `${copy.hub.editDetails} ${title.toLowerCase()}`
 ]
 
@@ -427,6 +431,21 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
       section.getByText(copy.hub.cph.hint, { exact: true })
     ).toBeVisible()
     await expect(section.getByRole('link')).toHaveText([copy.hub.cph.add])
+  })
+
+  test('shows a saved CPH number in its slashed form, offering only a Change link into the CPH page', async ({
+    page
+  }) => {
+    await openAddresses(page, GALLUS_GALLUS_ROW)
+    await answerCphNumberFromAddLink(page)
+
+    const section = addressesSection(page, copy.hub.cph.title)
+    await expect(
+      section.getByText(SLASHED_CPH_NUMBER, { exact: true })
+    ).toBeVisible()
+    await expect(section.getByRole('link')).toHaveText([
+      changeLinkNameFor(copy.hub.cph.title)
+    ])
   })
 
   test('does not ask a consignment of horses for a CPH number', async ({

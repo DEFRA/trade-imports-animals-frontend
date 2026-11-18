@@ -325,14 +325,14 @@ describe('GET addresses — conditional CPH section', () => {
     })
   })
 
-  it('Should show the stored (slash-stripped) CPH value on one line with a Change link when answered', async () => {
+  it('Should show the stored CPH value in its slashed county/parish/holding form with a Change link when answered', async () => {
     const result = await driveAddresses({
       commodityLines: CPH_ASKED_LINES,
       countyParishHoldingCph: '123456789'
     })
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).chosen).toEqual({
-      lines: ['123456789'],
+      lines: ['12/345/6789'],
       changeHref: pagePath(result.journeyId, cphNumberPage.slug)
     })
   })

@@ -609,12 +609,12 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
   })
 
-  it('Should include the CPH row in the roles-and-addresses card when a line is a CPH-eligible commodity', async () => {
+  it('Should show the CPH row in the roles-and-addresses card in its slashed county/parish/holding form when a line is a CPH-eligible commodity', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
+    expect(valueOf(card.rows, CPH_KEY)).toBe('12/345/6789')
   })
 
   it('Should include the transited-countries row for an overland means of transport, labelling each code', async () => {
