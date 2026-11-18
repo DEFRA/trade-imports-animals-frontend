@@ -57,6 +57,9 @@ Redis is an in-memory key-value store. Every instance of a service has access to
 to how services might have a database (or MongoDB). All frontend services are given access to a namespaced prefixed that
 matches the service name. e.g. `my-service` will have access to everything in Redis that is prefixed with `my-service`.
 
+The Redis client pins the RESP2 wire protocol (`protocol: 2` in `buildRedisClient`). ioredis 6 defaults to RESP3
+(`HELLO 3`), and the session store talks RESP2 to ElastiCache.
+
 ## Call counts
 
 For every page request it handles, the service counts the calls that request
