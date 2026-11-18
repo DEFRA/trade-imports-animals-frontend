@@ -77,14 +77,11 @@ describe('MeasuredRedisEngine', () => {
       emf.documentsWith(CALL_DURATION).map(({ operation }) => operation)
     ).toEqual(['set', 'get', 'drop'])
     expect(
-      ecsLog
-        .lines()
-        .filter((line) => line.event?.category === 'external-call')
-        .map(({ event, cache, message }) => ({
-          action: event.action,
-          cache,
-          message
-        }))
+      ecsLog.externalCallLines().map(({ event, cache, message }) => ({
+        action: event.action,
+        cache,
+        message
+      }))
     ).toEqual(
       ['set', 'get', 'drop'].map((operation) => ({
         action: `redis/${operation}`,

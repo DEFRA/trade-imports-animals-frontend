@@ -15,14 +15,6 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
-}))
-
 function timedOut() {
   const error = new AggregateError(
     [new Error('connect ETIMEDOUT 127.0.0.1:3007')],

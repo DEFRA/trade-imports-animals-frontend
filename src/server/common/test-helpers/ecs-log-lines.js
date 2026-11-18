@@ -1,6 +1,6 @@
 import { Writable } from 'node:stream'
 import { pino } from 'pino'
-import { afterEach, beforeEach, vi } from 'vitest'
+import { afterEach, beforeEach, expect, vi } from 'vitest'
 
 import { createLogger } from '../helpers/logging/logger.js'
 import { buildEcsPinoOptions } from '../helpers/logging/logger-options.js'
@@ -10,7 +10,13 @@ import { buildEcsPinoOptions } from '../helpers/logging/logger-options.js'
  * enclosing `describe` through a pino logger with the deployed ECS format, and
  * keeps the JSON it writes, parsed. Restores the logger afterwards.
  *
- * @returns {{ lines: () => object[] }} the parsed lines, in the order written
+ * @returns {{
+ *   lines: () => object[],
+ *   externalCallLines: () => object[],
+ *   onlyExternalCallLine: () => object
+ * }} the parsed lines, every one or only the external-call ones, in the order
+ *   written; `onlyExternalCallLine` fails the test unless exactly one
+ *   external-call line was written, and returns it
  */
 export const recordEcsLogLines = () => {
   const lines = []
@@ -38,5 +44,14 @@ export const recordEcsLogLines = () => {
     spies.forEach((spy) => spy.mockRestore())
   })
 
-  return { lines: () => [...lines] }
+  const externalCallLines = () =>
+    lines.filter((line) => line.event?.category === 'external-call')
+
+  const onlyExternalCallLine = () => {
+    const written = externalCallLines()
+    expect(written).toHaveLength(1)
+    return written[0]
+  }
+
+  return { lines: () => [...lines], externalCallLines, onlyExternalCallLine }
 }
