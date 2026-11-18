@@ -1,13 +1,14 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { verifyToken } from './verify-token.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { config } from '../config/config.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
 const createPublicKeyMock = vi.hoisted(() => vi.fn())
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyMock = vi.hoisted(() => vi.fn())
-const configGetMock = vi.hoisted(() => vi.fn())
 const getTraceIdMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@hapi/wreck', () => ({
@@ -32,10 +33,6 @@ vi.mock('@hapi/jwt', () => ({
   }
 }))
 
-vi.mock('../config/config.js', () => ({
-  config: { get: configGetMock }
-}))
-
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
@@ -49,23 +46,17 @@ vi.mock('../server/common/helpers/logging/logger.js', () => ({
 }))
 
 describe('verifyToken', () => {
-  const tracingHeader = 'x-cdp-request-id'
   const traceId = 'test-trace-id'
+  const jwksCall = { dependency: 'defra-id', operation: 'jwks' }
 
-  let logSpy
+  const emf = recordEmfDocuments()
+  restoreConfigAfterEach(['defraId.clientId'])
+  let tracingHeader
 
   beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    configGetMock.mockImplementation((key) => {
-      if (key === 'tracing.header') return tracingHeader
-      if (key === 'defraId.clientId') return 'test-client-id'
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-    })
+    config.set('defraId.clientId', 'test-client-id')
+    tracingHeader = config.get('tracing.header')
     getTraceIdMock.mockReturnValue(traceId)
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
   })
 
   test('measures the key fetch as defra-id jwks', async () => {
@@ -78,14 +69,7 @@ describe('verifyToken', () => {
 
     await verifyToken('jwt-token')
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.dependency).toBe('defra-id')
-    expect(document.operation).toBe('jwks')
-    expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([
-      ['dependency', 'operation']
-    ])
-    expect(document['external.call.failure']).toBe(0)
+    expect(await emf.onlyExternalCall()).toEqual({ ...jwksCall, failure: 0 })
   })
 
   test('verifies token using first JWK', async () => {
@@ -156,10 +140,7 @@ describe('verifyToken', () => {
 
     await expect(verifyToken('token')).rejects.toThrow('jwks fetch failed')
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.operation).toBe('jwks')
-    expect(document['external.call.failure']).toBe(1)
+    expect(await emf.onlyExternalCall()).toEqual({ ...jwksCall, failure: 1 })
   })
 
   test('throws if JWKS has no keys', async () => {

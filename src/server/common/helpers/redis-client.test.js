@@ -4,7 +4,7 @@ import { Cluster, Redis } from 'ioredis'
 
 import { config } from '../../../config/config.js'
 import { buildRedisClient } from './redis-client.js'
-import { readEmfDocuments } from '../test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
 vi.mock('ioredis', async () => {
@@ -25,15 +25,7 @@ vi.mock('ioredis', async () => {
 describe('#buildRedisClient', () => {
   describe('When the client connects', () => {
     const ecsLog = recordEcsLogLines()
-    let logSpy
-
-    beforeEach(() => {
-      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      logSpy.mockRestore()
-    })
+    const emf = recordEmfDocuments()
 
     test('publishes Redis as available and logs the connection once', async () => {
       const client = buildRedisClient(config.get('redis'))
@@ -42,11 +34,7 @@ describe('#buildRedisClient', () => {
       client.emit('ready')
 
       await vi.waitFor(() =>
-        expect(
-          readEmfDocuments(logSpy).map(
-            (document) => document['external.dependency.available']
-          )
-        ).toEqual([1])
+        expect(emf.valuesOf('external.dependency.available')).toEqual([1])
       )
       expect(
         ecsLog

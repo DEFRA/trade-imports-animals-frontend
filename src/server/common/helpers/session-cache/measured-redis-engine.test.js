@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 import { MeasuredRedisEngine } from './measured-redis-engine.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
 
 const CALL_DURATION = 'external.call.duration'
@@ -22,22 +22,14 @@ const inMemoryRedisClient = () => {
   }
 }
 
-const documentsHolding = (logSpy, metricName) =>
-  readEmfDocuments(logSpy).filter((document) => metricName in document)
-
 describe('MeasuredRedisEngine', () => {
   const ecsLog = recordEcsLogLines()
-  let logSpy
+  const emf = recordEmfDocuments()
   let engine
 
   beforeEach(async () => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     engine = new MeasuredRedisEngine({ client: inMemoryRedisClient() })
     await engine.start()
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
   })
 
   test('a get of a key it holds returns the stored item, records one redis get and counts a cache hit for the segment', async () => {
@@ -47,21 +39,20 @@ describe('MeasuredRedisEngine', () => {
 
     expect(cached.item).toEqual({ user: 'u-1' })
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, CACHE_HIT)).toHaveLength(1)
+      expect(emf.publishesOf(CACHE_HIT)).toEqual([
+        { value: 1, unit: 'Count', dimensions: { cache: 'session' } }
+      ])
     )
-    const [hit] = documentsHolding(logSpy, CACHE_HIT)
-    expect(hit._aws.CloudWatchMetrics[0].Dimensions).toEqual([['cache']])
-    expect(hit.cache).toBe('session')
-    const gets = documentsHolding(logSpy, CALL_DURATION).filter(
-      ({ operation }) => operation === 'get'
-    )
+    const gets = emf
+      .documentsWith(CALL_DURATION)
+      .filter(({ operation }) => operation === 'get')
     expect(gets).toEqual([
       expect.objectContaining({
         dependency: 'redis',
         [CALL_FAILURE]: 0
       })
     ])
-    expect(documentsHolding(logSpy, CACHE_MISS)).toEqual([])
+    expect(emf.documentsWith(CACHE_MISS)).toEqual([])
   })
 
   test('a get of a key it does not hold returns nothing and counts a cache miss', async () => {
@@ -69,9 +60,9 @@ describe('MeasuredRedisEngine', () => {
 
     expect(cached).toBeNull()
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, CACHE_MISS)).toHaveLength(1)
+      expect(emf.documentsWith(CACHE_MISS)).toHaveLength(1)
     )
-    expect(documentsHolding(logSpy, CACHE_MISS)[0].cache).toBe('auth-sessions')
+    expect(emf.documentsWith(CACHE_MISS)[0].cache).toBe('auth-sessions')
   })
 
   test('a set, a get and a drop are each recorded as one redis call with an external-call line naming the segment', async () => {
@@ -80,10 +71,10 @@ describe('MeasuredRedisEngine', () => {
     await engine.drop(SESSION_KEY)
 
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, CALL_DURATION)).toHaveLength(3)
+      expect(emf.documentsWith(CALL_DURATION)).toHaveLength(3)
     )
     expect(
-      documentsHolding(logSpy, CALL_DURATION).map(({ operation }) => operation)
+      emf.documentsWith(CALL_DURATION).map(({ operation }) => operation)
     ).toEqual(['set', 'get', 'drop'])
     expect(
       ecsLog
@@ -119,16 +110,16 @@ describe('MeasuredRedisEngine', () => {
     await expect(failing.get(SESSION_KEY)).rejects.toBe(lost)
 
     await vi.waitFor(() =>
-      expect(documentsHolding(logSpy, CALL_FAILURE)).toHaveLength(1)
+      expect(emf.documentsWith(CALL_FAILURE)).toHaveLength(1)
     )
-    expect(documentsHolding(logSpy, CALL_FAILURE)).toEqual([
+    expect(emf.documentsWith(CALL_FAILURE)).toEqual([
       expect.objectContaining({
         dependency: 'redis',
         operation: 'get',
         [CALL_FAILURE]: 1
       })
     ])
-    expect(documentsHolding(logSpy, CACHE_HIT)).toEqual([])
-    expect(documentsHolding(logSpy, CACHE_MISS)).toEqual([])
+    expect(emf.documentsWith(CACHE_HIT)).toEqual([])
+    expect(emf.documentsWith(CACHE_MISS)).toEqual([])
   })
 })

@@ -2,36 +2,27 @@ import { vi } from 'vitest'
 import { Metrics } from '@defra/cdp-metrics'
 
 import { countEvent, publishMetricsInBackground } from './publish-metrics.js'
-import { config } from '../../../../config/config.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import {
+  EMF_TEST_NAMESPACE,
+  recordEmfDocuments
+} from '../../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
 
-const NAMESPACE_KEY = 'metrics.namespace'
-const TEST_NAMESPACE = 'test-namespace'
-
 describe('publish metrics', () => {
-  const originalNamespace = config.get(NAMESPACE_KEY)
   const ecsLog = recordEcsLogLines()
-  let logSpy
-
-  beforeEach(() => {
-    config.set(NAMESPACE_KEY, TEST_NAMESPACE)
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
+  const emf = recordEmfDocuments()
 
   afterEach(() => {
-    config.set(NAMESPACE_KEY, originalNamespace)
     vi.restoreAllMocks()
   })
 
   test('counting an event publishes a count of 1 with exactly the dimensions given', async () => {
     countEvent('journey.validation.failure', { page: 'origin' })
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
+    const document = await emf.onlyDocument()
     const directive = document._aws.CloudWatchMetrics[0]
     expect(directive).toEqual({
-      Namespace: TEST_NAMESPACE,
+      Namespace: EMF_TEST_NAMESPACE,
       Dimensions: [['page']],
       Metrics: [{ Name: 'journey.validation.failure', Unit: 'Count' }]
     })
@@ -45,15 +36,13 @@ describe('publish metrics', () => {
       Object.freeze({ dependency: 'redis' })
     )
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    expect(readEmfDocuments(logSpy)[0].dependency).toBe('redis')
+    expect((await emf.onlyDocument()).dependency).toBe('redis')
   })
 
   test('counting an event with no dimensions publishes it under the empty dimension set', async () => {
     countEvent('journey.started')
 
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
+    const document = await emf.onlyDocument()
     expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([[]])
     expect(document['journey.started']).toBe(1)
   })

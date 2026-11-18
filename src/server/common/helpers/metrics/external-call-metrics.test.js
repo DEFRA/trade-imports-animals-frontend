@@ -14,11 +14,11 @@ import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
 import { requestTracing } from '../request-tracing.js'
 import { failedResponse } from '../../../app/services/http/trace-headers.js'
 import { config } from '../../../../config/config.js'
-import { readEmfDocuments } from '../../test-helpers/emf-documents.js'
+import {
+  EMF_TEST_NAMESPACE,
+  recordEmfDocuments
+} from '../../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
-
-const NAMESPACE_KEY = 'metrics.namespace'
-const TEST_NAMESPACE = 'test-namespace'
 
 const JWKS_CALL = {
   dependency: 'defra-id',
@@ -34,17 +34,10 @@ const externalCallLines = (lines) =>
   lines.filter((line) => line.event?.category === 'external-call')
 
 const recordExternalCallOutput = () => {
-  const originalNamespace = config.get(NAMESPACE_KEY)
   const ecsLog = recordEcsLogLines()
-  let logSpy
-
-  beforeEach(() => {
-    config.set(NAMESPACE_KEY, TEST_NAMESPACE)
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
+  const emf = recordEmfDocuments()
 
   afterEach(() => {
-    config.set(NAMESPACE_KEY, originalNamespace)
     vi.restoreAllMocks()
   })
 
@@ -54,10 +47,7 @@ const recordExternalCallOutput = () => {
       expect(others).toEqual([])
       return line
     },
-    onlyDocument: async () => {
-      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-      return readEmfDocuments(logSpy)[0]
-    }
+    onlyDocument: emf.onlyDocument
   }
 }
 
@@ -70,7 +60,7 @@ describe('external call metrics', () => {
     expect(result).toBe('keys')
     const document = await onlyDocument()
     const directive = document._aws.CloudWatchMetrics[0]
-    expect(directive.Namespace).toBe(TEST_NAMESPACE)
+    expect(directive.Namespace).toBe(EMF_TEST_NAMESPACE)
     expect(directive.Dimensions).toEqual([['dependency', 'operation']])
     expect(directive.Metrics).toEqual([
       { Name: 'external.call.duration', Unit: 'Milliseconds' },

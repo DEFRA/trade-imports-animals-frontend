@@ -6,6 +6,7 @@ import { config } from '../../../../config/config.js'
 import { callCounts } from '../../../common/helpers/call-counts/call-counts.js'
 import { callCountsRoutes } from '../../../common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../../../common/helpers/call-counts/call-count-totals.js'
+import { recordEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
 import { documentUploadSessions } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -26,8 +27,9 @@ beforeEach(() => {
   config.set('cdpUploader.baseUrl', UPLOADER_URL)
   config.set('cdpUploader.scanResultCallbackUrl', CALLBACK_URL)
   config.set('cdpUploader.documentsBucket', DOCUMENTS_BUCKET)
-  vi.spyOn(console, 'log').mockImplementation(() => {})
 })
+
+recordEmfDocuments()
 
 afterEach(() => vi.restoreAllMocks())
 

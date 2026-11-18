@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../set.js'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import {
   createPath,
@@ -13,8 +13,7 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../engine/test-support.js'
-import { countEvent } from '../../../../../../common/helpers/metrics/publish-metrics.js'
-import { readEmfDocuments } from '../../../../../../common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../../../../../../common/test-helpers/emf-documents.js'
 import { dispatchPages } from '../features/index.js'
 import {
   entryGuardTarget,
@@ -87,27 +86,12 @@ describe('entry guard', () => {
   })
 
   describe('journey.entry.redirect', () => {
-    const PUBLISHED_SENTINEL = 'test.published'
-    let logSpy
-
-    const countsOf = (name) =>
-      readEmfDocuments(logSpy)
-        .filter((document) => name in document)
-        .map((document) => document[name])
+    const emf = recordEmfDocuments()
 
     const redirectCountsOnceEarlierPublishesFlush = async () => {
-      countEvent(PUBLISHED_SENTINEL)
-      await vi.waitFor(() => expect(countsOf(PUBLISHED_SENTINEL)).toEqual([1]))
-      return countsOf('journey.entry.redirect')
+      await emf.earlierPublishesFlushed()
+      return emf.valuesOf('journey.entry.redirect')
     }
-
-    beforeEach(() => {
-      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      logSpy.mockRestore()
-    })
 
     it('Should count exactly one redirect for a notification with no entered answer', async () => {
       await guardFor()
