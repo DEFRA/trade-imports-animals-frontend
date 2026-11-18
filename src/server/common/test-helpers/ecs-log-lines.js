@@ -8,8 +8,6 @@ import {
   traceMixin
 } from '../helpers/logging/logger-options.js'
 
-const LEVELS = ['info', 'warn', 'error']
-
 /**
  * Sends the lines the module-level logger writes during each test of the
  * enclosing `describe` through a pino logger with the deployed ECS format, and
@@ -32,7 +30,7 @@ export const recordEcsLogLines = () => {
 
   beforeEach(() => {
     lines.length = 0
-    spies = LEVELS.map((level) =>
+    spies = ['info', 'warn', 'error'].map((level) =>
       vi
         .spyOn(createLogger(), level)
         .mockImplementation((...args) => ecsLogger[level](...args))

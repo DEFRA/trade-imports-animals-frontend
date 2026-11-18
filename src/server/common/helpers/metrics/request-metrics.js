@@ -56,10 +56,10 @@ export const routePage = (routePath) => {
     : routeSection(routePath)
 }
 
-const STATUS_CODES_PER_CLASS = 100
-
-const statusClassOf = (statusCode) =>
-  `${Math.floor(statusCode / STATUS_CODES_PER_CLASS)}xx`
+const statusClassOf = (statusCode) => {
+  const statusCodesPerClass = 100
+  return `${Math.floor(statusCode / statusCodesPerClass)}xx`
+}
 
 const isRefusedAnswer = (request) =>
   request.method === 'post' &&

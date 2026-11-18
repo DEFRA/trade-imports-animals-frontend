@@ -6,8 +6,6 @@ import {
 } from './metrics/publish-metrics.js'
 import { REDIS_DEPENDENCY } from './redis-dependency.js'
 
-const DEPENDENCY_DIMENSIONS = Object.freeze({ dependency: REDIS_DEPENDENCY })
-
 /**
  * Reports a Redis client's connection events as log lines and metrics, all
  * tagged `dependency` `redis`. Publishes `external.dependency.available`
@@ -22,6 +20,7 @@ const DEPENDENCY_DIMENSIONS = Object.freeze({ dependency: REDIS_DEPENDENCY })
  */
 export const reportRedisConnectionEvents = (client) => {
   const logger = createLogger()
+  const dependencyDimensions = Object.freeze({ dependency: REDIS_DEPENDENCY })
   const publishEveryMs = 60_000
   let available
 
@@ -29,7 +28,7 @@ export const reportRedisConnectionEvents = (client) => {
     if (available === undefined) {
       return
     }
-    publishMetricsInBackground(DEPENDENCY_DIMENSIONS, [
+    publishMetricsInBackground(dependencyDimensions, [
       {
         name: 'external.dependency.available',
         value: available ? 1 : 0,
@@ -45,25 +44,25 @@ export const reportRedisConnectionEvents = (client) => {
     const connectionLost = available === true
     available = nowAvailable
     if (nowAvailable) {
-      logger.info(DEPENDENCY_DIMENSIONS, 'Redis is available')
+      logger.info(dependencyDimensions, 'Redis is available')
     } else {
-      logger.warn(DEPENDENCY_DIMENSIONS, 'Redis is unavailable')
+      logger.warn(dependencyDimensions, 'Redis is unavailable')
     }
     if (connectionLost) {
-      countEvent('external.dependency.connection.lost', DEPENDENCY_DIMENSIONS)
+      countEvent('external.dependency.connection.lost', dependencyDimensions)
     }
     publishAvailability()
   }
 
   const recordError = (err) => {
-    logger.error({ err, ...DEPENDENCY_DIMENSIONS }, 'Redis connection error')
-    countEvent('external.dependency.error', DEPENDENCY_DIMENSIONS)
+    logger.error({ err, ...dependencyDimensions }, 'Redis connection error')
+    countEvent('external.dependency.error', dependencyDimensions)
   }
 
   client.on('ready', () => changeAvailabilityTo(true))
   client.on('close', () => changeAvailabilityTo(false))
   client.on('end', () => {
-    logger.error(DEPENDENCY_DIMENSIONS, 'Redis client stopped reconnecting')
+    logger.error(dependencyDimensions, 'Redis client stopped reconnecting')
     changeAvailabilityTo(false)
   })
   client.on('error', recordError)
