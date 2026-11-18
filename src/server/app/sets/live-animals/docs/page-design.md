@@ -24,7 +24,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The commodity details task comes first in the second section, then
   identification, then additional details: the journey's page order, which
   Save and continue follows.
-- Only "Roles and addresses" carries a hint. A row with no hint gets no hint
+- Only "Consignment addresses" carries a hint. A row with no hint gets no hint
   slot, because `govukTaskList` draws an empty hint element for
   `{ text: undefined }`.
 - The commodity totals show from the first visit, reading zero.
@@ -104,7 +104,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Each party and the contact address read back as the name, then each non-empty
   address line, town or city, county and postcode, then the country, each on
   its own line, with no telephone or email.
-- The Addresses card carries a "Permanent address" subsection after the county
+- The Consignment addresses card carries a "Permanent address" subsection after the county
   parish holding row, with one entry per animal that has a saved permanent
   address. Each entry is keyed by the animal's species common name and number
   and holds that animal's name, address lines and country, with no telephone or

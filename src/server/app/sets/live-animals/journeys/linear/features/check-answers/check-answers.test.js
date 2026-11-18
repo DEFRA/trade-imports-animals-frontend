@@ -230,7 +230,7 @@ const MISSING_HTML = '<span class="govuk-visually-hidden">Missing</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
 const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const ORIGIN_OF_IMPORT_INCOMPLETE = 'Complete origin of import'
-const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
+const ADDRESSES_INCOMPLETE = 'Complete consignment addresses'
 const COMMODITY_DETAILS_INCOMPLETE = 'Complete commodity details'
 const WHAT_ARE_YOU_IMPORTING_INCOMPLETE = 'Complete what are you importing?'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
@@ -284,7 +284,7 @@ const WHAT_ARE_YOU_IMPORTING_CARD = 'What are you importing?'
 const ADDITIONAL_DETAILS_CARD = 'Additional details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
-const ADDRESSES_CARD = 'Addresses'
+const ADDRESSES_CARD = 'Consignment addresses'
 const CONTACT_ADDRESS_CARD = 'Contact address'
 const CONTACT_ADDRESS_KEY = 'Contact address'
 const DOCUMENT_1_CARD = 'Document 1'
@@ -318,7 +318,6 @@ const INTERNAL_MARKET_TEXT = 'Internal market'
 const TRANSIT_TEXT = 'Transit'
 const TEMPORARY_ADMISSION_HORSES_TEXT = 'Temporary admission horses'
 const PORT_OF_EXIT_KEY = 'Port of exit'
-const EXIT_BORDER_CONTROL_POST_KEY = 'Exit border control post'
 const APPROVAL_NUMBER_KEY = 'Approval number'
 const FRANCE_AND_BELGIUM = 'France, Belgium'
 const PLACE_OF_ORIGIN_KEY = 'Place of origin'
@@ -651,7 +650,7 @@ describe(`${SUITE} — section headings and cards`, () => {
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Uploaded documents',
-      '5. Consignment addresses',
+      '5. Addresses',
       '6. Contact address'
     ])
   })
@@ -722,7 +721,7 @@ describe(`${SUITE} — section headings and cards`, () => {
     expect(keysOf(card.rows)[0]).toBe(MAIN_IMPORT_REASON)
   })
 
-  it('Should give the addresses card and the contact address card one header action each, to their own pages', async () => {
+  it('Should give the consignment addresses card and the contact address card one header action each, to their own pages', async () => {
     const sections = await sectionsFor(fullSeed)
     const actionsOf = (title) => cardByTitle(sections, title).actions.items
 
@@ -774,7 +773,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
   })
 
-  it('Should include the CPH row in the Addresses card, read with slashes, when a line is a CPH-eligible commodity', async () => {
+  it('Should include the CPH row in the Consignment addresses card, read with slashes, when a line is a CPH-eligible commodity', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
     expect(valueOf(card.rows, CPH_KEY)).toBe('12/345/6789')
   })
@@ -962,7 +961,7 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     expect(
       valueOf(
         rowsOf(await sectionsFor(fullSeed)),
-        'Arrival date at destination'
+        'Arrival date at port of entry'
       )
     ).toBe('12/12/2026')
   })
@@ -1233,7 +1232,7 @@ describe(`${SUITE} — species identification details`, () => {
   })
 })
 
-describe(`${SUITE} — Permanent address subsection of the Addresses card`, () => {
+describe(`${SUITE} — Permanent address subsection of the Consignment addresses card`, () => {
   setupCheckAnswersEngine()
 
   it("Should list one entry per animal in the subsection, keyed by the animal's label and valued by its name, address lines and country alone", async () => {
@@ -1590,7 +1589,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(
       htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
-        'Arrival date at destination'
+        'Arrival date at port of entry'
       )
     ).toBe(MISSING_HTML)
   })
@@ -1725,7 +1724,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
     ...answers
   })
 
-  it('Should show the exit border control post then the destination country for a transit, labelling both codes', async () => {
+  it('Should show the port of exit then the destination country for a transit, labelling both codes', async () => {
     const card = cardByTitle(
       await sectionsFor(
         reasonSeed({
@@ -1739,16 +1738,14 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
 
     expect(keysOf(card.rows)).toEqual([
       MAIN_IMPORT_REASON,
-      EXIT_BORDER_CONTROL_POST_KEY,
+      PORT_OF_EXIT_KEY,
       DESTINATION_COUNTRY_KEY
     ])
-    expect(valueOf(card.rows, EXIT_BORDER_CONTROL_POST_KEY)).toBe(
-      PORT_OF_DOVER_TEXT
-    )
+    expect(valueOf(card.rows, PORT_OF_EXIT_KEY)).toBe(PORT_OF_DOVER_TEXT)
     expect(valueOf(card.rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
   })
 
-  it('Should read the exit border control post back exactly as the option the trader picked', async () => {
+  it('Should read the port of exit back exactly as the option the trader picked', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'transit', portOfExit: 'GB DVR' })
@@ -1758,7 +1755,7 @@ describe(`${SUITE} — main-import-reason exit answers`, () => {
       ({ value }) => value === 'GB DVR'
     )
 
-    expect(valueOf(rows, EXIT_BORDER_CONTROL_POST_KEY)).toBe(picked.text)
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
   })
 
   it('Should name a destination territory with its parent country', async () => {
@@ -1910,7 +1907,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     }
   })
 
-  it('Should offer the Addresses card only its heading Change link, to the addresses page carrying the review on the trail', async () => {
+  it('Should offer the Consignment addresses card only its heading Change link, to the addresses page carrying the review on the trail', async () => {
     const sections = await sectionsFor(fullSeed)
     const items = cardByTitle(sections, ADDRESSES_CARD).actions.items
 
@@ -2361,7 +2358,7 @@ const MAIN_IMPORT_REASON_FOLLOW_UP_CASES = [
       reasonForImport: 'transit',
       destinationCountry: 'IE'
     },
-    blank: [EXIT_BORDER_CONTROL_POST_KEY],
+    blank: [PORT_OF_EXIT_KEY],
     answered: [
       [MAIN_IMPORT_REASON, TRANSIT_TEXT],
       [DESTINATION_COUNTRY_KEY, 'Ireland']
@@ -2373,7 +2370,7 @@ const MAIN_IMPORT_REASON_FOLLOW_UP_CASES = [
     blank: [DESTINATION_COUNTRY_KEY],
     answered: [
       [MAIN_IMPORT_REASON, TRANSIT_TEXT],
-      [EXIT_BORDER_CONTROL_POST_KEY, PORT_OF_DOVER_TEXT]
+      [PORT_OF_EXIT_KEY, PORT_OF_DOVER_TEXT]
     ]
   },
   {
@@ -2423,7 +2420,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       'Complete additional details',
       ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
-      'Complete roles and addresses',
+      'Complete consignment addresses',
       'Complete contact address for this consignment'
     ])
   })

@@ -57,7 +57,7 @@ export const copy = {
     }
   },
   picker: {
-    caption: 'Consignment parties',
+    caption: 'Addresses',
     search: {
       label: 'Search',
       hint: 'Name, address or country',

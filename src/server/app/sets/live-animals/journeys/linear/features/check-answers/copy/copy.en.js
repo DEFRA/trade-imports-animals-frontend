@@ -14,7 +14,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
     documents: '4. Uploaded documents',
-    consignmentAddresses: '5. Consignment addresses',
+    addresses: '5. Addresses',
     contactAddress: '6. Contact address'
   },
   cards: {
@@ -24,7 +24,7 @@ export const copy = {
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
-    addresses: 'Addresses',
+    addresses: 'Consignment addresses',
     contactAddress: 'Contact address'
   },
   groups: {
@@ -42,14 +42,13 @@ export const copy = {
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
     portOfExit: 'Port of exit',
-    exitBorderControlPost: 'Exit border control post',
     commodityCode: 'Commodity code',
     speciesCommonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
     numberOfPackages: 'Number of packages (when required)',
     portOfEntry: 'Port of entry',
-    arrivalDate: 'Arrival date at destination',
+    arrivalDate: 'Arrival date at port of entry',
     meansOfTransport: 'Means of transport to the port of entry',
     transitedCountries: 'Countries that the consignment will travel through',
     transportIdentification: 'Transport identification',
@@ -84,7 +83,7 @@ export const copy = {
       additionalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
-      addresses: 'addresses',
+      addresses: 'consignment addresses',
       contactAddress: 'contact address'
     },
     document: (n) => `document ${n}`,
@@ -121,7 +120,7 @@ export const copy = {
       commodityDetails: 'Complete commodity details',
       arrivalDetails: 'Complete arrival details',
       transportDetails: 'Complete transport details',
-      addresses: 'Complete roles and addresses',
+      addresses: 'Complete consignment addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },

@@ -223,7 +223,7 @@ whatever the parts roll up to. See
 
 The hub lists a task row under the section that holds its first page, so there is no group list to edit.
 Add the row title to both hub copy bundles. Hub task rows carry no hint:
-Design release 1 keeps the hub to one-line rows and "Roles and addresses" is
+The hub keeps to one-line rows and "Consignment addresses" is
 the one hinted row, guarded by
 [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js).
 Add a new numbered hub

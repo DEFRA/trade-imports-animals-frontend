@@ -291,7 +291,7 @@ test.describe('hub feature', () => {
     ])
   })
 
-  test('overview: only the roles and addresses row carries a hint', async ({
+  test('overview: only the consignment addresses row carries a hint', async ({
     page
   }) => {
     await openHubWithCommodityTotals(page)

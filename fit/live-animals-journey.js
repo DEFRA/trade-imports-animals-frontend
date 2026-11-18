@@ -1253,7 +1253,7 @@ export const addPlaceOfDestination = async (page) => {
   await saveAndExpectLanding(page, LANDINGS.addresses)
 }
 
-export const answerRolesAndAddresses = async (page) => {
+export const answerConsignmentAddresses = async (page) => {
   const parties = [
     ['Add a consignor', partyPickerName(values.consignor)],
     ['Add a place of origin', partyPickerName(values.placeOfOrigin)],
@@ -1616,8 +1616,8 @@ export const completeAnswerSections = async (
   await answerAdditionalDetails(page, { leaveUnanswered })
   await openOverview(page)
 
-  await task('Roles and addresses')
-  await answerRolesAndAddresses(page)
+  await task(hubCopy.rows.addresses.title)
+  await answerConsignmentAddresses(page)
   await openOverview(page)
 
   await task('Arrival details')

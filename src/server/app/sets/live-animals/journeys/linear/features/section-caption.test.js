@@ -70,7 +70,7 @@ delete privateTransportFixture.commercialTransporter
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
 const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
-const CONSIGNMENT_PARTIES = 'Consignment parties'
+const ADDRESSES = 'Addresses'
 const TRANSPORT_AND_ARRIVAL = 'Transport and arrival'
 const NEW_TRANSPORTER = 'Add a new transporter'
 
@@ -117,8 +117,8 @@ const CAPTIONED_PAGES = [
     additionalDetailsRoutes,
     parityFixture
   ],
-  ['addresses', CONSIGNMENT_PARTIES, addressesRoutes, parityFixture],
-  ['CPH number', CONSIGNMENT_PARTIES, cphNumberRoutes, parityFixture],
+  ['addresses', ADDRESSES, addressesRoutes, parityFixture],
+  ['CPH number', ADDRESSES, cphNumberRoutes, parityFixture],
   ['transit countries', 'Movement', transitCountriesRoutes, parityFixture],
   ['port of entry', TRANSPORT_AND_ARRIVAL, portOfEntryRoutes, parityFixture],
   ['transporters', TRANSPORT_AND_ARRIVAL, transportersRoutes, parityFixture],

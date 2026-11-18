@@ -15,7 +15,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',
     transportAndArrival: '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau wedi’u huwchlwytho',
-    consignmentAddresses: '5. Cyfeiriadau’r llwyth',
+    addresses: '5. Cyfeiriadau',
     contactAddress: '6. Cyfeiriad cyswllt'
   },
   cards: {
@@ -25,7 +25,7 @@ export const copy = {
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
-    addresses: 'Cyfeiriadau',
+    addresses: 'Cyfeiriadau’r llwyth',
     contactAddress: 'Cyfeiriad cyswllt'
   },
   groups: {
@@ -43,14 +43,13 @@ export const copy = {
     destinationCountry: 'Gwlad gyrchfan',
     exitDate: 'Dyddiad ymadael',
     portOfExit: 'Porthladd ymadael',
-    exitBorderControlPost: 'Safle rheoli ffiniau ymadael',
     commodityCode: 'Cod nwyddau',
     speciesCommonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
     numberOfPackages: 'Nifer y pecynnau (pan fo angen)',
     portOfEntry: 'Porthladd mynediad',
-    arrivalDate: 'Dyddiad cyrraedd y gyrchfan',
+    arrivalDate: 'Dyddiad cyrraedd y porthladd mynediad',
     meansOfTransport: 'Cyfrwng cludo i’r porthladd mynediad',
     transitedCountries: 'Gwledydd y bydd y llwyth yn teithio drwyddynt',
     transportIdentification: 'Adnabod y cludiant',
@@ -85,7 +84,7 @@ export const copy = {
       additionalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
-      addresses: 'cyfeiriadau',
+      addresses: 'cyfeiriadau’r llwyth',
       contactAddress: 'cyfeiriad cyswllt'
     },
     document: (n) => `dogfen ${n}`,
@@ -122,7 +121,7 @@ export const copy = {
       commodityDetails: 'Cwblhewch fanylion y nwyddau',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transportDetails: 'Cwblhewch y manylion cludo',
-      addresses: 'Cwblhewch y rolau a’r cyfeiriadau',
+      addresses: 'Cwblhewch gyfeiriadau’r llwyth',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
     },

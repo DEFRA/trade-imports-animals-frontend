@@ -43,7 +43,6 @@ const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
 const ADDRESS_BOOK_SIZE = 13
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
-const ROLES_AND_ADDRESSES = 'Roles and addresses'
 
 const expectBackOnTheAddressesPage = async (page) => {
   await expect(
@@ -79,7 +78,7 @@ const pickEveryParty = async (page) => {
 const openAddresses = async (page, species) => {
   await startNotification(page)
   await unlockSections(page, species)
-  await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
+  await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
   await expectBackOnTheAddressesPage(page)
 }
 
@@ -182,7 +181,7 @@ test.describe('addresses hub', () => {
     await openOverview(page)
     await expect(
       page.locator('.govuk-task-list__item', {
-        hasText: ROLES_AND_ADDRESSES
+        hasText: hubCopy.rows.addresses.title
       })
     ).toContainText(hubCopy.statuses.complete)
   })

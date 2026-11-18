@@ -16,7 +16,7 @@ import {
   answerCommodityCounts,
   answerContactAddress,
   answerImportReason,
-  answerRolesAndAddresses,
+  answerConsignmentAddresses,
   answerTransitCountries,
   answerTransporter,
   saveAndContinueToImportReason,
@@ -147,7 +147,7 @@ test.describe('live-animals journey glue', () => {
     )
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await answerRolesAndAddresses(page)
+    await answerConsignmentAddresses(page)
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/consignment/contact/select')
     )
@@ -239,7 +239,7 @@ test.describe('live-animals journey glue', () => {
     const summary = errorSummary(page)
     await expect(summary).toContainText('There is a problem')
     await expect(summary).toContainText('Complete main import reason')
-    await expect(summary).toContainText('Complete roles and addresses')
+    await expect(summary).toContainText('Complete consignment addresses')
   })
 
   test('a notification created in another session, holding no answers, is sent back to the entry page', async ({

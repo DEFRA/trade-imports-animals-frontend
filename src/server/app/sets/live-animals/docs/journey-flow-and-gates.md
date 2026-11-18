@@ -20,8 +20,10 @@ gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derive
 from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page, then the permanent address page,
-then Roles and addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
-to Roles and addresses and Roles and addresses goes on to the contact address.
+then Consignment addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
+to Consignment addresses and Consignment addresses goes on to the contact address.
+
+The section id `consignment-parties` is a stable id that the journey spec and the prototype share. Its caption and group heading read "Addresses".
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
 keys the transport feature's own add-session module owns: the values an
@@ -150,9 +152,9 @@ onto it. The identification page's no-commodity-line guard carries the trail on 
 are you importing?, so Back there opens the page the trader came from. What are you
 importing? opened by Commodity details or Identification details saves back to the page
 that opened it, carrying the trail, and its Back opens that page. The CPH number page
-opened from the CPH section's add link saves back to Roles and addresses and goes Back
+opened from the CPH section's add link saves back to Consignment addresses and goes Back
 there; opened from a review Change link its Back is the review and its Save and continue
-goes to Roles and addresses. A return value that is not one of the pages allowed to open
+goes to Consignment addresses. A return value that is not one of the pages allowed to open
 this sub-page is refused, logged and ignored.
 
 A trail that names a place the journey does not have is ignored and logged once, and
@@ -163,8 +165,8 @@ dashboard on a submitted notification, including the one shown after an amendmen
 cancelled).
 
 Returning from the Import Notification Service's address book lands on a fixed address
-that carries no trail. Roles and addresses (the Overview task "Roles and addresses",
-Consignment addresses) and Contact address for consignment (the task "Contact address
+that carries no trail. The Consignment addresses page (the Overview task "Consignment addresses")
+and Contact address for consignment (the task "Contact address
 for this consignment") are the only pages whose Back goes to the Overview whatever the
 trail, after that return; Save and continue still goes on from them.
 
@@ -176,7 +178,7 @@ goes to the next page that applies in the journey's one page order from every st
 (a new notification, an Overview task, a reopened draft, a copy, a Change link, an
 amendment or a new browser session), and past the last page that applies it goes to
 the review page. The CPH number page and the permanent address page are both
-sub-pages: each goes on from the page that opens it to Roles and addresses.
+sub-pages: each goes on from the page that opens it to Consignment addresses.
 
 A notification is created by the dashboard's create POST or by the start entry
 (`<set>/start`, which the Import Notification Service's type question opens), through one

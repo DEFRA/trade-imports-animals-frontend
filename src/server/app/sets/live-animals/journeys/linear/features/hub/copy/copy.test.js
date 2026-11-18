@@ -55,7 +55,7 @@ const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const IDENTIFICATION_ROW_TITLE = 'Identification details'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
-const ADDRESSES_ROW_TITLE = 'Roles and addresses'
+const ADDRESSES_ROW_TITLE = 'Consignment addresses'
 const ADDRESSES_ROW_HINT =
   'Consignor or Exporter, Consignee, Importer and Place of Destination'
 
@@ -112,7 +112,7 @@ describe('#copy', () => {
     expect(copy.taskListHeading).toBe('Notification tasklist')
   })
 
-  test('Should give a hint to the roles and addresses row alone', () => {
+  test('Should give a hint to the consignment addresses row alone', () => {
     const hinted = Object.entries(copy.rows)
       .filter(([, row]) => row.hint !== undefined)
       .map(([id]) => id)
@@ -154,7 +154,7 @@ describe('#copy', () => {
       arrivalDetails: 'Manylion cyrraedd',
       transitCountries: 'Gwledydd tramwy',
       transporter: 'Manylion cludo',
-      addresses: 'Rolau a chyfeiriadau',
+      addresses: 'Cyfeiriadau’r llwyth',
       contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Uwchlwytho dogfennau'
     })
@@ -193,7 +193,7 @@ describe('#hubHandler', () => {
       '2. Description of the goods',
       '3. Transport and arrival',
       '4. Documents',
-      '5. Consignment parties',
+      '5. Addresses',
       '6. Contact address'
     ])
   })
@@ -492,7 +492,7 @@ describe('#hubHandler — the Commodity details row', () => {
 })
 
 describe('#hubHandler — the row hints', () => {
-  it('Should build a hint slot on the roles and addresses row alone', async () => {
+  it('Should build a hint slot on the consignment addresses row alone', async () => {
     const context = await renderHub(roadSeedShowingEveryRow)
 
     expect(

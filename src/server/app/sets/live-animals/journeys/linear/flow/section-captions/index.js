@@ -39,7 +39,7 @@ export const captionSections = [
   { id: 'descriptionOfTheGoods', pages: [consignmentDetailsPage] },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   {
-    id: 'consignmentParties',
+    id: 'addresses',
     pages: [addressesPage, cphNumberPage, permanentAddressPage]
   },
   { id: 'movement', pages: [transitCountriesPage] },

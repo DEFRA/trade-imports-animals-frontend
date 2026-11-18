@@ -36,20 +36,20 @@ const exitDateRows = (answers, scope) =>
 const portLabelOf = async (answers) =>
   (await ports.label(answers.portOfExit)) ?? answers.portOfExit
 
-const portRows = async (answers, scope, label) =>
+const portRows = async (answers, scope) =>
   portOfExitApplies(answers, scope)
-    ? [row(label, await portLabelOf(answers))]
+    ? [row(copy.rows.portOfExit, await portLabelOf(answers))]
     : []
 
 const transitExitRows = async (answers, scope) => [
-  ...(await portRows(answers, scope, copy.rows.exitBorderControlPost)),
+  ...(await portRows(answers, scope)),
   ...(await destinationCountryRows(answers, scope))
 ]
 
 const otherExitRows = async (answers, scope) => [
   ...(await destinationCountryRows(answers, scope)),
   ...exitDateRows(answers, scope),
-  ...(await portRows(answers, scope, copy.rows.portOfExit))
+  ...(await portRows(answers, scope))
 ]
 
 const exitRows = (answers, scope) =>

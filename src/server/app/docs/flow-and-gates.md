@@ -136,7 +136,7 @@ marker; [`kit.js`](../shared/kit.js) re-exports them. The three operations on th
   trail that is not recognised it logs once per request at warn.
 
 The `return` marker (`?return=<slug>`) names the page a sub-page returns to. Links
-that carry it are the CPH link from Roles and addresses, the party edit links and the
+that carry it are the CPH link from the Consignment addresses page, the party edit links and the
 commodity question detour. Such a link carries the trail unchanged and does not push
 the page that opens it. `withReturnMarker(href, slug)` builds the marker and
 `readReturnMarker(request, allowedSlugs)` reads it. The trail and the marker are each

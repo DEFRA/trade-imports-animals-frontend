@@ -15,7 +15,7 @@ export const consignmentAddressesSection = ({
   permanentAddresses = []
 }) => ({
   anchor: 'consignment-addresses',
-  heading: copy.sections.consignmentAddresses,
+  heading: copy.sections.addresses,
   cards: [
     addressesCard({
       journeyId,

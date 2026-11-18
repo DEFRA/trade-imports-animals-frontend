@@ -12,11 +12,11 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { copy as editCopy } from '../party-edit/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
-const ROLES_AND_ADDRESSES = 'Roles and addresses'
 const EDITED_NAME = 'Edited Consignor Ltd'
 
 const saveAndContinue = (page) =>
@@ -30,7 +30,7 @@ const saveAndContinue = (page) =>
 const openConsignorEdit = async (page) => {
   await startNotification(page)
   await unlockSections(page)
-  await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
+  await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
   await addressesSection(page, CONSIGNOR.title)
     .getByRole('link', { name: CONSIGNOR.add })
     .click()

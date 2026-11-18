@@ -193,12 +193,12 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
-test.describe('check-answers feature Permanent address subsection of the Addresses card', () => {
+test.describe('check-answers feature Permanent address subsection of the Consignment addresses card', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('renders one entry per cat in the Addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
+  test('renders one entry per cat in the Consignment addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -208,7 +208,7 @@ test.describe('check-answers feature Permanent address subsection of the Address
     await identifyAnimalsByMicrochip(page, ['MICROCHIP-1', 'MICROCHIP-2'])
 
     await openOverview(page)
-    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
     await addPlaceOfDestination(page)
     await openPermanentAddressFromAddLink(page)
     await expect(
@@ -374,7 +374,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.consignmentAddresses,
+      copy.sections.addresses,
       copy.sections.contactAddress
     ])
   })
@@ -433,7 +433,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.transportDetails,
       copy.sections.documents,
       copy.documentN(1),
-      copy.sections.consignmentAddresses,
+      copy.sections.addresses,
       copy.cards.addresses,
       copy.sections.contactAddress,
       copy.cards.contactAddress
@@ -451,7 +451,7 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.descriptionOfTheGoods,
       copy.sections.transportAndArrival,
       copy.sections.documents,
-      copy.sections.consignmentAddresses,
+      copy.sections.addresses,
       copy.sections.contactAddress
     ])
     await expect(
@@ -577,7 +577,7 @@ test.describe('check-answers feature exit answers', () => {
     await signIn(page)
   })
 
-  test('shows the exit border control post then the destination country a transit collected, with the one Change link in the card heading', async ({
+  test('shows the port of exit then the destination country a transit collected, with the one Change link in the card heading', async ({
     page
   }) => {
     await startNotification(page)
@@ -601,10 +601,10 @@ test.describe('check-answers feature exit answers', () => {
 
     await expect(rowKeysOf(page, MAIN_IMPORT_REASON_ANCHOR)).toHaveText([
       copy.rows.reasonForImport,
-      copy.rows.exitBorderControlPost,
+      copy.rows.portOfExit,
       copy.rows.destinationCountry
     ])
-    await expect(rowFor(page, copy.rows.exitBorderControlPost)).toContainText(
+    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
       EXIT_PORT_LABEL
     )
     await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
@@ -742,7 +742,7 @@ test.describe('check-answers feature change links', () => {
     )
   })
 
-  test('opens the consignment addresses page from the Addresses card', async ({
+  test('opens the consignment addresses page from the Consignment addresses card', async ({
     page
   }) => {
     await startNotification(page)
