@@ -61,6 +61,11 @@ const statusClassOf = (statusCode) => {
   return `${Math.floor(statusCode / statusCodesPerClass)}xx`
 }
 
+const statusCodeOf = (request) =>
+  request.response?.statusCode ??
+  request.response?.output?.statusCode ??
+  request.raw.res.statusCode
+
 const isRefusedAnswer = (request) =>
   request.method === 'post' &&
   request.response?.variety === 'view' &&
@@ -72,7 +77,7 @@ const recordRequestInBackground = (request) => {
     {
       method: request.method.toUpperCase(),
       section: routeSection(routePath),
-      'status.class': statusClassOf(request.response?.statusCode ?? 0)
+      'status.class': statusClassOf(statusCodeOf(request))
     },
     [
       {

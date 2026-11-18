@@ -1,4 +1,6 @@
+import { once } from 'node:events'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { get } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import hapi from '@hapi/hapi'
@@ -158,6 +160,40 @@ describe('request metrics', () => {
     const [document] = documentsHolding(logSpy, REQUEST_TIMER)
     expect(document.section).toBe('unmatched')
     expect(document['status.class']).toBe('4xx')
+  })
+
+  test('a request the client aborts is published with status class 4xx', async () => {
+    let handlerStarted
+    const handlerReached = new Promise((resolve) => {
+      handlerStarted = resolve
+    })
+    server.route({
+      method: 'GET',
+      path: '/live-animals/notifications/{journeyId}/slow',
+      handler: async (request) => {
+        handlerStarted()
+        await new Promise((resolve) =>
+          request.events.once('disconnect', resolve)
+        )
+        return 'too late'
+      }
+    })
+    await server.start()
+
+    const clientRequest = get(
+      `${server.info.uri}/live-animals/notifications/j-1/slow`
+    )
+    const clientHangUp = once(clientRequest, 'error')
+    await handlerReached
+    clientRequest.destroy()
+    await clientHangUp
+
+    await vi.waitFor(() =>
+      expect(documentsHolding(logSpy, REQUEST_TIMER)).toHaveLength(1)
+    )
+    expect(documentsHolding(logSpy, REQUEST_TIMER)[0]['status.class']).toBe(
+      '4xx'
+    )
   })
 
   test('a health check is not published', async () => {
