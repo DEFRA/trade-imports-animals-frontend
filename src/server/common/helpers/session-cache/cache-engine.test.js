@@ -1,3 +1,4 @@
+import { Redis } from 'ioredis'
 import { vi } from 'vitest'
 
 import { MeasuredRedisEngine } from './measured-redis-engine.js'
@@ -18,7 +19,6 @@ vi.mock('ioredis', () => ({
     return { on: () => ({}) }
   })
 }))
-vi.mock('@hapi/catbox-redis')
 vi.mock('@hapi/catbox-memory')
 vi.mock('../logging/logger.js', () => ({
   createLogger: () => ({
@@ -35,8 +35,10 @@ describe('#getCacheEngine', () => {
       engine = getCacheEngine('redis')
     })
 
-    test('Should setup the measured Redis cache', () => {
+    test('Should setup the measured Redis cache on the built Redis client', () => {
+      const [builtClient] = vi.mocked(Redis).mock.results
       expect(engine).toBeInstanceOf(MeasuredRedisEngine)
+      expect(engine.settings.client).toBe(builtClient.value)
     })
 
     test('Should log expected Redis message', () => {
