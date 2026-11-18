@@ -13,6 +13,7 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../engine/test-support.js'
+import { countEvent } from '../../../../../../common/helpers/metrics/publish-metrics.js'
 import { readEmfDocuments } from '../../../../../../common/test-helpers/emf-documents.js'
 import { dispatchPages } from '../features/index.js'
 import {
@@ -86,12 +87,19 @@ describe('entry guard', () => {
   })
 
   describe('journey.entry.redirect', () => {
+    const PUBLISHED_SENTINEL = 'test.published'
     let logSpy
 
-    const redirectCounts = () =>
+    const countsOf = (name) =>
       readEmfDocuments(logSpy)
-        .filter((document) => 'journey.entry.redirect' in document)
-        .map((document) => document['journey.entry.redirect'])
+        .filter((document) => name in document)
+        .map((document) => document[name])
+
+    const redirectCountsOnceEarlierPublishesFlush = async () => {
+      countEvent(PUBLISHED_SENTINEL)
+      await vi.waitFor(() => expect(countsOf(PUBLISHED_SENTINEL)).toEqual([1]))
+      return countsOf('journey.entry.redirect')
+    }
 
     beforeEach(() => {
       logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -101,17 +109,16 @@ describe('entry guard', () => {
       logSpy.mockRestore()
     })
 
-    it('Should count one redirect for a notification with no entered answer', async () => {
+    it('Should count exactly one redirect for a notification with no entered answer', async () => {
       await guardFor()
 
-      await vi.waitFor(() => expect(redirectCounts()).toEqual([1]))
+      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([1])
     })
 
     it('Should count no redirect for a journey with an entered answer', async () => {
       await guardFor({ seed: ANSWERED })
-      await guardFor()
 
-      await vi.waitFor(() => expect(redirectCounts()).toEqual([1]))
+      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([])
     })
   })
 
