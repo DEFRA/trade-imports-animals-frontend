@@ -137,7 +137,7 @@ describe('call counts', () => {
     expect(after.since > before.since).toBe(true)
   })
 
-  test('counting outside any request does nothing and does not throw', () => {
+  test('counting a call or a session read outside any request does not throw', () => {
     expect(() => {
       countExternalCall(BACKEND_READ)
       countExternalCall({ dependency: 'defra-id', operation: 'jwks' })
