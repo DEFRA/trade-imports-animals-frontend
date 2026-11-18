@@ -73,6 +73,11 @@ through `backendFetch`. A session resolution is one read of the session record
 by the auth plugin or by the view context; the session state yar loads is not
 counted.
 
+A request's counts live in an `AsyncLocalStorage` store. hapi gives no public
+hook that runs the whole request inside one async context, so the call-counts
+plugin wraps each request's private `_lifecycle` and `_postCycle` methods to run
+inside the store, the same way `@defra/hapi-tracing` keeps its trace id.
+
 Running totals are kept per route and served at `GET /call-counts`. `DELETE
 /call-counts` clears them.
 

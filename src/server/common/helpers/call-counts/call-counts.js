@@ -70,9 +70,7 @@ export const countSessionResolution = (request) => {
   }
 }
 
-// Same pattern as @defra/hapi-tracing: wrapping hapi's private cycle methods is
-// the only way to keep a request's store alive through the lifecycle.
-const wrapCycle = (request, cycle, counts) => {
+const runCycleWithCounts = (request, cycle, counts) => {
   const requestCycle = request[cycle].bind(request)
   request[cycle] = () => storage.run(counts, requestCycle)
 }
@@ -80,8 +78,8 @@ const wrapCycle = (request, cycle, counts) => {
 const countRequest = (request, h) => {
   const counts = newCallCounts()
   request.plugins[PLUGIN_NAME] = counts
-  wrapCycle(request, '_lifecycle', counts)
-  wrapCycle(request, '_postCycle', counts)
+  runCycleWithCounts(request, '_lifecycle', counts)
+  runCycleWithCounts(request, '_postCycle', counts)
   return h.continue
 }
 
