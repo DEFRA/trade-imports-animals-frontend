@@ -10,11 +10,13 @@ import { displayedCphNumber } from '../cph-number/shape.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import {
   anyLineNeedsPermanentAddress,
+  everyAddressableAnimalHasPermanentAddress,
   PLACE_OF_DESTINATION
 } from '../permanent-address/cards.js'
 import { permanentAddressesFromStoredAnswers } from '../permanent-address/saved-addresses.js'
 import { PARTIES } from './parties.js'
 import { partiesFromStoredAnswers } from './frozen-parties.js'
+import { isPartyHeld } from './party-held.js'
 import { copyOfStoredParty } from './party-inline.js'
 import { partyEditHref } from './party-edit/edit-href.js'
 import { insetAddressLines } from './party-picker/view-model/address-lines.js'
@@ -137,7 +139,7 @@ const permanentAddressSection = (
   )
   const everyAnimalAnswered =
     permanentAddresses.length > 0 &&
-    permanentAddresses.every(({ permanentAddress }) => permanentAddress)
+    everyAddressableAnimalHasPermanentAddress(answers, evaluation)
   return hubSection({
     id: 'permanentAddress',
     title: copy.permanentAddress.title,
@@ -237,14 +239,14 @@ const postSameAs = async (request, h, targetPartyId) => {
 
   const { answers } = await state.get(request, h)
   const sourceAnswer = answers[sourcePartyId]
-  if (!sourceAnswer?.name) {
+  if (!isPartyHeld(sourceAnswer)) {
     return refuseSameAs(request, h, {
       targetPartyId,
       sourcePartyId,
       reason: SAME_AS_REFUSAL.sourceEmpty
     })
   }
-  if (answers[targetPartyId]?.name) {
+  if (isPartyHeld(answers[targetPartyId])) {
     return refuseSameAs(request, h, {
       targetPartyId,
       sourcePartyId,

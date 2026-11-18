@@ -60,6 +60,14 @@ drawn. Reach for `applies` only when a scope condition genuinely cannot carry th
 rule — the transit-countries row needs no `applies`, because its answer leaves
 scope on its own.
 
+`extraAnswerGiven` is the second escape hatch, for a row that owes an answer no
+part key can reach. A scope key is a bare obligation name or a collection name, so
+a leaf nested inside a collection — the permanent address inside `animalIdentifiers`
+inside `commodityLines` — has no part key of its own. The addresses row declares
+`extraAnswerGiven`, a predicate over the answers and the evaluation in the same
+shape as `applies`, and `rowStatus` holds the row at In progress rather than
+Completed while it answers false, whatever the parts roll up to.
+
 The hub derives its groups from the flow sections: each section that holds a task
 row's first page is a group, headed by its caption, and lists its task rows in the
 order of their first page. The sections are also the journey's page order, which

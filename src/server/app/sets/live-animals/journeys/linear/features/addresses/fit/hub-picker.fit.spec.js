@@ -200,7 +200,7 @@ test.describe('addresses hub', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('completing every party marks the hub task Complete', async ({
+  test('completing every party marks the hub task Complete for a consignment asked for no CPH number or permanent address', async ({
     page
   }) => {
     await pickEveryParty(page)

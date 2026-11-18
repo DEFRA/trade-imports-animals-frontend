@@ -27,7 +27,6 @@ describe('#isStubMode', () => {
   })
 
   test('Should be off in production even when the flag is set', () => {
-    // The reason this helper exists rather than reading the flag directly.
     withConfig({ stubMode: true, isProduction: true })
 
     expect(isStubMode()).toBe(false)

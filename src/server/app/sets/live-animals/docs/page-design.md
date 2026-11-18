@@ -11,8 +11,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   means editing its copy too.
 - A task reads "Complete" or "To do" and nothing else. A part-answered or
   optional task reads "To do". A task whose stored answer no longer passes its
-  own page's rules also reads "To do": the hub works this out per request,
-  and `rowStatus` stays a pure engine query.
+  own page's rules also reads "To do": the hub works this out per request. A
+  task also reads "To do" while an answer its page asks for is still missing
+  and no part key can carry that answer — a permanent address sits inside a
+  collection, so no scope key names it: the bridge's `statusOf` stays the only
+  roll-up over a row's parts, and the set's own `rowStatus` may hold such a row
+  short of Completed until the answer is given. A section the page shows but
+  asks nothing of yet, such as the permanent address section on a line with no
+  animal identified, does not hold the row back. `rowStatus` stays synchronous
+  and free of I/O either way.
 - Every task is a link from the moment the notification exists, so a trader
   can work in any order. A task that does not apply to the consignment is
   left off the list rather than shown shut.

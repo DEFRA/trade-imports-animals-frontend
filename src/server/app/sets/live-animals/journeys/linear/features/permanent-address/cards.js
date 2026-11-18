@@ -3,6 +3,7 @@ import { linesOf } from '../commodities/lines.js'
 import { scopedFields } from '../commodities/animal-identification/identifier/fields.js'
 import { animalLabelOf } from '../commodities/animal-identification/animal-label.js'
 import { insetAddressLines } from '../addresses/party-picker/view-model/address-lines.js'
+import { isPartyHeld } from '../addresses/party-held.js'
 import {
   AUTOCOMPLETE_TOKENS,
   FIELD_CLASSES,
@@ -51,6 +52,14 @@ export const addressableUnits = (answers, evaluation) =>
           unit
         }))
       : []
+  )
+
+export const everyAddressableAnimalHasPermanentAddress = (
+  answers,
+  evaluation
+) =>
+  addressableUnits(answers, evaluation).every(({ unit }) =>
+    isPartyHeld(unit.permanentAddress)
   )
 
 const identifierLinesOf = (line, unit, copy) =>

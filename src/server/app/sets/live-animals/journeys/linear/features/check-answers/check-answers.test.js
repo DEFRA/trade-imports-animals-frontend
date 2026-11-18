@@ -956,7 +956,7 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
     expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
-  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still report the outstanding answer against the species card', async () => {
+  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and report the outstanding answer against both the species and roles and addresses cards', async () => {
     const seed = catsConsignmentSeed([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
@@ -977,9 +977,9 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
     ])
     expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
-    expect(summary.errorList.map((entry) => entry.text)).toContain(
-      SPECIES_INCOMPLETE
-    )
+    const errorTexts = summary.errorList.map((entry) => entry.text)
+    expect(errorTexts).toContain(SPECIES_INCOMPLETE)
+    expect(errorTexts).toContain(ADDRESSES_INCOMPLETE)
   })
 
   it('Should list no permanent address row when a line needing one holds no animal identifier records', async () => {
