@@ -17,6 +17,9 @@ defines lifecycle constants and delegates these operations to a configured adapt
 [`src/server/app/services/persistence/records/index.js`](../services/persistence/records/index.js)
 selects the stub or real implementation. Both expose the same operation names.
 
+The real adapter leaves the reference number to the backend: create posts an
+empty notification and returns the notification the backend created.
+
 Canonical fulfilment is the durable answer source. Writes replace a whole evaluated
 and purged snapshot. Reads rebuild projected answers, scope and status, so derived
 state is not stored, apart from `answersDifferFromSubmitted`. The loaded journey carries
