@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ensureAddressBookCoversEveryPartyPickerRole } from './seed-address-book.js'
+import { ensureAddressBookCoversEverySelectableRole } from './seed-address-book.js'
 
 const ADDRESSES_PATH = '/organisation/5900001/addresses'
 
@@ -23,19 +23,19 @@ const requestsTo = (calls, method) =>
     .filter(([, options]) => (options?.method ?? 'GET') === method)
     .map(([url, options]) => ({ url, body: JSON.parse(options.body) }))
 
-describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
+describe('#ensureAddressBookCoversEverySelectableRole', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('creates an address for every role a party picker filters by when the book holds none', async () => {
+  it('creates an address for every role the journey selects an address by when the book holds none', async () => {
     const fetchSpy = vi
       .fn()
       .mockResolvedValueOnce(listResponse([]))
       .mockResolvedValue(createdResponse())
     vi.stubGlobal('fetch', fetchSpy)
 
-    await ensureAddressBookCoversEveryPartyPickerRole()
+    await ensureAddressBookCoversEverySelectableRole()
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
     expect(created.map(({ body }) => body.roles)).toEqual([
@@ -43,7 +43,8 @@ describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
       ['CONSIGNOR'],
       ['CONSIGNEE'],
       ['IMPORTER'],
-      ['PLACE_OF_DESTINATION']
+      ['PLACE_OF_DESTINATION'],
+      ['BRANCH_ADDRESS']
     ])
     expect(created.every(({ url }) => url.includes(ADDRESSES_PATH))).toBe(true)
   })
@@ -57,12 +58,13 @@ describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
           addressHolding('CONSIGNOR'),
           addressHolding('CONSIGNEE'),
           addressHolding('IMPORTER'),
-          addressHolding('PLACE_OF_DESTINATION')
+          addressHolding('PLACE_OF_DESTINATION'),
+          addressHolding('BRANCH_ADDRESS')
         ])
       )
     vi.stubGlobal('fetch', fetchSpy)
 
-    await ensureAddressBookCoversEveryPartyPickerRole()
+    await ensureAddressBookCoversEverySelectableRole()
 
     expect(requestsTo(fetchSpy.mock.calls, 'POST')).toEqual([])
   })
@@ -74,14 +76,15 @@ describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
       .mockResolvedValue(createdResponse())
     vi.stubGlobal('fetch', fetchSpy)
 
-    await ensureAddressBookCoversEveryPartyPickerRole()
+    await ensureAddressBookCoversEverySelectableRole()
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
     expect(created.map(({ body }) => body.roles)).toEqual([
       ['PLACE_OF_ORIGIN'],
       ['CONSIGNEE'],
       ['IMPORTER'],
-      ['PLACE_OF_DESTINATION']
+      ['PLACE_OF_DESTINATION'],
+      ['BRANCH_ADDRESS']
     ])
   })
 
@@ -91,7 +94,7 @@ describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
       vi.fn().mockResolvedValue({ ok: false, status: 500 })
     )
 
-    await expect(ensureAddressBookCoversEveryPartyPickerRole()).rejects.toThrow(
+    await expect(ensureAddressBookCoversEverySelectableRole()).rejects.toThrow(
       /Could not list address book/
     )
   })
@@ -105,7 +108,7 @@ describe('#ensureAddressBookCoversEveryPartyPickerRole', () => {
         .mockResolvedValue({ ok: false, status: 500 })
     )
 
-    await expect(ensureAddressBookCoversEveryPartyPickerRole()).rejects.toThrow(
+    await expect(ensureAddressBookCoversEverySelectableRole()).rejects.toThrow(
       /Could not create a "PLACE_OF_ORIGIN" address/
     )
   })

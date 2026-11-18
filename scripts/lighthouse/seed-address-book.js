@@ -3,12 +3,19 @@ const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 const HTTP_CREATED = 201
 const HTTP_OK = 200
 
-const PARTY_PICKER_ROLES = [
+/** Every address book role the journey filters an address list by: one per
+ * party picker, plus `BRANCH_ADDRESS` for the consignment contact page. A
+ * role missing here leaves its page with no option to choose, and the seed
+ * walk throws rather than reaching the pages after it. Keep in step with
+ * `PARTIES` and `CONTACT_PARTY` in
+ * `src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js`. */
+const SELECTABLE_ADDRESS_ROLES = [
   'PLACE_OF_ORIGIN',
   'CONSIGNOR',
   'CONSIGNEE',
   'IMPORTER',
-  'PLACE_OF_DESTINATION'
+  'PLACE_OF_DESTINATION',
+  'BRANCH_ADDRESS'
 ]
 
 const addressBookBase = () =>
@@ -59,8 +66,10 @@ const createAddressHoldingRole = async (role) => {
   }
 }
 
-export const ensureAddressBookCoversEveryPartyPickerRole = async () => {
+export const ensureAddressBookCoversEverySelectableRole = async () => {
   const covered = rolesAlreadyCovered(await existingAddresses())
-  const uncovered = PARTY_PICKER_ROLES.filter((role) => !covered.has(role))
+  const uncovered = SELECTABLE_ADDRESS_ROLES.filter(
+    (role) => !covered.has(role)
+  )
   await Promise.all(uncovered.map(createAddressHoldingRole))
 }
