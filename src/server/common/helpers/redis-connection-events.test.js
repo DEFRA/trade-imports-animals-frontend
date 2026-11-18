@@ -87,6 +87,22 @@ describe('reportRedisConnectionEvents', () => {
     ])
   })
 
+  test('a client that stops reconnecting logs so once at error, tagged dependency redis', () => {
+    client.emit('ready')
+    client.emit('close')
+    client.emit('end')
+
+    expect(
+      ecsLog
+        .lines()
+        .filter((line) => line.message === 'Redis client stopped reconnecting')
+        .map((line) => ({
+          level: line['log.level'],
+          dependency: line.dependency
+        }))
+    ).toEqual([{ level: 'error', dependency: 'redis' }])
+  })
+
   test('a client that never connected and closes counts no lost connection', async () => {
     client.emit('close')
 
