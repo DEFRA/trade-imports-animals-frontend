@@ -1,9 +1,6 @@
 import { createLogger } from './logging/logger.js'
-import {
-  NONE,
-  countEvent,
-  publishMetricsInBackground
-} from './metrics/publish-metrics.js'
+import { countEvent } from './metrics/publish-metrics.js'
+import { publishDependencyAvailabilityInBackground } from './metrics/dependency-availability.js'
 import { REDIS_DEPENDENCY } from './redis-dependency.js'
 
 /**
@@ -28,13 +25,7 @@ export const reportRedisConnectionEvents = (client) => {
     if (available === undefined) {
       return
     }
-    publishMetricsInBackground(dependencyDimensions, [
-      {
-        name: 'external.dependency.available',
-        value: available ? 1 : 0,
-        unit: NONE
-      }
-    ])
+    publishDependencyAvailabilityInBackground(REDIS_DEPENDENCY, available)
   }
 
   const changeAvailabilityTo = (nowAvailable) => {
