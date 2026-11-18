@@ -7,6 +7,7 @@ import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
 const ONE_MINUTE_MS = 60_000
 const AVAILABLE = 'external.dependency.available'
+const ERROR = 'external.dependency.error'
 
 const valuesOf = (logSpy, metricName) =>
   readEmfDocuments(logSpy)
@@ -50,9 +51,7 @@ describe('reportRedisConnectionEvents', () => {
     vi.advanceTimersByTime(ONE_MINUTE_MS)
     client.emit('error', new Error('ECONNREFUSED'))
 
-    await eventually(() =>
-      expect(valuesOf(logSpy, 'external.dependency.error')).toEqual([1])
-    )
+    await eventually(() => expect(valuesOf(logSpy, ERROR)).toEqual([1]))
     expect(valuesOf(logSpy, AVAILABLE)).toEqual([])
   })
 
@@ -99,14 +98,21 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('error', new Error('ECONNREFUSED'))
     client.emit('error', new Error('ECONNREFUSED'))
 
-    await eventually(() =>
-      expect(valuesOf(logSpy, 'external.dependency.error')).toEqual([1, 1])
-    )
+    await eventually(() => expect(valuesOf(logSpy, ERROR)).toEqual([1, 1]))
     const refusedLine = {
       level: 'error',
       dependency: 'redis',
       error: 'ECONNREFUSED'
     }
     expect(errorLines(ecsLog.lines())).toEqual([refusedLine, refusedLine])
+  })
+
+  test('each error a Cluster client reports from one of its nodes is logged and counted, tagged dependency redis', async () => {
+    client.emit('node error', new Error('ECONNREFUSED'), '10.0.0.1:6379')
+
+    await eventually(() => expect(valuesOf(logSpy, ERROR)).toEqual([1]))
+    expect(errorLines(ecsLog.lines())).toEqual([
+      { level: 'error', dependency: 'redis', error: 'ECONNREFUSED' }
+    ])
   })
 })
