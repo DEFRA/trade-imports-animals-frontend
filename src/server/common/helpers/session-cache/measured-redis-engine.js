@@ -2,7 +2,7 @@ import { Engine as CatboxRedis } from '@hapi/catbox-redis'
 
 import { measureExternalCall } from '../metrics/external-call-metrics.js'
 import { countEvent } from '../metrics/publish-metrics.js'
-import { REDIS_DEPENDENCY } from '../redis-availability.js'
+import { REDIS_DEPENDENCY } from '../redis-dependency.js'
 
 const redisCall = (operation) => ({ dependency: REDIS_DEPENDENCY, operation })
 

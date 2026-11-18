@@ -1,7 +1,6 @@
 import { Cluster, Redis } from 'ioredis'
 
-import { createLogger } from './logging/logger.js'
-import { trackRedisAvailability } from './redis-availability.js'
+import { reportRedisConnectionEvents } from './redis-connection-events.js'
 
 /**
  * Setup Redis and provide a redis client
@@ -10,7 +9,6 @@ import { trackRedisAvailability } from './redis-availability.js'
  * Environments - Elasticache / Redis Cluster with username and password
  */
 export function buildRedisClient(redisConfig) {
-  const logger = createLogger()
   const port = 6379
   const db = 0
   // ioredis 6 defaults to RESP3 (HELLO 3). Pin RESP2 so the session store
@@ -61,15 +59,7 @@ export function buildRedisClient(redisConfig) {
     )
   }
 
-  redisClient.on('connect', () => {
-    logger.info('Connected to Redis server')
-  })
-
-  redisClient.on('error', (error) => {
-    logger.error({ err: error }, 'Redis connection error')
-  })
-
-  trackRedisAvailability(redisClient)
+  reportRedisConnectionEvents(redisClient)
 
   return redisClient
 }
