@@ -25,9 +25,7 @@ const transportersPage = async (orgId, page) => {
   return response.json()
 }
 
-/** Every live transporter the address book holds for the organisation,
- * newest first, read a page at a time until every page the address book
- * reports has been fetched. */
+/** Every live transporter the address book holds for the organisation. */
 export const listTransporters = async (orgId) => {
   const items = []
   let page = 1
