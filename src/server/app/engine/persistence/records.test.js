@@ -79,7 +79,7 @@ describe('records journey counters', () => {
     )
   })
 
-  test('a submit the store refuses counts no submission', async () => {
+  test('a submit the store refuses for a stale concurrency token counts one conflict and no submission, and rethrows the refusal', async () => {
     const started = await records.create()
 
     await expect(
