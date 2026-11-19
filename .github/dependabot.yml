@@ -49,7 +49,8 @@ updates:
           - '*'
 
     # The nightly job moves these sets in every repo at once, on one branch
-    # name, so Dependabot leaves them alone.
+    # name, so Dependabot leaves them alone. A held package stays at its
+    # current version: Dependabot does not propose the versions it breaks.
     ignore:
       # playwright
       # The frontends record traces that the tests repo and tim read, and a
@@ -63,6 +64,17 @@ updates:
       # green CI cannot prove were applied, so every version goes through the
       # govuk-upgrade skill, one version at a time, across every frontend.
       - dependency-name: 'govuk-frontend'
+      # held: @axe-core/playwright, since 2026-11-19
+      # axe 4.14 flags govuk-frontend's own enhanced file upload button
+      # (label-content-name-mismatch); no govuk-frontend release covers it yet
+      # Failing test: FIT Tests (documents drop-zone accessibility,
+      # label-content-name-mismatch)
+      # Lift it with tim deps lift when a newer @axe-core/playwright or
+      # govuk-frontend clears it.
+      # https://github.com/DEFRA/trade-imports-animals-frontend/pull/492
+      - dependency-name: '@axe-core/playwright'
+        versions:
+          - '4.14.x'
 
     # Wait 3 days after a release before proposing it, so a broken release is
     # usually withdrawn first.
