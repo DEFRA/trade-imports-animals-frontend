@@ -60,9 +60,12 @@ describe('#appliesForGateValue', () => {
     )
   })
 
-  it('Should ask for CPH for ostriches (01063300) but not for horses (0101)', () => {
-    expect(appliesForGateValue('countyParishHoldingCph', '01063300')).toBe(true)
+  it('Should ask for CPH for cattle (0102) but not for horses (0101) or ostriches (01063300)', () => {
+    expect(appliesForGateValue('countyParishHoldingCph', '0102')).toBe(true)
     expect(appliesForGateValue('countyParishHoldingCph', '0101')).toBe(false)
+    expect(appliesForGateValue('countyParishHoldingCph', '01063300')).toBe(
+      false
+    )
   })
 
   it('Should apply the two free-text fallback identifiers but no typed identifier for commodity code 01063300', () => {

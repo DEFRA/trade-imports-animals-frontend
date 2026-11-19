@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { addressSummary } from './address-summary.js'
+import {
+  addressSummary,
+  addressSummaryEndingAtPostcode
+} from './address-summary.js'
 
 const privateAddress = {
   addressLine1: '12 Harbour Road',
@@ -40,5 +43,31 @@ describe('#addressSummary', () => {
   it('Should summarise a missing or empty address as an empty string', () => {
     expect(addressSummary()).toBe('')
     expect(addressSummary({})).toBe('')
+  })
+})
+
+describe('#addressSummaryEndingAtPostcode', () => {
+  it('Should read a private address as street, town, county, postcode, never the country', () => {
+    expect(addressSummaryEndingAtPostcode(privateAddress)).toBe(
+      '12 Harbour Road, Aberdeen, Aberdeenshire, AB11 5DQ'
+    )
+  })
+
+  it('Should read a commercial address as its numbered lines, never the country', () => {
+    expect(addressSummaryEndingAtPostcode(commercialAddress)).toBe(
+      '43 East Hague Extension, Delectus sitodio p. Laborum Odio tempor, Quasoccaecat ut ear, 30055'
+    )
+  })
+
+  it('Should summarise a missing or empty address as an empty string', () => {
+    expect(addressSummaryEndingAtPostcode()).toBe('')
+    expect(addressSummaryEndingAtPostcode({})).toBe('')
+  })
+
+  it('Should omit the country that addressSummary includes for the same address', () => {
+    expect(addressSummaryEndingAtPostcode(privateAddress)).not.toContain(
+      privateAddress.country
+    )
+    expect(addressSummary(privateAddress)).toContain(privateAddress.country)
   })
 })

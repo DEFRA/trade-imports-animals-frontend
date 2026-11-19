@@ -4,6 +4,7 @@ import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { addressesPage } from '../../../../addresses/page.js'
 import { PARTIES } from '../../../../addresses/parties.js'
+import { displayedCphNumber } from '../../../../cph-number/shape.js'
 import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
 import { cphApplies } from '../../applicability.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
@@ -60,7 +61,7 @@ export const rolesAndAddressesCard = ({
       })
     ),
     ...(cphApplies(answers)
-      ? [row(copy.rows.cph, answers.countyParishHoldingCph)]
+      ? [row(copy.rows.cph, displayedCphNumber(answers.countyParishHoldingCph))]
       : []),
     ...permanentAddresses
       .filter(({ permanentAddress }) => permanentAddress)

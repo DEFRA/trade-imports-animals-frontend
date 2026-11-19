@@ -253,6 +253,17 @@ describe('#nextTarget and #nextTargetKeepingTrail', () => {
       ).toBe(hubPath('j-1'))
     }
   )
+
+  it('Should honour a given save choice over the posted one for nextTargetKeepingTrail', () => {
+    expect(
+      nextTargetKeepingTrail(
+        trailRequest('overview'),
+        { id: 'origin', slug: 'origin' },
+        {},
+        { saveChoice: { hubExit: true } }
+      )
+    ).toBe(hubPath('j-1'))
+  })
 })
 
 describe('#withReturnMarker — the return marker on an href', () => {

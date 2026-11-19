@@ -11,8 +11,15 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   means editing its copy too.
 - A task reads "Complete" or "To do" and nothing else. A part-answered or
   optional task reads "To do". A task whose stored answer no longer passes its
-  own page's rules also reads "To do": the hub works this out per request,
-  and `rowStatus` stays a pure engine query.
+  own page's rules also reads "To do": the hub works this out per request. A
+  task also reads "To do" while an answer its page asks for is still missing
+  and no part key can carry that answer — a permanent address sits inside a
+  collection, so no scope key names it: the bridge's `statusOf` stays the only
+  roll-up over a row's parts, and the set's own `rowStatus` may hold such a row
+  short of Completed until the answer is given. A section the page shows but
+  asks nothing of yet, such as the permanent address section on a line with no
+  animal identified, does not hold the row back. `rowStatus` stays synchronous
+  and free of I/O either way.
 - Every task is a link from the moment the notification exists, so a trader
   can work in any order. A task that does not apply to the consignment is
   left off the list rather than shown shut.
@@ -42,17 +49,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 ## How a page ends
 
 - A page the overview links to directly ends with all three controls: the
-  primary and "Save and return to overview" side by side, then "Cancel and
-  return to overview" on its own line below them, so a trader can stop and
-  leave from where the overview sent them.
+  primary and its save-and-return control side by side, then its cancel link
+  on its own line below them, so a trader can stop and leave from where the
+  overview sent them. Every one of these pages reads "Save and return to
+  overview" and "Cancel and return to overview" except the contact address
+  page, which reads "Save and return to hub" and "Cancel and return to hub".
 - Origin of the import is the one overview-linked page without the return
   controls, because the design gives it "Save and continue" as its only way to
   save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
-  "Overview". "Hub" is the internal name for it and never appears on screen.
-- A page reached from another page ends with the primary alone, and the trader
-  leaves the way they came in: the CPH number page, the permanent address
-  page, the role address pickers and the transporter type question. The two
+  "Overview". "Hub" is the internal name for it and reaches the screen only on
+  the contact address page.
+- A page reached from another page ends with the primary alone: the permanent
+  address page, the role address pickers and the transporter type question
+  leave the way the trader came in, while the CPH number page always leaves to
+  the consignment addresses page, however it was reached. The two
   transporter details forms are
   the one exception: each ends with the primary and a secondary "Cancel and
   return to dashboard", because a trader who opened one did not come from the
@@ -60,10 +71,10 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   Saving either form returns to the transporter list with the new transporter
   chosen, and Back goes where the trader came from.
 - While a notification is being amended, a page ends exactly as it does on a
-  draft: Save and continue, then Save and return to overview, then Cancel and
-  return to overview wherever the draft page shows it. Save and continue goes on
-  through the journey to check your answers, Save and return to overview goes to
-  the Overview, and Cancel and return to overview goes to the Overview without
+  draft: Save and continue, then its own save-and-return control, then its own
+  cancel link, wherever the draft page shows them. Save and continue goes on
+  through the journey to check your answers, the save-and-return control goes to
+  the Overview, and the cancel link goes to the Overview without
   saving the page. Upload documents posts its own form from both buttons. The
   status strip shows the Amend status and its Cancel amend link. The two
   transporter details forms keep their own primary and cancel even
@@ -368,11 +379,19 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   in an inset text with Change and Edit details under it. The trader sees
   which full address they chose, name and every address line. The county
   parish holding number follows the same section shape, with its stored value
-  on one line and no Edit details.
+  on one line and no Edit details. A section with no address may also offer a
+  "Same as …" control that fills it from another party's address: place of
+  origin fills the consignor, and consignee fills both the importer and the
+  place of destination. No other pair offers one, and a section already
+  holding an address never offers one.
+- The page is one form, so a "Same as …" control posts it: pressing one shows
+  the page again with the target section filled and no success banner.
 - Each section is a region named by its heading, so a screen reader lists the
   parties. The add link names the party, so it needs no visually hidden
-  suffix. Change and Edit details keep a visually hidden suffix naming the
-  party, because two sections would otherwise offer the same link names.
+  suffix. Change, Edit details and a "Same as …" control keep a visually
+  hidden suffix naming the party, because two sections would otherwise offer
+  the same link or button name — both the importer and the place of
+  destination offer "Same as consignee".
 - The inset shows the name in bold, then each street line on its own line.
   The locality, county, postcode and country join into the last line, as in
   "Hull, HU9 5PX, United Kingdom". The country is the name held on the
@@ -380,26 +399,30 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
   here, and Save and continue here goes on to the contact address.
-  The county parish holding link carries the trail and the `return=addresses`
-  marker.
+  The county parish holding link carries the trail alone: its page's Back and
+  Save and continue always answer this page, with no marker needed.
 - Each party picker searches the address book from the submitted search box:
   a medium "Search" label, the hint "Name, address or country", and a square
   GOV.UK blue icon button joined to the box. The button is named "Search" for
   screen readers and is the form's first submit, so Enter in the box runs the
   search. The box and button are half the content column wide.
 - The picker is one form. The search and Save and continue are told apart by
-  their `action` value. Paging is a link, so the selection travels in the
-  link's query string and in a hidden field, with no client JavaScript.
-- Edit details is offered only for an address the picker has copied onto the
-  notification, so with no address picked the edit page sends the trader to the
-  picker.
+  their `action` value. A ticked row travels across a further search in a
+  hidden field, with no client JavaScript.
+- Edit details follows a section's address whether the picker copied it onto
+  the notification or a "Same as …" control filled it from the paired party;
+  with no address held the edit page sends the trader to the picker.
+- Reopening a party's picker pre-ticks the record that party's address was
+  picked from, when the role's list still holds it. Nothing else on the page
+  reads that record.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
 - "Add a new address" is a secondary button beside the heading, shown only
   outside stub mode. It leaves the journey for the address book, so it sits
   with the page and not inside the search form.
 - The results sit under the heading "Select an address", with the count
-  "Showing 5 out of 13 results" straight under it. The table is one fieldset
+  straight under it: every address the role's list holds, on one page,
+  however many there are. The table is one fieldset
   whose visually hidden legend repeats the heading, so a screen reader names
   the group of addresses. With no matches the message takes the place of the
   count.
@@ -426,18 +449,24 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - The three part labels stay on screen. Three unlabelled boxes under one
   legend would be harder to use than the single field they replace.
 - A CPH number is two digits of county, three of parish and four of holding,
-  so the example hint shows that 2/3/4 grouping.
-- The help names APHA documents only. A link to GOV.UK holding details waits
-  for a real destination.
+  so the example hint shows that 2/3/4 grouping, with no comma and no full
+  stop.
+- The help names APHA documents, then links to the GOV.UK guidance for checking
+  a holding's details.
 - The boxes set no character limit, so nothing typed or pasted is cut short.
   When the county box holds nine digits, with or without spaces or slashes,
   and parish and holding are empty, the number is split into its three parts
   on save. Anything else, such as `1234` in the county box, goes through the
-  per-part checks unchanged and every box keeps what was typed.
+  per-part checks unchanged and every box keeps what was typed. Each box turns
+  the browser's saved values off and asks for a digit keypad.
 - Nothing moves focus between the boxes (WCAG 3.2.2; GOV.UK forms do not
   auto-advance).
 - One error message belongs to the group, not to each box. The date-input row
   classes only sit the boxes side by side.
+- The page can be saved with every box empty: no number is saved, any number
+  saved before is cleared, and the gap is held at submission rather than
+  refused here.
+- The number is stored as nine bare digits.
 
 ## Permanent address
 

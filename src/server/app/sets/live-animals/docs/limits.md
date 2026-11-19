@@ -9,7 +9,7 @@ the cardinality and the documents feature enforces it on its write path.
 
 Species come from MDM through reference-data. The rules in
 [`rules.js`](../services/commodities/rules.js) are set data: the identifier,
-package-count, permanent-address, unweaned, CPH-exemption and type rules. They must
+package-count, permanent-address, unweaned, CPH-required and type rules. They must
 match MDM's spelling exactly.
 
 ## Backend notification projections differ

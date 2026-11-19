@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { validation } from './validate.js'
 
 describe('#validation for cph-number — onSubmit', () => {
-  it('Should collapse an all-blank submission to a single required message', async () => {
-    const { errors } = await validation.onSubmit({
+  it('Should accept an all-blank submission and commit it as an empty number', async () => {
+    const { answers, errors } = await validation.onSubmit({
       cphCounty: '',
       cphParish: '',
       cphHolding: ''
     })
-    expect(errors).toEqual({ cphCounty: 'Enter a CPH number' })
+    expect(errors).toEqual({})
+    expect(answers).toEqual({ countyParishHoldingCph: '' })
   })
 
   it('Should name each blank part when the submission is not all-blank', async () => {
@@ -47,6 +48,25 @@ describe('#validation for cph-number — onSubmit', () => {
         cphCounty: '12',
         cphParish: '345',
         cphHolding: '6789'
+      })
+    }
+  )
+
+  it.each(['12-345-6789', 'A12/345/6789B'])(
+    'Should name each part when the county box holds %s, written with separators the page does not accept',
+    async (typed) => {
+      const { errors, values } = await validation.onSubmit({
+        cphCounty: typed,
+        cphParish: '',
+        cphHolding: ''
+      })
+      expect(errors).toHaveProperty('cphCounty')
+      expect(errors).toHaveProperty('cphParish')
+      expect(errors).toHaveProperty('cphHolding')
+      expect(values).toEqual({
+        cphCounty: typed,
+        cphParish: '',
+        cphHolding: ''
       })
     }
   )

@@ -2,23 +2,29 @@ import { expect, test } from '@playwright/test'
 import {
   BOS_TAURUS_ROW,
   EQUUS_CABALUS_ROW,
+  GALLUS_GALLUS_ROW,
   STRUTHIO_ROW,
   DESKTOP_VIEWPORT,
   PHONE_VIEWPORT,
+  LANDINGS,
   addressesSection,
+  answerCphNumberFromAddLink,
   contentWidthOf,
   errorSummaryLinks,
+  expectLanding,
   followErrorLinkToField,
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
+  expectPageEndsWithPrimaryAlone,
   expectSearchBoxJoinedToItsButton,
   journeyFormOf,
+  openAddresses,
   openOverview,
+  paragraphFollowing,
   partyPickerName,
+  saveAndContinue,
   searchByPressingEnter,
   signIn,
-  startNotification,
-  unlockSections,
   values,
   withinFullWidthColumn,
   backLink
@@ -26,9 +32,9 @@ import {
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
-import { PAGE_SIZE } from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
 import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
+import { recordsHoldingRole as listedFor } from '../../../../../../../services/address-book/stub/test-support.js'
 
 const addressBookInsetText = (party) => {
   const {
@@ -38,49 +44,67 @@ const addressBookInsetText = (party) => {
   return `${name} ${addressLine1} ${townOrCity}, ${postcode}, ${country}`
 }
 
-const NO_MATCH_QUERY = 'no such address'
-const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
-const NOT_IN_THE_BOOK = 'not-in-this-book'
-const ADDRESS_BOOK_SIZE = 13
-const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
-const ROLES_AND_ADDRESSES = 'Roles and addresses'
+const addressCountFor = (party) => listedFor(party.addressBookRole).length
 
-const expectBackOnTheAddressesPage = async (page) => {
-  await expect(
-    page.getByRole('heading', { name: copy.hub.title })
-  ).toBeVisible()
-}
+const NO_MATCH_QUERY = 'no such address'
+const NOT_IN_THE_BOOK = 'not-in-this-book'
+const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
+const PLACE_OF_ORIGIN = PARTIES.find(({ id }) => id === 'placeOfOrigin')
+const CONSIGNEE = PARTIES.find(({ id }) => id === 'consignee')
+const IMPORTER = PARTIES.find(({ id }) => id === 'importer')
+const PLACE_OF_DESTINATION = PARTIES.find(
+  ({ id }) => id === 'placeOfDestination'
+)
+const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
+const ROLES_AND_ADDRESSES = 'Roles and addresses'
+const SLASHED_CPH_NUMBER = '12/345/6789'
 
 const expectConsignorOffersOnlyItsAddLink = async (page) => {
-  await expectBackOnTheAddressesPage(page)
+  await expectLanding(page, LANDINGS.addresses)
   await expect(
     addressesSection(page, CONSIGNOR.title).getByRole('link')
   ).toHaveText([CONSIGNOR.add])
 }
 
+const changeLinkNameFor = (title) => `${copy.hub.change} ${title.toLowerCase()}`
+
 const chosenLinkNames = ({ title }) => [
-  `${copy.hub.change} ${title.toLowerCase()}`,
+  changeLinkNameFor(title),
   `${copy.hub.editDetails} ${title.toLowerCase()}`
 ]
 
 const partySectionTitles = (page) =>
   page.getByRole('main').getByRole('heading', { level: 2 })
 
+const pickParty = async (page, party) => {
+  await openPartyPicker(page, party)
+  await page
+    .getByRole('radio', { name: partyPickerName(values[party.id]) })
+    .check()
+  await saveAndContinue(page).click()
+}
+
 const pickEveryParty = async (page) => {
   for (const party of PARTIES) {
-    await openPartyPicker(page, party)
-    await page
-      .getByRole('radio', { name: partyPickerName(values[party.id]) })
-      .check()
-    await saveAndContinue(page)
+    await pickParty(page, party)
   }
 }
 
-const openAddresses = async (page, species) => {
-  await startNotification(page)
-  await unlockSections(page, species)
-  await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
-  await expectBackOnTheAddressesPage(page)
+const choosePlaceOfOriginAndConsignee = async (page) => {
+  await pickParty(page, PLACE_OF_ORIGIN)
+  await pickParty(page, CONSIGNEE)
+}
+
+const fillConsignorFromPlaceOfOrigin = async (page) => {
+  await addressesSection(page, CONSIGNOR.title)
+    .getByRole('button', { name: copy.hub.sameAs.placeOfOrigin })
+    .click()
+  await expect(
+    addressesSection(page, CONSIGNOR.title).getByText(
+      partyPickerName(values.placeOfOrigin),
+      { exact: true }
+    )
+  ).toBeVisible()
 }
 
 const openPartyPicker = async (page, party) => {
@@ -95,19 +119,16 @@ const searchAddresses = async (page, query) => {
     .click()
 }
 
-const saveAndContinue = (page) =>
-  page
-    .getByRole('button', {
-      name: sharedCopy.saveActions.saveAndContinue,
-      exact: true
-    })
-    .click()
-
 const resultsHeading = (page) =>
   page.getByRole('heading', { name: copy.picker.resultsHeading, level: 2 })
 
-const resultsSummary = (page) =>
-  resultsHeading(page).locator('xpath=following-sibling::*[1][self::p]')
+const resultsSummary = (page) => paragraphFollowing(resultsHeading(page))
+
+const expectNothingBetweenSearchAndResultsHeading = async (page) => {
+  await expect(
+    resultsHeading(page).locator('xpath=preceding-sibling::*[1]')
+  ).toHaveClass(/govuk-form-group/)
+}
 
 const postAnIdNotInTheBook = async (page) => {
   await page
@@ -117,7 +138,7 @@ const postAnIdNotInTheBook = async (page) => {
       input.value = id
       input.checked = true
     }, NOT_IN_THE_BOOK)
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
 }
 
 const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
@@ -134,7 +155,7 @@ const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
     },
     { name: fieldName, id: NOT_IN_THE_BOOK }
   )
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
 }
 
 test.describe('addresses hub', () => {
@@ -160,12 +181,7 @@ test.describe('addresses hub', () => {
       await expect(section.getByRole('link')).toHaveAccessibleName(party.add)
     }
 
-    await expect(
-      page.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toBeVisible()
+    await expect(saveAndContinue(page)).toBeVisible()
   })
 
   test('hub back link returns to the overview', async ({ page }) => {
@@ -173,11 +189,11 @@ test.describe('addresses hub', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('completing every party marks the hub task Complete', async ({
+  test('completing every party marks the hub task Complete for a consignment asked for no CPH number or permanent address', async ({
     page
   }) => {
     await pickEveryParty(page)
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await openOverview(page)
     await expect(
@@ -246,6 +262,120 @@ test.describe('addresses hub', () => {
   })
 })
 
+test.describe('addresses hub — same-as shortcut', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openAddresses(page, EQUUS_CABALUS_ROW)
+    await choosePlaceOfOriginAndConsignee(page)
+  })
+
+  test('shows a same-as button naming its source in the Consignor, Importer and Place of destination sections, with the two consignee buttons each naming the section they fill, and none in the Place of origin or Consignee sections', async ({
+    page
+  }) => {
+    const consignorButton = addressesSection(page, CONSIGNOR.title).getByRole(
+      'button',
+      { name: copy.hub.sameAs.placeOfOrigin }
+    )
+    await expect(consignorButton).toBeVisible()
+    await expect(consignorButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.placeOfOrigin} ${CONSIGNOR.title.toLowerCase()}`
+    )
+
+    const importerButton = addressesSection(page, IMPORTER.title).getByRole(
+      'button',
+      { name: copy.hub.sameAs.consignee }
+    )
+    await expect(importerButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.consignee} ${IMPORTER.title.toLowerCase()}`
+    )
+
+    const destinationButton = addressesSection(
+      page,
+      PLACE_OF_DESTINATION.title
+    ).getByRole('button', { name: copy.hub.sameAs.consignee })
+    await expect(destinationButton).toHaveAccessibleName(
+      `${copy.hub.sameAs.consignee} ${PLACE_OF_DESTINATION.title.toLowerCase()}`
+    )
+
+    await expect(
+      addressesSection(page, PLACE_OF_ORIGIN.title).getByRole('button')
+    ).toHaveCount(0)
+    await expect(
+      addressesSection(page, CONSIGNEE.title).getByRole('button')
+    ).toHaveCount(0)
+  })
+
+  test('pressing a same-as button fills its target section with the source address, with no success banner, and the pressed button gone', async ({
+    page
+  }) => {
+    await addressesSection(page, CONSIGNOR.title)
+      .getByRole('button', { name: copy.hub.sameAs.placeOfOrigin })
+      .click()
+
+    await expectLanding(page, LANDINGS.addresses)
+    await expect(
+      page.locator('.govuk-notification-banner--success')
+    ).toHaveCount(0)
+    const consignorSection = addressesSection(page, CONSIGNOR.title)
+    await expect(
+      consignorSection.getByText(partyPickerName(values.placeOfOrigin), {
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(consignorSection.getByRole('link')).toHaveText(
+      chosenLinkNames(CONSIGNOR)
+    )
+    await expect(consignorSection.getByRole('button')).toHaveCount(0)
+
+    await addressesSection(page, IMPORTER.title)
+      .getByRole('button', { name: copy.hub.sameAs.consignee })
+      .click()
+    await addressesSection(page, PLACE_OF_DESTINATION.title)
+      .getByRole('button', { name: copy.hub.sameAs.consignee })
+      .click()
+
+    await expect(page.getByRole('button', { name: /^Same as /i })).toHaveCount(
+      0
+    )
+    for (const party of [CONSIGNOR, IMPORTER, PLACE_OF_DESTINATION]) {
+      await expect(
+        addressesSection(page, party.title).getByRole('link')
+      ).toHaveText(chosenLinkNames(party))
+    }
+  })
+
+  test('excludes the copied place-of-origin record from the consignor picker, with the Consignor section still showing it', async ({
+    page
+  }) => {
+    await fillConsignorFromPlaceOfOrigin(page)
+
+    await addressesSection(page, CONSIGNOR.title)
+      .getByRole('link', { name: copy.hub.change })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: CONSIGNOR.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: partyPickerName(values.placeOfOrigin) })
+    ).toHaveCount(0)
+    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+  })
+
+  test('has no serious or critical axe violations with the same-as buttons showing, at desktop and phone width', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Addresses with same-as buttons'
+    )
+    await page.setViewportSize(PHONE_VIEWPORT)
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Addresses with same-as buttons on a phone'
+    )
+  })
+})
+
 test.describe('addresses hub without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
 
@@ -263,6 +393,14 @@ test.describe('addresses hub without JavaScript', () => {
 
     await openPartyPicker(page, CONSIGNOR)
   })
+
+  test('fills the consignor section from the place of origin when its same-as button is pressed', async ({
+    page
+  }) => {
+    await pickParty(page, PLACE_OF_ORIGIN)
+
+    await fillConsignorFromPlaceOfOrigin(page)
+  })
 })
 
 test.describe('addresses hub — who is asked for a CPH number', () => {
@@ -270,8 +408,8 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await signIn(page)
   })
 
-  test('asks a consignment of ostriches for a CPH number', async ({ page }) => {
-    await openAddresses(page, STRUTHIO_ROW)
+  test('asks a consignment of poultry for a CPH number', async ({ page }) => {
+    await openAddresses(page, GALLUS_GALLUS_ROW)
 
     const section = addressesSection(page, copy.hub.cph.title)
     await expect(
@@ -280,10 +418,35 @@ test.describe('addresses hub — who is asked for a CPH number', () => {
     await expect(section.getByRole('link')).toHaveText([copy.hub.cph.add])
   })
 
+  test('shows a saved CPH number in its slashed form, offering only a Change link into the CPH page', async ({
+    page
+  }) => {
+    await openAddresses(page, GALLUS_GALLUS_ROW)
+    await answerCphNumberFromAddLink(page)
+
+    const section = addressesSection(page, copy.hub.cph.title)
+    await expect(
+      section.getByText(SLASHED_CPH_NUMBER, { exact: true })
+    ).toBeVisible()
+    await expect(section.getByRole('link')).toHaveText([
+      changeLinkNameFor(copy.hub.cph.title)
+    ])
+  })
+
   test('does not ask a consignment of horses for a CPH number', async ({
     page
   }) => {
     await openAddresses(page, EQUUS_CABALUS_ROW)
+
+    await expect(partySectionTitles(page)).toHaveText(
+      PARTIES.map(({ title }) => title)
+    )
+  })
+
+  test('does not ask a consignment of ostriches for a CPH number', async ({
+    page
+  }) => {
+    await openAddresses(page, STRUTHIO_ROW)
 
     await expect(partySectionTitles(page)).toHaveText(
       PARTIES.map(({ title }) => title)
@@ -331,7 +494,7 @@ test.describe('party picker per role', () => {
   })
 
   for (const party of PARTIES) {
-    test(`${party.title} picker renders its role-specific copy and address table`, async ({
+    test(`${party.title} picker lists only its own role's addresses and the role-less address, with its role-specific copy`, async ({
       page
     }) => {
       await openPartyPicker(page, party)
@@ -353,6 +516,25 @@ test.describe('party picker per role', () => {
       await expect(
         page.getByRole('columnheader', { name: copy.picker.table.country })
       ).toBeVisible()
+
+      const listed = listedFor(party.addressBookRole)
+      await expect(page.getByRole('radio')).toHaveCount(listed.length)
+
+      const rolelessRecord = STUB_BOOK.find(
+        (record) => record.name === 'Unclassified Traders Ltd'
+      )
+      await expect(
+        page.getByRole('radio', { name: partyPickerName(rolelessRecord) })
+      ).toBeVisible()
+
+      const otherRole = STUB_BOOK.find(
+        (record) =>
+          record.roles.length > 0 &&
+          !record.roles.includes(party.addressBookRole)
+      )
+      await expect(
+        page.getByRole('radio', { name: partyPickerName(otherRole) })
+      ).toHaveCount(0)
     })
 
     test(`${party.title} picker offers no add-address control in stub mode`, async ({
@@ -374,19 +556,17 @@ test.describe('party picker per role', () => {
       const selected = values[party.id]
       const selectedName = partyPickerName(selected)
       await page.getByRole('radio', { name: selectedName }).check()
-      await saveAndContinue(page)
-      await expectBackOnTheAddressesPage(page)
+      await saveAndContinue(page).click()
+      await expectLanding(page, LANDINGS.addresses)
       await expect(
         section.getByText(selectedName, { exact: true })
       ).toBeVisible()
       await expect(section.getByRole('link')).toHaveText(chosenLinkNames(party))
       await section.getByRole('link', { name: copy.hub.change }).click()
       await expect(
-        page.getByText(`${copy.picker.selectedAddressPrefix} ${selectedName}`)
-      ).toBeVisible()
-      await expect(
         page.getByRole('radio', { name: selectedName })
       ).toBeChecked()
+      await expectNothingBetweenSearchAndResultsHeading(page)
     })
   }
 })
@@ -408,17 +588,18 @@ test.describe('party picker layout', () => {
 
     expect(headingTop).toBeGreaterThan(searchBox.y + searchBox.height)
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
     )
   })
 
-  test('picker offers its addresses as one group named by the results heading', async ({
+  test('picker offers every consignor address as one group named by the results heading, with no page links', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.picker.resultsHeading })
 
-    await expect(group.getByRole('radio')).toHaveCount(PAGE_SIZE)
-    await expect(page.getByRole('radio')).toHaveCount(PAGE_SIZE)
+    await expect(group.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(0)
   })
 
   test('picker shows the no-matches message in the place of the count after a search that finds nothing', async ({
@@ -427,6 +608,12 @@ test.describe('party picker layout', () => {
     await searchAddresses(page, NO_MATCH_QUERY)
 
     await expect(resultsSummary(page)).toHaveText(copy.picker.noMatches)
+  })
+
+  test('ends with Save and continue alone, offering no return control', async ({
+    page
+  }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 })
 
@@ -440,7 +627,7 @@ test.describe('party picker save', () => {
   test('saving with nothing ticked returns to the addresses page with the consignor section offering only its add link', async ({
     page
   }) => {
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await expectConsignorOffersOnlyItsAddLink(page)
   })
@@ -449,7 +636,7 @@ test.describe('party picker save', () => {
     page
   }) => {
     await searchAddresses(page, NO_MATCH_QUERY)
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await expectConsignorOffersOnlyItsAddLink(page)
   })
@@ -504,7 +691,7 @@ test.describe('party picker search', () => {
     )
   })
 
-  test('clearing the search and searching with nothing entered lists the whole book again, paged as before', async ({
+  test('clearing the search and searching with nothing entered lists every consignor address again, on one page', async ({
     page
   }) => {
     await searchAddresses(page, 'Denmark')
@@ -515,10 +702,9 @@ test.describe('party picker search', () => {
     await searchAddresses(page, '')
 
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
     )
-    await expect(page.getByRole('radio')).toHaveCount(PAGE_SIZE)
-    await expect(page.getByRole('link', { name: 'Page 2' })).toBeVisible()
+    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
   })
 
   test('picker search with no matches shows its empty state', async ({
@@ -588,7 +774,7 @@ test.describe('party picker search without JavaScript', () => {
   })
 })
 
-test.describe('party picker details and pagination', () => {
+test.describe('party picker details', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openAddresses(page)
@@ -599,47 +785,46 @@ test.describe('party picker details and pagination', () => {
     page
   }) => {
     await expect(resultsSummary(page)).toHaveText(
-      copy.picker.resultsCount(PAGE_SIZE, ADDRESS_BOOK_SIZE)
+      copy.picker.resultsCount(CONSIGNOR_ADDRESS_COUNT, CONSIGNOR_ADDRESS_COUNT)
     )
     await expect(withinFullWidthColumn(journeyFormOf(page))).toHaveCount(1)
-    const addressRow = page.getByRole('row', { name: /Tech Imports Ltd/ })
+    const addressRow = page.getByRole('row', { name: /Danish Meat Export ApS/ })
 
     const addressCell = addressRow.getByRole('cell').nth(2)
     await expect
       .poll(() => addressCell.evaluate((cell) => cell.innerText))
-      .toBe('18 Dockside Road\nLondon, E14 9GE')
+      .toBe('Havnegade 21\nCopenhagen, 1058')
     await expect(page.getByRole('columnheader')).toHaveText([
       copy.picker.table.selectHidden,
       copy.picker.table.name,
       copy.picker.table.address,
       copy.picker.table.country
     ])
-    await expect(addressRow.getByRole('cell').last()).toHaveText(
-      'United Kingdom'
-    )
+    await expect(addressRow.getByRole('cell').last()).toHaveText('Denmark')
   })
 
-  test('picker carries a later-page selection and keeps it selected off-page', async ({
+  test('picker lists every consignor address on one page, with no page links', async ({
+    page
+  }) => {
+    await expect(page.getByRole('radio')).toHaveCount(CONSIGNOR_ADDRESS_COUNT)
+    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(0)
+  })
+
+  test('reopening the picker checks the previously chosen address, with nothing between the search box and the results heading', async ({
     page
   }) => {
     const consignorSection = addressesSection(page, CONSIGNOR.title)
-    await page.getByRole('link', { name: 'Page 2' }).click()
-    await page.getByRole('link', { name: 'Page 3' }).click()
-    await page.getByRole('radio', { name: LATER_PAGE_ADDRESS }).check()
-    await saveAndContinue(page)
+    await page
+      .getByRole('radio', { name: partyPickerName(values.consignor) })
+      .check()
+    await saveAndContinue(page).click()
 
-    await expect(consignorSection).toContainText(LATER_PAGE_ADDRESS)
     await consignorSection.getByRole('link', { name: copy.hub.change }).click()
+
     await expect(
-      page.getByText(
-        `${copy.picker.selectedAddressPrefix} ${LATER_PAGE_ADDRESS}`
-      )
-    ).toBeVisible()
-    await expect(
-      page.getByRole('radio', { name: LATER_PAGE_ADDRESS })
-    ).toHaveCount(0)
-    await saveAndContinue(page)
-    await expect(consignorSection).toContainText(LATER_PAGE_ADDRESS)
+      page.getByRole('radio', { name: partyPickerName(values.consignor) })
+    ).toBeChecked()
+    await expectNothingBetweenSearchAndResultsHeading(page)
   })
 
   test('picker page has no serious or critical axe violations', async ({

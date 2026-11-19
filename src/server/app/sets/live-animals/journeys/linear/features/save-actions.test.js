@@ -6,6 +6,7 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import {
   amendmentOpened,
   driveHandler,
+  getHandlerOf,
   reviewChangeLinkQuery,
   postHandlerOf
 } from '../../../../../engine/test-support.js'
@@ -14,6 +15,7 @@ import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
+import { recordsHoldingRole } from '../../../../../services/address-book/stub/test-support.js'
 import { seedFromFranceWithCommodityLineOfAnimals } from '../../../test-support.js'
 import { dispatchPages } from './index.js'
 import {
@@ -28,6 +30,10 @@ import * as consignmentDetails from './commodities/consignment-details/consignme
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
 import * as cphNumber from './cph-number/controller.js'
+import * as contact from './contact/controller.js'
+import { copy } from './contact/copy/copy.en.js'
+import { HELD_CONTACT } from './contact/test-support.js'
+import { CONTACT_PARTY } from './addresses/parties.js'
 import {
   BOS_TAURUS_ROW,
   FELIS_CATUS_ROW
@@ -224,25 +230,84 @@ describe('save actions — hub exit semantics', () => {
     ).toEqual(['GBHC1111111111'])
   })
 
-  it('Should let the hub exit win over a return-to-addresses entry context', async () => {
-    const cphInScope = { commodityLines: [BOS_TAURUS_ROW] }
+  it('Should return to the consignment addresses page from both posts, because the page offers no overview-return control', async () => {
+    const cphInScope = {
+      countryOfOrigin: 'FR',
+      commodityLines: [BOS_TAURUS_ROW]
+    }
     const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
-    const returned = await driveHandler(postHandlerOf(cphNumber), {
+    const saved = await driveHandler(postHandlerOf(cphNumber), {
       payload: cphParts,
-      query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(returned.response).toEqual({
-      redirect: pagePath(returned.journeyId, 'addresses')
+    expect(saved.response).toEqual({
+      redirect: pagePath(saved.journeyId, 'addresses')
     })
 
-    const exit = await driveHandler(postHandlerOf(cphNumber), {
+    const posingAsHubExit = await driveHandler(postHandlerOf(cphNumber), {
       payload: { ...cphParts, exit: 'hub' },
-      query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
-    expect(exit.after.countyParishHoldingCph).toBe('123456789')
+    expect(posingAsHubExit.response).toEqual({
+      redirect: pagePath(posingAsHubExit.journeyId, 'addresses')
+    })
+    expect(posingAsHubExit.after.countyParishHoldingCph).toBe('123456789')
+  })
+})
+
+describe('save actions — hub exit semantics — contact address', () => {
+  it('Should refuse both save controls with the same errors when nothing is chosen, leaving a held contact address as it was', async () => {
+    const plain = await driveHandler(postHandlerOf(contact), {
+      seed: { contactAddress: HELD_CONTACT },
+      payload: {}
+    })
+    const exit = await driveHandler(postHandlerOf(contact), {
+      seed: { contactAddress: HELD_CONTACT },
+      payload: { exit: 'hub' }
+    })
+
+    expect(plain.response.redirect).toBeUndefined()
+    expect(exit.response.redirect).toBeUndefined()
+    expect(exit.view.context.errors).toEqual(plain.view.context.errors)
+    expect(exit.view.context.errors.contactAddress).toBeDefined()
+    expect(plain.after.contactAddress).toEqual(HELD_CONTACT)
+    expect(exit.after.contactAddress).toEqual(HELD_CONTACT)
+  })
+
+  it('Should save a chosen address from either save control, each reaching its own destination', async () => {
+    const [chosen] = recordsHoldingRole(CONTACT_PARTY.addressBookRole)
+
+    const continuing = await driveHandler(postHandlerOf(contact), {
+      payload: { contactAddress: chosen.id }
+    })
+    const exiting = await driveHandler(postHandlerOf(contact), {
+      payload: { contactAddress: chosen.id, exit: 'hub' }
+    })
+
+    expect(continuing.response).toEqual({
+      redirect: withTrail(pagePath(continuing.journeyId, CYA_SLUG), [
+        contact.meta.slug
+      ])
+    })
+    expect(exiting.response).toEqual({ redirect: hubPath(exiting.journeyId) })
+    expect(continuing.after.contactAddress).toMatchObject({
+      pickedFromId: chosen.id,
+      name: chosen.name
+    })
+    expect(exiting.after.contactAddress).toMatchObject({
+      pickedFromId: chosen.id,
+      name: chosen.name
+    })
+
+    const returning = await driveHandler(getHandlerOf(contact), {
+      seed: exiting.after
+    })
+    expect(returning.view.context.errorSummary).toBeNull()
+    expect(
+      returning.view.context.contactOptions
+        .filter((option) => option.checked)
+        .map(({ value }) => value)
+    ).toEqual([chosen.id])
   })
 })
 
@@ -294,6 +359,38 @@ describe('save actions — while amending', () => {
       expect(amending.response.redirect).toBeUndefined()
       expect(amending.view.context.errors).toEqual(outside.view.context.errors)
       expect(amending.after).toEqual(amending.before)
+    }
+  )
+
+  it.each([
+    ['Save and continue', {}],
+    ['Save and return to hub', { exit: 'hub' }]
+  ])(
+    "Should hold %s on the contact address page to its own check while amending, re-offering the organisation's addresses with none chosen",
+    async (_button, buttonPayload) => {
+      const amending = await driveHandler(postHandlerOf(contact), {
+        seed: { contactAddress: HELD_CONTACT },
+        payload: buttonPayload,
+        startingFrom: [amendmentOpened()]
+      })
+      const outside = await driveHandler(postHandlerOf(contact), {
+        seed: { contactAddress: HELD_CONTACT },
+        payload: buttonPayload
+      })
+
+      expect(amending.response.redirect).toBeUndefined()
+      expect(amending.view.context.errors).toEqual(outside.view.context.errors)
+      expect(amending.view.context.errors.contactAddress).toBe(
+        copy.errors.contactRequired
+      )
+      expect(amending.view.context.errorSummary.errorList[0].text).toBe(
+        copy.errors.contactRequired
+      )
+      expect(amending.after).toEqual(amending.before)
+      expect(
+        amending.view.context.contactOptions.every((option) => !option.checked)
+      ).toBe(true)
+      expect(amending.view.context.contactOptions.length).toBeGreaterThan(0)
     }
   )
 })

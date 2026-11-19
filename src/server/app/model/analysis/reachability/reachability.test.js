@@ -524,11 +524,11 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     expect(decision.inScope).toBe(true)
   })
 
-  it('Should open the cph closure with a not-in-union witness', () => {
+  it('Should open the cph closure with an allow-listed witness', () => {
     const cph = obligations.find(
       (obligation) => obligation.name === 'countyParishHoldingCph'
     )
-    expect(cph.applyTo.metadata.gateType).toBe('anyNotInUnionOf')
+    expect(cph.applyTo.metadata.gateType).toBe('anyAllowListed')
     const witness = synthesiseWitness(cph)
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     const decision = cph.applyTo({

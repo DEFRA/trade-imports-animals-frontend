@@ -55,11 +55,11 @@ so generic notification-mapper code does not import the set.
   `UNWEANED_CODES`: `0101` (equines), `0102` (cattle), `0103` (pigs),
   `010410` (sheep) and `010420` (goats), set by the live animals data-fields
   specification.
-- Every consignment is asked for a CPH number unless every line's code is
-  exempt. `CPH_EXEMPT_CODES` names the exemptions by code: `0101` (equines)
-  and `01061900` (cats, dogs and ferrets, which are asked for each
-  animal's permanent address instead). A line with no code yet is ignored, and a
-  code added under any other value is asked.
+- Every consignment is asked for a CPH number when any line's code calls for one.
+  `CPH_REQUIRED_CODES` names the codes: cattle, pigs, sheep, goats and poultry
+  (day-old chicks, adult birds and hatching eggs), set by the live animals
+  data-fields specification. A line with no code yet is ignored, and a code not on
+  the list is not asked.
 
 ### Codes and species from MDM
 

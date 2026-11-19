@@ -27,12 +27,12 @@ const renderResults = (rows, { error, query, withViewLinks = true } = {}) =>
     }
   )
 
-const renderPicker = () =>
+const renderPicker = (picker = { rows: [], query: '' }) =>
   environment.renderString(
     `{% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPicker %}
      {{ addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) }}`,
     {
-      picker: { page: 1, rows: [], query: '' },
+      picker,
       crumb: 'test-crumb',
       copy: pickerCopy,
       saveActionsCopy: sharedEn.saveActions,
@@ -198,5 +198,21 @@ describe('addressPicker macro', () => {
       pickerCopy.search.label
     )
     expect(form.previousElementSibling).toBeNull()
+  })
+
+  it('Should render the results heading directly after the search field, with nothing between them', () => {
+    const picker = {
+      rows: [row],
+      query: '',
+      tableRows: pickerTableRows([row], pickerCopy, { withViewLinks: true }),
+      resultsCount: pickerCopy.resultsCount(1, 1),
+      selected: row
+    }
+    const form = documentOf(renderPicker(picker)).querySelector('form')
+    const searchFormGroup = form.querySelector('.govuk-form-group')
+
+    expect(searchFormGroup.nextElementSibling.textContent.trim()).toBe(
+      pickerCopy.resultsHeading
+    )
   })
 })

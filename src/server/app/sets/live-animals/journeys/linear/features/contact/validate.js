@@ -1,7 +1,8 @@
 import {
   compose,
   oneOf,
-  pageValidation
+  pageValidation,
+  requiredOneOf
 } from '../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
@@ -9,15 +10,17 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// Membership check gated on the caller passing `addressOptions` — only the
-// page itself fetches the book. Task list and review page skip this rule.
-const fields = (_values, { addressOptions } = {}) =>
+const contactAddressRule = (stored, ids) =>
+  stored
+    ? oneOf('contactAddress', ids)
+    : requiredOneOf('contactAddress', ids, copy.errors.contactRequired)
+
+const fields = (_values, { addressOptions, stored } = {}) =>
   addressOptions
     ? compose(
-        oneOf(
-          'contactAddress',
-          addressOptions.map((option) => option.id),
-          copy.errors.contactRequired
+        contactAddressRule(
+          stored,
+          addressOptions.map((option) => option.id)
         )
       )
     : compose()
@@ -26,6 +29,4 @@ export const validation = pageValidation({
   fields,
   fromPayload: (payload) => ({ contactAddress: payload.contactAddress ?? '' }),
   fromAnswers: () => ({ contactAddress: '' })
-  // No toAnswers — POST commits `answerFor(CONTACT_PARTY, chosen)` from a
-  // book record fetched by id, which values alone can't derive.
 })

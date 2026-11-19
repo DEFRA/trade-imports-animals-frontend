@@ -60,6 +60,14 @@ drawn. Reach for `applies` only when a scope condition genuinely cannot carry th
 rule — the transit-countries row needs no `applies`, because its answer leaves
 scope on its own.
 
+`extraAnswerGiven` is the second escape hatch, for a row that owes an answer no
+part key can reach. A scope key is a bare obligation name or a collection name, so
+a leaf nested inside a collection — the permanent address inside `animalIdentifiers`
+inside `commodityLines` — has no part key of its own. The addresses row declares
+`extraAnswerGiven`, a predicate over the answers and the evaluation in the same
+shape as `applies`, and `rowStatus` holds the row at In progress rather than
+Completed while it answers false, whatever the parts roll up to.
+
 The hub derives its groups from the flow sections: each section that holds a task
 row's first page is a group, headed by its caption, and lists its task rows in the
 order of their first page. The sections are also the journey's page order, which
@@ -142,18 +150,21 @@ answers' own Back link went, so Back from the page it opens returns to check you
 answers with that Back link unchanged.
 
 A round trip to a sub-page keeps where the trader came from, so the page that opened
-it still goes Back where it did before: the CPH number page, the permanent address
-page, add transporter and a picker's View link each carry the trail out and back.
+it still goes Back where it did before: the permanent address page, add transporter
+and a picker's View link each carry the trail out and back.
 
 Pages that redirect onward without showing themselves carry the trail rather than push
 onto it. The identification page's no-commodity-line guard carries the trail on to What
 are you importing?, so Back there opens the page the trader came from. What are you
 importing? opened by Commodity details or Identification details saves back to the page
-that opened it, carrying the trail, and its Back opens that page. The CPH number page
-opened from the CPH section's add link saves back to Roles and addresses and goes Back
-there; opened from a review Change link its Back is the review and its Save and continue
-goes to Roles and addresses. A return value that is not one of the pages allowed to open
-this sub-page is refused, logged and ignored.
+that opened it, carrying the trail, and its Back opens that page. A return value that is
+not one of the pages allowed to open this sub-page is refused, logged and ignored.
+
+The county parish holding number page is the exception: its Back always answers the
+consignment addresses page, carrying the trail, however the page was reached, and its
+Save and continue answers the consignment addresses page as the next step that applies
+— the same page, carrying the trail — unless a required earlier answer is still
+missing, in which case it answers the page that asks for that answer instead.
 
 A trail that names a place the journey does not have is ignored and logged once, and
 the page goes Back to its fallback. The fallback is the overview, except on the first
@@ -175,8 +186,9 @@ Overview task, or by opening the notification from the dashboard. Save and conti
 goes to the next page that applies in the journey's one page order from every start
 (a new notification, an Overview task, a reopened draft, a copy, a Change link, an
 amendment or a new browser session), and past the last page that applies it goes to
-the review page. The CPH number page and the permanent address page are both
-sub-pages: each goes on from the page that opens it to Roles and addresses.
+the review page. The permanent address page is a sub-page: it goes on from the page
+that opens it to Roles and addresses. The county parish holding number page goes on to
+Roles and addresses however it was reached (see above).
 
 A notification is created by the dashboard's create POST or by the start entry
 (`<set>/start`, which the Import Notification Service's type question opens), through one

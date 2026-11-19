@@ -12,37 +12,42 @@
 
   {{ govukWarningText({ text: copy.warning }) }}
 
-  {% for section in sections %}
-    <section aria-labelledby="{{ section.id }}-heading">
-      <h2 class="govuk-heading-m" id="{{ section.id }}-heading">{{ section.title }}</h2>
-      <p class="govuk-hint">{{ section.hint }}</p>
-
-      {% if section.bullets %}
-        <ul class="govuk-list govuk-list--bullet">
-          {% for bullet in section.bullets %}<li>{{ bullet }}</li>{% endfor %}
-        </ul>
-      {% endif %}
-
-      {% if section.chosen %}
-        {% call govukInsetText() %}
-          {% if section.chosen.name %}<strong>{{ section.chosen.name }}</strong><br>{% endif %}
-          {% for line in section.chosen.lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
-        {% endcall %}
-        <p class="govuk-body">
-          <a class="govuk-link govuk-!-margin-right-3" href="{{ section.chosen.changeHref }}">{{ copy.change }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
-          {% if section.chosen.editDetailsHref %}
-            <a class="govuk-link" href="{{ section.chosen.editDetailsHref }}">{{ copy.editDetails }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
-          {% endif %}
-        </p>
-      {% else %}
-        <p class="govuk-body"><a class="govuk-link" href="{{ section.addLink.href }}">{{ section.addLink.text }}</a></p>
-      {% endif %}
-    </section>
-  {% endfor %}
-
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+
+    {% for section in sections %}
+      <section aria-labelledby="{{ section.id }}-heading">
+        <h2 class="govuk-heading-m" id="{{ section.id }}-heading">{{ section.title }}</h2>
+        <p class="govuk-hint">{{ section.hint }}</p>
+
+        {% if section.bullets %}
+          <ul class="govuk-list govuk-list--bullet">
+            {% for bullet in section.bullets %}<li>{{ bullet }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if section.chosen %}
+          {% call govukInsetText() %}
+            {% if section.chosen.name %}<strong>{{ section.chosen.name }}</strong><br>{% endif %}
+            {% for line in section.chosen.lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+          {% endcall %}
+          <p class="govuk-body">
+            <a class="govuk-link govuk-!-margin-right-3" href="{{ section.chosen.changeHref }}">{{ copy.change }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
+            {% if section.chosen.editDetailsHref %}
+              <a class="govuk-link" href="{{ section.chosen.editDetailsHref }}">{{ copy.editDetails }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></a>
+            {% endif %}
+          </p>
+        {% else %}
+          <p class="govuk-body">
+            {% if section.sameAs %}
+              <button type="submit" class="govuk-link app-link-button govuk-!-margin-right-3" name="action" value="{{ section.sameAs.value }}">{{ section.sameAs.label }}<span class="govuk-visually-hidden"> {{ section.hiddenSuffix }}</span></button>
+            {% endif %}
+            <a class="govuk-link" href="{{ section.addLink.href }}">{{ section.addLink.text }}</a>
+          </p>
+        {% endif %}
+      </section>
+    {% endfor %}
 
     {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions }) }}
   </form>
