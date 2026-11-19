@@ -7,12 +7,15 @@ import {
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   expectPageEndsWithPrimaryAlone,
+  expectStyle,
   journeyUrl,
+  measureReferenceElement,
   openAddresses,
   openCphNumberFromAddLink,
   errorSummary,
   followErrorLinkToField,
-  govukColourOf
+  govukColourOf,
+  saveAndContinue
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../../flow/section-captions/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -22,7 +25,6 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const { serviceName, govukSuffix, errorTitlePrefix } = sharedCopy.layout
 
-const SUBMIT_BUTTON = 'form button[type="submit"]'
 const WHOLE_NUMBER = '123456789'
 const SLASHED_NUMBER = '12/345/6789'
 
@@ -40,7 +42,7 @@ const fillCph = async (page, { county, parish, holding }) => {
 }
 
 const saveAndExpectAddresses = async (page) => {
-  await page.locator(SUBMIT_BUTTON).first().click()
+  await saveAndContinue(page).click()
   await expect(page).toHaveURL(
     /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
   )
@@ -101,13 +103,24 @@ test.describe('cph-number feature', () => {
   }) => {
     const boxes = partBoxes(page)
 
-    const widths = await Promise.all(
-      [boxes.county, boxes.parish, boxes.holding].map(
-        async (box) => (await box.boundingBox()).width
-      )
+    const govukInputWidthStyleOf = (widthClass) =>
+      measureReferenceElement(page, {
+        tagName: 'input',
+        className: `govuk-input ${widthClass}`,
+        properties: ['width']
+      })
+    await expectStyle(
+      boxes.county,
+      await govukInputWidthStyleOf('govuk-input--width-2')
     )
-    expect(widths[0]).toBeLessThan(widths[1])
-    expect(widths[1]).toBeLessThan(widths[2])
+    await expectStyle(
+      boxes.parish,
+      await govukInputWidthStyleOf('govuk-input--width-3')
+    )
+    await expectStyle(
+      boxes.holding,
+      await govukInputWidthStyleOf('govuk-input--width-4')
+    )
 
     for (const box of Object.values(boxes)) {
       await expect(box).toHaveAttribute('inputmode', 'numeric')
@@ -115,17 +128,16 @@ test.describe('cph-number feature', () => {
       await expect(box).toHaveAttribute('pattern', '[0-9]*')
     }
 
-    for (const [id, text] of [
-      ['cphCounty', copy.cph.county],
-      ['cphParish', copy.cph.parish],
-      ['cphHolding', copy.cph.holding]
-    ]) {
-      const label = page.locator(`label[for="${id}"]`)
-      await expect(label).toHaveText(text)
+    const group = page.getByRole('group', { name: copy.cph.legend })
+    for (const [part, box] of Object.entries(boxes)) {
+      const text = copy.cph[part]
+      await expect(box).toHaveAccessibleName(text)
+
+      const label = group.getByText(text, { exact: true })
       await expect(label).toBeVisible()
-      const box = await label.boundingBox()
+      const labelRect = await label.boundingBox()
       expect(
-        box.width,
+        labelRect.width,
         `${text} label is clipped out of sight`
       ).toBeGreaterThan(1)
     }
@@ -256,7 +268,7 @@ test.describe('cph-number without JavaScript', () => {
     page
   }) => {
     await partBoxes(page).county.fill('1234')
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const summary = errorSummary(page)
     await expect(
@@ -293,7 +305,7 @@ test.describe('cph-number validation', () => {
   test('CPH validation: saving an untouched page lands on the consignment addresses page, offering the add link again', async ({
     page
   }) => {
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page).toHaveURL(
       /\/notifications\/[^/]+\/addresses(?:\?from=[^#]*)?$/
@@ -309,7 +321,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '12', parish: '34', holding: '6789' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const boxes = partBoxes(page)
     await followErrorLinkToField(page, copy.errors.parishLength, boxes.parish)
@@ -322,7 +334,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '12', parish: '345', holding: '' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await followErrorLinkToField(
       page,
@@ -335,7 +347,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '12', parish: '345', holding: '678a' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const boxes = partBoxes(page)
     await followErrorLinkToField(
@@ -350,7 +362,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     const summary = errorSummary(page)
     await expect(
@@ -368,7 +380,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
 
     await expect(page.locator('form > .govuk-form-group--error')).toHaveCount(1)
     await expect(
@@ -394,7 +406,7 @@ test.describe('cph-number validation', () => {
     page
   }) => {
     await fillCph(page, { county: '1', parish: '34', holding: '678' })
-    await page.locator(SUBMIT_BUTTON).first().click()
+    await saveAndContinue(page).click()
     await expect(errorSummary(page)).toBeVisible()
 
     await expectNoSeriousOrCriticalViolations(

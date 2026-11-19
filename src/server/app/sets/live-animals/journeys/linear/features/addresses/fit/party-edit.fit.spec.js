@@ -4,13 +4,13 @@ import {
   expectCaptionAboveHeading,
   expectNoSeriousOrCriticalViolations,
   partyPickerName,
+  saveAndContinue,
   signIn,
   startNotification,
   unlockSections,
   values,
   followErrorLinkToField
 } from '../../../../../../../../../../fit/live-animals-journey.js'
-import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as editCopy } from '../party-edit/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
@@ -18,14 +18,6 @@ import { PARTIES } from '../parties.js'
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
 const ROLES_AND_ADDRESSES = 'Roles and addresses'
 const EDITED_NAME = 'Edited Consignor Ltd'
-
-const saveAndContinue = (page) =>
-  page
-    .getByRole('button', {
-      name: sharedCopy.saveActions.saveAndContinue,
-      exact: true
-    })
-    .click()
 
 const openConsignorEdit = async (page) => {
   await startNotification(page)
@@ -37,7 +29,7 @@ const openConsignorEdit = async (page) => {
   await page
     .getByRole('radio', { name: partyPickerName(values.consignor) })
     .check()
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
   await addressesSection(page, CONSIGNOR.title)
     .getByRole('link', { name: copy.hub.editDetails })
     .click()

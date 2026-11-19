@@ -22,6 +22,7 @@ import {
   openOverview,
   paragraphFollowing,
   partyPickerName,
+  saveAndContinue,
   searchByPressingEnter,
   signIn,
   values,
@@ -80,7 +81,7 @@ const pickParty = async (page, party) => {
   await page
     .getByRole('radio', { name: partyPickerName(values[party.id]) })
     .check()
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
 }
 
 const pickEveryParty = async (page) => {
@@ -118,14 +119,6 @@ const searchAddresses = async (page, query) => {
     .click()
 }
 
-const saveAndContinue = (page) =>
-  page
-    .getByRole('button', {
-      name: sharedCopy.saveActions.saveAndContinue,
-      exact: true
-    })
-    .click()
-
 const resultsHeading = (page) =>
   page.getByRole('heading', { name: copy.picker.resultsHeading, level: 2 })
 
@@ -145,7 +138,7 @@ const postAnIdNotInTheBook = async (page) => {
       input.value = id
       input.checked = true
     }, NOT_IN_THE_BOOK)
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
 }
 
 const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
@@ -162,7 +155,7 @@ const postAnIdNotInTheBookAfterASearchMatchingNothing = async (page) => {
     },
     { name: fieldName, id: NOT_IN_THE_BOOK }
   )
-  await saveAndContinue(page)
+  await saveAndContinue(page).click()
 }
 
 test.describe('addresses hub', () => {
@@ -188,12 +181,7 @@ test.describe('addresses hub', () => {
       await expect(section.getByRole('link')).toHaveAccessibleName(party.add)
     }
 
-    await expect(
-      page.getByRole('button', {
-        name: sharedCopy.saveActions.saveAndContinue,
-        exact: true
-      })
-    ).toBeVisible()
+    await expect(saveAndContinue(page)).toBeVisible()
   })
 
   test('hub back link returns to the overview', async ({ page }) => {
@@ -205,7 +193,7 @@ test.describe('addresses hub', () => {
     page
   }) => {
     await pickEveryParty(page)
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await openOverview(page)
     await expect(
@@ -568,7 +556,7 @@ test.describe('party picker per role', () => {
       const selected = values[party.id]
       const selectedName = partyPickerName(selected)
       await page.getByRole('radio', { name: selectedName }).check()
-      await saveAndContinue(page)
+      await saveAndContinue(page).click()
       await expectLanding(page, LANDINGS.addresses)
       await expect(
         section.getByText(selectedName, { exact: true })
@@ -639,7 +627,7 @@ test.describe('party picker save', () => {
   test('saving with nothing ticked returns to the addresses page with the consignor section offering only its add link', async ({
     page
   }) => {
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await expectConsignorOffersOnlyItsAddLink(page)
   })
@@ -648,7 +636,7 @@ test.describe('party picker save', () => {
     page
   }) => {
     await searchAddresses(page, NO_MATCH_QUERY)
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await expectConsignorOffersOnlyItsAddLink(page)
   })
@@ -829,7 +817,7 @@ test.describe('party picker details', () => {
     await page
       .getByRole('radio', { name: partyPickerName(values.consignor) })
       .check()
-    await saveAndContinue(page)
+    await saveAndContinue(page).click()
 
     await consignorSection.getByRole('link', { name: copy.hub.change }).click()
 
