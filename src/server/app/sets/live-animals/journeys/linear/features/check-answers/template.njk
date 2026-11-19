@@ -36,22 +36,29 @@
     <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ viewHeader.reference }}</h1>
     {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
 
+    {% if viewHeader.actions.amend %}
+      <form id="view-header-amend" method="post" action="{{ viewHeader.actions.amend.postAction }}" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+      </form>
+    {% endif %}
+    <form id="view-header-copy" method="post" action="{{ viewHeader.actions.copy.postAction }}" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+      <input type="hidden" name="copyOrigin" value="notification-view" />
+    </form>
+
     <div class="govuk-button-group">
       {% if viewHeader.actions.amend %}
-        <form method="post" action="{{ viewHeader.actions.amend.postAction }}" class="app-form-inline">
-          <input type="hidden" name="crumb" value="{{ crumb }}" />
-          {{ govukButton({ text: viewHeader.actions.amend.text }) }}
-        </form>
-      {% endif %}
-      <form method="post" action="{{ viewHeader.actions.copy.postAction }}" class="app-form-inline">
-        <input type="hidden" name="crumb" value="{{ crumb }}" />
-        <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-        <input type="hidden" name="copyOrigin" value="notification-view" />
         {{ govukButton({
-          text: viewHeader.actions.copy.text,
-          classes: viewHeader.actions.copy.classes
+          text: viewHeader.actions.amend.text,
+          attributes: { form: "view-header-amend" }
         }) }}
-      </form>
+      {% endif %}
+      {{ govukButton({
+        text: viewHeader.actions.copy.text,
+        classes: viewHeader.actions.copy.classes,
+        attributes: { form: "view-header-copy" }
+      }) }}
       {{ govukButton(viewHeader.actions.delete) }}
     </div>
 

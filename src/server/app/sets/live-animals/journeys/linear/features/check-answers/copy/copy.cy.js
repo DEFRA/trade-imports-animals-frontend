@@ -38,7 +38,7 @@ export const copy = {
     internalReference: 'Cyfeirnod mewnol',
     certifiedFor: 'Wedi’i ardystio ar gyfer',
     unweaned: 'Yn cynnwys anifeiliaid heb eu diddyfnu',
-    reasonForImport: 'Prif reswm mewnforio',
+    mainImportReason: 'Prif reswm mewnforio',
     purpose: 'Diben yn y farchnad',
     destinationCountry: 'Gwlad gyrchfan',
     exitDate: 'Dyddiad ymadael',

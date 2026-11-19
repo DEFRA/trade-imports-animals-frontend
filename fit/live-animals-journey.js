@@ -500,8 +500,19 @@ export const notificationReferenceHeading = (page) =>
 export const viewHeaderTag = (page, statusText) =>
   page.getByRole('main').getByText(statusText, { exact: true })
 
-export const journeyStripTag = (page) =>
-  page.getByText(sharedAppCopy.journeyStrip.amend, { exact: true })
+export const formSubmittedBy = async (button) => {
+  const formId = await button.getAttribute('form')
+  const page = button.page()
+  return {
+    form: page.locator(`form[id="${formId}"]`),
+    submitButtons: page.locator(`button[form="${formId}"]`)
+  }
+}
+
+export const journeyStrip = (page) => page.locator('.app-journey-strip')
+
+export const journeyStripStatus = (page, statusText) =>
+  journeyStrip(page).getByText(statusText, { exact: true })
 
 export const expectDraftReview = async (page) => {
   await expect(notificationReferenceHeading(page)).toBeVisible()

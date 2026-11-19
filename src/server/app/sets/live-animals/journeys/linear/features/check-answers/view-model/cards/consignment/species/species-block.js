@@ -22,11 +22,12 @@ const identificationDetails = ({
   entry,
   units
 }) => {
-  const table = identificationDetailsTable(
+  const table = identificationDetailsTable({
     units,
-    entry.commodityCode,
-    entry.speciesLatinName
-  )
+    commodityCode: entry.commodityCode,
+    speciesLatinName: entry.speciesLatinName,
+    speciesName
+  })
   return table
     ? {
         ...editableActions({

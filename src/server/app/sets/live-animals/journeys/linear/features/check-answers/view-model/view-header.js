@@ -75,12 +75,11 @@ const importReferences = ({ journeyId }) => {
  * notification.
  *
  * @param {object} journey - the journey being viewed.
- * @returns {object|null} null unless the journey is a draft or submitted.
- * Otherwise the reference, the
- * status tag, the date line (Date created for a draft, Date submitted for a
- * submitted notification, null without the stored instant), the Amend action
- * (null for a draft), the Copy as new and Delete actions, and the import
- * reference numbers section.
+ * @returns {object|null} null unless the journey is a draft or submitted;
+ * otherwise { reference, status, dateLine, actions: { amend, copy, delete },
+ * importReferences }
+ *
+ * dateLine is 'Date created' for a draft and 'Date submitted' for a submitted notification, and null without the stored instant.
  */
 export const viewHeader = (journey) => {
   if (journey.status !== DRAFT && journey.status !== SUBMITTED) {

@@ -333,7 +333,7 @@ test.describe('declaration reached only from the review', () => {
       question: 'main import reason',
       unanswered: 'mainImportReason',
       cardMessage: checkAnswersCopy.errors.cards.mainImportReason,
-      blankRowLabel: checkAnswersCopy.rows.reasonForImport
+      blankRowLabel: checkAnswersCopy.rows.mainImportReason
     },
     {
       question: 'certified-for answer',

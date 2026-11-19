@@ -37,7 +37,7 @@ export const copy = {
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
     unweaned: 'Includes unweaned animals',
-    reasonForImport: 'Main import reason',
+    mainImportReason: 'Main import reason',
     purpose: 'Purpose in the market',
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',

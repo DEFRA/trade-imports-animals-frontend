@@ -7,11 +7,12 @@ import { filledIdentifierColumns } from './identifier-columns.js'
 
 const copy = copyFor({ en, cy })
 
-export const identificationDetailsTable = (
+export const identificationDetailsTable = ({
   units,
   commodityCode,
-  speciesLatinName
-) => {
+  speciesLatinName,
+  speciesName
+}) => {
   if (units.length === 0) {
     return null
   }
@@ -26,7 +27,7 @@ export const identificationDetailsTable = (
       ...columns.map(([, label]) => ({ text: label }))
     ],
     rows: units.map((unit, unitIndex) => [
-      { text: animalLabelOf(speciesLatinName, unitIndex + 1) },
+      { text: animalLabelOf(speciesName, unitIndex + 1) },
       ...columns.map(([id]) => ({ text: valueText(unit[id]) }))
     ])
   }

@@ -903,6 +903,16 @@ describe(`${SUITE} — commodity selection and species blocks`, () => {
       [{ text: 'Bos taurus 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
     ])
   })
+
+  it('Should label identification rows with the same species name as the block heading', async () => {
+    const block = speciesBlockOf(
+      await sectionsFor(fullSeed),
+      CATTLE_CARD_TITLE,
+      BOS_TAURUS_HEADING
+    )
+    const [firstRow] = block.identificationDetails.table.rows
+    expect(firstRow[0].text).toBe(`${block.heading} 1`)
+  })
 })
 
 describe(`${SUITE} — fully-populated notification, documents and change links`, () => {
@@ -1423,7 +1433,7 @@ describe(`${SUITE} — main-import-reason card`, () => {
   it('Should carry the reason and the purpose, and link to the page that collects them', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), MAIN_IMPORT_REASON)
 
-    expect(valueOf(card.rows, copyEn.rows.reasonForImport)).toBe(
+    expect(valueOf(card.rows, copyEn.rows.mainImportReason)).toBe(
       INTERNAL_MARKET_TEXT
     )
     expect(valueOf(card.rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
@@ -2986,7 +2996,7 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         ...document.querySelectorAll('.govuk-button-group .govuk-button')
       ].map((button) => ({
         text: button.textContent.trim(),
-        formAction: button.closest('form')?.getAttribute('action'),
+        formAction: button.form?.getAttribute('action'),
         href: button.getAttribute('href'),
         classes: button.className
       }))
@@ -2999,7 +3009,9 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
       expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[2].href).toBe(actions.delete.href)
       expect(controls[2].classes).toContain('govuk-button--warning')
-      expect(document.querySelector('form[novalidate]')).toBeNull()
+      expect(
+        document.querySelector(`form[action="${view.context.declarationHref}"]`)
+      ).toBeNull()
     })
   })
 })

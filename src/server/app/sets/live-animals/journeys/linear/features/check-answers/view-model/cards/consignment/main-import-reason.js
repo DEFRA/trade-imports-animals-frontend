@@ -76,7 +76,7 @@ export const mainImportReasonCard = async ({
   }),
   rows: [
     row(
-      copy.rows.reasonForImport,
+      copy.rows.mainImportReason,
       importReasonPurpose.reasonLabel(answers.reasonForImport) ?? ''
     ),
     ...(purposeApplies(answers, scope)

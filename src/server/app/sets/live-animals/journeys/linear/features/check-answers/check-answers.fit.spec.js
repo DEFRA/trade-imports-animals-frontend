@@ -29,7 +29,7 @@ import {
   expectDraftReview,
   expectDraftReviewEndsWithContinue,
   journeyIdFromPage,
-  journeyStripTag,
+  journeyStripStatus,
   journeyUrl,
   notificationViewUrl,
   numberOfAnimalsFor,
@@ -37,6 +37,7 @@ import {
   reviewCardFor,
   viewHeaderTag,
   formControls,
+  formSubmittedBy,
   reviewFootControls,
   INFECTED_DOCUMENT_FILE_NAME,
   STILL_SCANNING_DOCUMENT_FILE_NAME,
@@ -112,12 +113,13 @@ const headerButtonGroup = (page) =>
 
 const headerControls = (page) => formControls(headerButtonGroup(page))
 
-const headerFormHolding = (page, buttonName) =>
-  headerButtonGroup(page)
-    .locator('form')
-    .filter({
-      has: page.getByRole('button', { name: buttonName, exact: true })
+const headerFormSubmittedBy = (page, buttonName) =>
+  formSubmittedBy(
+    headerButtonGroup(page).getByRole('button', {
+      name: buttonName,
+      exact: true
     })
+  )
 
 const fieldNamesOf = (form) =>
   form.locator('input').evaluateAll((inputs) => inputs.map(({ name }) => name))
@@ -648,7 +650,7 @@ test.describe('check-answers feature exit answers', () => {
     await openNotificationView(page)
 
     await expect(rowKeysOf(page, copy.cards.mainImportReason)).toHaveText([
-      copy.rows.reasonForImport,
+      copy.rows.mainImportReason,
       copy.rows.portOfExit,
       copy.rows.destinationCountry
     ])
@@ -1180,7 +1182,7 @@ test.describe('check-answers feature draft notification reached from Review and 
   test('posts Copy as new from a form of its own holding only the crumb, concurrency token and copy origin', async ({
     page
   }) => {
-    const form = headerFormHolding(
+    const { form, submitButtons } = await headerFormSubmittedBy(
       page,
       sharedCopy.notificationActions.copy.text
     )
@@ -1191,7 +1193,9 @@ test.describe('check-answers feature draft notification reached from Review and 
       'concurrencyToken',
       'copyOrigin'
     ])
-    await expect(form.getByRole('button')).toHaveCount(1)
+    await expect(submitButtons).toHaveText([
+      sharedCopy.notificationActions.copy.text
+    ])
   })
 
   test('Copy as new opens a different draft notification overview', async ({
@@ -1378,25 +1382,24 @@ test.describe('check-answers feature submitted notification', () => {
   test('posts Amend this notification from a form of its own holding only the crumb, and Copy as new from another', async ({
     page
   }) => {
-    const amendForm = headerFormHolding(page, copy.viewHeader.amend)
-    const copyForm = headerFormHolding(
+    const amend = await headerFormSubmittedBy(page, copy.viewHeader.amend)
+    const copyAsNew = await headerFormSubmittedBy(
       page,
       sharedCopy.notificationActions.copy.text
     )
 
-    await expect(amendForm).toHaveAttribute('action', /\/amend$/)
-    expect(await fieldNamesOf(amendForm)).toEqual(['crumb'])
-    await expect(amendForm.getByRole('button')).toHaveCount(1)
-    await expect(copyForm).toHaveAttribute('action', /\/copy$/)
-    expect(await fieldNamesOf(copyForm)).toEqual([
+    await expect(amend.form).toHaveAttribute('action', /\/amend$/)
+    expect(await fieldNamesOf(amend.form)).toEqual(['crumb'])
+    await expect(amend.submitButtons).toHaveText([copy.viewHeader.amend])
+    await expect(copyAsNew.form).toHaveAttribute('action', /\/copy$/)
+    expect(await fieldNamesOf(copyAsNew.form)).toEqual([
       'crumb',
       'concurrencyToken',
       'copyOrigin'
     ])
-    await expect(copyForm.getByRole('button')).toHaveCount(1)
-    await expect(
-      headerButtonGroup(page).locator('form a.govuk-button')
-    ).toHaveCount(0)
+    await expect(copyAsNew.submitButtons).toHaveText([
+      sharedCopy.notificationActions.copy.text
+    ])
     await expect(
       headerButtonGroup(page).getByRole('button', {
         name: sharedCopy.notificationActions.delete.text,
@@ -1410,7 +1413,9 @@ test.describe('check-answers feature submitted notification', () => {
   }) => {
     await page.getByRole('button', { name: copy.viewHeader.amend }).click()
 
-    await expect(journeyStripTag(page)).toBeVisible()
+    await expect(
+      journeyStripStatus(page, sharedCopy.journeyStrip.amend)
+    ).toBeVisible()
   })
 
   test('Amend this notification opens the amendment review when JavaScript is off', async ({
@@ -1420,7 +1425,9 @@ test.describe('check-answers feature submitted notification', () => {
     await withoutJavaScript(page, browser, async (noJs) => {
       await noJs.getByRole('button', { name: copy.viewHeader.amend }).click()
 
-      await expect(journeyStripTag(noJs)).toBeVisible()
+      await expect(
+        journeyStripStatus(noJs, sharedCopy.journeyStrip.amend)
+      ).toBeVisible()
     })
   })
 

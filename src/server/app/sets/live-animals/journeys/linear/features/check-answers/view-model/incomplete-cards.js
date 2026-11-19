@@ -86,16 +86,8 @@ const cardHref = (card, pageAnchors) =>
     ? `#${card.anchor}`
     : `#${card.fallbackAnchor}`
 
-/**
- * The in-page target for a review error key.
- *
- * @param {string} key - a card id or a per-species key.
- * @param {Set<string>} pageAnchors - the anchors the page carries.
- * @returns {string|undefined} a card key resolves to its card's anchor or,
- * when the page carries none, its fallback; a per-species key resolves to its
- * species block's anchor; any other key to undefined.
- */
-export const cardAnchorHref = (key, pageAnchors) => {
+/** Returns the in-page anchor for a review error key, or undefined for an unknown key. */
+export const reviewErrorAnchorHref = (key, pageAnchors) => {
   const card = cardById.get(key)
   return card ? cardHref(card, pageAnchors) : speciesBlockHref(key)
 }

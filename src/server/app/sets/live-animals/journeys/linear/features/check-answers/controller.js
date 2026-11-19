@@ -26,7 +26,7 @@ import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import { speciesErrors } from './view-model/species-errors.js'
 import {
-  cardAnchorHref,
+  reviewErrorAnchorHref,
   incompleteCardErrors,
   REVIEW_CARDS,
   withCardErrors
@@ -84,7 +84,7 @@ const reviewErrorSummary = (
               CYA_SLUG,
               reviewPageTrail
             )
-          : (cardAnchorHref(key, pageAnchors) ??
+          : (reviewErrorAnchorHref(key, pageAnchors) ??
             changeHref({ journeyId, changeLinkTrail }, key)),
       disableAutoFocus
     }
