@@ -20,7 +20,6 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { buildSections } from './view-model/index.js'
 import { deleteButtonFor, viewHeader } from './view-model/view-header.js'
 import { changeHref } from './view-model/rows/change-link.js'
@@ -146,6 +145,7 @@ const renderCya = async (
       evaluation,
       journeyId: journey.journeyId,
       changeLinkTrail,
+      reviewPageTrail,
       readOnly,
       parties,
       partyErrors,
@@ -255,27 +255,4 @@ const renderAndRecordReviewed = async (request, h) => {
   return response
 }
 
-const redirectToNotificationList = (request, h) => {
-  request.logger.info(
-    {
-      journeyId: request.params.journeyId,
-      path: request.path,
-      organisationId: organisationIdOf(request)
-    },
-    'Notification not found, sent to the notification list'
-  )
-  return h.redirect(dashboardPath())
-}
-
-const get = async (request, h) => {
-  try {
-    return await renderAndRecordReviewed(request, h)
-  } catch (error) {
-    if (state.isJourneyNotFound(error)) {
-      return redirectToNotificationList(request, h)
-    }
-    throw error
-  }
-}
-
-export const routes = pageRoutes(page, { get })
+export const routes = pageRoutes(page, { get: renderAndRecordReviewed })

@@ -91,12 +91,14 @@ describe('entry guard', () => {
     expect(response).toBe(pagePath(journeyId, ORIGIN_SLUG))
   })
 
-  it('Should let a guarded path through for a notification that does not exist, for its page to answer', async () => {
+  it('Should reject with not found for a guarded path of a notification that does not exist', async () => {
     const request = journeyRequest('GBN-0000-0000-0000', {
       path: pagePath('GBN-0000-0000-0000', 'notification-view')
     })
 
-    expect(await entryGuardTarget(request, stubH(request))).toBeNull()
+    await expect(
+      entryGuardTarget(request, stubH(request))
+    ).rejects.toMatchObject({ isBoom: true, output: { statusCode: 404 } })
   })
 
   it('Should never consult the journey for an exempt path', async () => {

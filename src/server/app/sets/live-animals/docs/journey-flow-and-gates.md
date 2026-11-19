@@ -206,11 +206,12 @@ as user answers. A journey with none (a deep link to an id this session never
 created, or a draft with nothing saved) is sent to the origin page, and a request
 for Overview, the review, the declaration or the confirmation page is sent there
 too. Each redirect is logged once with the journey id and the requested path. A
-notification that cannot be found at all is admitted, and its page answers it:
-the review sends it to the notification list, and every other page answers not
-found. The
-origin page and its children, and the amend, cancel-amend, copy and delete
-actions, are exempt from the guard, so there is no redirect loop.
+notification that cannot be found at all is answered by the guard itself with the
+service's standard page not found (404), on every page, the review included,
+before any page runs, and is sent nothing to the origin page or the notification
+list. The origin page and its children, and the amend, cancel-amend, copy and
+delete actions, are exempt from the guard, so there is no redirect loop. An
+exempt path's own page answers not found the same way.
 
 A journey the guard bounces to the origin page carries no trail, so the origin page's
 Back is the dashboard until an answer is entered. The guard sends the request on to

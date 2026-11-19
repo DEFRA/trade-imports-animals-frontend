@@ -33,7 +33,26 @@ const valueCell = (lines, errorText) => {
   return { html: errorText ? errorMarkup(errorText) + details : details }
 }
 
-export const partyRow = (key, party, { errorText = null } = {}) => ({
-  key: { text: key },
-  value: valueCell(htmlLines(party), errorText)
-})
+const editAction = (lines, edit) =>
+  lines && edit
+    ? {
+        actions: {
+          items: [
+            {
+              href: edit.href,
+              text: copy.editDetails,
+              visuallyHiddenText: edit.visuallyHiddenText
+            }
+          ]
+        }
+      }
+    : {}
+
+export const partyRow = (key, party, { errorText = null, edit } = {}) => {
+  const lines = htmlLines(party)
+  return {
+    key: { text: key },
+    value: valueCell(lines, errorText),
+    ...editAction(lines, edit)
+  }
+}

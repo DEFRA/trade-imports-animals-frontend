@@ -75,6 +75,7 @@ export const copy = {
     animalColumn: 'Anifail',
     heading: 'Manylion adnabod'
   },
+  editDetails: 'Golygu manylion',
   documentN: (n) => `Dogfen ${n}`,
   hidden: {
     cards: {

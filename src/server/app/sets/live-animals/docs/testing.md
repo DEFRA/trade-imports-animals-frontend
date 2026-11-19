@@ -99,7 +99,7 @@ These steps are shared because two or more tests use them:
   name. The stub uploader rejects a file name holding "virus" and never
   settles one holding "never-scans". `INFECTED_DOCUMENT_FILE_NAME` and
   `STILL_SCANNING_DOCUMENT_FILE_NAME` hold the two file names.
-- `reviewCardFor` finds the review's summary card by its level-3 heading name; a card's error message is found inside it with `getByText`.
+- `reviewCardFor` finds the review's summary card as the region named by its title; a card's error message is found inside it with `getByText`.
 - `expectMainImportReasonAndAdditionalDetailsNamed` proves the refused review
   names the main import reason and additional details cards, in the error
   summary and on each card.

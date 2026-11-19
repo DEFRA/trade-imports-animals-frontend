@@ -1,5 +1,4 @@
 export { get, makeScope } from './read.js'
-export { isJourneyNotFound } from './journey.js'
 export {
   commit,
   appendEntry,

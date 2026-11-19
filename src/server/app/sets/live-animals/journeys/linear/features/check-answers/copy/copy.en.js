@@ -74,6 +74,7 @@ export const copy = {
     animalColumn: 'Animal',
     heading: 'Identification details'
   },
+  editDetails: 'Edit details',
   documentN: (n) => `Document ${n}`,
   hidden: {
     cards: {

@@ -27,6 +27,11 @@ describe('#copy', () => {
     expect(copy.hidden.document(1)).toBe('document 1')
   })
 
+  it('Should name the row action Edit details in English and Welsh', () => {
+    expect(copy.editDetails).toBe('Edit details')
+    expect(copyCy.editDetails).toBe('Golygu manylion')
+  })
+
   it('Should write the date created line with the supplied date', () => {
     expect(copy.viewHeader.dateCreated('22 July 2026')).toBe(
       'Date created: 22 July 2026'

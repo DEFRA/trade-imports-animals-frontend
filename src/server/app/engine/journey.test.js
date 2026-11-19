@@ -1,13 +1,11 @@
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import Boom from '@hapi/boom'
 import createFetchMock from 'vitest-fetch-mock'
 import {
   cancelAmendJourney,
   copyJourney,
   currentJourney,
   amendJourney,
-  isJourneyNotFound,
   listKnownJourneys,
   replaceJourneyFulfilment,
   softDeleteJourney,
@@ -175,24 +173,6 @@ describe('#currentJourney', () => {
         message: 'Notification added to the known journeys of this session'
       }
     ])
-  })
-})
-
-describe('#isJourneyNotFound', () => {
-  beforeEach(useStubRecords)
-
-  it('Should accept the error currentJourney raises for an unknown journey', async () => {
-    const error = await currentJourney(
-      journeyRequest('unknown', { knownJourneyIds: [] }),
-      recordingH()
-    ).catch((raised) => raised)
-
-    expect(isJourneyNotFound(error)).toBe(true)
-  })
-
-  it('Should refuse a plain error and a server error', () => {
-    expect(isJourneyNotFound(new Error('not found'))).toBe(false)
-    expect(isJourneyNotFound(Boom.badImplementation())).toBe(false)
   })
 })
 

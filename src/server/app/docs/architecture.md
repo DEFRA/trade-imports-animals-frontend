@@ -73,9 +73,12 @@ The generic manifest accessors remain in
 
 A journey owns page identity, controllers, templates, copy, bindings, its one page
 order, task rows and entry guard. The session holds no record of how a notification
-was started. The entry guard admits a notification that holds a committed user answer
+was started. The entry guard lets a notification that holds a committed user answer through
 and sends any other notification on a guarded path to the journey's entry page.
-A notification that cannot be found is admitted, and its page answers it.
+On a guarded path, the guard itself answers a notification that cannot be found
+with the service's standard page not found (404), on every page, the review
+included, before any page runs, and sends nothing to the entry page or the
+notification list. An exempt path's own page answers not found the same way.
 Journeys may use their own set and L2 APIs. They do not import another journey or
 another set.
 

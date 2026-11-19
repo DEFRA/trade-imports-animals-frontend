@@ -6,7 +6,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Overview (hub)
 
-- The task list is headed "Notification tasklist" and split into six numbered
+- The task list is headed "Notification task list" and split into six numbered
   sections. The numbers are part of the heading copy, so reordering a section
   means editing its copy too.
 - A task reads "Complete" or "To do" and nothing else. A part-answered or
@@ -103,9 +103,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
     identification
   - the transit countries row
 
-  The Consignment addresses and Contact address cards carry no row link: a party row has
-  none. An address copied onto the notification that breaks the address-book
-  rules is reached from its error summary entry, which links to its edit page.
+  The Consignment addresses card carries no row link: a party row has none. The
+  Contact address card's row carries "Edit details" when a contact address is chosen
+  and the review is a draft or an amendment; it opens the contact edit page and
+  returns to the review. An address copied onto the notification that breaks the
+  address-book rules is reached from its error summary entry, which links to its
+  edit page.
 
   The transit countries read back in a "Transit countries" subsection of the
   Arrival details card, with their own row-level Change link, when they apply.
@@ -161,8 +164,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   Delete, and an Import reference numbers section shows the notification
   reference and the customs document code as selectable text. The view has no
   Continue form, no Change links and no document scan errors.
-- The view of a notification that cannot be found goes to the notification
-  list.
+- The view of a notification that cannot be found shows the service's standard
+  page not found.
 - The means of transport row reads the arrival page's own label for the
   stored code, so the two cannot differ.
 - An answer the reference data has since retired is named on the review with

@@ -460,13 +460,10 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(amendment.context.viewHeader).toBeNull()
   })
 
-  it('Should redirect the view of a notification that does not exist to the notification list', async () => {
-    const response = await getHandler(
-      journeyRequest('GBN-0000-0000-0000'),
-      stubH()
-    )
-
-    expect(response).toEqual({ redirect: dashboardPath() })
+  it('Should reject the view of a notification that does not exist with not found', async () => {
+    await expect(
+      getHandler(journeyRequest('GBN-0000-0000-0000'), stubH())
+    ).rejects.toMatchObject({ isBoom: true, output: { statusCode: 404 } })
   })
 
   it('Should retain Change hrefs on a draft, with the header offering Delete and no Amend, and no foot Delete', async () => {
@@ -994,14 +991,17 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     ).toContain('Address')
   })
 
-  it('Should give every card a Change action in its heading and no row any action but Change on the transit countries', async () => {
+  it('Should give every card a Change action in its heading and no row any action but Change on the transit countries and Edit details on the contact address', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
       expect(card.actions.items, card.title).toHaveLength(1)
     }
     const actionsOnRows = actionsOfRows(sections)
-    expect(actionsOnRows.map((action) => action.text)).toEqual(['Change'])
+    expect(actionsOnRows.map((action) => action.text)).toEqual([
+      'Change',
+      'Edit details'
+    ])
   })
 
   it('Should point each card Change link at the page that collects its answers carrying the review on the trail', async () => {
@@ -1895,16 +1895,42 @@ describe(`${SUITE} — copied party addresses`, () => {
     expect(html).not.toContain(badEmail.email)
   })
 
-  it('Should give no copied role and no contact address row any action on a draft', async () => {
-    const sections = await sectionsFor(fullSeed)
+  it('Should give no consignment addresses row any action on a draft', async () => {
+    const { rows } = cardByTitle(await sectionsFor(fullSeed), ADDRESSES_CARD)
 
-    for (const title of [ADDRESSES_CARD, CONTACT_ADDRESS_CARD]) {
-      const { rows } = cardByTitle(sections, title)
-      expect(
-        rows.map((row) => row.actions),
-        title
-      ).toEqual(rows.map(() => undefined))
-    }
+    expect(rows.map((row) => row.actions)).toEqual(rows.map(() => undefined))
+  })
+
+  it('Should give a draft contact address row exactly one action, Edit details, to its edit page returning to the review', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: fullSeed
+    })
+    const { rows } = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+
+    expect(rows[0].actions).toEqual({
+      items: [
+        {
+          href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`,
+          text: 'Edit details',
+          visuallyHiddenText: 'contact address'
+        }
+      ]
+    })
+  })
+
+  it('Should give a submitted contact address row no action', async () => {
+    const { context } = await viewForStatus(SUBMITTED, fullSeed)
+    const { rows } = cardByTitle(context.sections, CONTACT_ADDRESS_CARD)
+
+    expect(Object.keys(rows[0]).sort()).toEqual(['key', 'value'])
+  })
+
+  it('Should give an unanswered contact address row no action', async () => {
+    const seed = { ...fullSeed }
+    delete seed.contactAddress
+    const { rows } = cardByTitle(await sectionsFor(seed), CONTACT_ADDRESS_CARD)
+
+    expect(Object.keys(rows[0]).sort()).toEqual(['key', 'value'])
   })
 
   it('Should offer the Consignment addresses card only its heading Change link, to the addresses page carrying the review on the trail', async () => {
@@ -2913,9 +2939,9 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         document.querySelector('form[novalidate] .govuk-button-group')
       )
       const headerControls = [
-        ...document.querySelectorAll(
-          'form:not([novalidate]) .govuk-button-group .govuk-button'
-        )
+        ...document
+          .querySelector('.govuk-button-group')
+          .querySelectorAll('.govuk-button')
       ].map((button) => ({
         text: button.textContent.trim(),
         href: button.getAttribute('href'),
@@ -2960,13 +2986,15 @@ describe(`${SUITE} — amendment review end controls and title`, () => {
         ...document.querySelectorAll('.govuk-button-group .govuk-button')
       ].map((button) => ({
         text: button.textContent.trim(),
-        formaction: button.getAttribute('formaction'),
+        formAction: button.closest('form')?.getAttribute('action'),
         href: button.getAttribute('href'),
         classes: button.className
       }))
 
       expect(controls.map(({ text }) => text)).toEqual(SUBMITTED_BUTTON_TEXTS)
-      expect(controls[0].formaction).toBe(actions.amend.postAction)
+      expect(controls[0].formAction).toBe(actions.amend.postAction)
+      expect(controls[1].formAction).toBe(actions.copy.postAction)
+      expect(controls[2].formAction).toBeUndefined()
       expect(controls[0].classes).not.toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[1].classes).toContain(SECONDARY_BUTTON_CLASS)
       expect(controls[2].href).toBe(actions.delete.href)

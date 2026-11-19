@@ -104,8 +104,8 @@ const EXIT_DATE = { day: '20', month: '12', year: '2026' }
 describe('#copy', () => {
   itHoldsCopyAtEveryLeaf(copy, copyCy)
 
-  test('Should head the whole task list "Notification tasklist"', () => {
-    expect(copy.taskListHeading).toBe('Notification tasklist')
+  test('Should head the whole task list "Notification task list"', () => {
+    expect(copy.taskListHeading).toBe('Notification task list')
   })
 
   test('Should give a hint to the consignment addresses row alone', () => {

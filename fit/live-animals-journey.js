@@ -461,13 +461,7 @@ export const postJourneyFormToDeclaration = async (page, fields) => {
 }
 
 export const reviewCardFor = (page, headingName) =>
-  page.getByRole('group').filter({
-    has: page.getByRole('heading', {
-      level: 3,
-      name: headingName,
-      exact: true
-    })
-  })
+  page.getByRole('region', { name: headingName, exact: true })
 
 export const expectMainImportReasonAndAdditionalDetailsNamed = async (page) => {
   for (const { message, anchor } of [

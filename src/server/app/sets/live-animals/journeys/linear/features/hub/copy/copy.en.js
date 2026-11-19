@@ -15,7 +15,7 @@ export const copy = {
     complete: 'Complete',
     toDo: 'To do'
   },
-  taskListHeading: 'Notification tasklist',
+  taskListHeading: 'Notification task list',
   groups: {
     'about-the-consignment': '1. About the consignment',
     'description-of-the-goods': '2. Description of the goods',

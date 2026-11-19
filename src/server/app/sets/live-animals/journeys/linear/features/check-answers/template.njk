@@ -4,7 +4,6 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
-{% from "govuk/macros/attributes.njk" import govukAttributes %}
 
 {% macro cardError(text) %}
   {% if text %}
@@ -14,16 +13,16 @@
   {% endif %}
 {% endmacro %}
 
-{% macro actionLink(item) %}
-  <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span></a>
+{% macro actionLink(item, cardTitle) %}
+  <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span>{% if cardTitle %}<span class="govuk-visually-hidden"> ({{ cardTitle }})</span>{% endif %}</a>
 {%- endmacro %}
 
-{% macro cardActions(actions) %}
+{% macro cardActions(actions, cardTitle) %}
   {% if actions and actions.items.length %}
     <ul class="govuk-summary-card__actions">
       {% for item in actions.items %}
         <li class="govuk-summary-card__action">
-          {{ actionLink(item) }}
+          {{ actionLink(item, cardTitle) }}
         </li>
       {% endfor %}
     </ul>
@@ -37,24 +36,24 @@
     <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-3">{{ viewHeader.reference }}</h1>
     {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
 
-    <form method="post" action="{{ viewHeader.actions.copy.postAction }}">
-      <input type="hidden" name="crumb" value="{{ crumb }}" />
-      <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-      <input type="hidden" name="copyOrigin" value="notification-view" />
-      <div class="govuk-button-group">
-        {% if viewHeader.actions.amend %}
-          {{ govukButton({
-            text: viewHeader.actions.amend.text,
-            attributes: { formaction: viewHeader.actions.amend.postAction }
-          }) }}
-        {% endif %}
+    <div class="govuk-button-group">
+      {% if viewHeader.actions.amend %}
+        <form method="post" action="{{ viewHeader.actions.amend.postAction }}" class="app-form-inline">
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+          {{ govukButton({ text: viewHeader.actions.amend.text }) }}
+        </form>
+      {% endif %}
+      <form method="post" action="{{ viewHeader.actions.copy.postAction }}" class="app-form-inline">
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+        <input type="hidden" name="copyOrigin" value="notification-view" />
         {{ govukButton({
           text: viewHeader.actions.copy.text,
           classes: viewHeader.actions.copy.classes
         }) }}
-        {{ govukButton(viewHeader.actions.delete) }}
-      </div>
-    </form>
+      </form>
+      {{ govukButton(viewHeader.actions.delete) }}
+    </div>
 
     {% if viewHeader.dateLine %}
       <p class="govuk-body">{{ viewHeader.dateLine }}</p>
@@ -76,59 +75,43 @@
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
-      {% set cardAttributes = {
-        id: { value: card.anchor, optional: true },
-        tabindex: { value: '-1' if card.anchor else false, optional: true },
-        role: 'group',
-        'aria-label': card.title
-      } %}
-      {% if card.speciesBlocks.length or card.groups.length or card.error %}
-        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{{ govukAttributes(cardAttributes) }}>
-          <div class="govuk-summary-card__title-wrapper">
-            <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
-            {{ cardActions(card.actions) }}
-          </div>
-          <div class="govuk-summary-card__content">
-            {{ cardError(card.error) }}
-            {% if card.rows.length %}
-              {{ govukSummaryList({ rows: card.rows }) }}
-            {% endif %}
-            {% for block in card.speciesBlocks %}
-              <div id="{{ block.anchor }}" tabindex="-1">
-                <h4 class="govuk-heading-s">{{ block.heading }}</h4>
-                {{ govukSummaryList({ rows: block.rows }) }}
-                {% if block.identificationDetails %}
-                  <h5 class="govuk-body govuk-!-font-weight-bold">{{ copy.identificationDetails.heading }}</h5>
-                  {% if block.identificationDetails.actions %}
-                    <p class="govuk-body">
-                      {% for item in block.identificationDetails.actions.items %}
-                        {{ actionLink(item) }}
-                      {% endfor %}
-                    </p>
-                  {% endif %}
-                  {{ govukTable({
-                    head: block.identificationDetails.table.head,
-                    rows: block.identificationDetails.table.rows
-                  }) }}
-                {% endif %}
-              </div>
-            {% endfor %}
-            {% for group in card.groups %}
-              <h4 class="govuk-heading-s">{{ group.heading }}</h4>
-              {{ govukSummaryList({ rows: group.rows }) }}
-            {% endfor %}
-          </div>
+      {% set cardTitleId = section.anchor + '-card-' + loop.index + '-title' %}
+      <section class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %} aria-labelledby="{{ cardTitleId }}">
+        <div class="govuk-summary-card__title-wrapper">
+          <h3 class="govuk-summary-card__title" id="{{ cardTitleId }}">{{ card.title }}</h3>
+          {{ cardActions(card.actions, card.title) }}
         </div>
-      {% else %}
-        {{ govukSummaryList({
-          card: {
-            title: { text: card.title, headingLevel: 3 },
-            actions: card.actions,
-            attributes: cardAttributes
-          },
-          rows: card.rows
-        }) }}
-      {% endif %}
+        <div class="govuk-summary-card__content">
+          {{ cardError(card.error) }}
+          {% if card.rows.length %}
+            {{ govukSummaryList({ rows: card.rows }) }}
+          {% endif %}
+          {% for block in card.speciesBlocks %}
+            <div id="{{ block.anchor }}" tabindex="-1">
+              <h4 class="govuk-heading-s">{{ block.heading }}</h4>
+              {{ govukSummaryList({ rows: block.rows }) }}
+              {% if block.identificationDetails %}
+                <h5 class="govuk-heading-s">{{ copy.identificationDetails.heading }}</h5>
+                {% if block.identificationDetails.actions %}
+                  <p class="govuk-body">
+                    {% for item in block.identificationDetails.actions.items %}
+                      {{ actionLink(item) }}
+                    {% endfor %}
+                  </p>
+                {% endif %}
+                {{ govukTable({
+                  head: block.identificationDetails.table.head,
+                  rows: block.identificationDetails.table.rows
+                }) }}
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% for group in card.groups %}
+            <h4 class="govuk-heading-s">{{ group.heading }}</h4>
+            {{ govukSummaryList({ rows: group.rows }) }}
+          {% endfor %}
+        </div>
+      </section>
     {% endfor %}
   {% endfor %}
 
