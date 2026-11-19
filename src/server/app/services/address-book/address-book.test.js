@@ -250,21 +250,21 @@ describe('the role rule', () => {
   })
 
   test('Should hold a single record whose roles include the role asked for', async () => {
-    const { holdsRole } = await addressBook()
+    const { offeredForRole } = await addressBook()
 
-    expect(holdsRole({ roles: ['CONSIGNOR'] }, 'CONSIGNOR')).toBe(true)
+    expect(offeredForRole({ roles: ['CONSIGNOR'] }, 'CONSIGNOR')).toBe(true)
   })
 
   test('Should not hold a single record whose roles belong to another role', async () => {
-    const { holdsRole } = await addressBook()
+    const { offeredForRole } = await addressBook()
 
-    expect(holdsRole({ roles: ['CONSIGNEE'] }, 'CONSIGNOR')).toBe(false)
+    expect(offeredForRole({ roles: ['CONSIGNEE'] }, 'CONSIGNOR')).toBe(false)
   })
 
   test('Should hold a single record whose roles list is empty, whatever role is asked for', async () => {
-    const { holdsRole } = await addressBook()
+    const { offeredForRole } = await addressBook()
 
-    expect(holdsRole({ roles: [] }, 'CONSIGNOR')).toBe(true)
+    expect(offeredForRole({ roles: [] }, 'CONSIGNOR')).toBe(true)
   })
 })
 
@@ -393,7 +393,7 @@ describe('writes', () => {
 
     expect(Object.keys(book).sort()).toEqual([
       'addresses',
-      'holdsRole',
+      'offeredForRole',
       'party'
     ])
   })

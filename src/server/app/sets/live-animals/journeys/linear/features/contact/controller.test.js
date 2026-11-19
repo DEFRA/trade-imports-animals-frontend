@@ -11,6 +11,7 @@ import {
   refusingSaves,
   resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
+  expectOneRefusalLogged,
   postHandlerOf,
   useStubbedJourney,
   unavailableBackendError
@@ -151,6 +152,7 @@ describe('GET contact — select an address from the book', () => {
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after.contactAddress).toBeUndefined()
+    expectNoRefusalLogged(result.logger)
   })
 })
 
@@ -165,14 +167,36 @@ describe('GET contact — added address banner', () => {
 describe('POST contact — invalid payload', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should answer 400 and re-render an out-of-list contact, committing nothing', async () => {
+  it('Should answer 400 and re-render an out-of-list contact, logging the refusal and committing nothing', async () => {
     const result = await driveHandler(post, {
       payload: { contactAddress: NOT_IN_THE_BOOK }
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
-    expectNoRefusalLogged(result.logger)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['contactAddress'],
+      partyId: CONTACT_PARTY.id,
+      addressId: NOT_IN_THE_BOOK
+    })
+  })
+
+  it('Should refuse an address held for a consignment role, not the contact role, logging the refusal', async () => {
+    const [consignmentRoleRecord] = recordsHoldingRole('CONSIGNOR')
+
+    const result = await driveHandler(post, {
+      payload: { contactAddress: consignmentRoleRecord.id }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
+    expect(result.after).toEqual(result.before)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: ['contactAddress'],
+      partyId: CONTACT_PARTY.id,
+      addressId: consignmentRoleRecord.id
+    })
   })
 
   it('Should treat a dangling contact addressId as unselected on GET and reject it on POST', async () => {

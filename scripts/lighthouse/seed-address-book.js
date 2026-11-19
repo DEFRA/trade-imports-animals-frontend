@@ -1,22 +1,16 @@
+import {
+  PARTIES,
+  CONTACT_PARTY
+} from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
+
 const ORGANISATION_ID = '5900001'
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 const HTTP_CREATED = 201
 const HTTP_OK = 200
 
-/** Every address book role the journey filters an address list by: one per
- * party picker, plus `BRANCH_ADDRESS` for the consignment contact page. A
- * role missing here leaves its page with no option to choose, and the seed
- * walk throws rather than reaching the pages after it. Keep in step with
- * `PARTIES` and `CONTACT_PARTY` in
- * `src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js`. */
-const SELECTABLE_ADDRESS_ROLES = [
-  'PLACE_OF_ORIGIN',
-  'CONSIGNOR',
-  'CONSIGNEE',
-  'IMPORTER',
-  'PLACE_OF_DESTINATION',
-  'BRANCH_ADDRESS'
-]
+const SELECTABLE_ADDRESS_ROLES = [...PARTIES, CONTACT_PARTY]
+  .map(({ addressBookRole }) => addressBookRole)
+  .filter(Boolean)
 
 const addressBookBase = () =>
   process.env.TRADE_IMPORTS_ADDRESS_BOOK_URL ?? 'http://localhost:8089'

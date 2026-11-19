@@ -24,7 +24,9 @@ import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 
 import * as partyPicker from './party-picker.controller.js'
+import * as addresses from '../controller.js'
 import { PARTIES } from '../parties.js'
+import { sameAsActionFor } from '../same-as-action.js'
 import { expectAddedAddressBannerShownOnce } from '../test-support.js'
 import { recordsHoldingRole } from '../../../../../../../services/address-book/stub/test-support.js'
 
@@ -36,6 +38,7 @@ const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const JUTLAND_SWINE_ID = 'jutland-swine-aps'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
+const OTHER_ROLE_ONLY_ID = 'animal-and-plant-health-agency'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
 const listedFor = (role) => recordsHoldingRole(role).map((record) => record.id)
@@ -47,6 +50,9 @@ const handlerFor = (method, slug) =>
 
 const getConsignor = handlerFor('GET', CONSIGNOR_SELECT_SLUG)
 const postConsignor = handlerFor('POST', CONSIGNOR_SELECT_SLUG)
+const postAddresses = addresses.routes.find(
+  (route) => route.method === 'POST'
+).handler
 
 const DELETED_CONSIGNOR_ID = 'deleted-consignor'
 
@@ -250,7 +256,7 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toBeUndefined()
     expectOneLogged(result.logger, {
       level: 'info',
-      fields: { journeyId: result.journeyId, party: 'consignor' },
+      fields: { journeyId: result.journeyId, partyId: 'consignor' },
       message: 'Address picker saved with no address chosen, nothing committed'
     })
   })
@@ -280,7 +286,7 @@ describe('POST /consignors/select', () => {
     expectOneRefusalLogged(result.logger, {
       journeyId: result.journeyId,
       errorCodes: ['party'],
-      party: 'consignor',
+      partyId: 'consignor',
       addressId: NOT_IN_THE_BOOK
     })
   })
@@ -363,6 +369,38 @@ describe('The five spokes share the one picker, each filtered to its own role', 
 
       expect(result.view.context.heading).toBe(party.title)
       expect(result.view.context.addAddressHref).toBeFalsy()
+    }
+  })
+
+  it('Should refuse a record carrying only another party role, logging the refusal and committing nothing', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('POST', party.slug), {
+        payload: { action: 'save', selected: OTHER_ROLE_ONLY_ID }
+      })
+
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.picker.error).toBe(party.error)
+      expect(result.after[party.id]).toBeUndefined()
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: ['party'],
+        partyId: party.id,
+        addressId: OTHER_ROLE_ONLY_ID
+      })
+    }
+  })
+
+  it('Should render no selected hidden field when the stored answer points at a record of another role', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('GET', party.slug), {
+        seed: {
+          [party.id]: { pickedFromId: OTHER_ROLE_ONLY_ID, name: 'Copied Name' }
+        }
+      })
+
+      expect(pickerFrom(result).selected).toBeUndefined()
     }
   })
 })
@@ -530,7 +568,7 @@ describe('POST /consignors/select — recoverable save failure', () => {
     expect(result.after.consignor).toBeUndefined()
     expectRecoverableSaveFallback(result, {
       err: failure,
-      party: 'consignor',
+      partyId: 'consignor',
       addressId: ALPINE_DAIRY_ID
     })
   })
@@ -597,5 +635,24 @@ describe('/consignors/select — Save and continue while amending', () => {
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     })
+  })
+})
+
+describe('GET /consignors/select — after a same-as copy', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should render no selected hidden field for the copy a same-as action made', async () => {
+    const copied = await driveHandler(postAddresses, {
+      seed: {
+        placeOfOrigin: { name: 'Origin Farm', address: { countryCode: 'IE' } }
+      },
+      payload: { action: sameAsActionFor('consignor') }
+    })
+
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, { journeyId: copied.journeyId })
+    )
+
+    expect(picker.selected).toBeUndefined()
   })
 })

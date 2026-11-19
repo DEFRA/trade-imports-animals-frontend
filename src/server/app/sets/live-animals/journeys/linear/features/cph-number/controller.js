@@ -80,15 +80,17 @@ const get = async (request, h) => {
 }
 
 const post = async (request, h) => {
-  const { evaluation, scope, storedAnswers } = await state.get(request, h)
+  const { evaluation, scope, answers } = await state.get(request, h)
   if (isOutOfScope(scope)) {
-    logOutOfScope(request, storedAnswers, evaluation)
+    logOutOfScope(request, answers, evaluation)
     return redirectOnward(request, h, scope)
   }
 
-  const { values, answers, errors } = await validation.onSubmit(
-    request.payload ?? {}
-  )
+  const {
+    values,
+    answers: submittedAnswers,
+    errors
+  } = await validation.onSubmit(request.payload ?? {})
   if (hasErrors(errors)) {
     const { journey: invalidJourney } = await state.get(request, h)
     return render(request, h, invalidJourney, values, { errors }).code(
@@ -98,7 +100,7 @@ const post = async (request, h) => {
 
   const { failure, value: committed } = await kit.recoverableSave(
     request,
-    () => state.commit(request, h, answers),
+    () => state.commit(request, h, submittedAnswers),
     async () => {
       const { journey: failedJourney } = await state.get(request, h)
       return render(request, h, failedJourney, values, {

@@ -11,16 +11,13 @@ const haystack = (record) =>
 const matchesSearch = (record, query) =>
   haystack(record).includes(query.trim().toLowerCase())
 
-/** Whether a record holds a role a list offers: a record holding that role,
- * or holding no role at all, holds it; with no role given, every record
- * holds it. */
-export const holdsRole = (record, role) =>
+export const offeredForRole = (record, role) =>
   !role || record.roles.length === 0 || record.roles.includes(role)
 
 const pageNumbersFrom = (first, last) =>
   Array.from({ length: last - first + 1 }, (_, index) => first + index)
 
-const readEveryLivePage = async (orgId, query) => {
+const recordsFromEveryLivePage = async (orgId, query) => {
   const PAGES_READ_AT_ONCE = 4
   const readPage = (page) =>
     client.listAddresses(orgId, {
@@ -53,8 +50,8 @@ const readEveryLivePage = async (orgId, query) => {
 export const addresses = async (orgId, { query = '', role } = {}) => {
   const matching = isStubMode()
     ? STUB_BOOK.filter((record) => matchesSearch(record, query))
-    : await readEveryLivePage(orgId, query)
-  return matching.filter((record) => holdsRole(record, role))
+    : await recordsFromEveryLivePage(orgId, query)
+  return matching.filter((record) => offeredForRole(record, role))
 }
 
 /** One address by id. Resolves to undefined when the record does not exist for

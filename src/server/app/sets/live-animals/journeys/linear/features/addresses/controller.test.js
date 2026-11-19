@@ -78,6 +78,8 @@ const PLACE_OF_ORIGIN_ANSWER = {
 }
 const CONSIGNEE_ANSWER = {
   name: 'British Livestock Ltd',
+  phone: '01632 960001',
+  email: 'british-livestock@example.com',
   address: {
     addressLine1: '10 Market Street',
     townOrCity: 'Bern',
@@ -588,6 +590,12 @@ describe('POST addresses — the same-as shortcut', () => {
     expect(result.response.redirect).toBe(
       `${pagePath(result.journeyId, addressesPage.slug)}?from=${CYA_SLUG}`
     )
+    expect(result.after.consignor).not.toHaveProperty('pickedFromId')
+    expect(result.after.consignor).toMatchObject({
+      name: PLACE_OF_ORIGIN_ANSWER.name,
+      phone: PLACE_OF_ORIGIN_ANSWER.phone,
+      email: PLACE_OF_ORIGIN_ANSWER.email
+    })
 
     const h = stubH()
     await getAddresses(journeyRequest(result.journeyId), h)
@@ -604,6 +612,42 @@ describe('POST addresses — the same-as shortcut', () => {
     })
     expect(consignorSection.sameAs).toBeUndefined()
     expect(h.captured.view.context.successBanner).toBeNull()
+  })
+
+  it('Should fill the importer from the consignee, with no link back to its source record', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { consignee: CONSIGNEE_ANSWER },
+      payload: { action: sameAsActionFor('importer') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.importer).not.toHaveProperty('pickedFromId')
+    expect(result.after.importer).toMatchObject({
+      name: CONSIGNEE_ANSWER.name,
+      phone: CONSIGNEE_ANSWER.phone,
+      email: CONSIGNEE_ANSWER.email,
+      address: CONSIGNEE_ANSWER.address
+    })
+  })
+
+  it('Should fill the place of destination from the consignee, with no link back to its source record', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { consignee: CONSIGNEE_ANSWER },
+      payload: { action: sameAsActionFor('placeOfDestination') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.placeOfDestination).not.toHaveProperty('pickedFromId')
+    expect(result.after.placeOfDestination).toMatchObject({
+      name: CONSIGNEE_ANSWER.name,
+      phone: CONSIGNEE_ANSWER.phone,
+      email: CONSIGNEE_ANSWER.email,
+      address: CONSIGNEE_ANSWER.address
+    })
   })
 
   it('Should commit nothing and keep the target party showing the address it already held, logging the refusal', async () => {

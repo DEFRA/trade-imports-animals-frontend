@@ -42,7 +42,7 @@ const returnFromTheAddressBookWith = async (
 test('the added address banner on the Consignment addresses page is still shown ten seconds later and is gone after a reload', async ({
   page
 }) => {
-  const added = STUB_BOOK[1]
+  const added = STUB_BOOK.find((record) => record.roles.includes('CONSIGNOR'))
   const { title, text } = sharedCopy.addressHandshake.addedBanner
   const addressesHeading = page.getByRole('heading', { name: copy.hub.title })
   const addedBanner = page.getByRole('alert', { name: title })

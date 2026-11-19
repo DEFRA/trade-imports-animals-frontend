@@ -53,7 +53,11 @@ const render = async (
     query,
     role: party.addressBookRole
   })
-  const selected = await chosenPartyFor(orgId, selectedId)
+  const selected = await chosenPartyFor(
+    orgId,
+    selectedId,
+    party.addressBookRole
+  )
   const effectiveSelectedId = selected ? selected.id : ''
   const trail = kit.requestTrail(request)
 
@@ -133,7 +137,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     },
-    { party: party.id, addressId: chosen.id }
+    { partyId: party.id, addressId: chosen.id }
   )
   if (failure) {
     return failure
@@ -159,18 +163,18 @@ const post = (party) => async (request, h) => {
 
   if (!selectedId) {
     request.logger.info(
-      { journeyId: request.params.journeyId, party: party.id },
+      { journeyId: request.params.journeyId, partyId: party.id },
       'Address picker saved with no address chosen, nothing committed'
     )
     return h.redirect(savedTarget(request))
   }
 
-  const chosen = await chosenPartyFor(orgId, selectedId)
+  const chosen = await chosenPartyFor(orgId, selectedId, party.addressBookRole)
   if (!chosen) {
     const { journey } = await state.get(request, h)
     kit.logRefusal(request, {
       fieldErrors: { party: party.error },
-      party: party.id,
+      partyId: party.id,
       addressId: selectedId
     })
     return (

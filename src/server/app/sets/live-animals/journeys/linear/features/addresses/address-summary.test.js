@@ -63,4 +63,11 @@ describe('#addressSummaryEndingAtPostcode', () => {
     expect(addressSummaryEndingAtPostcode()).toBe('')
     expect(addressSummaryEndingAtPostcode({})).toBe('')
   })
+
+  it('Should omit the country that addressSummary includes for the same address', () => {
+    expect(addressSummaryEndingAtPostcode(privateAddress)).not.toContain(
+      privateAddress.country
+    )
+    expect(addressSummary(privateAddress)).toContain(privateAddress.country)
+  })
 })

@@ -37,12 +37,12 @@ const partyPageHref = (journeyId, party, query = {}) => {
 
 const logAndRefuse = (
   request,
-  { journeyId, fulfilmentId, landing, party },
+  { journeyId, fulfilmentId, landing, partyId },
   reason,
   message
 ) => {
   request.logger.warn(
-    { journeyId, fulfilmentId, landing, party, reason },
+    { journeyId, fulfilmentId, landing, partyId, reason },
     'Address return refused'
   )
   return Boom.badRequest(message)
@@ -82,9 +82,13 @@ const readReturnedAddress = async (
   request,
   { journeyId, party, addressId }
 ) => {
-  const logged = { journeyId, party: party.id, addressId }
+  const logged = { journeyId, partyId: party.id, addressId }
   try {
-    const chosen = await chosenPartyFor(organisationIdOf(request), addressId)
+    const chosen = await chosenPartyFor(
+      organisationIdOf(request),
+      addressId,
+      party.addressBookRole
+    )
     if (chosen) {
       return { chosen }
     }
@@ -135,7 +139,7 @@ const saveAddressAndLandOnReturnPageWithBanner = async (
     return unsaved
   }
   setAddedAddressBanner(h, chosen.name)
-  logLanding(request, { journeyId, party: party.id, landing, addressId })
+  logLanding(request, { journeyId, partyId: party.id, landing, addressId })
   return h.redirect(pagePath(journeyId, party.returnSlug))
 }
 
@@ -145,7 +149,7 @@ const landOnPartyPageWithBanner = (
   { journeyId, party, addressId, landing, chosen }
 ) => {
   setAddedAddressBanner(h, chosen.name)
-  logLanding(request, { journeyId, party: party.id, landing, addressId })
+  logLanding(request, { journeyId, partyId: party.id, landing, addressId })
   return h.redirect(partyPageHref(journeyId, party))
 }
 
@@ -168,10 +172,10 @@ const get = async (request, h) => {
     )
   }
 
-  const returnedForParty = { ...returned, party: party.id }
+  const returnedForParty = { ...returned, partyId: party.id }
   const landing = validLandingOf(request, returnedForParty)
   if (landing === BACK_WITHOUT_LANDING) {
-    logLanding(request, { journeyId, party: party.id, landing })
+    logLanding(request, { journeyId, partyId: party.id, landing })
     return h.redirect(partyPageHref(journeyId, party))
   }
 
@@ -183,7 +187,7 @@ const get = async (request, h) => {
   )
 
   if (landing === ADDRESS_LANDING.CANCEL) {
-    logLanding(request, { journeyId, party: party.id, landing })
+    logLanding(request, { journeyId, partyId: party.id, landing })
     return h.redirect(hubPath(journeyId))
   }
 

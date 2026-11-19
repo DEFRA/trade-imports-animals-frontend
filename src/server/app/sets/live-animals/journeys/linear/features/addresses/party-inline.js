@@ -8,7 +8,10 @@ export const answerForInlineParty = (chosen) => ({
   address: toWireAddress(chosen.address ?? {})
 })
 
-export const copyOfStoredParty = (storedParty) => ({
+export const copyOfStoredParty = ({
+  pickedFromId: _pickedFromId,
+  ...storedParty
+}) => ({
   ...storedParty,
   address: { ...storedParty.address }
 })

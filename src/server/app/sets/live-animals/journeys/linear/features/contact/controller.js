@@ -89,13 +89,6 @@ const render = (
 const offeredAddresses = (orgId) =>
   addressBook.addresses(orgId, { role: CONTACT_PARTY.addressBookRole })
 
-const offeredAddress = async (orgId, addressId) => {
-  const chosen = await chosenPartyFor(orgId, addressId)
-  return chosen && addressBook.holdsRole(chosen, CONTACT_PARTY.addressBookRole)
-    ? chosen
-    : undefined
-}
-
 const get = async (request, h) => {
   const current = await state.get(request, h)
   const { journey, answers } = current
@@ -134,12 +127,23 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const orgId = organisationIdOf(request)
   const chosen = payload.contactAddress
-    ? await offeredAddress(orgId, payload.contactAddress)
+    ? await chosenPartyFor(
+        orgId,
+        payload.contactAddress,
+        CONTACT_PARTY.addressBookRole
+      )
     : undefined
   const { errors } = await validation.onSubmit(payload, {
     addressOptions: chosen ? [chosen] : []
   })
   if (hasErrors(errors)) {
+    if (payload.contactAddress && !chosen) {
+      kit.logRefusal(request, {
+        fieldErrors: { contactAddress: copy.errors.contactRequired },
+        partyId: CONTACT_PARTY.id,
+        addressId: payload.contactAddress
+      })
+    }
     const current = await state.get(request, h)
     return render(
       request,
@@ -155,18 +159,16 @@ const post = async (request, h) => {
   const { value: committed, failure } = await kit.recoverableSave(
     request,
     () =>
-      chosen
-        ? state.commit(request, h, {
-            contactAddress: answerFor(CONTACT_PARTY, chosen)
-          })
-        : state.get(request, h),
+      state.commit(request, h, {
+        contactAddress: answerFor(CONTACT_PARTY, chosen)
+      }),
     async () => {
       const current = await state.get(request, h)
       return render(
         request,
         h,
         current,
-        { selectedId: chosen?.id },
+        { selectedId: chosen.id },
         await offeredAddresses(orgId),
         issueAddAddressLink(request, h, current.journey),
         { recoverableError: true }

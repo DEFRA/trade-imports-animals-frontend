@@ -1,12 +1,12 @@
-const ADDRESS_LINE_PARTS = [
+const ADDRESS_PARTS_TO_POSTCODE = [
   'addressLine1',
   'addressLine2',
   'addressLine3',
   'townOrCity',
   'county',
-  'postcode',
-  'country'
+  'postcode'
 ]
+const ADDRESS_LINE_PARTS = [...ADDRESS_PARTS_TO_POSTCODE, 'country']
 
 const lineOf = (address, parts) =>
   parts
@@ -18,4 +18,4 @@ export const addressSummary = (address = {}) =>
   lineOf(address, ADDRESS_LINE_PARTS)
 
 export const addressSummaryEndingAtPostcode = (address = {}) =>
-  lineOf(address, ADDRESS_LINE_PARTS.slice(0, -1))
+  lineOf(address, ADDRESS_PARTS_TO_POSTCODE)
