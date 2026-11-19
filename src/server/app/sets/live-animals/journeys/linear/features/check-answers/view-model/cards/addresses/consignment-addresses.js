@@ -3,7 +3,7 @@ import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { addressesPage } from '../../../../addresses/page.js'
 import { PARTIES } from '../../../../addresses/parties.js'
-import { cphNumberWithSlashes } from '../../../../cph-number/cph-number.js'
+import { displayedCphNumber } from '../../../../cph-number/shape.js'
 import { cphApplies } from '../../applicability.js'
 import { changeAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
@@ -63,12 +63,7 @@ export const consignmentAddressesCard = ({
       })
     ),
     ...(cphApplies(answers)
-      ? [
-          row(
-            copy.rows.cph,
-            cphNumberWithSlashes(answers.countyParishHoldingCph)
-          )
-        ]
+      ? [row(copy.rows.cph, displayedCphNumber(answers.countyParishHoldingCph))]
       : [])
   ],
   groups: permanentAddressGroups(permanentAddresses)

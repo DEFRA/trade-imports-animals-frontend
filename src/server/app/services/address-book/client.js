@@ -6,9 +6,6 @@ import {
   throwOnAddressBookError
 } from '../address-book-request.js'
 
-/** The page size the address book serves when the request names none. */
-export const API_PAGE_SIZE = 25
-
 const addressesUrl = (orgId, addressId) =>
   addressBookResourceUrl('addresses', orgId, addressId)
 
@@ -18,6 +15,7 @@ const toRecord = async (operator) => ({
   id: operator.id,
   name: operator.name,
   deleted: Boolean(operator.deleted),
+  roles: operator.roles,
   address: {
     addressLine1: operator.addressLine1,
     addressLine2: operator.addressLine2,

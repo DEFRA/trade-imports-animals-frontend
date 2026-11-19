@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { copyFor } from './copy.js'
-import { leaves, isCopyLeaf } from './copy-leaves.js'
+import { itHoldsCopyAtEveryLeaf } from '../engine/copy-test-support.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 
@@ -120,9 +120,5 @@ describe('not-applicable copy', () => {
 })
 
 describe('shared copy module', () => {
-  it('Should have a non-empty string or copy function at every leaf', () => {
-    for (const { path, value } of leaves(sharedEn)) {
-      expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(sharedEn, sharedCy)
 })

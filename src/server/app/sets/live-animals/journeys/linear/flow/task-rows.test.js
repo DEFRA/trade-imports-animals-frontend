@@ -28,6 +28,7 @@ import {
   FELIS_CATUS_ROW,
   STRUTHIO_ROW
 } from '../features/commodities/search/test-support.js'
+import { petConsignmentSeed } from '../test-support.js'
 
 const happyPath = completeNotification()
 
@@ -388,6 +389,68 @@ describe('#rowStatus — the conditional transit-countries row', () => {
         transitedCountries: ['FR', 'BE']
       })
     ).toBe(FULFILLED)
+  })
+})
+
+describe('#rowStatus — the addresses row owes a permanent address for every animal that needs one', () => {
+  const partyAnswers = {
+    consignor: happyPath.consignor,
+    placeOfDestination: happyPath.placeOfDestination,
+    placeOfOrigin: happyPath.placeOfOrigin,
+    consignee: happyPath.consignee,
+    importer: happyPath.importer
+  }
+
+  it('Should hold the addresses row In progress while an identified animal that needs a permanent address has none', () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [{ animalIdentifierMicrochip: 'MICROCHIP-1' }]
+    })
+
+    expect(statusIn('addresses', { ...partyAnswers, commodityLines })).toBe(
+      IN_PROGRESS
+    )
+  })
+
+  it('Should complete the addresses row once every such animal has a permanent address', () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [
+        {
+          animalIdentifierMicrochip: 'MICROCHIP-1',
+          permanentAddressOrigin: 'newAddress',
+          permanentAddress: { name: 'Pet Owner' }
+        }
+      ]
+    })
+
+    expect(statusIn('addresses', { ...partyAnswers, commodityLines })).toBe(
+      FULFILLED
+    )
+  })
+
+  it('Should hold the addresses row to its parties and CPH number for a consignment the page asks no permanent address of', () => {
+    const answers = { ...partyAnswers, commodityLines: [BOS_TAURUS_ROW] }
+
+    expect(statusIn('addresses', answers)).toBe(IN_PROGRESS)
+    expect(
+      statusIn('addresses', {
+        ...answers,
+        countyParishHoldingCph: happyPath.countyParishHoldingCph
+      })
+    ).toBe(FULFILLED)
+  })
+
+  it('Should complete the addresses row on its parties alone when a line needing a permanent address has an animal count but no animal identified', () => {
+    const { commodityLines } = petConsignmentSeed({
+      row: FELIS_CATUS_ROW,
+      units: [],
+      numberOfAnimalsQuantity: 2
+    })
+
+    expect(statusIn('addresses', { ...partyAnswers, commodityLines })).toBe(
+      FULFILLED
+    )
   })
 })
 

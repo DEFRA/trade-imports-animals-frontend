@@ -12,19 +12,13 @@ import {
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
-import { sampleText } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text = sampleText(value, ['sample'])
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy, ['sample'])
 
   it('Should interpolate the hidden action label', () => {
     expect(copy.actionHidden('GBN-1')).toBe('notification GBN-1')

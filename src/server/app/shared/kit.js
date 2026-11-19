@@ -245,18 +245,26 @@ export const nextTarget = (request, page, scope, { saveChoice } = {}) =>
   pushTrail(request, nextPagePath(request, page, scope), page.slug)
 
 /**
- * Where a page that is skipped goes next.
+ * Where a page goes next, carrying the request's trail unchanged rather than joining it.
  *
  * @param {object} request - the request being answered.
- * @param {object} page - the page being skipped.
+ * @param {object} page - the page being skipped or saved.
  * @param {object} scope - the journey's scope.
+ * @param {object} [options]
+ * @param {{ hubExit: boolean }} [options.saveChoice] - the save choice to
+ * follow. Defaults to the request's own.
  * @returns {string} the overview's path when Save and return to overview was
  * pressed, else the next page that applies, else the review's path, carrying
  * the request's trail unchanged. A next page that needs a required earlier
  * answer that is missing gives the page that asks for it, logged once.
  */
-export const nextTargetKeepingTrail = (request, page, scope) =>
-  hubExitTarget(request) ??
+export const nextTargetKeepingTrail = (
+  request,
+  page,
+  scope,
+  { saveChoice } = {}
+) =>
+  hubExitTarget(request, { saveChoice }) ??
   carryTrail(request, nextPagePath(request, page, scope))
 
 /**

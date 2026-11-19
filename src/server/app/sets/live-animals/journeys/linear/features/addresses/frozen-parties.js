@@ -1,5 +1,6 @@
 import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { PARTIES, CONTACT_PARTY } from './parties.js'
+import { isPartyHeld } from './party-held.js'
 
 export const PARTY_ID_BY_ROLE = {
   placeOfOrigin: 'placeOfOrigin',
@@ -17,7 +18,7 @@ const JOURNEY_PARTY_IDS = [
 
 /** The stored inline party in the shape the journey renders, or nothing when it has no name. */
 export const toDisplayParty = async (party) => {
-  if (!party?.name) {
+  if (!isPartyHeld(party)) {
     return undefined
   }
   const address = party.address ?? {}

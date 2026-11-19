@@ -43,12 +43,15 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 //   the Welsh GOV.UK carries the same name.
 // - confirmation.help.importsEmail is an email address, identical in both
 //   locales.
+// - cph-number.help.whereToFindHref is the county parish holding gov.uk
+//   guidance URL, likewise.
 const IDENTICAL_ALLOWLIST = new Set([
   'confirmation:help.importsEmail',
   'shared:layout.govukSuffix',
   'documents:guidance.additional.linkHref',
   'transport:transporters.guidance.linkHref',
-  'commodities:search.help.lookupHref'
+  'commodities:search.help.lookupHref',
+  'cph-number:help.whereToFindHref'
 ])
 
 const kindOf = (value) => (typeof value === 'function' ? 'function' : 'string')

@@ -16,7 +16,7 @@ import { PARTIES } from '../parties.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { isSearchAction, pageNumber } from './request-params.js'
+import { isSearchAction } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
@@ -42,7 +42,6 @@ const render = async (
   party,
   {
     query,
-    page,
     selectedId,
     error,
     recoverableError = false,
@@ -50,8 +49,15 @@ const render = async (
     successBanner = null
   }
 ) => {
-  const found = await addressBook.search(orgId, { query, page })
-  const selected = await chosenPartyFor(orgId, selectedId)
+  const found = await addressBook.addresses(orgId, {
+    query,
+    role: party.addressBookRole
+  })
+  const selected = await chosenPartyFor(
+    orgId,
+    selectedId,
+    party.addressBookRole
+  )
   const effectiveSelectedId = selected ? selected.id : ''
   const trail = kit.requestTrail(request)
 
@@ -69,7 +75,7 @@ const render = async (
     heading: party.title,
     description: party.hint,
     pickerCopy: copy,
-    errorSummary: errorSummary(error, found.results.length > 0, sharedCopy),
+    errorSummary: errorSummary(error, found.length > 0, sharedCopy),
     addAddressHref,
     picker: pickerViewModel(
       journey,
@@ -101,7 +107,6 @@ const get = (party) => async (request, h) => {
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
-    page: pageNumber(request.query.page),
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
@@ -132,7 +137,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     },
-    { role: party.id, addressId: chosen.id }
+    { partyId: party.id, addressId: chosen.id }
   )
   if (failure) {
     return failure
@@ -151,7 +156,6 @@ const post = (party) => async (request, h) => {
     const { journey } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
-      page: 1,
       selectedId,
       addAddressHref: issueAddAddressLink(request, h, journey, party)
     })
@@ -159,24 +163,23 @@ const post = (party) => async (request, h) => {
 
   if (!selectedId) {
     request.logger.info(
-      { journeyId: request.params.journeyId, role: party.id },
+      { journeyId: request.params.journeyId, partyId: party.id },
       'Address picker saved with no address chosen, nothing committed'
     )
     return h.redirect(savedTarget(request))
   }
 
-  const chosen = await chosenPartyFor(orgId, selectedId)
+  const chosen = await chosenPartyFor(orgId, selectedId, party.addressBookRole)
   if (!chosen) {
     const { journey } = await state.get(request, h)
     kit.logRefusal(request, {
       fieldErrors: { party: party.error },
-      role: party.id,
+      partyId: party.id,
       addressId: selectedId
     })
     return (
       await render(request, h, orgId, journey, party, {
         query,
-        page: pageNumber(payload.page),
         selectedId: '',
         error: party.error,
         addAddressHref: issueAddAddressLink(request, h, journey, party)
@@ -184,10 +187,7 @@ const post = (party) => async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, party, chosen, {
-    query,
-    page: pageNumber(payload.page)
-  })
+  return commitSelection(request, h, party, chosen, { query })
 }
 
 export const routes = PARTIES.flatMap((party) => [

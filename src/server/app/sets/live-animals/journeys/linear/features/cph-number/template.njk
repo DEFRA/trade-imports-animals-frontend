@@ -15,7 +15,7 @@
 
   {% set cphHelpHtml %}
     <p class="govuk-body">{{ copy.help.definition }}</p>
-    <p class="govuk-body">{{ copy.help.whereToFind }}</p>
+    <p class="govuk-body">{{ copy.help.whereToFindPrefix }} <a href="{{ copy.help.whereToFindHref }}" class="govuk-link">{{ copy.help.whereToFindLink }}</a>.</p>
   {% endset %}
 
   {{ govukDetails({
@@ -45,6 +45,8 @@
             label: { text: copy.cph.county, classes: "govuk-date-input__label" },
             classes: "govuk-input--width-2" + (" govuk-input--error" if errors.cphCounty else ""),
             inputmode: "numeric",
+            pattern: "[0-9]*",
+            autocomplete: "off",
             spellcheck: false,
             value: values.cphCounty
           }) }}
@@ -57,6 +59,8 @@
             label: { text: copy.cph.parish, classes: "govuk-date-input__label" },
             classes: "govuk-input--width-3" + (" govuk-input--error" if errors.cphParish else ""),
             inputmode: "numeric",
+            pattern: "[0-9]*",
+            autocomplete: "off",
             spellcheck: false,
             value: values.cphParish
           }) }}
@@ -69,6 +73,8 @@
             label: { text: copy.cph.holding, classes: "govuk-date-input__label" },
             classes: "govuk-input--width-4" + (" govuk-input--error" if errors.cphHolding else ""),
             inputmode: "numeric",
+            pattern: "[0-9]*",
+            autocomplete: "off",
             spellcheck: false,
             value: values.cphHolding
           }) }}

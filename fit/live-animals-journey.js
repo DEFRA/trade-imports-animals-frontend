@@ -261,6 +261,15 @@ export const backLink = (page) =>
   page.getByRole('link', { name: 'Back', exact: true })
 
 /**
+ * The paragraph directly after a heading.
+ *
+ * @param {import('@playwright/test').Locator} heading
+ * @returns {import('@playwright/test').Locator}
+ */
+export const paragraphFollowing = (heading) =>
+  heading.locator('xpath=following-sibling::*[1][self::p]')
+
+/**
  * Follows the error summary link named `message` and expects focus to land on
  * the field the link points to.
  *
@@ -1053,6 +1062,13 @@ export const openOverview = async (page) => {
   await expectOverview(page)
 }
 
+export const openAddresses = async (page, species) => {
+  await startNotification(page)
+  await unlockSections(page, species)
+  await page.getByRole('link', { name: hubCopy.rows.addresses.title }).click()
+  await expectLanding(page, LANDINGS.addresses)
+}
+
 export const fillOriginDetails = async (
   page,
   {
@@ -1632,7 +1648,11 @@ export const completeAnswerSections = async (
 
   await task('Contact address for this consignment')
   await chooseContactAddress(page)
-  await saveAndExpectOverview(page)
+  await saveAndReturnToHub(
+    page,
+    contactCopy.saveActions.saveAndReturnToHub
+  ).click()
+  await expectOverview(page)
 }
 
 export const openReviewFromHub = async (page) => {
@@ -1759,38 +1779,52 @@ export const continueTransporterType = (page) =>
     exact: true
   })
 
-export const saveAndReturnToHub = (page) =>
+export const saveAndReturnToHub = (
+  page,
+  label = sharedAppCopy.saveActions.saveAndReturnToHub
+) =>
   page.getByRole('button', {
-    name: sharedAppCopy.saveActions.saveAndReturnToHub,
+    name: label,
     exact: true
   })
 
-const cancelAndReturnToHub = (page) =>
+export const cancelAndReturnToHub = (
+  page,
+  label = sharedAppCopy.saveActions.cancelAndReturnToHub
+) =>
   page.getByRole('link', {
-    name: sharedAppCopy.saveActions.cancelAndReturnToHub
+    name: label
   })
 
 /**
- * Fails unless the journey form offers Save and continue, Save and return to
- * overview and Cancel and return to overview in that order, with Save and
- * return to overview as the form's last button.
+ * Fails unless the journey form offers Save and continue, the save-and-return
+ * control and the cancel link in that order, with the save-and-return control
+ * as the form's last button.
  *
  * @param {import('@playwright/test').Page} page
+ * @param {{ saveAndReturnToHubLabel?: string, cancelAndReturnToHubLabel?: string }} [labels] -
+ *   the page's own words for the two return controls, defaulting to the shared copy.
  */
-export const expectThreeSaveControls = async (page) => {
+export const expectThreeSaveControls = async (
+  page,
+  {
+    saveAndReturnToHubLabel = sharedAppCopy.saveActions.saveAndReturnToHub,
+    cancelAndReturnToHubLabel = sharedAppCopy.saveActions.cancelAndReturnToHub
+  } = {}
+) => {
   const form = journeyFormOf(page)
   const saveControls = form
     .locator(saveAndContinue(page))
-    .or(form.locator(saveAndReturnToHub(page)))
-    .or(form.locator(cancelAndReturnToHub(page)))
+    .or(form.locator(saveAndReturnToHub(page, saveAndReturnToHubLabel)))
+    .or(form.locator(cancelAndReturnToHub(page, cancelAndReturnToHubLabel)))
 
   await expect(saveControls).toHaveText([
     sharedAppCopy.saveActions.saveAndContinue,
-    sharedAppCopy.saveActions.saveAndReturnToHub,
-    sharedAppCopy.saveActions.cancelAndReturnToHub
+    saveAndReturnToHubLabel,
+    cancelAndReturnToHubLabel
   ])
   await expect(form.getByRole('button').last()).toHaveText(
-    sharedAppCopy.saveActions.saveAndReturnToHub
+    saveAndReturnToHubLabel
   )
 }
 

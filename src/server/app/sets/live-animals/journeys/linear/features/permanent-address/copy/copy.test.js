@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 import { ADDRESS_FIELDS } from '../cards.js'
 
 describe('permanent-address copy module', () => {
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      const text = typeof value === 'function' ? value('label', 'value') : value
-      expect(typeof text, `${path} must resolve to a string`).toBe('string')
-      expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy, ['label', 'value'])
 
   it('Should head the page "Permanent address" in English and Welsh', () => {
     expect(copy.title).toBe('Permanent address')

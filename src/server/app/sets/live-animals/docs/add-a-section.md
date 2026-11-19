@@ -218,7 +218,10 @@ The row status defaults to the union of those pages' `collects`. Use `parts`
 only when the row needs a collection facet. Use `conditional: true` only when
 the hub must hide a Not applicable row. Use `applies` only when the row's parts
 cannot express its applicability — it makes the row read Not applicable
-whatever the parts roll up to. See
+whatever the parts roll up to. Use `extraAnswerGiven` only when the row owes
+an answer no part key can reach — a leaf nested inside a collection, such as
+an animal's permanent address — it holds the row at In progress rather than
+Completed whatever the parts roll up to. See
 [`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
 The hub lists a task row under the section that holds its first page, so there is no group list to edit.

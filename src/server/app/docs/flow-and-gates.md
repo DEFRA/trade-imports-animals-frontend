@@ -136,9 +136,10 @@ marker; [`kit.js`](../shared/kit.js) re-exports them. The three operations on th
   trail that is not recognised it logs once per request at warn.
 
 The `return` marker (`?return=<slug>`) names the page a sub-page returns to. Links
-that carry it are the CPH link from the Consignment addresses page, the party edit links and the
-commodity question detour. Such a link carries the trail unchanged and does not push
-the page that opens it. `withReturnMarker(href, slug)` builds the marker and
+that carry it are the party edit links, the permanent address link and the commodity
+question detour. Such a link carries the trail unchanged and does not push the page
+that opens it.
+`withReturnMarker(href, slug)` builds the marker and
 `readReturnMarker(request, allowedSlugs)` reads it. The trail and the marker are each
 checked against their allowed values; a refused one of either is dropped and logged
 once per request at warn in the same way, each independently.
@@ -156,7 +157,10 @@ one page, Back steps back through those pages in reverse. A check your answers C
 link or error-summary link carries where check your answers' own Back link went, so
 Back from the page it opens returns to check your answers with that Back link
 unchanged. A journey page names no fixed Back target and no list of earlier pages its
-Back may open: it takes its Back link from `trailBackLink`.
+Back may open: it takes its Back link from `trailBackLink`. The consignment addresses
+section makes one exception: its county parish holding number sub-page names a fixed
+Back target, the consignment addresses page, listed in
+[journey-flow-and-gates.md](../sets/live-animals/docs/journey-flow-and-gates.md).
 
 For the current section order, task rows, authored review gate and the entry guard, see
 the [live-animals journey flow guide](../sets/live-animals/docs/journey-flow-and-gates.md).

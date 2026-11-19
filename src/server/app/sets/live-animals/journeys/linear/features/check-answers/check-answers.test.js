@@ -1258,7 +1258,7 @@ describe(`${SUITE} — Permanent address subsection of the Consignment addresses
     expect(htmlOf(entries, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
-  it('Should list the answered animal alone in the subsection and still name commodity details as outstanding', async () => {
+  it('Should list the answered animal alone in the subsection and name both commodity details and consignment addresses as outstanding', async () => {
     const { card, seed } = await addressesCardForCats([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
@@ -1273,9 +1273,9 @@ describe(`${SUITE} — Permanent address subsection of the Consignment addresses
     expect(keysOf(entries)).toEqual([DOMESTIC_CAT_1_LABEL])
     expect(htmlOf(entries, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
-    expect(summary.errorList.map((entry) => entry.text)).toContain(
-      COMMODITY_DETAILS_INCOMPLETE
-    )
+    const errorTexts = summary.errorList.map((entry) => entry.text)
+    expect(errorTexts).toContain(COMMODITY_DETAILS_INCOMPLETE)
+    expect(errorTexts).toContain(ADDRESSES_INCOMPLETE)
   })
 
   it('Should show no Permanent address subsection when a line needing one holds no animal identifier records', async () => {
@@ -1479,7 +1479,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keys).not.toContain(UNWEANED_KEY)
   })
 
-  it('Should omit the CPH row for an exempt commodity', async () => {
+  it('Should omit the CPH row for a commodity not on the CPH-required list', async () => {
     const keys = keysOf(
       rowsOf(
         await sectionsFor({
@@ -2169,7 +2169,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
       commodityCode: OSTRICHES_CODE,
       packages: false,
       unweaned: false,
-      cph: true
+      cph: false
     }
   ]
 

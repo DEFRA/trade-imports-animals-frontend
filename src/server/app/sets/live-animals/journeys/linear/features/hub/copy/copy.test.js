@@ -11,10 +11,10 @@ import {
   stubH,
   journeyRequest
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { dispatchPages } from '../../index.js'
 import { pagePathFrom } from '../../../test-support.js'
 import { transitAppliesSeedWithout } from '../../transport/test-support.js'
-import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 import { dashboardPath } from '../../../../../../../shared/paths.js'
 
 import { routes } from '../controller.js'
@@ -102,11 +102,7 @@ const roadSeedShowingEveryRow = {
 const EXIT_DATE = { day: '20', month: '12', year: '2026' }
 
 describe('#copy', () => {
-  test('Should have a non-empty string or copy function at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
-      expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   test('Should head the whole task list "Notification tasklist"', () => {
     expect(copy.taskListHeading).toBe('Notification tasklist')

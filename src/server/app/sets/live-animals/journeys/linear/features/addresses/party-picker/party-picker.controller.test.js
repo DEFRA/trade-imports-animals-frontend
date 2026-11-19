@@ -12,7 +12,7 @@ import {
   addressBookPage,
   expectOneLogged,
   expectOneRefusalLogged,
-  expectOneSaveFallbackLogged,
+  expectRecoverableSaveFallback,
   listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
@@ -22,11 +22,13 @@ import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpe
 import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 
 import * as partyPicker from './party-picker.controller.js'
+import * as addresses from '../controller.js'
 import { PARTIES } from '../parties.js'
+import { sameAsActionFor } from '../same-as-action.js'
 import { expectAddedAddressBannerShownOnce } from '../test-support.js'
+import { recordsHoldingRole } from '../../../../../../../services/address-book/stub/test-support.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
@@ -36,7 +38,10 @@ const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const JUTLAND_SWINE_ID = 'jutland-swine-aps'
 const NOT_IN_THE_BOOK = 'not-in-this-book'
+const OTHER_ROLE_ONLY_ID = 'animal-and-plant-health-agency'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
+
+const listedFor = (role) => recordsHoldingRole(role).map((record) => record.id)
 
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(
@@ -45,6 +50,9 @@ const handlerFor = (method, slug) =>
 
 const getConsignor = handlerFor('GET', CONSIGNOR_SELECT_SLUG)
 const postConsignor = handlerFor('POST', CONSIGNOR_SELECT_SLUG)
+const postAddresses = addresses.routes.find(
+  (route) => route.method === 'POST'
+).handler
 
 const DELETED_CONSIGNOR_ID = 'deleted-consignor'
 
@@ -68,37 +76,26 @@ describe('GET /consignors/select', () => {
   resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should render the first page of the book with a radio per row and pagination over the rest', async () => {
+  it('Should list every consignor-role address, with the role-less address, and nothing else', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
-    expect(picker.page).toBe(1)
-    expect(picker.resultsCount).toBe('Showing 5 out of 13 results')
-    expect(idsOf(picker)).toEqual([
-      'astra-rosales',
-      'tech-imports-ltd',
-      'origin-farm',
-      'british-livestock-ltd',
-      'import-co-uk'
-    ])
+    expect(picker.resultsCount).toBe('Showing 9 out of 9 results')
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR'))
     expect(picker.rows[0]).toMatchObject({
       name: 'Astra Rosales',
       country: 'Switzerland',
       checked: false
     })
-    expect(picker.pagination.items.at(-1).number).toBe(3)
-    expect(picker.pagination.previous).toBeUndefined()
     expect(picker.selected).toBeUndefined()
   })
 
   it('Should give each row its street lines and then its town and postcode on one line', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
-    expect(picker.rows.map((row) => row.addressLines)).toEqual([
+    expect(picker.rows.slice(0, 3).map((row) => row.addressLines)).toEqual([
       ['43 East Hague Extension', 'Bern, 30055'],
-      ['18 Dockside Road', 'London, E14 9GE'],
-      ['1 Farm Lane', 'Ennis, V95 X7P2'],
-      ['10 Market Street', 'Leeds, LS1 6HB'],
-      ['20 Trade Road', 'London, EC1A 1BB']
+      ['Havnegade 21', 'Copenhagen, 1058'],
+      ['Sondergade 4', 'Aarhus, 8000']
     ])
   })
 
@@ -110,53 +107,43 @@ describe('GET /consignors/select', () => {
     )
   })
 
-  it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
+  it('Should carry the selection into the View link return, with no page', async () => {
     const result = await driveHandler(getConsignor, {
-      query: { page: '2', selected: DANISH_MEAT_ID }
+      query: { selected: DANISH_MEAT_ID }
     })
     const picker = pickerFrom(result)
 
-    expect(picker.page).toBe(2)
     expect(idsOf(picker)).toContain(NORDVIK_ID)
     expect(picker.selected.name).toBe(DANISH_MEAT_NAME)
-    expect(picker.pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
-    )
-    expect(picker.pagination.items[0].href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=${DANISH_MEAT_ID}`
-    )
   })
 
-  it('Should filter the book down to the search matches and drop the pagination when one page holds them', async () => {
+  it('Should filter the consignor list down to the search matches', async () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, { query: { q: 'denmark' } })
     )
 
     expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
-    expect(picker.pagination).toBeNull()
   })
 
-  it('Should open with the record the held copy was picked from selected, carried into pagination', async () => {
+  it('Should open with the record the held copy was picked from selected', async () => {
     const result = await driveHandler(getConsignor, {
       seed: {
         consignor: { pickedFromId: DANISH_MEAT_ID, name: 'Copied Name' }
-      },
-      query: { page: '2' }
+      }
     })
     const picker = pickerFrom(result)
 
     expect(picker.selected.name).toBe(DANISH_MEAT_NAME)
-    expect(picker.pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
+    expect(picker.rows.find((row) => row.id === DANISH_MEAT_ID).checked).toBe(
+      true
     )
   })
 
   it('Should open with nothing selected when the held copy has no record it was picked from', async () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, {
-        seed: { consignor: { name: ALPINE_DAIRY_NAME } },
-        query: { page: '3' }
+        seed: { consignor: { name: ALPINE_DAIRY_NAME } }
       })
     )
 
@@ -182,14 +169,13 @@ describe('POST /consignors/select', () => {
   resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should re-render the matches from page one on a search, saving nothing', async () => {
+  it('Should re-render the consignor matches on a search, saving nothing', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'search', q: 'Copenhagen', page: '3' }
+      payload: { action: 'search', q: 'Copenhagen' }
     })
     const picker = pickerFrom(result)
 
     expect(result.response.statusCode).toBe(200)
-    expect(picker.page).toBe(1)
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID])
     expect(result.after.consignor).toBeUndefined()
   })
@@ -206,22 +192,14 @@ describe('POST /consignors/select', () => {
     expect(picker.rows.every((row) => row.checked === false)).toBe(true)
   })
 
-  it('Should copy the row ticked on a later page and return to the addresses hub', async () => {
-    const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '2', party: ALPINE_DAIRY_ID }
-    })
-
-    expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, 'addresses')
-    })
-    expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
-  })
-
   it('Should store a copy of the record, noting which record it was picked from', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID }
     })
 
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
     expect(result.after.consignor).not.toHaveProperty('addressId')
     expect(result.after.consignor.pickedFromId).toBe(ALPINE_DAIRY_ID)
     expect(result.after.consignor.name).toBe(ALPINE_DAIRY_NAME)
@@ -231,9 +209,9 @@ describe('POST /consignors/select', () => {
     })
   })
 
-  it('Should save the selection made on an earlier page when the page on screen has no row ticked', async () => {
+  it('Should save the selection carried in the hidden field when the page on screen has no row ticked', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '3', selected: NORDVIK_ID }
+      payload: { action: 'save', selected: NORDVIK_ID }
     })
 
     expect(result.view).toBeUndefined()
@@ -255,11 +233,10 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toEqual(held)
   })
 
-  it('Should let a row ticked on the page on screen beat the selection carried from an earlier one', async () => {
+  it('Should let a row ticked on screen beat a selection carried in the hidden field', async () => {
     const result = await driveHandler(postConsignor, {
       payload: {
         action: 'save',
-        page: '2',
         selected: NORDVIK_ID,
         party: ALPINE_DAIRY_ID
       }
@@ -270,7 +247,7 @@ describe('POST /consignors/select', () => {
 
   it('Should return to the addresses page with the consignor still empty when saved with nothing selected', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '2' }
+      payload: { action: 'save' }
     })
 
     expect(result.response).toEqual({
@@ -279,7 +256,7 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toBeUndefined()
     expectOneLogged(result.logger, {
       level: 'info',
-      fields: { journeyId: result.journeyId, role: 'consignor' },
+      fields: { journeyId: result.journeyId, partyId: 'consignor' },
       message: 'Address picker saved with no address chosen, nothing committed'
     })
   })
@@ -309,7 +286,7 @@ describe('POST /consignors/select', () => {
     expectOneRefusalLogged(result.logger, {
       journeyId: result.journeyId,
       errorCodes: ['party'],
-      role: 'consignor',
+      partyId: 'consignor',
       addressId: NOT_IN_THE_BOOK
     })
   })
@@ -340,21 +317,22 @@ describe('POST /consignors/select', () => {
   })
 })
 
-describe('The five spokes share the one picker', () => {
+describe('The five spokes share the one picker, each filtered to its own role', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should serve every party from the one untyped book, committing to its own obligation', async () => {
+  it('Should commit the record its own role was asked for, to its own obligation', async () => {
     for (const party of PARTIES) {
       store.clear()
-      const result = await driveHandler(handlerFor('POST', party.slug), {
-        payload: { action: 'save', party: DANISH_MEAT_ID }
+      const result = await driveHandler(handlerFor('GET', party.slug))
+      const [firstRow] = pickerFrom(result).rows
+
+      const posted = await driveHandler(handlerFor('POST', party.slug), {
+        payload: { action: 'save', party: firstRow.id }
       })
 
-      expect(result.after[party.id]).toMatchObject({
-        name: DANISH_MEAT_NAME
-      })
-      expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'addresses')
+      expect(posted.after[party.id]).toMatchObject({ name: firstRow.name })
+      expect(posted.response).toEqual({
+        redirect: pagePath(posted.journeyId, 'addresses')
       })
     }
   })
@@ -373,16 +351,16 @@ describe('The five spokes share the one picker', () => {
     }
   })
 
-  it('Should offer the same records whichever spoke is being filled', async () => {
+  it('Should give each spoke the stub records carrying its own role, with the role-less record, and nothing else', async () => {
     const seen = []
     for (const party of PARTIES) {
       const result = await driveHandler(handlerFor('GET', party.slug))
       seen.push(idsOf(result.view.context.picker))
     }
 
-    for (const ids of seen) {
-      expect(ids).toEqual(seen[0])
-    }
+    expect(seen).toEqual(
+      PARTIES.map((party) => listedFor(party.addressBookRole))
+    )
   })
 
   it('Should title each spoke and offer no INS add link in stub mode', async () => {
@@ -391,6 +369,38 @@ describe('The five spokes share the one picker', () => {
 
       expect(result.view.context.heading).toBe(party.title)
       expect(result.view.context.addAddressHref).toBeFalsy()
+    }
+  })
+
+  it('Should refuse a record carrying only another party role, logging the refusal and committing nothing', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('POST', party.slug), {
+        payload: { action: 'save', selected: OTHER_ROLE_ONLY_ID }
+      })
+
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.picker.error).toBe(party.error)
+      expect(result.after[party.id]).toBeUndefined()
+      expectOneRefusalLogged(result.logger, {
+        journeyId: result.journeyId,
+        errorCodes: ['party'],
+        partyId: party.id,
+        addressId: OTHER_ROLE_ONLY_ID
+      })
+    }
+  })
+
+  it('Should render no selected hidden field when the stored answer points at a record of another role', async () => {
+    for (const party of PARTIES) {
+      store.clear()
+      const result = await driveHandler(handlerFor('GET', party.slug), {
+        seed: {
+          [party.id]: { pickedFromId: OTHER_ROLE_ONLY_ID, name: 'Copied Name' }
+        }
+      })
+
+      expect(pickerFrom(result).selected).toBeUndefined()
     }
   })
 })
@@ -476,8 +486,6 @@ describe('View link to the INS address book', () => {
   resetMocksAndConfigAfterTests()
   const setInsFrontendBaseUrl = useInsFrontendBaseUrl()
 
-  const firstViewHrefOf = (result) => pickerFrom(result).rows[0].viewHref
-
   const addressBookListing = (items) =>
     addressBookAnswering((request) =>
       request.url.includes(`/addresses/${ALPINE_DAIRY_ID}`)
@@ -488,10 +496,6 @@ describe('View link to the INS address book', () => {
           }
         : addressBookPage(items)
     )
-
-  const twoPagesOfTraders = Array.from({ length: 7 }, (_, index) =>
-    listedAddress(`trader-${index + 1}`, `Trader ${index + 1}`)
-  )
 
   it('Should link each row to its INS address page, returning to this picker with its search and selection', async () => {
     setInsFrontendBaseUrl('http://ins.example/')
@@ -504,7 +508,7 @@ describe('View link to the INS address book', () => {
       query: { q: 'denmark', selected: ALPINE_DAIRY_ID }
     })
 
-    const pickerReturn = `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&page=1&selected=${ALPINE_DAIRY_ID}`
+    const pickerReturn = `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?q=denmark&selected=${ALPINE_DAIRY_ID}`
 
     expect(pickerFrom(result).rows.map((row) => row.viewHref)).toEqual([
       insViewAddressUrl(DANISH_MEAT_ID, pickerReturn),
@@ -514,20 +518,19 @@ describe('View link to the INS address book', () => {
 
   it('Should return to the page being shown with its chosen address, carrying the trail, when the picker was opened from the review', async () => {
     setInsFrontendBaseUrl('http://ins.example')
-    addressBookListing(twoPagesOfTraders)
+    addressBookListing([listedAddress(DANISH_MEAT_ID, DANISH_MEAT_NAME)])
 
     const result = await driveHandler(getConsignor, {
       query: {
-        page: '2',
         selected: ALPINE_DAIRY_ID,
         ...reviewChangeLinkQuery()
       }
     })
 
-    expect(firstViewHrefOf(result)).toBe(
+    expect(pickerFrom(result).rows[0].viewHref).toBe(
       insViewAddressUrl(
-        'trader-6',
-        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2&selected=${ALPINE_DAIRY_ID}&from=${CYA_SLUG}`
+        DANISH_MEAT_ID,
+        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?selected=${ALPINE_DAIRY_ID}&from=${CYA_SLUG}`
       )
     )
   })
@@ -562,13 +565,10 @@ describe('POST /consignors/select — recoverable save failure', () => {
       startingFrom: [refusingSaves(failure)]
     })
 
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toBeUndefined()
-    expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
+    expectRecoverableSaveFallback(result, {
       err: failure,
-      role: 'consignor',
+      partyId: 'consignor',
       addressId: ALPINE_DAIRY_ID
     })
   })
@@ -598,30 +598,6 @@ describe('/consignors/select — the trail', () => {
 
     expect(result.view.context.backLink).toBe(
       `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
-    )
-  })
-
-  it('Should carry the trail across a paged link, beside the search and the selection', async () => {
-    const result = await driveHandler(getConsignor, {
-      query: { page: '2', selected: DANISH_MEAT_ID },
-      startingFrom: [{ query: reviewChangeLinkQuery() }]
-    })
-
-    expect(pickerFrom(result).pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}&from=${CYA_SLUG}`
-    )
-  })
-
-  it('Should leave the hub link and the paged links plain when the request carries no trail', async () => {
-    const result = await driveHandler(getConsignor, {
-      query: { page: '2', selected: DANISH_MEAT_ID }
-    })
-
-    expect(result.view.context.backLink).toBe(
-      pagePath(result.journeyId, 'addresses')
-    )
-    expect(pickerFrom(result).pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
     )
   })
 })
@@ -659,5 +635,24 @@ describe('/consignors/select — Save and continue while amending', () => {
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, 'addresses')}?from=${CYA_SLUG}`
     })
+  })
+})
+
+describe('GET /consignors/select — after a same-as copy', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should render no selected hidden field for the copy a same-as action made', async () => {
+    const copied = await driveHandler(postAddresses, {
+      seed: {
+        placeOfOrigin: { name: 'Origin Farm', address: { countryCode: 'IE' } }
+      },
+      payload: { action: sameAsActionFor('consignor') }
+    })
+
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, { journeyId: copied.journeyId })
+    )
+
+    expect(picker.selected).toBeUndefined()
   })
 })

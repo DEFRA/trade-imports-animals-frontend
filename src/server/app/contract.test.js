@@ -391,22 +391,22 @@ describe('controller <-> model commit contract', () => {
       },
       {
         slug: 'destinations/select',
-        id: 'alpine-dairy',
+        id: 'tech-imports-ltd',
         commits: 'placeOfDestination'
       },
       {
         slug: 'place-of-origin/select',
-        id: 'nordvik-seafood',
+        id: 'origin-farm',
         commits: 'placeOfOrigin'
       },
       {
         slug: 'consignees/select',
-        id: 'irish-beef-traders-ltd',
+        id: 'british-livestock-ltd',
         commits: 'consignee'
       },
       {
         slug: 'importers/select',
-        id: 'iberian-swine-sa',
+        id: 'import-co-uk',
         commits: 'importer'
       }
     ]

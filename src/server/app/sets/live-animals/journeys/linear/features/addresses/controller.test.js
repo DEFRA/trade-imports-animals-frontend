@@ -5,11 +5,15 @@ import { store } from '../../../../../../engine/store.js'
 import {
   addressBookRefusingAddresses,
   driveHandler,
+  expectOneRefusalLogged,
+  expectRecoverableSaveFallback,
   reviewChangeLinkQuery,
   trailQuery,
   journeyRequest,
+  refusingSaves,
   resetMocksAndConfigAfterTests,
   stubH,
+  unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { requiredEarlierAnswers } from '../../../../test-support.js'
@@ -24,6 +28,7 @@ import {
   withTrail
 } from '../../../../../../shared/kit.js'
 import { addressesPage } from './page.js'
+import { cphNumberPage } from '../cph-number/page.js'
 import { permanentAddressPage } from '../permanent-address/page.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { consignmentContactSelectPage } from '../contact/page.js'
@@ -34,6 +39,7 @@ import {
 
 import * as addresses from './controller.js'
 import { PARTIES } from './parties.js'
+import { sameAsActionFor } from './same-as-action.js'
 import { expectAddedAddressBannerShownOnce } from './test-support.js'
 
 const getAddresses = addresses.routes.find(
@@ -50,7 +56,6 @@ const sectionTitled = (sections, title) =>
   sections.find((section) => section.title === title)
 const PLACE_OF_ORIGIN_TITLE = 'Place of origin'
 const SWITZERLAND = 'Switzerland'
-const CPH_PATH_RETURNING_TO_ADDRESSES = 'cph-number?return=addresses'
 const CPH_TITLE = 'County parish holding (CPH) number'
 const CONSIGNOR_TITLE = 'Consignor'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
@@ -60,6 +65,30 @@ const PERMANENT_ADDRESS_TITLE = 'Permanent address'
 const PERMANENT_ADDRESS_PATH_RETURNING_TO_ADDRESSES = `${permanentAddressPage.slug}?return=addresses`
 const CAT_1_MICROCHIP = 'MICROCHIP-1'
 const CAT_2_MICROCHIP = 'MICROCHIP-2'
+const PLACE_OF_ORIGIN_ANSWER = {
+  name: 'Origin Farm',
+  phone: '01632 960000',
+  email: 'origin-farm@example.com',
+  address: {
+    addressLine1: '2 Origin Lane',
+    townOrCity: 'Bern',
+    postcode: '30055',
+    countryCode: 'CH'
+  }
+}
+const CONSIGNEE_ANSWER = {
+  name: 'British Livestock Ltd',
+  phone: '01632 960001',
+  email: 'british-livestock@example.com',
+  address: {
+    addressLine1: '10 Market Street',
+    townOrCity: 'Bern',
+    postcode: '30055',
+    countryCode: 'CH'
+  }
+}
+const IMPORTER_TITLE = 'Importer'
+const PLACE_OF_DESTINATION_TITLE = 'Place of destination'
 
 describe('GET addresses — sections for parties not yet chosen', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -292,13 +321,13 @@ describe('GET addresses — conditional CPH section', () => {
       hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.',
       hiddenSuffix: CPH_TITLE.toLowerCase(),
       addLink: {
-        href: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES),
+        href: pagePath(result.journeyId, cphNumberPage.slug),
         text: 'Add a CPH number'
       }
     })
   })
 
-  it('Should show the stored CPH number with its parts separated by slashes on one line with a Change link when answered', async () => {
+  it('Should show the stored CPH value in its slashed county/parish/holding form with a Change link when answered', async () => {
     const result = await driveAddresses({
       commodityLines: CPH_ASKED_LINES,
       countyParishHoldingCph: '123456789'
@@ -306,7 +335,7 @@ describe('GET addresses — conditional CPH section', () => {
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).chosen).toEqual({
       lines: ['12/345/6789'],
-      changeHref: pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)
+      changeHref: pagePath(result.journeyId, cphNumberPage.slug)
     })
   })
 })
@@ -393,6 +422,53 @@ describe('GET addresses — sections for parties copied onto the notification', 
   })
 })
 
+describe('GET addresses — the same-as shortcut control', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should offer the consignor section a same-as control naming the place of origin, and offer the place of origin section none', async () => {
+    const result = await driveAddresses({
+      placeOfOrigin: PLACE_OF_ORIGIN_ANSWER
+    })
+
+    expect(sectionTitled(sectionsOf(result), CONSIGNOR_TITLE).sameAs).toEqual({
+      label: 'Same as place of origin',
+      value: sameAsActionFor('consignor')
+    })
+    expect(
+      sectionTitled(sectionsOf(result), PLACE_OF_ORIGIN_TITLE).sameAs
+    ).toBeUndefined()
+  })
+
+  it('Should offer the control to exactly the consignor, importer and place of destination sections, with the CPH and permanent address sections present but carrying none', async () => {
+    const result = await driveAddresses({
+      commodityLines: [BOS_TAURUS_ROW, FELIS_CATUS_ROW],
+      placeOfOrigin: PLACE_OF_ORIGIN_ANSWER,
+      consignee: CONSIGNEE_ANSWER
+    })
+    const sections = sectionsOf(result)
+
+    expect(sections.map(({ title }) => title)).toEqual([
+      ...PARTIES.map(({ title }) => title),
+      CPH_TITLE,
+      PERMANENT_ADDRESS_TITLE
+    ])
+    expect(
+      sections.filter((section) => section.sameAs).map(({ title }) => title)
+    ).toEqual([CONSIGNOR_TITLE, IMPORTER_TITLE, PLACE_OF_DESTINATION_TITLE])
+  })
+
+  it('Should carry no control and still show the chosen address when the consignor already holds one', async () => {
+    const result = await driveAddresses({
+      placeOfOrigin: PLACE_OF_ORIGIN_ANSWER,
+      consignor: { name: ASTRA_NAME, address: { countryCode: 'CH' } }
+    })
+    const consignorSection = sectionTitled(sectionsOf(result), CONSIGNOR_TITLE)
+
+    expect(consignorSection.sameAs).toBeUndefined()
+    expect(consignorSection.chosen.name).toBe(ASTRA_NAME)
+  })
+})
+
 describe('GET addresses — frozen parties on submitted notification', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
@@ -445,13 +521,13 @@ describe('GET addresses — the trail', () => {
     })
   })
 
-  it('Should join the trail to the query string the CPH link already has', async () => {
+  it('Should carry the trail onto the CPH link', async () => {
     const result = await driveAddresses({ commodityLines: CPH_ASKED_LINES }, [
       { query: reviewChangeLinkQuery() }
     ])
 
     expect(sectionTitled(sectionsOf(result), CPH_TITLE).addLink.href).toBe(
-      `${pagePath(result.journeyId, CPH_PATH_RETURNING_TO_ADDRESSES)}&from=${CYA_SLUG}`
+      withTrail(pagePath(result.journeyId, cphNumberPage.slug), [CYA_SLUG])
     )
   })
 
@@ -499,4 +575,152 @@ describe('POST addresses — where Save and continue goes', () => {
       )
     }
   )
+})
+
+describe('POST addresses — the same-as shortcut', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should fill the consignor from the place of origin, redirect to the addresses page carrying the trail, and show no success banner on the following GET', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { placeOfOrigin: PLACE_OF_ORIGIN_ANSWER },
+      payload: { action: sameAsActionFor('consignor') },
+      startingFrom: [{ query: reviewChangeLinkQuery() }]
+    })
+
+    expect(result.response.redirect).toBe(
+      `${pagePath(result.journeyId, addressesPage.slug)}?from=${CYA_SLUG}`
+    )
+    expect(result.after.consignor).not.toHaveProperty('pickedFromId')
+    expect(result.after.consignor).toMatchObject({
+      name: PLACE_OF_ORIGIN_ANSWER.name,
+      phone: PLACE_OF_ORIGIN_ANSWER.phone,
+      email: PLACE_OF_ORIGIN_ANSWER.email
+    })
+
+    const h = stubH()
+    await getAddresses(journeyRequest(result.journeyId), h)
+    const consignorSection = sectionTitled(
+      h.captured.view.context.sections,
+      CONSIGNOR_TITLE
+    )
+    expect(consignorSection.chosen).toMatchObject({
+      name: PLACE_OF_ORIGIN_ANSWER.name,
+      lines: [
+        PLACE_OF_ORIGIN_ANSWER.address.addressLine1,
+        `Bern, 30055, ${SWITZERLAND}`
+      ]
+    })
+    expect(consignorSection.sameAs).toBeUndefined()
+    expect(h.captured.view.context.successBanner).toBeNull()
+  })
+
+  it('Should fill the importer from the consignee, with no link back to its source record', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { consignee: CONSIGNEE_ANSWER },
+      payload: { action: sameAsActionFor('importer') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.importer).not.toHaveProperty('pickedFromId')
+    expect(result.after.importer).toMatchObject({
+      name: CONSIGNEE_ANSWER.name,
+      phone: CONSIGNEE_ANSWER.phone,
+      email: CONSIGNEE_ANSWER.email,
+      address: CONSIGNEE_ANSWER.address
+    })
+  })
+
+  it('Should fill the place of destination from the consignee, with no link back to its source record', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { consignee: CONSIGNEE_ANSWER },
+      payload: { action: sameAsActionFor('placeOfDestination') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.placeOfDestination).not.toHaveProperty('pickedFromId')
+    expect(result.after.placeOfDestination).toMatchObject({
+      name: CONSIGNEE_ANSWER.name,
+      phone: CONSIGNEE_ANSWER.phone,
+      email: CONSIGNEE_ANSWER.email,
+      address: CONSIGNEE_ANSWER.address
+    })
+  })
+
+  it('Should commit nothing and keep the target party showing the address it already held, logging the refusal', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: {
+        placeOfOrigin: PLACE_OF_ORIGIN_ANSWER,
+        consignor: { name: ASTRA_NAME, address: { countryCode: 'CH' } }
+      },
+      payload: { action: sameAsActionFor('consignor') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.consignor.name).toBe(ASTRA_NAME)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [],
+      reason: addresses.SAME_AS_REFUSAL.targetAlreadyHeld,
+      targetPartyId: 'consignor',
+      sourcePartyId: 'placeOfOrigin'
+    })
+  })
+
+  it('Should commit nothing when the source party holds no address, logging the refusal', async () => {
+    const result = await driveHandler(postAddresses, {
+      payload: { action: sameAsActionFor('consignor') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.consignor).toBeUndefined()
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [],
+      reason: addresses.SAME_AS_REFUSAL.sourceEmpty,
+      targetPartyId: 'consignor',
+      sourcePartyId: 'placeOfOrigin'
+    })
+  })
+
+  it('Should commit nothing when the target party has no paired source, logging the refusal', async () => {
+    const result = await driveHandler(postAddresses, {
+      seed: { placeOfOrigin: PLACE_OF_ORIGIN_ANSWER },
+      payload: { action: sameAsActionFor('placeOfOrigin') }
+    })
+
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, addressesPage.slug)
+    )
+    expect(result.after.placeOfOrigin).toEqual(PLACE_OF_ORIGIN_ANSWER)
+    expectOneRefusalLogged(result.logger, {
+      journeyId: result.journeyId,
+      errorCodes: [],
+      reason: addresses.SAME_AS_REFUSAL.pairNotOffered,
+      targetPartyId: 'placeOfOrigin'
+    })
+  })
+
+  it('Should re-render the addresses page with its recoverable banner when saving the copy fails', async () => {
+    const failure = unavailableBackendError('save answers')
+    const result = await driveHandler(postAddresses, {
+      seed: { placeOfOrigin: PLACE_OF_ORIGIN_ANSWER },
+      payload: { action: sameAsActionFor('consignor') },
+      startingFrom: [refusingSaves(failure)]
+    })
+
+    expect(result.after.consignor).toBeUndefined()
+    expectRecoverableSaveFallback(result, {
+      err: failure,
+      targetPartyId: 'consignor',
+      sourcePartyId: 'placeOfOrigin'
+    })
+  })
 })

@@ -108,9 +108,9 @@ const numberOfPackagesReason = {
 }
 
 const cphReason = {
-  code: 'obligation.cph.applicable.becauseNotCphExempt',
+  code: 'obligation.cph.applicable.becauseCphRequiredCommodity',
   explanation:
-    'CPH applies when any commodity line has a commodityCode that is not CPH-exempt'
+    'CPH applies when any commodity line has a commodityCode in the CPH-required list'
 }
 
 const LINE_UNKNOWN = 'line1'
@@ -626,7 +626,7 @@ describe('cph (notification-level, reads commodityCode storage)', () => {
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when every line is CPH-exempt', () => {
+  it('is out of scope when no line is on the CPH-required list', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
@@ -636,7 +636,7 @@ describe('cph (notification-level, reads commodityCode storage)', () => {
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is mandatory in-scope when at least one line is not CPH-exempt', () => {
+  it('is mandatory in-scope when at least one line is on the CPH-required list', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSES]: HORSES_CODE,
@@ -650,7 +650,7 @@ describe('cph (notification-level, reads commodityCode storage)', () => {
     })
   })
 
-  it('keeps a stored cph value when a line is not CPH-exempt', () => {
+  it('keeps a stored cph value when a line is on the CPH-required list', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CATTLE]: CATTLE_CODE },
       [cph.id]: '123456789'
@@ -658,7 +658,7 @@ describe('cph (notification-level, reads commodityCode storage)', () => {
     expect(result.fulfilments[cph.id]).toBe('123456789')
   })
 
-  it('purges a stored cph value when every line is CPH-exempt', () => {
+  it('purges a stored cph value when no line is on the CPH-required list', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSES]: HORSES_CODE },
       [cph.id]: '123456789'
