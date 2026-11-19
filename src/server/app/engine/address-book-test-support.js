@@ -4,8 +4,7 @@ import { fetchMock } from './test-support.js'
 /** Puts the address book on the network boundary: every request to its
  * `/addresses` or `/transporters` paths gets `addressResponse` (or, for a
  * function, what it returns for the request) and the country list gets the
- * United Kingdom, Switzerland and the United States. Call it inside a test;
- * pair it with `resetMocksAndConfigAfterTests()` in the describe. */
+ * United Kingdom, Switzerland and the United States. */
 export const addressBookAnswering = (addressResponse) => {
   const countryList = JSON.stringify([
     { code: 'GB', name: 'United Kingdom' },
@@ -39,7 +38,7 @@ export const listedAddress = (id, name, overrides = {}) => ({
 })
 
 /** The address book's response to a search: one page holding every row
- * in `items`. Pass it to `addressBookAnswering()`. */
+ * in `items`. */
 export const addressBookPage = (items = []) => ({
   body: JSON.stringify({
     items,
@@ -53,7 +52,7 @@ export const addressBookPage = (items = []) => ({
 export const addressBookRefusingAddresses = () =>
   addressBookAnswering({ status: 500 })
 
-/** The urls of the address book requests made since `addressBookAnswering()`. */
+/** The urls of the address book requests made so far. */
 export const addressBookRequestUrls = () =>
   fetchMock
     .requests()
