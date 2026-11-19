@@ -3,7 +3,7 @@ import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { linesOf } from '../../../../commodities/lines.js'
 import { commoditiesPage } from '../../../../commodities/page.js'
-import { speciesTitleName } from '../../../../commodities/species-label.js'
+import { speciesDisplayName } from '../../../../commodities/species-label.js'
 import { buildSelectedCommodityRows } from '../../../../commodities/view-model/selected-commodity-rows.js'
 import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
@@ -43,7 +43,7 @@ export const whatAreYouImportingCard = ({
         copy.rows.speciesCommonName,
         commaSeparated(entries.map((entry) => entry.speciesCommonName))
       ),
-      row(copy.rows.species, commaSeparated(entries.map(speciesTitleName)))
+      row(copy.rows.species, commaSeparated(entries.map(speciesDisplayName)))
     ]
   }
 }

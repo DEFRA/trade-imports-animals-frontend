@@ -75,9 +75,9 @@ import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
 import { copy } from './copy/copy.en.js'
 
 const SPECIES_BLOCK_SELECTOR = '[id^="species-block-"]'
-const BISON_BISON_HEADING = 'Bison Bison'
-const BOS_TAURUS_HEADING = 'Bos Taurus'
-const FELIS_CATUS_HEADING = 'Felis Catus'
+const BISON_BISON_HEADING = 'Bison bison'
+const BOS_TAURUS_HEADING = 'Bos taurus'
+const FELIS_CATUS_HEADING = 'Felis catus'
 const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
@@ -202,7 +202,7 @@ test.describe('check-answers feature Permanent address subsection of the Consign
     await signIn(page)
   })
 
-  test('renders one entry per cat in the Consignment addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details with the identifiers alone', async ({
+  test('renders one entry per cat in the Consignment addresses card Permanent address subsection, keyed by its common name and number, and heads its identification details in bold body text with the identifiers alone', async ({
     page
   }) => {
     test.slow()
@@ -252,11 +252,15 @@ test.describe('check-answers feature Permanent address subsection of the Consign
     const speciesBlock = page.locator(SPECIES_BLOCK_SELECTOR, {
       has: page.getByRole('heading', { name: FELIS_CATUS_HEADING, exact: true })
     })
-    await expect(
-      speciesBlock.getByRole('heading', {
-        name: copy.identificationDetails.heading
-      })
-    ).toBeVisible()
+    const identificationHeading = speciesBlock.getByRole('heading', {
+      name: copy.identificationDetails.heading
+    })
+    await expect(identificationHeading).toBeVisible()
+    await expect(identificationHeading).toHaveCSS(
+      'font-family',
+      /^"GDS Transport"/
+    )
+    await expect(identificationHeading).toHaveCSS('font-weight', '700')
     await expect(speciesBlock.getByRole('columnheader')).toHaveText([
       'Animal',
       'Microchip'

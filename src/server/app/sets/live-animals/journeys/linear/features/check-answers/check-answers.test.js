@@ -303,8 +303,8 @@ const COMMODITY_CODE_KEY = 'Commodity code'
 const COMMON_NAME_KEY = 'Common name'
 const SPECIES_KEY = 'Species'
 const NUMBER_OF_ANIMALS_KEY = 'Number of animals'
-const BOS_TAURUS_HEADING = 'Bos Taurus'
-const BISON_BISON_HEADING = 'Bison Bison'
+const BOS_TAURUS_HEADING = 'Bos taurus'
+const BISON_BISON_HEADING = 'Bison bison'
 const DOCUMENT_TYPE_KEY = 'Document type'
 const DOCUMENT_REFERENCE_KEY = 'Document reference'
 const ATTACHMENT_KEY = 'Attachment'
@@ -838,7 +838,7 @@ describe(`${SUITE} — commodity selection and species blocks`, () => {
     expect(valueOf(card.rows, COMMON_NAME_KEY)).toBe(
       'Domestic Cattle, American Bison'
     )
-    expect(valueOf(card.rows, SPECIES_KEY)).toBe('Bos Taurus, Bison Bison')
+    expect(valueOf(card.rows, SPECIES_KEY)).toBe('Bos taurus, Bison bison')
   })
 
   it('Should add each species its own code and common name under other live mammals', async () => {
@@ -852,7 +852,7 @@ describe(`${SUITE} — commodity selection and species blocks`, () => {
     expect(valueOf(card.rows, COMMODITY_CODE_KEY)).toBe('01061900, 01061900')
     expect(valueOf(card.rows, COMMON_NAME_KEY)).toBe('Domestic Cat, Ferret')
     expect(valueOf(card.rows, SPECIES_KEY)).toBe(
-      'Felis Catus, Mustela Putorius Furo'
+      'Felis catus, Mustela putorius furo'
     )
   })
 
@@ -1066,7 +1066,7 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
       hrefEndingWithFromReview('consignment-details')
     )
     expect(block.rows[0].actions.items[0].visuallyHiddenText).toBe(
-      'number of animals for Bos Taurus'
+      'number of animals for Bos taurus'
     )
     expect(block.rows[1].actions).toBeUndefined()
     expect(block.identificationDetails.actions.items[0].href).toMatch(

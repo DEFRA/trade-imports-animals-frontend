@@ -98,7 +98,7 @@
                 <h4 class="govuk-heading-s">{{ block.heading }}</h4>
                 {{ govukSummaryList({ rows: block.rows }) }}
                 {% if block.identificationDetails %}
-                  <h5 class="govuk-heading-xs">{{ copy.identificationDetails.heading }}</h5>
+                  <h5 class="govuk-body govuk-!-font-weight-bold">{{ copy.identificationDetails.heading }}</h5>
                   {% if block.identificationDetails.actions %}
                     <p class="govuk-body">
                       {% for item in block.identificationDetails.actions.items %}

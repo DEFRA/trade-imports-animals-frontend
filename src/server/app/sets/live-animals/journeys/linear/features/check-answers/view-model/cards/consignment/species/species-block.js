@@ -5,7 +5,7 @@ import {
   animalIdentificationPage,
   consignmentDetailsPage
 } from '../../../../../commodities/page.js'
-import { speciesTitleName } from '../../../../../commodities/species-label.js'
+import { speciesDisplayName } from '../../../../../commodities/species-label.js'
 import { packagesApply } from '../../../applicability.js'
 import { changeAction, editableActions } from '../../../rows/change-link.js'
 import { row } from '../../../rows/summary-row.js'
@@ -68,7 +68,7 @@ export const speciesBlock = ({
   line: { index, entry }
 }) => {
   const changeContext = { journeyId, changeLinkTrail }
-  const speciesName = speciesTitleName(entry)
+  const speciesName = speciesDisplayName(entry)
   return {
     anchor: speciesBlockAnchor(index),
     heading: speciesName,

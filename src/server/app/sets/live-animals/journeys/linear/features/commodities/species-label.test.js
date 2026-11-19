@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  speciesDisplayName,
   speciesLabel,
-  speciesSentenceName,
-  speciesTitleName
+  speciesSentenceName
 } from './species-label.js'
 
 const BOS_TAURUS = 'Bos taurus'
@@ -27,25 +27,33 @@ describe('#speciesLabel', () => {
   })
 })
 
-describe('#speciesTitleName', () => {
-  it('Should capitalise every word of a Latin name stored in sentence case', () => {
-    expect(speciesTitleName({ speciesLatinName: BOS_TAURUS })).toBe(
-      'Bos Taurus'
+describe('#speciesDisplayName', () => {
+  it('Should keep a Latin name stored in sentence case as it is', () => {
+    expect(speciesDisplayName({ speciesLatinName: BOS_TAURUS })).toBe(
+      BOS_TAURUS
     )
   })
 
-  it('Should capitalise every word of a Latin name stored in lower case', () => {
-    expect(speciesTitleName({ speciesLatinName: 'bison bison' })).toBe(
-      'Bison Bison'
+  it('Should capitalise only the genus of a Latin name stored in lower case', () => {
+    expect(speciesDisplayName({ speciesLatinName: 'bison bison' })).toBe(
+      'Bison bison'
     )
   })
 
-  it('Should keep a single-word name capitalised', () => {
-    expect(speciesTitleName({ speciesLatinName: 'struthio' })).toBe('Struthio')
+  it('Should lower-case every word after the genus of a Latin name stored in title case', () => {
+    expect(speciesDisplayName({ speciesLatinName: 'Bos Taurus' })).toBe(
+      BOS_TAURUS
+    )
+  })
+
+  it('Should capitalise a single-word Latin name stored in lower case', () => {
+    expect(speciesDisplayName({ speciesLatinName: 'struthio' })).toBe(
+      'Struthio'
+    )
   })
 
   it('Should return blank for a line with no Latin name yet', () => {
-    expect(speciesTitleName({ speciesCommonName: 'Cattle' })).toBe('')
+    expect(speciesDisplayName({ speciesCommonName: 'Cattle' })).toBe('')
   })
 })
 
