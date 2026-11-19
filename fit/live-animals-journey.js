@@ -1734,6 +1734,19 @@ export const changeOriginOnAmendment = async (page, internalReference) => {
   await openNotificationView(page)
 }
 
+export const cancelAmendLink = (page) =>
+  page.locator('.app-journey-strip').getByRole('link', {
+    name: sharedAppCopy.journeyStrip.cancelAmend,
+    exact: true
+  })
+
+export const amendChangeOriginAndOpenCancel = async (page, reference) => {
+  await amendFromList(page, reference)
+  await expect(cancelAmendLink(page)).toBeVisible()
+  await changeOriginOnAmendment(page, 'DiscardMe99')
+  await cancelAmendLink(page).click()
+}
+
 export const saveAndContinue = (page) =>
   page.getByRole('button', {
     name: sharedAppCopy.saveActions.saveAndContinue,

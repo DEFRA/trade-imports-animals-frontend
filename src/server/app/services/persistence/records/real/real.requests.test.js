@@ -54,6 +54,7 @@ const canonical = ({
   fulfilments,
   status,
   created: createdAt,
+  answersDifferFromSubmitted: false,
   submittedAt,
   concurrencyToken
 })

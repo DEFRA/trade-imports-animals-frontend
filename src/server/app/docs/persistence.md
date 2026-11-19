@@ -19,9 +19,9 @@ selects the stub or real implementation. Both expose the same operation names.
 
 Canonical fulfilment is the durable answer source. Writes replace a whole evaluated
 and purged snapshot. Reads rebuild projected answers, scope and status, so derived
-state is not stored. The loaded journey also carries `answersDifferFromSubmitted`,
-whether an amendment's notification answers differ from the submitted version.
-The real adapter reads it from the backend; the stub adapter works it out itself.
+state is not stored, apart from `answersDifferFromSubmitted`. The loaded journey carries
+whether an amendment's notification answers differ from the submitted version,
+always yes or no. Both adapters read a stored flag: the real one from the backend, the stub from its own journey record, which it keeps as the backend does.
 
 ## Session port
 
@@ -89,8 +89,8 @@ The real records adapter writes canonical fulfilment first, then derives backend
 notification projections through
 [`src/server/app/services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/).
 The projections are downstream views, not resume sources. The stub adapter
-derives the notification projection of the current fulfilment and of the
-submitted snapshot on read, to work out `answersDifferFromSubmitted`.
+derives the notification projection of the saved fulfilment and of the
+submitted snapshot on each save while amending, to work out `answersDifferFromSubmitted`. It does not do this on read.
 
 A commodity line is one CN code with one species and its own counts and nested
 identifier records. The backend commodity is one complement per CN code, holding

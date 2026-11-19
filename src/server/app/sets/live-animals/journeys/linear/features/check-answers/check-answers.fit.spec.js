@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
+  amendChangeOriginAndOpenCancel,
   amendFromList,
   backLink,
   changeOriginOnAmendment,
@@ -1454,7 +1455,42 @@ test.describe('check-answers feature amendment review', () => {
     await expect(page).toHaveTitle(new RegExp(`^${copy.resubmittingTitle}`))
   })
 
+  test('is headed and titled for reviewing again once the changed answer is put back', async ({
+    page
+  }) => {
+    await changeOriginOnAmendment(page, 'ChangedRef1')
+    await changeOriginOnAmendment(page, values.internalReferenceNumber)
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title })
+    ).toBeVisible()
+    await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
+  })
+
   test('has no serious or critical axe violations', async ({ page }) => {
     await expectNoSeriousOrCriticalViolations(page, 'Amendment check answers')
+  })
+})
+
+test.describe('check-answers feature amendment review after a cancelled amendment', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test('a new amendment is headed and titled for reviewing, not re-submitting', async ({
+    page
+  }) => {
+    await signIn(page)
+    const reference = await submitCompleteNotification(page)
+    await amendChangeOriginAndOpenCancel(page, reference)
+    await page
+      .getByRole('button', { name: cancelAmendCopy.confirmButton })
+      .click()
+
+    await amendFromList(page, reference)
+    await openNotificationView(page)
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title })
+    ).toBeVisible()
+    await expect(page).toHaveTitle(new RegExp(`^${copy.title}`))
   })
 })

@@ -18,6 +18,7 @@ export const finalise = async (journeyId, _actor, concurrencyToken) => {
   advanceConcurrencyToken(journey)
   journey.status = SUBMITTED
   journey.submittedAt = new Date().toISOString()
+  journey.answersDifferFromSubmitted = false
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
 }
@@ -37,6 +38,7 @@ export const amend = async (journeyId, _actor) => {
   advanceConcurrencyToken(journey)
   journey.status = AMEND
   journey.submittedAt = null
+  journey.answersDifferFromSubmitted = false
   return structuredClone(marshal(journey))
 }
 
@@ -54,6 +56,7 @@ export const cancelAmend = async (journeyId, _actor) => {
   journey.submittedAt = journey.submittedSnapshot.submittedAt
   advanceConcurrencyToken(journey)
   journey.status = SUBMITTED
+  journey.answersDifferFromSubmitted = false
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
 }

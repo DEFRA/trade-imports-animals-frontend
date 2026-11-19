@@ -384,6 +384,31 @@ describe('records answersDifferFromSubmitted', () => {
     expect(await differs(journeyId)).toBe(false)
   })
 
+  it('Should be false after resubmitting a changed amendment and when the next amendment starts', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    await finaliseAtLoadedToken(journeyId)
+    expect(await differs(journeyId)).toBe(false)
+
+    const amendedAgain = await records.amend(journeyId)
+    expect(amendedAgain.answersDifferFromSubmitted).toBe(false)
+  })
+
+  it('Should be false after a changed amendment is cancelled', async () => {
+    const journeyId = await submittedWithOrigin('FR')
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect(await differs(journeyId)).toBe(true)
+
+    const cancelled = await records.cancelAmend(journeyId)
+
+    expect(cancelled.answersDifferFromSubmitted).toBe(false)
+    expect(await differs(journeyId)).toBe(false)
+  })
+
   it('Should be false on a draft and on a submitted notification', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))

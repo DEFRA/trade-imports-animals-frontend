@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
+  amendChangeOriginAndOpenCancel,
   amendFromList,
   BASE,
-  changeOriginOnAmendment,
+  cancelAmendLink,
   expectNoSeriousOrCriticalViolations,
   journeyIdFromPage,
   openReviewFromHub,
@@ -20,11 +21,6 @@ import { copy } from './copy/copy.en.js'
 const TAG = '.govuk-tag'
 const strip = (page) => page.locator('.app-journey-strip')
 const viewHeaderTag = (page) => page.locator(`main ${TAG}`)
-const cancelAmendLink = (page) =>
-  strip(page).getByRole('link', {
-    name: sharedCopy.journeyStrip.cancelAmend,
-    exact: true
-  })
 
 const expectAmendStrip = async (page) => {
   await expect(strip(page).locator(TAG)).toHaveText(
@@ -33,20 +29,13 @@ const expectAmendStrip = async (page) => {
   await expect(cancelAmendLink(page)).toBeVisible()
 }
 
-const amendAndOpenCancel = async (page, reference) => {
-  await amendFromList(page, reference)
-  await expectAmendStrip(page)
-  await changeOriginOnAmendment(page, 'DiscardMe99')
-  await cancelAmendLink(page).click()
-}
-
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     const reference = await submitCompleteNotification(page, {
       withItahc: true
     })
-    await amendAndOpenCancel(page, reference)
+    await amendChangeOriginAndOpenCancel(page, reference)
   })
 
   test('renders confirmation copy, actions and review back link', async ({

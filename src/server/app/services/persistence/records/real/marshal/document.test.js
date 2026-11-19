@@ -13,7 +13,8 @@ const document = (status) => ({
   created: '2026-01-01T00:00:00',
   submittedAt: '2026-01-02T00:00:00',
   concurrencyToken: 3,
-  fulfilments: []
+  fulfilments: [],
+  answersDifferFromSubmitted: false
 })
 
 describe('marshal document', () => {
@@ -45,7 +46,7 @@ describe('marshal document answersDifferFromSubmitted', () => {
     ).toBe(true)
   })
 
-  it('Should be false when the backend document leaves it out', () => {
+  it('Should be false when the backend document says the answers do not differ', () => {
     expect(marshal(document('AMEND')).answersDifferFromSubmitted).toBe(false)
   })
 })
