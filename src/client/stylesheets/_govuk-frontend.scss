@@ -1,6 +1,5 @@
-@use "@ministryofjustice/frontend/moj/vendor/govuk-frontend" with (
-  $moj-assets-path: "/public/assets/",
-  $govuk-global-styles: true
+@forward "pkg:govuk-frontend" with (
+  $govuk-assets-path: "/public/assets/",
+  $govuk-global-styles: true,
+  $govuk-include-default-font-face: false
 );
-
-@forward "pkg:govuk-frontend";
