@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
 import {
-  addressBookAnswering,
   driveHandler,
   refusingSaves,
   expectOneLogged,
@@ -13,6 +12,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { addressBookAnswering } from '../../../../../../../engine/address-book-test-support.js'
 import { dispatchPages } from '../../index.js'
 import { consignor, contactAddress } from '../../../../../obligations/index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'

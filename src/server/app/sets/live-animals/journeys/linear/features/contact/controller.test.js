@@ -2,12 +2,8 @@ import { SET_ID } from '../../../../set.js'
 import { describe, expect, it } from 'vitest'
 
 import {
-  addressBookAnswering,
-  addressBookPage,
-  addressBookRequestUrls,
   authenticatedCredentials,
   driveHandler,
-  listedAddress,
   refusingSaves,
   resetMocksAndConfigAfterTests,
   expectNoRefusalLogged,
@@ -16,6 +12,12 @@ import {
   useStubbedJourney,
   unavailableBackendError
 } from '../../../../../../engine/test-support.js'
+import {
+  addressBookAnswering,
+  addressBookPage,
+  addressBookRequestUrls,
+  listedAddress
+} from '../../../../../../engine/address-book-test-support.js'
 import { useInsFrontendBaseUrl } from '../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { dispatchPages } from '../index.js'
 import {

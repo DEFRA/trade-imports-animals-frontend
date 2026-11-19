@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'vitest'
 
 import {
-  addressBookAnswering,
-  addressBookRefusingAddresses,
   fetchMock,
   resetMocksAndConfigAfterTests
 } from '../../engine/test-support.js'
+import {
+  addressBookAnswering,
+  addressBookRefusingAddresses
+} from '../../engine/address-book-test-support.js'
 import { createTransporter, listTransporters } from './client.js'
 import { WIRE_PRIVATE } from './wire-types.js'
 

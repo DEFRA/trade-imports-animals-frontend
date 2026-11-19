@@ -8,16 +8,18 @@ import {
   driveHandler,
   reviewChangeLinkQuery,
   refusingSaves,
-  addressBookAnswering,
-  addressBookPage,
   expectOneLogged,
   expectOneRefusalLogged,
   expectRecoverableSaveFallback,
-  listedAddress,
   resetMocksAndConfigAfterTests,
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import {
+  addressBookAnswering,
+  addressBookPage,
+  listedAddress
+} from '../../../../../../../engine/address-book-test-support.js'
 import { useInsFrontendBaseUrl } from '../../../../../../../../common/test-helpers/use-ins-frontend-base-url.js'
 import { insViewAddressUrl } from '../../../../../../../../common/helpers/ins-address-book-urls.js'
 import { dispatchPages } from '../../index.js'

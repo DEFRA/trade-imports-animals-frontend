@@ -8,8 +8,6 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { records as realRecords } from '../../../../../../services/persistence/records/real/index.js'
 import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import {
-  addressBookRefusingAddresses,
-  addressBookRequestUrls,
   expectOneLogged,
   expectNoRefusalLogged,
   fetchMock,
@@ -23,6 +21,10 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import {
+  addressBookRefusingAddresses,
+  addressBookRequestUrls
+} from '../../../../../../engine/address-book-test-support.js'
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'

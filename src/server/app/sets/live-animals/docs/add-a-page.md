@@ -398,9 +398,10 @@ set-up in the test file:
     `useBackendRecords`, `addressBookAnswering` and `useReferenceDataServing`
     drive; a test enables it and sets its response, with
     `resetMocksAndConfigAfterTests()` registered
-  - `addressBookAnswering` and `addressBookRefusingAddresses` put the address
-    book on the network boundary, and `resetMocksAndConfigAfterTests` resets it
-    after each test
+  - `addressBookAnswering` and `addressBookRefusingAddresses`, exported from
+    [`engine/address-book-test-support.js`](../../../engine/address-book-test-support.js),
+    put the address book on the network boundary, and
+    `resetMocksAndConfigAfterTests` resets it after each test
   - `useReferenceDataServing` registers `resetMocksAndConfigAfterTests()` for the
     describe that calls it, and returns the function that serves given rows as
     the reference-data response
