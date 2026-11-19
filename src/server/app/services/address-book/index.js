@@ -1,21 +1,6 @@
 import { isStubMode } from '../../../common/services/mode.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
 import * as client from './client.js'
 import { STUB_BOOK } from './stub/index.js'
-
-/** Rows per page of the picker's results table. */
-export const PAGE_SIZE = 5
-
-/** Addresses have no type in the address book (D3) — the same record may be a
- * consignor on one notification and a consignee on the next. So every picker
- * searches one book, and no function here takes a role. What a picker does
- * with the record it gets back is the page's business, not the book's. */
-
-/** Addresses are read-only here: the notification journey selects from the
- * organisation's book, and adding, changing and removing an address belongs
- * to the INS frontend. A transporter the journey adds is written here
- * instead, through `services/transporters`, because the journey is where it
- * is entered. */
 
 const haystack = (record) =>
   [record.name, ...Object.values(record.address ?? {})]
@@ -23,95 +8,23 @@ const haystack = (record) =>
     .join(' ')
     .toLowerCase()
 
-const pageOf = (records, requested) => {
-  const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE))
-  const current =
-    Number.isInteger(requested) && requested >= 1 && requested <= totalPages
-      ? requested
-      : 1
-  const from = (current - 1) * PAGE_SIZE
-  return {
-    results: records.slice(from, from + PAGE_SIZE),
-    total: records.length,
-    page: current,
-    totalPages,
-    pageSize: PAGE_SIZE
-  }
-}
+const matchesSearch = (record, query) =>
+  haystack(record).includes(query.trim().toLowerCase())
 
-const searchStub = (query, requested) => {
-  const term = query.trim().toLowerCase()
-  return pageOf(
-    STUB_BOOK.filter((record) => haystack(record).includes(term)),
-    requested
-  )
-}
-
-const apiPageHolding = (offset, apiPageSize) =>
-  Math.floor(offset / apiPageSize) + 1
-
-const servedAnotherPageSize = (found) =>
-  found.pageSize > 0 && found.pageSize !== client.API_PAGE_SIZE
-
-const sliceAt = async (orgId, query, requested) => {
-  const offset = (requested - 1) * PAGE_SIZE
-  let apiPage = apiPageHolding(offset, client.API_PAGE_SIZE)
-  let found = await client.listAddresses(orgId, { page: apiPage, query })
-
-  if (servedAnotherPageSize(found)) {
-    apiPage = apiPageHolding(offset, found.pageSize)
-    found = await client.listAddresses(orgId, { page: apiPage, query })
-  }
-
-  const within = offset - (apiPage - 1) * found.pageSize
-  return {
-    results: found.records.slice(within, within + PAGE_SIZE),
-    total: found.totalItems,
-    page: requested,
-    totalPages: Math.max(1, Math.ceil(found.totalItems / PAGE_SIZE)),
-    pageSize: PAGE_SIZE
-  }
-}
-
-/** An out-of-range page falls back to the first — the book decides what a page
- * is, the pages only render what comes back. The API rejects an out-of-range
- * page with a 400, so that is a fallback and not an error. */
-const searchReal = async (orgId, query, requested) => {
-  try {
-    const found = await sliceAt(orgId, query, requested)
-    if (requested <= found.totalPages) {
-      return found
-    }
-  } catch (error) {
-    if (error.status !== HTTP_STATUS_BAD_REQUEST) {
-      throw error
-    }
-  }
-  return sliceAt(orgId, query, 1)
-}
-
-/** Free-text search over the organisation's book, returning one page. */
-export const search = async (orgId, { query = '', page = 1 } = {}) => {
-  const requested = Number.isInteger(page) && page >= 1 ? page : 1
-  return isStubMode()
-    ? searchStub(query, requested)
-    : searchReal(orgId, query, requested)
-}
+export const offeredForRole = (record, role) =>
+  !role || record.roles.length === 0 || record.roles.includes(role)
 
 const pageNumbersFrom = (first, last) =>
   Array.from({ length: last - first + 1 }, (_, index) => first + index)
 
-/** Every address the organisation has saved, unpaginated — for the contact
- * picker, which renders a flat radio list rather than a searchable table.
- * Reads the book in its largest pages, a few requests at a time. */
-export const all = async (orgId) => {
-  if (isStubMode()) {
-    return [...STUB_BOOK]
-  }
-
+const recordsFromEveryLivePage = async (orgId, query) => {
   const PAGES_READ_AT_ONCE = 4
   const readPage = (page) =>
-    client.listAddresses(orgId, { page, pageSize: client.MAX_API_PAGE_SIZE })
+    client.listAddresses(orgId, {
+      page,
+      pageSize: client.MAX_API_PAGE_SIZE,
+      query
+    })
   const first = await readPage(1)
   const records = [...first.records]
   for (
@@ -129,6 +42,16 @@ export const all = async (orgId) => {
     records.push(...batch.flatMap((found) => found.records))
   }
   return records
+}
+
+/** The organisation's live addresses matching an optional search term,
+ * narrowed to an optional role: a record holding that role, or holding no
+ * role at all, matches; with no role given, every matching record does. */
+export const addresses = async (orgId, { query = '', role } = {}) => {
+  const matching = isStubMode()
+    ? STUB_BOOK.filter((record) => matchesSearch(record, query))
+    : await recordsFromEveryLivePage(orgId, query)
+  return matching.filter((record) => offeredForRole(record, role))
 }
 
 /** One address by id. Resolves to undefined when the record does not exist for

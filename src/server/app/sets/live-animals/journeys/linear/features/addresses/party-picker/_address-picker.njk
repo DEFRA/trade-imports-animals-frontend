@@ -1,8 +1,6 @@
 {% from "submitted-search/macro.njk" import appSubmittedSearch %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
-{% from "govuk/components/pagination/macro.njk" import govukPagination %}
-{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
 
 {% macro pickerError(picker, copy) %}
@@ -45,10 +43,6 @@
         html: fieldsetContent
       }) }}
     </div>
-
-    {% if picker.pagination %}
-      {{ govukPagination(picker.pagination) }}
-    {% endif %}
   {% else %}
     <p class="govuk-body">{{ copy.noMatches }}</p>
     {% if picker.error %}
@@ -63,7 +57,6 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    <input type="hidden" name="page" value="{{ picker.page }}" />
     {% if picker.selected %}
       <input type="hidden" name="selected" value="{{ picker.selected.id }}" />
     {% endif %}
@@ -77,10 +70,6 @@
       button: { text: copy.search.button },
       wrapperClasses: "govuk-!-width-one-half"
     }) }}
-
-    {% if picker.selected %}
-      {{ govukInsetText({ text: copy.selectedAddressPrefix + " " + picker.selected.name }) }}
-    {% endif %}
 
     {{ addressPickerResults(picker, copy) }}
 

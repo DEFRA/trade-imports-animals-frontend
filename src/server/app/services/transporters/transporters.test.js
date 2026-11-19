@@ -100,7 +100,7 @@ describe('#parties', () => {
 describe('separation from the address book', () => {
   test('Should not be reachable through the address book', async () => {
     // The suite already runs in stub mode, which is where both books are canned.
-    const book = await addressBook.all('5900001')
+    const book = await addressBook.addresses('5900001')
 
     const transporterIds = transporters.parties().map((record) => record.id)
 

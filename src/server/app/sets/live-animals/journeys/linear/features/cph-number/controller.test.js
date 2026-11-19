@@ -2,18 +2,21 @@ import { describe, expect, it } from 'vitest'
 
 import {
   driveHandler,
+  expectBackLinkIsPath,
   expectNoRefusalLogged,
+  expectOneLogged,
   postHandlerOf,
   trailQuery,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import { SET_ID } from '../../../../set.js'
 import { dispatchPages } from '../index.js'
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import { CYA_SLUG, withTrail } from '../../../../../../shared/kit.js'
 import { TRAIL_START } from '../../../../../../shared/trail.js'
 
 import { addressesPage } from '../addresses/page.js'
+import { originPage } from '../origin/page.js'
 import { cphNumberPage } from './page.js'
 import * as cphNumber from './controller.js'
 
@@ -52,17 +55,25 @@ describe('POST cph-number — the CPH number saved as nine digits or refused per
     expect(result.after.countyParishHoldingCph).toBe('123456789')
   })
 
-  it('Should answer an untouched page with the whole question at the first box', async () => {
+  it('Should accept all three boxes empty, commit the number as empty and go to the consignment addresses page', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
       payload: { cphCounty: '', cphParish: '', cphHolding: '' }
     })
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors).toEqual({
-      cphCounty: 'Enter a CPH number'
+    expect(result.view).toBeUndefined()
+    expect(result.after.countyParishHoldingCph).toBe('')
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, addressesPage.slug)
     })
-    expect(result.after.countyParishHoldingCph).toBeUndefined()
     expectNoRefusalLogged(result.logger)
+  })
+
+  it('Should clear a number saved before when all three boxes are submitted empty', async () => {
+    const result = await driveHandler(postCph, {
+      seed: { ...seed(), countyParishHoldingCph: '123456789' },
+      payload: { cphCounty: '', cphParish: '', cphHolding: '' }
+    })
+    expect(result.after.countyParishHoldingCph).toBe('')
   })
 
   it('Should name the missing part when the others are answered', async () => {
@@ -164,39 +175,65 @@ describe('GET cph-number — the stored number back in its parts', () => {
   })
 })
 
-describe("cph-number — Back and the save's next page by where the trader came from", () => {
+describe('cph-number — Back and Save and continue always answer the consignment addresses page', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   const fromReview = { from: CYA_SLUG }
 
-  describe('GET /cph-number', () => {
-    it('Should back-link to the addresses page carrying the trail when entered from its CPH section add link', async () => {
+  describe('Back', () => {
+    it('Should go to the consignment addresses page with no trail, reached from the section add link', async () => {
+      const result = await driveWithQuery(getCph)
+      expectBackLinkIsPath(
+        result,
+        pagePath(result.journeyId, addressesPage.slug)
+      )
+    })
+
+    it('Should go to the consignment addresses page carrying the trail, reached from the overview', async () => {
       const result = await driveWithQuery(getCph, {
-        query: { return: addressesPage.slug, ...fromReview }
+        query: trailQuery(TRAIL_START.overview)
       })
-      expect(result.view.context.backLink).toBe(
+      expectBackLinkIsPath(
+        result,
+        withTrail(pagePath(result.journeyId, addressesPage.slug), [
+          TRAIL_START.overview
+        ])
+      )
+    })
+
+    it('Should go to the consignment addresses page carrying the trail, reached from a review Change link', async () => {
+      const result = await driveWithQuery(getCph, { query: fromReview })
+      expectBackLinkIsPath(
+        result,
         withTrail(pagePath(result.journeyId, addressesPage.slug), [CYA_SLUG])
       )
     })
-
-    it('Should back-link to the review when entered from a review Change link', async () => {
-      const result = await driveWithQuery(getCph, { query: fromReview })
-      expect(result.view.context.backLink).toBe(
-        pagePath(result.journeyId, CYA_SLUG)
-      )
-    })
-
-    it('Should back-link to the overview when nothing says where the trader came from', async () => {
-      const result = await driveWithQuery(getCph)
-      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
-    })
   })
 
-  describe('POST /cph-number', () => {
-    it('Should save and return to the addresses page carrying the trail when entered from its CPH section add link', async () => {
+  describe('Save and continue', () => {
+    it('Should go to the consignment addresses page with no trail, without joining it, reached from the section add link', async () => {
+      const result = await driveWithQuery(postCph, { payload: VALID_PARTS })
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, addressesPage.slug)
+      })
+    })
+
+    it('Should go to the consignment addresses page carrying the trail, without joining it, reached from the overview', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
-        query: { return: addressesPage.slug, ...fromReview }
+        query: trailQuery(TRAIL_START.overview)
+      })
+      expect(result.response).toEqual({
+        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
+          TRAIL_START.overview
+        ])
+      })
+    })
+
+    it('Should go to the consignment addresses page carrying the trail, without joining it, reached from a review Change link', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: fromReview
       })
       expect(result.response).toEqual({
         redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
@@ -204,31 +241,68 @@ describe("cph-number — Back and the save's next page by where the trader came 
         ])
       })
     })
+  })
+})
 
-    it('Should go to the consignment addresses page with the CPH page after the overview on the trail when entered from the overview', async () => {
-      const result = await driveWithQuery(postCph, {
-        payload: VALID_PARTS,
-        query: trailQuery(TRAIL_START.overview)
-      })
-      expect(result.response).toEqual({
-        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
-          TRAIL_START.overview,
-          cphNumberPage.slug
-        ])
-      })
+describe('cph-number — Save and continue when the country of origin is still missing', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  it('Should go to the page that asks for the country of origin, not the consignment addresses page, logging the landing once', async () => {
+    const result = await driveHandler(postCph, {
+      seed: { commodityLines: [{ commodityCode: '0102' }] },
+      payload: VALID_PARTS
     })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, originPage.slug)
+    })
+    expectOneLogged(result.logger, {
+      level: 'info',
+      message:
+        'Save and continue opened the page that asks for a missing earlier answer',
+      fields: {
+        journeyId: result.journeyId,
+        savedPageId: cphNumberPage.id,
+        unopenedPageId: addressesPage.id,
+        missingAnswerIds: ['countryOfOrigin']
+      }
+    })
+  })
+})
 
-    it('Should go to the consignment addresses page with the CPH page on the trail when entered from a review Change link without return=addresses', async () => {
-      const result = await driveWithQuery(postCph, {
-        payload: VALID_PARTS,
-        query: fromReview
-      })
-      expect(result.response).toEqual({
-        redirect: withTrail(pagePath(result.journeyId, addressesPage.slug), [
-          CYA_SLUG,
-          cphNumberPage.slug
-        ])
-      })
+describe('cph-number — a consignment whose commodities do not call for the number', () => {
+  useStubbedJourney(SET_ID, dispatchPages)
+
+  const horsesOnly = () => ({
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commodityCode: '0101' }]
+  })
+
+  it('Should answer the consignment addresses page, render nothing and log once on a GET', async () => {
+    const result = await driveHandler(getCph, { seed: horsesOnly() })
+    expect(result.view).toBeUndefined()
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, addressesPage.slug)
+    })
+    expectOneLogged(result.logger, {
+      level: 'info',
+      message:
+        'County parish holding number skipped: no commodity on this consignment needs one',
+      fields: {
+        journeyId: result.journeyId,
+        reason: 'cph-number-not-in-scope',
+        commodityCodes: ['0101']
+      }
+    })
+  })
+
+  it('Should save nothing and answer the consignment addresses page on a POST', async () => {
+    const result = await driveHandler(postCph, {
+      seed: horsesOnly(),
+      payload: VALID_PARTS
+    })
+    expect(result.after.countyParishHoldingCph).toBeUndefined()
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, addressesPage.slug)
     })
   })
 })

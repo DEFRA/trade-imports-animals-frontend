@@ -11,7 +11,7 @@ const contactCopy = copyFor({ en: contactEn, cy: contactCy })
 export const PARTIES = [
   {
     id: 'placeOfOrigin',
-    role: 'placeOfOrigin',
+    addressBookRole: 'PLACE_OF_ORIGIN',
     slug: 'place-of-origin/select',
     editSlug: 'place-of-origin/edit',
     returnSlug: 'addresses',
@@ -19,7 +19,7 @@ export const PARTIES = [
   },
   {
     id: 'consignor',
-    role: 'consignor',
+    addressBookRole: 'CONSIGNOR',
     slug: 'consignors/select',
     editSlug: 'consignors/edit',
     returnSlug: 'addresses',
@@ -27,7 +27,7 @@ export const PARTIES = [
   },
   {
     id: 'consignee',
-    role: 'consignee',
+    addressBookRole: 'CONSIGNEE',
     slug: 'consignees/select',
     editSlug: 'consignees/edit',
     returnSlug: 'addresses',
@@ -35,7 +35,7 @@ export const PARTIES = [
   },
   {
     id: 'importer',
-    role: 'importer',
+    addressBookRole: 'IMPORTER',
     slug: 'importers/select',
     editSlug: 'importers/edit',
     returnSlug: 'addresses',
@@ -43,7 +43,7 @@ export const PARTIES = [
   },
   {
     id: 'placeOfDestination',
-    role: 'destination',
+    addressBookRole: 'PLACE_OF_DESTINATION',
     slug: 'destinations/select',
     editSlug: 'destinations/edit',
     returnSlug: 'addresses',
@@ -53,12 +53,11 @@ export const PARTIES = [
 
 export const CONTACT_PARTY = {
   id: 'contactAddress',
-  role: 'contact',
+  addressBookRole: 'BRANCH_ADDRESS',
   slug: consignmentContactSelectPage.slug,
   editSlug: 'consignment/contact/edit',
   returnSlug: consignmentContactSelectPage.slug,
   title: contactCopy.title,
-  hint: contactCopy.hint,
   error: contactCopy.errors.contactRequired
 }
 

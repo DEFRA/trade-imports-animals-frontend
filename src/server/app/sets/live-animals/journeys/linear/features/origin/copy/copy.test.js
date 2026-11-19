@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCopyLeaf, leaves } from '../../../../../../../shared/copy-leaves.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
-  it.each([
-    ['en', copy],
-    ['cy', copyCy]
-  ])('Should hold non-empty copy at every %s leaf', (locale, bundle) => {
-    for (const { path, value } of leaves(bundle)) {
-      expect(isCopyLeaf(value), `${locale}: ${path} must be copy`).toBe(true)
-    }
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   it.each([
     'country',

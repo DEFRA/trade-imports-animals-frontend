@@ -409,8 +409,9 @@ set-up in the test file:
   `selectSpecies`, `chooseTypeAheadOption`, `choosePortOfEntry`,
   `openFromOverviewRow`, `openNotificationView` and `documentRowFor`;
   `expectThreeSaveControls` proves, by role inside the journey form, that the
-  primary, Save and return to overview and Cancel and return to overview
-  appear in that order, `expectPageEndsWithPrimaryAlone` proves a page
+  primary and the page's own save-and-return and cancel controls appear in
+  that order, defaulting to the shared "Save and return to overview" and
+  "Cancel and return to overview" wording; `expectPageEndsWithPrimaryAlone` proves a page
   ends with the primary alone, and `expectPageEndsWithPrimaryAndCancel`
   proves a page ends with exactly the primary and the secondary "Cancel and
   return to dashboard", offering no overview return control;

@@ -1,15 +1,18 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
-{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <p class="govuk-body">{{ copy.intro }}</p>
+
+  <h2 class="govuk-heading-m">{{ resultsHeading }}</h2>
+
   {% if addAddressHref %}
-    <p class="govuk-body">
-      <a class="govuk-link" href="{{ addAddressHref }}">{{ addNewAddressLabel }}</a>
-    </p>
+    <p class="govuk-body">{{ copy.addNewBranchAddress.before }}<a class="govuk-link" href="{{ addAddressHref }}">{{ copy.addNewBranchAddress.linkText }}</a>{{ copy.addNewBranchAddress.after }}</p>
   {% endif %}
 
   <form method="post" novalidate>
@@ -20,41 +23,14 @@
       name: "contactAddress",
       fieldset: {
         legend: {
-          text: copy.legend,
-          isPageHeading: true,
-          classes: "govuk-fieldset__legend--l"
+          text: resultsHeading,
+          classes: "govuk-visually-hidden"
         }
       },
-      hint: { text: copy.hint },
       errorMessage: errors.contactAddress and { text: errors.contactAddress },
       items: contactOptions
     }) }}
 
-    {# Below the radios so the page heading (the legend) stays the first heading. #}
-    {% if currentContact %}
-      {{ govukSummaryList({
-        card: {
-          title: { text: copy.current.title },
-          attributes: { role: "region", "aria-label": copy.current.title }
-        },
-        rows: [
-          {
-            key: { text: currentContact.name },
-            value: { text: currentContact.summary },
-            actions: {
-              items: [
-                {
-                  href: currentContact.editHref,
-                  text: copy.current.editDetails,
-                  visuallyHiddenText: copy.current.title | lower
-                }
-              ]
-            }
-          }
-        ]
-      }) }}
-    {% endif %}
-
-    {{ saveActions({ hubHref: hubHref, copy: sharedCopy.saveActions }) }}
+    {{ saveActions({ hubHref: hubHref, copy: saveActionsCopy }) }}
   </form>
 {% endblock %}

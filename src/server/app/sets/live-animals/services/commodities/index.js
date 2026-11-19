@@ -2,7 +2,7 @@ import {
   COMMODITY_DESCRIPTIONS,
   COMMODITY_IDENTIFIERS,
   COMMODITY_NAMES_BY_CODE,
-  CPH_EXEMPT_CODES,
+  CPH_REQUIRED_CODES,
   EAR_TAG_CODES,
   HORSE_NAME_CODE_SPECIES,
   IDENTIFIED_CODES,
@@ -43,4 +43,4 @@ export const permanentAddressCodeSpecies = () => PERMANENT_ADDRESS_CODE_SPECIES
 
 export const unweanedCommodityCodes = () => UNWEANED_CODES
 
-export const cphExemptCommodityCodes = () => CPH_EXEMPT_CODES
+export const cphRequiredCommodityCodes = () => CPH_REQUIRED_CODES

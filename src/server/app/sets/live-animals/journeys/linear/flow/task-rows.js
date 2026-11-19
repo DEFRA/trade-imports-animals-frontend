@@ -1,4 +1,9 @@
-import { NA, statusOf } from '../../../../../bridge/status/index.js'
+import {
+  FULFILLED,
+  IN_PROGRESS,
+  NA,
+  statusOf
+} from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
 import { originPage } from '../features/origin/page.js'
 import {
@@ -7,6 +12,7 @@ import {
   consignmentDetailsPage
 } from '../features/commodities/page.js'
 import { hasAnyCommodityLine } from '../features/commodities/lines.js'
+import { everyAddressableAnimalHasPermanentAddress } from '../features/permanent-address/cards.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
@@ -58,7 +64,11 @@ export const taskRows = [
   { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
   { id: 'transporter', pages: [transportersPage] },
   { id: 'documents', pages: [documentsPage] },
-  { id: 'addresses', pages: [addressesPage, cphNumberPage] },
+  {
+    id: 'addresses',
+    pages: [addressesPage, cphNumberPage],
+    extraAnswerGiven: everyAddressableAnimalHasPermanentAddress
+  },
   { id: 'contact', pages: [consignmentContactSelectPage] }
 ]
 
@@ -70,7 +80,15 @@ export const rowParts = (row) =>
 const rowApplies = (row, answers, evaluation) =>
   row.applies?.(answers, evaluation) ?? true
 
-export const rowStatus = (row, answers, inScope, evaluation) =>
-  rowApplies(row, answers, evaluation)
-    ? statusOf(rowParts(row), answers, inScope, evaluation)
-    : NA
+const extraAnswerGiven = (row, answers, evaluation) =>
+  row.extraAnswerGiven?.(answers, evaluation) ?? true
+
+export const rowStatus = (row, answers, inScope, evaluation) => {
+  if (!rowApplies(row, answers, evaluation)) {
+    return NA
+  }
+  const status = statusOf(rowParts(row), answers, inScope, evaluation)
+  return status === FULFILLED && !extraAnswerGiven(row, answers, evaluation)
+    ? IN_PROGRESS
+    : status
+}

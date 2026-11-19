@@ -1,11 +1,6 @@
 /**
  * Project the obligation implications into the 5-way task/section status.
  *
- * `statusOf(parts, answers, inScope, evaluation)` is the sole runtime source
- * of the 5-way task/section status at the row/section callers (`flow/task-rows.js`
- * `rowStatus`, `flow/section-status.js` `sectionStatus`;
- * `readyForCheckYourAnswers` rolls up through the former).
- *
  * The OUTER classification branches on NA / OPTIONAL / NOT_STARTED /
  * IN_PROGRESS / FULFILLED via `partRequired` / `partStarted` — so the
  * presentation-facing edge cases (empty optional collection -> OPTIONAL,

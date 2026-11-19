@@ -609,12 +609,12 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
   })
 
-  it('Should include the CPH row in the roles-and-addresses card when a line is a CPH-eligible commodity', async () => {
+  it('Should show the CPH row in the roles-and-addresses card in its slashed county/parish/holding form when a line is a CPH-eligible commodity', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
+    expect(valueOf(card.rows, CPH_KEY)).toBe('12/345/6789')
   })
 
   it('Should include the transited-countries row for an overland means of transport, labelling each code', async () => {
@@ -956,7 +956,7 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
     expect(htmlOf(card.rows, 'Domestic Cat 2')).toBe(PET_OWNER_ADDRESS_HTML)
   })
 
-  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and still report the outstanding answer against the species card', async () => {
+  it('Should list a row for the answered animal alone, leave the unanswered one with no row, and report the outstanding answer against both the species and roles and addresses cards', async () => {
     const seed = catsConsignmentSeed([
       {
         animalIdentifierMicrochip: CAT_1_MICROCHIP,
@@ -977,9 +977,9 @@ describe(`${SUITE} — permanent address rows on the roles-and-addresses card`, 
     ])
     expect(htmlOf(card.rows, DOMESTIC_CAT_1_LABEL)).toBe(PET_OWNER_ADDRESS_HTML)
     const summary = await summaryFor(seed)
-    expect(summary.errorList.map((entry) => entry.text)).toContain(
-      SPECIES_INCOMPLETE
-    )
+    const errorTexts = summary.errorList.map((entry) => entry.text)
+    expect(errorTexts).toContain(SPECIES_INCOMPLETE)
+    expect(errorTexts).toContain(ADDRESSES_INCOMPLETE)
   })
 
   it('Should list no permanent address row when a line needing one holds no animal identifier records', async () => {
@@ -1150,7 +1150,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keys).not.toContain(UNWEANED_KEY)
   })
 
-  it('Should omit the CPH row for an exempt commodity', async () => {
+  it('Should omit the CPH row for a commodity not on the CPH-required list', async () => {
     const keys = keysOf(
       rowsOf(
         await sectionsFor({
@@ -1769,7 +1769,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per code`
       commodityCode: OSTRICHES_CODE,
       packages: false,
       unweaned: false,
-      cph: true
+      cph: false
     }
   ]
 

@@ -1,11 +1,11 @@
 import { SET_ID } from '../../../../../set.js'
 import { describe, expect, it } from 'vitest'
-import { leaves } from '../../../../../../../shared/copy-leaves.js'
 
 import {
   driveHandler,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import { itHoldsCopyAtEveryLeaf } from '../../../../../../../engine/copy-test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import * as ports from '../../../../../../../services/ports/index.js'
@@ -21,14 +21,7 @@ const SELECT_ONE = 'Select one'
 const SELECT_ONE_CY = 'Dewiswch un'
 
 describe('import-reason copy module', () => {
-  it('Should have a non-empty string at every leaf', () => {
-    leaves(copy).forEach(({ path, value }) => {
-      expect(typeof value, `${path} must be a string`).toBe('string')
-      expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
-        0
-      )
-    })
-  })
+  itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   it('Should carry a hint for every service reason option', () => {
     for (const option of importReasonPurpose.reasons()) {
