@@ -75,6 +75,16 @@ updates:
       - dependency-name: '@axe-core/playwright'
         versions:
           - '4.14.x'
+      # held: stylelint, since 2026-11-19
+      # stylelint-config-gds 3.0.0, the newest release, has a peer of
+      # stylelint ^17.4.0, so stylelint 18 fails npm ci with ERESOLVE
+      # Failing test: npm ci (Run Pull Request Checks)
+      # Lift it with tim deps lift when a newer stylelint or
+      # stylelint-config-gds clears it.
+      # https://github.com/DEFRA/trade-imports-animals-admin/pull/99
+      - dependency-name: 'stylelint'
+        versions:
+          - '18.x'
 
     # Wait 3 days after a release before proposing it, so a broken release is
     # usually withdrawn first.
