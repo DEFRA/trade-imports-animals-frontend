@@ -30,6 +30,7 @@ import {
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { recordsHoldingRole } from '../../../../../../services/address-book/stub/test-support.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
+import { HELD_CONTACT } from './test-support.js'
 
 import * as contact from './controller.js'
 
@@ -40,7 +41,6 @@ const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
 const NOT_IN_THE_BOOK = 'not-a-real-contact'
-const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
 const addressLineEndingAtPostcode = ({ addressLine1, townOrCity, postcode }) =>
   [addressLine1, townOrCity, postcode].join(', ')
 
