@@ -20,10 +20,15 @@ gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derive
 from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page, then the permanent address page,
+<<<<<<< HEAD
 then Consignment addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
 to Consignment addresses and Consignment addresses goes on to the contact address.
 
 The section id `consignment-parties` is a stable id that the journey spec and the prototype share. Its caption and group heading read "Addresses".
+=======
+then Roles and addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
+to Roles and addresses, and Roles and addresses goes on to check your answers when every party and CPH owed is answered.
+>>>>>>> 82a3f0d1 (Tidy live-animals docs and remove orphan contact test support.)
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
 keys the transport feature's own add-session module owns: the values an
@@ -288,8 +293,8 @@ filed under its own section, "Description of the goods"; the section captioned
 
 Some pages carry no caption on purpose:
 
-- The overview, check your answers, contact address, declaration and
-  confirmation pages open straight into their heading.
+- The overview, check your answers, declaration and confirmation pages open
+  straight into their heading.
 - Delete notification and cancel amend are interruptions, not steps in a
   section.
 - The address pickers get their caption from the addresses feature.

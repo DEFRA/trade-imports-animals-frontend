@@ -58,14 +58,12 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   primary and its save-and-return control side by side, then its cancel link
   on its own line below them, so a trader can stop and leave from where the
   overview sent them. Every one of these pages reads "Save and return to
-  overview" and "Cancel and return to overview" except the contact address
-  page, which reads "Save and return to hub" and "Cancel and return to hub".
+  overview" and "Cancel and return to overview".
 - Origin of the import is the one overview-linked page without the return
   controls, because the design gives it "Save and continue" as its only way to
   save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
-  "Overview". "Hub" is the internal name for it and reaches the screen only on
-  the contact address page.
+  "Overview". "Hub" is the internal name for it in the codebase.
 - A page reached from another page ends with the primary alone: the permanent
   address page, the role address pickers and the transporter type question
   leave the way the trader came in, while the CPH number page always leaves to
@@ -95,6 +93,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview while
   amending and to the notification list on a draft or a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
+<<<<<<< HEAD
 - The review has six numbered sections. Each card stands directly under its
   section heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except:
@@ -130,6 +129,21 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Each species block's identifiers sit under an "Identification details"
   heading, in a table that heads only the identifiers the species was asked
   for; it carries no permanent address column.
+=======
+- The review has the same six numbered sections as the hub, with a
+  subsection heading over every card.
+- Each card has one Change link, in its heading. Rows carry none, except
+  "Edit details" on an address copied onto this notification. A page that is
+  only sometimes asked gets its own card and link.
+- The roles-and-addresses card carries one row per animal that has a saved
+  permanent address, after the county parish holding row, each keyed by the
+  animal's species common name and number and holding that animal's saved
+  address exactly as a party row reads. An animal that still owes one has no
+  row: the card that shows the answer is not the card that owes it. A line
+  that needs a permanent address with no animal counted carries no row
+  either. The species card's identifier table heads only the identifiers the
+  species was asked for; it carries no permanent address column.
+>>>>>>> 82a3f0d1 (Tidy live-animals docs and remove orphan contact test support.)
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,
@@ -426,9 +440,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Consignment addresses pages
 
-- The backend names the place of destination `destination` and the contact
-  address `consignment`; the journey says `placeOfDestination` and
-  `contactAddress`. Every other role has the same name in both.
+- Party keys match between the backend and the journey for every role on this
+  page, including `placeOfDestination`.
 - The consignment addresses page gives each party its own section: a medium
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
@@ -453,7 +466,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification's copy of the party, so the page never asks the address book.
 - Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
-  here, and Save and continue here goes on to the contact address.
+  here, and Save and continue here goes on toward check your answers when every
+  party and CPH owed is answered.
   The county parish holding link carries the trail alone: its page's Back and
   Save and continue always answer this page, with no marker needed.
 - Each party picker searches the address book from the submitted search box:
