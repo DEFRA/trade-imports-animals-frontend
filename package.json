@@ -101,7 +101,7 @@
     "@axe-core/playwright": "4.13.0",
     "@babel/preset-env": "8.0.6",
     "@lhci/cli": "0.15.1",
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.65.0",
     "@vitest/coverage-v8": "5.1.0",
     "audit-ci": "7.1.0",
     "autoprefixer": "10.6.1",
