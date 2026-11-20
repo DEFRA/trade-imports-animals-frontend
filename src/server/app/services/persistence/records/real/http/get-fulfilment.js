@@ -1,5 +1,5 @@
 import { statusCodes } from '../../../../../../common/constants/status-codes.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
+import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 import { currentOrganisationId } from '../../../../../../common/helpers/organisation-id.js'
 import { notificationsUrl } from '../config.js'
 import { failed } from './failed.js'
@@ -7,7 +7,9 @@ import { headers } from './headers.js'
 import { logger } from '../logger.js'
 
 export const getFulfilment = async (journeyId) => {
+  const operation = 'get-fulfilment'
   const response = await backendFetch(
+    operation,
     `${notificationsUrl}/${journeyId}/fulfilments`,
     {
       method: 'GET',
@@ -19,12 +21,17 @@ export const getFulfilment = async (journeyId) => {
   }
   if (response.status === statusCodes.forbidden) {
     logger.warn(
-      `Backend refused fulfilment read for notification ${journeyId}, organisation ${currentOrganisationId()}`
+      {
+        journeyId,
+        organisationId: currentOrganisationId(),
+        status: response.status
+      },
+      'Backend refused fulfilment read'
     )
     return undefined
   }
   if (!response.ok) {
-    throw await failed('get fulfilment', response)
+    throw await failed(operation, response)
   }
   return response.json()
 }

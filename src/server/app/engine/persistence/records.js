@@ -1,9 +1,15 @@
 import { currentSetId, setKeyed } from '../../shared/set-context.js'
+import { countEvent } from '../../../common/helpers/metrics/publish-metrics.js'
 
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
+
+export const STALE_CONCURRENCY_TOKEN = 'STALE_CONCURRENCY_TOKEN'
+
+export const isStaleConcurrencyRefusal = (error) =>
+  error?.code === STALE_CONCURRENCY_TOKEN
 
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')
@@ -31,16 +37,49 @@ export const configureRecords = (setId, newImpl) => {
   store.configure(setId, newImpl)
 }
 
+const writeCountingConflicts = async (write) => {
+  try {
+    return await write()
+  } catch (error) {
+    if (isStaleConcurrencyRefusal(error)) {
+      countEvent('journey.concurrency.conflict')
+    }
+    throw error
+  }
+}
+
+const writeCountingSuccessAndConflicts = async (metric, write) => {
+  const written = await writeCountingConflicts(write)
+  countEvent(metric)
+  return written
+}
+
 export const records = {
-  create: async (...args) => impl().create(...args),
+  create: async (...args) =>
+    writeCountingSuccessAndConflicts('journey.started', () =>
+      impl().create(...args)
+    ),
   load: async (...args) => impl().load(...args),
   list: async (...args) => impl().list(...args),
   has: async (...args) => impl().has(...args),
-  replaceFulfilment: async (...args) => impl().replaceFulfilment(...args),
-  finalise: async (...args) => impl().finalise(...args),
-  amend: async (...args) => impl().amend(...args),
+  replaceFulfilment: async (...args) =>
+    writeCountingConflicts(() => impl().replaceFulfilment(...args)),
+  finalise: async (...args) =>
+    writeCountingSuccessAndConflicts('journey.submitted', () =>
+      impl().finalise(...args)
+    ),
+  amend: async (...args) =>
+    writeCountingSuccessAndConflicts('journey.amended', () =>
+      impl().amend(...args)
+    ),
   cancelAmend: async (...args) => impl().cancelAmend(...args),
-  copy: async (...args) => impl().copy(...args),
-  softDelete: async (...args) => impl().softDelete(...args),
+  copy: async (...args) =>
+    writeCountingSuccessAndConflicts('journey.copied', () =>
+      impl().copy(...args)
+    ),
+  softDelete: async (...args) =>
+    writeCountingSuccessAndConflicts('journey.deleted', () =>
+      impl().softDelete(...args)
+    ),
   clear: async (...args) => impl().clear(...args)
 }

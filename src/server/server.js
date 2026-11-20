@@ -18,13 +18,13 @@ import { nunjucksConfig } from '../config/nunjucks/nunjucks.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
 import { callCounts } from './common/helpers/call-counts/call-counts.js'
+import { requestMetrics } from './common/helpers/metrics/request-metrics.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { sessionCache } from './common/helpers/session-cache/session-cache.js'
 import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
 import { secureContext } from '@defra/hapi-secure-context'
 import { contentSecurityPolicy } from './common/helpers/content-security-policy.js'
 import { setContextExtension } from './app/shared/set-context.js'
-import { metrics } from '@defra/cdp-metrics'
 
 export async function createServer() {
   setupProxy()
@@ -69,7 +69,7 @@ export async function createServer() {
     requestLogger,
     requestTracing,
     callCounts,
-    metrics,
+    requestMetrics,
     secureContext,
     pulse,
     sessionCache,

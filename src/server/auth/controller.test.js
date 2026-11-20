@@ -4,9 +4,10 @@ import { config } from '../../config/config.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { sessionAuth } from '../common/test-helpers/session-auth.js'
-import { readEmfDocuments } from '../common/test-helpers/emf-documents.js'
+import { recordEmfDocuments } from '../common/test-helpers/emf-documents.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
+import { TOKEN_EXCHANGE_STARTED_AT } from '../../auth/token-exchange-timer.js'
 import { copy as sharedEn } from '../app/shared/copy.en.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
@@ -195,15 +196,11 @@ describe('#authController', () => {
   })
 
   describe('Defra ID token exchange metrics', () => {
-    let logSpy
-
-    beforeEach(() => {
-      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      logSpy.mockRestore()
-    })
+    const emf = recordEmfDocuments()
+    const tokenExchange = {
+      dependency: 'defra-id',
+      operation: 'token-exchange'
+    }
 
     test('GET /auth/sign-in-oidc records the Defra ID token exchange it completed', async () => {
       verifyToken.mockResolvedValue(undefined)
@@ -213,18 +210,14 @@ describe('#authController', () => {
         method: 'GET',
         url: SIGN_IN_OIDC_URL,
         auth: defraIdAuth(),
-        app: { defraIdTokenExchangeStartedAt: performance.now() }
+        app: { [TOKEN_EXCHANGE_STARTED_AT]: performance.now() }
       })
 
       expect(statusCode).toBe(HTTP_STATUS_FOUND)
       expect(headers.location).toBe('/')
-      await vi.waitFor(() => {
-        const [document] = readEmfDocuments(logSpy)
-        expect(readEmfDocuments(logSpy)).toHaveLength(1)
-        expect(document.Dependency).toBe('defra-id')
-        expect(document.Operation).toBe('token-exchange')
-        expect(document.Interface).toBe('SYN-11')
-        expect(document.ExternalCallFailure).toBe(0)
+      expect(await emf.onlyExternalCall()).toEqual({
+        ...tokenExchange,
+        failure: 0
       })
     })
 
@@ -232,16 +225,15 @@ describe('#authController', () => {
       const { statusCode, payload } = await server.inject({
         method: 'GET',
         url: `${SIGN_IN_OIDC_URL}?code=unused&state=unmatched&refresh=1`,
-        app: { defraIdTokenExchangeStartedAt: performance.now() }
+        app: { [TOKEN_EXCHANGE_STARTED_AT]: performance.now() }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(payload).toContain(sharedEn.unauthorised.heading)
-      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-      const [document] = readEmfDocuments(logSpy)
-      expect(document.Dependency).toBe('defra-id')
-      expect(document.Operation).toBe('token-exchange')
-      expect(document.ExternalCallFailure).toBe(1)
+      expect(await emf.onlyExternalCall()).toEqual({
+        ...tokenExchange,
+        failure: 1
+      })
     })
   })
 })

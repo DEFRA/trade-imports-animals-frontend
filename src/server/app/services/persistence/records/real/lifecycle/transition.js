@@ -1,20 +1,6 @@
 import { notificationsUrl } from '../config.js'
-import { failed } from '../http/failed.js'
-import { headers } from '../http/headers.js'
+import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
-
-const postTransition = async (url, action, body) => {
-  const response = await backendFetch(url, {
-    method: 'POST',
-    headers: headers(),
-    body: body === undefined ? undefined : JSON.stringify(body)
-  })
-  if (!response.ok) {
-    throw await failed(action, response)
-  }
-  return response
-}
 
 export const finalise = async (journeyId, actor, concurrencyToken) => {
   if (concurrencyToken === undefined || concurrencyToken === null) {
@@ -23,37 +9,37 @@ export const finalise = async (journeyId, actor, concurrencyToken) => {
     )
   }
   const query = new URLSearchParams({ concurrencyToken })
-  const response = await postTransition(
+  const response = await send(
+    'submit-notification',
     `${notificationsUrl}/${journeyId}/submit?${query}`,
-    'submit notification',
-    actor
+    { method: 'POST', body: actor }
   )
   return marshal(await response.json())
 }
 
 export const amend = async (journeyId, actor) => {
-  const response = await postTransition(
+  const response = await send(
+    'amend-notification',
     `${notificationsUrl}/${journeyId}/amend`,
-    'amend notification',
-    actor
+    { method: 'POST', body: actor }
   )
   return marshal(await response.json())
 }
 
 export const cancelAmend = async (journeyId, actor) => {
-  const response = await postTransition(
+  const response = await send(
+    'cancel-amend-notification',
     `${notificationsUrl}/${journeyId}/cancel-amend`,
-    'cancel notification amendment',
-    actor
+    { method: 'POST', body: actor }
   )
   return marshal(await response.json())
 }
 
 export const softDelete = async (journeyId, actor) => {
-  const response = await postTransition(
+  const response = await send(
+    'soft-delete-notification',
     `${notificationsUrl}/${journeyId}/soft-delete`,
-    'soft-delete notification',
-    actor
+    { method: 'POST', body: actor }
   )
   return marshal(await response.json())
 }

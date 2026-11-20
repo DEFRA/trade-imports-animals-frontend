@@ -461,7 +461,7 @@ describe('#declaration submit against the real records adapter', () => {
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
-      const failure = unavailableBackendError('submit notification')
+      const failure = unavailableBackendError('submit-notification')
       backendResponds({
         status: 503,
         statusText: 'Service Unavailable',

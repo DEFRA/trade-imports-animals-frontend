@@ -7,9 +7,9 @@ export const traceHeaders = (contentType) => ({
   [config.get('tracing.header')]: getTraceId() ?? ''
 })
 
-export const failedResponse = (action, response) => {
+export const failedResponse = (operation, response) => {
   const error = new Error(
-    `Failed to ${action}: ${response.status} ${response.statusText}`
+    `Failed to ${operation}: ${response.status} ${response.statusText}`
   )
   error.status = response.status
   error.statusText = response.statusText

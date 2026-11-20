@@ -1,28 +1,18 @@
 import { vi } from 'vitest'
 import { getOidcConfigWithRetry } from './get-oidc-config-with-retry.js'
+import { config } from '../config/config.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
-const configGetMock = vi.hoisted(() => vi.fn())
 const getTraceIdMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock }
 }))
 
-vi.mock('../config/config.js', () => ({
-  config: { get: configGetMock }
-}))
-
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
-}))
-
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
 }))
 
 function timedOut() {
@@ -39,19 +29,16 @@ describe('getOidcConfigWithRetry', () => {
     'https://defra-id-stub/idp/.well-known/openid-configuration'
   const payload = { authorization_endpoint: 'https://defra-id-stub/auth' }
 
+  recordEmfDocuments()
+  restoreConfigAfterEach(['defraId.oidcDiscoveryUrl'])
   let logger
 
   beforeEach(() => {
     vi.useFakeTimers()
     wreckGetMock.mockReset()
-    configGetMock.mockReset()
     getTraceIdMock.mockReset()
 
-    configGetMock.mockImplementation((key) => {
-      if (key === 'defraId.oidcDiscoveryUrl') return discoveryUrl
-      if (key === 'tracing.header') return 'x-cdp-request-id'
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-    })
+    config.set('defraId.oidcDiscoveryUrl', discoveryUrl)
     getTraceIdMock.mockReturnValue('test-trace-id')
 
     logger = { warn: vi.fn() }

@@ -1,5 +1,5 @@
 import { config } from '../../../../config/config.js'
-import { measureExternalCall } from '../../../common/helpers/external-call-metrics.js'
+import { measureExternalCall } from '../../../common/helpers/metrics/external-call-metrics.js'
 import { failedResponse, traceHeaders } from '../http/trace-headers.js'
 
 const uploaderBaseUrl = () => config.get('cdpUploader.baseUrl')
@@ -56,7 +56,7 @@ export const documentUploadSessions = {
           })
         })
         if (!response.ok) {
-          throw failedResponse('open an upload session', response)
+          throw failedResponse(UPLOADER_CALLS.openSession.operation, response)
         }
         return response.json()
       }
@@ -70,8 +70,6 @@ export const documentUploadSessions = {
   /**
    * Reads back what the browser submitted, including the text fields sent alongside the file.
    *
-   * The path is built on the configured base URL rather than taken from the session.
-   *
    * @param {string} uploadId - the session's id
    * @returns {Promise<{uploadStatus: string, form: object}>} the submitted form and its state
    */
@@ -82,7 +80,7 @@ export const documentUploadSessions = {
         headers: traceHeaders()
       })
       if (!response.ok) {
-        throw failedResponse('read an upload session', response)
+        throw failedResponse(UPLOADER_CALLS.readSession.operation, response)
       }
       return response.json()
     })

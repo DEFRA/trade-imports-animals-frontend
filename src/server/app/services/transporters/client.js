@@ -1,33 +1,30 @@
 import {
   addressBookHeaders,
   addressBookResourceUrl,
-  throwOnAddressBookError
+  sendToAddressBook
 } from '../address-book-request.js'
 
 const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
 
-const headers = addressBookHeaders
-
-const MAX_PAGE_SIZE = 100
-
 const transportersPage = async (orgId, page) => {
+  const maxPageSize = 100
   const url = new URL(transportersUrl(orgId))
-  url.searchParams.set('pageSize', String(MAX_PAGE_SIZE))
+  url.searchParams.set('pageSize', String(maxPageSize))
   url.searchParams.set('page', String(page))
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: headers(orgId)
-  })
-
-  throwOnAddressBookError('list transporters', response)
+  const response = await sendToAddressBook(
+    'list-transporters',
+    url.toString(),
+    {
+      method: 'GET',
+      headers: addressBookHeaders(orgId)
+    }
+  )
 
   return response.json()
 }
 
-/** Every live transporter the address book holds for the organisation,
- * newest first, read a page at a time until every page the address book
- * reports has been fetched. */
+/** Every live transporter the address book holds for the organisation. */
 export const listTransporters = async (orgId) => {
   const items = []
   let page = 1
@@ -44,13 +41,15 @@ export const listTransporters = async (orgId) => {
 
 /** Creates a transporter in the organisation's address book. */
 export const createTransporter = async (orgId, transporter) => {
-  const response = await fetch(transportersUrl(orgId), {
-    method: 'POST',
-    headers: headers(orgId),
-    body: JSON.stringify(transporter)
-  })
-
-  throwOnAddressBookError('create transporter', response)
+  const response = await sendToAddressBook(
+    'create-transporter',
+    transportersUrl(orgId),
+    {
+      method: 'POST',
+      headers: addressBookHeaders(orgId),
+      body: JSON.stringify(transporter)
+    }
+  )
 
   return response.json()
 }

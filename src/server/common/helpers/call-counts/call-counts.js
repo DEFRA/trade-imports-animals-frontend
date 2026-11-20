@@ -1,8 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
-import { config } from '../../../../config/config.js'
 import { addPageRequest, isPageRequest } from './call-count-totals.js'
-import { recordPageRequestInBackground } from './page-request-metrics.js'
 
 const PLUGIN_NAME = 'call-counts'
 
@@ -11,10 +9,9 @@ const storage = new AsyncLocalStorage()
 /**
  * Starts the counts for one request.
  *
- * @returns {{ backendCalls: number, sessionResolutions: number, externalCalls: Record<string, Record<string, number>> }} zeroed counts
+ * @returns {{ sessionResolutions: number, externalCalls: Record<string, Record<string, number>> }} zeroed counts
  */
 export const newCallCounts = () => ({
-  backendCalls: 0,
   sessionResolutions: 0,
   externalCalls: {}
 })
@@ -27,16 +24,24 @@ export const newCallCounts = () => ({
  */
 export const callCountsOf = (request) => request?.plugins?.[PLUGIN_NAME]
 
-/** Counts one call to the journey backend against the request in progress. */
-export const countBackendCall = () => {
-  const counts = storage.getStore()
-  if (counts) {
-    counts.backendCalls += 1
-  }
-}
+/** The `dependency` name of the journey backend. */
+export const BACKEND_DEPENDENCY = 'animals-backend'
 
 /**
- * Counts one call to a system outside the INS boundary against the request in progress.
+ * Adds up a request's calls to the journey backend, across every operation.
+ *
+ * @param {ReturnType<typeof newCallCounts>} counts - the request's counts
+ * @returns {number} the number of backend calls
+ */
+export const backendCallsOf = (counts) =>
+  Object.values(counts.externalCalls[BACKEND_DEPENDENCY] ?? {}).reduce(
+    (sum, calls) => sum + calls,
+    0
+  )
+
+/**
+ * Counts one call to a dependency against the request in progress, by
+ * dependency and operation.
  *
  * @param {{ dependency: string, operation: string }} externalCall - the call, as the metric contract names it
  */
@@ -65,9 +70,7 @@ export const countSessionResolution = (request) => {
   }
 }
 
-// Same pattern as @defra/hapi-tracing: wrapping hapi's private cycle methods is
-// the only way to keep a request's store alive through the lifecycle.
-const wrapCycle = (request, cycle, counts) => {
+const runCycleWithCounts = (request, cycle, counts) => {
   const requestCycle = request[cycle].bind(request)
   request[cycle] = () => storage.run(counts, requestCycle)
 }
@@ -75,8 +78,8 @@ const wrapCycle = (request, cycle, counts) => {
 const countRequest = (request, h) => {
   const counts = newCallCounts()
   request.plugins[PLUGIN_NAME] = counts
-  wrapCycle(request, '_lifecycle', counts)
-  wrapCycle(request, '_postCycle', counts)
+  runCycleWithCounts(request, '_lifecycle', counts)
+  runCycleWithCounts(request, '_postCycle', counts)
   return h.continue
 }
 
@@ -88,11 +91,9 @@ const totalFinishedRequest = (request) => {
   addPageRequest({
     method: request.method,
     path: request.route.path,
+    backendCalls: backendCallsOf(counts),
     counts
   })
-  if (config.get('callCounts.metrics.enabled')) {
-    recordPageRequestInBackground(counts)
-  }
 }
 
 export const callCounts = {

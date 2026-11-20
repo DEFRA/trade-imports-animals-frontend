@@ -13,6 +13,7 @@ import {
   stubH,
   useStubbedJourney
 } from '../../../../../engine/test-support.js'
+import { recordEmfDocuments } from '../../../../../../common/test-helpers/emf-documents.js'
 import { dispatchPages } from '../features/index.js'
 import {
   entryGuardTarget,
@@ -82,6 +83,27 @@ describe('entry guard', () => {
   it('Should let a journey with an entered answer straight through', async () => {
     const { response } = await guardFor({ seed: ANSWERED })
     expect(response).toBeNull()
+  })
+
+  describe('journey.entry.redirect', () => {
+    const emf = recordEmfDocuments()
+
+    const redirectCountsOnceEarlierPublishesFlush = async () => {
+      await emf.earlierPublishesFlushed()
+      return emf.valuesOf('journey.entry.redirect')
+    }
+
+    it('Should count exactly one redirect for a notification with no entered answer', async () => {
+      await guardFor()
+
+      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([1])
+    })
+
+    it('Should count no redirect for a journey with an entered answer', async () => {
+      await guardFor({ seed: ANSWERED })
+
+      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([])
+    })
   })
 
   it('Should treat a journey whose only answer is a flow-only key as having none', async () => {

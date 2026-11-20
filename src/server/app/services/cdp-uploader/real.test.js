@@ -6,6 +6,7 @@ import { config } from '../../../../config/config.js'
 import { callCounts } from '../../../common/helpers/call-counts/call-counts.js'
 import { callCountsRoutes } from '../../../common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../../../common/helpers/call-counts/call-count-totals.js'
+import { recordEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
 import { documentUploadSessions } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -26,8 +27,9 @@ beforeEach(() => {
   config.set('cdpUploader.baseUrl', UPLOADER_URL)
   config.set('cdpUploader.scanResultCallbackUrl', CALLBACK_URL)
   config.set('cdpUploader.documentsBucket', DOCUMENTS_BUCKET)
-  vi.spyOn(console, 'log').mockImplementation(() => {})
 })
+
+recordEmfDocuments()
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -129,12 +131,12 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when a session cannot be opened', async () => {
+    it('Should throw naming the operation and the status when a session cannot be opened', async () => {
       fetchMocker.mockResponse(() => ({ status: 503, body: 'Unavailable' }))
 
       await expect(openSession()).rejects.toMatchObject({
         status: 503,
-        message: expect.stringContaining('open an upload session')
+        message: expect.stringContaining('Failed to initiate: 503')
       })
     })
   })
@@ -171,14 +173,14 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when the session cannot be read', async () => {
+    it('Should throw naming the operation and the status when the session cannot be read', async () => {
       fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
 
       await expect(
         documentUploadSessions.read(UPLOAD_ID)
       ).rejects.toMatchObject({
         status: 404,
-        message: expect.stringContaining('read an upload session')
+        message: expect.stringContaining('Failed to status: 404')
       })
     })
   })
