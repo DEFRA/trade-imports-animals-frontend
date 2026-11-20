@@ -62,7 +62,7 @@ export const copy = {
     }
   },
   picker: {
-    caption: 'Partïon y llwyth',
+    caption: 'Cyfeiriadau',
     search: {
       label: 'Chwilio',
       hint: 'Enw, cyfeiriad neu wlad',

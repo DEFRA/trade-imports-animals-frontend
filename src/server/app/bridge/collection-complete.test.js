@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { entryComplete } from './collection-complete.js'
+import { entryComplete, entryOwesNestedRecord } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
 import { evaluateAnswers } from './evaluation.js'
 import { commodityLine, completeCommodityLine } from '../engine/test-support.js'
@@ -114,5 +114,63 @@ describe('#entryComplete', () => {
       ]
     }
     expect(completeFlags(answers, ['documents'])).toEqual([true, true])
+  })
+})
+
+describe('#entryOwesNestedRecord', () => {
+  const OSTRICHES_CODE = '01063100'
+  const BISON_BISON = 'Bison bison'
+  const withUnit = { animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }] }
+  const identifiedLine = (fields = {}) =>
+    commodityLine({ numberOfAnimalsQuantity: '1', ...fields })
+  const unidentifiedLine = commodityLine({
+    commodityCode: OSTRICHES_CODE,
+    speciesLatinName: 'Struthio camelus',
+    numberOfAnimalsQuantity: '1'
+  })
+
+  const owedFlags = (lines) => {
+    const answers = { commodityLines: lines }
+    const evaluation = evaluateAnswers(answers)
+    return lines.map((_line, index) =>
+      entryOwesNestedRecord(
+        evaluation,
+        ['commodityLines'],
+        index,
+        'animalIdentifiers'
+      )
+    )
+  }
+
+  it('Should owe a record to each of two identified-code lines holding no unit', () => {
+    expect(
+      owedFlags([
+        identifiedLine(),
+        identifiedLine({ speciesLatinName: BISON_BISON })
+      ])
+    ).toEqual([true, true])
+  })
+
+  it('Should owe no record when a single identified-code line holds no unit', () => {
+    expect(owedFlags([identifiedLine()])).toEqual([false])
+  })
+
+  it('Should owe no record to an identified-code line that holds a unit', () => {
+    expect(
+      owedFlags([
+        identifiedLine(withUnit),
+        identifiedLine({ speciesLatinName: BISON_BISON })
+      ])
+    ).toEqual([false, true])
+  })
+
+  it('Should owe no record to a line of a code that is not identified, beside two identified lines', () => {
+    expect(
+      owedFlags([
+        identifiedLine(),
+        identifiedLine({ speciesLatinName: BISON_BISON }),
+        unidentifiedLine
+      ])
+    ).toEqual([true, true, false])
   })
 })

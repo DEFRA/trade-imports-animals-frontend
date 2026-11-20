@@ -5,8 +5,10 @@ export const copy = {
     heading: 'Eich nwyddau',
     animalsLabel: 'Anifeiliaid',
     animalsCaption: 'Cyfanswm nifer yr anifeiliaid yn y llwyth hwn',
+    animalsRegionLabel: 'Crynodeb anifeiliaid',
     packagesLabel: 'Pecynnau/blychau',
-    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
+    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn',
+    packagesRegionLabel: 'Crynodeb pecynnau'
   },
   reviewAndSubmit: 'Adolygu a chyflwyno',
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
@@ -20,7 +22,7 @@ export const copy = {
     'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
     'transport-and-arrival': '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau',
-    'consignment-parties': '5. Partïon y llwyth',
+    'consignment-parties': '5. Cyfeiriadau',
     'contact-address': '6. Cyfeiriad cyswllt'
   },
   rows: {
@@ -52,7 +54,7 @@ export const copy = {
       title: 'Manylion cludo'
     },
     addresses: {
-      title: 'Rolau a chyfeiriadau',
+      title: 'Cyfeiriadau’r llwyth',
       hint: 'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
     },
     contact: {

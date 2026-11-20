@@ -6,6 +6,7 @@ import {
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
+  cancelAmendControl,
   CYA_SLUG,
   errorSummary,
   journeyStrip,
@@ -20,10 +21,12 @@ import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { buildSections } from './view-model/index.js'
+import { deleteButtonFor, viewHeader } from './view-model/view-header.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { speciesErrors } from './view-model/species-errors.js'
 import {
-  cardAnchorHref,
+  reviewErrorAnchorHref,
   incompleteCardErrors,
   REVIEW_CARDS,
   withCardErrors
@@ -33,7 +36,7 @@ import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { permanentAddressesFromStoredAnswers } from '../permanent-address/saved-addresses.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { documentScanCardErrors, speciesCardErrors } from './refusal.js'
+import { documentScanCardErrors, unlistedSpeciesErrors } from './refusal.js'
 import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
@@ -43,13 +46,24 @@ const copy = copyFor({ en, cy })
 
 const PARTY_KEY_PREFIX = 'party:'
 
+const anchorsOf = (sections) =>
+  new Set(
+    sections.flatMap((section) => [
+      section.anchor,
+      ...section.cards.flatMap((card) => [
+        card.anchor,
+        ...(card.speciesBlocks ?? []).map((block) => block.anchor)
+      ])
+    ])
+  )
+
 const reviewErrorSummary = (
   journeyId,
   changeLinkTrail,
   reviewPageTrail,
   cardErrors,
   partyErrors,
-  disableAutoFocus
+  { disableAutoFocus, pageAnchors }
 ) =>
   errorSummary(
     {
@@ -70,7 +84,7 @@ const reviewErrorSummary = (
               CYA_SLUG,
               reviewPageTrail
             )
-          : (cardAnchorHref(key) ??
+          : (reviewErrorAnchorHref(key, pageAnchors) ??
             changeHref({ journeyId, changeLinkTrail }, key)),
       disableAutoFocus
     }
@@ -79,10 +93,30 @@ const reviewErrorSummary = (
 const backLinkFor = (request, journey) =>
   trailBackLink(request, {
     fallback:
-      journey.status === state.SUBMITTED
-        ? dashboardPath()
-        : hubPath(journey.journeyId)
+      journey.status === state.AMEND
+        ? hubPath(journey.journeyId)
+        : dashboardPath()
   })
+
+const cancelAmendButtonFor = (journey) => {
+  const cancelAmend = cancelAmendControl(journey)
+  return cancelAmend
+    ? { ...cancelAmend, classes: 'govuk-button--secondary' }
+    : null
+}
+
+const reviewTitle = (journey) =>
+  journey.status === state.AMEND && journey.answersDifferFromSubmitted
+    ? copy.resubmittingTitle
+    : copy.title
+
+const cancelAmendBanner = (amendmentCancelled) =>
+  amendmentCancelled
+    ? {
+        titleText: copy.cancelAmend.successTitle,
+        text: copy.cancelAmend.successBody
+      }
+    : null
 
 const renderCya = async (
   request,
@@ -119,36 +153,32 @@ const renderCya = async (
     }),
     cardErrors
   )
+  const header = viewHeader(journey)
+  const title = header ? header.reference : reviewTitle(journey)
   return h.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     declarationHref: pagePath(journey.journeyId, declarationPage.slug),
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: header ? null : journeyStrip(journey),
+    viewHeader: header,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       changeLinkTrail,
       reviewPageTrail,
       cardErrors,
       partyErrors,
-      disableAutoFocus
+      { disableAutoFocus, pageAnchors: anchorsOf(sections) }
     ),
     sections,
     readOnly,
-    successBanner: amendmentCancelled
-      ? {
-          titleText: copy.cancelAmend.successTitle,
-          text: copy.cancelAmend.successBody
-        }
-      : null,
+    successBanner: cancelAmendBanner(amendmentCancelled),
     recoverableError,
-    copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
-    deleteHref:
-      readOnly && journey.status === state.SUBMITTED
-        ? pagePath(journey.journeyId, 'delete')
-        : null,
+    deleteButton:
+      journey.status === state.AMEND ? deleteButtonFor(journey) : null,
+    cancelAmendButton: cancelAmendButtonFor(journey),
     backLink: backLinkFor(request, journey)
   })
 }
@@ -156,13 +186,15 @@ const renderCya = async (
 const mergeCardErrorsByPrecedence = ({
   invalid,
   scan,
-  species,
-  incomplete
+  unlisted,
+  incomplete,
+  speciesBlocks
 }) => ({
   ...invalid,
   ...scan,
-  ...species,
-  ...incomplete
+  ...unlisted,
+  ...incomplete,
+  ...speciesBlocks
 })
 
 export const renderNotificationView = async (
@@ -188,9 +220,9 @@ export const renderNotificationView = async (
     : await documentScanCardErrors(request, answers, {
         includePending: refused
       })
-  const speciesErrors = hidesAnswerErrors
+  const unlistedErrors = hidesAnswerErrors
     ? {}
-    : await speciesCardErrors(journey, answers, { refused })
+    : await unlistedSpeciesErrors(journey, answers, { refused })
   return renderCya(request, h, journey, {
     answers,
     scope,
@@ -206,14 +238,15 @@ export const renderNotificationView = async (
       : mergeCardErrorsByPrecedence({
           invalid: invalidCardErrors,
           scan: scanDocErrors,
-          species: speciesErrors,
-          incomplete: incompleteCardErrors(answers, scope, evaluation)
+          unlisted: unlistedErrors,
+          incomplete: incompleteCardErrors(answers, scope, evaluation),
+          speciesBlocks: speciesErrors(answers, evaluation)
         }),
     disableAutoFocus: !refused
   })
 }
 
-const get = async (request, h) => {
+const renderAndRecordReviewed = async (request, h) => {
   const response = await renderNotificationView(request, h)
   const { journey } = await state.get(request, h)
   if (journey.status !== state.SUBMITTED) {
@@ -222,4 +255,4 @@ const get = async (request, h) => {
   return response
 }
 
-export const routes = pageRoutes(page, { get })
+export const routes = pageRoutes(page, { get: renderAndRecordReviewed })

@@ -513,7 +513,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     ])
   })
 
-  it('Should append nothing and redirect to Roles and addresses for an untouched form returned with Save and continue', async () => {
+  it('Should append nothing and redirect to Consignment addresses for an untouched form returned with Save and continue', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE)
 
     expect(result.response).toEqual({
@@ -544,7 +544,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should send an untouched form returned with Save and continue from a page opened with a Change link on to Roles and addresses', async () => {
+  it('Should send an untouched form returned with Save and continue from a page opened with a Change link on to Consignment addresses', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
       startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
@@ -554,7 +554,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
     })
   })
 
-  it('Should send an untouched form returned with Save and continue while amending on to Roles and addresses', async () => {
+  it('Should send an untouched form returned with Save and continue while amending on to Consignment addresses', async () => {
     const result = await driveClaim(SAVE_AND_CONTINUE, {
       startingFrom: amendmentOpenedFromChangeLink()
     })

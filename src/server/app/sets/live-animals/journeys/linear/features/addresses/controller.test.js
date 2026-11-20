@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 
 import { store } from '../../../../../../engine/store.js'
 import {
-  addressBookRefusingAddresses,
   driveHandler,
   expectOneRefusalLogged,
   expectRecoverableSaveFallback,
@@ -16,6 +15,7 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
+import { addressBookRefusingAddresses } from '../../../../../../engine/address-book-test-support.js'
 import { requiredEarlierAnswers } from '../../../../test-support.js'
 import { dispatchPages } from '../index.js'
 import {

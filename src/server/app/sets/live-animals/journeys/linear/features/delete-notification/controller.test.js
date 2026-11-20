@@ -28,6 +28,9 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
+const DELETE_TEMPLATE =
+  'live-animals/journeys/linear/features/delete-notification/template'
+
 const get = routes.find((route) => route.method === 'GET').handler
 const post = routes.find((route) => route.method === 'POST').handler
 
@@ -52,9 +55,7 @@ describe('delete notification routes', () => {
 
     const response = await get(journeyRequest(journey.journeyId), stubH())
 
-    expect(response.view).toBe(
-      'live-animals/journeys/linear/features/delete-notification/template'
-    )
+    expect(response.view).toBe(DELETE_TEMPLATE)
     expect(response.context).toMatchObject({
       heading: 'Delete this notification?',
       deleteAction: pagePath(journey.journeyId, 'delete'),
@@ -111,8 +112,6 @@ describe('delete notification routes', () => {
 
     expect(response.statusCode).toBe(500)
     expect(response.context.recoverableError).toBe(true)
-    expect(response.view).toBe(
-      'live-animals/journeys/linear/features/delete-notification/template'
-    )
+    expect(response.view).toBe(DELETE_TEMPLATE)
   })
 })

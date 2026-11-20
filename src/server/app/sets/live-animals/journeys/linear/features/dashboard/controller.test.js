@@ -489,7 +489,7 @@ describe('dashboard amend', () => {
         journeyId: submitted.journeyId,
         organisationId: authenticatedActor.organisationId
       },
-      message: 'Amendment started, sent to the review page'
+      message: 'Amendment started'
     })
   })
 })

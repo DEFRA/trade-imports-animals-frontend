@@ -13,7 +13,8 @@ const document = (status) => ({
   created: '2026-01-01T00:00:00',
   submittedAt: '2026-01-02T00:00:00',
   concurrencyToken: 3,
-  fulfilments: []
+  fulfilments: [],
+  answersDifferFromSubmitted: false
 })
 
 describe('marshal document', () => {
@@ -23,9 +24,29 @@ describe('marshal document', () => {
     expect(journey.status).toBe(SUBMITTED)
   })
 
+  it('Should keep the submission date of a submitted notification', () => {
+    const journey = marshal(document('SUBMITTED'))
+
+    expect(journey.status).toBe(SUBMITTED)
+    expect(journey.submittedAt).toBe('2026-01-02T00:00:00')
+  })
+
   it('Should map draft and amend statuses without a freeze field', () => {
     expect(marshal(document('DRAFT')).status).toBe(DRAFT)
     expect(marshal(document('AMEND')).status).toBe(AMEND)
     expect(marshal(document('DRAFT'))).not.toHaveProperty('frozenParties')
+  })
+})
+
+describe('marshal document answersDifferFromSubmitted', () => {
+  it('Should be true when the backend document says the answers differ', () => {
+    expect(
+      marshal({ ...document('AMEND'), answersDifferFromSubmitted: true })
+        .answersDifferFromSubmitted
+    ).toBe(true)
+  })
+
+  it('Should be false when the backend document says the answers do not differ', () => {
+    expect(marshal(document('AMEND')).answersDifferFromSubmitted).toBe(false)
   })
 })

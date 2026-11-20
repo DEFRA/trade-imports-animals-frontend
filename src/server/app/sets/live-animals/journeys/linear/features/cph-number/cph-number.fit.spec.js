@@ -84,7 +84,7 @@ test.describe('cph-number feature', () => {
 
   test('renders the CPH copy', async ({ page }) => {
     await expectCaptionAboveHeading(page, {
-      captionText: sectionCaptionsCopy.sections.consignmentParties,
+      captionText: sectionCaptionsCopy.sections.addresses,
       headingName: copy.title
     })
 

@@ -1,12 +1,7 @@
 import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { commit, submitJourney } from './index.js'
-import {
-  records,
-  configureRecords,
-  DRAFT,
-  SUBMITTED
-} from './persistence/records.js'
+import { commit, submitJourney, DRAFT, SUBMITTED } from './index.js'
+import { records, configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'

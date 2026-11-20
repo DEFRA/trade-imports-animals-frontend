@@ -164,22 +164,12 @@ export const isoDateFromDateParts = (parts) => {
 }
 
 const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
+const LONG_DATE_FORMAT = 'd MMMM yyyy'
 
-/**
- * Formats the calendar day a `Date` names in UTC, with no zone conversion.
- *
- * `format` on its own reads the ambient zone, so the day is taken from the UTC
- * accessors and the components are handed back as plain local ones purely to
- * get date-fns' month names. `Intl.DateTimeFormat` would be shorter but ICU's
- * `en-GB` short month for September is `Sept`, four letters, which would
- * reword every September date in the service.
- * @param {Date} date
- * @returns {string} e.g. `5 Mar 2026`.
- */
-const formatUtcComponents = (date) =>
+const formatUtcComponents = (date, pattern = DISPLAY_DATE_FORMAT) =>
   format(
     new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    DISPLAY_DATE_FORMAT
+    pattern
   )
 
 /**
@@ -219,3 +209,14 @@ export const formatCalendarDate = (date) => formatUtcComponents(date)
  */
 export const formatMomentAsDay = (date) =>
   formatUtcComponents(startOfDayInZone(date, SERVICE_TIME_ZONE))
+
+/**
+ * Like {@link formatMomentAsDay}, with the month written out in full.
+ * @param {Date} date
+ * @returns {string} e.g. `11 September 2026` for `2026-09-10T23:35:39.455Z`.
+ */
+export const formatMomentAsLongDay = (date) =>
+  formatUtcComponents(
+    startOfDayInZone(date, SERVICE_TIME_ZONE),
+    LONG_DATE_FORMAT
+  )

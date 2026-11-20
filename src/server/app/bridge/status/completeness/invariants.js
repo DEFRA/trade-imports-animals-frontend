@@ -1,5 +1,6 @@
 import { obligations } from '../../../model/obligations/manifest.js'
 import { admitsValue } from '../../../model/obligations/helper-internals.js'
+import { childFulfilmentIndexes } from './records.js'
 
 // Collection cap (MAX_ENTRIES) — group-level, no fulfilmentIndex.
 export const collectionCapExceeded = (invariantErrors) =>
@@ -98,3 +99,17 @@ export const emptyCollectionSatisfiesFloor = (
   }
   return !anyOfLeafCouldApply(group, parentFulfilmentIndex, state)
 }
+
+export const emptyCollectionShortOfFloor = (
+  collection,
+  group,
+  parentFulfilmentIndex,
+  state
+) =>
+  childFulfilmentIndexes(group, parentFulfilmentIndex, state).length === 0 &&
+  !emptyCollectionSatisfiesFloor(
+    collection,
+    group,
+    parentFulfilmentIndex,
+    state
+  )

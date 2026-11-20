@@ -13,7 +13,8 @@ export const create = async () => {
     status: DRAFT,
     createdAt: new Date().toISOString(),
     submittedAt: null,
-    fulfilment: []
+    fulfilment: [],
+    answersDifferFromSubmitted: false
   }
   journeys().set(document.id, document)
   return structuredClone(marshal(document))
@@ -44,7 +45,8 @@ export const copy = async (journeyId, idempotencyKey, _actor) => {
     status: DRAFT,
     createdAt: new Date().toISOString(),
     submittedAt: null,
-    fulfilment: structuredClone(source.fulfilment)
+    fulfilment: structuredClone(source.fulfilment),
+    answersDifferFromSubmitted: false
   }
   inSet.set(document.id, document)
   copies.set(dedupeKey, document.id)

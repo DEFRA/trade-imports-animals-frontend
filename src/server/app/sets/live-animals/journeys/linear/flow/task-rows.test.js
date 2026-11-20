@@ -505,8 +505,28 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
     numberOfAnimalsQuantity: '4'
   }
 
+  const transitExit = {
+    reasonForImport: 'transit',
+    destinationCountry: 'IE',
+    portOfExit: 'GB DVR'
+  }
+  const temporaryAdmissionExit = {
+    reasonForImport: 'temporaryAdmissionHorses',
+    portOfExit: 'GB DVR',
+    exitDate: { day: '20', month: '12', year: '2026' }
+  }
+
   const submittable = {
     'the happy path': happyPath,
+    'the happy path for transit with its destination country and port of exit':
+      { ...happyPath, ...transitExit },
+    'the happy path for transhipment with its destination country': {
+      ...happyPath,
+      reasonForImport: 'transhipmentOrOnwardTravel',
+      destinationCountry: 'IE'
+    },
+    'the happy path for temporary admission with its port of exit and exit date':
+      { ...happyPath, ...temporaryAdmissionExit },
     'the happy path by air (the conditional transit row is Not applicable)': {
       ...happyPath,
       meansOfTransport: 'AIRPLANE',
@@ -555,6 +575,34 @@ describe('submit-readiness equivalence — the row roll-up and the section roll-
     'the happy path without certified-for': {
       ...happyPath,
       animalsCertifiedFor: ''
+    },
+    'the happy path for the internal market without its purpose': {
+      ...happyPath,
+      purposeInInternalMarket: ''
+    },
+    'the happy path for transit without its destination country': {
+      ...happyPath,
+      ...transitExit,
+      destinationCountry: ''
+    },
+    'the happy path for transit without its port of exit': {
+      ...happyPath,
+      ...transitExit,
+      portOfExit: ''
+    },
+    'the happy path for transhipment without its destination country': {
+      ...happyPath,
+      reasonForImport: 'transhipmentOrOnwardTravel',
+      destinationCountry: ''
+    },
+    'the happy path for temporary admission without its port of exit': {
+      ...happyPath,
+      ...temporaryAdmissionExit,
+      portOfExit: ''
+    },
+    'the happy path without the unweaned answer on a cattle line': {
+      ...happyPath,
+      containsUnweanedAnimals: ''
     },
     'the happy path without the species': {
       ...happyPath,

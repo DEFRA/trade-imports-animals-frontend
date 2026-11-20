@@ -3,9 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 
 import {
-  addressBookAnswering,
-  addressBookRefusingAddresses,
-  addressBookRequestUrls,
   driveHandler,
   reviewChangeLinkQuery,
   refusingSaves,
@@ -14,6 +11,11 @@ import {
   unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
+import {
+  addressBookAnswering,
+  addressBookRefusingAddresses,
+  addressBookRequestUrls
+} from '../../../../../../../engine/address-book-test-support.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR

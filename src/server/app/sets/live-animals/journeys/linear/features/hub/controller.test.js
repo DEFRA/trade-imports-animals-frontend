@@ -12,6 +12,9 @@ import {
   withOriginSaved
 } from '../../../../test-support.js'
 import { BOS_TAURUS_ROW, lineOf } from '../commodities/search/test-support.js'
+import { readDate } from '../../../../../../shared/kit.js'
+import { formatDateText } from '../../../../../../lib/validate/calendar.js'
+import { arrivalWindow } from '../transport/port-of-entry/arrival-window.js'
 import { routes } from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -27,9 +30,13 @@ const rowByTitle = (groups, title) =>
 
 const STALE_PORT = 'GB ZZZ'
 const KNOWN_PORT = 'GB ABD'
+const latestArrivalDate = arrivalWindow().max
 const arrivalDetailsAnswers = {
   portOfEntry: STALE_PORT,
-  arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
+  arrivalDateAtPort: readDate(
+    { arrivalDateAtPort: formatDateText(latestArrivalDate) },
+    'arrivalDateAtPort'
+  ),
   meansOfTransport: 'ROAD_VEHICLE',
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721'
@@ -95,7 +102,6 @@ describe('#handler — every task link carries the mark that it was opened from 
     expect(items.length).toBeGreaterThan(0)
     for (const item of items) {
       const [pagePathOfRow] = item.href.split('?')
-      expect(pagePathOfRow).not.toContain('?')
       expect(item.href).toBe(`${pagePathOfRow}?from=overview`)
     }
   })

@@ -20,8 +20,10 @@ gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derive
 from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page, then the permanent address page,
-then Roles and addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
-to Roles and addresses and Roles and addresses goes on to the contact address.
+then Consignment addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
+to Consignment addresses and Consignment addresses goes on to the contact address.
+
+The section id `consignment-parties` is a stable id that the journey spec and the prototype share. Its caption and group heading read "Addresses".
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
 keys the transport feature's own add-session module owns: the values an
@@ -174,8 +176,8 @@ dashboard on a submitted notification, including the one shown after an amendmen
 cancelled).
 
 Returning from the Import Notification Service's address book lands on a fixed address
-that carries no trail. Roles and addresses (the Overview task "Roles and addresses",
-Consignment addresses) and Contact address for consignment (the task "Contact address
+that carries no trail. The Consignment addresses page (the Overview task "Consignment addresses")
+and Contact address for consignment (the task "Contact address
 for this consignment") are the only pages whose Back goes to the Overview whatever the
 trail, after that return; Save and continue still goes on from them.
 
@@ -187,8 +189,8 @@ goes to the next page that applies in the journey's one page order from every st
 (a new notification, an Overview task, a reopened draft, a copy, a Change link, an
 amendment or a new browser session), and past the last page that applies it goes to
 the review page. The permanent address page is a sub-page: it goes on from the page
-that opens it to Roles and addresses. The county parish holding number page goes on to
-Roles and addresses however it was reached (see above).
+that opens it to Consignment addresses. The county parish holding number page goes on to
+Consignment addresses however it was reached (see above).
 
 A notification is created by the dashboard's create POST or by the start entry
 (`<set>/start`, which the Import Notification Service's type question opens), through one
@@ -203,9 +205,13 @@ System-populated obligations and flow-only keys such as `declaration` never coun
 as user answers. A journey with none (a deep link to an id this session never
 created, or a draft with nothing saved) is sent to the origin page, and a request
 for Overview, the review, the declaration or the confirmation page is sent there
-too. Each redirect is logged once with the journey id and the requested path. The
-origin page and its children, and the amend, cancel-amend, copy and delete
-actions, are exempt from the guard, so there is no redirect loop.
+too. Each redirect is logged once with the journey id and the requested path. A
+notification that cannot be found at all is answered by the guard itself with the
+service's standard page not found (404), on every page, the review included,
+before any page runs, and is sent nothing to the origin page or the notification
+list. The origin page and its children, and the amend, cancel-amend, copy and
+delete actions, are exempt from the guard, so there is no redirect loop. An
+exempt path's own page answers not found the same way.
 
 A journey the guard bounces to the origin page carries no trail, so the origin page's
 Back is the dashboard until an answer is entered. The guard sends the request on to
@@ -225,8 +231,8 @@ Coming back by Back from a page a check your answers Change link or error-summar
 opened, Back goes where it went before. After an amendment is cancelled, Back goes to
 the dashboard.
 
-Check your answers reached any other way goes Back to the Overview on a draft or an
-amendment and to the dashboard on a submitted notification. The other ways are: from
+Check your answers reached any other way goes Back to the Overview while amending
+and to the notification list on a draft or a submitted notification. The other ways are: from
 the declaration, including a refusal that comes back through it; from the confirmation
 page; by a typed address; in a new browser session; or by a link whose marker is
 missing or not allowed.

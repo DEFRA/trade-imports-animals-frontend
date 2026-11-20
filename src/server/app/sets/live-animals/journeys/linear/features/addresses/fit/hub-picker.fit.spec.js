@@ -56,7 +56,6 @@ const PLACE_OF_DESTINATION = PARTIES.find(
   ({ id }) => id === 'placeOfDestination'
 )
 const CONSIGNOR_ADDRESS_COUNT = addressCountFor(CONSIGNOR)
-const ROLES_AND_ADDRESSES = 'Roles and addresses'
 const SLASHED_CPH_NUMBER = '12/345/6789'
 
 const expectConsignorOffersOnlyItsAddLink = async (page) => {
@@ -198,7 +197,7 @@ test.describe('addresses hub', () => {
     await openOverview(page)
     await expect(
       page.locator('.govuk-task-list__item', {
-        hasText: ROLES_AND_ADDRESSES
+        hasText: hubCopy.rows.addresses.title
       })
     ).toContainText(hubCopy.statuses.complete)
   })

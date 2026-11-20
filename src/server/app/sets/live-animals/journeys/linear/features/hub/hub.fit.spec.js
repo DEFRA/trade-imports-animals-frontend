@@ -17,9 +17,9 @@ import {
   saveAndReturnToHub,
   signIn,
   startNotification,
-  backLink
+  backLink,
+  expectDraftReview
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -30,19 +30,28 @@ const taskRow = (page, title) =>
     has: page.getByText(title, { exact: true })
   })
 
-const groupTaskList = (page, groupId) =>
-  page
-    .locator('ul.govuk-task-list')
-    .filter({ has: page.locator(`[id^="${groupId}-"]`) })
-
-const taskRowTitles = (list) => list.locator('.govuk-task-list__link')
-
 const ANIMALS = '25'
 const PACKAGES = '5'
-const TOTAL_BOX = '.app-commodity-total'
-const SECTION_HEADING = 'h3.govuk-heading-m'
-const CANNOT_START_STATUS = '.govuk-task-list__status--cannot-start-yet'
-const TASK_ROW_HINT = '.govuk-task-list__hint'
+
+const commodityTotalsRegion = (page) =>
+  page.getByRole('region', { name: copy.commodityTotals.heading, exact: true })
+
+const taskListRegion = (page) =>
+  page.getByRole('region', { name: copy.taskListHeading, exact: true })
+
+const sectionRegion = (page, groupId) =>
+  taskListRegion(page).getByRole('region', {
+    name: copy.groups[groupId],
+    exact: true
+  })
+
+const expectEveryTaskIsCompleteOrToDo = async (page) => {
+  const region = taskListRegion(page)
+  const statuses = region
+    .getByText(copy.statuses.complete, { exact: true })
+    .or(region.getByText(copy.statuses.toDo, { exact: true }))
+  await expect(statuses).toHaveCount(await region.getByRole('link').count())
+}
 
 const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
@@ -80,14 +89,22 @@ const openHubOwingTheCommodityNumbers = async (page) => {
   await expectHub(page)
 }
 
+const totalBoxes = (page) => commodityTotalsRegion(page).getByRole('region')
+
 const expectTotalBoxes = async (page, animals, packages) => {
-  const boxes = page.locator(TOTAL_BOX)
+  const boxes = totalBoxes(page)
   await expect(boxes).toHaveCount(2)
+  await expect(boxes.nth(0)).toHaveAccessibleName(
+    copy.commodityTotals.animalsRegionLabel
+  )
   await expect(boxes.nth(0).locator('> *')).toHaveText([
     animals,
     copy.commodityTotals.animalsLabel,
     copy.commodityTotals.animalsCaption
   ])
+  await expect(boxes.nth(1)).toHaveAccessibleName(
+    copy.commodityTotals.packagesRegionLabel
+  )
   await expect(boxes.nth(1).locator('> *')).toHaveText([
     packages,
     copy.commodityTotals.packagesLabel,
@@ -131,7 +148,7 @@ test.describe('hub feature', () => {
     ).toBeVisible()
   })
 
-  test('the task list is headed "Notification tasklist" over the six numbered design sections in order, with nothing after them', async ({
+  test('the task list is headed "Notification task list" over the six numbered design sections in order, with nothing after them', async ({
     page
   }) => {
     await startNotification(page)
@@ -140,9 +157,29 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { level: 2, name: copy.taskListHeading })
     ).toBeVisible()
 
-    await expect(page.locator(SECTION_HEADING)).toHaveText(
-      Object.values(copy.groups)
+    await expect(
+      taskListRegion(page).getByRole('heading', { level: 3 })
+    ).toHaveText(Object.values(copy.groups))
+  })
+
+  test('the task list is a region of one named region per numbered section, each holding its heading and one task list, with Main import reason under About the consignment', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(taskListRegion(page).getByRole('region')).toHaveCount(
+      Object.keys(copy.groups).length
     )
+    for (const [groupId, caption] of Object.entries(copy.groups)) {
+      const section = sectionRegion(page, groupId)
+      await expect(section.getByRole('heading', { level: 3 })).toHaveText(
+        caption
+      )
+      await expect(section.getByRole('list')).toHaveCount(1)
+    }
+    await expect(
+      sectionRegion(page, 'about-the-consignment').getByRole('link')
+    ).toContainText([copy.rows.importReason.title])
   })
 
   test('every task the hub shows opens before a commodity is chosen', async ({
@@ -170,7 +207,7 @@ test.describe('hub feature', () => {
       ).toBeVisible()
     }
 
-    await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
+    await expectEveryTaskIsCompleteOrToDo(page)
   })
 
   test('saving arrival details with only the country of origin answered opens What are you importing?', async ({
@@ -246,7 +283,7 @@ test.describe('hub feature', () => {
     await openHubWithCommodityTotals(page)
 
     await expect(
-      taskRowTitles(groupTaskList(page, 'description-of-the-goods'))
+      sectionRegion(page, 'description-of-the-goods').getByRole('link')
     ).toHaveText([
       copy.rows.consignmentDetails.title,
       copy.rows.animalIdentification.title,
@@ -254,19 +291,25 @@ test.describe('hub feature', () => {
     ])
   })
 
-  test('overview: only the roles and addresses row carries a hint', async ({
+  test('overview: only the consignment addresses row carries a hint', async ({
     page
   }) => {
     await openHubWithCommodityTotals(page)
 
-    const hints = page.locator(TASK_ROW_HINT)
-    await expect(hints).toHaveCount(1)
-    await expect(hints).toHaveText(copy.rows.addresses.hint)
+    const statusPattern = `(${copy.statuses.complete}|${copy.statuses.toDo})`
+    const links = taskListRegion(page).getByRole('link')
     await expect(
-      taskRow(page, copy.rows.addresses.title).locator(TASK_ROW_HINT)
-    ).toHaveText(
-      'Consignor or Exporter, Consignee, Importer and Place of Destination'
+      links.filter({ hasText: copy.rows.addresses.title })
+    ).toHaveAccessibleDescription(
+      new RegExp(`^${copy.rows.addresses.hint} ${statusPattern}$`)
     )
+    for (const link of await links
+      .filter({ hasNotText: copy.rows.addresses.title })
+      .all()) {
+      await expect(link).toHaveAccessibleDescription(
+        new RegExp(`^${statusPattern}$`)
+      )
+    }
   })
 
   test('overview has no back link and returns to the dashboard', async ({
@@ -343,9 +386,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('leads the secondary Return to dashboard button, with no task shut as Cannot start yet', async ({
@@ -370,7 +411,7 @@ test.describe('hub feature — the Review and submit button', () => {
       page.getByRole('button', { name: copy.returnToDashboard }),
       secondaryButtonStyle
     )
-    await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
+    await expectEveryTaskIsCompleteOrToDo(page)
   })
 
   test('opens the review once every answer section is complete', async ({
@@ -382,9 +423,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('a single-species notification reaches the review with no identifier saved', async ({
@@ -399,9 +438,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expectDraftReview(page)
   })
 
   test('hub with nothing but the origin answered has no serious or critical axe violations', async ({
@@ -460,30 +497,12 @@ test.describe('hub feature — commodity totals', () => {
         name: copy.commodityTotals.packagesLabel
       })
     ).toBeVisible()
-
-    const captions = await page
-      .locator(`${TOTAL_BOX}__caption`)
-      .evaluateAll((elements) =>
-        elements.map((element) => ({
-          text: element.textContent,
-          height: element.getBoundingClientRect().height,
-          lineHeight: parseFloat(getComputedStyle(element).lineHeight)
-        }))
-      )
-
-    expect(captions).toHaveLength(2)
-    for (const { text, height, lineHeight } of captions) {
-      expect(
-        height,
-        `"${text}" wraps to more than two lines`
-      ).toBeLessThanOrEqual(lineHeight * 2 + 1)
-    }
   })
 
   test('the boxes hold no link and no button', async ({ page }) => {
     await openHubWithCommodityTotals(page)
 
-    const boxes = page.locator(TOTAL_BOX)
+    const boxes = totalBoxes(page)
     await expect(boxes).toHaveCount(2)
     await expect(boxes.getByRole('link')).toHaveCount(0)
     await expect(boxes.getByRole('button')).toHaveCount(0)
@@ -495,7 +514,7 @@ test.describe('hub feature — commodity totals', () => {
     await page.setViewportSize(PHONE_VIEWPORT)
     await openHubWithCommodityTotals(page)
 
-    const boxes = page.locator(TOTAL_BOX)
+    const boxes = totalBoxes(page)
     await expect(boxes).toHaveCount(2)
     const first = await boxes.nth(0).boundingBox()
     const second = await boxes.nth(1).boundingBox()

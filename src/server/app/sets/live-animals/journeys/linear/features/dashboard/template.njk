@@ -82,7 +82,7 @@
             {% for action in row.actions %}
               <li class="govuk-summary-card__action">
                 {% if action.postAction %}
-                  <form method="post" action="{{ action.postAction }}" class="app-form-inline">
+                  <form method="post" action="{{ action.postAction }}" novalidate>
                     <input type="hidden" name="crumb" value="{{ crumb }}" />
                     {% if action.concurrencyToken !== undefined %}
                       <input type="hidden" name="concurrencyToken" value="{{ action.concurrencyToken }}" />

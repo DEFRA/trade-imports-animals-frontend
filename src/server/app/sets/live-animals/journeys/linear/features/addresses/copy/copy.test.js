@@ -42,7 +42,7 @@ describe('#copy', () => {
     'Should caption the %s pickers with the section name their hub carries',
     (_locale, addressCopy, sectionCaptions) => {
       expect(addressCopy.picker.caption).toBe(
-        sectionCaptions.sections.consignmentParties
+        sectionCaptions.sections.addresses
       )
     }
   )

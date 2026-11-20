@@ -10,6 +10,7 @@ import {
   withTrail
 } from '../../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
+import { notificationActionSlugs } from '../../../../flow/notification-action-slugs.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../../../shared/copy.en.js'
@@ -21,13 +22,13 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 export const rowActions = (journey) => {
   const copyAction = {
     text: sharedCopy.notificationActions.copy.text,
-    postAction: pagePath(journey.journeyId, 'copy'),
+    postAction: pagePath(journey.journeyId, notificationActionSlugs.copy),
     concurrencyToken: journey.concurrencyToken,
     copyOrigin: 'dashboard'
   }
   const deleteAction = {
     text: sharedCopy.notificationActions.delete.text,
-    href: pagePath(journey.journeyId, 'delete')
+    href: pagePath(journey.journeyId, notificationActionSlugs.delete)
   }
   if (journey.status === SUBMITTED) {
     return [
@@ -39,7 +40,7 @@ export const rowActions = (journey) => {
       },
       {
         text: copy.actions.amend,
-        postAction: pagePath(journey.journeyId, 'amend')
+        postAction: pagePath(journey.journeyId, notificationActionSlugs.amend)
       },
       copyAction,
       deleteAction
@@ -64,7 +65,7 @@ export const rowActions = (journey) => {
       copyAction,
       {
         text: copy.actions.cancelAmend,
-        href: pagePath(journey.journeyId, 'cancel-amend')
+        href: pagePath(journey.journeyId, notificationActionSlugs.cancelAmend)
       },
       deleteAction
     ]

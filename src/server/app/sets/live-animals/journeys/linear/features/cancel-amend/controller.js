@@ -40,17 +40,29 @@ const render = (h, journey, { recoverableError = false } = {}) =>
     noHref: cyaPath(journey.journeyId)
   })
 
+const redirectNotInAmend = (request, h, journey) => {
+  request.logger.info(
+    {
+      journeyId: journey.journeyId,
+      status: journey.status,
+      refusal: 'not-in-amend'
+    },
+    'Cancel amend refused'
+  )
+  return h.redirect(nonAmendTarget(journey))
+}
+
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
   return journey.status === state.AMEND
     ? render(h, journey)
-    : h.redirect(nonAmendTarget(journey))
+    : redirectNotInAmend(request, h, journey)
 }
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
   if (journey.status !== state.AMEND) {
-    return h.redirect(nonAmendTarget(journey))
+    return redirectNotInAmend(request, h, journey)
   }
 
   const { failure, value: restored } = await kit.recoverableSave(

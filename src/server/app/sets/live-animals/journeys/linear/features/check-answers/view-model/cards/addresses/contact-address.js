@@ -1,11 +1,11 @@
 import { copyFor } from '../../../../../../../../../shared/copy.js'
-import { CYA_SLUG } from '../../../../../../../../../shared/kit.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
+import { CYA_SLUG } from '../../../../../../../../../shared/kit.js'
 import { consignmentContactSelectPage } from '../../../../contact/page.js'
 import { CONTACT_PARTY } from '../../../../addresses/parties.js'
 import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })
@@ -23,7 +23,7 @@ export const contactAddressCard = ({
   title: copy.cards.contactAddress,
   ...editableActions({
     readOnly,
-    actions: cardAction(
+    actions: changeAction(
       { journeyId, changeLinkTrail },
       consignmentContactSelectPage.slug,
       copy.hidden.cards.contactAddress
@@ -32,9 +32,17 @@ export const contactAddressCard = ({
   rows: [
     partyRow(copy.rows.contactAddress, parties.contactAddress, {
       errorText: partyErrors.contactAddress,
-      editHref: readOnly
+      edit: readOnly
         ? undefined
-        : partyEditHref(journeyId, CONTACT_PARTY, CYA_SLUG, reviewPageTrail)
+        : {
+            href: partyEditHref(
+              journeyId,
+              CONTACT_PARTY,
+              CYA_SLUG,
+              reviewPageTrail
+            ),
+            visuallyHiddenText: copy.hidden.cards.contactAddress
+          }
     })
   ]
 })
