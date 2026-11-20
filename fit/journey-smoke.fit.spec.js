@@ -15,7 +15,6 @@ import {
   answerAnimalIdentification,
   answerArrivalDetails,
   answerCommodityCounts,
-  answerContactAddress,
   answerImportReason,
   answerRolesAndAddresses,
   answerTransitCountries,
@@ -148,11 +147,6 @@ test.describe('live-animals journey glue', () => {
 
     await answerRolesAndAddresses(page)
     await expect(page).toHaveURL(
-      urlUnderBase('/notifications/[^/]+/consignment/contact/select')
-    )
-    await answerContactAddress(page)
-
-    await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/notification-view')
     )
     await expect(heading(checkAnswersCopy.title)).toBeVisible()
@@ -230,8 +224,8 @@ test.describe('live-animals journey glue', () => {
 
     await saveAndContinueToImportReason(page)
 
-    await page.goto(journeyUrl(page, 'consignment/contact/select'))
-    await answerContactAddress(page)
+    await page.goto(journeyUrl(page, 'addresses'))
+    await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/notification-view')
@@ -275,7 +269,6 @@ test.describe('live-animals journey glue', () => {
       LANDINGS.transporters,
       LANDINGS.documents,
       LANDINGS.addresses,
-      LANDINGS.contactAddress,
       review
     ]
     await startNotification(page)

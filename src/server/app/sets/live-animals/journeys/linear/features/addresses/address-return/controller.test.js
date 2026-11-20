@@ -14,7 +14,7 @@ import {
   useStubbedJourney
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import { consignor, contactAddress } from '../../../../../obligations/index.js'
+import { consignor } from '../../../../../obligations/index.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TRAIL_START } from '../../../../../../../shared/kit.js'
 import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
@@ -119,17 +119,6 @@ describe('GET /address-return', () => {
         landedLog(result.journeyId, { partyId: 'consignor', landing: 'back' })
       )
     })
-
-    it('Should redirect the contact to the contact page and commit nothing', async () => {
-      const result = await driveHandler(handler, {
-        query: { 'fulfilment-id': contactAddress.id }
-      })
-
-      expect(result.response.redirect).toBe(
-        partyPagePath(contactAddress.id, result.journeyId)
-      )
-      expect(result.after.contactAddress).toBeUndefined()
-    })
   })
 
   describe('select landing', () => {
@@ -174,23 +163,6 @@ describe('GET /address-return', () => {
       expect(result.response.redirect).toBe(
         consignmentAddressesPage(result.journeyId)
       )
-    })
-
-    it('Should commit the contact answer and land on the contact page', async () => {
-      addressBookAnswering({ body: newAddressBody() })
-
-      const result = await driveHandler(handler, {
-        query: returnedQuery(ADDRESS_LANDING.SELECT, contactAddress.id),
-        state: handshakeState(contactAddress.id)
-      })
-
-      expect(result.response.redirect).toBe(
-        partyPagePath(contactAddress.id, result.journeyId)
-      )
-      expect(result.after.contactAddress.address).toMatchObject({
-        townOrCity: 'Carlisle'
-      })
-      expect(result.cookies).toEqual(addedAddressBannerState(storedName))
     })
 
     it('Should treat a returned address with no landing as select', async () => {

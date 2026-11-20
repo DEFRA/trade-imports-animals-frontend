@@ -28,18 +28,6 @@ const placeOfOrigin = {
     countryCode: 'IE'
   }
 }
-const contactAddress = {
-  name: 'Animal and Plant Health Agency',
-  phone: '01632 960000',
-  email: 'animal-and-plant-health-agency@example.com',
-  address: {
-    addressLine1: 'Woodham Lane',
-    townOrCity: 'Addlestone',
-    postcode: 'KT15 3NB',
-    countryCode: 'GB'
-  }
-}
-
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
     const fulfilment = assembleFulfilments(completeJourneyAnswers)
@@ -81,7 +69,6 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      consignment: contactAddress,
       cphNumber: '12/345/6789',
       purposeInInternalMarket: 'breeding',
       origin: {
@@ -143,14 +130,13 @@ describe('Mapper A PUT /notifications contract', () => {
     )
 
     expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
-    expect(payload.consignment).toEqual(contactAddress)
+    expect(payload).not.toHaveProperty('consignment')
   })
 
   test('carries only a party answer’s details, dropping pickedFromId and any other key', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { ...placeOfOrigin, pickedFromId: 'origin-farm' },
-      contactAddress: { ...contactAddress, unrelated: 'dropped' }
+      placeOfOrigin: { ...placeOfOrigin, pickedFromId: 'origin-farm' }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
@@ -158,7 +144,7 @@ describe('Mapper A PUT /notifications contract', () => {
     )
 
     expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
-    expect(payload.consignment).toEqual(contactAddress)
+    expect(payload).not.toHaveProperty('consignment')
   })
 
   test('omits a party answer with no details', () => {

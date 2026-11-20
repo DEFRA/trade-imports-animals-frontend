@@ -54,7 +54,6 @@ import * as transporters from './sets/live-animals/journeys/linear/features/tran
 import * as transporterAdd from './sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.js'
 import * as commercialTransporterDetails from './sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
-import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 import {
   BOS_TAURUS,
@@ -138,12 +137,6 @@ const cases = [
     handler: postHandlerOf(transitCountries),
     seed: transitAppliesSeed,
     payload: { transitedCountries: ['FR', 'BE'] }
-  },
-  {
-    id: 'consignment-contact-select',
-    collects: contactSelect.meta.collects,
-    handler: postHandlerOf(contactSelect),
-    payload: { contactAddress: 'animal-and-plant-health-agency' }
   },
   {
     id: 'declaration',

@@ -38,7 +38,6 @@ import { routes as privateTransporterDetailsRoutes } from './transport/private-t
 import { routes as documentsRoutes } from './documents/controller.js'
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as checkAnswersRoutes } from './check-answers/controller.js'
-import { routes as contactRoutes } from './contact/controller.js'
 import { declarationRoutesFromReview as declarationRoutes } from './declaration/test-support.js'
 
 const comprehensive = characterisationCorpus.find(
@@ -141,7 +140,6 @@ const CAPTIONED_PAGES = [
 const BARE_PAGES = [
   ['overview', hubRoutes, parityFixture],
   ['check your answers', checkAnswersRoutes, parityFixture],
-  ['contact', contactRoutes, parityFixture],
   ['declaration', declarationRoutes, {}]
 ]
 

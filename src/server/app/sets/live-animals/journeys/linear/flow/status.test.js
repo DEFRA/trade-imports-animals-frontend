@@ -43,7 +43,6 @@ const cases = {
       NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     sections: [
@@ -52,7 +51,6 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     ready: false
@@ -70,7 +68,6 @@ const cases = {
       NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     sections: [
@@ -79,7 +76,6 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     ready: false
@@ -100,7 +96,6 @@ const cases = {
       NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     sections: [
@@ -109,7 +104,6 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     ready: false
@@ -135,7 +129,6 @@ const cases = {
       NA,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     sections: [
@@ -144,7 +137,6 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       OPTIONAL,
-      NOT_STARTED,
       NOT_STARTED
     ],
     ready: false
@@ -162,18 +154,9 @@ const cases = {
       FULFILLED,
       FULFILLED,
       FULFILLED,
-      FULFILLED,
       FULFILLED
     ],
-    sections: [
-      NA,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED
-    ],
+    sections: [NA, FULFILLED, FULFILLED, FULFILLED, FULFILLED, FULFILLED],
     ready: true
   },
   'the happy path with an empty required collection': {
@@ -189,18 +172,9 @@ const cases = {
       FULFILLED,
       FULFILLED,
       FULFILLED,
-      FULFILLED,
       FULFILLED
     ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED
-    ],
+    sections: [NA, IN_PROGRESS, FULFILLED, FULFILLED, FULFILLED, FULFILLED],
     ready: false
   }
 }

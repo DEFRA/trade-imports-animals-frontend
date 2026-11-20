@@ -14,8 +14,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
     documents: '4. Documents',
-    consignmentParties: '5. Consignment parties',
-    contactAddress: '6. Contact address'
+    consignmentParties: '5. Consignment parties'
   },
   groups: {
     whereFrom: 'Where is this consignment coming from?',
@@ -26,8 +25,7 @@ export const copy = {
     transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
     uploadDocuments: 'Upload documents',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment'
+    rolesAndAddresses: 'Roles and addresses'
   },
   cards: {
     importDetails: 'Import details',
@@ -37,7 +35,6 @@ export const copy = {
     transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
     rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment',
     documents: 'Uploaded documents'
   },
   rows: {
@@ -65,7 +62,6 @@ export const copy = {
     transportDocumentReference: 'Transport document reference',
     name: 'Name',
     address: 'Address',
-    contactAddress: 'Contact address',
     country: 'Country',
     approvalNumber: 'Approval number',
     type: 'Type',
@@ -96,7 +92,6 @@ export const copy = {
       transitCountries: 'transit countries',
       transportDetails: 'transport details',
       rolesAndAddresses: 'roles and addresses',
-      contactAddress: 'contact address for this consignment',
       documents: 'uploaded documents'
     },
     commodity: (n) => `commodity ${n}`
@@ -115,7 +110,6 @@ export const copy = {
       transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
       rolesAndAddresses: 'Complete roles and addresses',
-      contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
     },
     species: {
@@ -128,8 +122,7 @@ export const copy = {
       consignee: 'Correct the address details for the consignee',
       importer: 'Correct the address details for the importer',
       placeOfDestination:
-        'Correct the address details for the place of destination',
-      contactAddress: 'Correct the contact address details for this consignment'
+        'Correct the address details for the place of destination'
     }
   }
 }

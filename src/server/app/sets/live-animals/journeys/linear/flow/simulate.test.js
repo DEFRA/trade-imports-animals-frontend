@@ -27,7 +27,7 @@ describe('#simulateJourney', () => {
       pages.indexOf('transporters')
     )
     expect(pages.indexOf('transporters')).toBeLessThan(
-      pages.indexOf('consignment-contact-select')
+      pages.indexOf('addresses')
     )
   })
 

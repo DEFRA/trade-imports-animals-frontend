@@ -25,15 +25,14 @@ const SECTION_ORDER = [
     id: 'consignment-parties',
     pageIds: ['cphNumber', 'permanentAddress', 'addresses']
   },
-  { id: 'contact-address', pageIds: ['consignment-contact-select'] },
   {
     id: 'review',
     pageIds: ['notification-view', 'declaration', 'confirmation']
   }
 ]
 
-describe('#sections — the journey is ordered as eight sections', () => {
-  it('Should run the eight sections in the order Overview lists them', () => {
+describe('#sections — the journey is ordered as seven sections', () => {
+  it('Should run the seven sections in the order Overview lists them', () => {
     expect(
       sections.map((section) => ({
         id: section.id,

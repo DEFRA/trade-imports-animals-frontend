@@ -20,10 +20,10 @@ import {
 } from '../../../../../../../lib/http-status.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
-import { CONTACT_PARTY, PARTIES } from '../parties.js'
+import { PARTIES } from '../parties.js'
 import * as partyEdit from './party-edit.controller.js'
 
-const ALL_PARTIES = [...PARTIES, CONTACT_PARTY]
+const ALL_PARTIES = PARTIES
 const REVIEW_SLUG = 'notification-view'
 
 const STORED = {

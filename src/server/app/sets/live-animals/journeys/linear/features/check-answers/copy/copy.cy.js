@@ -15,8 +15,7 @@ export const copy = {
     descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',
     transportAndArrival: '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau',
-    consignmentParties: '5. Partïon y llwyth',
-    contactAddress: '6. Cyfeiriad cyswllt'
+    consignmentParties: '5. Partïon y llwyth'
   },
   groups: {
     whereFrom: 'O ble mae’r llwyth hwn yn dod?',
@@ -27,8 +26,7 @@ export const copy = {
     transitCountries: 'Gwledydd tramwy',
     transportDetails: 'Manylion cludo',
     uploadDocuments: 'Uwchlwytho dogfennau',
-    rolesAndAddresses: 'Rolau a chyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn'
+    rolesAndAddresses: 'Rolau a chyfeiriadau'
   },
   cards: {
     importDetails: 'Manylion mewnforio',
@@ -38,7 +36,6 @@ export const copy = {
     transitCountries: 'Gwledydd tramwy',
     transportDetails: 'Manylion cludo',
     rolesAndAddresses: 'Rolau a chyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
     documents: 'Dogfennau wedi’u huwchlwytho'
   },
   rows: {
@@ -66,7 +63,6 @@ export const copy = {
     transportDocumentReference: 'Cyfeirnod dogfen cludo',
     name: 'Enw',
     address: 'Cyfeiriad',
-    contactAddress: 'Cyfeiriad cyswllt',
     country: 'Gwlad',
     approvalNumber: 'Rhif cymeradwyo',
     type: 'Math',
@@ -97,7 +93,6 @@ export const copy = {
       transitCountries: 'gwledydd tramwy',
       transportDetails: 'manylion cludo',
       rolesAndAddresses: 'rolau a chyfeiriadau',
-      contactAddress: 'cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'dogfennau wedi’u huwchlwytho'
     },
     commodity: (n) => `nwydd ${n}`
@@ -117,7 +112,6 @@ export const copy = {
       transitCountries: 'Cwblhewch y gwledydd tramwy',
       transportDetails: 'Cwblhewch y manylion cludo',
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
-      contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
     },
     species: {
@@ -130,9 +124,7 @@ export const copy = {
       consignee: 'Cywirwch fanylion y cyfeiriad ar gyfer y derbynnydd',
       importer: 'Cywirwch fanylion y cyfeiriad ar gyfer y mewnforiwr',
       placeOfDestination:
-        'Cywirwch fanylion y cyfeiriad ar gyfer y man cyrchfan',
-      contactAddress:
-        'Cywirwch fanylion y cyfeiriad cyswllt ar gyfer y llwyth hwn'
+        'Cywirwch fanylion y cyfeiriad ar gyfer y man cyrchfan'
     }
   }
 }

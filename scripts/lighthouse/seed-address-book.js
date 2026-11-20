@@ -1,16 +1,13 @@
-import {
-  PARTIES,
-  CONTACT_PARTY
-} from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
+import { PARTIES } from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
 
 const ORGANISATION_ID = '5900001'
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 const HTTP_CREATED = 201
 const HTTP_OK = 200
 
-const SELECTABLE_ADDRESS_ROLES = [...PARTIES, CONTACT_PARTY]
-  .map(({ addressBookRole }) => addressBookRole)
-  .filter(Boolean)
+const SELECTABLE_ADDRESS_ROLES = PARTIES.map(
+  ({ addressBookRole }) => addressBookRole
+).filter(Boolean)
 
 const addressBookBase = () =>
   process.env.TRADE_IMPORTS_ADDRESS_BOOK_URL ?? 'http://localhost:8089'
