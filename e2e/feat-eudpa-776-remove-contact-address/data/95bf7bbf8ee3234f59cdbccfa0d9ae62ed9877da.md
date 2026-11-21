@@ -1,0 +1,537 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: animals/e2e/features/amend-from-a-later-session.spec.ts >> Dashboard actions in a later browser session >> tells the user a deleted notification could not be amended
+- Location: tests/animals/e2e/features/amend-from-a-later-session.spec.ts:37:3
+
+# Error details
+
+```
+Test timeout of 90000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 90000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Save and return to overview', exact: true })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f35e1]:
+  - link "Skip to main content" [ref=f35e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f35e3]:
+    - link [ref=f35e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=f35e8]
+    - region "Service information" [ref=f35e21]:
+      - generic [ref=f35e23]:
+        - link "Import notification service" [ref=f35e25] [cursor=pointer]:
+          - /url: /live-animals
+        - navigation "Menu" [ref=f35e26]:
+          - list [ref=f35e27]:
+            - listitem [ref=f35e28]:
+              - link [ref=f35e29] [cursor=pointer]:
+                - /url: /live-animals
+                - strong [ref=f35e30]: Dashboard
+            - listitem [ref=f35e31]:
+              - link "Address book" [ref=f35e32] [cursor=pointer]:
+                - /url: http://localhost:3002/address-book
+            - listitem [ref=f35e33]:
+              - link "Manage account" [ref=f35e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=f35e35]:
+              - link "Log out" [ref=f35e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=f35e37]:
+    - paragraph [ref=f35e39]:
+      - strong [ref=f35e40]: Alpha
+      - generic [ref=f35e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=f35e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - paragraph [ref=f35e44]:
+      - strong [ref=f35e45]:
+        - generic [ref=f35e46]: "This page’s status:"
+        - text: Detailing
+        - generic [ref=f35e47]: .
+      - generic [ref=f35e48]: We’re keeping this page. We’re still working out the detail.
+    - link "Back" [ref=f35e49] [cursor=pointer]:
+      - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/addresses?from=overview
+    - main [ref=f35e50]:
+      - generic [ref=f35e52]:
+        - generic [ref=f35e53]:
+          - strong [ref=f35e54]: Draft
+          - text: GBN-AG-26-X9DCCG
+        - alert [ref=f35e56]:
+          - heading "There is a problem" [level=2] [ref=f35e57]
+          - list [ref=f35e59]:
+            - listitem [ref=f35e60]:
+              - link "Complete arrival details" [ref=f35e61] [cursor=pointer]:
+                - /url: "#arrival-details"
+            - listitem [ref=f35e62]:
+              - link "Complete transport details" [ref=f35e63] [cursor=pointer]:
+                - /url: "#transport-details"
+        - heading "Review your notification" [level=1] [ref=f35e64]
+        - heading "1. About the consignment" [level=2] [ref=f35e65]
+        - heading "Where is this consignment coming from?" [level=3] [ref=f35e66]
+        - generic [ref=f35e67]:
+          - generic [ref=f35e68]:
+            - heading "Import details" [level=4] [ref=f35e69]
+            - link "Change import details (Import details)" [ref=f35e71] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/origin?from=overview%2Caddresses%2Cnotification-view
+              - text: Change
+              - generic [ref=f35e72]: import details (Import details)
+          - generic [ref=f35e74]:
+            - generic [ref=f35e75]:
+              - term [ref=f35e76]: Country of origin
+              - definition [ref=f35e77]: France
+            - generic [ref=f35e78]:
+              - term [ref=f35e79]: Region of origin code required
+              - definition [ref=f35e80]: "No"
+            - generic [ref=f35e81]:
+              - term [ref=f35e82]: Region of origin code
+              - definition [ref=f35e83]: Not applicable
+            - generic [ref=f35e84]:
+              - term [ref=f35e85]: Internal reference number
+              - definition [ref=f35e86]: Not applicable
+        - heading "Main import reason" [level=3] [ref=f35e87]
+        - generic [ref=f35e88]:
+          - generic [ref=f35e89]:
+            - heading "Reason for import" [level=4] [ref=f35e90]
+            - link "Change reason for import (Reason for import)" [ref=f35e92] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/import-reason?from=overview%2Caddresses%2Cnotification-view
+              - text: Change
+              - generic [ref=f35e93]: reason for import (Reason for import)
+          - generic [ref=f35e95]:
+            - generic [ref=f35e96]:
+              - term [ref=f35e97]: Reason for import
+              - definition [ref=f35e98]: Internal market
+            - generic [ref=f35e99]:
+              - term [ref=f35e100]: Purpose in the market
+              - definition [ref=f35e101]: Breeding
+        - separator [ref=f35e102]
+        - heading "2. Description of the goods" [level=2] [ref=f35e103]
+        - heading "Commodity details" [level=3] [ref=f35e104]
+        - generic [ref=f35e105]:
+          - generic [ref=f35e106]:
+            - heading "0102 — Bos taurus" [level=4] [ref=f35e107]
+            - list [ref=f35e108]:
+              - listitem [ref=f35e109]:
+                - link "Change commodity 1" [ref=f35e110] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/consignment-details?from=overview%2Caddresses%2Cnotification-view
+                  - text: Change
+                  - generic [ref=f35e111]: commodity 1
+          - generic [ref=f35e112]:
+            - generic [ref=f35e113]:
+              - generic [ref=f35e114]:
+                - term [ref=f35e115]: Commodity code
+                - definition [ref=f35e116]: "0102"
+              - generic [ref=f35e117]:
+                - term [ref=f35e118]: Common name
+                - definition [ref=f35e119]: Domestic Cattle
+              - generic [ref=f35e120]:
+                - term [ref=f35e121]: Species
+                - definition [ref=f35e122]: Bos taurus
+              - generic [ref=f35e123]:
+                - term [ref=f35e124]: Number of animals
+                - definition [ref=f35e125]: "1"
+              - generic [ref=f35e126]:
+                - term [ref=f35e127]: Number of packages
+                - definition [ref=f35e128]: Not applicable
+            - heading "Animal details" [level=5] [ref=f35e129]
+            - table [ref=f35e130]:
+              - rowgroup [ref=f35e131]:
+                - row [ref=f35e132]:
+                  - columnheader "Animal" [ref=f35e133]
+                  - columnheader "Ear tag" [ref=f35e134]
+              - rowgroup [ref=f35e135]:
+                - row [ref=f35e136]:
+                  - cell "Animal 1" [ref=f35e137]
+                  - cell "UK123456789012" [ref=f35e138]
+        - heading "Additional details" [level=3] [ref=f35e139]
+        - generic [ref=f35e140]:
+          - generic [ref=f35e141]:
+            - heading "Additional animal details" [level=4] [ref=f35e142]
+            - link "Change additional animal details (Additional animal details)" [ref=f35e144] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/additional-details?from=overview%2Caddresses%2Cnotification-view
+              - text: Change
+              - generic [ref=f35e145]: additional animal details (Additional animal details)
+          - generic [ref=f35e147]:
+            - generic [ref=f35e148]:
+              - term [ref=f35e149]: Certified for
+              - definition [ref=f35e150]: Slaughter
+            - generic [ref=f35e151]:
+              - term [ref=f35e152]: Includes unweaned animals
+              - definition [ref=f35e153]: "No"
+        - separator [ref=f35e154]
+        - heading "3. Transport and arrival" [level=2] [ref=f35e155]
+        - heading "Arrival details" [level=3] [ref=f35e156]
+        - generic [ref=f35e157]:
+          - generic [ref=f35e158]:
+            - heading "Arrival details" [level=4] [ref=f35e159]
+            - list [ref=f35e160]:
+              - listitem [ref=f35e161]:
+                - link "Change arrival details" [ref=f35e162] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/port-of-entry?from=overview%2Caddresses%2Cnotification-view
+                  - text: Change
+                  - generic [ref=f35e163]: arrival details
+          - generic [ref=f35e164]:
+            - paragraph [ref=f35e165]:
+              - generic [ref=f35e166]: "Error:"
+              - text: Complete arrival details
+            - generic [ref=f35e167]:
+              - generic [ref=f35e168]:
+                - term [ref=f35e169]: Port of entry
+                - definition [ref=f35e170]:
+                  - generic [ref=f35e171]: Missing
+              - generic [ref=f35e172]:
+                - term [ref=f35e173]: Arrival date at port of entry
+                - definition [ref=f35e174]:
+                  - generic [ref=f35e175]: Missing
+              - generic [ref=f35e176]:
+                - term [ref=f35e177]: Means of transport to the port of entry
+                - definition [ref=f35e178]:
+                  - generic [ref=f35e179]: Missing
+              - generic [ref=f35e180]:
+                - term [ref=f35e181]: Transport identification
+                - definition [ref=f35e182]:
+                  - generic [ref=f35e183]: Missing
+              - generic [ref=f35e184]:
+                - term [ref=f35e185]: Transport document reference
+                - definition [ref=f35e186]:
+                  - generic [ref=f35e187]: Missing
+        - heading "Transport details" [level=3] [ref=f35e188]
+        - generic [ref=f35e189]:
+          - generic [ref=f35e190]:
+            - heading "Transport details" [level=4] [ref=f35e191]
+            - list [ref=f35e192]:
+              - listitem [ref=f35e193]:
+                - link "Change transport details" [ref=f35e194] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/transporters?from=overview%2Caddresses%2Cnotification-view
+                  - text: Change
+                  - generic [ref=f35e195]: transport details
+          - generic [ref=f35e196]:
+            - paragraph [ref=f35e197]:
+              - generic [ref=f35e198]: "Error:"
+              - text: Complete transport details
+            - generic [ref=f35e200]:
+              - term [ref=f35e201]: Type
+              - definition [ref=f35e202]:
+                - generic [ref=f35e203]: Missing
+        - separator [ref=f35e204]
+        - heading "4. Documents" [level=2] [ref=f35e205]
+        - heading "Upload documents" [level=3] [ref=f35e206]
+        - generic [ref=f35e207]:
+          - generic [ref=f35e208]:
+            - heading "Uploaded documents" [level=4] [ref=f35e209]
+            - list [ref=f35e210]:
+              - listitem [ref=f35e211]:
+                - link "Change uploaded documents" [ref=f35e212] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/accompanying-documents?from=overview%2Caddresses%2Cnotification-view
+                  - text: Change
+                  - generic [ref=f35e213]: uploaded documents
+          - paragraph [ref=f35e215]: You have not added any documents yet.
+        - separator [ref=f35e216]
+        - heading "5. Consignment parties" [level=2] [ref=f35e217]
+        - heading "Roles and addresses" [level=3] [ref=f35e218]
+        - generic [ref=f35e219]:
+          - generic [ref=f35e220]:
+            - heading "Roles and addresses" [level=4] [ref=f35e221]
+            - link "Change roles and addresses (Roles and addresses)" [ref=f35e223] [cursor=pointer]:
+              - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/addresses?from=overview%2Caddresses%2Cnotification-view
+              - text: Change
+              - generic [ref=f35e224]: roles and addresses (Roles and addresses)
+          - generic [ref=f35e226]:
+            - generic [ref=f35e227]:
+              - term [ref=f35e228]: Place of origin
+              - definition [ref=f35e229]:
+                - strong [ref=f35e230]: Origin Farm
+                - text: 1 Farm LaneEnnisV95 X7P2Ireland+44 1234 567890contact@example.com
+              - definition [ref=f35e231]:
+                - link "Edit details place of origin (Roles and addresses)" [ref=f35e232] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/place-of-origin/edit?return=notification-view&from=overview%2Caddresses
+                  - text: Edit details
+                  - generic [ref=f35e233]: place of origin (Roles and addresses)
+            - generic [ref=f35e234]:
+              - term [ref=f35e235]: Consignor
+              - definition [ref=f35e236]:
+                - strong [ref=f35e237]: Astra Rosales
+                - text: 43 East Hague ExtensionBern30055Switzerland+44 1234 567890contact@example.com
+              - definition [ref=f35e238]:
+                - link "Edit details consignor (Roles and addresses)" [ref=f35e239] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/consignors/edit?return=notification-view&from=overview%2Caddresses
+                  - text: Edit details
+                  - generic [ref=f35e240]: consignor (Roles and addresses)
+            - generic [ref=f35e241]:
+              - term [ref=f35e242]: Consignee
+              - definition [ref=f35e243]:
+                - strong [ref=f35e244]: British Livestock Ltd
+                - text: 10 Market StreetLeedsLS1 6HBUnited Kingdom+44 1234 567890contact@example.com
+              - definition [ref=f35e245]:
+                - link "Edit details consignee (Roles and addresses)" [ref=f35e246] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/consignees/edit?return=notification-view&from=overview%2Caddresses
+                  - text: Edit details
+                  - generic [ref=f35e247]: consignee (Roles and addresses)
+            - generic [ref=f35e248]:
+              - term [ref=f35e249]: Importer
+              - definition [ref=f35e250]:
+                - strong [ref=f35e251]: Import Co UK
+                - text: 20 Trade RoadLondonEC1A 1BBUnited Kingdom+44 1234 567890contact@example.com
+              - definition [ref=f35e252]:
+                - link "Edit details importer (Roles and addresses)" [ref=f35e253] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/importers/edit?return=notification-view&from=overview%2Caddresses
+                  - text: Edit details
+                  - generic [ref=f35e254]: importer (Roles and addresses)
+            - generic [ref=f35e255]:
+              - term [ref=f35e256]: Place of destination
+              - definition [ref=f35e257]:
+                - strong [ref=f35e258]: Tech Imports Ltd
+                - text: 18 Dockside RoadLondonE14 9GEUnited Kingdom+44 1234 567890contact@example.com
+              - definition [ref=f35e259]:
+                - link "Edit details place of destination (Roles and addresses)" [ref=f35e260] [cursor=pointer]:
+                  - /url: /live-animals/notifications/GBN-AG-26-X9DCCG/destinations/edit?return=notification-view&from=overview%2Caddresses
+                  - text: Edit details
+                  - generic [ref=f35e261]: place of destination (Roles and addresses)
+            - generic [ref=f35e262]:
+              - term [ref=f35e263]: County parish holding (CPH) number
+              - definition [ref=f35e264]: "123456789"
+        - button "Continue" [ref=f35e266] [cursor=pointer]
+  - contentinfo [ref=f35e267]:
+    - generic [ref=f35e280]:
+      - generic [ref=f35e281]:
+        - heading "Support links" [level=2] [ref=f35e282]
+        - list [ref=f35e283]:
+          - listitem [ref=f35e284]:
+            - link "Privacy" [ref=f35e285] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=f35e286]:
+            - link "Cookies" [ref=f35e287] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=f35e288]:
+            - link "Accessibility statement" [ref=f35e289] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - generic [ref=f35e292]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=f35e293] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=f35e295] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  303 |   private async openAdditionalDetailsFromOverview(): Promise<void> {
+  304 |     await this.animalsPages.overview.task('Additional details').click();
+  305 |     await this.animalsPages.additionalDetails.heading.waitFor(pageLoadWait);
+  306 |   }
+  307 | 
+  308 |   async answerCommodity(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  309 |     const { commodityLines: lines } = answers;
+  310 |     await this.animalsPages.overview.task('What are you importing?').click();
+  311 |     await this.chooseSpeciesAndOpenDetails(lines.map((line) => line.species));
+  312 |     for (const line of lines) {
+  313 |       await this.animalsPages.consignmentDetails.fillAnimalCountFor(line.species, line.noOfAnimals);
+  314 |       if (line.noOfPackages !== undefined) {
+  315 |         await this.animalsPages.consignmentDetails.fillPackageCountFor(line.species, line.noOfPackages);
+  316 |       }
+  317 |     }
+  318 |     await this.animalsPages.consignmentDetails.saveAndReturnToOverview.click();
+  319 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  320 |   }
+  321 | 
+  322 |   async answerAnimalIdentification(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  323 |     const { commodityLines: lines } = answers;
+  324 |     await this.animalsPages.overview.task('Identification details').click();
+  325 |     const { animalIdentification: identification } = this.animalsPages;
+  326 |     for (const line of lines) {
+  327 |       await this.fillAnimalIdentifiers(identification.speciesCard(line.species), line);
+  328 |     }
+  329 |     await identification.saveAndReturnToOverview.click();
+  330 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  331 |   }
+  332 | 
+  333 |   async answerReasonAndAdditionalDetails(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  334 |     await this.animalsPages.overview.task(IMPORT_REASON_TASK).click();
+  335 |     await this.animalsPages.importReason.reason(answers.importReason.display).check();
+  336 |     await this.animalsPages.importReason.purpose(answers.internalMarketPurpose.display).check();
+  337 |     await this.animalsPages.importReason.saveAndReturnToOverview.click();
+  338 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  339 |     await this.openAdditionalDetailsFromOverview();
+  340 |     await this.animalsPages.additionalDetails.certifiedFor(answers.certifiedFor.display).check();
+  341 |     if (await this.animalsPages.additionalDetails.unweanedAnimalsQuestion.isVisible()) {
+  342 |       await this.animalsPages.additionalDetails.containsUnweanedAnimals(answers.unweanedAnimals).check();
+  343 |     }
+  344 |     await this.animalsPages.additionalDetails.saveAndReturnToOverview.click();
+  345 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  346 |   }
+  347 | 
+  348 |   async toAccompanyingDocuments(): Promise<void> {
+  349 |     await this.startNotification();
+  350 |     await this.answerCommodity();
+  351 |     await this.animalsPages.overview.task('Upload documents').click();
+  352 |     await this.animalsPages.accompanyingDocuments.heading.waitFor(pageLoadWait);
+  353 |   }
+  354 | 
+  355 |   async addFiveParties(names: PartyAnswers = MANDATORY_ANSWERS.parties): Promise<void> {
+  356 |     await this.addParties([['Consignor', names.consignor]]);
+  357 |     await this.addRemainingParties(names);
+  358 |   }
+  359 | 
+  360 |   async addRemainingParties(names: PartyAnswers = MANDATORY_ANSWERS.parties): Promise<void> {
+  361 |     await this.addParties([
+  362 |       ['Place of destination', names.placeOfDestination],
+  363 |       ['Place of origin', names.placeOfOrigin],
+  364 |       ['Consignee', names.consignee],
+  365 |       ['Importer', names.importer],
+  366 |     ]);
+  367 |   }
+  368 | 
+  369 |   private async addParties(parties: PartyAnswer[]): Promise<void> {
+  370 |     for (const [role, name] of parties) {
+  371 |       const picker = this.partyPicker(role);
+  372 |       await this.animalsPages.addresses.addParty(role).click();
+  373 |       await picker.select(name);
+  374 |       await picker.saveAndContinue.click();
+  375 |       await this.animalsPages.addresses.heading.waitFor(pageLoadWait);
+  376 |     }
+  377 |   }
+  378 | 
+  379 |   async fillAddressesAndOpenCph(): Promise<void> {
+  380 |     await this.animalsPages.overview.task('Roles and addresses').click();
+  381 |     await this.addFiveParties();
+  382 |     await this.animalsPages.addresses.addCph.click();
+  383 |     await this.animalsPages.cphNumber.heading.waitFor(pageLoadWait);
+  384 |   }
+  385 | 
+  386 |   async addCphAndLeaveAddresses(cph: CphAnswer = MANDATORY_ANSWERS.cph): Promise<void> {
+  387 |     if (await this.animalsPages.addresses.addCph.isVisible()) {
+  388 |       await this.animalsPages.addresses.addCph.click();
+  389 |       await this.animalsPages.cphNumber.heading.waitFor(pageLoadWait);
+  390 |       await this.animalsPages.cphNumber.fillCphNumber(cph);
+  391 |       await this.animalsPages.cphNumber.saveAndContinue.click();
+  392 |       await this.animalsPages.addresses.heading.waitFor(pageLoadWait);
+  393 |     }
+  394 |     await this.animalsPages.addresses.continueButton.click();
+  395 |     await this.animalsPages.notificationView.heading.waitFor(pageLoadWait);
+  396 |   }
+  397 | 
+  398 |   async answerAddresses(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  399 |     await this.animalsPages.overview.task('Roles and addresses').click();
+  400 |     await this.addFiveParties(answers.parties);
+  401 |     await this.answerPermanentAddresses(answers.commodityLines);
+  402 |     await this.addCphAndLeaveAddresses(answers.cph);
+> 403 |     await this.animalsPages.notificationView.saveAndReturnToOverview.click();
+      |                                                                      ^ Error: locator.click: Test timeout of 90000ms exceeded.
+  404 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  405 |   }
+  406 | 
+  407 |   async fillArrivalDetails({
+  408 |     date = MANDATORY_ANSWERS.arrivalDate,
+  409 |     means = MANDATORY_ANSWERS.meansOfTransport.display,
+  410 |     port = MANDATORY_ANSWERS.pointOfEntry.display,
+  411 |     transportId = MANDATORY_ANSWERS.transportIdentification,
+  412 |     documentReference = MANDATORY_ANSWERS.transportDocumentReference,
+  413 |   }: ArrivalDetailsAnswer = {}): Promise<void> {
+  414 |     await this.animalsPages.arrivalDetails.fillArrivalDate(date);
+  415 |     await this.animalsPages.arrivalDetails.portOfEntry.choose(port);
+  416 |     await this.animalsPages.arrivalDetails.chooseMeansOfTransport(means);
+  417 |     await this.animalsPages.arrivalDetails.transportIdentification.fill(transportId);
+  418 |     await this.animalsPages.arrivalDetails.transportDocumentReference.fill(documentReference);
+  419 |   }
+  420 | 
+  421 |   async uploadDocumentAndWaitForScan(document: AccompanyingDocumentAnswer): Promise<void> {
+  422 |     await this.animalsPages.accompanyingDocuments.fillDocument(document.reference, document.issueDate, document.filePath, document.type);
+  423 |     await this.animalsPages.accompanyingDocuments.saveAndAddAnother.click();
+  424 |     await this.waitForDocumentScanComplete(document.reference);
+  425 |   }
+  426 | 
+  427 |   async waitForDocumentScanComplete(reference: string): Promise<void> {
+  428 |     await this.animalsPages.accompanyingDocuments
+  429 |       .documentRow(reference)
+  430 |       .filter({ hasText: 'Check completed' })
+  431 |       .waitFor({ state: 'visible', timeout: fileUploadTimeouts.virusScanComplete });
+  432 |   }
+  433 | 
+  434 |   async uploadScannedDocument(): Promise<Locator> {
+  435 |     const reference = timestampedReference('PW');
+  436 |     await this.uploadDocumentAndWaitForScan({ ...ALL_ANSWERS.accompanyingDocument, reference });
+  437 |     return this.animalsPages.accompanyingDocuments.documentRow(reference);
+  438 |   }
+  439 | 
+  440 |   async reachTransporterFromHub(): Promise<void> {
+  441 |     await this.saveArrivalDetailsFromOverview();
+  442 |     await this.animalsPages.overview.task('Transit countries').click();
+  443 |     await this.animalsPages.transitedCountries.heading.waitFor(pageLoadWait);
+  444 |     await this.animalsPages.transitedCountries.addCountry(ALL_ANSWERS.transitedCountries[0].display);
+  445 |     await this.animalsPages.transitedCountries.saveAndReturnToOverview.click();
+  446 |     await this.openTransporterFromOverview();
+  447 |   }
+  448 | 
+  449 |   async openTransporterFromOverview(): Promise<void> {
+  450 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  451 |     await this.animalsPages.overview.task('Transport details').click();
+  452 |     await this.animalsPages.transporter.heading.waitFor(pageLoadWait);
+  453 |   }
+  454 | 
+  455 |   async saveTransporterDetailsToOverview(form: { saveAndContinue: Locator }): Promise<void> {
+  456 |     await form.saveAndContinue.click();
+  457 |     await this.animalsPages.transporter.heading.waitFor(pageLoadWait);
+  458 |     await this.animalsPages.transporter.saveAndReturnToOverview.click();
+  459 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  460 |   }
+  461 | 
+  462 |   async chooseTransporterType(type: 'Commercial' | 'Private'): Promise<void> {
+  463 |     await this.animalsPages.transporter.addTransporter.click();
+  464 |     await this.animalsPages.transporterAdd.heading.waitFor(pageLoadWait);
+  465 |     await this.animalsPages.transporterAdd.transporterType(type).check();
+  466 |     await this.animalsPages.transporterAdd.continueButton.click();
+  467 |   }
+  468 | 
+  469 |   async answerTransport(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  470 |     await this.animalsPages.overview.task('Arrival details').click();
+  471 |     await this.saveArrivalDetailsOnOpenPage({
+  472 |       date: answers.arrivalDate,
+  473 |       means: answers.meansOfTransport.display,
+  474 |       port: answers.pointOfEntry.display,
+  475 |       transportId: answers.transportIdentification,
+  476 |       documentReference: answers.transportDocumentReference,
+  477 |     });
+  478 |     if (answers.transitedCountries) {
+  479 |       await this.animalsPages.overview.task('Transit countries').click();
+  480 |       await this.animalsPages.transitedCountries.heading.waitFor(pageLoadWait);
+  481 |       for (const country of answers.transitedCountries) {
+  482 |         await this.animalsPages.transitedCountries.addCountry(country.display);
+  483 |       }
+  484 |       await this.animalsPages.transitedCountries.saveAndReturnToOverview.click();
+  485 |       await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  486 |     }
+  487 |     await this.animalsPages.overview.task('Transport details').click();
+  488 |     await this.animalsPages.transporter.heading.waitFor(pageLoadWait);
+  489 |     await this.animalsPages.transporter.transporter(answers.transporter.display).check();
+  490 |     await this.animalsPages.transporter.saveAndReturnToOverview.click();
+  491 |     await this.animalsPages.overview.heading.waitFor(pageLoadWait);
+  492 |   }
+  493 | 
+  494 |   async answerAccompanyingDocument(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  495 |     if (!answers.accompanyingDocument) return;
+  496 |     await this.animalsPages.overview.task('Upload documents').click();
+  497 |     await this.animalsPages.accompanyingDocuments.heading.waitFor(pageLoadWait);
+  498 |     await this.uploadDocumentAndWaitForScan(answers.accompanyingDocument);
+  499 |     await this.openCurrentOverview();
+  500 |   }
+  501 | 
+  502 |   async completeAnswerSections(answers: NotificationAnswers = MANDATORY_ANSWERS): Promise<void> {
+  503 |     assertConsistentAnswers(answers);
+```
