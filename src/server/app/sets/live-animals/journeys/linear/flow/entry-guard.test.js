@@ -69,7 +69,7 @@ describe('entry guard', () => {
     }
   )
 
-  it('Should log the redirect once with the journey and the requested path', async () => {
+  it('Should log the redirect once with the journey id and the requested path', async () => {
     const { journeyId, logger } = await guardFor()
 
     expect(logger.entries).toEqual([
@@ -81,7 +81,7 @@ describe('entry guard', () => {
     ])
   })
 
-  it('Should let a journey with an entered answer straight through', async () => {
+  it('Should let a notification with an entered answer straight through', async () => {
     const { response } = await guardFor({ seed: ANSWERED })
     expect(response).toBeNull()
   })
@@ -96,7 +96,7 @@ describe('entry guard', () => {
       expect(emf.valuesOf(ENTRY_REDIRECT)).toEqual([1])
     })
 
-    it('Should count no redirect for a journey with an entered answer', async () => {
+    it('Should count no redirect for a notification with an entered answer', async () => {
       await guardFor({ seed: ANSWERED })
 
       await emf.earlierPublishesFlushed()
@@ -104,7 +104,7 @@ describe('entry guard', () => {
     })
   })
 
-  it('Should treat a journey whose only answer is a flow-only key as having none', async () => {
+  it('Should treat a notification whose only answer is a flow-only key as having none', async () => {
     const { journeyId, response } = await guardFor({
       seed: { declaration: 'confirmed' }
     })
@@ -121,7 +121,7 @@ describe('entry guard', () => {
     ).rejects.toMatchObject({ isBoom: true, output: { statusCode: 404 } })
   })
 
-  it('Should never consult the journey for an exempt path', async () => {
+  it('Should never consult the notification for an exempt path', async () => {
     const request = journeyRequest(undefined, { path: createPath() })
     expect(await entryGuardTarget(request, stubH(request))).toBeNull()
   })
