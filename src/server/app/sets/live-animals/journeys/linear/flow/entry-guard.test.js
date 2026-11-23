@@ -24,6 +24,7 @@ import {
 const ORIGIN_SLUG = 'origin'
 const JOURNEY = { journeyId: 'j-1' }
 const ANSWERED = { countryOfOrigin: 'FR' }
+const ENTRY_REDIRECT = 'journey.entry.redirect'
 
 describe('entry guard', () => {
   useStubbedJourney(SET_ID, dispatchPages)
@@ -85,24 +86,21 @@ describe('entry guard', () => {
     expect(response).toBeNull()
   })
 
-  describe('journey.entry.redirect', () => {
+  describe(ENTRY_REDIRECT, () => {
     const emf = recordEmfDocuments()
-
-    const redirectCountsOnceEarlierPublishesFlush = async () => {
-      await emf.earlierPublishesFlushed()
-      return emf.valuesOf('journey.entry.redirect')
-    }
 
     it('Should count exactly one redirect for a notification with no entered answer', async () => {
       await guardFor()
 
-      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([1])
+      await emf.earlierPublishesFlushed()
+      expect(emf.valuesOf(ENTRY_REDIRECT)).toEqual([1])
     })
 
     it('Should count no redirect for a journey with an entered answer', async () => {
       await guardFor({ seed: ANSWERED })
 
-      expect(await redirectCountsOnceEarlierPublishesFlush()).toEqual([])
+      await emf.earlierPublishesFlushed()
+      expect(emf.valuesOf(ENTRY_REDIRECT)).toEqual([])
     })
   })
 
