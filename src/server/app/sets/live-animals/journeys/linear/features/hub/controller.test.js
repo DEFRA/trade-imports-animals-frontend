@@ -110,7 +110,7 @@ describe('#handler — every task link carries the mark that it was opened from 
 describe('#handler — Overview lists the journey in its page order', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should list the six group captions, and under them the task titles, in the order Save and continue visits them', async () => {
+  it('Should list the five group captions, and under them the task titles, in the order Save and continue visits them', async () => {
     const result = await driveHandler(getHandler, {
       seed: completeNotification()
     })

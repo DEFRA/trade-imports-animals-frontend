@@ -1325,25 +1325,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
   })
 })
 
-// ---------------------------------------------------------------------------
-// Trivial `applyTo` drop fidelity.
-//
-// 17 always-in-scope obligations use the data-only shape
-// `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
-// `dependsOn`. They classify as `'unindexed'` and `unindexedImplication`
-// falls through to `{ inScope: true, status: obligation.status }` when
-// no applicabilityDecision is present.
-//
-// The fidelity contract this block pins: for every one of the 17
-// obligations, `evaluator.evaluate({})` returns EXACTLY the decision
-// object shape `{ inScope: true, status: '<literal>' }`. Any regression
-// here means the classifier didn't route the obligation to the
-// `'unindexed'` category or the constructor produced a different shape.
-//
-// Expected split: 17 mandatory + 1 optional (`internalReferenceNumber`).
-// ---------------------------------------------------------------------------
-
-describe('trivial applyTo drop fidelity (17 always-in-scope obligations)', () => {
+describe('trivial applyTo drop fidelity', () => {
   const trivialAlwaysMandatoryObligations = [
     ['poApprovedReferenceNumber', poApprovedReferenceNumber],
     ['countryOfOrigin', countryOfOrigin],
@@ -1363,7 +1345,7 @@ describe('trivial applyTo drop fidelity (17 always-in-scope obligations)', () =>
     ['animalsCertifiedFor', animalsCertifiedFor]
   ]
 
-  const allSeventeenObligations = [
+  const alwaysInScopeObligations = [
     ...trivialAlwaysMandatoryObligations.map(([, obligation]) => obligation),
     internalReferenceNumber
   ]
@@ -1381,15 +1363,15 @@ describe('trivial applyTo drop fidelity (17 always-in-scope obligations)', () =>
     expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
   })
 
-  it('none of the 17 obligations carry an applyTo closure (data-only shape)', () => {
-    const stragglers = allSeventeenObligations.filter(
+  it('none of the always-in-scope obligations carry an applyTo closure (data-only shape)', () => {
+    const stragglers = alwaysInScopeObligations.filter(
       (o) => typeof o.applyTo === 'function'
     )
     expect(stragglers).toEqual([])
   })
 
-  it('none of the 17 obligations carry a dependsOn key (derivable from no-applyTo)', () => {
-    const stragglers = allSeventeenObligations.filter(
+  it('none of the always-in-scope obligations carry a dependsOn key (derivable from no-applyTo)', () => {
+    const stragglers = alwaysInScopeObligations.filter(
       (o) => o.dependsOn !== undefined
     )
     expect(stragglers).toEqual([])

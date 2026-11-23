@@ -147,9 +147,6 @@ test.describe('live-animals journey glue', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await answerConsignmentAddresses(page)
-    await expect(page).toHaveURL(
-      urlUnderBase('/notifications/[^/]+/notification-view')
-    )
     await expectDraftReview(page)
   })
 

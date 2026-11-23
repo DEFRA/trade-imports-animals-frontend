@@ -25,7 +25,6 @@ import { dispatchPages } from '../../index.js'
 import { PARTIES } from '../parties.js'
 import * as partyEdit from './party-edit.controller.js'
 
-const ALL_PARTIES = PARTIES
 const REVIEW_SLUG = 'notification-view'
 
 const STORED = {
@@ -59,7 +58,7 @@ const handlerFor = (method, party) =>
     (route) => route.method === method && route.path.endsWith(party.editSlug)
   ).handler
 
-describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
+describe.each(PARTIES)('Edit $id address details', (party) => {
   useStubbedJourney(SET_ID, dispatchPages)
   resetMocksAndConfigAfterTests()
 
@@ -204,7 +203,7 @@ describe('Edit address details — where the trader returns to', () => {
     )
   })
 
-  it('Should carry the trail on the way back to the hub', async () => {
+  it('Should carry the trail on the way back to the addresses page', async () => {
     const result = await driveHandler(post, {
       seed: { consignor: STORED },
       payload: FORM,

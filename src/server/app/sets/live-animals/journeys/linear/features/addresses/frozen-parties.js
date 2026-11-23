@@ -2,14 +2,6 @@ import { addressBookCountryName } from '../../../../../../services/countries/ind
 import { PARTIES } from './parties.js'
 import { isPartyHeld } from './party-held.js'
 
-export const PARTY_ID_BY_ROLE = {
-  placeOfOrigin: 'placeOfOrigin',
-  consignor: 'consignor',
-  consignee: 'consignee',
-  importer: 'importer',
-  destination: 'placeOfDestination'
-}
-
 const JOURNEY_PARTY_IDS = PARTIES.map((party) => party.id)
 
 /** The stored inline party in the shape the journey renders, or nothing when it has no name. */

@@ -64,10 +64,6 @@ import {
 } from './sets/live-animals/journeys/linear/features/commodities/search/test-support.js'
 import { lineKey } from './sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
 
-const drive = driveHandler
-
-// Today, derived from the window itself rather than from a second guess at the
-// rule. Today stays inside the window even if the day ticks over mid-run.
 const ARRIVAL_DATE = formatDateText(
   addUtcDays(arrivalWindow().min, DAYS_BEFORE)
 )
@@ -76,10 +72,8 @@ const obligationNames = [...walkObligations()].map(
   (node) => node.obligation.name
 )
 
-const committableKeys = obligationNames
-
 const committedIds = ({ before, after }) =>
-  committableKeys.filter(
+  obligationNames.filter(
     (id) => isAnswered(after[id]) && !isAnswered(before[id])
   )
 
@@ -146,9 +140,6 @@ const cases = [
   }
 ]
 
-// The reason page asks its follow-up questions as conditional reveals, so
-// which of its collects a POST commits is the reason's call. One case per
-// reason, and the union of them has to be everything the page declares.
 const REASON_REVEALS = [
   { reasonForImport: 'reEntry', payload: {}, commits: [] },
   {
@@ -191,7 +182,7 @@ describe('reason-for-import commit contract — one reveal per reason', () => {
   it.each(REASON_REVEALS)(
     'Should commit the reason $reasonForImport and only the answers its reveal opens',
     async ({ reasonForImport, payload, commits }) => {
-      const result = await drive(postHandlerOf(importReason), {
+      const result = await driveHandler(postHandlerOf(importReason), {
         payload: { reasonForImport, ...payload }
       })
       expect(new Set(committedIds(result))).toEqual(
@@ -228,7 +219,7 @@ describe('controller <-> model commit contract', () => {
   it.each(cases)(
     'Should commit exactly the committable collects for $id',
     async ({ collects, handler, payload, seed }) => {
-      const result = await drive(handler, { payload, seed })
+      const result = await driveHandler(handler, { payload, seed })
       expect(new Set(committedIds(result))).toEqual(
         new Set(committableCollects(collects))
       )
@@ -237,7 +228,7 @@ describe('controller <-> model commit contract', () => {
 
   it('Should commit commodity lines via the search (batch create) handler it declares', async () => {
     expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
-    const result = await drive(postHandlerOf(commoditiesSearch), {
+    const result = await driveHandler(postHandlerOf(commoditiesSearch), {
       startingFrom: [
         withFlowOnlyAnswers({
           commoditySearchRows: [BOS_TAURUS_ROW, FELIS_CATUS_ROW]
@@ -256,7 +247,7 @@ describe('controller <-> model commit contract', () => {
 
   it('Should commit nothing new via the consignment details handler — it edits the lines the search created', async () => {
     expect(consignmentDetails.meta.collects).toEqual([])
-    const result = await drive(postHandlerOf(consignmentDetails), {
+    const result = await driveHandler(postHandlerOf(consignmentDetails), {
       seed: {
         commodityLines: [
           {
@@ -292,7 +283,7 @@ describe('controller <-> model commit contract', () => {
       animalIdentification,
       'commodities/identification'
     )
-    const result = await drive(post, {
+    const result = await driveHandler(post, {
       seed: seedFromFranceWithCommodityLineOfAnimals(2),
       payload: {
         action: 'add:0',
@@ -317,7 +308,7 @@ describe('controller <-> model commit contract', () => {
       animalIdentification,
       'commodities/identification'
     )
-    const result = await drive(post, {
+    const result = await driveHandler(post, {
       seed: withOriginSaved({
         commodityLines: [lineOf(STRUTHIO_ROW, { numberOfAnimalsQuantity: '2' })]
       }),
@@ -344,7 +335,7 @@ describe('controller <-> model commit contract', () => {
     expect(permanentAddress.meta.collects).toEqual([])
     const post = postHandlerOf(permanentAddress)
     const key = cardKeyFor(0, 0)
-    const result = await drive(post, {
+    const result = await driveHandler(post, {
       seed: petConsignmentSeed({
         row: FELIS_CATUS_ROW,
         units: [{ animalIdentifierMicrochip: '900123456789012' }]
@@ -374,8 +365,6 @@ describe('controller <-> model commit contract', () => {
       'importer'
     ])
 
-    // One shared picker serves all five spokes: the chosen address
-    // travels as the book's stable id, whichever page of results it sat on.
     const spokes = [
       {
         slug: 'consignors/select',
@@ -405,9 +394,12 @@ describe('controller <-> model commit contract', () => {
     ]
     const committed = []
     for (const { slug, id, commits } of spokes) {
-      const result = await drive(postHandlerEndingWith(partyPicker, slug), {
-        payload: { action: 'save', party: id }
-      })
+      const result = await driveHandler(
+        postHandlerEndingWith(partyPicker, slug),
+        {
+          payload: { action: 'save', party: id }
+        }
+      )
       expect(committedIds(result)).toEqual([commits])
       committed.push(...committedIds(result))
     }
@@ -417,9 +409,6 @@ describe('controller <-> model commit contract', () => {
   })
 })
 
-// The transporter list declares all three transporter answers and the add
-// spokes write them without declaring them, so the contract is a union across
-// the pick and the spokes rather than one POST per page.
 describe('transporter commit contract — the list and its add spokes', () => {
   setupJourneyEngine()
 
@@ -436,7 +425,7 @@ describe('transporter commit contract — the list and its add spokes', () => {
     ]
     const committed = []
     for (const [transporter, expected] of picks) {
-      const result = await drive(postHandlerOf(transporters), {
+      const result = await driveHandler(postHandlerOf(transporters), {
         payload: { transporter }
       })
       expect(new Set(committedIds(result))).toEqual(
@@ -469,13 +458,13 @@ describe('transporter commit contract — the list and its add spokes', () => {
     )
   })
 
-  it('Should commit the same transporter answers from the add spokes the list declares them for', async () => {
-    const chooser = await drive(postHandlerOf(transporterAdd), {
+  it('Should commit nothing from the transporter chooser and one transporter party from each details spoke', async () => {
+    const chooser = await driveHandler(postHandlerOf(transporterAdd), {
       payload: { transporterType: 'Private' }
     })
     expect(committedIds(chooser)).toEqual([])
 
-    const typedInCommercial = await drive(
+    const typedInCommercial = await driveHandler(
       postHandlerOf(commercialTransporterDetails),
       {
         seed: { transporterType: 'Commercial' },
@@ -490,10 +479,13 @@ describe('transporter commit contract — the list and its add spokes', () => {
       'Northern Ireland'
     )
 
-    const typedIn = await drive(postHandlerOf(privateTransporterDetails), {
-      seed: { transporterType: 'Private' },
-      payload: typedInPrivateTransporterPayload
-    })
+    const typedIn = await driveHandler(
+      postHandlerOf(privateTransporterDetails),
+      {
+        seed: { transporterType: 'Private' },
+        payload: typedInPrivateTransporterPayload
+      }
+    )
     expect(committedIds(typedIn)).toEqual(['privateTransporter'])
   })
 })

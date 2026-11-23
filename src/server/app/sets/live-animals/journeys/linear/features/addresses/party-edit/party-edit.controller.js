@@ -24,11 +24,9 @@ const view = `${TEMPLATES}/features/addresses/party-edit/party-edit`
 
 const copy = copyFor({ en, cy })
 
-const EDITABLE_PARTIES = PARTIES
-
 const returnHref = (request, party) => {
   const { honouredSlug } = kit.readReturnMarker(request, [
-    'addresses',
+    addressesPage.slug,
     kit.CYA_SLUG
   ])
   return kit.carryTrail(
@@ -123,7 +121,7 @@ const post = (party) => async (request, h) => {
   return h.redirect(returnHref(request, party))
 }
 
-export const routes = EDITABLE_PARTIES.flatMap((party) =>
+export const routes = PARTIES.flatMap((party) =>
   kit.pageRoutes(
     { slug: party.editSlug, maturity: addressesPage.maturity },
     { get: get(party), post: post(party) }

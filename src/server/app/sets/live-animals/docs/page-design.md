@@ -6,7 +6,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Overview (hub)
 
-- The task list is headed "Notification task list" and split into six numbered
+- The task list is headed "Notification task list" and split into five numbered
   sections. The numbers are part of the heading copy, so reordering a section
   means editing its copy too.
 - A task reads "Complete" or "To do" and nothing else. A part-answered or
@@ -93,7 +93,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview while
   amending and to the notification list on a draft or a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
-- The review has six numbered sections. Each card stands directly under its
+- The review has five numbered sections. Each card stands directly under its
   section heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except:
   - the first row of each species block: Change opens consignment details

@@ -7,11 +7,9 @@ import { copy as cy } from '../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-const ALL_PARTIES = PARTIES
-
 /** An unanswered role is not an error: the user has not had a chance to answer. */
 export const invalidPartyErrors = async (answers = {}) => {
-  const answered = ALL_PARTIES.filter((party) => answers[party.id])
+  const answered = PARTIES.filter((party) => answers[party.id])
   if (answered.length === 0) {
     return {}
   }

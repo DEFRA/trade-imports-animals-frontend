@@ -416,7 +416,7 @@ test.describe('check-answers feature section structure', () => {
     ])
   })
 
-  test('ends with Continue alone in its last block, and nothing after it', async ({
+  test('titles the page by its reference and ends with the Addresses section, then Continue alone in the last block with nothing after it', async ({
     page
   }) => {
     await startNotification(page)

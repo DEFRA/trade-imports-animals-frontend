@@ -123,20 +123,14 @@ describe('Mapper A PUT /notifications contract', () => {
     })
   })
 
-  test('emits each party answer as its details', () => {
-    const payload = fulfilmentToNotification(
-      assembleFulfilments(completeJourneyAnswers),
-      CONTRACT_REFERENCE
-    )
-
-    expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
-    expect(payload).not.toHaveProperty('consignment')
-  })
-
   test('carries only a party answer’s details, dropping pickedFromId and any other key', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { ...placeOfOrigin, pickedFromId: 'origin-farm' }
+      placeOfOrigin: {
+        ...placeOfOrigin,
+        pickedFromId: 'origin-farm',
+        unrelated: 'dropped'
+      }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
@@ -144,7 +138,6 @@ describe('Mapper A PUT /notifications contract', () => {
     )
 
     expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
-    expect(payload).not.toHaveProperty('consignment')
   })
 
   test('omits a party answer with no details', () => {

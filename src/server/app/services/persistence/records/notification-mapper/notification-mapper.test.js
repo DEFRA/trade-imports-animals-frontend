@@ -215,7 +215,6 @@ describe('Mapper A — backend notification', () => {
     expect(notification.destination).toEqual(
       address('Destination Farm', '5 Field Lane')
     )
-    expect(notification).not.toHaveProperty('consignment')
     expect(notification.cphNumber).toBe('12/345/6789')
     expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
     expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)

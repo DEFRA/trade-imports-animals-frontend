@@ -29,55 +29,43 @@ import {
 
 const happyPath = completeNotification()
 
+const blankRows = {
+  origin: NOT_STARTED,
+  commodities: NOT_STARTED,
+  importReason: NOT_STARTED,
+  consignmentDetails: NOT_STARTED,
+  animalIdentification: NOT_STARTED,
+  additionalDetails: NOT_STARTED,
+  arrivalDetails: NOT_STARTED,
+  transitCountries: NA,
+  transporter: NOT_STARTED,
+  documents: OPTIONAL,
+  addresses: NOT_STARTED
+}
+
+const blankSections = {
+  start: NA,
+  'about-the-consignment': NOT_STARTED,
+  'description-of-the-goods': NOT_STARTED,
+  'transport-and-arrival': NOT_STARTED,
+  documents: OPTIONAL,
+  'consignment-parties': NOT_STARTED
+}
+
+const fulfilled = (statuses) =>
+  Object.fromEntries(Object.keys(statuses).map((id) => [id, FULFILLED]))
+
 const cases = {
   'a blank journey': {
     answers: {},
-    rows: [
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NA,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
-    sections: [
-      NA,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
+    rows: blankRows,
+    sections: blankSections,
     ready: false
   },
   'an origin-only journey': {
     answers: { countryOfOrigin: 'FR' },
-    rows: [
-      IN_PROGRESS,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NA,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
+    rows: { ...blankRows, origin: IN_PROGRESS },
+    sections: { ...blankSections, 'about-the-consignment': IN_PROGRESS },
     ready: false
   },
   'a partial single-line journey with identifiers fulfilled with no records': {
@@ -85,27 +73,13 @@ const cases = {
       countryOfOrigin: 'FR',
       commodityLines: [{ commodityCode: BOS_TAURUS_ROW.commodityCode }]
     },
-    rows: [
-      IN_PROGRESS,
-      IN_PROGRESS,
-      NOT_STARTED,
-      NOT_STARTED,
-      FULFILLED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NA,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
+    rows: {
+      ...blankRows,
+      origin: IN_PROGRESS,
+      commodities: IN_PROGRESS,
+      animalIdentification: FULFILLED
+    },
+    sections: { ...blankSections, 'about-the-consignment': IN_PROGRESS },
     ready: false
   },
   'a line with data but no identifiers': {
@@ -118,63 +92,35 @@ const cases = {
         }
       ]
     },
-    rows: [
-      IN_PROGRESS,
-      FULFILLED,
-      NOT_STARTED,
-      FULFILLED,
-      FULFILLED,
-      NOT_STARTED,
-      NOT_STARTED,
-      NA,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
-    sections: [
-      NA,
-      IN_PROGRESS,
-      NOT_STARTED,
-      NOT_STARTED,
-      OPTIONAL,
-      NOT_STARTED
-    ],
+    rows: {
+      ...blankRows,
+      origin: IN_PROGRESS,
+      commodities: FULFILLED,
+      consignmentDetails: FULFILLED,
+      animalIdentification: FULFILLED
+    },
+    sections: { ...blankSections, 'about-the-consignment': IN_PROGRESS },
     ready: false
   },
   'the happy path': {
     answers: happyPath,
-    rows: [
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED
-    ],
-    sections: [NA, FULFILLED, FULFILLED, FULFILLED, FULFILLED, FULFILLED],
+    rows: fulfilled(blankRows),
+    sections: { ...fulfilled(blankSections), start: NA },
     ready: true
   },
   'the happy path with an empty required collection': {
     answers: { ...happyPath, commodityLines: [] },
-    rows: [
-      FULFILLED,
-      NOT_STARTED,
-      FULFILLED,
-      NOT_STARTED,
-      NOT_STARTED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED,
-      FULFILLED
-    ],
-    sections: [NA, IN_PROGRESS, FULFILLED, FULFILLED, FULFILLED, FULFILLED],
+    rows: {
+      ...fulfilled(blankRows),
+      commodities: NOT_STARTED,
+      consignmentDetails: NOT_STARTED,
+      animalIdentification: NOT_STARTED
+    },
+    sections: {
+      ...fulfilled(blankSections),
+      start: NA,
+      'about-the-consignment': IN_PROGRESS
+    },
     ready: false
   }
 }
@@ -196,8 +142,11 @@ describe('statusOf — the presentation rollup', () => {
       it('Should roll each task row up to the expected status', () => {
         const { evaluation, inScope } = requestState()
         expect(
-          taskRows.map((row) =>
-            statusOf(rowParts(row), answers, inScope, evaluation)
+          Object.fromEntries(
+            taskRows.map((row) => [
+              row.id,
+              statusOf(rowParts(row), answers, inScope, evaluation)
+            ])
           )
         ).toEqual(rows)
       })
@@ -205,13 +154,16 @@ describe('statusOf — the presentation rollup', () => {
       it('Should roll each answer section up to the expected status', () => {
         const { evaluation, inScope } = requestState()
         expect(
-          answerSections.map((section) =>
-            statusOf(
-              sectionObligationIds(section),
-              answers,
-              inScope,
-              evaluation
-            )
+          Object.fromEntries(
+            answerSections.map((section) => [
+              section.id,
+              statusOf(
+                sectionObligationIds(section),
+                answers,
+                inScope,
+                evaluation
+              )
+            ])
           )
         ).toEqual(sections)
       })

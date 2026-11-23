@@ -6,7 +6,7 @@ The platform consumes that policy through `configureJourneyFlow()`.
 
 ## Flow sections
 
-[`flow.js`](../journeys/linear/flow/flow.js) exports eight ordered `sections`. A flow
+[`flow.js`](../journeys/linear/flow/flow.js) exports seven ordered `sections`. A flow
 section is an Overview group, and the sections together are the journey's one page
 order: the order Overview lists its tasks in. Save and continue goes to the next page
 in that order that applies, and from the last page that applies to check your

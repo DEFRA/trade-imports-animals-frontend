@@ -62,7 +62,7 @@ const doc = (overrides = {}) => ({
   ...overrides
 })
 
-const fullyAnswered = (overrides = {}) => ({
+const portAndConsignorAnswers = (overrides = {}) => ({
   portOfEntry: KNOWN_PORT,
   consignor: VALID_COPY,
   ...overrides
@@ -119,7 +119,7 @@ describe('#isReviewRefused', () => {
   it('Should refuse a notification whose copied address breaks the address-book rules', async () => {
     const { postcode: _dropped, ...withoutPostcode } = VALID_COPY.address
     const journey = await seedAnd(
-      fullyAnswered({
+      portAndConsignorAnswers({
         consignor: { ...VALID_COPY, address: withoutPostcode }
       })
     )
@@ -128,14 +128,14 @@ describe('#isReviewRefused', () => {
   })
 
   it('Should not refuse a notification whose answers all pass', async () => {
-    const journey = await seedAnd(fullyAnswered())
+    const journey = await seedAnd(portAndConsignorAnswers())
 
     expect(await askRefused(journey.journeyId)).toBe(false)
   })
 
   it('Should refuse a notification whose stored document is still being scanned', async () => {
     const journey = await seedAnd(
-      fullyAnswered({
+      portAndConsignorAnswers({
         documents: [doc({ filename: PENDING_FILENAME })]
       })
     )
@@ -145,7 +145,7 @@ describe('#isReviewRefused', () => {
 
   it('Should refuse a notification whose stored document was rejected by the scan', async () => {
     const journey = await seedAnd(
-      fullyAnswered({
+      portAndConsignorAnswers({
         documents: [doc({ filename: REJECTED_FILENAME })]
       })
     )
@@ -155,7 +155,7 @@ describe('#isReviewRefused', () => {
 
   it('Should not refuse a notification whose stored documents have all completed scanning', async () => {
     const journey = await seedAnd(
-      fullyAnswered({
+      portAndConsignorAnswers({
         documents: [doc({ filename: 'clean.pdf' })]
       })
     )
@@ -165,7 +165,7 @@ describe('#isReviewRefused', () => {
 
   it('Should refuse a draft holding a species not listed under its code', async () => {
     const journey = await seedAnd(
-      fullyAnswered({ commodityLines: [UNLISTED_SPECIES_LINE] })
+      portAndConsignorAnswers({ commodityLines: [UNLISTED_SPECIES_LINE] })
     )
 
     expect(await askRefused(journey.journeyId)).toBe(true)
@@ -173,7 +173,7 @@ describe('#isReviewRefused', () => {
 
   it('Should not refuse a draft whose species is still listed under its code', async () => {
     const journey = await seedAnd(
-      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
+      portAndConsignorAnswers({ commodityLines: [LISTED_SPECIES_LINE] })
     )
 
     expect(await askRefused(journey.journeyId)).toBe(false)
@@ -181,7 +181,7 @@ describe('#isReviewRefused', () => {
 
   it('Should log the refusal once at warn with the journey id and each unlisted code and Latin name', async () => {
     const journey = await seedAnd(
-      fullyAnswered({
+      portAndConsignorAnswers({
         commodityLines: [
           LISTED_SPECIES_LINE,
           UNLISTED_SPECIES_LINE,
@@ -206,7 +206,7 @@ describe('#isReviewRefused', () => {
 
   it('Should log nothing when every species is still listed', async () => {
     const journey = await seedAnd(
-      fullyAnswered({ commodityLines: [LISTED_SPECIES_LINE] })
+      portAndConsignorAnswers({ commodityLines: [LISTED_SPECIES_LINE] })
     )
     const { refused, logger } = await askRefusedAndReadLog(journey.journeyId)
 

@@ -158,11 +158,6 @@ const AFTER_REASON = [
   }
 ]
 
-const OPENING_RUN_TAIL = [
-  { slug: 'accompanying-documents', fields: {} },
-  { slug: 'addresses', fields: {} }
-]
-
 const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
@@ -247,8 +242,7 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   reasonStep(reasonForImport),
   ...AFTER_REASON,
   { slug: 'transporters/add', fields: { transporterType } },
-  ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type'),
-  ...OPENING_RUN_TAIL
+  ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type')
 ]
 
 const fieldsFor = (step, page) =>

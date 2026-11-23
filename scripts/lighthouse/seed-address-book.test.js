@@ -4,7 +4,7 @@ import { ensureAddressBookCoversEverySelectableRole } from './seed-address-book.
 
 const ADDRESSES_PATH = '/organisation/5900001/addresses'
 
-const JOURNEY_SELECTABLE_ROLES = [
+const SELECTABLE_ADDRESS_ROLES = [
   'PLACE_OF_ORIGIN',
   'CONSIGNOR',
   'CONSIGNEE',
@@ -47,7 +47,7 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
     expect(created.map(({ body }) => body.roles)).toEqual(
-      JOURNEY_SELECTABLE_ROLES.map((role) => [role])
+      SELECTABLE_ADDRESS_ROLES.map((role) => [role])
     )
     expect(created.every(({ url }) => url.includes(ADDRESSES_PATH))).toBe(true)
   })
@@ -57,7 +57,7 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
       .fn()
       .mockResolvedValue(
         listResponse(
-          JOURNEY_SELECTABLE_ROLES.map((role) => addressHolding(role))
+          SELECTABLE_ADDRESS_ROLES.map((role) => addressHolding(role))
         )
       )
     vi.stubGlobal('fetch', fetchSpy)
@@ -78,7 +78,7 @@ describe('#ensureAddressBookCoversEverySelectableRole', () => {
 
     const created = requestsTo(fetchSpy.mock.calls, 'POST')
     expect(created.map(({ body }) => body.roles)).toEqual(
-      JOURNEY_SELECTABLE_ROLES.filter((role) => role !== 'CONSIGNOR').map(
+      SELECTABLE_ADDRESS_ROLES.filter((role) => role !== 'CONSIGNOR').map(
         (role) => [role]
       )
     )

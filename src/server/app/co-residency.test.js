@@ -1,13 +1,3 @@
-/**
- * Two obligation sets, one Node process.
- *
- * It boots the PRODUCTION router rather than hand-rolling the composition it
- * is meant to be checking.
- *
- * The second set is a test fixture (test/fixtures/second-set.js) rather than a
- * real journey. Co-residency is a property of the platform, and shipping a
- * second real set would mean shipping a journey nobody asked for.
- */
 import path from 'node:path'
 import Hapi from '@hapi/hapi'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -60,11 +50,6 @@ const FOREIGN_REALM_BASE = `/${FOREIGN_REALM}`
 
 let foreignRealmExtensionRan = 0
 
-/**
- * A third mounted realm whose onPreAuth counts every route it runs on. If any
- * set-owned extension were registered without `{ sandbox: 'plugin' }` it would
- * be server-wide, and this counter would tick on the other sets' routes.
- */
 const foreignRealm = {
   plugin: {
     name: 'foreign-realm-probe',
@@ -89,8 +74,6 @@ const foreignRealm = {
   }
 }
 
-/** Reads Set-Cookie the way a browser does, so a cookie's Path attribute
- * decides which requests carry it back. Scoping is the whole point here. */
 const cookieJar = () => {
   const cookies = new Map()
   return {
@@ -160,7 +143,6 @@ describe('co-residency — two sets mounted in one process', () => {
       )
       .map((route) => route.path)
 
-    // What is left at the root is the server-wide surface and nothing else.
     expect(rootRoutes.toSorted()).toEqual([
       '/',
       '/call-counts',
@@ -194,8 +176,6 @@ describe('co-residency — each set answers with its own configuration', () => {
   })
 
   it("Should not leak the second set's configuration into live-animals", async () => {
-    // Read live-animals' configuration the way a request does, then confirm it
-    // is nothing like the second set's, which is mounted at the same time.
     const liveAnimalsObligations = await withSetContext(LIVE_ANIMALS, () =>
       obligations().map(({ name }) => name)
     )
@@ -435,7 +415,6 @@ describe('co-residency — journey cookies are scoped to their set', () => {
       )
     ).toBeUndefined()
 
-    // Clearing one set leaves the other set's drafts standing.
     await inSet(SECOND_SET, () => stubRecords.clear())
 
     expect(
