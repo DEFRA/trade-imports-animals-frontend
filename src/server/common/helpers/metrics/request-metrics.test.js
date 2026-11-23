@@ -9,8 +9,8 @@ import vision from '@hapi/vision'
 import { vi } from 'vitest'
 
 import { requestMetrics, routePage, routeArea } from './request-metrics.js'
+import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
 import {
-  BACKEND_DEPENDENCY,
   callCounts,
   countExternalCall,
   countSessionResolution

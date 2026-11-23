@@ -1,5 +1,5 @@
 import { STALE_CONCURRENCY_TOKEN } from '../../../../../engine/persistence/records.js'
-import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_BAD_REQUEST, HTTP_CONFLICT } from '../../real/config.js'
 

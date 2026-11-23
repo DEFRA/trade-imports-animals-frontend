@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
+import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
 import { addPageRequest, isPageRequest } from './call-count-totals.js'
 
 const PLUGIN_NAME = 'call-counts'
@@ -23,9 +24,6 @@ export const newCallCounts = () => ({
  * @returns {ReturnType<typeof newCallCounts> | undefined} the counts, or undefined when the plugin did not see the request
  */
 export const callCountsOf = (request) => request?.plugins?.[PLUGIN_NAME]
-
-/** The `dependency` name of the journey backend. */
-export const BACKEND_DEPENDENCY = 'animals-backend'
 
 /**
  * Adds up a request's calls to the journey backend, across every operation.

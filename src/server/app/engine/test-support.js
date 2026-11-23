@@ -15,7 +15,7 @@ import { records as recordsReal } from '../services/persistence/records/real/ind
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
-import { BACKEND_DEPENDENCY } from '../../common/helpers/call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from '../../common/helpers/backend-client/backend-dependency.js'
 import {
   CYA_SLUG,
   REFUSAL_LOG_MESSAGE,

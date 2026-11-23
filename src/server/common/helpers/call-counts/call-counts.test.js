@@ -1,9 +1,9 @@
 import hapi from '@hapi/hapi'
 
 import { config } from '../../../../config/config.js'
+import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
 import {
   callCounts,
-  BACKEND_DEPENDENCY,
   countExternalCall,
   countSessionResolution
 } from './call-counts.js'

@@ -3,7 +3,7 @@ import { Agent, Dispatcher1Wrapper } from 'undici'
 import { config } from '../../../../config/config.js'
 import { createLogger } from '../logging/logger.js'
 import { measureExternalResponse } from '../metrics/external-call-metrics.js'
-import { BACKEND_DEPENDENCY } from '../call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from './backend-dependency.js'
 
 const connectBoundedDispatcher = () =>
   config.get('httpProxy')

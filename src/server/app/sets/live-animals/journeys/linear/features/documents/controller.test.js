@@ -39,7 +39,7 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
-import { BACKEND_DEPENDENCY } from '../../../../../../../common/helpers/call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { RefusedCallError } from '../../../../../../services/http/dependency-error.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'

@@ -1,4 +1,4 @@
-import { BACKEND_DEPENDENCY } from '../../../common/helpers/call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from '../../../common/helpers/backend-client/backend-dependency.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
 import { RefusedCallError } from '../http/dependency-error.js'
 import {

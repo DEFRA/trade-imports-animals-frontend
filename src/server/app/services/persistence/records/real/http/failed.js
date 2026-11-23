@@ -1,4 +1,4 @@
-import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/call-counts/call-counts.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
 import { logger } from '../logger.js'
