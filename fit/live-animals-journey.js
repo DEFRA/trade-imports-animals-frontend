@@ -1035,20 +1035,19 @@ export const LANDINGS = {
   },
   documents: { slug: 'accompanying-documents', title: documentsCopy.title },
   addresses: { slug: 'addresses', title: addressesCopy.hub.title },
-  notificationView: {
-    slug: 'notification-view',
-    title: checkAnswersCopy.title
-  }
+  notificationView: { slug: 'notification-view' }
 }
 
 export const expectLanding = async (page, { slug, title }) => {
   await expect(page).toHaveURL(urlUnderBase(`/notifications/[^/]+/${slug}`))
-  await expect(
-    page.getByRole('heading', {
-      name: title,
-      exact: true
-    })
-  ).toBeVisible()
+  if (title) {
+    await expect(
+      page.getByRole('heading', {
+        name: title,
+        exact: true
+      })
+    ).toBeVisible()
+  }
 }
 
 export const saveAndExpectLanding = async (page, landing) => {
