@@ -70,9 +70,10 @@ session store are not counted there. A page
 request is every request except `GET /health`,
 `GET /favicon.ico`, the static asset route and `/call-counts` itself: form
 posts, redirects, rendered pages, the 404 page and the document scan-status
-poll all count. A backend call is one `fetch` to the journey backend, made
-through `backendFetch`. A session resolution is one read of the session record
-by the auth plugin or by the view context; the session state yar loads is not
+poll all count. A backend call is one call to the journey backend through
+`backendFetch`, counted once even when a refused or slow connection is
+retried. A session resolution is one read of the session record by the auth
+plugin or by the view context; the session state yar loads is not
 counted.
 
 A request's counts live in an `AsyncLocalStorage` store. hapi gives no public
