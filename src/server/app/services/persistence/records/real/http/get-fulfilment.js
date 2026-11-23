@@ -1,20 +1,15 @@
 import { statusCodes } from '../../../../../../common/constants/status-codes.js'
-import { backendFetch } from '../../../../../../common/helpers/backend-client/backend-fetch.js'
 import { currentOrganisationId } from '../../../../../../common/helpers/organisation-id.js'
 import { notificationsUrl } from '../config.js'
-import { failed } from './failed.js'
-import { headers } from './headers.js'
+import { refuseUnlessOk, requestBackend } from './send.js'
 import { logger } from '../logger.js'
 
 export const getFulfilment = async (journeyId) => {
   const operation = 'get-fulfilment'
-  const response = await backendFetch(
+  const response = await requestBackend(
     operation,
     `${notificationsUrl}/${journeyId}/fulfilments`,
-    {
-      method: 'GET',
-      headers: headers()
-    }
+    { method: 'GET' }
   )
   if (response.status === statusCodes.notFound) {
     return undefined
@@ -30,8 +25,5 @@ export const getFulfilment = async (journeyId) => {
     )
     return undefined
   }
-  if (!response.ok) {
-    throw await failed(operation, response)
-  }
-  return response.json()
+  return (await refuseUnlessOk(operation, response)).json()
 }
