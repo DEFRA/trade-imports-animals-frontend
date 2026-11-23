@@ -1,7 +1,5 @@
 import { NONE, publishMetricsInBackground } from './publish-metrics.js'
 
-const PUBLISH_EVERY_MS = 60_000
-
 const latestAvailabilityByDependency = new Map()
 let availabilityPublishTimer
 
@@ -38,9 +36,10 @@ const publishEachCalledDependency = () => {
  * @param {{ dependency: string, available: boolean }} availability - the dependency called, and whether its call succeeded
  */
 export const recordDependencyCallOutcome = ({ dependency, available }) => {
+  const publishEveryMs = 60_000
   latestAvailabilityByDependency.set(dependency, available)
   availabilityPublishTimer ??= setInterval(
     publishEachCalledDependency,
-    PUBLISH_EVERY_MS
+    publishEveryMs
   ).unref()
 }
