@@ -358,7 +358,7 @@ describe('#documentUploads — scan status, removal and reads', () => {
   })
 
   describe('#streamFile', () => {
-    it('Should GET the file leg and hand back the streamed body and headers', async () => {
+    it("Should GET the upload's file and hand back the streamed body and headers", async () => {
       fetchMocker.mockResponse('%PDF-1.4 stored bytes', {
         headers: {
           'content-type': PDF_CONTENT_TYPE,
