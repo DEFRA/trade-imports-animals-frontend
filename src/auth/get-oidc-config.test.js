@@ -1,7 +1,7 @@
 import nock from 'nock'
 import { vi } from 'vitest'
 import { config } from '../config/config.js'
-import { getOidcConfig } from './get-oidc-config.js'
+import { getOidcConfig, OIDC_DOCUMENT_TIMEOUT_MS } from './get-oidc-config.js'
 import {
   defraIdDiscoveryDocument,
   useDefraIdNetwork
@@ -107,8 +107,10 @@ describe('getOidcConfig', () => {
     )
   })
 
-  test('gives up on a discovery fetch Defra ID has not answered within a second, and records it as a failed call', async () => {
-    interceptDiscovery().delay(1100).reply(200, defraIdDiscoveryDocument)
+  test('gives up on a discovery fetch Defra ID has not answered within the document timeout, and records it as a failed defra-id openid-configuration call', async () => {
+    interceptDiscovery()
+      .delay(OIDC_DOCUMENT_TIMEOUT_MS + 100)
+      .reply(200, defraIdDiscoveryDocument)
 
     await expect(getOidcConfig()).rejects.toThrow('Client request timeout')
 
