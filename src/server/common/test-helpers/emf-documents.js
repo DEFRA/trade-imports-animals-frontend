@@ -47,8 +47,9 @@ const publishOf = (document, metricName) => {
 
 /**
  * Captures the EMF documents published during each test of the enclosing
- * `describe`, under the namespace `EMF_TEST_NAMESPACE`, and keeps them off the
- * test output. Restores console.log and the namespace afterwards.
+ * `describe`, under the namespace `EMF_TEST_NAMESPACE`, and silences every
+ * console.log call during each test. Restores console.log and the namespace
+ * afterwards.
  *
  * @returns {{
  *   documents: () => object[],
