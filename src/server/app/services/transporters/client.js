@@ -1,4 +1,5 @@
 import {
+  MAX_API_PAGE_SIZE,
   addressBookHeaders,
   addressBookResourceUrl,
   sendToAddressBook
@@ -7,9 +8,8 @@ import {
 const transportersUrl = (orgId) => addressBookResourceUrl('transporters', orgId)
 
 const transportersPage = async (orgId, page) => {
-  const maxPageSize = 100
   const url = new URL(transportersUrl(orgId))
-  url.searchParams.set('pageSize', String(maxPageSize))
+  url.searchParams.set('pageSize', String(MAX_API_PAGE_SIZE))
   url.searchParams.set('page', String(page))
 
   const response = await sendToAddressBook(

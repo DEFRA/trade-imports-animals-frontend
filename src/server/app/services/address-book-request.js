@@ -10,6 +10,9 @@ const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
 export { ORGANISATION_ID_HEADER }
 
+/** The largest page size the address book serves. */
+export const MAX_API_PAGE_SIZE = 100
+
 /**
  * The absolute URL of a resource under the caller's organisation in the
  * address book, or one record of it.
