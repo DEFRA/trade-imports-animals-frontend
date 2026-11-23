@@ -174,7 +174,7 @@ describe('external call metrics', () => {
     expect(result).toBe('keys')
   })
 
-  test('a call recorded in the background with a known duration publishes that duration', async () => {
+  test('a failed call recorded in the background publishes the duration given and a failure of 1', async () => {
     recordExternalCallInBackground(JWKS_CALL, { durationMs: 42, failed: true })
 
     const document = await onlyDocument()
