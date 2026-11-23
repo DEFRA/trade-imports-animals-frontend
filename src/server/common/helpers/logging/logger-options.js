@@ -23,29 +23,15 @@ const optionsForFormat = {
   'pino-pretty': () => ({ transport: { target: 'pino-pretty' } })
 }
 
-const pinoOptions = ({ format, level }) => ({
+export const loggerOptions = {
+  enabled: logConfig.enabled,
+  ignorePaths: ['/health'],
   redact: {
     paths: logConfig.redact,
     remove: true
   },
-  level,
-  ...optionsForFormat[format](),
-  mixin: traceMixin
-})
-
-/**
- * Pino options for ECS JSON output, with the configured redaction and the
- * trace id of the request in progress.
- *
- * @param {{ level: string }} options - the lowest level written
- * @returns {import('pino').LoggerOptions} the pino options
- */
-export const buildEcsPinoOptions = ({ level }) =>
-  pinoOptions({ format: 'ecs', level })
-
-export const loggerOptions = {
-  enabled: logConfig.enabled,
-  ignorePaths: ['/health'],
-  ...pinoOptions({ format: logConfig.format, level: logConfig.level }),
+  level: logConfig.level,
+  ...optionsForFormat[logConfig.format](),
+  mixin: traceMixin,
   nesting: true
 }

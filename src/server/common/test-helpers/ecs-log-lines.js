@@ -1,14 +1,13 @@
-import { Writable } from 'node:stream'
-import { pino } from 'pino'
-import { afterEach, beforeEach, expect, vi } from 'vitest'
+import { afterEach, beforeEach, expect } from 'vitest'
 
-import { createLogger } from '../helpers/logging/logger.js'
-import { buildEcsPinoOptions } from '../helpers/logging/logger-options.js'
+import { config } from '../../../config/config.js'
+import { createLogger, writeLogsTo } from '../helpers/logging/logger.js'
 
 /**
- * Sends the lines the module-level logger writes during each test of the
- * enclosing `describe` through a pino logger with the deployed ECS format, and
- * keeps the JSON it writes, parsed. Restores the logger afterwards.
+ * Keeps, parsed, every line the module logger and its child loggers write at
+ * the configured log level during each test of the enclosing `describe`, in
+ * place of the logger's output. Needs `LOG_FORMAT` `ecs`. Puts back the logger's
+ * level and output afterwards.
  *
  * @returns {{
  *   lines: () => object[],
@@ -19,29 +18,23 @@ import { buildEcsPinoOptions } from '../helpers/logging/logger-options.js'
  *   external-call line was written, and returns it
  */
 export const recordEcsLogLines = () => {
+  const logger = createLogger()
   const lines = []
-  const ecsLogger = pino(
-    buildEcsPinoOptions({ level: 'info' }),
-    new Writable({
-      write(chunk, _encoding, done) {
-        lines.push(JSON.parse(chunk))
-        done()
-      }
-    })
-  )
-  let spies = []
+  let levelBefore
+  let restoreOutput
 
   beforeEach(() => {
     lines.length = 0
-    spies = ['info', 'warn', 'error'].map((level) =>
-      vi
-        .spyOn(createLogger(), level)
-        .mockImplementation((...args) => ecsLogger[level](...args))
-    )
+    levelBefore = logger.level
+    logger.level = config.get('log.level')
+    restoreOutput = writeLogsTo({
+      write: (line) => lines.push(JSON.parse(line))
+    })
   })
 
   afterEach(() => {
-    spies.forEach((spy) => spy.mockRestore())
+    restoreOutput()
+    logger.level = levelBefore
   })
 
   const externalCallLines = () =>
