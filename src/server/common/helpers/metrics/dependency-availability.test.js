@@ -14,14 +14,8 @@ const answerWith = (dependency, status) =>
     return new Response(null, { status })
   })
 
-const availableTo = (dependency) => ({
-  value: 1,
-  unit: 'None',
-  dimensions: { dependency }
-})
-
-const unavailableTo = (dependency) => ({
-  value: 0,
+const availabilityPublish = (dependency, value) => ({
+  value,
   unit: 'None',
   dimensions: { dependency }
 })
@@ -50,7 +44,9 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
     await emf.earlierPublishesFlushed()
-    expect(availabilityOf(dependency)).toEqual([availableTo(dependency)])
+    expect(availabilityOf(dependency)).toEqual([
+      availabilityPublish(dependency, 1)
+    ])
   })
 
   test('after a successful call it publishes 1, tagged dependency alone, every minute', async () => {
@@ -62,8 +58,8 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
 
     await emf.earlierPublishesFlushed()
     expect(availabilityOf(dependency)).toEqual([
-      availableTo(dependency),
-      availableTo(dependency)
+      availabilityPublish(dependency, 1),
+      availabilityPublish(dependency, 1)
     ])
   })
 
@@ -77,8 +73,8 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
 
     await emf.earlierPublishesFlushed()
     expect(availabilityOf(dependency)).toEqual([
-      unavailableTo(dependency),
-      availableTo(dependency)
+      availabilityPublish(dependency, 0),
+      availabilityPublish(dependency, 1)
     ])
   })
 
@@ -94,7 +90,9 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
     await emf.earlierPublishesFlushed()
-    expect(availabilityOf(dependency)).toEqual([unavailableTo(dependency)])
+    expect(availabilityOf(dependency)).toEqual([
+      availabilityPublish(dependency, 0)
+    ])
   })
 
   test('a minute holding a failed call and then a successful one publishes 1 once, the outcome of the most recent', async () => {
@@ -105,7 +103,9 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
     await emf.earlierPublishesFlushed()
-    expect(availabilityOf(dependency)).toEqual([availableTo(dependency)])
+    expect(availabilityOf(dependency)).toEqual([
+      availabilityPublish(dependency, 1)
+    ])
   })
 
   test('each dependency publishes its own availability', async () => {
@@ -114,7 +114,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
     await emf.earlierPublishesFlushed()
-    expect(availabilityOf('up')).toEqual([availableTo('up')])
-    expect(availabilityOf('down')).toEqual([unavailableTo('down')])
+    expect(availabilityOf('up')).toEqual([availabilityPublish('up', 1)])
+    expect(availabilityOf('down')).toEqual([availabilityPublish('down', 0)])
   })
 })
