@@ -139,7 +139,7 @@ way:
 - where a page's Back link goes: `trailBackLink()`, with `carryTrail()` and `pushTrail()` for the links that keep the trail
 - the return marker a sub-page round trip carries: `withReturnMarker()` and `readReturnMarker()`
 - saving: `recoverableSave()` and `pageRoutes()`
-- date fields: `readDate()`, `dateTextOf()` and `dateField()`
+- date fields: `readDateAnswer()`, `dateTextOf()` and `dateField()`
 
 [`shared/trail.js`](../shared/trail.js) owns the trail and return marker operations, and `kit.js` re-exports them.
 

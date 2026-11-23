@@ -415,7 +415,7 @@ export const pageRoutes = (page, { get, post }) => [
     : [])
 ]
 
-export const readDate = (payload, name) => {
+export const readDateAnswer = (payload, name) => {
   const raw = String(payload[name] ?? '').trim()
   if (raw === '') {
     return { day: '', month: '', year: '' }

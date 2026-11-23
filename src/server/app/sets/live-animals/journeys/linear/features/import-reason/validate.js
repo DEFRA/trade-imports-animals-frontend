@@ -5,7 +5,7 @@ import {
   requiredDateText,
   requiredOneOf
 } from '../../../../../../lib/validate/index.js'
-import { dateTextOf, readDate } from '../../../../../../shared/kit.js'
+import { dateTextOf, readDateAnswer } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
@@ -138,7 +138,7 @@ const toAnswers = (values) => ({
     revealsFor(values.reasonForImport).map(({ field, answer }) => [
       answer,
       field === TEMPORARY_ADMISSION_DATE_FIELD
-        ? readDate(values, field)
+        ? readDateAnswer(values, field)
         : values[field]
     ])
   )
