@@ -92,14 +92,14 @@ describe('entry guard', () => {
     it('Should count exactly one redirect for a notification with no entered answer', async () => {
       await guardFor()
 
-      await emf.earlierPublishesFlushed()
+      await emf.publishMarkerAndAwaitEarlierPublishes()
       expect(emf.valuesOf(ENTRY_REDIRECT)).toEqual([1])
     })
 
     it('Should count no redirect for a notification with an entered answer', async () => {
       await guardFor({ seed: ANSWERED })
 
-      await emf.earlierPublishesFlushed()
+      await emf.publishMarkerAndAwaitEarlierPublishes()
       expect(emf.valuesOf(ENTRY_REDIRECT)).toEqual([])
     })
   })

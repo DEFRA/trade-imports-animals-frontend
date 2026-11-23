@@ -69,7 +69,7 @@ describe('token exchange timer', () => {
   test('recordTokenExchange publishes and logs no external call when Bell never reached the token call', async () => {
     recordTokenExchange({ app: {}, auth: { isAuthenticated: false } })
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.externalCalls()).toEqual([])
     expect(ecsLog.externalCallLines()).toEqual([])
   })

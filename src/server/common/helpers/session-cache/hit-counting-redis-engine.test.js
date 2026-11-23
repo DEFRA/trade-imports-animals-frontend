@@ -37,7 +37,7 @@ describe('HitCountingRedisEngine', () => {
     const cached = await engine.get(SESSION_KEY)
 
     expect(cached.item).toEqual({ user: 'u-1' })
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.publishesOf(CACHE_HIT)).toEqual([COUNTED_FOR_SESSION])
     expect(emf.documentsWith(CACHE_MISS)).toEqual([])
   })
@@ -46,7 +46,7 @@ describe('HitCountingRedisEngine', () => {
     const cached = await engine.get({ segment: 'auth-sessions', id: 'none' })
 
     expect(cached).toBeNull()
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.publishesOf(CACHE_MISS)).toEqual([COUNTED_FOR_SESSION])
     expect(emf.documentsWith(CACHE_HIT)).toEqual([])
   })
@@ -64,7 +64,7 @@ describe('HitCountingRedisEngine', () => {
 
     await expect(failing.get(SESSION_KEY)).rejects.toBe(lost)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(CACHE_HIT)).toEqual([])
     expect(emf.documentsWith(CACHE_MISS)).toEqual([])
   })

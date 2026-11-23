@@ -163,7 +163,7 @@ describe('each animals-backend, address-book, reference-data and cdp-uploader ca
   })
 
   const recordedCallsTo = async (dependency) => {
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     return emf
       .externalCalls()
       .filter((recorded) => recorded.dependency === dependency)

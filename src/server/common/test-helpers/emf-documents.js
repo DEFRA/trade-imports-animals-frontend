@@ -63,7 +63,7 @@ const publishOf = (document, metricName) => {
  *   onlyDocument: () => Promise<object>,
  *   externalCalls: () => Array<{ dependency: string, operation: string, failure: number }>,
  *   onlyExternalCall: () => Promise<{ dependency: string, operation: string, failure: number }>,
- *   earlierPublishesFlushed: () => Promise<void>
+ *   publishMarkerAndAwaitEarlierPublishes: () => Promise<void>
  * }} readers of the documents captured so far, each in the order published
  */
 export const recordEmfDocuments = () => {
@@ -79,7 +79,13 @@ export const recordEmfDocuments = () => {
     logSpy.mockRestore()
   })
 
-  const documents = () => readEmfDocuments(logSpy)
+  const isFlushMarker = (document) => FLUSH_MARKER in document
+
+  const documents = () =>
+    readEmfDocuments(logSpy).filter((document) => !isFlushMarker(document))
+
+  const flushMarkerCount = () =>
+    readEmfDocuments(logSpy).filter(isFlushMarker).length
 
   const documentsWith = (metricName) =>
     documents().filter((document) => metricName in document)
@@ -112,9 +118,10 @@ export const recordEmfDocuments = () => {
     return externalCalls()[0]
   }
 
-  const earlierPublishesFlushed = async () => {
+  const publishMarkerAndAwaitEarlierPublishes = async () => {
+    const markersBefore = flushMarkerCount()
     countEvent(FLUSH_MARKER)
-    await vi.waitFor(() => expect(valuesOf(FLUSH_MARKER)).toEqual([1]))
+    await vi.waitFor(() => expect(flushMarkerCount()).toBe(markersBefore + 1))
   }
 
   return {
@@ -126,6 +133,6 @@ export const recordEmfDocuments = () => {
     onlyDocument,
     externalCalls,
     onlyExternalCall,
-    earlierPublishesFlushed
+    publishMarkerAndAwaitEarlierPublishes
   }
 }

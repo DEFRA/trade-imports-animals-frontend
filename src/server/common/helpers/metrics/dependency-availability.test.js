@@ -34,7 +34,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     await answerWith(dependency, 200)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf(dependency)).toEqual([
       availabilityPublish(dependency, 1)
     ])
@@ -47,7 +47,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     vi.advanceTimersByTime(ONE_MINUTE_MS)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf(dependency)).toEqual([
       availabilityPublish(dependency, 1),
       availabilityPublish(dependency, 1)
@@ -62,7 +62,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     await answerWith(dependency, 404)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf(dependency)).toEqual([
       availabilityPublish(dependency, 0),
       availabilityPublish(dependency, 1)
@@ -80,7 +80,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     ).rejects.toBe(refused)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf(dependency)).toEqual([
       availabilityPublish(dependency, 0)
     ])
@@ -93,7 +93,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     await answerWith(dependency, 200)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf(dependency)).toEqual([
       availabilityPublish(dependency, 1)
     ])
@@ -104,7 +104,7 @@ describe('the availability of an HTTP dependency, from its most recent call', ()
     await answerWith('down', 502)
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await emf.earlierPublishesFlushed()
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.availabilityOf('up')).toEqual([availabilityPublish('up', 1)])
     expect(emf.availabilityOf('down')).toEqual([availabilityPublish('down', 0)])
   })
