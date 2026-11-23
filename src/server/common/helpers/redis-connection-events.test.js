@@ -18,6 +18,15 @@ const STOPPED_RECONNECTING_LINE = {
   level: 'error',
   message: 'Redis client stopped reconnecting'
 }
+const COUNTED_FOR_REDIS = {
+  value: 1,
+  unit: 'Count',
+  dimensions: { dependency: 'redis' }
+}
+const clientEvent = (action) => ({
+  category: 'external-dependency',
+  action
+})
 
 describe('reportRedisConnectionEvents', () => {
   const ecsLog = recordEcsLogLines()
@@ -26,7 +35,7 @@ describe('reportRedisConnectionEvents', () => {
   const connectionErrorLines = () =>
     ecsLog.linesWithMessage('Redis connection error').map((line) => ({
       level: line['log.level'],
-      dependency: line.dependency,
+      event: line.event,
       error: line.error?.message,
       serverAddress: line.server?.address
     }))
@@ -95,7 +104,7 @@ describe('reportRedisConnectionEvents', () => {
     ])
   })
 
-  test('a client that stops reconnecting logs so once at error, tagged dependency redis', () => {
+  test('a client that stops reconnecting logs so once at error, with event.action redis/end', () => {
     client.emit('ready')
     client.emit('close')
     client.emit('end')
@@ -103,11 +112,28 @@ describe('reportRedisConnectionEvents', () => {
     expect(
       ecsLog
         .linesWithMessage(STOPPED_RECONNECTING_LINE.message)
-        .map((line) => ({
-          level: line['log.level'],
-          dependency: line.dependency
-        }))
-    ).toEqual([{ level: 'error', dependency: 'redis' }])
+        .map((line) => ({ level: line['log.level'], event: line.event }))
+    ).toEqual([{ level: 'error', event: clientEvent('redis/end') }])
+  })
+
+  test('each change is logged with event.category external-dependency and the client event as event.action, and with no dependency field', () => {
+    client.emit('ready')
+    client.emit('close')
+
+    expect(ecsLog.lines()).toEqual([
+      expect.objectContaining({
+        message: AVAILABLE_LINE.message,
+        event: clientEvent('redis/ready')
+      }),
+      expect.objectContaining({
+        message: UNAVAILABLE_LINE.message,
+        event: clientEvent('redis/close')
+      })
+    ])
+    expect(ecsLog.lines().map((line) => line.dependency)).toEqual([
+      undefined,
+      undefined
+    ])
   })
 
   test('a client that never connected and closes counts no lost connection', async () => {
@@ -118,29 +144,32 @@ describe('reportRedisConnectionEvents', () => {
     expect(emf.valuesOf(CONNECTION_LOST)).toEqual([])
   })
 
-  test('each client error is logged with its error and counted, tagged dependency redis', async () => {
+  test('each client error is logged with its error and event.action redis/error, and counted tagged dependency redis', async () => {
     client.emit('error', new Error('ECONNREFUSED'))
     client.emit('error', new Error('ECONNREFUSED'))
 
     await emf.publishMarkerAndAwaitEarlierPublishes()
-    expect(emf.valuesOf(ERROR)).toEqual([1, 1])
+    expect(emf.publishesOf(ERROR)).toEqual([
+      COUNTED_FOR_REDIS,
+      COUNTED_FOR_REDIS
+    ])
     const refusedLine = {
       level: 'error',
-      dependency: 'redis',
+      event: clientEvent('redis/error'),
       error: 'ECONNREFUSED'
     }
     expect(connectionErrorLines()).toEqual([refusedLine, refusedLine])
   })
 
-  test("each error a Cluster client reports from one of its nodes is logged with the node's server address and counted, tagged dependency redis", async () => {
+  test("each error a Cluster client reports from one of its nodes is logged with the node's server address and event.action redis/node-error, and counted tagged dependency redis", async () => {
     client.emit('node error', new Error('ECONNREFUSED'), '10.0.0.1:6379')
 
     await emf.publishMarkerAndAwaitEarlierPublishes()
-    expect(emf.valuesOf(ERROR)).toEqual([1])
+    expect(emf.publishesOf(ERROR)).toEqual([COUNTED_FOR_REDIS])
     expect(connectionErrorLines()).toEqual([
       {
         level: 'error',
-        dependency: 'redis',
+        event: clientEvent('redis/node-error'),
         error: 'ECONNREFUSED',
         serverAddress: '10.0.0.1:6379'
       }
