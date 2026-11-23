@@ -23,9 +23,7 @@ const PAGE_REQUEST_METRICS_ENABLED_KEY = 'callCounts.metrics.enabled'
 const REQUEST_TIMER = 'http.server.requests'
 const VALIDATION_FAILURE = 'journey.validation.failure'
 const PAGE_REQUEST_BACKEND_CALLS = 'page.request.backend.calls'
-const PAGE_REQUEST_SESSION_RESOLUTIONS = 'page.request.session.resolutions'
 const ORIGIN_URL = '/live-animals/notifications/j-1/origin'
-const ORIGIN_HANDLER_DELAY_MS = 20
 const CONTACT_ROUTE_PATH =
   '/live-animals/notifications/{journeyId}/consignment/contact/edit'
 const CONTACT_URL = '/live-animals/notifications/j-1/consignment/contact/edit'
@@ -37,7 +35,8 @@ const routePages = (server) =>
       method: 'GET',
       path: '/live-animals/notifications/{journeyId}/origin',
       handler: async (request) => {
-        await setTimeout(ORIGIN_HANDLER_DELAY_MS)
+        const handlerDelayMs = 20
+        await setTimeout(handlerDelayMs)
         countExternalCall({
           dependency: BACKEND_DEPENDENCY,
           operation: 'get-fulfilment'
@@ -244,7 +243,7 @@ describe('request metrics', () => {
     expect(emf.publishesOf(PAGE_REQUEST_BACKEND_CALLS)).toEqual([
       { value: 2, unit: 'Count', dimensions: pageRequestKind }
     ])
-    expect(emf.publishesOf(PAGE_REQUEST_SESSION_RESOLUTIONS)).toEqual([
+    expect(emf.publishesOf('page.request.session.resolutions')).toEqual([
       { value: 1, unit: 'Count', dimensions: pageRequestKind }
     ])
   })
