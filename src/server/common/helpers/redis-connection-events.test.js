@@ -67,7 +67,7 @@ describe('reportRedisConnectionEvents', () => {
     )
   })
 
-  test('a ready client that closes publishes 0, counts one lost connection and logs each change once', async () => {
+  test('a ready client that closes and then ends publishes 0 once, counts one lost connection and logs each change once', async () => {
     client.emit('ready')
     client.emit('close')
     client.emit('end')
