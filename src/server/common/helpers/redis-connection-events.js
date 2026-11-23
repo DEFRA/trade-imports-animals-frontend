@@ -25,7 +25,10 @@ export const reportRedisConnectionEvents = (client) => {
     if (available === undefined) {
       return
     }
-    publishDependencyAvailabilityInBackground(REDIS_DEPENDENCY, available)
+    publishDependencyAvailabilityInBackground({
+      dependency: REDIS_DEPENDENCY,
+      available
+    })
   }
 
   const changeAvailabilityTo = (nowAvailable) => {

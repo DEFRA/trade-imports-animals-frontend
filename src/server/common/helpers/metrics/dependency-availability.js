@@ -2,20 +2,19 @@ import { NONE, publishMetricsInBackground } from './publish-metrics.js'
 
 const PUBLISH_EVERY_MS = 60_000
 
-const lastCallSucceededByDependency = new Map()
+const latestAvailabilityByDependency = new Map()
 let availabilityPublishTimer
 
 /**
  * Publishes `external.dependency.available` tagged `dependency`: 1 when the
  * dependency is available, 0 when it is not.
  *
- * @param {string} dependency - the dependency, as the metric contract names it
- * @param {boolean} available - whether it is available
+ * @param {{ dependency: string, available: boolean }} availability - the dependency, as the metric contract names it, and whether it is available
  */
-export const publishDependencyAvailabilityInBackground = (
+export const publishDependencyAvailabilityInBackground = ({
   dependency,
   available
-) =>
+}) =>
   publishMetricsInBackground({ dependency }, [
     {
       name: 'external.dependency.available',
@@ -25,8 +24,8 @@ export const publishDependencyAvailabilityInBackground = (
   ])
 
 const publishEachCalledDependency = () => {
-  for (const [dependency, succeeded] of lastCallSucceededByDependency) {
-    publishDependencyAvailabilityInBackground(dependency, succeeded)
+  for (const [dependency, available] of latestAvailabilityByDependency) {
+    publishDependencyAvailabilityInBackground({ dependency, available })
   }
 }
 
@@ -36,11 +35,10 @@ const publishEachCalledDependency = () => {
  * far: 1 after a call that succeeded, 0 after one that failed. A dependency
  * not yet called publishes nothing.
  *
- * @param {string} dependency - the dependency called
- * @param {boolean} failed - whether the call failed
+ * @param {{ dependency: string, available: boolean }} availability - the dependency called, and whether its call succeeded
  */
-export const recordDependencyCallOutcome = (dependency, failed) => {
-  lastCallSucceededByDependency.set(dependency, !failed)
+export const recordDependencyCallOutcome = ({ dependency, available }) => {
+  latestAvailabilityByDependency.set(dependency, available)
   availabilityPublishTimer ??= setInterval(
     publishEachCalledDependency,
     PUBLISH_EVERY_MS

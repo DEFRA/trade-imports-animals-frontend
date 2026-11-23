@@ -66,7 +66,10 @@ const logExternalCall = (
 export const recordExternalCallInBackground = (externalCall, result) => {
   countExternalCall(externalCall)
   logExternalCall(externalCall, result)
-  recordDependencyCallOutcome(externalCall.dependency, result.failed)
+  recordDependencyCallOutcome({
+    dependency: externalCall.dependency,
+    available: !result.failed
+  })
   publishMetricsInBackground(
     {
       dependency: externalCall.dependency,
