@@ -195,8 +195,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       expect.objectContaining({
         'log.level': 'warn',
         message: 'Backend refused fulfilment read',
-        journeyId: 'GBN-AG-26-ABC123',
-        organisationId: '5900001',
+        journeyId,
+        organisationId: DEFAULT_TEST_ORG,
         status: 403
       })
     ])
