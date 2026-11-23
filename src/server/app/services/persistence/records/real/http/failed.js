@@ -1,5 +1,6 @@
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
+import { logger } from '../logger.js'
 
 export const failed = async (operation, response) => {
   const error = new BackendRequestError(operation, response)
@@ -9,8 +10,11 @@ export const failed = async (operation, response) => {
       if (body?.code) {
         error.code = body.code
       }
-    } catch {
-      // body wasn't JSON — no code to attach
+    } catch (err) {
+      logger.warn(
+        { err, operation, status: response.status },
+        'Conflict response body was not JSON; no error code attached'
+      )
     }
   }
   return error

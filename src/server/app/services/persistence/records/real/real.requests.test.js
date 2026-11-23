@@ -15,6 +15,7 @@ import {
 import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
 import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
+import { recordEcsLogLines } from '../../../../../common/test-helpers/ecs-log-lines.js'
 import { logger } from './logger.js'
 import { mapStatus, records } from './index.js'
 
@@ -323,6 +324,8 @@ describe('real records adapter — fulfilment writes', () => {
 })
 
 describe('real records adapter — lifecycle and list', () => {
+  const ecsLog = recordEcsLogLines()
+
   beforeEach(() => {
     fetchMocker.resetMocks()
   })
@@ -405,6 +408,35 @@ describe('real records adapter — lifecycle and list', () => {
     expect(fetchMocker.requests()[0].url).toBe(
       `${notificationsUrl}/${journeyId}/submit?concurrencyToken=4`
     )
+  })
+
+  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line naming the operation and status', async () => {
+    fetchMocker.mockResponse('Conflict', { status: 409 })
+
+    const surfaced = await asDefaultOrganisation(() =>
+      records.finalise(journeyId, actor, 4)
+    ).catch((error) => error)
+
+    expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
+    expect(surfaced.code).toBeUndefined()
+    expect(
+      ecsLog
+        .lines()
+        .filter((line) => line['log.level'] === 'warn')
+        .map((line) => ({
+          message: line.message,
+          operation: line.operation,
+          status: line.status,
+          errorType: line.error?.type
+        }))
+    ).toEqual([
+      {
+        message: 'Conflict response body was not JSON; no error code attached',
+        operation: 'submit-notification',
+        status: 409,
+        errorType: 'SyntaxError'
+      }
+    ])
   })
 
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
