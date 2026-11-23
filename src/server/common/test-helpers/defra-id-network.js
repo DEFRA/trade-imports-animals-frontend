@@ -8,8 +8,6 @@ import { restoreConfigAfterEach } from './restore-config-after-each.js'
 const DEFRA_ID_ORIGIN = 'https://defra-id.test'
 const DISCOVERY_PATH = '/idp/.well-known/openid-configuration'
 
-export const DEFRA_ID_DISCOVERY_URL = `${DEFRA_ID_ORIGIN}${DISCOVERY_PATH}`
-
 export const defraIdDiscoveryDocument = {
   issuer: `${DEFRA_ID_ORIGIN}/idp`,
   authorization_endpoint: `${DEFRA_ID_ORIGIN}/idp/authorize`,
@@ -35,7 +33,10 @@ export const useDefraIdNetwork = () => {
 
   beforeEach(() => {
     nock.disableNetConnect()
-    config.set('defraId.oidcDiscoveryUrl', DEFRA_ID_DISCOVERY_URL)
+    config.set(
+      'defraId.oidcDiscoveryUrl',
+      `${DEFRA_ID_ORIGIN}${DISCOVERY_PATH}`
+    )
   })
 
   afterEach(() => {
