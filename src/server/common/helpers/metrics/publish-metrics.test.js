@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { onTestFinished, vi } from 'vitest'
 import { Metrics } from '@defra/cdp-metrics'
 
 import { countEvent, publishMetricsInBackground } from './publish-metrics.js'
@@ -11,10 +11,6 @@ import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
 describe('publish metrics', () => {
   const ecsLog = recordEcsLogLines()
   const emf = recordEmfDocuments()
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
 
   test('counting an event publishes a count of 1 with exactly the dimensions given', async () => {
     countEvent('journey.validation.failure', { page: 'origin' })
@@ -53,9 +49,10 @@ describe('publish metrics', () => {
       putMetric: vi.fn(() => metricsLogger),
       flush: vi.fn().mockRejectedValue(new Error('agent unavailable'))
     }
-    vi.spyOn(Metrics.prototype, 'getMetricsLogger').mockReturnValue(
-      metricsLogger
-    )
+    const getMetricsLogger = vi
+      .spyOn(Metrics.prototype, 'getMetricsLogger')
+      .mockReturnValue(metricsLogger)
+    onTestFinished(() => getMetricsLogger.mockRestore())
 
     publishMetricsInBackground(
       { dependency: 'address-book', operation: 'list-addresses' },

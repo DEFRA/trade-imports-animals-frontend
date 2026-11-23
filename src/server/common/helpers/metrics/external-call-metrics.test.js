@@ -1,6 +1,6 @@
 import hapi from '@hapi/hapi'
 import Wreck from '@hapi/wreck'
-import { vi } from 'vitest'
+import { onTestFinished, vi } from 'vitest'
 import { Metrics } from '@defra/cdp-metrics'
 
 import {
@@ -30,28 +30,15 @@ const LIST_ADDRESSES = {
   operation: 'list-addresses'
 }
 
-const recordExternalCallOutput = () => {
+describe('external call metrics', () => {
   const ecsLog = recordEcsLogLines()
   const emf = recordEmfDocuments()
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  return {
-    onlyLine: ecsLog.onlyExternalCallLine,
-    onlyDocument: emf.onlyDocument
-  }
-}
-
-describe('external call metrics', () => {
-  const { onlyLine, onlyDocument } = recordExternalCallOutput()
 
   test('a successful call returns its result and publishes its duration and a failure of 0, tagged dependency and operation', async () => {
     const result = await measureExternalCall(JWKS_CALL, async () => 'keys')
 
     expect(result).toBe('keys')
-    const document = await onlyDocument()
+    const document = await emf.onlyDocument()
     const directive = document._aws.CloudWatchMetrics[0]
     expect(directive.Namespace).toBe(EMF_TEST_NAMESPACE)
     expect(directive.Dimensions).toEqual([['dependency', 'operation']])
@@ -69,13 +56,15 @@ describe('external call metrics', () => {
   })
 
   test('a successful call taking 41.6 ms writes one info line with the nested event fields, a duration of 41,600,000 ns and 42 ms in the message, and publishes 41.6 ms', async () => {
-    vi.spyOn(performance, 'now')
+    const now = vi
+      .spyOn(performance, 'now')
       .mockReturnValueOnce(1000)
       .mockReturnValueOnce(1041.6)
+    onTestFinished(() => now.mockRestore())
 
     await measureExternalCall(JWKS_CALL, async () => 'keys')
 
-    const line = onlyLine()
+    const line = ecsLog.onlyExternalCallLine()
     expect(line['log.level']).toBe('info')
     expect(line.event).toEqual({
       category: 'external-call',
@@ -86,7 +75,9 @@ describe('external call metrics', () => {
     expect(line.message).toBe(
       'External call defra-id/jwks (SYN-12) success in 42 ms'
     )
-    expect((await onlyDocument())['external.call.duration']).toBeCloseTo(41.6)
+    expect((await emf.onlyDocument())['external.call.duration']).toBeCloseTo(
+      41.6
+    )
     expect(line).not.toHaveProperty('error')
   })
 
@@ -101,8 +92,8 @@ describe('external call metrics', () => {
       })
     ).rejects.toBe(failure)
 
-    expect((await onlyDocument())['external.call.failure']).toBe(1)
-    const line = onlyLine()
+    expect((await emf.onlyDocument())['external.call.failure']).toBe(1)
+    const line = ecsLog.onlyExternalCallLine()
     expect(line['log.level']).toBe('warn')
     expect(line.event.outcome).toBe('failure')
     expect(line.error).toEqual({
@@ -140,7 +131,7 @@ describe('external call metrics', () => {
         headers: { [config.get('tracing.header')]: 'trace-123' }
       })
 
-      expect(onlyLine().trace).toEqual({ id: 'trace-123' })
+      expect(ecsLog.onlyExternalCallLine().trace).toEqual({ id: 'trace-123' })
     })
 
     test('the call is counted against the route that made it', async () => {
@@ -165,9 +156,10 @@ describe('external call metrics', () => {
       putMetric: vi.fn(() => metricsLogger),
       flush: vi.fn(() => new Promise(() => {}))
     }
-    vi.spyOn(Metrics.prototype, 'getMetricsLogger').mockReturnValue(
-      metricsLogger
-    )
+    const getMetricsLogger = vi
+      .spyOn(Metrics.prototype, 'getMetricsLogger')
+      .mockReturnValue(metricsLogger)
+    onTestFinished(() => getMetricsLogger.mockRestore())
 
     const result = await measureExternalCall(JWKS_CALL, async () => 'keys')
 
@@ -177,14 +169,15 @@ describe('external call metrics', () => {
   test('a failed call recorded in the background publishes the duration given and a failure of 1', async () => {
     recordExternalCallInBackground(JWKS_CALL, { durationMs: 42, failed: true })
 
-    const document = await onlyDocument()
+    const document = await emf.onlyDocument()
     expect(document['external.call.duration']).toBe(42)
     expect(document['external.call.failure']).toBe(1)
   })
 })
 
 describe('the status a dependency answers with', () => {
-  const { onlyLine, onlyDocument } = recordExternalCallOutput()
+  const ecsLog = recordEcsLogLines()
+  const emf = recordEmfDocuments()
 
   test.each([
     { status: 404, outcome: 'success', failure: 0, level: 'info' },
@@ -200,8 +193,8 @@ describe('the status a dependency answers with', () => {
         measureExternalResponse(LIST_ADDRESSES, async () => response)
       ).resolves.toBe(response)
 
-      expect((await onlyDocument())['external.call.failure']).toBe(failure)
-      const line = onlyLine()
+      expect((await emf.onlyDocument())['external.call.failure']).toBe(failure)
+      const line = ecsLog.onlyExternalCallLine()
       expect(line['log.level']).toBe(level)
       expect(line.event.outcome).toBe(outcome)
       expect(line.http).toEqual({ response: { status_code: status } })
@@ -239,8 +232,8 @@ describe('the status a dependency answers with', () => {
         })
       ).rejects.toBe(refusal)
 
-      expect((await onlyDocument())['external.call.failure']).toBe(failure)
-      const line = onlyLine()
+      expect((await emf.onlyDocument())['external.call.failure']).toBe(failure)
+      const line = ecsLog.onlyExternalCallLine()
       expect(line['log.level']).toBe(level)
       expect(line.event.outcome).toBe(outcome)
       expect(line.http).toEqual({ response: { status_code: status } })
@@ -287,8 +280,10 @@ describe('the status a dependency answers with', () => {
           measureExternalCall(JWKS_CALL, () => wreckGet(`/status/${status}`))
         ).rejects.toMatchObject({ output: { statusCode: status } })
 
-        expect((await onlyDocument())['external.call.failure']).toBe(failure)
-        const line = onlyLine()
+        expect((await emf.onlyDocument())['external.call.failure']).toBe(
+          failure
+        )
+        const line = ecsLog.onlyExternalCallLine()
         expect(line.event.outcome).toBe(outcome)
         expect(line.http).toEqual({ response: { status_code: status } })
       }
@@ -299,8 +294,8 @@ describe('the status a dependency answers with', () => {
         measureExternalCall(JWKS_CALL, () => wreckGet('/slow', { timeout: 10 }))
       ).rejects.toThrow('Client request timeout')
 
-      expect((await onlyDocument())['external.call.failure']).toBe(1)
-      const line = onlyLine()
+      expect((await emf.onlyDocument())['external.call.failure']).toBe(1)
+      const line = ecsLog.onlyExternalCallLine()
       expect(line.event.outcome).toBe('failure')
       expect(line).not.toHaveProperty('http')
     })
