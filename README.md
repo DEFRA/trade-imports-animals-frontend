@@ -79,7 +79,9 @@ counted.
 A request's counts live in an `AsyncLocalStorage` store. hapi gives no public
 hook that runs the whole request inside one async context, so the call-counts
 plugin wraps each request's private `_lifecycle` and `_postCycle` methods to run
-inside the store, the same way `@defra/hapi-tracing` keeps its trace id.
+inside the store, the same way `@defra/hapi-tracing` keeps its trace id. A
+view renders outside that async context, so a session resolution is counted
+against the request it is read for rather than through the store.
 
 Running totals are kept per route and served at `GET /call-counts`. `DELETE
 /call-counts` clears them.

@@ -58,8 +58,7 @@ export const countExternalCall = ({ dependency, operation }) => {
 }
 
 /**
- * Counts one read of the signed-in session record.
- * Takes the request because a view renders outside the request's async context.
+ * Counts one read of the signed-in session record against the given request.
  *
  * @param {import('@hapi/hapi').Request} request - the request the session is read for
  */
