@@ -1,5 +1,5 @@
 import { aboutConsignmentSection } from './sections/about-consignment.js'
-import { consignmentPartiesSection } from './sections/consignment-parties.js'
+import { addressesSection } from './sections/addresses.js'
 import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
 import { transportAndArrivalSection } from './sections/transport-and-arrival.js'
@@ -10,7 +10,6 @@ export const buildSections = async ({
   evaluation,
   journeyId,
   changeLinkTrail,
-  reviewPageTrail,
   readOnly = false,
   parties = answers,
   partyErrors = {},
@@ -22,6 +21,7 @@ export const buildSections = async ({
       changeLinkTrail,
       answers,
       scope,
+      evaluation,
       readOnly
     }),
     transportAndArrivalSection({
@@ -49,10 +49,9 @@ export const buildSections = async ({
       evaluation,
       readOnly
     }),
-    consignmentPartiesSection({
+    addressesSection({
       journeyId,
       changeLinkTrail,
-      reviewPageTrail,
       answers,
       readOnly,
       parties,

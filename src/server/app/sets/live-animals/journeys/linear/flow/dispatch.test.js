@@ -249,7 +249,7 @@ describe('#nextStepLanding — where Save and continue lands', () => {
     }
   )
 
-  it('Should go from the CPH number page on to Roles and addresses', () => {
+  it('Should go from the CPH number page on to Consignment addresses', () => {
     expect(nextSlug('cphNumber', completeAnswers)).toBe('addresses')
   })
 

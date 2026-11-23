@@ -63,7 +63,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   controls, because the design gives it "Save and continue" as its only way to
   save and move on, on a draft and while amending alike.
 - The two return controls name the page they lead to, which is headed
-  "Overview". "Hub" is the internal name for it in the codebase.
+  "Overview". "Hub" is the internal name for it and reaches no screen.
 - A page reached from another page ends with the primary alone: the permanent
   address page, the role address pickers and the transporter type question
   leave the way the trader came in, while the CPH number page always leaves to
@@ -108,9 +108,9 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   The transit countries read back in a "Transit countries" subsection of the
   Arrival details card, with their own row-level Change link, when they apply.
 
-- Each party reads back as the name, then each non-empty address line, town or
-  city, county and postcode, then the country, each on its own line, with no
-  telephone or email.
+- Each party reads back as the name, then each non-empty
+  address line, town or city, county and postcode, then the country, each on
+  its own line, with no telephone or email.
 - The Consignment addresses card carries a "Permanent address" subsection after the county
   parish holding row, with one entry per animal that has a saved permanent
   address. Each entry is keyed by the animal's species common name and number
@@ -419,8 +419,8 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 
 ## Consignment addresses pages
 
-- Party keys match between the backend and the journey for every role on this
-  page, including `placeOfDestination`.
+- The backend names the place of destination `destination`; the journey says
+  `placeOfDestination`. Every other role has the same name in both.
 - The consignment addresses page gives each party its own section: a medium
   heading, its hint, then either a named "Add a …" link or the chosen address
   in an inset text with Change and Edit details under it. The trader sees
@@ -445,8 +445,7 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification's copy of the party, so the page never asks the address book.
 - Every party link carries the trail. A trader sent here from check
   your answers goes out to the picker or the edit page and has to come back
-  here, and Save and continue here goes on toward check your answers when every
-  party and CPH owed is answered.
+  here, and Save and continue here goes on to the review page.
   The county parish holding link carries the trail alone: its page's Back and
   Save and continue always answer this page, with no marker needed.
 - Each party picker searches the address book from the submitted search box:

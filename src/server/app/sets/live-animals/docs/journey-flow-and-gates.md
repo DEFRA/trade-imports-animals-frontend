@@ -21,8 +21,7 @@ from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page, then the permanent address page,
 then Consignment addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
-to Consignment addresses and Consignment addresses goes on to check your answers when every party
-and CPH owed is answered.
+to Consignment addresses and Consignment addresses goes on to the review page.
 
 The section id `consignment-parties` is a stable id that the journey spec and the prototype share. Its caption and group heading read "Addresses".
 
@@ -178,9 +177,8 @@ cancelled).
 
 Returning from the Import Notification Service's address book lands on a fixed address
 that carries no trail. The Consignment addresses page (the Overview task "Consignment addresses")
-and Contact address for consignment (the task "Contact address
-for this consignment") are the only pages whose Back goes to the Overview whatever the
-trail, after that return; Save and continue still goes on from them.
+is the only page whose Back goes to the Overview whatever the
+trail, after that return; Save and continue still goes on from it.
 
 The hub is somewhere the user chooses to go: through the secondary "Save and
 return to overview" button on the pages that offer it
@@ -289,8 +287,8 @@ filed under its own section, "Description of the goods"; the section captioned
 
 Some pages carry no caption on purpose:
 
-- The overview, check your answers, declaration and confirmation pages open
-  straight into their heading.
+- The overview, check your answers, declaration and
+  confirmation pages open straight into their heading.
 - Delete notification and cancel amend are interruptions, not steps in a
   section.
 - The address pickers get their caption from the addresses feature.

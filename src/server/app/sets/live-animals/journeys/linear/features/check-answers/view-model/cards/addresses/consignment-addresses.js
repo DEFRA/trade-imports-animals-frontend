@@ -1,70 +1,70 @@
 import { copyFor } from '../../../../../../../../../shared/copy.js'
-import { CYA_SLUG } from '../../../../../../../../../shared/kit.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { addressesPage } from '../../../../addresses/page.js'
 import { PARTIES } from '../../../../addresses/parties.js'
 import { displayedCphNumber } from '../../../../cph-number/shape.js'
-import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
 import { cphApplies } from '../../applicability.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
 import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
+const permanentAddressGroups = (permanentAddresses) => {
+  const rows = permanentAddresses
+    .filter(({ permanentAddress }) => permanentAddress)
+    .map(({ label, permanentAddress }) => partyRow(label, permanentAddress))
+  return rows.length > 0
+    ? [{ heading: copy.groups.permanentAddress, rows }]
+    : []
+}
+
 /**
- * The roles and addresses summary card: one row per party, a CPH row when CPH
- * applies, one row per animal holding a saved permanent address, and, unless
- * read-only, a card Change action to the addresses page and an edit link on
- * each party row.
+ * The addresses summary card: one row per party, a CPH row when CPH applies,
+ * a "Permanent address" group with one row per animal holding a saved
+ * permanent address and, unless read-only, a card Change action to the
+ * addresses page.
  *
  * @param {object} options
  * @param {string} options.journeyId - the journey the card belongs to.
  * @param {string[]} options.changeLinkTrail - the trail a link from the review carries.
- * @param {string[]} options.reviewPageTrail - the trail the review itself carries.
  * @param {object} options.answers - the journey's answers.
- * @param {boolean} options.readOnly - true to omit every Change action and edit link.
+ * @param {boolean} options.readOnly - true to omit the card Change action.
  * @param {object} [options.parties] - the stored party copies in display shape; defaults to `answers`.
  * @param {object} [options.partyErrors] - the error text per party id.
  * @param {{label: string, permanentAddress: (object|undefined)}[]} [options.permanentAddresses] -
- * an animal with no saved address contributes no row.
+ * an animal with no saved address contributes no row, and none at all leaves out the group.
  * @returns {object} the summary card.
  */
-export const rolesAndAddressesCard = ({
+export const consignmentAddressesCard = ({
   journeyId,
   changeLinkTrail,
-  reviewPageTrail,
   answers,
   readOnly,
   parties = answers,
   partyErrors = {},
   permanentAddresses = []
 }) => ({
-  id: 'rolesAndAddresses',
-  title: copy.cards.rolesAndAddresses,
+  id: 'consignmentAddresses',
+  title: copy.cards.consignmentAddresses,
   ...editableActions({
     readOnly,
-    actions: cardAction(
+    actions: changeAction(
       { journeyId, changeLinkTrail },
       addressesPage.slug,
-      copy.hidden.cards.rolesAndAddresses
+      copy.hidden.cards.consignmentAddresses
     )
   }),
   rows: [
     ...PARTIES.map((party) =>
       partyRow(copy.rows[party.id], parties[party.id], {
-        errorText: partyErrors[party.id],
-        editHref: readOnly
-          ? undefined
-          : partyEditHref(journeyId, party, CYA_SLUG, reviewPageTrail)
+        errorText: partyErrors[party.id]
       })
     ),
     ...(cphApplies(answers)
       ? [row(copy.rows.cph, displayedCphNumber(answers.countyParishHoldingCph))]
-      : []),
-    ...permanentAddresses
-      .filter(({ permanentAddress }) => permanentAddress)
-      .map(({ label, permanentAddress }) => partyRow(label, permanentAddress))
-  ]
+      : [])
+  ],
+  groups: permanentAddressGroups(permanentAddresses)
 })
