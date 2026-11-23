@@ -21,9 +21,6 @@ import { isReviewRefused } from '../check-answers/refusal.js'
 import { reviewHref } from '../check-answers/review-href.js'
 import { reviewedConcurrencyToken as reviewedConcurrencyTokenOf } from '../check-answers/reviewed.js'
 
-const STEP_REVIEW = 'review'
-const STEP_DECLARE = 'declare'
-
 export const DECLARATION_REFUSAL = Object.freeze({
   alreadySubmitted: 'already-submitted',
   openedBeforeReview: 'opened-before-review',
@@ -167,6 +164,8 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
 }
 
 const post = async (request, h) => {
+  const reviewStep = 'review'
+  const declareStep = 'declare'
   const { journey } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
     return logRefusalAndRedirect(request, h, {
@@ -177,7 +176,7 @@ const post = async (request, h) => {
   }
 
   const payload = request.payload ?? {}
-  if (payload.step !== STEP_REVIEW && payload.step !== STEP_DECLARE) {
+  if (payload.step !== reviewStep && payload.step !== declareStep) {
     return logRefusalAndRedirect(request, h, {
       journey,
       refusal: DECLARATION_REFUSAL.unknownStep,
@@ -212,7 +211,7 @@ const post = async (request, h) => {
     })
   }
 
-  if (payload.step === STEP_REVIEW) {
+  if (payload.step === reviewStep) {
     return render(h, journey, reviewedConcurrencyToken, {
       declaration: ''
     })
