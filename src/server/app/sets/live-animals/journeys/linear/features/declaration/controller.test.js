@@ -309,7 +309,7 @@ describe('#declaration submit', () => {
       expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
-    it('Should keep the not-ready outcome as a redirect to the review', async () => {
+    it('Should redirect to the review with its errors in focus when the notification is not ready for check your answers', async () => {
       configureReadyForCheckYourAnswers(SET_ID, () => false)
 
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
