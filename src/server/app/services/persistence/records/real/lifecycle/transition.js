@@ -2,6 +2,14 @@ import { notificationsUrl } from '../config.js'
 import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
 
+const transition = async (operation, path, actor) => {
+  const response = await send(operation, `${notificationsUrl}/${path}`, {
+    method: 'POST',
+    body: actor
+  })
+  return marshal(await response.json())
+}
+
 export const finalise = async (journeyId, actor, concurrencyToken) => {
   if (concurrencyToken === undefined || concurrencyToken === null) {
     throw new Error(
@@ -9,37 +17,18 @@ export const finalise = async (journeyId, actor, concurrencyToken) => {
     )
   }
   const query = new URLSearchParams({ concurrencyToken })
-  const response = await send(
+  return transition(
     'submit-notification',
-    `${notificationsUrl}/${journeyId}/submit?${query}`,
-    { method: 'POST', body: actor }
+    `${journeyId}/submit?${query}`,
+    actor
   )
-  return marshal(await response.json())
 }
 
-export const amend = async (journeyId, actor) => {
-  const response = await send(
-    'amend-notification',
-    `${notificationsUrl}/${journeyId}/amend`,
-    { method: 'POST', body: actor }
-  )
-  return marshal(await response.json())
-}
+export const amend = (journeyId, actor) =>
+  transition('amend-notification', `${journeyId}/amend`, actor)
 
-export const cancelAmend = async (journeyId, actor) => {
-  const response = await send(
-    'cancel-amend-notification',
-    `${notificationsUrl}/${journeyId}/cancel-amend`,
-    { method: 'POST', body: actor }
-  )
-  return marshal(await response.json())
-}
+export const cancelAmend = (journeyId, actor) =>
+  transition('cancel-amend-notification', `${journeyId}/cancel-amend`, actor)
 
-export const softDelete = async (journeyId, actor) => {
-  const response = await send(
-    'soft-delete-notification',
-    `${notificationsUrl}/${journeyId}/soft-delete`,
-    { method: 'POST', body: actor }
-  )
-  return marshal(await response.json())
-}
+export const softDelete = (journeyId, actor) =>
+  transition('soft-delete-notification', `${journeyId}/soft-delete`, actor)
