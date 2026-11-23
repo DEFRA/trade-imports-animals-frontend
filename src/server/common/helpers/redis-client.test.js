@@ -4,7 +4,10 @@ import { Cluster, Redis } from 'ioredis'
 
 import { config } from '../../../config/config.js'
 import { buildRedisClient } from './redis-client.js'
-import { recordEmfDocuments } from '../test-helpers/emf-documents.js'
+import {
+  DEPENDENCY_AVAILABLE,
+  recordEmfDocuments
+} from '../test-helpers/emf-documents.js'
 import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
 vi.mock('ioredis', async () => {
@@ -34,7 +37,7 @@ describe('#buildRedisClient', () => {
       client.emit('ready')
 
       await vi.waitFor(() =>
-        expect(emf.valuesOf('external.dependency.available')).toEqual([1])
+        expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1])
       )
       expect(
         ecsLog

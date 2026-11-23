@@ -5,6 +5,21 @@ import { countEvent } from '../helpers/metrics/publish-metrics.js'
 import { restoreConfigAfterEach } from './restore-config-after-each.js'
 
 export const EMF_TEST_NAMESPACE = 'test-namespace'
+export const DEPENDENCY_AVAILABLE = 'external.dependency.available'
+
+/**
+ * Builds the `external.dependency.available` publish a dependency's
+ * availability makes.
+ *
+ * @param {string} dependency - the dependency it is tagged with
+ * @param {number} value - 1 when available, 0 when not
+ * @returns {{ value: number, unit: string, dimensions: { dependency: string } }} the publish
+ */
+export const availabilityPublish = (dependency, value) => ({
+  value,
+  unit: 'None',
+  dimensions: { dependency }
+})
 
 const NAMESPACE_KEY = 'metrics.namespace'
 const EXTERNAL_CALL_FAILURE = 'external.call.failure'
@@ -44,6 +59,7 @@ const publishOf = (document, metricName) => {
  *   documentsWith: (metricName: string) => object[],
  *   valuesOf: (metricName: string) => number[],
  *   publishesOf: (metricName: string) => Array<{ value: number, unit: string, dimensions: Record<string, string> }>,
+ *   availabilityOf: (dependency: string) => Array<{ value: number, unit: string, dimensions: Record<string, string> }>,
  *   onlyDocument: () => Promise<object>,
  *   externalCalls: () => Array<{ dependency: string, operation: string, failure: number }>,
  *   onlyExternalCall: () => Promise<{ dependency: string, operation: string, failure: number }>,
@@ -74,6 +90,11 @@ export const recordEmfDocuments = () => {
   const publishesOf = (metricName) =>
     documentsWith(metricName).map((document) => publishOf(document, metricName))
 
+  const availabilityOf = (dependency) =>
+    publishesOf(DEPENDENCY_AVAILABLE).filter(
+      ({ dimensions }) => dimensions.dependency === dependency
+    )
+
   const onlyDocument = async () => {
     await vi.waitFor(() => expect(documents()).toHaveLength(1))
     return documents()[0]
@@ -101,6 +122,7 @@ export const recordEmfDocuments = () => {
     documentsWith,
     valuesOf,
     publishesOf,
+    availabilityOf,
     onlyDocument,
     externalCalls,
     onlyExternalCall,
