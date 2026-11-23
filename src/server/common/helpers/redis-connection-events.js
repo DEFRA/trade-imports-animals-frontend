@@ -11,7 +11,9 @@ import { REDIS_DEPENDENCY } from './redis-dependency.js'
  * reconnecting, counts each change from ready to closed as
  * `external.dependency.connection.lost`, and logs and counts each client
  * error, and each error a Cluster client reports from one of its nodes (logged
- * with the node's `server.address`), as `external.dependency.error`. Nothing is published before the first event.
+ * with the node's `server.address`), as `external.dependency.error`.
+ * Availability is not published until the client is first ready, closed or
+ * ended.
  *
  * @param {import('ioredis').Redis | import('ioredis').Cluster} client - the client to report on
  */
