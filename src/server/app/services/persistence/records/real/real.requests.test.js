@@ -16,7 +16,6 @@ import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
 import { withOrganisationId } from '../../../../../common/helpers/organisation-id.js'
 import { recordEcsLogLines } from '../../../../../common/test-helpers/ecs-log-lines.js'
-import { logger } from './logger.js'
 import { mapStatus, records } from './index.js'
 
 const DEFAULT_TEST_ORG = '5900001'
@@ -63,6 +62,11 @@ const canonical = ({
 const jsonOf = (request) => request.clone().json()
 
 describe('real records adapter — canonical fulfilment boundary', () => {
+  const ecsLog = recordEcsLogLines()
+
+  const linesBesideExternalCalls = () =>
+    ecsLog.lines().filter((line) => line.event?.category !== 'external-call')
+
   beforeEach(() => {
     fetchMocker.resetMocks()
   })
@@ -179,8 +183,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     }
   )
 
-  it('Should log the reference, organisation and status as fields when the fulfilment GET returns 403', async () => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+  it('Should log one warn line with the reference, organisation and status as fields when the fulfilment GET returns 403', async () => {
     fetchMocker.mockResponse('Forbidden', { status: 403 })
 
     const loaded = await asDefaultOrganisation(() =>
@@ -188,19 +191,18 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     expect(loaded).toBeUndefined()
-    expect(warn).toHaveBeenCalledWith(
-      {
+    expect(linesBesideExternalCalls()).toEqual([
+      expect.objectContaining({
+        'log.level': 'warn',
+        message: 'Backend refused fulfilment read',
         journeyId: 'GBN-AG-26-ABC123',
         organisationId: '5900001',
         status: 403
-      },
-      'Backend refused fulfilment read'
-    )
-    warn.mockRestore()
+      })
+    ])
   })
 
-  it('Should not log when the fulfilment GET returns 404', async () => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+  it('Should log no line beside the external call when the fulfilment GET returns 404', async () => {
     fetchMocker.mockResponse('Not Found', { status: 404 })
 
     const loaded = await asDefaultOrganisation(() =>
@@ -208,8 +210,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     expect(loaded).toBeUndefined()
-    expect(warn).not.toHaveBeenCalled()
-    warn.mockRestore()
+    expect(linesBesideExternalCalls()).toEqual([])
   })
 })
 
