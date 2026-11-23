@@ -3,7 +3,7 @@ import { vi } from 'vitest'
 import {
   recordTokenExchange,
   timeTokenExchange,
-  TOKEN_EXCHANGE_STARTED_AT
+  TOKEN_EXCHANGE_STARTED_AT_KEY
 } from './token-exchange-timer.js'
 import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
 import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
@@ -31,7 +31,9 @@ describe('token exchange timer', () => {
     const endpoint = timeTokenExchange(tokenEndpoint)(request)
 
     expect(endpoint).toBe(tokenEndpoint)
-    expect(request.app[TOKEN_EXCHANGE_STARTED_AT]).toEqual(expect.any(Number))
+    expect(request.app[TOKEN_EXCHANGE_STARTED_AT_KEY]).toEqual(
+      expect.any(Number)
+    )
   })
 
   test('recordTokenExchange publishes the time since the stamp as the duration of a successful defra-id token-exchange call, logged as SYN-11', async () => {
