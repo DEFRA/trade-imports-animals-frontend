@@ -3,7 +3,7 @@ import { NONE, publishMetricsInBackground } from './publish-metrics.js'
 const PUBLISH_EVERY_MS = 60_000
 
 const lastCallSucceededByDependency = new Map()
-let publishingEveryMinute
+let availabilityPublishTimer
 
 /**
  * Publishes `external.dependency.available` tagged `dependency`: 1 when the
@@ -41,7 +41,7 @@ const publishEachCalledDependency = () => {
  */
 export const recordDependencyCallOutcome = (dependency, failed) => {
   lastCallSucceededByDependency.set(dependency, !failed)
-  publishingEveryMinute ??= setInterval(
+  availabilityPublishTimer ??= setInterval(
     publishEachCalledDependency,
     PUBLISH_EVERY_MS
   ).unref()
