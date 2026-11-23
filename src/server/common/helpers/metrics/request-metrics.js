@@ -66,7 +66,7 @@ const statusCodeOf = (request) =>
   request.response?.output?.statusCode ??
   request.raw.res.statusCode
 
-const isRefusedAnswer = (request) =>
+const isValidationFailure = (request) =>
   request.method === 'post' &&
   request.response?.variety === 'view' &&
   Boolean(request.response.source?.context?.errorSummary)
@@ -87,8 +87,8 @@ const recordRequestTimeInBackground = (request) =>
     ]
   )
 
-const countRefusedAnswerInBackground = (request) => {
-  if (isRefusedAnswer(request)) {
+const countValidationFailureInBackground = (request) => {
+  if (isValidationFailure(request)) {
     countEvent('journey.validation.failure', {
       page: routePage(request.route.path)
     })
@@ -100,7 +100,7 @@ const publishFinishedPageRequestMetrics = (request) => {
     return
   }
   recordRequestTimeInBackground(request)
-  countRefusedAnswerInBackground(request)
+  countValidationFailureInBackground(request)
   if (config.get('callCounts.metrics.enabled')) {
     recordPageRequestInBackground(callCountsOf(request))
   }
