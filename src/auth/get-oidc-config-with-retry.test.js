@@ -28,8 +28,14 @@ describe('getOidcConfigWithRetry', () => {
   const discoveryUrl =
     'https://defra-id-stub/idp/.well-known/openid-configuration'
   const payload = { authorization_endpoint: 'https://defra-id-stub/auth' }
+  const discoveryCall = {
+    dependency: 'defra-id',
+    operation: 'openid-configuration'
+  }
+  const failedDiscoveryCall = { ...discoveryCall, failure: 1 }
+  const successfulDiscoveryCall = { ...discoveryCall, failure: 0 }
 
-  recordEmfDocuments()
+  const emf = recordEmfDocuments()
   restoreConfigAfterEach(['defraId.oidcDiscoveryUrl'])
   let logger
 
@@ -57,7 +63,7 @@ describe('getOidcConfigWithRetry', () => {
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
-  test('retries after a timeout and returns the document once the provider answers', async () => {
+  test('retries after a timeout, returns the document once the provider answers, and records a failed then a successful defra-id openid-configuration call', async () => {
     wreckGetMock
       .mockRejectedValueOnce(timedOut())
       .mockResolvedValueOnce({ payload })
@@ -77,9 +83,15 @@ describe('getOidcConfigWithRetry', () => {
     await expect(tracked).resolves.toEqual(payload)
     expect(wreckGetMock).toHaveBeenCalledTimes(2)
     expect(logger.warn).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual([
+        failedDiscoveryCall,
+        successfulDiscoveryCall
+      ])
+    )
   })
 
-  test('gives up only after the full 1s, 2s and 4s backoff and throws an error naming the discovery URL', async () => {
+  test('gives up only after the full 1s, 2s and 4s backoff, throws an error naming the discovery URL, and records four failed defra-id openid-configuration calls', async () => {
     wreckGetMock.mockRejectedValue(timedOut())
 
     const result = getOidcConfigWithRetry(logger)
@@ -101,5 +113,8 @@ describe('getOidcConfigWithRetry', () => {
     expect(error.cause.code).toBe('ETIMEDOUT')
     expect(wreckGetMock).toHaveBeenCalledTimes(4)
     expect(logger.warn).toHaveBeenCalledTimes(3)
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual(Array(4).fill(failedDiscoveryCall))
+    )
   })
 })
