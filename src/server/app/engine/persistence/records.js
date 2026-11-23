@@ -1,5 +1,5 @@
 import { currentSetId, setKeyed } from '../../shared/set-context.js'
-import { countEvent } from '../../../common/helpers/metrics/publish-metrics.js'
+import { countEventInBackground } from '../../../common/helpers/metrics/publish-metrics.js'
 
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
@@ -42,7 +42,7 @@ const writeCountingConflicts = async (write) => {
     return await write()
   } catch (error) {
     if (isStaleConcurrencyRefusal(error)) {
-      countEvent('journey.concurrency.conflict')
+      countEventInBackground('journey.concurrency.conflict')
     }
     throw error
   }
@@ -50,7 +50,7 @@ const writeCountingConflicts = async (write) => {
 
 const writeCountingSuccessAndConflicts = async (metric, write) => {
   const written = await writeCountingConflicts(write)
-  countEvent(metric)
+  countEventInBackground(metric)
   return written
 }
 

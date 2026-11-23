@@ -36,10 +36,11 @@ export const publishMetricsInBackground = (dimensions, metrics) => {
 }
 
 /**
- * Publishes a count of one for an event.
+ * Publishes a count of one for an event, without making the caller wait for
+ * the flush.
  *
  * @param {string} name - the metric's dot-case name
  * @param {Record<string, string>} [dimensions] - its dimensions, the same set on every publish
  */
-export const countEvent = (name, dimensions = {}) =>
+export const countEventInBackground = (name, dimensions = {}) =>
   publishMetricsInBackground(dimensions, [{ name, value: 1, unit: COUNT }])

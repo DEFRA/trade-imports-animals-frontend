@@ -1,5 +1,5 @@
 import { createLogger } from './logging/logger.js'
-import { countEvent } from './metrics/publish-metrics.js'
+import { countEventInBackground } from './metrics/publish-metrics.js'
 import {
   publishDependencyAvailabilityInBackground,
   recordDependencyAvailability
@@ -37,7 +37,10 @@ export const reportRedisConnectionEvents = (client) => {
       logger.warn(dependencyDimensions, 'Redis is unavailable')
     }
     if (connectionLost) {
-      countEvent('external.dependency.connection.lost', dependencyDimensions)
+      countEventInBackground(
+        'external.dependency.connection.lost',
+        dependencyDimensions
+      )
     }
     recordDependencyAvailability({ dependency, available })
     publishDependencyAvailabilityInBackground({ dependency, available })
@@ -48,7 +51,7 @@ export const reportRedisConnectionEvents = (client) => {
       { err, ...dependencyDimensions, ...logFields },
       'Redis connection error'
     )
-    countEvent('external.dependency.error', dependencyDimensions)
+    countEventInBackground('external.dependency.error', dependencyDimensions)
   }
 
   client.on('ready', () => changeAvailabilityTo(true))

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, vi } from 'vitest'
 
 import { config } from '../../../config/config.js'
-import { countEvent } from '../helpers/metrics/publish-metrics.js'
+import { countEventInBackground } from '../helpers/metrics/publish-metrics.js'
 import { restoreConfigAfterEach } from './restore-config-after-each.js'
 
 export const EMF_TEST_NAMESPACE = 'test-namespace'
@@ -121,7 +121,7 @@ export const recordEmfDocuments = () => {
 
   const publishMarkerAndAwaitEarlierPublishes = async () => {
     const markersBefore = flushMarkerCount()
-    countEvent(FLUSH_MARKER)
+    countEventInBackground(FLUSH_MARKER)
     await vi.waitFor(() => expect(flushMarkerCount()).toBe(markersBefore + 1))
   }
 

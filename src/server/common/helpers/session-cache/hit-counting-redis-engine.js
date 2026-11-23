@@ -1,6 +1,6 @@
 import { Engine as CatboxRedis } from '@hapi/catbox-redis'
 
-import { countEvent } from '../metrics/publish-metrics.js'
+import { countEventInBackground } from '../metrics/publish-metrics.js'
 
 /**
  * The Redis catbox engine. Each get that resolves publishes `cache.hit` or
@@ -9,7 +9,9 @@ import { countEvent } from '../metrics/publish-metrics.js'
 export class HitCountingRedisEngine extends CatboxRedis {
   async get(key) {
     const cached = await super.get(key)
-    countEvent(cached ? 'cache.hit' : 'cache.miss', { cache: 'session' })
+    countEventInBackground(cached ? 'cache.hit' : 'cache.miss', {
+      cache: 'session'
+    })
     return cached
   }
 }

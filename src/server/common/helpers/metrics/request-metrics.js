@@ -3,7 +3,7 @@ import { callCountsOf } from '../call-counts/call-counts.js'
 import { isPageRequest } from '../call-counts/call-count-totals.js'
 import { recordPageRequestInBackground } from './page-request-metrics.js'
 import {
-  countEvent,
+  countEventInBackground,
   MILLISECONDS,
   publishMetricsInBackground
 } from './publish-metrics.js'
@@ -89,7 +89,7 @@ const recordRequestTimeInBackground = (request) =>
 
 const countValidationFailureInBackground = (request) => {
   if (isValidationFailure(request)) {
-    countEvent('journey.validation.failure', {
+    countEventInBackground('journey.validation.failure', {
       page: routePage(request.route.path)
     })
   }

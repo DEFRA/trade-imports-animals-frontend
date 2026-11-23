@@ -1,7 +1,10 @@
 import { onTestFinished, vi } from 'vitest'
 import { Metrics } from '@defra/cdp-metrics'
 
-import { countEvent, publishMetricsInBackground } from './publish-metrics.js'
+import {
+  countEventInBackground,
+  publishMetricsInBackground
+} from './publish-metrics.js'
 import {
   EMF_TEST_NAMESPACE,
   recordEmfDocuments
@@ -13,7 +16,7 @@ describe('publish metrics', () => {
   const emf = recordEmfDocuments()
 
   test('counting an event publishes a count of 1 with exactly the dimensions given', async () => {
-    countEvent('journey.validation.failure', { page: 'origin' })
+    countEventInBackground('journey.validation.failure', { page: 'origin' })
 
     const document = await emf.onlyDocument()
     const directive = document._aws.CloudWatchMetrics[0]
@@ -27,7 +30,7 @@ describe('publish metrics', () => {
   })
 
   test('counting an event with frozen dimensions publishes it', async () => {
-    countEvent(
+    countEventInBackground(
       'external.dependency.error',
       Object.freeze({ dependency: 'redis' })
     )
@@ -36,7 +39,7 @@ describe('publish metrics', () => {
   })
 
   test('counting an event with no dimensions publishes it under the empty dimension set', async () => {
-    countEvent('journey.started')
+    countEventInBackground('journey.started')
 
     const document = await emf.onlyDocument()
     expect(document._aws.CloudWatchMetrics[0].Dimensions).toEqual([[]])
