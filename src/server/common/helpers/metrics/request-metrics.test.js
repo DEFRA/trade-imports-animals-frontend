@@ -8,7 +8,7 @@ import hapi from '@hapi/hapi'
 import vision from '@hapi/vision'
 import { vi } from 'vitest'
 
-import { requestMetrics, routePage, routeSection } from './request-metrics.js'
+import { requestMetrics, routePage, routeArea } from './request-metrics.js'
 import {
   BACKEND_DEPENDENCY,
   callCounts,
@@ -68,7 +68,7 @@ const routePages = (server) =>
     { method: 'GET', path: '/health', handler: () => 'ok' }
   ])
 
-describe('route section and page', () => {
+describe('route area and page', () => {
   test.each([
     ['/live-animals/notifications/{journeyId}/origin', 'origin', 'origin'],
     [CONTACT_ROUTE_PATH, 'consignment', 'consignment/contact/edit'],
@@ -92,8 +92,8 @@ describe('route section and page', () => {
     ],
     ['/', 'root', 'root'],
     ['/{p*}', 'unmatched', 'unmatched']
-  ])('%s is in section %s and shows page %s', (routePath, section, page) => {
-    expect(routeSection(routePath)).toBe(section)
+  ])('%s is in area %s and shows page %s', (routePath, area, page) => {
+    expect(routeArea(routePath)).toBe(area)
     expect(routePage(routePath)).toBe(page)
   })
 })
@@ -132,7 +132,7 @@ describe('request metrics', () => {
       expect(emf.documentsWith(REQUEST_TIMER)).toHaveLength(count)
     )
 
-  test('a page request publishes its time from received to completed tagged method, section and status class', async () => {
+  test('a page request publishes its time from received to completed tagged method, area and status class', async () => {
     const { request } = await server.inject({ method: 'GET', url: ORIGIN_URL })
     const elapsedMs = request.info.completed - request.info.received
 
@@ -141,18 +141,18 @@ describe('request metrics', () => {
       {
         value: elapsedMs,
         unit: 'Milliseconds',
-        dimensions: { method: 'GET', section: 'origin', 'status.class': '2xx' }
+        dimensions: { method: 'GET', area: 'origin', 'status.class': '2xx' }
       }
     ])
     expect(elapsedMs).toBeGreaterThan(0)
   })
 
-  test('a request no route matches is published in section unmatched with status class 4xx', async () => {
+  test('a request no route matches is published in area unmatched with status class 4xx', async () => {
     await server.inject({ method: 'GET', url: '/nowhere' })
 
     await requestTimesPublished(1)
     const [document] = emf.documentsWith(REQUEST_TIMER)
-    expect(document.section).toBe('unmatched')
+    expect(document.area).toBe('unmatched')
     expect(document['status.class']).toBe('4xx')
   })
 
@@ -191,7 +191,7 @@ describe('request metrics', () => {
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await requestTimesPublished(1)
-    expect(emf.documentsWith(REQUEST_TIMER)[0].section).toBe('origin')
+    expect(emf.documentsWith(REQUEST_TIMER)[0].area).toBe('origin')
   })
 
   test('a posted answer shown again with an error summary counts one validation failure for its page', async () => {

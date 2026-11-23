@@ -25,14 +25,14 @@ const splitRoutePath = (routePath) => {
 }
 
 /**
- * The section a route belongs to: the first literal segment after its first
+ * The area a route belongs to: the first literal segment after its first
  * path parameter, else its last literal segment before it, `root` for `/` and
  * `unmatched` for a route that is all parameters.
  *
  * @param {string} routePath - the matched route's path template
- * @returns {string} the section
+ * @returns {string} the area
  */
-export const routeSection = (routePath) => {
+export const routeArea = (routePath) => {
   if (routePath === '/') {
     return 'root'
   }
@@ -44,7 +44,7 @@ export const routeSection = (routePath) => {
 
 /**
  * The page a route shows: the literal segments after its first path parameter,
- * joined with `/`, else its section.
+ * joined with `/`, else its area.
  *
  * @param {string} routePath - the matched route's path template
  * @returns {string} the page
@@ -53,7 +53,7 @@ export const routePage = (routePath) => {
   const afterParameter = literalSegments(splitRoutePath(routePath).after)
   return afterParameter.length > 0
     ? afterParameter.join('/')
-    : routeSection(routePath)
+    : routeArea(routePath)
 }
 
 const statusClassOf = (statusCode) => {
@@ -75,7 +75,7 @@ const recordRequestTimeInBackground = (request) =>
   publishMetricsInBackground(
     {
       method: request.method.toUpperCase(),
-      section: routeSection(request.route.path),
+      area: routeArea(request.route.path),
       'status.class': statusClassOf(statusCodeOf(request))
     },
     [
@@ -109,7 +109,7 @@ const publishFinishedPageRequestMetrics = (request) => {
 /**
  * Publishes, without making the request wait, every finished page request as
  * `http.server.requests` (its time from received to completed, tagged
- * `method`, `section` and `status.class`); for a posted answer the page showed
+ * `method`, `area` and `status.class`); for a posted answer the page showed
  * again with an error summary, a `journey.validation.failure` count tagged
  * `page`; and, when `callCounts.metrics.enabled` is on, the request's call
  * counts as `page.request.backend.calls` and `page.request.session.resolutions`.
