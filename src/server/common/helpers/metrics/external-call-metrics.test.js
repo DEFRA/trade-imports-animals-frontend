@@ -210,11 +210,24 @@ describe('the status a dependency answers with', () => {
   )
 
   test.each([
-    { status: 404, outcome: 'success', failure: 0, level: 'info' },
-    { status: 503, outcome: 'failure', failure: 1, level: 'warn' }
+    {
+      status: 404,
+      outcome: 'success',
+      failure: 0,
+      level: 'info',
+      errorLogged: 'no error'
+    },
+    {
+      status: 503,
+      outcome: 'failure',
+      failure: 1,
+      level: 'warn',
+      errorLogged: 'the error type and message',
+      error: { type: 'Error', message: 'Failed to status: 503 Refused' }
+    }
   ])(
-    'a call that throws an error with status $status rethrows it, is a $outcome and is logged with its status code',
-    async ({ status, outcome, failure, level }) => {
+    'a call that throws an error with status $status rethrows it, is a $outcome and is logged with its status code and $errorLogged',
+    async ({ status, outcome, failure, level, error }) => {
       const refusal = failedResponse(
         'status',
         new Response(null, { status, statusText: 'Refused' })
@@ -231,6 +244,7 @@ describe('the status a dependency answers with', () => {
       expect(line['log.level']).toBe(level)
       expect(line.event.outcome).toBe(outcome)
       expect(line.http).toEqual({ response: { status_code: status } })
+      expect(line.error).toEqual(error)
     }
   )
 
