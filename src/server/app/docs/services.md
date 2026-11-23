@@ -43,6 +43,12 @@ questions. A session's status is read from `cdpUploader.baseUrl`, never from a
 URL the session hands back, so a session cannot point the server at another
 host.
 
+cdp-uploader refuses a session request whose body is not sent as
+`application/json`. Both calls carry the tracing header, so support can follow
+an upload of up to 50MB across services. The return path a session is opened
+with is relative, and cdp-uploader refuses a protocol-relative one (`//host`)
+even though it starts with a slash.
+
 A return link naming a handle the notification never opened is an ordinary
 outcome — a stale or hand-edited link — so the session lookup answers nothing
 rather than failing. So is a handle whose session has already taken its file:

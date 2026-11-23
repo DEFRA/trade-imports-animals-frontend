@@ -12,8 +12,6 @@ import { documentUploadSessions } from './real.js'
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-// Deliberately unlike the defaults, so a value read from somewhere other than
-// the configuration — or hard-coded — fails rather than matching by accident.
 const UPLOADER_URL = 'http://uploader.test:7337'
 const CALLBACK_URL =
   'http://backend.test:8085/document-uploads/pending/scan-results'
@@ -74,10 +72,6 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    /**
-     * The upload service refuses the body without the JSON content type, and support follows a
-     * 50MB upload across services by the tracing header, so both are part of the contract.
-     */
     it('Should send JSON with the tracing header', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
@@ -88,8 +82,6 @@ describe('#documentUploadSessions', () => {
       expect(request.headers.has(TRACING_HEADER)).toBe(true)
     })
 
-    // The whole value is pinned, not just its first character: a protocol-relative
-    // URL starts with a slash and is refused too.
     it('Should ask the upload service to return the browser to a relative path', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
@@ -99,10 +91,6 @@ describe('#documentUploadSessions', () => {
       expect(sent.redirect).toBe(RETURN_PATH)
     })
 
-    /**
-     * cdp-uploader resolves the callback itself, from inside the platform's network, so a value
-     * that is not the configured one scans the file and posts the result nowhere.
-     */
     it('Should take the callback and the bucket from the configuration', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
