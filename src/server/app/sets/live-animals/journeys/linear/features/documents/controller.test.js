@@ -125,7 +125,6 @@ const PDF_FILENAME = 'itahc-certificate.pdf'
 const DOCUMENTS_SLUG = 'accompanying-documents'
 const UNHELD_UPLOAD_ID = 'somebody-elses-upload-id'
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
-// Pinned as literals rather than read from copy, so a rewording fails a test.
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
 const TAG_REJECTED = 'Rejected'
@@ -805,8 +804,6 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   const NOT_FOUND = 404
   const TAKE_ON_FAILED_MESSAGE = 'Could not take on the returned upload'
-  // Registered against the notification but never opened with the upload
-  // service, so reading the session it names answers 404.
   const UNOPENED_UPLOAD_ID = 'upload-session-never-opened'
 
   const expectHeldOnPageWithProblemBanner = (result) => {
@@ -826,8 +823,6 @@ describe('documents — taking on a returned upload a service refuses', () => {
 
   it('Should hold the trader on the page with the problem banner when the upload session cannot be read, appending nothing and logging the failure once', async () => {
     const correlationId = randomUUID()
-    // Answered here rather than registered through the stub, which scopes a
-    // handle to its notification and so needs the journey this drive creates.
     const found = vi
       .spyOn(documentUploads, 'findByCorrelationId')
       .mockResolvedValue({ uploadId: UNOPENED_UPLOAD_ID, correlationId })
@@ -1898,8 +1893,6 @@ describe('documents — the add form when no upload session can be opened', () =
     }
   })
 
-  // Pressing the refused button is still reachable from the keyboard, and the
-  // add step it would ask for is the one that cannot be taken.
   it('Should state only the upload failure when Continue carries a document and no session can be opened, keeping the answers', async () => {
     const open = vi
       .spyOn(documentUploadSessions, 'open')
@@ -2208,8 +2201,6 @@ describe('documents — backend and upload service failures', () => {
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after).toEqual(seed)
-    // The failure render re-opens the add form, which logs a line of its own,
-    // so the fallback is asserted as present rather than as the only line.
     expect(result.logger.entries).toContainEqual(
       saveFallbackEntry({
         journeyId: result.journeyId,
@@ -2258,8 +2249,6 @@ describe('documents — the add form on a notification at its cap', () => {
     expect(result.view.context.addFormClosedReason).toBe(
       `You can upload a maximum of ${MAX_DOCUMENTS} files`
     )
-    // The session still opened — the form is closed on capacity, not on a
-    // failure to reach the upload service.
     expect(result.view.context.uploadFormUnavailable).toBe(false)
   })
 
@@ -2349,8 +2338,6 @@ describe('documents — what a document reference may carry', () => {
   const REFERENCE_CHARACTERS_MESSAGE =
     'Document reference must only include letters, numbers, spaces, hyphens, full stops and forward slashes'
 
-  // The shapes real documents carry: an IATA air waybill, a TRACES
-  // certificate, a commercial invoice, and a plain alphanumeric reference.
   it.each([
     '125-12345675',
     'CHEDA.GB.2026.1234567',
