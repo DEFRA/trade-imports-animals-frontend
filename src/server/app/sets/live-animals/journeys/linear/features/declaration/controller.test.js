@@ -250,15 +250,7 @@ describe('#declaration submit', () => {
       expectNoRefusalLogged(result.logger)
     })
 
-    it('Should redirect to the confirmation page after a successful submit', async () => {
-      const result = await drivePost({ payload: { declaration: 'confirmed' } })
-
-      expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'confirmation')
-      })
-    })
-
-    it('Should submit the notification as Submitted and redirect to the confirmation page when the declaration is confirmed with no ITAHC uploaded', async () => {
+    it('Should submit the notification and redirect to the confirmation page when the declaration is confirmed', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
