@@ -70,7 +70,7 @@ export const countSessionResolution = (request) => {
   }
 }
 
-const runCycleWithCounts = (request, cycle, counts) => {
+const bindCountsToCycle = (request, cycle, counts) => {
   const requestCycle = request[cycle].bind(request)
   request[cycle] = () => storage.run(counts, requestCycle)
 }
@@ -78,8 +78,8 @@ const runCycleWithCounts = (request, cycle, counts) => {
 const countRequest = (request, h) => {
   const counts = newCallCounts()
   request.plugins[PLUGIN_NAME] = counts
-  runCycleWithCounts(request, '_lifecycle', counts)
-  runCycleWithCounts(request, '_postCycle', counts)
+  bindCountsToCycle(request, '_lifecycle', counts)
+  bindCountsToCycle(request, '_postCycle', counts)
   return h.continue
 }
 
