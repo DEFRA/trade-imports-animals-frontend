@@ -10,6 +10,7 @@ import {
 import { DatePicker } from '@ministryofjustice/frontend'
 import AccessibleAutocomplete from './components/accessible-autocomplete.js'
 import MultiSelectSearch from './components/multi-select-search.js'
+import PickerPagingSelection from './components/picker-paging-selection.js'
 import RegionCodePrefix from './components/region-code-prefix.js'
 import StatusAnnouncer from './components/status-announcer.js'
 import TransporterFilter from './components/transporter-filter.js'
@@ -23,6 +24,7 @@ createAll(SkipLink)
 createAll(DatePicker)
 createAll(AccessibleAutocomplete)
 createAll(MultiSelectSearch)
+createAll(PickerPagingSelection)
 createAll(RegionCodePrefix)
 createAll(StatusAnnouncer)
 createAll(TransporterFilter)

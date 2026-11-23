@@ -70,9 +70,14 @@ export const copy = {
     },
     errorPrefix: 'Gwall:',
     noMatches: 'Nid oes unrhyw gyfeiriadau’n cyfateb i’ch chwiliad.',
+    selectedAddress: (name) => `Cyfeiriad a ddewiswyd: ${name}`,
     resultsHeading: 'Dewiswch gyfeiriad',
     resultsCount: (shown, total) =>
       `Yn dangos ${shown} allan o ${total} canlyniad`,
+    pagination: {
+      previous: 'Blaenorol',
+      next: 'Nesaf'
+    },
     table: {
       selectHidden: 'Dewis',
       name: 'Enw',

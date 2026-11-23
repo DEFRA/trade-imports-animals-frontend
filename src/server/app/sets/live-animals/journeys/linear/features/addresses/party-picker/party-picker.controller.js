@@ -16,9 +16,10 @@ import { PARTIES } from '../parties.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { isSearchAction } from './request-params.js'
+import { isSearchAction, pageNumber } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
+import { servedPageOf } from './view-model/pagination/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
@@ -42,6 +43,7 @@ const render = async (
   party,
   {
     query,
+    page: requestedPage,
     selectedId,
     error,
     recoverableError = false,
@@ -53,6 +55,18 @@ const render = async (
     query,
     role: party.addressBookRole
   })
+  const page = servedPageOf(requestedPage, found.length)
+  if (page !== requestedPage) {
+    request.logger.info(
+      {
+        journeyId: journey.journeyId,
+        partyId: party.id,
+        requestedPage,
+        servedPage: page
+      },
+      'Address picker page is past the last page, serving the last page'
+    )
+  }
   const selected = await chosenPartyFor(
     orgId,
     selectedId,
@@ -82,6 +96,7 @@ const render = async (
       party,
       {
         query,
+        page,
         selectedId: effectiveSelectedId,
         error,
         found,
@@ -107,6 +122,7 @@ const get = (party) => async (request, h) => {
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
+    page: pageNumber(request.query.page),
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
@@ -156,6 +172,7 @@ const post = (party) => async (request, h) => {
     const { journey } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
+      page: 1,
       selectedId,
       addAddressHref: issueAddAddressLink(request, h, journey, party)
     })
@@ -180,6 +197,7 @@ const post = (party) => async (request, h) => {
     return (
       await render(request, h, orgId, journey, party, {
         query,
+        page: pageNumber(payload.page),
         selectedId: '',
         error: party.error,
         addAddressHref: issueAddAddressLink(request, h, journey, party)
@@ -187,7 +205,10 @@ const post = (party) => async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, party, chosen, { query })
+  return commitSelection(request, h, party, chosen, {
+    query,
+    page: pageNumber(payload.page)
+  })
 }
 
 export const routes = PARTIES.flatMap((party) => [
