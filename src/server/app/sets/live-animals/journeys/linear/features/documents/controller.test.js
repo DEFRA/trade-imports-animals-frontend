@@ -202,19 +202,7 @@ const registeredSession = async (journeyId) => {
   return { journeyId, correlationId, uploadId }
 }
 
-/**
- * Drives the page the way the upload service returns the browser to it: a session opened and
- * registered against the notification through the stub adapters, and the submitted form read
- * back from it. The read is stood in for so a test can hand the page a file entry the stand-in
- * will not produce — a code it does not model, or a scan verdict it reaches no other way.
- * A case the stand-in can judge for itself belongs in `driveClaimThroughUploadService`.
- *
- * @param {object} form - the form the session answers with
- * @param {object} [options] - `driveHandler` options, plus `session` to replay one and
- *   `claimError` to refuse the claim
- * @returns {Promise<object>} what `driveHandler` reports, plus the `session` it drove
- */
-const driveClaim = async (
+const driveClaimReadingForm = async (
   form,
   { claimError = null, session = null, ...options } = {}
 ) => {
@@ -240,15 +228,6 @@ const driveClaim = async (
   }
 }
 
-/**
- * Drives the claim leg with nothing stood in for: the submitted form is recorded against the
- * session by the stand-in upload service, which judges the file by the limits the session was
- * opened with, and the page reads it back through the real session read.
- *
- * @param {object} payload - the submitted fields, `file` as hapi's annotated multipart entry
- * @param {object} [options] - `driveHandler` options
- * @returns {Promise<object>} what `driveHandler` reports, plus the `session` it drove
- */
 const driveClaimThroughUploadService = async (payload, options = {}) => {
   const { journeyId, correlationId, uploadId } = await registeredSession(
     (await store.create()).journeyId
@@ -302,7 +281,6 @@ const registeredUpload = async (filename) => {
   return uploadId
 }
 
-/** The payload cap a route carries when it sets none, read from hapi itself. */
 const uncappedRouteMaxBytes = async () => {
   const server = Hapi.server()
   server.route({ method: 'POST', path: '/', handler: () => null })
@@ -350,7 +328,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   useStubbedJourney(SET_ID, dispatchPages)
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
-    const result = await driveClaim({
+    const result = await driveClaimReadingForm({
       accompanyingDocumentType: 'ITAHC',
       accompanyingDocumentDateOfIssue: '31/2/2000',
       file: submittedFile()
@@ -363,7 +341,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should require a document reference, a document type and a date of issue', async () => {
-    const result = await driveClaim({ file: submittedFile() })
+    const result = await driveClaimReadingForm({ file: submittedFile() })
 
     expect(result.view.context.errors.accompanyingDocumentReference).toBe(
       'Enter a document reference'
@@ -378,7 +356,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should list the errors in the order the fields appear on the page', async () => {
-    const result = await driveClaim({ file: submittedFile() })
+    const result = await driveClaimReadingForm({ file: submittedFile() })
 
     expect(Object.keys(result.view.context.errors)).toEqual([
       'accompanyingDocumentReference',
@@ -388,7 +366,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should name a refused file alongside the missing fields, in page order', async () => {
-    const result = await driveClaim({
+    const result = await driveClaimReadingForm({
       file: submittedFile({ hasError: true, errorCode: 'FILE_TOO_LARGE' })
     })
     const fieldOrder = [
@@ -405,7 +383,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should refuse a document type the page never offered and append nothing', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({ accompanyingDocumentType: UNOFFERED_TYPE })
     )
     expect(result.response.statusCode).toBe(400)
@@ -416,7 +394,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should append the document with the chosen type and the attachment type derived from the filename, then redirect', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({ file: submittedFile({ filename: 'itahc.pdf' }) })
     )
     expect(result.response.redirect).toBeDefined()
@@ -428,7 +406,7 @@ describe('documents — taking on an upload the browser returns with', () => {
   })
 
   it('Should store the chosen type whatever the filename says', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         accompanyingDocumentType: 'COMMERCIAL_INVOICE',
         file: submittedFile({ filename: PDF_FILENAME })
@@ -473,7 +451,10 @@ describe('documents — leaving the page by the save choice a returned upload ca
   ])(
     'Should append the returned document once and redirect to where %s leads',
     async (_choiceLabel, choice, requestOptions, expectedRedirect) => {
-      const result = await driveClaim(completeDocument(choice), requestOptions)
+      const result = await driveClaimReadingForm(
+        completeDocument(choice),
+        requestOptions
+      )
 
       expect(result.response).toEqual({
         redirect: expectedRedirect(result.journeyId)
@@ -489,7 +470,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   )
 
   it('Should append nothing and redirect to the overview for an untouched form returned with Save and return to overview, logging the unclaimed return once', async () => {
-    const result = await driveClaim(SAVE_AND_RETURN_TO_OVERVIEW)
+    const result = await driveClaimReadingForm(SAVE_AND_RETURN_TO_OVERVIEW)
 
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.after).toEqual(result.before)
@@ -513,7 +494,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should append nothing and redirect to Consignment addresses for an untouched form returned with Save and continue', async () => {
-    const result = await driveClaim(SAVE_AND_CONTINUE)
+    const result = await driveClaimReadingForm(SAVE_AND_CONTINUE)
 
     expect(result.response).toEqual({
       redirect: addressesPath(result.journeyId)
@@ -522,7 +503,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should redirect an untouched form returned at the cap with Save and return to overview to the overview, appending nothing', async () => {
-    const result = await driveClaim(SAVE_AND_RETURN_TO_OVERVIEW, {
+    const result = await driveClaimReadingForm(SAVE_AND_RETURN_TO_OVERVIEW, {
       seed: documentsAtCapacity()
     })
 
@@ -531,7 +512,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should refuse an untouched form returned with Save and add another, naming every missing detail', async () => {
-    const result = await driveClaim({ action: 'add' })
+    const result = await driveClaimReadingForm({ action: 'add' })
 
     expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
     expect(Object.keys(result.view.context.errors)).toEqual([
@@ -544,7 +525,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should send an untouched form returned with Save and continue from a page opened with a Change link on to Consignment addresses', async () => {
-    const result = await driveClaim(SAVE_AND_CONTINUE, {
+    const result = await driveClaimReadingForm(SAVE_AND_CONTINUE, {
       startingFrom: [{ query: reviewChangeLinkQuery() }]
     })
 
@@ -554,7 +535,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should send an untouched form returned with Save and continue while amending on to Consignment addresses', async () => {
-    const result = await driveClaim(SAVE_AND_CONTINUE, {
+    const result = await driveClaimReadingForm(SAVE_AND_CONTINUE, {
       startingFrom: amendmentOpenedFromChangeLink()
     })
 
@@ -564,7 +545,7 @@ describe('documents — leaving the page by the save choice a returned upload ca
   })
 
   it('Should ask for the document type when a reference, a date and a file arrive without one, appending nothing', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         ...SAVE_AND_CONTINUE,
         accompanyingDocumentType: ''
@@ -590,7 +571,10 @@ describe('documents — leaving the page by the save choice a returned upload ca
   ])(
     'Should count a returned form carrying %s as started and refuse it, appending nothing',
     async (_title, fields) => {
-      const result = await driveClaim({ ...SAVE_AND_CONTINUE, ...fields })
+      const result = await driveClaimReadingForm({
+        ...SAVE_AND_CONTINUE,
+        ...fields
+      })
 
       expect(result.response.statusCode).toBe(HTTP_STATUS_BAD_REQUEST)
       expect(result.view.context.errors.file).toBe(FILE_REQUIRED_MESSAGE)
@@ -658,7 +642,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file whose name resolves to no attachment type, and append nothing', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({ filename: 'certificate-with-no-extension' })
       })
@@ -669,7 +653,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file the upload service itself rejected as empty and append nothing', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({
           contentLength: 0,
@@ -684,7 +668,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file the upload service rejected for its type, naming the accepted types', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({
           filename: 'notes.zip',
@@ -698,7 +682,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file the upload service rejected for its size, naming the limit', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({
           filename: 'big.pdf',
@@ -712,7 +696,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should name the virus when the upload service found one, rather than inviting a retry', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({
           filename: 'eicar.pdf',
@@ -728,7 +712,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file the upload service could not download, rather than inviting a retry', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({
           filename: 'certificate.pdf',
@@ -744,7 +728,7 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should refuse a file the upload service rejected for a reason the page does not know', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         file: submittedFile({ hasError: true, errorCode: 'FILE_SOMETHING_NEW' })
       })
@@ -784,10 +768,10 @@ describe('documents — refusing an upload the browser returns with', () => {
   })
 
   it('Should append the document once when the same return is replayed', async () => {
-    const first = await driveClaim(submittedDocument())
+    const first = await driveClaimReadingForm(submittedDocument())
     expect(first.after.documents).toHaveLength(1)
 
-    const replayed = await driveClaim(submittedDocument(), {
+    const replayed = await driveClaimReadingForm(submittedDocument(), {
       session: first.session,
       seed: { documents: first.after.documents }
     })
@@ -849,7 +833,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
   it('Should hold the trader on the page with the answers they submitted when the claim is refused, appending nothing and logging the failure once', async () => {
     const refusal = claimRefusal()
 
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       claimError: refusal
     })
 
@@ -876,7 +860,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
   it('Should hold the trader on the page with the problem banner when saving the taken-on document fails, appending nothing and logging the failure once', async () => {
     const saveRefusal = backendRefusal()
 
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       startingFrom: [refusingSaves(saveRefusal)]
     })
 
@@ -897,7 +881,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
   })
 
   it('Should say the document was not saved to the notification, rather than that the answers were saved', async () => {
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       startingFrom: [refusingSaves(backendRefusal())]
     })
 
@@ -907,7 +891,7 @@ describe('documents — taking on a returned upload a service refuses', () => {
   })
 
   it('Should carry the handle the next save takes the upload on again by', async () => {
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       startingFrom: [refusingSaves(backendRefusal())]
     })
 
@@ -926,7 +910,6 @@ describe('documents — saving a document the service has taken on', () => {
   const RETRY_TAKE_ON_LINE =
     'Taking on the returned upload again, to save the document it was taken on for'
 
-  /** A session registered against the notification, uploaded through and claimed. */
   const takenOnUpload = async (journeyId) => {
     const session = await registeredSession(journeyId)
     recordSubmittedUpload(session.uploadId, {
@@ -1237,7 +1220,7 @@ describe('documents — removing one, and the document cap', () => {
   })
 
   it('Should refuse a returning upload past the cap with the maximum message, linked to the documents it already holds, and append nothing', async () => {
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       seed: documentsAtCapacity()
     })
     expect(result.response.statusCode).toBe(400)
@@ -1993,11 +1976,6 @@ describe('documents — the session the add form posts to', () => {
     )
   })
 
-  /**
-   * The handle arrives from the browser, so the session it names is looked up on the notification
-   * the page belongs to. A handle another notification opened must reach nothing, or a file would
-   * be uploaded into a session scoped to someone else's notification.
-   */
   it('Should open a session of its own for a handle another notification opened', async () => {
     const other = await registeredSession((await store.create()).journeyId)
 
@@ -2304,7 +2282,7 @@ describe('documents — where the save buttons post', () => {
   })
 
   it('Should post both save buttons to this page when a taken-on document is waiting to be saved, so the save is retried', async () => {
-    const result = await driveClaim(submittedDocument(), {
+    const result = await driveClaimReadingForm(submittedDocument(), {
       startingFrom: [refusingSaves(backendRefusal())]
     })
 
@@ -2344,7 +2322,7 @@ describe('documents — what a document reference may carry', () => {
     'INV 2026/0042',
     'GBHC1234567890'
   ])('Should take on a document whose reference is %s', async (reference) => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({ accompanyingDocumentReference: reference })
     )
 
@@ -2356,7 +2334,7 @@ describe('documents — what a document reference may carry', () => {
   it.each(['REF<script>', 'REF;DROP', 'REF|pipe'])(
     'Should refuse a reference carrying a character the claim would reject: %s',
     async (reference) => {
-      const result = await driveClaim(
+      const result = await driveClaimReadingForm(
         submittedDocument({ accompanyingDocumentReference: reference })
       )
 
@@ -2369,7 +2347,7 @@ describe('documents — what a document reference may carry', () => {
   )
 
   it('Should refuse a reference past the length the claim accepts, naming that length', async () => {
-    const result = await driveClaim(
+    const result = await driveClaimReadingForm(
       submittedDocument({
         accompanyingDocumentReference: 'R'.repeat(REFERENCE_MAX_LENGTH + 1)
       })
