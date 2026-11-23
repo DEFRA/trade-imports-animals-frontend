@@ -8,6 +8,11 @@ import { BackendRequestError } from './persistence/records/errors.js'
 
 const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
+const addressBookCall = (operation) => ({
+  dependency: 'address-book',
+  operation
+})
+
 export { ORGANISATION_ID_HEADER }
 
 /** The largest page size the address book serves. */
@@ -56,9 +61,7 @@ export const addressBookHeaders = (organisationId) =>
  * @returns {Promise<Response>} the address book's response
  */
 export const addressBookFetch = (operation, url, init) =>
-  measureExternalResponse({ dependency: 'address-book', operation }, () =>
-    fetch(url, init)
-  )
+  measureExternalResponse(addressBookCall(operation), () => fetch(url, init))
 
 /**
  * Raises the address book's refusal of a call when its response was not ok.
@@ -69,7 +72,7 @@ export const addressBookFetch = (operation, url, init) =>
  */
 export const throwOnAddressBookError = (operation, response) => {
   if (!response.ok) {
-    throw new BackendRequestError(operation, response)
+    throw new BackendRequestError(addressBookCall(operation), response)
   }
 }
 

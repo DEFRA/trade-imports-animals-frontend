@@ -1,6 +1,7 @@
 import { config } from '../../../../config/config.js'
 import { measureExternalCall } from '../../../common/helpers/metrics/external-call-metrics.js'
-import { failedResponse, traceHeaders } from '../http/trace-headers.js'
+import { RefusedCallError } from '../http/dependency-error.js'
+import { traceHeaders } from '../http/trace-headers.js'
 
 const uploaderBaseUrl = () => config.get('cdpUploader.baseUrl')
 const scanResultCallbackUrl = () =>
@@ -8,8 +9,16 @@ const scanResultCallbackUrl = () =>
 const documentsBucket = () => config.get('cdpUploader.documentsBucket')
 
 const UPLOADER_CALLS = Object.freeze({
-  openSession: { dependency: 'cdp-uploader', operation: 'initiate' },
-  readSession: { dependency: 'cdp-uploader', operation: 'status' }
+  openSession: {
+    dependency: 'cdp-uploader',
+    operation: 'initiate',
+    action: 'open an upload session'
+  },
+  readSession: {
+    dependency: 'cdp-uploader',
+    operation: 'status',
+    action: 'read an upload session'
+  }
 })
 
 export const documentUploadSessions = {
@@ -56,7 +65,7 @@ export const documentUploadSessions = {
           })
         })
         if (!response.ok) {
-          throw failedResponse(UPLOADER_CALLS.openSession.operation, response)
+          throw new RefusedCallError(UPLOADER_CALLS.openSession, response)
         }
         return response.json()
       }
@@ -80,7 +89,7 @@ export const documentUploadSessions = {
         headers: traceHeaders()
       })
       if (!response.ok) {
-        throw failedResponse(UPLOADER_CALLS.readSession.operation, response)
+        throw new RefusedCallError(UPLOADER_CALLS.readSession, response)
       }
       return response.json()
     })

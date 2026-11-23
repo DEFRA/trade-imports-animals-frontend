@@ -12,7 +12,7 @@ import { callCounts } from '../call-counts/call-counts.js'
 import { callCountsRoutes } from '../call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../call-counts/call-count-totals.js'
 import { requestTracing } from '../request-tracing.js'
-import { failedResponse } from '../../../app/services/http/trace-headers.js'
+import { RefusedCallError } from '../../../app/services/http/dependency-error.js'
 import { config } from '../../../../config/config.js'
 import {
   EMF_TEST_NAMESPACE,
@@ -216,13 +216,16 @@ describe('the status a dependency answers with', () => {
       failure: 1,
       level: 'warn',
       errorLogged: 'the error type and message',
-      error: { type: 'Error', message: 'Failed to status: 503 Refused' }
+      error: {
+        type: 'RefusedCallError',
+        message: 'address-book refused to list addresses: 503 Refused'
+      }
     }
   ])(
     'a call that throws an error with status $status rethrows it, is a $outcome and is logged with its status code and $errorLogged',
     async ({ status, outcome, failure, level, error }) => {
-      const refusal = failedResponse(
-        'status',
+      const refusal = new RefusedCallError(
+        LIST_ADDRESSES,
         new Response(null, { status, statusText: 'Refused' })
       )
 

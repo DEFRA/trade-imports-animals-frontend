@@ -1,9 +1,13 @@
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/call-counts/call-counts.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
 import { logger } from '../logger.js'
 
 export const failed = async (operation, response) => {
-  const error = new BackendRequestError(operation, response)
+  const error = new BackendRequestError(
+    { dependency: BACKEND_DEPENDENCY, operation },
+    response
+  )
   if (response.status === HTTP_CONFLICT) {
     try {
       const body = await response.clone().json()

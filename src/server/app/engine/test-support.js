@@ -15,6 +15,7 @@ import { records as recordsReal } from '../services/persistence/records/real/ind
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { BackendRequestError } from '../services/persistence/records/errors.js'
+import { BACKEND_DEPENDENCY } from '../../common/helpers/call-counts/call-counts.js'
 import {
   CYA_SLUG,
   REFUSAL_LOG_MESSAGE,
@@ -220,10 +221,13 @@ const requestLocation = (pathOf, journeyId, query) => {
 
 /** The recoverable records error for a backend that answered 503 to `operation`. */
 export const unavailableBackendError = (operation) =>
-  new BackendRequestError(operation, {
-    status: 503,
-    statusText: 'Service Unavailable'
-  })
+  new BackendRequestError(
+    { dependency: BACKEND_DEPENDENCY, operation },
+    {
+      status: 503,
+      statusText: 'Service Unavailable'
+    }
+  )
 
 const recordsRejectingSaves = (failure) => ({
   ...recordsStub,

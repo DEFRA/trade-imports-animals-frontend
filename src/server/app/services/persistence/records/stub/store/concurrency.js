@@ -1,4 +1,5 @@
 import { STALE_CONCURRENCY_TOKEN } from '../../../../../engine/persistence/records.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/call-counts/call-counts.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_BAD_REQUEST, HTTP_CONFLICT } from '../../real/config.js'
 
@@ -13,8 +14,9 @@ export const assertConcurrencyToken = (
   expectedConcurrencyToken,
   operation
 ) => {
+  const call = { dependency: BACKEND_DEPENDENCY, operation }
   if (isMissingToken(expectedConcurrencyToken)) {
-    const error = new BackendRequestError(operation, {
+    const error = new BackendRequestError(call, {
       status: HTTP_BAD_REQUEST,
       statusText: 'Bad Request'
     })
@@ -22,7 +24,7 @@ export const assertConcurrencyToken = (
     throw error
   }
   if (Number(expectedConcurrencyToken) !== (journey.concurrencyToken ?? 0)) {
-    const error = new BackendRequestError(operation, {
+    const error = new BackendRequestError(call, {
       status: HTTP_CONFLICT,
       statusText: 'Conflict'
     })

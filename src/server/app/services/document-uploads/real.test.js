@@ -77,7 +77,8 @@ describe('#documentUploads', () => {
           })
         )
       ).rejects.toMatchObject({
-        message: 'Failed to register-document-upload: 409 Conflict',
+        message:
+          'animals-backend refused to register document upload: 409 Conflict',
         status: 409
       })
     })
@@ -117,7 +118,8 @@ describe('#documentUploads', () => {
       await expect(
         asSession(() => documentUploads.claim({ uploadId: UPLOAD_ID }))
       ).rejects.toMatchObject({
-        message: 'Failed to claim-document-upload: 404 Not Found',
+        message:
+          'animals-backend refused to claim document upload: 404 Not Found',
         status: 404
       })
     })
@@ -171,7 +173,7 @@ describe('#documentUploads', () => {
         )
       ).rejects.toMatchObject({
         message:
-          'Failed to get-document-upload-session: 503 Service Unavailable',
+          'animals-backend refused to get document upload session: 503 Service Unavailable',
         status: 503
       })
     })
@@ -239,7 +241,8 @@ describe('#documentUploads', () => {
           documentUploads.listByNotification({ journeyId: JOURNEY_ID })
         )
       ).rejects.toMatchObject({
-        message: 'Failed to list-document-uploads: 503 Service Unavailable',
+        message:
+          'animals-backend refused to list document uploads: 503 Service Unavailable',
         status: 503
       })
     })
@@ -329,7 +332,7 @@ describe('#documentUploads — scan status, removal and reads', () => {
         asSession(() => documentUploads.scanStatus({ uploadId: UPLOAD_ID }))
       ).rejects.toMatchObject({
         message:
-          'Failed to get-document-upload-status: 503 Service Unavailable',
+          'animals-backend refused to get document upload status: 503 Service Unavailable',
         status: 503
       })
     })
@@ -352,7 +355,8 @@ describe('#documentUploads — scan status, removal and reads', () => {
       await expect(
         asSession(() => documentUploads.remove(UPLOAD_ID))
       ).rejects.toMatchObject({
-        message: 'Failed to delete-document-upload: 404 Not Found',
+        message:
+          'animals-backend refused to delete document upload: 404 Not Found',
         status: 404
       })
     })
@@ -387,7 +391,8 @@ describe('#documentUploads — scan status, removal and reads', () => {
       await expect(
         asSession(() => documentUploads.streamFile(UPLOAD_ID))
       ).rejects.toMatchObject({
-        message: 'Failed to stream-document-file: 404 Not Found',
+        message:
+          'animals-backend refused to stream document file: 404 Not Found',
         status: 404
       })
     })

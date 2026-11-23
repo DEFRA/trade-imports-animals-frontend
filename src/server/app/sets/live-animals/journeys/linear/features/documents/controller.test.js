@@ -39,6 +39,8 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../../common/helpers/call-counts/call-counts.js'
+import { RefusedCallError } from '../../../../../../services/http/dependency-error.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
@@ -301,11 +303,16 @@ const errorEntries = ({ logger }) =>
 
 const SERVICE_UNAVAILABLE = 503
 
+const SERVICE_UNAVAILABLE_ANSWER = {
+  status: SERVICE_UNAVAILABLE,
+  statusText: 'Service Unavailable'
+}
+
 const backendRefusal = (operation = 'save answers') =>
-  new BackendRequestError(operation, {
-    status: SERVICE_UNAVAILABLE,
-    statusText: 'Service Unavailable'
-  })
+  new BackendRequestError(
+    { dependency: BACKEND_DEPENDENCY, operation },
+    SERVICE_UNAVAILABLE_ANSWER
+  )
 
 const configureEngine = () => {
   configureRecords(SET_ID, recordsStub)
@@ -800,9 +807,9 @@ describe('documents — taking on a returned upload a service refuses', () => {
   }
 
   const claimRefusal = () =>
-    Object.assign(
-      new Error('Failed to claim-document-upload: 503 Service Unavailable'),
-      { status: SERVICE_UNAVAILABLE }
+    new RefusedCallError(
+      { dependency: BACKEND_DEPENDENCY, operation: 'claim-document-upload' },
+      SERVICE_UNAVAILABLE_ANSWER
     )
 
   it('Should hold the trader on the page with the problem banner when the upload session cannot be read, appending nothing and logging the failure once', async () => {
@@ -1395,11 +1402,15 @@ describe('documents — scan-status poll and view context', () => {
 
   it('Should treat an unreadable scan status as pending and log it against the upload', async () => {
     const uploadId = await registeredUpload('itahc.pdf')
-    const err = Object.assign(
-      new Error(
-        'Failed to get-document-upload-status: 500 Internal Server Error'
-      ),
-      { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
+    const err = new RefusedCallError(
+      {
+        dependency: BACKEND_DEPENDENCY,
+        operation: 'get-document-upload-status'
+      },
+      {
+        status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        statusText: 'Internal Server Error'
+      }
     )
     const read = vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(err)
 
@@ -1784,14 +1795,19 @@ describe('documents — the add form when no upload session can be opened', () =
     'Documents cannot be uploaded at the moment. Reload the page or come back later.'
 
   const uploaderError = () =>
-    Object.assign(new Error('Failed to initiate: 503 Service Unavailable'), {
-      status: SERVICE_UNAVAILABLE
-    })
+    new RefusedCallError(
+      {
+        dependency: 'cdp-uploader',
+        operation: 'initiate',
+        action: 'open an upload session'
+      },
+      SERVICE_UNAVAILABLE_ANSWER
+    )
 
   it('Should log the ids of a session it opened but could not record against the notification, and still refuse only the add form', async () => {
-    const err = Object.assign(
-      new Error('Failed to register-document-upload: 503 Service Unavailable'),
-      { status: SERVICE_UNAVAILABLE }
+    const err = new RefusedCallError(
+      { dependency: BACKEND_DEPENDENCY, operation: 'register-document-upload' },
+      SERVICE_UNAVAILABLE_ANSWER
     )
     const register = vi
       .spyOn(documentUploads, 'register')

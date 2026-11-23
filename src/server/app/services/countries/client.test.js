@@ -29,7 +29,7 @@ describe('countries client', () => {
   it('Should throw on a non-ok response', async () => {
     stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
     await expect(fetchCountries()).rejects.toThrow(
-      'Failed to get-countries: 503 Down'
+      'reference-data refused to get countries: 503 Down'
     )
   })
 })

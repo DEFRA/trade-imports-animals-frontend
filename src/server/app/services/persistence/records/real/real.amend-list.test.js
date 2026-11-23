@@ -65,7 +65,7 @@ describe('real records adapter — amend', () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(asTestOrg(() => records.amend('GBN-1'))).rejects.toThrow(
-      /Failed to amend-notification: 409/
+      /animals-backend refused to amend notification: 409/
     )
   })
 })

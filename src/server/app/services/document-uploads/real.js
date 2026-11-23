@@ -1,6 +1,7 @@
 import { backendFetch } from '../../../common/helpers/backend-client/backend-fetch.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
-import { failedResponse } from '../http/trace-headers.js'
+import { BACKEND_DEPENDENCY } from '../../../common/helpers/call-counts/call-counts.js'
+import { RefusedCallError } from '../http/dependency-error.js'
 import { notificationBackendHeaders } from '../http/organisation-headers.js'
 
 const backendBaseUrl =
@@ -19,7 +20,10 @@ const requestDocumentUploadBackend = (operation, path, { method, body }) =>
 const send = async (operation, path, init) => {
   const response = await requestDocumentUploadBackend(operation, path, init)
   if (!response.ok) {
-    throw failedResponse(operation, response)
+    throw new RefusedCallError(
+      { dependency: BACKEND_DEPENDENCY, operation },
+      response
+    )
   }
   return response
 }
@@ -55,7 +59,10 @@ export const documentUploads = {
       return undefined
     }
     if (!response.ok) {
-      throw failedResponse(operation, response)
+      throw new RefusedCallError(
+        { dependency: BACKEND_DEPENDENCY, operation },
+        response
+      )
     }
     return response.json()
   },

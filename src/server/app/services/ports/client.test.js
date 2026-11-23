@@ -21,7 +21,7 @@ describe('ports client', () => {
   it('Should throw on a non-ok response', async () => {
     stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
     await expect(fetchPortsOfEntry()).rejects.toThrow(
-      'Failed to get-ports-of-entry: 500 Boom'
+      'reference-data refused to get ports of entry: 500 Boom'
     )
   })
 })

@@ -129,7 +129,9 @@ describe('#documentUploadSessions', () => {
 
       await expect(openSession()).rejects.toMatchObject({
         status: 503,
-        message: expect.stringContaining('Failed to initiate: 503')
+        message: expect.stringContaining(
+          'cdp-uploader refused to open an upload session: 503'
+        )
       })
     })
   })
@@ -185,7 +187,9 @@ describe('#documentUploadSessions', () => {
         documentUploadSessions.read(UPLOAD_ID)
       ).rejects.toMatchObject({
         status: 404,
-        message: expect.stringContaining('Failed to status: 404')
+        message: expect.stringContaining(
+          'cdp-uploader refused to read an upload session: 404'
+        )
       })
     })
   })
