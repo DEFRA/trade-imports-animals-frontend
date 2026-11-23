@@ -1,4 +1,4 @@
-import { backendCallsOf } from '../call-counts/call-counts.js'
+import { backendCallsOf } from '../call-counts/call-count-totals.js'
 import { COUNT, publishMetricsInBackground } from './publish-metrics.js'
 
 /**

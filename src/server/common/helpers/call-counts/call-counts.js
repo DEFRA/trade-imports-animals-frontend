@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
-import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
 import { addPageRequest, isPageRequest } from './call-count-totals.js'
 
 const PLUGIN_NAME = 'call-counts'
@@ -24,18 +23,6 @@ export const newCallCounts = () => ({
  * @returns {ReturnType<typeof newCallCounts> | undefined} the counts, or undefined when the plugin did not see the request
  */
 export const callCountsOf = (request) => request?.plugins?.[PLUGIN_NAME]
-
-/**
- * Adds up a request's calls to the journey backend, across every operation.
- *
- * @param {ReturnType<typeof newCallCounts>} counts - the request's counts
- * @returns {number} the number of backend calls
- */
-export const backendCallsOf = (counts) =>
-  Object.values(counts.externalCalls[BACKEND_DEPENDENCY] ?? {}).reduce(
-    (sum, calls) => sum + calls,
-    0
-  )
 
 /**
  * Counts one call to a dependency against the request in progress, by
@@ -88,7 +75,6 @@ const totalFinishedRequest = (request) => {
   addPageRequest({
     method: request.method,
     path: request.route.path,
-    backendCalls: backendCallsOf(counts),
     counts
   })
 }
