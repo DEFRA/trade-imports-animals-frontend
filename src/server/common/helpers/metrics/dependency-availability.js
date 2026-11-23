@@ -21,25 +21,24 @@ export const publishDependencyAvailabilityInBackground = ({
     }
   ])
 
-const publishEachCalledDependency = () => {
+const publishEachRecordedDependency = () => {
   for (const [dependency, available] of latestAvailabilityByDependency) {
     publishDependencyAvailabilityInBackground({ dependency, available })
   }
 }
 
 /**
- * Keeps the outcome of a dependency's most recent call as its availability,
- * and every minute publishes the availability of each dependency called so
- * far: 1 after a call that succeeded, 0 after one that failed. A dependency
- * not yet called publishes nothing.
+ * Keeps a dependency's most recently recorded availability, and every minute
+ * publishes the availability kept for each dependency recorded so far. A
+ * dependency not yet recorded publishes nothing.
  *
- * @param {{ dependency: string, available: boolean }} availability - the dependency called, and whether its call succeeded
+ * @param {{ dependency: string, available: boolean }} availability - the dependency, as the metric contract names it, and whether it is available
  */
-export const recordDependencyCallOutcome = ({ dependency, available }) => {
+export const recordDependencyAvailability = ({ dependency, available }) => {
   const publishEveryMs = 60_000
   latestAvailabilityByDependency.set(dependency, available)
   availabilityPublishTimer ??= setInterval(
-    publishEachCalledDependency,
+    publishEachRecordedDependency,
     publishEveryMs
   ).unref()
 }

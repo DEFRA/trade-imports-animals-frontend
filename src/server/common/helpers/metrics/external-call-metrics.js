@@ -5,7 +5,7 @@ import {
   MILLISECONDS,
   publishMetricsInBackground
 } from './publish-metrics.js'
-import { recordDependencyCallOutcome } from './dependency-availability.js'
+import { recordDependencyAvailability } from './dependency-availability.js'
 
 const logger = createLogger()
 
@@ -73,7 +73,7 @@ const logExternalCall = (
 export const recordExternalCallInBackground = (externalCall, result) => {
   countExternalCall(externalCall)
   logExternalCall(externalCall, result)
-  recordDependencyCallOutcome({
+  recordDependencyAvailability({
     dependency: externalCall.dependency,
     available: !result.failed
   })

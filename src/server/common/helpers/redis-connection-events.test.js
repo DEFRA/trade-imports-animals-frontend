@@ -37,14 +37,17 @@ describe('reportRedisConnectionEvents', () => {
 
   const eventually = (assertion) => vi.waitFor(assertion)
 
-  beforeEach(() => {
+  beforeAll(() => {
     vi.useFakeTimers({ toFake: ['setInterval'] })
-    client = new EventEmitter()
-    reportRedisConnectionEvents(client)
   })
 
-  afterEach(() => {
+  afterAll(() => {
     vi.useRealTimers()
+  })
+
+  beforeEach(() => {
+    client = new EventEmitter()
+    reportRedisConnectionEvents(client)
   })
 
   test('publishes no availability before the client is ready or closes, even after a minute', async () => {

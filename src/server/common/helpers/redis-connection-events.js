@@ -1,13 +1,16 @@
 import { createLogger } from './logging/logger.js'
 import { countEvent } from './metrics/publish-metrics.js'
-import { publishDependencyAvailabilityInBackground } from './metrics/dependency-availability.js'
+import {
+  publishDependencyAvailabilityInBackground,
+  recordDependencyAvailability
+} from './metrics/dependency-availability.js'
 
 /**
  * Reports a Redis client's connection events as log lines and metrics, all
  * tagged `dependency` `redis`. Publishes `external.dependency.available`
- * (1 once ready, 0 once closed or ended) on each change and every minute
- * after, logs each change once, logs at error when the client stops
- * reconnecting, counts each change from ready to closed as
+ * (1 once ready, 0 once closed or ended) on each change, and records it as
+ * Redis's availability, published every minute. Logs each change once, logs at error when the client stops reconnecting,
+ * counts each change from ready to closed as
  * `external.dependency.connection.lost`, and logs and counts each client
  * error, and each error a Cluster client reports from one of its nodes (logged
  * with the node's `server.address`), as `external.dependency.error`.
@@ -20,15 +23,7 @@ export const reportRedisConnectionEvents = (client) => {
   const logger = createLogger()
   const dependency = 'redis'
   const dependencyDimensions = Object.freeze({ dependency })
-  const publishEveryMs = 60_000
   let available
-
-  const publishAvailability = () => {
-    if (available === undefined) {
-      return
-    }
-    publishDependencyAvailabilityInBackground({ dependency, available })
-  }
 
   const changeAvailabilityTo = (nowAvailable) => {
     if (nowAvailable === available) {
@@ -44,7 +39,8 @@ export const reportRedisConnectionEvents = (client) => {
     if (connectionLost) {
       countEvent('external.dependency.connection.lost', dependencyDimensions)
     }
-    publishAvailability()
+    recordDependencyAvailability({ dependency, available })
+    publishDependencyAvailabilityInBackground({ dependency, available })
   }
 
   const recordError = (err, logFields) => {
@@ -65,5 +61,4 @@ export const reportRedisConnectionEvents = (client) => {
   client.on('node error', (err, address) =>
     recordError(err, { server: { address } })
   )
-  setInterval(publishAvailability, publishEveryMs).unref()
 }
