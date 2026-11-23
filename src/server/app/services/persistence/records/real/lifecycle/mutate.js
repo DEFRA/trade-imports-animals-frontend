@@ -15,9 +15,6 @@ export const replaceFulfilment = async (
   assertWritable(journeyId, status)
 
   const snapshot = structuredClone(fulfilment ?? {})
-  // Body carries both the notification-shape fields (via the mapper) and the
-  // opaque fulfilments payload. The actor rides alongside: the backend needs its
-  // organisation to resolve referenced parties onto the edit event.
   const body = {
     notification: {
       referenceNumber: journeyId,
