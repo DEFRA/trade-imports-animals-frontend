@@ -35,8 +35,6 @@ describe('reportRedisConnectionEvents', () => {
   const emf = recordEmfDocuments()
   let client
 
-  const eventually = (assertion) => vi.waitFor(assertion)
-
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['setInterval'] })
   })
@@ -54,7 +52,8 @@ describe('reportRedisConnectionEvents', () => {
     vi.advanceTimersByTime(ONE_MINUTE_MS)
     client.emit('error', new Error('ECONNREFUSED'))
 
-    await eventually(() => expect(emf.valuesOf(ERROR)).toEqual([1]))
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(ERROR)).toEqual([1])
     expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([])
   })
 
@@ -62,12 +61,11 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('ready')
     vi.advanceTimersByTime(ONE_MINUTE_MS)
 
-    await eventually(() =>
-      expect(emf.availabilityOf('redis')).toEqual([
-        availabilityPublish('redis', 1),
-        availabilityPublish('redis', 1)
-      ])
-    )
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.availabilityOf('redis')).toEqual([
+      availabilityPublish('redis', 1),
+      availabilityPublish('redis', 1)
+    ])
   })
 
   test('a ready client that closes and then ends publishes 0 once, counts one lost connection and logs each change once', async () => {
@@ -75,10 +73,9 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('close')
     client.emit('end')
 
-    await eventually(() => {
-      expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1, 0])
-      expect(emf.valuesOf(CONNECTION_LOST)).toEqual([1])
-    })
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1, 0])
+    expect(emf.valuesOf(CONNECTION_LOST)).toEqual([1])
     expect(availabilityLines(ecsLog.lines())).toEqual([
       AVAILABLE_LINE,
       UNAVAILABLE_LINE
@@ -90,10 +87,9 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('close')
     client.emit('ready')
 
-    await eventually(() => {
-      expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1, 0, 1])
-      expect(emf.valuesOf(CONNECTION_LOST)).toEqual([1])
-    })
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1, 0, 1])
+    expect(emf.valuesOf(CONNECTION_LOST)).toEqual([1])
     expect(availabilityLines(ecsLog.lines())).toEqual([
       AVAILABLE_LINE,
       UNAVAILABLE_LINE,
@@ -120,9 +116,8 @@ describe('reportRedisConnectionEvents', () => {
   test('a client that never connected and closes counts no lost connection', async () => {
     client.emit('close')
 
-    await eventually(() =>
-      expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([0])
-    )
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([0])
     expect(emf.valuesOf(CONNECTION_LOST)).toEqual([])
   })
 
@@ -130,7 +125,8 @@ describe('reportRedisConnectionEvents', () => {
     client.emit('error', new Error('ECONNREFUSED'))
     client.emit('error', new Error('ECONNREFUSED'))
 
-    await eventually(() => expect(emf.valuesOf(ERROR)).toEqual([1, 1]))
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(ERROR)).toEqual([1, 1])
     const refusedLine = {
       level: 'error',
       dependency: 'redis',
@@ -142,7 +138,8 @@ describe('reportRedisConnectionEvents', () => {
   test("each error a Cluster client reports from one of its nodes is logged with the node's server address and counted, tagged dependency redis", async () => {
     client.emit('node error', new Error('ECONNREFUSED'), '10.0.0.1:6379')
 
-    await eventually(() => expect(emf.valuesOf(ERROR)).toEqual([1]))
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.valuesOf(ERROR)).toEqual([1])
     expect(errorLines(ecsLog.lines())).toEqual([
       {
         level: 'error',

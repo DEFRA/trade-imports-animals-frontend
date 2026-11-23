@@ -219,6 +219,7 @@ describe('request metrics', () => {
     })
 
     await requestTimesPublished(1)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(VALIDATION_FAILURE)).toEqual([])
   })
 
@@ -229,6 +230,7 @@ describe('request metrics', () => {
     })
 
     await requestTimesPublished(1)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(VALIDATION_FAILURE)).toEqual([])
   })
 
@@ -253,6 +255,7 @@ describe('request metrics', () => {
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await requestTimesPublished(1)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
   })
 })
