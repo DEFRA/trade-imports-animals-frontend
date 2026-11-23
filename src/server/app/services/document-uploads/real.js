@@ -9,7 +9,7 @@ const backendBaseUrl =
 const rejectionReasonOf = (files) =>
   (Array.isArray(files) ? files : []).find((file) => file.hasError)?.errorCode
 
-const fetchDocumentUploads = (operation, path, { method, body }) =>
+const requestDocumentUploadBackend = (operation, path, { method, body }) =>
   backendFetch(operation, `${backendBaseUrl}${path}`, {
     method,
     headers: notificationBackendHeaders(),
@@ -17,7 +17,7 @@ const fetchDocumentUploads = (operation, path, { method, body }) =>
   })
 
 const send = async (operation, path, init) => {
-  const response = await fetchDocumentUploads(operation, path, init)
+  const response = await requestDocumentUploadBackend(operation, path, init)
   if (!response.ok) {
     throw failedResponse(operation, response)
   }
@@ -46,7 +46,7 @@ export const documentUploads = {
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
     const operation = 'get-document-upload-session'
-    const response = await fetchDocumentUploads(
+    const response = await requestDocumentUploadBackend(
       operation,
       `/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
       { method: 'GET' }
