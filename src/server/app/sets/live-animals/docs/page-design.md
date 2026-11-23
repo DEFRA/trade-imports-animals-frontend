@@ -93,7 +93,6 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   notification alike. Reached any other way it goes to the Overview while
   amending and to the notification list on a draft or a submitted notification. See
   [Back on check your answers](journey-flow-and-gates.md#back-on-check-your-answers).
-<<<<<<< HEAD
 - The review has six numbered sections. Each card stands directly under its
   section heading, titled one heading level below it.
 - Each card has one Change link, in its heading. Rows carry none, except:
@@ -102,21 +101,16 @@ code comments. Commodity rules are in [Set-owned services](services.md).
     identification
   - the transit countries row
 
-  The Consignment addresses card carries no row link: a party row has none. The
-  Contact address card's row carries "Edit details" when a contact address is chosen
-  and the review is a draft or an amendment; it opens the contact edit page and
-  returns to the review. An address copied onto the notification that breaks the
-  address-book rules is reached from its error summary entry, which links to its
-  edit page.
+  The Consignment addresses card carries no row link: a party row has none. An
+  address copied onto the notification that breaks the address-book rules is
+  reached from its error summary entry, which links to its edit page.
 
   The transit countries read back in a "Transit countries" subsection of the
   Arrival details card, with their own row-level Change link, when they apply.
 
-- The contact address row is keyed "Contact address", not "Address": the
-  page lists several addresses.
-- Each party and the contact address read back as the name, then each non-empty
-  address line, town or city, county and postcode, then the country, each on
-  its own line, with no telephone or email.
+- Each party reads back as the name, then each non-empty address line, town or
+  city, county and postcode, then the country, each on its own line, with no
+  telephone or email.
 - The Consignment addresses card carries a "Permanent address" subsection after the county
   parish holding row, with one entry per animal that has a saved permanent
   address. Each entry is keyed by the animal's species common name and number
@@ -129,21 +123,6 @@ code comments. Commodity rules are in [Set-owned services](services.md).
 - Each species block's identifiers sit under an "Identification details"
   heading, in a table that heads only the identifiers the species was asked
   for; it carries no permanent address column.
-=======
-- The review has the same six numbered sections as the hub, with a
-  subsection heading over every card.
-- Each card has one Change link, in its heading. Rows carry none, except
-  "Edit details" on an address copied onto this notification. A page that is
-  only sometimes asked gets its own card and link.
-- The roles-and-addresses card carries one row per animal that has a saved
-  permanent address, after the county parish holding row, each keyed by the
-  animal's species common name and number and holding that animal's saved
-  address exactly as a party row reads. An animal that still owes one has no
-  row: the card that shows the answer is not the card that owes it. A line
-  that needs a permanent address with no animal counted carries no row
-  either. The species card's identifier table heads only the identifiers the
-  species was asked for; it carries no permanent address column.
->>>>>>> 82a3f0d1 (Tidy live-animals docs and remove orphan contact test support.)
 - A blank answer on a finished card reads "Not applicable", and the cell
   carries an empty flag, not just that text, because a trader can type "Not
   applicable" into a free-text answer. On a card that still owes answers,

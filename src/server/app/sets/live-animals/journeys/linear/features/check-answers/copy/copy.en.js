@@ -1,5 +1,6 @@
 export const copy = {
   title: 'Review your notification',
+  resubmittingTitle: 'Review before re-submitting',
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   change: 'Change',
@@ -98,6 +99,19 @@ export const copy = {
   },
   submit: {
     button: 'Continue'
+  },
+  warningIcon: 'Warning',
+  viewHeader: {
+    amend: 'Amend this notification',
+    dateCreated: (date) => `Date created: ${date}`,
+    dateSubmitted: (date) => `Date submitted: ${date}`
+  },
+  importReferences: {
+    heading: 'Import reference numbers',
+    warning:
+      'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
+    notificationReference: 'Notification reference',
+    customsDocumentCode: 'Customs document code'
   },
   errors: {
     prefix: 'Error:',

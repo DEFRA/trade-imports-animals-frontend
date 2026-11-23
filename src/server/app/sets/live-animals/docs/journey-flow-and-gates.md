@@ -20,15 +20,11 @@ gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derive
 from `meta.collects`, scope and the required earlier answers.
 
 The `consignment-parties` section holds the CPH number page, then the permanent address page,
-<<<<<<< HEAD
 then Consignment addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
-to Consignment addresses and Consignment addresses goes on to the contact address.
+to Consignment addresses and Consignment addresses goes on to check your answers when every party
+and CPH owed is answered.
 
 The section id `consignment-parties` is a stable id that the journey spec and the prototype share. Its caption and group heading read "Addresses".
-=======
-then Roles and addresses, so each sub-page, marked `subPage: true` on its page identity, goes on
-to Roles and addresses, and Roles and addresses goes on to check your answers when every party and CPH owed is answered.
->>>>>>> 82a3f0d1 (Tidy live-animals docs and remove orphan contact test support.)
 
 `FLOW_ONLY_KEYS` contains `declaration` and `commoditySearchRows`, plus the two
 keys the transport feature's own add-session module owns: the values an

@@ -1,6 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Adolygu eich hysbysiad',
+  resubmittingTitle: 'Adolygu cyn ailgyflwyno',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   change: 'Newid',
@@ -99,6 +100,19 @@ export const copy = {
   },
   submit: {
     button: 'Parhau'
+  },
+  warningIcon: 'Rhybudd',
+  viewHeader: {
+    amend: 'Diwygio’r hysbysiad hwn',
+    dateCreated: (date) => `Dyddiad creu: ${date}`,
+    dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`
+  },
+  importReferences: {
+    heading: 'Cyfeirnodau mewnforio',
+    warning:
+      'Rhaid i chi ddefnyddio’r cyfeirnod cywir a’r cod ar y datganiad tollau neu bydd eich llwyth yn cael ei ohirio.',
+    notificationReference: 'Cyfeirnod hysbysiad',
+    customsDocumentCode: 'Cod dogfen tollau'
   },
   errors: {
     prefix: 'Gwall:',
