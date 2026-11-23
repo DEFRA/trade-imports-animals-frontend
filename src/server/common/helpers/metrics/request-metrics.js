@@ -112,7 +112,7 @@ const publishFinishedPageRequestMetrics = (request) => {
  * `method`, `area` and `status.class`); for a posted answer the page showed
  * again with an error summary, a `journey.validation.failure` count tagged
  * `page`; and, when `callCounts.metrics.enabled` is on, the request's call
- * counts as `page.request.backend.calls` and `page.request.session.resolutions`.
+ * counts.
  */
 export const requestMetrics = {
   plugin: {
