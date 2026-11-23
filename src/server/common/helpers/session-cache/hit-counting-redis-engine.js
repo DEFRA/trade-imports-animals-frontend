@@ -5,9 +5,8 @@ import { countEvent } from '../metrics/publish-metrics.js'
 const SESSION_CACHE = Object.freeze({ cache: 'session' })
 
 /**
- * The Redis catbox engine, with each get that returns counted as `cache.hit`
- * or `cache.miss` tagged `cache` `session`, the one cache it holds, whichever
- * segment the get read. A get that throws is counted as neither.
+ * The Redis catbox engine. Each get that resolves publishes `cache.hit` or
+ * `cache.miss` tagged `cache` `session`; a get that throws publishes neither.
  */
 export class HitCountingRedisEngine extends CatboxRedis {
   async get(key) {
