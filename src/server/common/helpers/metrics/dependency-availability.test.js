@@ -26,9 +26,6 @@ const unavailableTo = (dependency) => ({
   dimensions: { dependency }
 })
 
-// The minute's timer starts at the first call in this file and is kept for
-// the module's life, so setInterval stays faked for the whole file, and each
-// test calls dependencies no other test calls.
 describe('the availability of an HTTP dependency, from its most recent call', () => {
   const emf = recordEmfDocuments()
 
