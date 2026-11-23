@@ -38,7 +38,7 @@ describe('backendFetch over a real connection', () => {
     }
   })
 
-  test("streams a file's bytes through Readable.fromWeb, as a download does", async () => {
+  test("returns a response body that streams the backend's bytes intact through Readable.fromWeb", async () => {
     const backend = await listen((_request, response) => {
       response.writeHead(200, { 'content-type': 'application/pdf' })
       response.end('%PDF-1.4 stored bytes')
