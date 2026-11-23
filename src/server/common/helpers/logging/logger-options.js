@@ -14,7 +14,7 @@ const traceMixin = () => {
   return mixinValues
 }
 
-const formatters = {
+const optionsForFormat = {
   ecs: () =>
     ecsFormat({
       serviceVersion: config.get('serviceVersion'),
@@ -29,7 +29,7 @@ const pinoOptions = ({ format, level }) => ({
     remove: true
   },
   level,
-  ...formatters[format](),
+  ...optionsForFormat[format](),
   mixin: traceMixin
 })
 
