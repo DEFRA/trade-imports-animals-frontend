@@ -253,6 +253,10 @@ describe('#nextStepLanding — where Save and continue lands', () => {
     expect(nextSlug('cphNumber', completeAnswers)).toBe('addresses')
   })
 
+  it('Should go from Consignment addresses to nothing, the review page being the fallback, even when every other task is complete', () => {
+    expect(nextSlug('addresses', completeAnswers)).toBeUndefined()
+  })
+
   it('Should refuse a page that belongs to no section', () => {
     expect(() =>
       nextStepLanding('not-a-real-page', makeScope({}), JOURNEY_ID)
