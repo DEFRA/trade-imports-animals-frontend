@@ -14,10 +14,11 @@ export const create = async (actor) => {
 }
 
 export const copy = async (journeyId, concurrencyToken, actor) => {
-  const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
-  const response = await send('copy-notification', url, {
-    method: 'POST',
-    body: actor
-  })
+  const query = new URLSearchParams({ concurrencyToken })
+  const response = await send(
+    'copy-notification',
+    `${notificationsUrl}/${journeyId}/copy?${query}`,
+    { method: 'POST', body: actor }
+  )
   return marshal(await response.json())
 }
