@@ -19,7 +19,6 @@ vi.mock('ioredis', () => ({
     return { on: () => ({}) }
   })
 }))
-vi.mock('@hapi/catbox-memory')
 vi.mock('../logging/logger.js', () => ({
   createLogger: () => ({
     info: (...args) => mockLoggerInfo(...args),
@@ -47,12 +46,14 @@ describe('#getCacheEngine', () => {
   })
 
   describe('When In memory cache engine has been requested', () => {
+    let engine
+
     beforeEach(() => {
-      getCacheEngine()
+      engine = getCacheEngine()
     })
 
     test('Should setup In memory cache', () => {
-      expect(CatboxMemory).toHaveBeenCalledTimes(1)
+      expect(engine).toBeInstanceOf(CatboxMemory)
     })
 
     test('Should log expected CatBox memory message', () => {
@@ -63,9 +64,11 @@ describe('#getCacheEngine', () => {
   })
 
   describe('When In memory cache engine has been requested in Production', () => {
+    let engine
+
     beforeEach(() => {
       config.set('isProduction', true)
-      getCacheEngine()
+      engine = getCacheEngine()
     })
 
     test('Should log Production warning message', () => {
@@ -75,7 +78,7 @@ describe('#getCacheEngine', () => {
     })
 
     test('Should setup In memory cache', () => {
-      expect(CatboxMemory).toHaveBeenCalledTimes(1)
+      expect(engine).toBeInstanceOf(CatboxMemory)
     })
 
     test('Should log expected message', () => {
