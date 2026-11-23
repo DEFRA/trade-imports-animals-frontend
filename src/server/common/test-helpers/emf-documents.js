@@ -21,10 +21,6 @@ export const availabilityPublish = (dependency, value) => ({
   dimensions: { dependency }
 })
 
-const NAMESPACE_KEY = 'metrics.namespace'
-const EXTERNAL_CALL_FAILURE = 'external.call.failure'
-const FLUSH_MARKER = 'test.flush.marker'
-
 const firstArgument = ([line]) => line
 const isJsonLine = (line) => typeof line === 'string' && line.startsWith('{')
 const isEmfDocument = (document) => Boolean(document._aws)
@@ -67,6 +63,10 @@ const publishOf = (document, metricName) => {
  * }} readers of the documents captured so far, each in the order published
  */
 export const recordEmfDocuments = () => {
+  const NAMESPACE_KEY = 'metrics.namespace'
+  const EXTERNAL_CALL_FAILURE = 'external.call.failure'
+  const FLUSH_MARKER = 'test.flush.marker'
+
   restoreConfigAfterEach([NAMESPACE_KEY])
   let logSpy
 
