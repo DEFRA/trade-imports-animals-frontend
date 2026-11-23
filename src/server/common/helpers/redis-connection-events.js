@@ -10,8 +10,8 @@ import { REDIS_DEPENDENCY } from './redis-dependency.js'
  * after, logs each change once, logs at error when the client stops
  * reconnecting, counts each change from ready to closed as
  * `external.dependency.connection.lost`, and logs and counts each client
- * error, and each error a Cluster client reports from one of its nodes, as
- * `external.dependency.error`. Nothing is published before the first event.
+ * error, and each error a Cluster client reports from one of its nodes (logged
+ * with the node's `server.address`), as `external.dependency.error`. Nothing is published before the first event.
  *
  * @param {import('ioredis').Redis | import('ioredis').Cluster} client - the client to report on
  */
@@ -48,8 +48,11 @@ export const reportRedisConnectionEvents = (client) => {
     publishAvailability()
   }
 
-  const recordError = (err) => {
-    logger.error({ err, ...dependencyDimensions }, 'Redis connection error')
+  const recordError = (err, logFields) => {
+    logger.error(
+      { err, ...dependencyDimensions, ...logFields },
+      'Redis connection error'
+    )
     countEvent('external.dependency.error', dependencyDimensions)
   }
 
@@ -59,7 +62,9 @@ export const reportRedisConnectionEvents = (client) => {
     logger.error(dependencyDimensions, 'Redis client stopped reconnecting')
     changeAvailabilityTo(false)
   })
-  client.on('error', recordError)
-  client.on('node error', recordError)
+  client.on('error', (err) => recordError(err))
+  client.on('node error', (err, address) =>
+    recordError(err, { server: { address } })
+  )
   setInterval(publishAvailability, publishEveryMs).unref()
 }

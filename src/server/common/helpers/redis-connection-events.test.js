@@ -26,7 +26,8 @@ const errorLines = (lines) =>
     .map((line) => ({
       level: line['log.level'],
       dependency: line.dependency,
-      error: line.error?.message
+      error: line.error?.message,
+      serverAddress: line.server?.address
     }))
 
 describe('reportRedisConnectionEvents', () => {
@@ -135,12 +136,17 @@ describe('reportRedisConnectionEvents', () => {
     expect(errorLines(ecsLog.lines())).toEqual([refusedLine, refusedLine])
   })
 
-  test('each error a Cluster client reports from one of its nodes is logged and counted, tagged dependency redis', async () => {
+  test("each error a Cluster client reports from one of its nodes is logged with the node's server address and counted, tagged dependency redis", async () => {
     client.emit('node error', new Error('ECONNREFUSED'), '10.0.0.1:6379')
 
     await eventually(() => expect(emf.valuesOf(ERROR)).toEqual([1]))
     expect(errorLines(ecsLog.lines())).toEqual([
-      { level: 'error', dependency: 'redis', error: 'ECONNREFUSED' }
+      {
+        level: 'error',
+        dependency: 'redis',
+        error: 'ECONNREFUSED',
+        serverAddress: '10.0.0.1:6379'
+      }
     ])
   })
 })
