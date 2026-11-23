@@ -15,7 +15,7 @@ describe('token exchange timer', () => {
   const emf = recordEmfDocuments()
   const ecsLog = recordEcsLogLines()
 
-  const exchangeTaking = (durationMs, { isAuthenticated }) => {
+  const recordExchangeTaking = (durationMs, { isAuthenticated }) => {
     const startedAt = 1000
     const clock = vi.spyOn(performance, 'now').mockReturnValue(startedAt)
     const request = { app: {}, auth: { isAuthenticated } }
@@ -37,7 +37,7 @@ describe('token exchange timer', () => {
   })
 
   test('recordTokenExchange publishes the time since the stamp as the duration of a successful defra-id token-exchange call, logged as SYN-11', async () => {
-    exchangeTaking(250, { isAuthenticated: true })
+    recordExchangeTaking(250, { isAuthenticated: true })
 
     expect(await emf.onlyExternalCall()).toEqual({
       ...tokenExchange,
@@ -53,7 +53,7 @@ describe('token exchange timer', () => {
   })
 
   test('recordTokenExchange records an exchange that did not authenticate as a failed defra-id token-exchange call, logged as SYN-11 at warn', async () => {
-    exchangeTaking(250, { isAuthenticated: false })
+    recordExchangeTaking(250, { isAuthenticated: false })
 
     expect(await emf.onlyExternalCall()).toEqual({
       ...tokenExchange,
