@@ -16,7 +16,7 @@ import { PARTIES } from '../parties.js'
 import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { isSearchAction, pageNumber } from './request-params.js'
+import { isSearchAction } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { FIRST_PAGE, servedPageOf } from './view-model/pagination.js'
@@ -34,6 +34,25 @@ const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const linksToInsAddressBook = () => !isStubMode()
+
+const resultsPageAsked = (request, party, value) => {
+  const requested = Number.parseInt(value ?? '', 10)
+  if (Number.isInteger(requested) && requested >= FIRST_PAGE) {
+    return requested
+  }
+  if (value !== undefined) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        partyId: party.id,
+        requestedPage: value,
+        servedPage: FIRST_PAGE
+      },
+      'Address picker page is not a page number, serving the first page'
+    )
+  }
+  return FIRST_PAGE
+}
 
 const render = async (
   request,
@@ -122,7 +141,7 @@ const get = (party) => async (request, h) => {
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
-    page: pageNumber(request.query.page),
+    page: resultsPageAsked(request, party, request.query.page),
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
@@ -197,7 +216,7 @@ const post = (party) => async (request, h) => {
     return (
       await render(request, h, orgId, journey, party, {
         query,
-        page: pageNumber(payload.page),
+        page: resultsPageAsked(request, party, payload.page),
         selectedId: '',
         error: party.error,
         addAddressHref: issueAddAddressLink(request, h, journey, party)
@@ -207,7 +226,7 @@ const post = (party) => async (request, h) => {
 
   return commitSelection(request, h, party, chosen, {
     query,
-    page: pageNumber(payload.page)
+    page: resultsPageAsked(request, party, payload.page)
   })
 }
 

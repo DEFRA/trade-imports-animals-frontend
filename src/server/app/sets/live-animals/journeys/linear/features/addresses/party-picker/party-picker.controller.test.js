@@ -194,12 +194,24 @@ describe('GET /consignors/select', () => {
     })
   })
 
-  it('Should serve the first page when the page asked for is not a page number', async () => {
-    const picker = pickerFrom(
-      await driveHandler(getConsignor, { query: { page: 'nonsense' } })
-    )
+  it('Should serve the first page, logged once, when the page asked for is not a page number', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { page: 'nonsense' }
+    })
 
-    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(0, 8))
+    expect(idsOf(pickerFrom(result))).toEqual(
+      listedFor('CONSIGNOR').slice(0, 8)
+    )
+    expectOneLogged(result.logger, {
+      level: 'info',
+      message:
+        'Address picker page is not a page number, serving the first page',
+      fields: expect.objectContaining({
+        partyId: 'consignor',
+        requestedPage: 'nonsense',
+        servedPage: 1
+      })
+    })
   })
 
   it('Should give each row its street lines and then its town and postcode on one line', async () => {
