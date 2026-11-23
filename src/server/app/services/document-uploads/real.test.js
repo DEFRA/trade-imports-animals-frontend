@@ -9,6 +9,7 @@ fetchMocker.enableMocks()
 
 const BACKEND_URL = 'http://localhost:8085'
 const PDF_CONTENT_TYPE = 'application/pdf'
+const PDF_CONTENT_DISPOSITION = 'inline; filename="itahc.pdf"'
 const UPLOAD_ID = 'up-1'
 const CORRELATION_ID = 'corr-1'
 const JOURNEY_ID = 'GBN-1'
@@ -362,7 +363,7 @@ describe('#documentUploads — scan status, removal and reads', () => {
       fetchMocker.mockResponse('%PDF-1.4 stored bytes', {
         headers: {
           'content-type': PDF_CONTENT_TYPE,
-          'content-disposition': 'inline) filename="itahc.pdf"'
+          'content-disposition': PDF_CONTENT_DISPOSITION
         }
       })
 
@@ -375,7 +376,7 @@ describe('#documentUploads — scan status, removal and reads', () => {
       expect(options.method).toBe('GET')
       expect(response.headers.get('content-type')).toBe(PDF_CONTENT_TYPE)
       expect(response.headers.get('content-disposition')).toBe(
-        'inline) filename="itahc.pdf"'
+        PDF_CONTENT_DISPOSITION
       )
       expect(await response.text()).toBe('%PDF-1.4 stored bytes')
     })
