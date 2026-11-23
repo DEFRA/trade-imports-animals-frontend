@@ -101,12 +101,16 @@ describe('verifyToken', () => {
     ).rejects.toThrow('Invalid token signature')
   })
 
-  test('rejects every token when Defra ID publishes no keys', async () => {
+  test('rejects a token when Defra ID publishes no keys', async () => {
     interceptKeys().reply(200, { keys: [] })
 
     await expect(
       verifyToken(signedWith(defraIdKeys.privateKey))
-    ).rejects.toThrow(TypeError)
+    ).rejects.toMatchObject({
+      code: 'ERR_INVALID_ARG_TYPE',
+      message:
+        'The "key.key" property must be of type object. Received undefined'
+    })
   })
 
   test('rethrows a key fetch Defra ID answers with 503, and records it as a failed defra-id jwks call logged as SYN-12', async () => {
