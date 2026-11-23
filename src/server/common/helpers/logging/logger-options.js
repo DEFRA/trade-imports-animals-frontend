@@ -34,8 +34,8 @@ const pinoOptions = ({ format, level }) => ({
 })
 
 /**
- * The pino options a deployed line is written with: ECS JSON, the configured
- * redaction and the trace id of the request in progress.
+ * Pino options for ECS JSON output, with the configured redaction and the
+ * trace id of the request in progress.
  *
  * @param {{ level: string }} options - the lowest level written
  * @returns {import('pino').LoggerOptions} the pino options
