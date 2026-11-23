@@ -188,24 +188,23 @@ describe('backendFetch', () => {
   })
 
   test('counts a backend call whose fetch rejects', async () => {
-    fetchMock.mockRejectOnce(new Error('down'))
+    const down = new Error('down')
+    fetchMock.mockRejectOnce(down)
+    let rejection
     server.route({
       method: 'GET',
       path: '/failing',
       handler: async () => {
-        await expect(
-          backendFetch(OPERATION, BACKEND_URL, INIT)
-        ).rejects.toThrow('down')
+        rejection = await backendFetch(OPERATION, BACKEND_URL, INIT).catch(
+          (error) => error
+        )
         return 'page'
       }
     })
 
-    const { statusCode } = await server.inject({
-      method: 'GET',
-      url: '/failing'
-    })
+    await server.inject({ method: 'GET', url: '/failing' })
 
-    expect(statusCode).toBe(200)
+    expect(rejection).toBe(down)
     expect((await readRoute('/failing')).backendCalls).toBe(1)
   })
 
