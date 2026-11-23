@@ -4,9 +4,8 @@ import { reportRedisConnectionEvents } from './redis-connection-events.js'
 
 /**
  * Builds a Redis client that speaks RESP2: a single-instance client when
- * `useSingleInstanceCache` is set, otherwise a Cluster client. The client's
- * connection events are logged and published as metrics, among them
- * `external.dependency.available`, tagged `dependency` `redis`.
+ * `useSingleInstanceCache` is set, otherwise a Cluster client. The client
+ * reports its connection events (see `reportRedisConnectionEvents`).
  *
  * @param {{ host: string, keyPrefix: string, username: string, password: string, useSingleInstanceCache: boolean, useTLS: boolean }} redisConfig - where and how to connect
  * @returns {import('ioredis').Redis | import('ioredis').Cluster} the client
