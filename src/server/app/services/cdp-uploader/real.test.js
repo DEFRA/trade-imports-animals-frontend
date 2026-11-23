@@ -78,17 +78,14 @@ describe('#documentUploadSessions', () => {
      * The upload service refuses the body without the JSON content type, and support follows a
      * 50MB upload across services by the tracing header, so both are part of the contract.
      */
-    it('Should send both requests as JSON with the tracing header', async () => {
+    it('Should send JSON with the tracing header', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
       await openSession()
-      await documentUploadSessions.read(UPLOAD_ID)
 
-      const [open, read] = fetchMocker.requests()
-      expect(open.headers.get('content-type')).toBe('application/json')
-      expect(open.headers.has(TRACING_HEADER)).toBe(true)
-      expect(read.method).toBe('GET')
-      expect(read.headers.has(TRACING_HEADER)).toBe(true)
+      const [request] = fetchMocker.requests()
+      expect(request.headers.get('content-type')).toBe('application/json')
+      expect(request.headers.has(TRACING_HEADER)).toBe(true)
     })
 
     // The whole value is pinned, not just its first character: a protocol-relative
@@ -114,6 +111,14 @@ describe('#documentUploadSessions', () => {
       const sent = await jsonOf(fetchMocker.requests()[0])
       expect(sent.callback).toBe(CALLBACK_URL)
       expect(sent.s3Bucket).toBe(DOCUMENTS_BUCKET)
+    })
+
+    it('Should file the upload in the bucket under the journey id', async () => {
+      fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
+
+      await openSession()
+
+      const sent = await jsonOf(fetchMocker.requests()[0])
       expect(sent.s3Path).toBe(JOURNEY_ID)
     })
 
@@ -151,6 +156,18 @@ describe('#documentUploadSessions', () => {
 
       const [request] = fetchMocker.requests()
       expect(request.url).toBe(`${UPLOADER_URL}/status/${UPLOAD_ID}`)
+    })
+
+    it('Should read with GET and the tracing header', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({ uploadStatus: 'pending', form: {} })
+      )
+
+      await documentUploadSessions.read(UPLOAD_ID)
+
+      const [request] = fetchMocker.requests()
+      expect(request.method).toBe('GET')
+      expect(request.headers.has(TRACING_HEADER)).toBe(true)
     })
 
     it('Should answer the submitted form alongside the session state', async () => {
