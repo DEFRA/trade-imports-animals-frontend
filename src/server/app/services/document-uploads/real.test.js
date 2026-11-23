@@ -18,6 +18,10 @@ const ID_WITH_SEPARATORS = '../../notifications/x'
 const ID_WITH_SEPARATORS_ENCODED = '..%2F..%2Fnotifications%2Fx'
 const JSON_CONTENT_TYPE = 'application/json'
 const NOT_FOUND_RESPONSE = { status: 404, statusText: 'Not Found' }
+const SERVICE_UNAVAILABLE_RESPONSE = {
+  status: 503,
+  statusText: 'Service Unavailable'
+}
 const SESSION_ORG = '5900066'
 
 const sentAs = ({ method, url, headers }) => ({
@@ -155,10 +159,7 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the session cannot be read', async () => {
-      fetchMocker.mockResponse(() => ({
-        status: 503,
-        statusText: 'Service Unavailable'
-      }))
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
 
       await expect(
         asSession(() =>
@@ -230,10 +231,7 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the uploads cannot be read', async () => {
-      fetchMocker.mockResponse(() => ({
-        status: 503,
-        statusText: 'Service Unavailable'
-      }))
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
 
       await expect(
         asSession(() =>
@@ -321,6 +319,18 @@ describe('#documentUploads — scan status, removal and reads', () => {
 
       expect(read.scanStatus).toBe('REJECTED')
       expect(read.rejectionReason).toBeUndefined()
+    })
+
+    it('Should throw with the response status when the scan status cannot be read', async () => {
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
+
+      await expect(
+        asSession(() => documentUploads.scanStatus({ uploadId: UPLOAD_ID }))
+      ).rejects.toMatchObject({
+        message:
+          'Failed to get-document-upload-status: 503 Service Unavailable',
+        status: 503
+      })
     })
   })
 
