@@ -64,9 +64,6 @@ const jsonOf = (request) => request.clone().json()
 describe('real records adapter — canonical fulfilment boundary', () => {
   const ecsLog = recordEcsLogLines()
 
-  const linesBesideExternalCalls = () =>
-    ecsLog.lines().filter((line) => line.event?.category !== 'external-call')
-
   beforeEach(() => {
     fetchMocker.resetMocks()
   })
@@ -191,7 +188,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     expect(loaded).toBeUndefined()
-    expect(linesBesideExternalCalls()).toEqual([
+    expect(ecsLog.linesBesideExternalCalls()).toEqual([
       expect.objectContaining({
         'log.level': 'warn',
         message: 'Backend refused fulfilment read',
@@ -210,7 +207,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     expect(loaded).toBeUndefined()
-    expect(linesBesideExternalCalls()).toEqual([])
+    expect(ecsLog.linesBesideExternalCalls()).toEqual([])
   })
 })
 
@@ -421,15 +418,12 @@ describe('real records adapter — lifecycle and list', () => {
     expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
     expect(surfaced.code).toBeUndefined()
     expect(
-      ecsLog
-        .lines()
-        .filter((line) => line['log.level'] === 'warn')
-        .map((line) => ({
-          message: line.message,
-          operation: line.operation,
-          status: line.status,
-          errorType: line.error?.type
-        }))
+      ecsLog.linesAtLevel('warn').map((line) => ({
+        message: line.message,
+        operation: line.operation,
+        status: line.status,
+        errorType: line.error?.type
+      }))
     ).toEqual([
       {
         message: 'Conflict response body was not JSON; no error code attached',

@@ -30,9 +30,6 @@ vi.mock('../../server.js', async (importOriginal) => {
 import { startServer } from './start-server.js'
 import { createServer } from '../../server.js'
 
-const linesWithMessage = (ecsLog, message) =>
-  ecsLog.lines().filter((line) => line.message === message)
-
 describe('#startServer', () => {
   describe('When server starts', () => {
     let server
@@ -75,8 +72,7 @@ describe('#startServer', () => {
       await server.stop({ timeout: 0 })
 
       expect(
-        linesWithMessage(
-          ecsLog,
+        ecsLog.linesWithMessage(
           'Wreck plain-HTTP calls use the retrying keep-alive agent'
         )
       ).toEqual([
@@ -95,8 +91,7 @@ describe('#startServer', () => {
       const server = await startServer()
       await server.stop({ timeout: 0 })
 
-      const lines = linesWithMessage(
-        ecsLog,
+      const lines = ecsLog.linesWithMessage(
         'HTTP proxy configured; Wreck keeps its own agent'
       )
       expect(lines).toEqual([

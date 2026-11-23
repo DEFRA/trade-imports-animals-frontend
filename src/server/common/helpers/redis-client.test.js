@@ -39,11 +39,9 @@ describe('#buildRedisClient', () => {
       await vi.waitFor(() =>
         expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1])
       )
-      expect(
-        ecsLog
-          .lines()
-          .map((line) => ({ level: line['log.level'], message: line.message }))
-      ).toEqual([{ level: 'info', message: 'Redis is available' }])
+      expect(ecsLog.levelledMessages()).toEqual([
+        { level: 'info', message: 'Redis is available' }
+      ])
     })
   })
 
