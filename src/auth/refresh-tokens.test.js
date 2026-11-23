@@ -1,7 +1,10 @@
 import { vi } from 'vitest'
 import { refreshTokens } from './refresh-tokens.js'
 import { config } from '../config/config.js'
-import { useDefraIdNetwork } from '../server/common/test-helpers/defra-id-network.js'
+import {
+  defraIdDiscoveryCall,
+  useDefraIdNetwork
+} from '../server/common/test-helpers/defra-id-network.js'
 import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
 import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
@@ -32,11 +35,7 @@ describe('refreshTokens', () => {
     refresh_token: refreshToken,
     redirect_uri: DEFRA_ID_CONFIG['defraId.redirectUrl']
   }
-  const discoveryCall = {
-    dependency: 'defra-id',
-    operation: 'openid-configuration',
-    failure: 0
-  }
+  const discoveryCall = { ...defraIdDiscoveryCall, failure: 0 }
   const tokenRefresh = { dependency: 'defra-id', operation: 'token-refresh' }
 
   const { defraId, serveDiscovery } = useDefraIdNetwork()
@@ -47,10 +46,7 @@ describe('refreshTokens', () => {
 
   const interceptRefresh = () => defraId().post('/idp/token', refreshForm)
 
-  const refreshLine = () =>
-    ecsLog
-      .externalCallLines()
-      .find(({ event }) => event.action === 'defra-id/token-refresh')
+  const refreshLine = () => ecsLog.externalCallLine('defra-id/token-refresh')
 
   beforeEach(() => {
     for (const [key, value] of Object.entries(DEFRA_ID_CONFIG)) {

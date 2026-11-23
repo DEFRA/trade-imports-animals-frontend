@@ -1,8 +1,8 @@
-import nock from 'nock'
 import { vi } from 'vitest'
 import { config } from '../config/config.js'
 import { getOidcConfig, OIDC_DOCUMENT_TIMEOUT_MS } from './get-oidc-config.js'
 import {
+  defraIdDiscoveryCall,
   defraIdDiscoveryDocument,
   useDefraIdNetwork
 } from '../server/common/test-helpers/defra-id-network.js'
@@ -22,12 +22,7 @@ vi.mock('@defra/hapi-tracing', () => ({
 
 describe('getOidcConfig', () => {
   const traceId = 'test-trace-id'
-  const discoveryCall = {
-    dependency: 'defra-id',
-    operation: 'openid-configuration'
-  }
-
-  const { interceptDiscovery } = useDefraIdNetwork()
+  const { discoverAt, interceptDiscovery } = useDefraIdNetwork()
   restoreConfigAfterEach(STACK_DEFRA_ID_REWRITE_KEYS)
   const emf = recordEmfDocuments()
   const ecsLog = recordEcsLogLines()
@@ -48,7 +43,7 @@ describe('getOidcConfig', () => {
 
     expect(result).toEqual(defraIdDiscoveryDocument)
     expect(await emf.onlyExternalCall()).toEqual({
-      ...discoveryCall,
+      ...defraIdDiscoveryCall,
       failure: 0
     })
     const line = ecsLog.onlyExternalCallLine()
@@ -69,17 +64,12 @@ describe('getOidcConfig', () => {
 
   test('rewrites token_endpoint and jwks_uri hostnames to discovery URL hostname', async () => {
     setStackDefraIdRewrite()
-    config.set(
-      'defraId.oidcDiscoveryUrl',
-      'https://localhost/idp/.well-known/openid-configuration'
-    )
-    nock('https://localhost')
-      .get('/idp/.well-known/openid-configuration')
-      .reply(200, {
-        authorization_endpoint: 'https://external-host/auth',
-        token_endpoint: 'https://internal-host:9443/token',
-        jwks_uri: 'https://internal-host:9443/jwks'
-      })
+    discoverAt('https://localhost')
+    interceptDiscovery('https://localhost').reply(200, {
+      authorization_endpoint: 'https://external-host/auth',
+      token_endpoint: 'https://internal-host:9443/token',
+      jwks_uri: 'https://internal-host:9443/jwks'
+    })
 
     const result = await getOidcConfig()
 
@@ -96,7 +86,7 @@ describe('getOidcConfig', () => {
     await expect(getOidcConfig()).rejects.toThrow('Service Unavailable')
 
     expect(await emf.onlyExternalCall()).toEqual({
-      ...discoveryCall,
+      ...defraIdDiscoveryCall,
       failure: 1
     })
     const line = ecsLog.onlyExternalCallLine()
@@ -115,7 +105,7 @@ describe('getOidcConfig', () => {
     await expect(getOidcConfig()).rejects.toThrow('Client request timeout')
 
     expect(await emf.onlyExternalCall()).toEqual({
-      ...discoveryCall,
+      ...defraIdDiscoveryCall,
       failure: 1
     })
   })

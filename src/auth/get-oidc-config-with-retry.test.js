@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 import { getOidcConfigWithRetry } from './get-oidc-config-with-retry.js'
 import { config } from '../config/config.js'
+import { defraIdDiscoveryCall } from '../server/common/test-helpers/defra-id-network.js'
 import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
@@ -28,12 +29,8 @@ describe('getOidcConfigWithRetry', () => {
   const discoveryUrl =
     'https://defra-id-stub/idp/.well-known/openid-configuration'
   const payload = { authorization_endpoint: 'https://defra-id-stub/auth' }
-  const discoveryCall = {
-    dependency: 'defra-id',
-    operation: 'openid-configuration'
-  }
-  const failedDiscoveryCall = { ...discoveryCall, failure: 1 }
-  const successfulDiscoveryCall = { ...discoveryCall, failure: 0 }
+  const failedDiscoveryCall = { ...defraIdDiscoveryCall, failure: 1 }
+  const successfulDiscoveryCall = { ...defraIdDiscoveryCall, failure: 0 }
 
   const emf = recordEmfDocuments()
   restoreConfigAfterEach(['defraId.oidcDiscoveryUrl'])

@@ -12,10 +12,13 @@ import { createLogger, writeLogsTo } from '../helpers/logging/logger.js'
  * @returns {{
  *   lines: () => object[],
  *   externalCallLines: () => object[],
+ *   externalCallLine: (action: string) => object | undefined,
  *   onlyExternalCallLine: () => object
  * }} the parsed lines, every one or only the external-call ones, in the order
- *   written; `onlyExternalCallLine` fails the test unless exactly one
- *   external-call line was written, and returns it
+ *   written; `externalCallLine` returns the first external-call line with the
+ *   given `event.action`, such as `defra-id/jwks`; `onlyExternalCallLine`
+ *   fails the test unless exactly one external-call line was written, and
+ *   returns it
  */
 export const recordEcsLogLines = () => {
   const logger = createLogger()
@@ -40,11 +43,19 @@ export const recordEcsLogLines = () => {
   const externalCallLines = () =>
     lines.filter((line) => line.event?.category === 'external-call')
 
+  const externalCallLine = (action) =>
+    externalCallLines().find(({ event }) => event.action === action)
+
   const onlyExternalCallLine = () => {
     const written = externalCallLines()
     expect(written).toHaveLength(1)
     return written[0]
   }
 
-  return { lines: () => [...lines], externalCallLines, onlyExternalCallLine }
+  return {
+    lines: () => [...lines],
+    externalCallLines,
+    externalCallLine,
+    onlyExternalCallLine
+  }
 }

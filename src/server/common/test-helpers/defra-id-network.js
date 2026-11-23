@@ -15,6 +15,11 @@ export const defraIdDiscoveryDocument = {
   jwks_uri: `${DEFRA_ID_ORIGIN}/idp/jwks`
 }
 
+export const defraIdDiscoveryCall = Object.freeze({
+  dependency: 'defra-id',
+  operation: 'openid-configuration'
+})
+
 /**
  * Points Defra ID discovery at a host that only nock answers, and refuses every
  * other outbound connection, during each test of the enclosing `describe`.
@@ -22,21 +27,26 @@ export const defraIdDiscoveryDocument = {
  *
  * @returns {{
  *   defraId: () => import('nock').Scope,
- *   interceptDiscovery: () => import('nock').Interceptor,
- *   serveDiscovery: () => import('nock').Scope
- * }} `defraId` intercepts requests to the Defra ID host; `interceptDiscovery`
- *   intercepts one discovery fetch, for the test to answer; `serveDiscovery`
- *   answers one with `defraIdDiscoveryDocument`
+ *   discoverAt: (origin: string) => void,
+ *   interceptDiscovery: (origin?: string) => import('nock').Interceptor,
+ *   serveDiscovery: () => import('nock').Scope,
+ *   interceptJwks: () => import('nock').Interceptor
+ * }} `defraId` intercepts requests to the Defra ID host; `discoverAt` points
+ *   discovery at another origin, on the same path; `interceptDiscovery`
+ *   intercepts one discovery fetch from the Defra ID host, or from the origin
+ *   given, for the test to answer; `serveDiscovery` answers one with
+ *   `defraIdDiscoveryDocument`; `interceptJwks` intercepts one fetch of the
+ *   keys at that document's `jwks_uri`
  */
 export const useDefraIdNetwork = () => {
   restoreConfigAfterEach(['defraId.oidcDiscoveryUrl'])
 
+  const discoverAt = (origin) =>
+    config.set('defraId.oidcDiscoveryUrl', `${origin}${DISCOVERY_PATH}`)
+
   beforeEach(() => {
     nock.disableNetConnect()
-    config.set(
-      'defraId.oidcDiscoveryUrl',
-      `${DEFRA_ID_ORIGIN}${DISCOVERY_PATH}`
-    )
+    discoverAt(DEFRA_ID_ORIGIN)
   })
 
   afterEach(() => {
@@ -46,10 +56,20 @@ export const useDefraIdNetwork = () => {
 
   const defraId = () => nock(DEFRA_ID_ORIGIN)
 
-  const interceptDiscovery = () => defraId().get(DISCOVERY_PATH)
+  const interceptDiscovery = (origin = DEFRA_ID_ORIGIN) =>
+    nock(origin).get(DISCOVERY_PATH)
 
   const serveDiscovery = () =>
     interceptDiscovery().reply(statusCodes.ok, defraIdDiscoveryDocument)
 
-  return { defraId, interceptDiscovery, serveDiscovery }
+  const interceptJwks = () =>
+    defraId().get(new URL(defraIdDiscoveryDocument.jwks_uri).pathname)
+
+  return {
+    defraId,
+    discoverAt,
+    interceptDiscovery,
+    serveDiscovery,
+    interceptJwks
+  }
 }
