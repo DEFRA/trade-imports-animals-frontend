@@ -1,7 +1,6 @@
 import { pagePath } from '../../../../../../../../shared/paths.js'
 import { withTrail } from '../../../../../../../../shared/kit.js'
-
-const FIRST_PAGE = 1
+import { FIRST_PAGE } from './pagination.js'
 
 export const resultsHref = (
   journeyId,

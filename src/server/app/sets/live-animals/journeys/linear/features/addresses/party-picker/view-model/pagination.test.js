@@ -2,30 +2,29 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ADDRESSES_A_PAGE,
-  addressesBeforePage,
   addressesOnPage,
   pageCountOf,
   paginationLinks,
   servedPageOf
-} from './index.js'
+} from './pagination.js'
 
 const LABELS = { previous: 'Previous', next: 'Next' }
-const PARTY = { slug: 'consignor/select' }
-const JOURNEY_ID = 'GBN-AG-26-ABC123'
 
 const addresses = (count) =>
   Array.from({ length: count }, (_, index) => ({ id: `address-${index + 1}` }))
 
+const hrefFor = (number) => `/select?page=${number}`
+
 const linksFor = (overrides) =>
-  paginationLinks(JOURNEY_ID, PARTY, {
-    query: '',
-    page: 1,
-    totalPages: 3,
-    selectedId: '',
-    trail: [],
-    labels: LABELS,
-    ...overrides
-  })
+  paginationLinks(
+    { page: 1, totalPages: 3, labels: LABELS, ...overrides },
+    hrefFor
+  )
+
+const shapeOf = (page, totalPages) =>
+  paginationLinks({ page, totalPages, labels: LABELS }, hrefFor).items.map(
+    (item) => (item.ellipsis ? '…' : item.number)
+  )
 
 describe('#ADDRESSES_A_PAGE', () => {
   it('Should hold eight addresses on a page', () => {
@@ -63,31 +62,24 @@ describe('#servedPageOf', () => {
 
 describe('#addressesOnPage', () => {
   it('Should hold the first eight addresses on the first page', () => {
-    const onPage = addressesOnPage(addresses(9), 1)
-
-    expect(onPage.map((record) => record.id)).toEqual([
-      'address-1',
-      'address-2',
-      'address-3',
-      'address-4',
-      'address-5',
-      'address-6',
-      'address-7',
-      'address-8'
-    ])
+    expect(addressesOnPage(addresses(9), 1).map((record) => record.id)).toEqual(
+      [
+        'address-1',
+        'address-2',
+        'address-3',
+        'address-4',
+        'address-5',
+        'address-6',
+        'address-7',
+        'address-8'
+      ]
+    )
   })
 
   it('Should hold what is left on the page after it', () => {
     expect(addressesOnPage(addresses(9), 2).map((record) => record.id)).toEqual(
       ['address-9']
     )
-  })
-})
-
-describe('#addressesBeforePage', () => {
-  it('Should count the addresses the pages before this one hold', () => {
-    expect(addressesBeforePage(1)).toBe(0)
-    expect(addressesBeforePage(3)).toBe(16)
   })
 })
 
@@ -100,15 +92,13 @@ describe('#paginationLinks', () => {
     const links = linksFor({ page: 1 })
 
     expect(links.previous).toBeUndefined()
-    expect(links.next.href).toContain('page=2')
-    expect(links.next.text).toBe(LABELS.next)
+    expect(links.next).toEqual({ href: hrefFor(2), text: LABELS.next })
   })
 
   it('Should offer previous and no next on the last page', () => {
     const links = linksFor({ page: 3 })
 
-    expect(links.previous.href).toContain('page=2')
-    expect(links.previous.text).toBe(LABELS.previous)
+    expect(links.previous).toEqual({ href: hrefFor(2), text: LABELS.previous })
     expect(links.next).toBeUndefined()
   })
 
@@ -122,22 +112,35 @@ describe('#paginationLinks', () => {
     expect(links.next.text).toBe('Nesaf')
   })
 
-  it('Should carry the search term and the ticked address on every page link', () => {
-    const links = linksFor({ query: 'kolding', selectedId: 'astra-rosales' })
+  it('Should build every link, previous and next included, from the page it opens', () => {
+    const links = linksFor({ page: 2, totalPages: 9 })
 
-    for (const item of links.items) {
-      expect(item.href).toContain('q=kolding')
-      expect(item.href).toContain('selected=astra-rosales')
+    expect(links.previous.href).toBe(hrefFor(1))
+    expect(links.next.href).toBe(hrefFor(3))
+    for (const numbered of links.items.filter((item) => !item.ellipsis)) {
+      expect(numbered.href).toBe(hrefFor(numbered.number))
     }
-    expect(links.next.href).toContain('q=kolding')
-    expect(links.next.href).toContain('selected=astra-rosales')
   })
 
   it('Should mark the page being shown as the current item', () => {
     const current = linksFor({ page: 2 }).items.filter((item) => item.current)
 
-    expect(current).toEqual([
-      { number: 2, href: expect.stringContaining('page=2'), current: true }
-    ])
+    expect(current).toEqual([{ number: 2, href: hrefFor(2), current: true }])
+  })
+
+  it('Should number every page while they all fit beside the current one', () => {
+    expect(shapeOf(1, 3)).toEqual([1, 2, 3])
+  })
+
+  it('Should hold the first, last and either side of the current page, with an ellipsis across each gap', () => {
+    expect(shapeOf(5, 9)).toEqual([1, '…', 4, 5, 6, '…', 9])
+  })
+
+  it('Should show no ellipsis where the pages either side of the current one reach the first and last', () => {
+    expect(shapeOf(3, 5)).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('Should stand an ellipsis in for a gap of a single page, as the address book list does', () => {
+    expect(shapeOf(4, 5)).toEqual([1, '…', 3, 4, 5])
   })
 })

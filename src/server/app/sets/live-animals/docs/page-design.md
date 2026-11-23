@@ -463,26 +463,30 @@ code comments. Commodity rules are in [Set-owned services](services.md).
   search. The box and button are half the content column wide.
 - The picker is one form. The search and Save and continue are told apart by
   their `action` value. A ticked row travels across a further search in a
-  hidden field, with no client JavaScript, and across a page link through the
-  picker's own client component, which rewrites those links as a row is
-  ticked.
+  hidden field, with no client JavaScript. A page link is a GET, so it carries
+  the address the server already holds for the party, not a row ticked on this
+  visit and not yet saved.
 - Edit details follows a section's address whether the picker copied it onto
   the notification or a "Same as …" control filled it from the paired party;
   with no address held the edit page sends the trader to the picker.
 - Reopening a party's picker pre-ticks the record that party's address was
-  picked from, when the role's list still holds it. An inset above the
-  results names it, "Selected address: <name>", so the choice shows on a page
-  that does not hold its row.
+  picked from, when the role's list still holds it.
+- An inset above the results names whichever address the picker currently
+  holds as chosen, "Selected address: <name>", on every page and after a
+  search. The address comes from the `selected` query parameter, the posted
+  field or the party's saved answer, so the name shows on a page that does
+  not hold its row.
 - A picker is reached from the consignment addresses page, not from the hub,
   so it ends with the primary alone.
 - "Add a new address" is a secondary button beside the heading, shown only
   outside stub mode. It leaves the journey for the address book, so it sits
   with the page and not inside the search form.
 - The results sit under the heading "Select an address", with the count
-  straight under it: eight of the role's addresses a page, counted against
-  every one the role holds. GOV.UK pagination follows the table where the
-  role holds more than eight, and its links carry the search term and the
-  ticked row. The table is one fieldset
+  straight under it: eight a page, counted against every address the picker
+  found — the role's whole list, or the matches when a search narrows it.
+  GOV.UK pagination follows the table where more than eight were found, and
+  its links carry the search term and the address held as chosen. The table
+  is one fieldset
   whose visually hidden legend repeats the heading, so a screen reader names
   the group of addresses. With no matches the message takes the place of the
   count.

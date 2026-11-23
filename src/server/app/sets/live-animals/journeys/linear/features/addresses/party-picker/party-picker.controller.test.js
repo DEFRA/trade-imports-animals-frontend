@@ -144,6 +144,38 @@ describe('GET /consignors/select', () => {
     expect(picker.pagination.next.href).toContain('page=2')
   })
 
+  it('Should leave the page out of a link to the first page, so its URL carries only the search and the choice', async () => {
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, {
+        query: { page: '2', q: 'a', selected: DANISH_MEAT_ID }
+      })
+    )
+
+    expect(picker.pagination.previous.href).toContain('q=a')
+    expect(picker.pagination.previous.href).toContain(
+      `selected=${DANISH_MEAT_ID}`
+    )
+    expect(picker.pagination.previous.href).not.toContain('page=')
+  })
+
+  it('Should keep the results narrowed to the search term on the page after the first', async () => {
+    const wholeList = listedFor('CONSIGNOR')
+    const firstPage = pickerFrom(
+      await driveHandler(getConsignor, { query: { q: 'a' } })
+    )
+    const secondPage = pickerFrom(
+      await driveHandler(getConsignor, { query: { q: 'a', page: '2' } })
+    )
+
+    expect(firstPage.rows).toHaveLength(8)
+    expect(secondPage.rows.length).toBeGreaterThan(0)
+    expect(secondPage.query).toBe('a')
+    for (const row of secondPage.rows) {
+      expect(wholeList).toContain(row.id)
+      expect(idsOf(firstPage)).not.toContain(row.id)
+    }
+  })
+
   it('Should serve the last page, logged once, when the page asked for is past it', async () => {
     const result = await driveHandler(getConsignor, {
       query: { page: '40' }
@@ -692,6 +724,17 @@ describe('POST /consignors/select — recoverable save failure', () => {
       partyId: 'consignor',
       addressId: ALPINE_DAIRY_ID
     })
+  })
+
+  it('Should re-render a failed save on the page it was posted from', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: ALPINE_DAIRY_ID, page: '2' },
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
+    })
+    const picker = pickerFrom(result)
+
+    expect(picker.page).toBe(2)
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(8))
   })
 })
 

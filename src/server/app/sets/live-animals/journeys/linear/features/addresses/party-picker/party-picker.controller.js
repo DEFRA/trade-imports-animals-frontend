@@ -19,7 +19,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction, pageNumber } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
-import { servedPageOf } from './view-model/pagination/index.js'
+import { FIRST_PAGE, servedPageOf } from './view-model/pagination.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
@@ -172,7 +172,7 @@ const post = (party) => async (request, h) => {
     const { journey } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
-      page: 1,
+      page: FIRST_PAGE,
       selectedId,
       addAddressHref: issueAddAddressLink(request, h, journey, party)
     })

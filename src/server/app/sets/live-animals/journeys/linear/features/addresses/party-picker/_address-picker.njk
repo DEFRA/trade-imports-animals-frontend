@@ -60,7 +60,7 @@
 {% endmacro %}
 
 {% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) %}
-  <form method="post" novalidate data-module="app-picker-paging-selection">
+  <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     <input type="hidden" name="page" value="{{ picker.page }}" />

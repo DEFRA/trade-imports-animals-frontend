@@ -245,9 +245,10 @@ describe('addressPicker macro', () => {
   })
 
   it('Should name the chosen address between the search field and the results heading', () => {
-    const form = documentOf(renderPicker(pickerShowing({ selected: row }))) //
+    const document = documentOf(renderPicker(pickerShowing({ selected: row })))
+    const searchFormGroup = document
       .querySelector('form')
-    const searchFormGroup = form.querySelector(FORM_GROUP_SELECTOR)
+      .querySelector(FORM_GROUP_SELECTOR)
     const afterSearch = searchFormGroup.nextElementSibling
 
     expect(afterSearch.textContent.trim()).toBe(
@@ -267,7 +268,7 @@ describe('addressPicker macro', () => {
     )
   })
 
-  it('Should carry the page being shown in the form, so a search and a save know it', () => {
+  it('Should carry the page being shown in a hidden field of the form', () => {
     const form = documentOf(
       renderPicker(pickerShowing({ page: 2 }))
     ).querySelector('form')

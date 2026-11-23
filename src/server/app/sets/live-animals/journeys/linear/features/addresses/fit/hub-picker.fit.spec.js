@@ -35,7 +35,7 @@ import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 import { STUB_BOOK } from '../../../../../../../services/address-book/stub/index.js'
 import { recordsHoldingRole as listedFor } from '../../../../../../../services/address-book/stub/test-support.js'
-import { ADDRESSES_A_PAGE } from '../party-picker/view-model/pagination/index.js'
+import { ADDRESSES_A_PAGE } from '../party-picker/view-model/pagination.js'
 
 const addressBookInsetText = (party) => {
   const {
@@ -141,14 +141,6 @@ const expectChosenAddressNamedAboveResults = async (page, name) => {
 
 const pageLink = (page, number) =>
   page.getByRole('link', { name: `Page ${number}`, exact: true })
-
-const openLastPageOfResults = async (page) => {
-  const pageLinks = page.locator('.govuk-pagination__item a')
-  const lastPage = (await pageLinks.count()) - 1
-  if (lastPage >= 0) {
-    await pageLinks.nth(lastPage).click()
-  }
-}
 
 const postAnIdNotInTheBook = async (page) => {
   await page
@@ -538,26 +530,36 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
 
       const listed = listedFor(party.addressBookRole)
-      await expect(page.getByRole('radio')).toHaveCount(
-        Math.min(listed.length, ADDRESSES_A_PAGE)
-      )
-
       const rolelessRecord = STUB_BOOK.find(
         (record) => record.name === 'Unclassified Traders Ltd'
       )
-      await openLastPageOfResults(page)
-      await expect(
-        page.getByRole('radio', { name: partyPickerName(rolelessRecord) })
-      ).toBeVisible()
-
       const otherRole = STUB_BOOK.find(
         (record) =>
           record.roles.length > 0 &&
           !record.roles.includes(party.addressBookRole)
       )
-      await expect(
-        page.getByRole('radio', { name: partyPickerName(otherRole) })
-      ).toHaveCount(0)
+      const idsSeen = []
+
+      for (
+        let number = 1;
+        number <= Math.ceil(listed.length / ADDRESSES_A_PAGE);
+        number++
+      ) {
+        if (number > 1) {
+          await pageLink(page, number).click()
+        }
+        await expect(
+          page.getByRole('radio', { name: partyPickerName(otherRole) })
+        ).toHaveCount(0)
+        idsSeen.push(
+          ...(await page
+            .getByRole('radio')
+            .evaluateAll((radios) => radios.map((radio) => radio.value)))
+        )
+      }
+
+      expect(idsSeen).toEqual(listed.map((record) => record.id))
+      expect(idsSeen).toContain(rolelessRecord.id)
     })
 
     test(`${party.title} picker offers no add-address control in stub mode`, async ({
@@ -615,7 +617,7 @@ test.describe('party picker layout', () => {
     )
   })
 
-  test('picker offers a page of consignor addresses as one group named by the results heading, with a link to the page holding the rest', async ({
+  test('picker offers a page of consignor addresses as one group named by the results heading, numbering every page of the role', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.picker.resultsHeading })
@@ -623,7 +625,9 @@ test.describe('party picker layout', () => {
     await expect(group.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
     await expect(page.getByRole('radio')).toHaveCount(ADDRESSES_A_PAGE)
     await expect(pageLink(page, 1)).toHaveAttribute('aria-current', 'page')
-    await expect(pageLink(page, 2)).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Page \d/ })).toHaveCount(
+      Math.ceil(CONSIGNOR_ADDRESS_COUNT / ADDRESSES_A_PAGE)
+    )
     await expect(
       page.getByRole('link', { name: copy.picker.pagination.next })
     ).toBeVisible()
@@ -732,7 +736,7 @@ test.describe('party picker search', () => {
     )
   })
 
-  test('clearing the search and searching with nothing entered lists every consignor address again, on one page', async ({
+  test('clearing the search and searching with nothing entered opens the whole consignor list again, from its first page', async ({
     page
   }) => {
     await searchAddresses(page, 'Denmark')
