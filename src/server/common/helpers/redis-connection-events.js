@@ -1,7 +1,6 @@
 import { createLogger } from './logging/logger.js'
 import { countEvent } from './metrics/publish-metrics.js'
 import { publishDependencyAvailabilityInBackground } from './metrics/dependency-availability.js'
-import { REDIS_DEPENDENCY } from './redis-dependency.js'
 
 /**
  * Reports a Redis client's connection events as log lines and metrics, all
@@ -19,7 +18,8 @@ import { REDIS_DEPENDENCY } from './redis-dependency.js'
  */
 export const reportRedisConnectionEvents = (client) => {
   const logger = createLogger()
-  const dependencyDimensions = Object.freeze({ dependency: REDIS_DEPENDENCY })
+  const dependency = 'redis'
+  const dependencyDimensions = Object.freeze({ dependency })
   const publishEveryMs = 60_000
   let available
 
@@ -27,10 +27,7 @@ export const reportRedisConnectionEvents = (client) => {
     if (available === undefined) {
       return
     }
-    publishDependencyAvailabilityInBackground({
-      dependency: REDIS_DEPENDENCY,
-      available
-    })
+    publishDependencyAvailabilityInBackground({ dependency, available })
   }
 
   const changeAvailabilityTo = (nowAvailable) => {
