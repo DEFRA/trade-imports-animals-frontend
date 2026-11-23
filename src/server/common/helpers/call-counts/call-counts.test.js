@@ -16,10 +16,6 @@ const BACKEND_READ = {
   dependency: BACKEND_DEPENDENCY,
   operation: 'get-fulfilment'
 }
-const EXTERNAL_CALLS = {
-  'animals-backend': { 'get-fulfilment': 2 },
-  'defra-id': { jwks: 1 }
-}
 
 const buildServer = async () => {
   const server = hapi.server()
@@ -68,6 +64,10 @@ describe('call counts', () => {
 
     const { totals, routes } = await readTotals(server)
 
+    const oneRequestsExternalCalls = {
+      'animals-backend': { 'get-fulfilment': 2 },
+      'defra-id': { jwks: 1 }
+    }
     expect(routes).toEqual([
       {
         method: 'get',
@@ -75,14 +75,14 @@ describe('call counts', () => {
         pageRequests: 1,
         backendCalls: 2,
         sessionResolutions: 1,
-        externalCalls: EXTERNAL_CALLS
+        externalCalls: oneRequestsExternalCalls
       }
     ])
     expect(totals).toEqual({
       pageRequests: 1,
       backendCalls: 2,
       sessionResolutions: 1,
-      externalCalls: EXTERNAL_CALLS
+      externalCalls: oneRequestsExternalCalls
     })
   })
 
