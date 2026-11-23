@@ -6,22 +6,22 @@ import {
   switchToStubMode
 } from '../../../common/test-helpers/run-mode.js'
 
-// Address-book toRecord translates a countryCode to a display name via
-// addressBookCountryName; with self-loading readers, calling it in real mode
-// would trigger a countries fetch. This file's tests are about the address-
-// book, not countries, so mock the reader to a fixed lookup — the fetch mock
-// only has to answer address-book URLs.
-const COUNTRY_LABELS = { BE: 'Belgium', FR: 'France' }
-vi.mock('../countries/index.js', () => ({
-  addressBookCountryName: async (code) => COUNTRY_LABELS[code] ?? code
-}))
-
 const ORG = '5900001'
 const PHONE = '01632 960000'
 
 const okResponse = (body) => ({ ok: true, status: 200, json: async () => body })
 
-const stubFetch = (impl) => vi.stubGlobal('fetch', vi.fn(impl))
+const stubFetch = (answerAddressBook) => {
+  const referenceDataCountries = [{ code: 'BE', name: 'Belgium' }]
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url, init) =>
+      new URL(url).pathname.endsWith('/countries')
+        ? okResponse(referenceDataCountries)
+        : answerAddressBook(url, init)
+    )
+  )
+}
 
 const operator = (id, overrides = {}) => ({
   id,
@@ -38,10 +38,7 @@ const operator = (id, overrides = {}) => ({
   ...overrides
 })
 
-/** An address book of `total` records, served the way the API serves it:
- * the requested page size or else `defaultPageSize` records per page, page
- * number taken from the query string. */
-const bookOf = (
+const servePagedAddressBook = (
   total,
   defaultPageSize = 25,
   buildRecord = (id) => operator(id)
@@ -78,7 +75,7 @@ afterEach(() => {
 
 describe('#addresses against the real address book', () => {
   test('Should scope the request to the organisation in both path and header', async () => {
-    const fetched = vi.fn(bookOf(10))
+    const fetched = vi.fn(servePagedAddressBook(10))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -91,7 +88,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should carry the request trace on to the address book', async () => {
-    const fetched = vi.fn(bookOf(10))
+    const fetched = vi.fn(servePagedAddressBook(10))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -103,7 +100,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should return every matching record the book holds across more than one API page, not the first page only', async () => {
-    const fetched = vi.fn(bookOf(60))
+    const fetched = vi.fn(servePagedAddressBook(60))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -115,7 +112,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should make a single call when the book fits one page', async () => {
-    const fetched = vi.fn(bookOf(3))
+    const fetched = vi.fn(servePagedAddressBook(3))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -126,7 +123,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should read a large book in pages of a hundred', async () => {
-    const fetched = vi.fn(bookOf(1001))
+    const fetched = vi.fn(servePagedAddressBook(1001))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -147,7 +144,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should have at most four page requests in flight at once', async () => {
-    const serve = bookOf(2000)
+    const serve = servePagedAddressBook(2000)
     let inFlight = 0
     let mostInFlight = 0
     switchToRealMode()
@@ -167,7 +164,7 @@ describe('#addresses against the real address book', () => {
   })
 
   test('Should send the search term to the address book and not the role', async () => {
-    const fetched = vi.fn(bookOf(10))
+    const fetched = vi.fn(servePagedAddressBook(10))
     switchToRealMode()
     stubFetch(fetched)
 
@@ -195,7 +192,11 @@ describe('#addresses against the real address book', () => {
 describe('the role rule', () => {
   test('Should return a record whose roles include the role asked for', async () => {
     switchToRealMode()
-    stubFetch(bookOf(1, 25, (id) => operator(id, { roles: ['CONSIGNOR'] })))
+    stubFetch(
+      servePagedAddressBook(1, 25, (id) =>
+        operator(id, { roles: ['CONSIGNOR'] })
+      )
+    )
 
     const { addresses } = await addressBook()
     const found = await addresses(ORG, { role: 'CONSIGNOR' })
@@ -205,7 +206,11 @@ describe('the role rule', () => {
 
   test('Should not return a record whose roles belong to another role', async () => {
     switchToRealMode()
-    stubFetch(bookOf(1, 25, (id) => operator(id, { roles: ['CONSIGNEE'] })))
+    stubFetch(
+      servePagedAddressBook(1, 25, (id) =>
+        operator(id, { roles: ['CONSIGNEE'] })
+      )
+    )
 
     const { addresses } = await addressBook()
     const found = await addresses(ORG, { role: 'CONSIGNOR' })
@@ -215,7 +220,7 @@ describe('the role rule', () => {
 
   test('Should return a record the book answers with an empty roles list, whatever role is asked for', async () => {
     switchToRealMode()
-    stubFetch(bookOf(1, 25, (id) => operator(id, { roles: [] })))
+    stubFetch(servePagedAddressBook(1, 25, (id) => operator(id, { roles: [] })))
 
     const { addresses } = await addressBook()
     const found = await addresses(ORG, { role: 'CONSIGNOR' })
@@ -226,7 +231,9 @@ describe('the role rule', () => {
   test('Should return a record carrying two roles when either is asked for', async () => {
     switchToRealMode()
     stubFetch(
-      bookOf(1, 25, (id) => operator(id, { roles: ['CONSIGNEE', 'IMPORTER'] }))
+      servePagedAddressBook(1, 25, (id) =>
+        operator(id, { roles: ['CONSIGNEE', 'IMPORTER'] })
+      )
     )
 
     const { addresses } = await addressBook()
@@ -238,7 +245,7 @@ describe('the role rule', () => {
   test('Should return every live record when no role is asked for', async () => {
     switchToRealMode()
     stubFetch(
-      bookOf(2, 25, (id, index) =>
+      servePagedAddressBook(2, 25, (id, index) =>
         operator(id, { roles: index === 0 ? ['CONSIGNOR'] : [] })
       )
     )
@@ -271,7 +278,7 @@ describe('the role rule', () => {
 describe('mapping the wire onto the journey', () => {
   test('Should map the API field names onto the ones the journey renders', async () => {
     switchToRealMode()
-    stubFetch(bookOf(1))
+    stubFetch(servePagedAddressBook(1))
 
     const { addresses } = await addressBook()
     const [record] = await addresses(ORG)
@@ -292,7 +299,7 @@ describe('mapping the wire onto the journey', () => {
 
   test('Should show a country by name, not by its code', async () => {
     switchToRealMode()
-    stubFetch(bookOf(1))
+    stubFetch(servePagedAddressBook(1))
 
     const { addresses } = await addressBook()
     const [record] = await addresses(ORG)
@@ -321,11 +328,6 @@ describe('mapping the wire onto the journey', () => {
 
 describe('without an organisation', () => {
   test('Should refuse to read, rather than ask for an organisation named "undefined"', async () => {
-    // The organisation sits in the path, so a missing one is not an error the
-    // address book can see — it answers for an organisation of that literal
-    // name, and an empty book comes back. A search then looks like "you have
-    // saved nothing" and a resolve like "that address was deleted", when in
-    // truth nobody was signed in. Fail here instead, and say why.
     switchToRealMode()
     stubFetch(async () => okResponse(operator('record-7')))
 
