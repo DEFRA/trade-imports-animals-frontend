@@ -14,11 +14,7 @@ export const requestReferenceData = async (operation, url, init) => {
     () =>
       fetch(url.toString(), {
         ...init,
-        headers: {
-          'Content-Type': 'application/json',
-          ...traceHeaders(),
-          ...init?.headers
-        }
+        headers: { ...traceHeaders('application/json'), ...init?.headers }
       })
   )
 
