@@ -41,10 +41,10 @@ const draftUnlistedSpecies = async (journey, answers) => {
  * @param {object} answers - the journey's answers.
  * @param {object} [options]
  * @param {boolean} [options.refused=false] - whether Continue was refused
- * @returns {Promise<object>} `{ whatAreYouImporting: <message> }` when
- * Continue was refused and the draft holds unlisted species, else `{}`.
+ * @returns {Promise<object>} the `species` error when Continue was refused and
+ * a draft holds unlisted species, else none.
  */
-export const unlistedSpeciesErrors = async (
+export const speciesCardErrors = async (
   journey,
   answers,
   { refused = false } = {}
@@ -60,7 +60,7 @@ export const unlistedSpeciesErrors = async (
     .map(({ code, latinName }) => `${latinName} (${code})`)
     .join(', ')
   return {
-    whatAreYouImporting: reviewCopy.errors.species.notListed(speciesWithCodes)
+    species: reviewCopy.errors.species.notListed(speciesWithCodes)
   }
 }
 

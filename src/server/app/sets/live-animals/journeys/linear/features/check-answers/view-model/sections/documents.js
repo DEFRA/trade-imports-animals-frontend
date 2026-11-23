@@ -1,7 +1,7 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { documentCards } from '../cards/documents.js'
+import { documentsCard } from '../cards/documents.js'
 
 const copy = copyFor({ en, cy })
 
@@ -14,11 +14,18 @@ export const documentsSection = ({
 }) => ({
   anchor: 'documents-section',
   heading: copy.sections.documents,
-  cards: documentCards({
-    journeyId,
-    changeLinkTrail,
-    answers,
-    evaluation,
-    readOnly
-  })
+  groups: [
+    {
+      heading: copy.groups.uploadDocuments,
+      cards: [
+        documentsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          evaluation,
+          readOnly
+        })
+      ]
+    }
+  ]
 })

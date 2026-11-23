@@ -20,7 +20,7 @@ import { copy as reviewEn } from './copy/copy.en.js'
 import {
   documentScanCardErrors,
   isReviewRefused,
-  unlistedSpeciesErrors
+  speciesCardErrors
 } from './refusal.js'
 
 const LISTED_SPECIES_LINE = {
@@ -215,7 +215,7 @@ describe('#isReviewRefused', () => {
   })
 })
 
-describe('#unlistedSpeciesErrors', () => {
+describe('#speciesCardErrors', () => {
   const unlistedDraft = {
     status: DRAFT,
     commodityLines: [
@@ -227,30 +227,30 @@ describe('#unlistedSpeciesErrors', () => {
 
   it('Should name every species of a draft that reference data no longer lists under its code, with its code, when Continue was refused', async () => {
     expect(
-      await unlistedSpeciesErrors(
+      await speciesCardErrors(
         { status: unlistedDraft.status },
         { commodityLines: unlistedDraft.commodityLines },
         { refused: true }
       )
     ).toEqual({
-      whatAreYouImporting: reviewEn.errors.species.notListed(
+      species: reviewEn.errors.species.notListed(
         'Bos spp. (0102), Felis catus (0102)'
       )
     })
   })
 
-  it('Should return no unlisted-species error until Continue is refused', async () => {
+  it('Should return no species error until Continue is refused', async () => {
     expect(
-      await unlistedSpeciesErrors(
+      await speciesCardErrors(
         { status: unlistedDraft.status },
         { commodityLines: unlistedDraft.commodityLines }
       )
     ).toEqual({})
   })
 
-  it('Should return no unlisted-species error for an amendment holding an unlisted species', async () => {
+  it('Should return no species error for an amendment holding an unlisted species', async () => {
     expect(
-      await unlistedSpeciesErrors(
+      await speciesCardErrors(
         { status: AMEND },
         { commodityLines: [UNLISTED_SPECIES_LINE] },
         { refused: true }
@@ -258,9 +258,9 @@ describe('#unlistedSpeciesErrors', () => {
     ).toEqual({})
   })
 
-  it('Should return no unlisted-species error for a line with no species', async () => {
+  it('Should return no species error for a line with no species', async () => {
     expect(
-      await unlistedSpeciesErrors(
+      await speciesCardErrors(
         { status: DRAFT },
         { commodityLines: [{ commodityCode: '0102' }] },
         { refused: true }

@@ -1,9 +1,8 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { originOfImportCard } from '../cards/consignment/origin-of-import.js'
-import { whatAreYouImportingCard } from '../cards/consignment/what-are-you-importing.js'
-import { mainImportReasonCard } from '../cards/consignment/main-import-reason.js'
+import { importDetailsCard } from '../cards/consignment/import-details.js'
+import { reasonForImportCard } from '../cards/consignment/reason-for-import.js'
 
 const copy = copyFor({ en, cy })
 
@@ -12,31 +11,34 @@ export const aboutConsignmentSection = async ({
   changeLinkTrail,
   answers,
   scope,
-  evaluation,
   readOnly
 }) => ({
   anchor: 'about-the-consignment',
   heading: copy.sections.aboutTheConsignment,
-  cards: [
-    await originOfImportCard({
-      journeyId,
-      changeLinkTrail,
-      answers,
-      readOnly
-    }),
-    whatAreYouImportingCard({
-      journeyId,
-      changeLinkTrail,
-      answers,
-      evaluation,
-      readOnly
-    }),
-    await mainImportReasonCard({
-      journeyId,
-      changeLinkTrail,
-      answers,
-      scope,
-      readOnly
-    })
+  groups: [
+    {
+      heading: copy.groups.whereFrom,
+      cards: [
+        await importDetailsCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          scope,
+          readOnly
+        })
+      ]
+    },
+    {
+      heading: copy.groups.mainImportReason,
+      cards: [
+        await reasonForImportCard({
+          journeyId,
+          changeLinkTrail,
+          answers,
+          scope,
+          readOnly
+        })
+      ]
+    }
   ]
 })

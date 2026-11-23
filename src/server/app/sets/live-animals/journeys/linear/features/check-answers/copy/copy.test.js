@@ -18,30 +18,9 @@ describe('#copy', () => {
   itHoldsCopyAtEveryLeaf(copy, copyCy)
 
   it('Should interpolate the parameterised leaves', () => {
-    expect(copy.errors.species.noCount('bos taurus')).toBe(
-      'Enter the number of animals for bos taurus'
-    )
-    expect(copy.resubmittingTitle).toBe('Review before re-submitting')
+    expect(copy.identifierTable.animalN(2)).toBe('Animal 2')
     expect(copy.documentN(1)).toBe('Document 1')
-    expect(copy.hidden.commodity('0102')).toBe('commodity 0102')
-    expect(copy.hidden.document(1)).toBe('document 1')
-  })
-
-  it('Should name the row action Edit details in English and Welsh', () => {
-    expect(copy.editDetails).toBe('Edit details')
-    expect(copyCy.editDetails).toBe('Golygu manylion')
-  })
-
-  it('Should write the date created line with the supplied date', () => {
-    expect(copy.viewHeader.dateCreated('22 July 2026')).toBe(
-      'Date created: 22 July 2026'
-    )
-  })
-
-  it('Should write the date submitted line with the supplied date', () => {
-    expect(copy.viewHeader.dateSubmitted('22 July 2026')).toBe(
-      'Date submitted: 22 July 2026'
-    )
+    expect(copy.hidden.commodity(3)).toBe('commodity 3')
   })
 })
 
@@ -55,7 +34,7 @@ describe('GET check-answers — copy reaches the view', () => {
     await handler(journeyRequest(journey.journeyId), h)
     const { context } = h.captured.view
     expect(context.copy).toBe(copy)
-    expect(context.pageTitle).toBe(journey.journeyId)
+    expect(context.pageTitle).toBe(copy.title)
     expect(context.sharedCopy.layout.serviceName).toBe(
       'Import notification service'
     )

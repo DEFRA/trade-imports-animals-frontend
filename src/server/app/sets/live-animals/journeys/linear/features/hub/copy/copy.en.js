@@ -15,13 +15,13 @@ export const copy = {
     complete: 'Complete',
     toDo: 'To do'
   },
-  taskListHeading: 'Notification task list',
+  taskListHeading: 'Notification tasklist',
   groups: {
     'about-the-consignment': '1. About the consignment',
     'description-of-the-goods': '2. Description of the goods',
     'transport-and-arrival': '3. Transport and arrival',
     documents: '4. Documents',
-    'consignment-parties': '5. Addresses'
+    'consignment-parties': '5. Consignment parties'
   },
   rows: {
     origin: {
@@ -52,7 +52,7 @@ export const copy = {
       title: 'Transport details'
     },
     addresses: {
-      title: 'Consignment addresses',
+      title: 'Roles and addresses',
       hint: 'Consignor or Exporter, Consignee, Importer and Place of Destination'
     },
     documents: {

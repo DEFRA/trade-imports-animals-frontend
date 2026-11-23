@@ -1,0 +1,45 @@
+import * as certification from '../../../../../../../../../services/certification-purposes/index.js'
+import { copyFor } from '../../../../../../../../../shared/copy.js'
+import { copy as en } from '../../../copy/copy.en.js'
+import { copy as cy } from '../../../copy/copy.cy.js'
+import { additionalDetailsPage } from '../../../../additional-details/page.js'
+import { unweanedApplies } from '../../applicability.js'
+import { cardAction, editableActions } from '../../rows/change-link.js'
+import { row } from '../../rows/summary-row.js'
+
+const copy = copyFor({ en, cy })
+
+/**
+ * What the animals are certified for, and whether any of them are unweaned.
+ */
+export const additionalAnimalDetailsCard = ({
+  journeyId,
+  changeLinkTrail,
+  answers,
+  readOnly
+}) => ({
+  id: 'additionalAnimalDetails',
+  title: copy.cards.additionalAnimalDetails,
+  ...editableActions({
+    readOnly,
+    actions: cardAction(
+      { journeyId, changeLinkTrail },
+      additionalDetailsPage.slug,
+      copy.hidden.cards.additionalAnimalDetails
+    )
+  }),
+  rows: [
+    row(
+      copy.rows.certifiedFor,
+      certification.certificationLabel(answers.animalsCertifiedFor) ?? ''
+    ),
+    ...(unweanedApplies(answers)
+      ? [
+          row(
+            copy.rows.unweaned,
+            copy.yesNo[answers.containsUnweanedAnimals] ?? ''
+          )
+        ]
+      : [])
+  ]
+})

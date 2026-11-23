@@ -22,7 +22,7 @@ export const copy = {
     'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
     'transport-and-arrival': '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau',
-    'consignment-parties': '5. Cyfeiriadau'
+    'consignment-parties': '5. Partïon y llwyth'
   },
   rows: {
     origin: {
@@ -53,7 +53,7 @@ export const copy = {
       title: 'Manylion cludo'
     },
     addresses: {
-      title: 'Cyfeiriadau’r llwyth',
+      title: 'Rolau a chyfeiriadau',
       hint: 'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
     },
     documents: {
