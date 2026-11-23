@@ -45,7 +45,7 @@ describe('#startServer', () => {
       await server?.stop({ timeout: 0 })
     })
 
-    test('Should start up server as expected', async () => {
+    test('answers the health check with 200 and success once started', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/health'
