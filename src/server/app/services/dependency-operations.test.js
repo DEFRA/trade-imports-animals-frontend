@@ -153,7 +153,7 @@ const answerEveryRequest = (status, body) => {
 
 const asOrganisation = (call) => withOrganisationId(ORGANISATION_ID, call)
 
-describe('every dependency call is recorded under its documented operation', () => {
+describe('each animals-backend, address-book, reference-data and cdp-uploader call is recorded under its fixed operation name', () => {
   resetMocksAndConfigAfterTests()
   const emf = recordEmfDocuments()
 
