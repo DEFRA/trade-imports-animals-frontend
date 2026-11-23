@@ -112,6 +112,10 @@ A replace-fulfilment write sends the signed-in actor beside the notification,
 because the backend uses the actor's organisation to resolve referenced parties
 onto the edit event.
 
+The stub adapter refuses a missing concurrency token as a bad request before it
+compares tokens, because `Number(null)` is 0 and would match a fresh journey's
+token.
+
 GBN-AG's `TradeCountry` carries an ISO 3166-1 alpha-2 code, so a territory the
 destination and transit selects offer must leave as its country. The identification
 page stores the ISO code, so persistence carries it through without a reverse

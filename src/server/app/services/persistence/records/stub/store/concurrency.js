@@ -6,16 +6,14 @@ export const advanceConcurrencyToken = (journey) => {
   journey.concurrencyToken = (journey.concurrencyToken ?? 0) + 1
 }
 
+const isMissingToken = (token) => token === undefined || token === null
+
 export const assertConcurrencyToken = (
   journey,
   expectedConcurrencyToken,
   operation
 ) => {
-  // Checked before coercion: Number(null) is 0, which would match a fresh journey.
-  if (
-    expectedConcurrencyToken === undefined ||
-    expectedConcurrencyToken === null
-  ) {
+  if (isMissingToken(expectedConcurrencyToken)) {
     const error = new BackendRequestError(operation, {
       status: HTTP_BAD_REQUEST,
       statusText: 'Bad Request'
