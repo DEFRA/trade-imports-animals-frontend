@@ -437,7 +437,7 @@ describe('in stub mode', () => {
     expect(found.some((record) => record.id === 'tech-imports-ltd')).toBe(false)
   })
 
-  test('Should filter identically to real mode: every record returned carries the role asked for, or carries none', async () => {
+  test('Should return only records carrying the role asked for, or carrying none, from the stub book', async () => {
     switchToStubMode()
 
     const { addresses } = await addressBook()
