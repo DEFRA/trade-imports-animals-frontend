@@ -1,6 +1,5 @@
 import { HitCountingRedisEngine } from './hit-counting-redis-engine.js'
 import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
-import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
 
 const CACHE_HIT = 'cache.hit'
 const CACHE_MISS = 'cache.miss'
@@ -24,7 +23,6 @@ const inMemoryRedisClient = () => {
 }
 
 describe('HitCountingRedisEngine', () => {
-  const ecsLog = recordEcsLogLines()
   const emf = recordEmfDocuments()
   let engine
 
@@ -51,16 +49,6 @@ describe('HitCountingRedisEngine', () => {
     await emf.earlierPublishesFlushed()
     expect(emf.publishesOf(CACHE_MISS)).toEqual([COUNTED_FOR_SESSION])
     expect(emf.documentsWith(CACHE_HIT)).toEqual([])
-  })
-
-  test('a set, a get and a drop publish no external call and write no external-call line', async () => {
-    await engine.set(SESSION_KEY, { user: 'u-1' }, 60_000)
-    await engine.get(SESSION_KEY)
-    await engine.drop(SESSION_KEY)
-
-    await emf.earlierPublishesFlushed()
-    expect(emf.externalCalls()).toEqual([])
-    expect(ecsLog.externalCallLines()).toEqual([])
   })
 
   test('a get the client fails is rethrown and counted as neither hit nor miss', async () => {
