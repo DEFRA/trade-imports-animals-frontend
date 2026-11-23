@@ -9,6 +9,13 @@ import { recordDependencyCallOutcome } from './dependency-availability.js'
 
 const logger = createLogger()
 
+/**
+ * A call to a dependency, as the metric contract names it. `interfaceId`
+ * names it in its log line only.
+ *
+ * @typedef {{ dependency: string, operation: string, interfaceId?: string }} ExternalCall
+ */
+
 const errorFields = (error) =>
   error
     ? {
@@ -60,7 +67,7 @@ const logExternalCall = (
  * making the caller wait for the publish, and keeps its outcome as the
  * dependency's availability, published every minute.
  *
- * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it; `interfaceId` names it in its log line only
+ * @param {ExternalCall} externalCall - the call
  * @param {{ durationMs: number, failed: boolean, error?: Error, statusCode?: number }} result - how long it took, whether it failed, and the error or HTTP status it ended with
  */
 export const recordExternalCallInBackground = (externalCall, result) => {
@@ -133,7 +140,7 @@ const measure = async (externalCall, call, outcomeOf) => {
  * other throw is a failure. A thrown error is always rethrown.
  *
  * @template T
- * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it; `interfaceId` names it in its log line only
+ * @param {ExternalCall} externalCall - the call
  * @param {() => Promise<T>} call - the call to run
  * @returns {Promise<T>} the call's result
  */
@@ -145,7 +152,7 @@ export const measureExternalCall = (externalCall, call) =>
  * The call failed when sending throws or the response has a 5xx status; any
  * other status is the dependency answering, so it is a success.
  *
- * @param {{ dependency: string, operation: string }} externalCall - the call, as the metric contract names it
+ * @param {ExternalCall} externalCall - the call
  * @param {() => Promise<Response>} send - sends the request
  * @returns {Promise<Response>} the dependency's response
  */
