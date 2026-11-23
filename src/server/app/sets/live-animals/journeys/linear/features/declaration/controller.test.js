@@ -386,7 +386,7 @@ describe('#declaration submit against the real records adapter', () => {
     beforeEach(() => {
       configureRecords(SET_ID, {
         ...recordsStub,
-        finalise: realRecords.finalise
+        submit: realRecords.submit
       })
     })
 

@@ -10,7 +10,7 @@ defines lifecycle constants and delegates these operations to a configured adapt
 
 - create, load, list and has
 - replace fulfilment
-- finalise, amend and cancel amend
+- submit, amend and cancel amend
 - copy and soft delete
 - clear for test support
 

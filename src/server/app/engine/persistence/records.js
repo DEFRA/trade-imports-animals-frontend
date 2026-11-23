@@ -21,7 +21,7 @@ const UNCONFIGURED = Object.freeze({
   list: unconfigured,
   has: unconfigured,
   replaceFulfilment: unconfigured,
-  finalise: unconfigured,
+  submit: unconfigured,
   amend: unconfigured,
   cancelAmend: unconfigured,
   copy: unconfigured,
@@ -64,9 +64,9 @@ export const records = {
   has: async (...args) => impl().has(...args),
   replaceFulfilment: async (...args) =>
     writeCountingConflicts(() => impl().replaceFulfilment(...args)),
-  finalise: async (...args) =>
+  submit: async (...args) =>
     writeCountingSuccessAndConflicts('journey.submitted', () =>
-      impl().finalise(...args)
+      impl().submit(...args)
     ),
   amend: async (...args) =>
     writeCountingSuccessAndConflicts('journey.amended', () =>

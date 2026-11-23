@@ -355,7 +355,7 @@ describe('real records adapter — lifecycle and list', () => {
 
     const { submitted, amended, restored } = await asDefaultOrganisation(
       async () => ({
-        submitted: await records.finalise(journeyId, actor, 4),
+        submitted: await records.submit(journeyId, actor, 4),
         amended: await records.amend(journeyId, actor),
         restored: await records.cancelAmend(journeyId, actor)
       })
@@ -382,12 +382,12 @@ describe('real records adapter — lifecycle and list', () => {
   })
 
   it.each([undefined, null])(
-    'Should refuse to finalise without a concurrencyToken (%s) and send nothing',
+    'Should refuse to submit without a concurrencyToken (%s) and send nothing',
     async (concurrencyToken) => {
       await expect(
-        records.finalise(journeyId, actor, concurrencyToken)
+        records.submit(journeyId, actor, concurrencyToken)
       ).rejects.toThrow(
-        `finalise requires a concurrencyToken to submit notification ${journeyId}`
+        `submit requires a concurrencyToken for notification ${journeyId}`
       )
       expect(fetchMocker.requests()).toHaveLength(0)
     }
@@ -400,7 +400,7 @@ describe('real records adapter — lifecycle and list', () => {
     )
 
     await expect(
-      asDefaultOrganisation(() => records.finalise(journeyId, actor, 4))
+      asDefaultOrganisation(() => records.submit(journeyId, actor, 4))
     ).rejects.toMatchObject({
       code: 'STALE_CONCURRENCY_TOKEN',
       status: 409
@@ -414,7 +414,7 @@ describe('real records adapter — lifecycle and list', () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     const surfaced = await asDefaultOrganisation(() =>
-      records.finalise(journeyId, actor, 4)
+      records.submit(journeyId, actor, 4)
     ).catch((error) => error)
 
     expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })

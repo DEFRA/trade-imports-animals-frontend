@@ -64,7 +64,7 @@ const operationCatalogue = [
     )
   ),
   backendCall('submit-notification', () =>
-    records.finalise(JOURNEY_ID, actor, 0)
+    records.submit(JOURNEY_ID, actor, 0)
   ),
   backendCall('amend-notification', () => records.amend(JOURNEY_ID, actor)),
   backendCall('cancel-amend-notification', () =>

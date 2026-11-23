@@ -37,7 +37,7 @@ describe('records journey counters', () => {
 
   test('starting, submitting, amending, copying and deleting a journey each count one event with no dimensions', async () => {
     const started = await records.create()
-    const submitted = await records.finalise(
+    const submitted = await records.submit(
       started.journeyId,
       undefined,
       started.concurrencyToken
@@ -78,7 +78,7 @@ describe('records journey counters', () => {
     const started = await records.create()
 
     await expect(
-      records.finalise(started.journeyId, undefined, 99)
+      records.submit(started.journeyId, undefined, 99)
     ).rejects.toMatchObject({ code: STALE_CONCURRENCY_TOKEN })
 
     await vi.waitFor(() =>

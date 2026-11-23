@@ -51,7 +51,7 @@ Collection mutations use the same canonical pipeline. They do not bypass scope,
 purge, answer-key recognition or persistence.
 
 [`src/server/app/engine/write/submit.js`](../engine/write/submit.js) checks recognised
-answer keys and `scope.readyForCheckYourAnswers` before calling `records.finalise`.
+answer keys and `scope.readyForCheckYourAnswers` before calling `records.submit`.
 Submit changes lifecycle state; it does not perform a separate fulfilment save.
 
 ## Answer-key recognition
@@ -60,7 +60,7 @@ Submit changes lifecycle state; it does not perform a separate fulfilment save.
 that says which keys may appear in a stored answers tree: manifest obligation
 names in their declared position, flow-only keys and the system keys. The
 evaluator never scopes or wipes a key outside that surface, yet the key would
-ship raw at finalise, so the engine's write paths and `submitJourney` reject it
+ship raw at submit, so the engine's write paths and `submitJourney` reject it
 loudly instead. `referenceNumber` is accepted by answer validation but is left
 out of canonical assembly, because runtime notification projections take the
 reference from the journey envelope.

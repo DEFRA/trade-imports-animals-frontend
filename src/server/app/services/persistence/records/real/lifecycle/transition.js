@@ -10,10 +10,10 @@ const transition = async (operation, path, actor) => {
   return marshal(await response.json())
 }
 
-export const finalise = async (journeyId, actor, concurrencyToken) => {
+export const submit = async (journeyId, actor, concurrencyToken) => {
   if (concurrencyToken === undefined || concurrencyToken === null) {
     throw new Error(
-      `finalise requires a concurrencyToken to submit notification ${journeyId}`
+      `submit requires a concurrencyToken for notification ${journeyId}`
     )
   }
   const query = new URLSearchParams({ concurrencyToken })

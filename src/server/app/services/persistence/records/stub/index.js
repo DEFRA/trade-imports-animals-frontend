@@ -2,7 +2,7 @@ import { create, copy } from './lifecycle/create.js'
 import { load, list, has } from './lifecycle/read.js'
 import { replaceFulfilment, clear } from './lifecycle/mutate.js'
 import {
-  finalise,
+  submit,
   amend,
   cancelAmend,
   softDelete
@@ -14,7 +14,7 @@ export const records = {
   list,
   has,
   replaceFulfilment,
-  finalise,
+  submit,
   amend,
   cancelAmend,
   copy,
