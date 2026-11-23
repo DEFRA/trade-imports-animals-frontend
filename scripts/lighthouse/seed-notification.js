@@ -158,10 +158,10 @@ const AFTER_REASON = [
   }
 ]
 
-const CONTACT_STEP = {
-  slug: 'consignment/contact/select',
-  fields: firstOption('contactAddress')
-}
+const OPENING_RUN_TAIL = [
+  { slug: 'accompanying-documents', fields: {} },
+  { slug: 'addresses', fields: {} }
+]
 
 const REASON_REVEAL_FIELDS = new Map([
   [
@@ -248,7 +248,7 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   ...AFTER_REASON,
   { slug: 'transporters/add', fields: { transporterType } },
   ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type'),
-  CONTACT_STEP
+  ...OPENING_RUN_TAIL
 ]
 
 const fieldsFor = (step, page) =>

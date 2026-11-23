@@ -34,7 +34,6 @@ const {
   transitedCountries,
   arrivalDateAtPort,
   portOfEntry,
-  contactAddress,
   internalReferenceNumber,
   animalsCertifiedFor,
   commodityLine,
@@ -427,8 +426,7 @@ describe('standard address blocks (composite value round-trip)', () => {
     ['consignor', consignor],
     ['consignee', consignee],
     ['importer', importer],
-    ['placeOfDestination', placeOfDestination],
-    ['contactAddress', contactAddress]
+    ['placeOfDestination', placeOfDestination]
   ])('%s stores and returns a composite address value', (_name, obligation) => {
     const result = evaluator.evaluate({
       [obligation.id]: alpineExporterAddress
@@ -1330,13 +1328,13 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 // ---------------------------------------------------------------------------
 // Trivial `applyTo` drop fidelity.
 //
-// 18 always-in-scope obligations use the data-only shape
+// 17 always-in-scope obligations use the data-only shape
 // `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
 // `dependsOn`. They classify as `'unindexed'` and `unindexedImplication`
 // falls through to `{ inScope: true, status: obligation.status }` when
 // no applicabilityDecision is present.
 //
-// The fidelity contract this block pins: for every one of the 18
+// The fidelity contract this block pins: for every one of the 17
 // obligations, `evaluator.evaluate({})` returns EXACTLY the decision
 // object shape `{ inScope: true, status: '<literal>' }`. Any regression
 // here means the classifier didn't route the obligation to the
@@ -1345,7 +1343,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 // Expected split: 17 mandatory + 1 optional (`internalReferenceNumber`).
 // ---------------------------------------------------------------------------
 
-describe('trivial applyTo drop fidelity (18 always-in-scope obligations)', () => {
+describe('trivial applyTo drop fidelity (17 always-in-scope obligations)', () => {
   const trivialAlwaysMandatoryObligations = [
     ['poApprovedReferenceNumber', poApprovedReferenceNumber],
     ['countryOfOrigin', countryOfOrigin],
@@ -1362,11 +1360,10 @@ describe('trivial applyTo drop fidelity (18 always-in-scope obligations)', () =>
     ['transportDocumentReference', transportDocumentReference],
     ['arrivalDateAtPort', arrivalDateAtPort],
     ['portOfEntry', portOfEntry],
-    ['contactAddress', contactAddress],
     ['animalsCertifiedFor', animalsCertifiedFor]
   ]
 
-  const allEighteenObligations = [
+  const allSeventeenObligations = [
     ...trivialAlwaysMandatoryObligations.map(([, obligation]) => obligation),
     internalReferenceNumber
   ]
@@ -1384,15 +1381,15 @@ describe('trivial applyTo drop fidelity (18 always-in-scope obligations)', () =>
     expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
   })
 
-  it('none of the 18 obligations carry an applyTo closure (data-only shape)', () => {
-    const stragglers = allEighteenObligations.filter(
+  it('none of the 17 obligations carry an applyTo closure (data-only shape)', () => {
+    const stragglers = allSeventeenObligations.filter(
       (o) => typeof o.applyTo === 'function'
     )
     expect(stragglers).toEqual([])
   })
 
-  it('none of the 18 obligations carry a dependsOn key (derivable from no-applyTo)', () => {
-    const stragglers = allEighteenObligations.filter(
+  it('none of the 17 obligations carry a dependsOn key (derivable from no-applyTo)', () => {
+    const stragglers = allSeventeenObligations.filter(
       (o) => o.dependsOn !== undefined
     )
     expect(stragglers).toEqual([])

@@ -196,7 +196,6 @@ test.describe('hub feature', () => {
       copy.rows.arrivalDetails,
       copy.rows.transporter,
       copy.rows.addresses,
-      copy.rows.contact,
       copy.rows.documents
     ]
 

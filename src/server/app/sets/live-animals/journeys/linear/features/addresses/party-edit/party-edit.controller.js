@@ -9,7 +9,7 @@ import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { addressBookCountries } from '../../../../../../../services/countries/index.js'
-import { CONTACT_PARTY, PARTIES } from '../parties.js'
+import { PARTIES } from '../parties.js'
 import { addressesPage } from '../page.js'
 import {
   addressRules,
@@ -24,13 +24,12 @@ const view = `${TEMPLATES}/features/addresses/party-edit/party-edit`
 
 const copy = copyFor({ en, cy })
 
-const EDITABLE_PARTIES = [...PARTIES, CONTACT_PARTY]
+const EDITABLE_PARTIES = PARTIES
 
 const returnHref = (request, party) => {
   const { honouredSlug } = kit.readReturnMarker(request, [
     'addresses',
-    kit.CYA_SLUG,
-    CONTACT_PARTY.slug
+    kit.CYA_SLUG
   ])
   return kit.carryTrail(
     request,

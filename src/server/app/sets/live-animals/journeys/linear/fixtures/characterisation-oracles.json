@@ -93,17 +93,6 @@
         "year": "2026"
       },
       "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
-      "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-        "name": "Animal and Plant Health Agency",
-        "phone": "01632 960000",
-        "email": "animal-and-plant-health-agency@example.com",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
-        }
-      },
       "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
       "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
       "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
@@ -260,17 +249,6 @@
           "year": "2026"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-          "name": "Animal and Plant Health Agency",
-          "phone": "01632 960000",
-          "email": "animal-and-plant-health-agency@example.com",
-          "address": {
-            "addressLine1": "Woodham Lane",
-            "townOrCity": "Addlestone",
-            "postcode": "KT15 3NB",
-            "countryCode": "GB"
-          }
-        },
         "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
         "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
@@ -461,10 +439,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -705,17 +679,6 @@
         "year": "2026"
       },
       "portOfEntry": "GB ABD",
-      "contactAddress": {
-        "name": "Animal and Plant Health Agency",
-        "phone": "01632 960000",
-        "email": "animal-and-plant-health-agency@example.com",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
-        }
-      },
       "internalReferenceNumber": "",
       "animalsCertifiedFor": "slaughter",
       "commodityLines": [
@@ -831,17 +794,6 @@
           "addressLine1": "643 Main Street",
           "addressLine2": "Birmingham G1 3AZ",
           "country": "United Kingdom"
-        }
-      },
-      "consignment": {
-        "name": "Animal and Plant Health Agency",
-        "email": "animal-and-plant-health-agency@example.com",
-        "phone": "01632 960000",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "townOrCity": "Addlestone",
-          "postcode": "KT15 3NB",
-          "countryCode": "GB"
         }
       },
       "cphNumber": "12/345/6789",
@@ -1061,10 +1013,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1310,10 +1258,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1575,10 +1519,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1916,10 +1856,6 @@
           "status": "mandatory"
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
           "inScope": true,
           "status": "mandatory"
         },

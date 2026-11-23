@@ -3,12 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   consignee,
   consignor,
-  contactAddress,
   importer,
   placeOfDestination,
   placeOfOrigin
 } from '../../../../obligations/index.js'
-import { CONTACT_PARTY, partyOf } from './parties.js'
+import { partyOf } from './parties.js'
 import {
   fulfilmentIdForParty,
   partyForFulfilmentId
@@ -20,8 +19,7 @@ describe('party-for-fulfilment-id', () => {
     [consignor.id, 'consignor'],
     [consignee.id, 'consignee'],
     [importer.id, 'importer'],
-    [placeOfDestination.id, 'placeOfDestination'],
-    [contactAddress.id, 'contactAddress']
+    [placeOfDestination.id, 'placeOfDestination']
   ])(
     'maps fulfilment id %s to the %s party',
     (fulfilmentId, expectedPartyId) => {
@@ -31,19 +29,12 @@ describe('party-for-fulfilment-id', () => {
     }
   )
 
-  it('maps the contact fulfilment id to CONTACT_PARTY', () => {
-    const party = partyForFulfilmentId(contactAddress.id)
-    expect(party).toBeDefined()
-    expect(party.id).toBe(CONTACT_PARTY.id)
-  })
-
   it.each([
     ['placeOfOrigin', placeOfOrigin.id],
     ['consignor', consignor.id],
     ['consignee', consignee.id],
     ['importer', importer.id],
-    ['placeOfDestination', placeOfDestination.id],
-    ['contactAddress', contactAddress.id]
+    ['placeOfDestination', placeOfDestination.id]
   ])('maps %s to fulfilment id %s', (partyId, expectedFulfilmentId) => {
     expect(fulfilmentIdForParty(partyOf(partyId))).toBe(expectedFulfilmentId)
   })

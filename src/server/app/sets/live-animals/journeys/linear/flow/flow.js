@@ -16,7 +16,6 @@ import {
   transitCountriesPage,
   transportersPage
 } from '../features/transport/page.js'
-import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
@@ -65,10 +64,6 @@ export const sections = [
   {
     id: 'consignment-parties',
     pages: [cphNumberPage, permanentAddressPage, addressesPage]
-  },
-  {
-    id: 'contact-address',
-    pages: [consignmentContactSelectPage]
   },
   {
     id: 'review',
