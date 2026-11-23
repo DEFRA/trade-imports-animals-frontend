@@ -11,7 +11,6 @@ const mockLoggerInfo = vi.fn()
 const mockLoggerError = vi.fn()
 
 vi.mock('ioredis', () => ({
-  ...vi.importActual('ioredis'),
   Cluster: vi.fn(function () {
     return { on: () => ({}) }
   }),
