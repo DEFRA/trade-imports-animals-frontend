@@ -1,7 +1,6 @@
 import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
-import { logger } from '../logger.js'
 
 export const failed = async (operation, response) => {
   const error = new BackendRequestError(
@@ -15,10 +14,7 @@ export const failed = async (operation, response) => {
         error.code = body.code
       }
     } catch (err) {
-      logger.warn(
-        { err, operation, status: response.status },
-        'Conflict response body was not JSON; no error code attached'
-      )
+      error.cause = err
     }
   }
   return error

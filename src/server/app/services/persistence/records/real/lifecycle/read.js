@@ -23,7 +23,8 @@ export const list = async ({
   const response = await send(
     'list-notifications',
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
-    { method: 'GET' }
+    { method: 'GET' },
+    { referenceNumber }
   )
   const result = await response.json()
   return {

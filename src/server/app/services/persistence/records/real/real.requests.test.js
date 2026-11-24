@@ -61,6 +61,8 @@ const canonical = ({
 
 const jsonOf = (request) => request.clone().json()
 
+const REFUSAL_LOG_MESSAGE = 'Backend refused request'
+
 describe('real records adapter — canonical fulfilment boundary', () => {
   const ecsLog = recordEcsLogLines()
 
@@ -408,7 +410,7 @@ describe('real records adapter — lifecycle and list', () => {
     )
   })
 
-  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line naming the operation and status', async () => {
+  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with the operation, status and journey id and no code', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     const surfaced = await asDefaultOrganisation(() =>
@@ -417,21 +419,16 @@ describe('real records adapter — lifecycle and list', () => {
 
     expect(surfaced).toMatchObject({ name: 'BackendRequestError', status: 409 })
     expect(surfaced.code).toBeUndefined()
-    expect(
-      ecsLog.linesAtLevel('warn').map((line) => ({
-        message: line.message,
-        operation: line.operation,
-        status: line.status,
-        errorType: line.error?.type
-      }))
-    ).toEqual([
-      {
-        message: 'Conflict response body was not JSON; no error code attached',
+    expect(ecsLog.linesAtLevel('warn')).toEqual([
+      expect.objectContaining({
+        message: REFUSAL_LOG_MESSAGE,
         operation: 'submit-notification',
         status: 409,
-        errorType: 'SyntaxError'
-      }
+        journeyId,
+        error: expect.objectContaining({ type: 'BackendRequestError' })
+      })
     ])
+    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('code')
   })
 
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
@@ -537,5 +534,74 @@ describe('real records adapter — lifecycle and list', () => {
     expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe(
       LIST_TEST_ORG
     )
+  })
+})
+
+describe('real records adapter — backend refusals', () => {
+  const ecsLog = recordEcsLogLines()
+
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+  })
+
+  it('Should log one warn line with the operation, status and journey id when the backend refuses the notification PUT', async () => {
+    fetchMocker.mockResponse('Unprocessable', { status: 422 })
+
+    await asDefaultOrganisation(() =>
+      records.replaceFulfilment(
+        journeyId,
+        assembleFulfilments({ countryOfOrigin: 'FR' }),
+        { known: { journeyId, status: DRAFT, concurrencyToken: 0 } }
+      )
+    ).catch((error) => error)
+
+    expect(ecsLog.linesAtLevel('warn')).toEqual([
+      expect.objectContaining({
+        message: REFUSAL_LOG_MESSAGE,
+        operation: 'replace-notification',
+        status: 422,
+        journeyId,
+        error: expect.objectContaining({ type: 'BackendRequestError' })
+      })
+    ])
+  })
+
+  it('Should log one warn line with the operation, status, code and journey id when the backend refuses a copy', async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
+      { status: 409 }
+    )
+
+    await asDefaultOrganisation(() => records.copy(journeyId, 7, actor)).catch(
+      (error) => error
+    )
+
+    expect(ecsLog.linesAtLevel('warn')).toEqual([
+      expect.objectContaining({
+        message: REFUSAL_LOG_MESSAGE,
+        operation: 'copy-notification',
+        status: 409,
+        code: 'STALE_CONCURRENCY_TOKEN',
+        journeyId,
+        error: expect.objectContaining({ type: 'BackendRequestError' })
+      })
+    ])
+  })
+
+  it('Should log one warn line with the operation and status and no journey id when the backend refuses a create', async () => {
+    fetchMocker.mockResponse('Bad Request', { status: 400 })
+
+    await asDefaultOrganisation(() => records.create(actor)).catch(
+      (error) => error
+    )
+
+    expect(ecsLog.linesAtLevel('warn')).toEqual([
+      expect.objectContaining({
+        message: REFUSAL_LOG_MESSAGE,
+        operation: 'create-notification',
+        status: 400
+      })
+    ])
+    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('journeyId')
   })
 })

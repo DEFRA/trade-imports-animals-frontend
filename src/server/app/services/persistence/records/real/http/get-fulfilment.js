@@ -25,5 +25,5 @@ export const getFulfilment = async (journeyId) => {
     )
     return undefined
   }
-  return (await refuseUnlessOk(operation, response)).json()
+  return (await refuseUnlessOk(operation, response, { journeyId })).json()
 }

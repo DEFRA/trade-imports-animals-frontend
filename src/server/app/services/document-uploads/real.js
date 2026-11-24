@@ -14,7 +14,8 @@ export const documentUploads = {
     await send(
       'register-document-upload',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
-      { method: 'POST', body: { uploadId, correlationId } }
+      { method: 'POST', body: { uploadId, correlationId } },
+      { journeyId, uploadId }
     )
   },
 
@@ -25,7 +26,8 @@ export const documentUploads = {
       {
         method: 'POST',
         body: { documentType, documentReference, dateOfIssue }
-      }
+      },
+      { uploadId }
     )
   },
 
@@ -39,14 +41,17 @@ export const documentUploads = {
     if (response.status === HTTP_STATUS_NOT_FOUND) {
       return undefined
     }
-    return (await refuseUnlessOk(operation, response)).json()
+    return (
+      await refuseUnlessOk(operation, response, { journeyId, correlationId })
+    ).json()
   },
 
   listByNotification: async ({ journeyId }) => {
     const response = await send(
       'list-document-uploads',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
-      { method: 'GET' }
+      { method: 'GET' },
+      { journeyId }
     )
     const { items } = await response.json()
     return (items ?? []).map(({ uploadId, correlationId, claimed }) => ({
@@ -60,7 +65,8 @@ export const documentUploads = {
     const response = await send(
       'get-document-upload-status',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'GET' }
+      { method: 'GET' },
+      { uploadId }
     )
     const { scanStatus, files } = await response.json()
     return { scanStatus, rejectionReason: rejectionReasonOf(files) }
@@ -70,7 +76,8 @@ export const documentUploads = {
     await send(
       'delete-document-upload',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'DELETE' }
+      { method: 'DELETE' },
+      { uploadId }
     )
   },
 
@@ -78,6 +85,7 @@ export const documentUploads = {
     send(
       'stream-document-file',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/file`,
-      { method: 'GET' }
+      { method: 'GET' },
+      { uploadId }
     )
 }

@@ -18,7 +18,8 @@ export const copy = async (journeyId, concurrencyToken, actor) => {
   const response = await send(
     'copy-notification',
     `${notificationsUrl}/${journeyId}/copy?${query}`,
-    { method: 'POST', body: actor }
+    { method: 'POST', body: actor },
+    { journeyId }
   )
   return marshal(await response.json())
 }

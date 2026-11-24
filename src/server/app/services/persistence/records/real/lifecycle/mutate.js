@@ -28,7 +28,8 @@ export const replaceFulfilment = async (
   const response = await send(
     'replace-notification',
     `${notificationsUrl}/${journeyId}`,
-    { method: 'PUT', body }
+    { method: 'PUT', body },
+    { journeyId }
   )
   return marshal(await response.json())
 }
