@@ -2,7 +2,8 @@
  * A dependency's refusal of a call: it answered with a status that was not
  * ok. The message names the dependency and the action, such as
  * `animals-backend refused to get document upload status: 503 Service Unavailable`;
- * `status` and `statusText` carry the answer.
+ * `dependency` and `operation` carry the call, and `status` and `statusText`
+ * carry the answer.
  */
 export class RefusedCallError extends Error {
   /**
@@ -15,6 +16,8 @@ export class RefusedCallError extends Error {
   ) {
     super(`${dependency} refused to ${action}: ${status} ${statusText}`)
     this.name = 'RefusedCallError'
+    this.dependency = dependency
+    this.operation = operation
     this.status = status
     this.statusText = statusText
   }
