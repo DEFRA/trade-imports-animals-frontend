@@ -1,5 +1,6 @@
 import { ecsFormat } from '@elastic/ecs-pino-format'
 import { getTraceId } from '@defra/hapi-tracing'
+import { stdSerializers } from 'pino'
 
 import { config } from '../../../../config/config.js'
 
@@ -14,12 +15,35 @@ const traceMixin = () => {
   return mixinValues
 }
 
+const errorFieldsOf = (err, ecsError) => {
+  const code = err.code ?? err.cause?.code
+  return {
+    ...ecsError,
+    stack_trace: stdSerializers.err(err).stack,
+    ...(code === undefined ? {} : { code })
+  }
+}
+
+const ecsOptions = () => {
+  const options = ecsFormat({
+    serviceVersion: config.get('serviceVersion'),
+    serviceName: config.get('serviceName')
+  })
+  const formatEcsFields = options.formatters.log
+  const formatFields = (fields) => {
+    const ecsFields = formatEcsFields(fields)
+    return fields.err instanceof Error
+      ? { ...ecsFields, error: errorFieldsOf(fields.err, ecsFields.error) }
+      : ecsFields
+  }
+  return {
+    ...options,
+    formatters: { ...options.formatters, log: formatFields }
+  }
+}
+
 const optionsForFormat = {
-  ecs: () =>
-    ecsFormat({
-      serviceVersion: config.get('serviceVersion'),
-      serviceName: config.get('serviceName')
-    }),
+  ecs: ecsOptions,
   'pino-pretty': () => ({ transport: { target: 'pino-pretty' } })
 }
 

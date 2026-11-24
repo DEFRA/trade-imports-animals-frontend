@@ -81,7 +81,7 @@ describe('external call metrics', () => {
     expect(line).not.toHaveProperty('error')
   })
 
-  test('a call that throws rethrows the same error, publishes a failure of 1 and writes a warn line with the error type and message and no stack trace', async () => {
+  test('a call that throws rethrows the same error, publishes a failure of 1 and writes a warn line with the error type, message, its cause code and a stack trace that carries its cause', async () => {
     const failure = new TypeError('fetch failed', {
       cause: Object.assign(new Error('refused'), { code: 'ECONNREFUSED' })
     })
@@ -99,7 +99,10 @@ describe('external call metrics', () => {
     expect(line.error).toEqual({
       type: 'TypeError',
       message: 'fetch failed',
-      code: 'ECONNREFUSED'
+      code: 'ECONNREFUSED',
+      stack_trace: expect.stringMatching(
+        /^TypeError: fetch failed\n[\s\S]*\ncaused by: Error: refused\n/
+      )
     })
   })
 
@@ -215,10 +218,13 @@ describe('the status a dependency answers with', () => {
       outcome: 'failure',
       failure: 1,
       level: 'warn',
-      errorLogged: 'the error type and message',
+      errorLogged: 'the error type, message and stack trace',
       error: {
         type: 'RefusedCallError',
-        message: 'address-book refused to list addresses: 503 Refused'
+        message: 'address-book refused to list addresses: 503 Refused',
+        stack_trace: expect.stringMatching(
+          /^RefusedCallError: address-book refused to list addresses: 503 Refused\n/
+        )
       }
     }
   ])(

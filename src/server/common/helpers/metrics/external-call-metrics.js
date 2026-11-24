@@ -16,17 +16,6 @@ const logger = createLogger()
  * @typedef {{ dependency: string, operation: string, interfaceId?: string }} ExternalCall
  */
 
-const errorFields = (error) =>
-  error
-    ? {
-        error: {
-          type: error.name,
-          message: error.message,
-          ...(error.cause?.code ? { code: error.cause.code } : {})
-        }
-      }
-    : {}
-
 const statusFields = (statusCode) =>
   statusCode === undefined
     ? {}
@@ -47,7 +36,7 @@ const logExternalCall = (
       duration: Math.round(durationMs * nanosecondsPerMillisecond)
     },
     ...statusFields(statusCode),
-    ...errorFields(error)
+    ...(error ? { err: error } : {})
   }
   const callName = externalCall.interfaceId
     ? `${action} (${externalCall.interfaceId})`
