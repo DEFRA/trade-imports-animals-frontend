@@ -19,11 +19,8 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
-import {
-  FIRST_PAGE,
-  pageAskedFor,
-  servedPageOf
-} from './view-model/pagination.js'
+import { servedPageOf } from './view-model/pagination.js'
+import { FIRST_PAGE, pageAskedFor } from '../../../../../../../shared/paging.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
@@ -39,17 +36,17 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const linksToInsAddressBook = () => !isStubMode()
 
-const resultsPageAsked = (request, party, value) => {
-  const asked = pageAskedFor(value)
+const resultsPageToOpen = (request, party, requestedPage) => {
+  const asked = pageAskedFor(requestedPage)
   if (asked !== undefined) {
     return asked
   }
-  if (value !== undefined) {
+  if (requestedPage !== undefined) {
     request.logger.info(
       {
         journeyId: request.params.journeyId,
         partyId: party.id,
-        requestedPage: value,
+        requestedPage,
         servedPage: FIRST_PAGE
       },
       'Address picker page is not a page number, serving the first page'
@@ -145,7 +142,7 @@ const get = (party) => async (request, h) => {
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
-    page: resultsPageAsked(request, party, request.query.page),
+    page: resultsPageToOpen(request, party, request.query.page),
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
@@ -220,7 +217,7 @@ const post = (party) => async (request, h) => {
     return (
       await render(request, h, orgId, journey, party, {
         query,
-        page: resultsPageAsked(request, party, payload.page),
+        page: resultsPageToOpen(request, party, payload.page),
         selectedId: '',
         error: party.error,
         addAddressHref: issueAddAddressLink(request, h, journey, party)
@@ -230,7 +227,7 @@ const post = (party) => async (request, h) => {
 
   return commitSelection(request, h, party, chosen, {
     query,
-    page: resultsPageAsked(request, party, payload.page)
+    page: resultsPageToOpen(request, party, payload.page)
   })
 }
 

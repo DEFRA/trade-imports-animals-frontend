@@ -3,6 +3,7 @@ import {
   formatCalendarDate,
   formatMomentAsDay
 } from '../../../../../../lib/validate/index.js'
+import { previousAndNextLinks } from '../../../../../../shared/paging.js'
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
 
@@ -102,38 +103,19 @@ export const buildPaginationLinks = (
   referenceNumber
 ) => {
   const sortOrDefault = sort ?? DEFAULT_NOTIFICATION_SORT
-  const linkLabels = labels ?? {}
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
+  const hrefFor = (number) =>
+    `${baseUrl}${buildHomeListQueryString({
+      page: number,
+      sort: sortOrDefault,
+      referenceNumber
+    })}`
 
-  if (totalPages <= 1) {
-    return null
-  }
-
-  return {
-    previous:
-      page > 1
-        ? {
-            href: `${baseUrl}${buildHomeListQueryString({
-              page: page - 1,
-              sort: sortOrDefault,
-              referenceNumber
-            })}`,
-            text: linkLabels.previous
-          }
-        : undefined,
-    next:
-      page < totalPages
-        ? {
-            href: `${baseUrl}${buildHomeListQueryString({
-              page: page + 1,
-              sort: sortOrDefault,
-              referenceNumber
-            })}`,
-            text: linkLabels.next
-          }
-        : undefined
-  }
+  return previousAndNextLinks(
+    { page, totalPages, labels: labels ?? {} },
+    hrefFor
+  )
 }
 
 export const buildPageResultsRange = (

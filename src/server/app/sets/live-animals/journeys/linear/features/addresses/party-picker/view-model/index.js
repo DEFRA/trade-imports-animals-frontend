@@ -24,7 +24,7 @@ export const pickerViewModel = (
   copy
 ) => {
   const hrefForPage = (number) =>
-    resultsHref(journey.journeyId, party, {
+    resultsHref(journey.journeyId, party.slug, {
       query,
       page: number,
       selectedId,

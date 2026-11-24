@@ -678,6 +678,22 @@ describe('View link to the INS address book', () => {
     )
   })
 
+  it('Should leave no empty query on a link to the first page, which carries only the page the trader came from', async () => {
+    addressBookListing(
+      Array.from({ length: 9 }, (_, index) =>
+        listedAddress(`consignor-${index + 1}`, `Consignor ${index + 1}`)
+      )
+    )
+
+    const result = await driveHandler(getConsignor, {
+      query: { page: '2', ...reviewChangeLinkQuery() }
+    })
+
+    expect(pickerFrom(result).pagination.previous.href).toBe(
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?from=${CYA_SLUG}`
+    )
+  })
+
   it('Should return to the page being shown with its chosen address, carrying the trail, when the picker was opened from the review', async () => {
     setInsFrontendBaseUrl('http://ins.example')
     addressBookListing([listedAddress(DANISH_MEAT_ID, DANISH_MEAT_NAME)])

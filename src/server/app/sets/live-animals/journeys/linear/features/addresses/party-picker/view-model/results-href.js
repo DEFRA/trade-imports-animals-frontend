@@ -1,10 +1,10 @@
 import { pagePath } from '../../../../../../../../shared/paths.js'
 import { withTrail } from '../../../../../../../../shared/kit.js'
-import { FIRST_PAGE } from './pagination.js'
+import { FIRST_PAGE } from '../../../../../../../../shared/paging.js'
 
 export const resultsHref = (
   journeyId,
-  party,
+  slug,
   { query, page, selectedId, trail }
 ) => {
   const params = new URLSearchParams()
@@ -17,6 +17,7 @@ export const resultsHref = (
   if (selectedId) {
     params.set('selected', selectedId)
   }
-  const href = `${pagePath(journeyId, party.slug)}?${params.toString()}`
-  return withTrail(href, trail)
+  const search = params.toString()
+  const path = pagePath(journeyId, slug)
+  return withTrail(search ? `${path}?${search}` : path, trail)
 }
