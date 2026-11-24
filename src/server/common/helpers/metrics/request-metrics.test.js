@@ -250,6 +250,23 @@ describe('request metrics', () => {
     ])
   })
 
+  test('a request an earlier onRequest extension answers publishes its time and no page request counts', async () => {
+    config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
+    server.ext('onRequest', (_request, h) => h.response('early').takeover(), {
+      before: 'call-counts'
+    })
+
+    const { statusCode } = await server.inject({
+      method: 'GET',
+      url: ORIGIN_URL
+    })
+
+    expect(statusCode).toBe(200)
+    await requestTimesPublished(1)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
+  })
+
   test('publishes no page request counts when callCounts.metrics.enabled is off', async () => {
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, false)
     await server.inject({ method: 'GET', url: ORIGIN_URL })

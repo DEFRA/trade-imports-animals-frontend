@@ -101,8 +101,9 @@ const publishFinishedPageRequestMetrics = (request) => {
   }
   recordRequestTimeInBackground(request)
   countValidationFailureInBackground(request)
-  if (config.get('callCounts.metrics.enabled')) {
-    recordPageRequestInBackground(callCountsOf(request))
+  const counts = callCountsOf(request)
+  if (counts && config.get('callCounts.metrics.enabled')) {
+    recordPageRequestInBackground(counts)
   }
 }
 
