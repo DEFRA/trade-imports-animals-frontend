@@ -19,6 +19,7 @@ export const refuseUnlessOk = async (operation, response, ids = {}) => {
         operation,
         status: response.status,
         code: error.code,
+        responseBody: error.responseBody,
         ...ids
       },
       'Backend refused request'

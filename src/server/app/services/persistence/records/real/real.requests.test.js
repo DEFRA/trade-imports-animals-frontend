@@ -410,7 +410,7 @@ describe('real records adapter — lifecycle and list', () => {
     )
   })
 
-  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with the operation, status and journey id and no code', async () => {
+  it('Should reject a 409 submit whose body is not JSON without a code, and log one warn line with the operation, status, journey id and a not-JSON response body and no code', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     const surfaced = await asDefaultOrganisation(() =>
@@ -425,6 +425,7 @@ describe('real records adapter — lifecycle and list', () => {
         operation: 'submit-notification',
         status: 409,
         journeyId,
+        responseBody: 'not-json',
         error: expect.objectContaining({ type: 'BackendRequestError' })
       })
     ])
@@ -566,7 +567,7 @@ describe('real records adapter — backend refusals', () => {
     ])
   })
 
-  it('Should log one warn line with the operation, status, code and journey id when the backend refuses a copy', async () => {
+  it('Should log one warn line with the operation, status, code and journey id and no response body marker when the backend refuses a copy', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
       { status: 409 }
@@ -586,6 +587,7 @@ describe('real records adapter — backend refusals', () => {
         error: expect.objectContaining({ type: 'BackendRequestError' })
       })
     ])
+    expect(ecsLog.linesAtLevel('warn')[0]).not.toHaveProperty('responseBody')
   })
 
   it('Should log one warn line with the operation and status and no journey id when the backend refuses a create', async () => {
