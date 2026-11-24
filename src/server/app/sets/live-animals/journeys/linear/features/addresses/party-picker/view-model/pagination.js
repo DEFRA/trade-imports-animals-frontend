@@ -3,6 +3,18 @@ export const ADDRESSES_A_PAGE = 8
 
 export const FIRST_PAGE = 1
 
+const A_WHOLE_NUMBER = /^\d+$/
+
+/** The page a query string asks for, or nothing when what it asks for is not
+ * a page a picker can serve. */
+export const pageAskedFor = (value) => {
+  if (!A_WHOLE_NUMBER.test(value ?? '')) {
+    return undefined
+  }
+  const asked = Number(value)
+  return asked >= FIRST_PAGE ? asked : undefined
+}
+
 export const pageCountOf = (addressesFound) =>
   Math.max(FIRST_PAGE, Math.ceil(addressesFound / ADDRESSES_A_PAGE))
 

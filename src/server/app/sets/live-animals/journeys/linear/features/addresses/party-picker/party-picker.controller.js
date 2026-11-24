@@ -19,7 +19,11 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
-import { FIRST_PAGE, servedPageOf } from './view-model/pagination.js'
+import {
+  FIRST_PAGE,
+  pageAskedFor,
+  servedPageOf
+} from './view-model/pagination.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
@@ -36,9 +40,9 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const linksToInsAddressBook = () => !isStubMode()
 
 const resultsPageAsked = (request, party, value) => {
-  const requested = Number.parseInt(value ?? '', 10)
-  if (Number.isInteger(requested) && requested >= FIRST_PAGE) {
-    return requested
+  const asked = pageAskedFor(value)
+  if (asked !== undefined) {
+    return asked
   }
   if (value !== undefined) {
     request.logger.info(

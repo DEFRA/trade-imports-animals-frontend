@@ -158,22 +158,15 @@ describe('GET /consignors/select', () => {
     expect(picker.pagination.previous.href).not.toContain('page=')
   })
 
-  it('Should keep the results narrowed to the search term on the page after the first', async () => {
-    const wholeList = listedFor('CONSIGNOR')
-    const firstPage = pickerFrom(
-      await driveHandler(getConsignor, { query: { q: 'a' } })
-    )
-    const secondPage = pickerFrom(
-      await driveHandler(getConsignor, { query: { q: 'a', page: '2' } })
-    )
+  it('Should keep the results narrowed to the search term when a later page is asked for', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { q: 'Denmark', page: '2' }
+    })
+    const picker = pickerFrom(result)
 
-    expect(firstPage.rows).toHaveLength(8)
-    expect(secondPage.rows.length).toBeGreaterThan(0)
-    expect(secondPage.query).toBe('a')
-    for (const row of secondPage.rows) {
-      expect(wholeList).toContain(row.id)
-      expect(idsOf(firstPage)).not.toContain(row.id)
-    }
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
+    expect(picker.query).toBe('Denmark')
+    expect(picker.pagination).toBeNull()
   })
 
   it('Should serve the last page, logged once, when the page asked for is past it', async () => {
@@ -194,25 +187,28 @@ describe('GET /consignors/select', () => {
     })
   })
 
-  it('Should serve the first page, logged once, when the page asked for is not a page number', async () => {
-    const result = await driveHandler(getConsignor, {
-      query: { page: 'nonsense' }
-    })
-
-    expect(idsOf(pickerFrom(result))).toEqual(
-      listedFor('CONSIGNOR').slice(0, 8)
-    )
-    expectOneLogged(result.logger, {
-      level: 'info',
-      message:
-        'Address picker page is not a page number, serving the first page',
-      fields: expect.objectContaining({
-        partyId: 'consignor',
-        requestedPage: 'nonsense',
-        servedPage: 1
+  it.each(['nonsense', '3abc', '2.9', '1e3', '0', '-1'])(
+    'Should serve the first page, logged once, when the page asked for is %s',
+    async (asked) => {
+      const result = await driveHandler(getConsignor, {
+        query: { page: asked }
       })
-    })
-  })
+
+      expect(idsOf(pickerFrom(result))).toEqual(
+        listedFor('CONSIGNOR').slice(0, 8)
+      )
+      expectOneLogged(result.logger, {
+        level: 'info',
+        message:
+          'Address picker page is not a page number, serving the first page',
+        fields: expect.objectContaining({
+          partyId: 'consignor',
+          requestedPage: asked,
+          servedPage: 1
+        })
+      })
+    }
+  )
 
   it('Should give each row its street lines and then its town and postcode on one line', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
@@ -249,6 +245,7 @@ describe('GET /consignors/select', () => {
 
     expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
+    expect(picker.pagination).toBeNull()
   })
 
   it('Should open with the record the held copy was picked from selected', async () => {
