@@ -1,5 +1,6 @@
 import { config } from '../../../../config/config.js'
 import { callCountsOf } from '../call-counts/call-counts.js'
+import { createLogger } from '../logging/logger.js'
 import { isPageRequest } from '../call-counts/call-count-totals.js'
 import { recordPageRequestInBackground } from './page-request-metrics.js'
 import {
@@ -7,6 +8,8 @@ import {
   MILLISECONDS,
   publishMetricsInBackground
 } from './publish-metrics.js'
+
+const logger = createLogger()
 
 const isPathParameter = (segment) => segment.startsWith('{')
 
@@ -95,32 +98,42 @@ const countValidationFailureInBackground = (request) => {
   }
 }
 
-const publishFinishedPageRequestMetrics = (request) => {
-  if (!isPageRequest(request.route.path)) {
-    return
+const finishedPageRequestListener =
+  ({ publishesCallCounts }) =>
+  (request) => {
+    if (!isPageRequest(request.route.path)) {
+      return
+    }
+    recordRequestTimeInBackground(request)
+    countValidationFailureInBackground(request)
+    const counts = callCountsOf(request)
+    if (counts && publishesCallCounts) {
+      recordPageRequestInBackground(counts)
+    }
   }
-  recordRequestTimeInBackground(request)
-  countValidationFailureInBackground(request)
-  const counts = callCountsOf(request)
-  if (counts && config.get('callCounts.metrics.enabled')) {
-    recordPageRequestInBackground(counts)
-  }
-}
 
 /**
  * Publishes, without making the request wait, every finished page request as
  * `http.server.requests` (its time from received to completed, tagged
  * `method`, `area` and `status.class`); for a posted answer the page showed
  * again with an error summary, a `journey.validation.failure` count tagged
- * `page`; and, when `callCounts.metrics.enabled` is on, the request's call
- * counts.
+ * `page`; and, when `callCounts.metrics.enabled` is on at registration, the
+ * request's call counts. Logs at registration whether it publishes call counts.
  */
 export const requestMetrics = {
   plugin: {
     name: 'request-metrics',
     dependencies: 'call-counts',
     register(server) {
-      server.events.on('response', publishFinishedPageRequestMetrics)
+      const publishesCallCounts = config.get('callCounts.metrics.enabled')
+      logger.info(
+        { callCountsMetricsEnabled: publishesCallCounts },
+        'Request metrics registered'
+      )
+      server.events.on(
+        'response',
+        finishedPageRequestListener({ publishesCallCounts })
+      )
     }
   }
 }

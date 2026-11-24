@@ -16,6 +16,7 @@ import {
   countSessionResolution
 } from '../call-counts/call-counts.js'
 import { config } from '../../../../config/config.js'
+import { recordEcsLogLines } from '../../test-helpers/ecs-log-lines.js'
 import { recordEmfDocuments } from '../../test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../../test-helpers/restore-config-after-each.js'
 
@@ -112,7 +113,7 @@ describe('request metrics', () => {
     await rm(templateDirectory, { recursive: true })
   })
 
-  beforeEach(async () => {
+  const registerPageServer = async () => {
     server = hapi.server()
     await server.register([callCounts, requestMetrics, vision])
     server.views({
@@ -120,7 +121,9 @@ describe('request metrics', () => {
       path: templateDirectory
     })
     routePages(server)
-  })
+  }
+
+  beforeEach(registerPageServer)
 
   afterEach(async () => {
     await server.stop({ timeout: 0 })
@@ -234,8 +237,9 @@ describe('request metrics', () => {
     expect(emf.documentsWith(VALIDATION_FAILURE)).toEqual([])
   })
 
-  test('publishes the page request counts tagged request.kind page when callCounts.metrics.enabled is on', async () => {
+  test('publishes the page request counts tagged request.kind page when callCounts.metrics.enabled is on at registration', async () => {
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
+    await registerPageServer()
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await vi.waitFor(() =>
@@ -252,6 +256,7 @@ describe('request metrics', () => {
 
   test('a request an earlier onRequest extension answers publishes its time and no page request counts', async () => {
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
+    await registerPageServer()
     server.ext('onRequest', (_request, h) => h.response('early').takeover(), {
       before: 'call-counts'
     })
@@ -267,12 +272,44 @@ describe('request metrics', () => {
     expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
   })
 
-  test('publishes no page request counts when callCounts.metrics.enabled is off', async () => {
+  test('publishes no page request counts when callCounts.metrics.enabled is off at registration', async () => {
     config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, false)
+    await registerPageServer()
     await server.inject({ method: 'GET', url: ORIGIN_URL })
 
     await requestTimesPublished(1)
     await emf.publishMarkerAndAwaitEarlierPublishes()
     expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
   })
+
+  test('publishes no page request counts when callCounts.metrics.enabled is turned on after registration', async () => {
+    config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, false)
+    await registerPageServer()
+    config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, true)
+    await server.inject({ method: 'GET', url: ORIGIN_URL })
+
+    await requestTimesPublished(1)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.documentsWith(PAGE_REQUEST_BACKEND_CALLS)).toEqual([])
+  })
+})
+
+describe('request metrics registration', () => {
+  const ecsLog = recordEcsLogLines()
+  restoreConfigAfterEach([PAGE_REQUEST_METRICS_ENABLED_KEY])
+
+  test.each([true, false])(
+    'logs once at info that it registered with callCountsMetricsEnabled %s',
+    async (enabled) => {
+      config.set(PAGE_REQUEST_METRICS_ENABLED_KEY, enabled)
+      const server = hapi.server()
+
+      await server.register([callCounts, requestMetrics])
+
+      const registered = ecsLog.linesWithMessage('Request metrics registered')
+      expect(registered).toHaveLength(1)
+      expect(registered[0]['log.level']).toBe('info')
+      expect(registered[0].callCountsMetricsEnabled).toBe(enabled)
+    }
+  )
 })
