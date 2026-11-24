@@ -19,6 +19,8 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction } from './request-params.js'
 import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
+import { servedPageOf } from './view-model/pagination.js'
+import { FIRST_PAGE, pageAskedFor } from '../../../../../../../shared/paging.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
 import {
@@ -34,6 +36,25 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const linksToInsAddressBook = () => !isStubMode()
 
+const resultsPageToOpen = (request, party, requestedPage) => {
+  const asked = pageAskedFor(requestedPage)
+  if (asked !== undefined) {
+    return asked
+  }
+  if (requestedPage !== undefined) {
+    request.logger.info(
+      {
+        journeyId: request.params.journeyId,
+        partyId: party.id,
+        requestedPage,
+        servedPage: FIRST_PAGE
+      },
+      'Address picker page is not a page number, serving the first page'
+    )
+  }
+  return FIRST_PAGE
+}
+
 const render = async (
   request,
   h,
@@ -42,6 +63,7 @@ const render = async (
   party,
   {
     query,
+    page: requestedPage,
     selectedId,
     error,
     recoverableError = false,
@@ -53,6 +75,18 @@ const render = async (
     query,
     role: party.addressBookRole
   })
+  const page = servedPageOf(requestedPage, found.length)
+  if (page !== requestedPage) {
+    request.logger.info(
+      {
+        journeyId: journey.journeyId,
+        partyId: party.id,
+        requestedPage,
+        servedPage: page
+      },
+      'Address picker page is past the last page, serving the last page'
+    )
+  }
   const selected = await chosenPartyFor(
     orgId,
     selectedId,
@@ -82,6 +116,7 @@ const render = async (
       party,
       {
         query,
+        page,
         selectedId: effectiveSelectedId,
         error,
         found,
@@ -107,6 +142,7 @@ const get = (party) => async (request, h) => {
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
+    page: resultsPageToOpen(request, party, request.query.page),
     selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
@@ -156,6 +192,7 @@ const post = (party) => async (request, h) => {
     const { journey } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
+      page: FIRST_PAGE,
       selectedId,
       addAddressHref: issueAddAddressLink(request, h, journey, party)
     })
@@ -180,6 +217,7 @@ const post = (party) => async (request, h) => {
     return (
       await render(request, h, orgId, journey, party, {
         query,
+        page: resultsPageToOpen(request, party, payload.page),
         selectedId: '',
         error: party.error,
         addAddressHref: issueAddAddressLink(request, h, journey, party)
@@ -187,7 +225,10 @@ const post = (party) => async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, party, chosen, { query })
+  return commitSelection(request, h, party, chosen, {
+    query,
+    page: resultsPageToOpen(request, party, payload.page)
+  })
 }
 
 export const routes = PARTIES.flatMap((party) => [

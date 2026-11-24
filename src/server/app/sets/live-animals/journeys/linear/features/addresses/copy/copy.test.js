@@ -30,6 +30,26 @@ describe('#copy', () => {
     )
   })
 
+  it('Should name the chosen address above the results, in both languages', () => {
+    expect(copy.picker.selectedAddress('Astra Rosales')).toBe(
+      'Selected address: Astra Rosales'
+    )
+    expect(copyCy.picker.selectedAddress('Astra Rosales')).toBe(
+      'Cyfeiriad a ddewiswyd: Astra Rosales'
+    )
+  })
+
+  it('Should word the paging links rather than leave them in English', () => {
+    expect(copy.picker.pagination).toEqual({
+      previous: 'Previous',
+      next: 'Next'
+    })
+    expect(copyCy.picker.pagination).toEqual({
+      previous: 'Blaenorol',
+      next: 'Nesaf'
+    })
+  })
+
   it("Should word each picker row's link to the address book 'View' in English and 'Gweld' in Welsh", () => {
     expect(copy.picker.view).toBe('View')
     expect(copyCy.picker.view).toBe('Gweld')

@@ -74,15 +74,32 @@ const answerWithDeletedConsignor = () =>
 const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
+const idsAcrossEveryPage = async (party) => {
+  const ids = []
+  let page = 1
+  for (;;) {
+    const picker = pickerFrom(
+      await driveHandler(handlerFor('GET', party.slug), {
+        query: { page: String(page) }
+      })
+    )
+    ids.push(...idsOf(picker))
+    if (!picker.pagination?.next) {
+      return ids
+    }
+    page += 1
+  }
+}
+
 describe('GET /consignors/select', () => {
   resetMocksAndConfigAfterTests()
   useStubbedJourney(SET_ID, dispatchPages)
 
-  it('Should list every consignor-role address, with the role-less address, and nothing else', async () => {
+  it('Should open on the first eight consignor-role addresses, counted against every one the role holds', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
-    expect(picker.resultsCount).toBe('Showing 9 out of 9 results')
-    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR'))
+    expect(picker.resultsCount).toBe('Showing 8 out of 9 results')
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(0, 8))
     expect(picker.rows[0]).toMatchObject({
       name: 'Astra Rosales',
       country: 'Switzerland',
@@ -90,6 +107,108 @@ describe('GET /consignors/select', () => {
     })
     expect(picker.selected).toBeUndefined()
   })
+
+  it('Should list every consignor-role address, with the role-less address, and nothing else, across its pages', async () => {
+    expect(await idsAcrossEveryPage({ slug: CONSIGNOR_SELECT_SLUG })).toEqual(
+      listedFor('CONSIGNOR')
+    )
+  })
+
+  it('Should hold what is left of the role on the page after the first, counted against every one it holds', async () => {
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, { query: { page: '2' } })
+    )
+
+    expect(picker.resultsCount).toBe('Showing 1 out of 9 results')
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(8))
+  })
+
+  it('Should offer no paging links on a role whose addresses fit on one page', async () => {
+    const picker = pickerFrom(
+      await driveHandler(handlerFor('GET', 'consignees/select'))
+    )
+
+    expect(picker.pagination).toBeNull()
+    expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
+  })
+
+  it('Should carry the search term and the ticked address through the paging links', async () => {
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, {
+        query: { q: 'a', selected: DANISH_MEAT_ID }
+      })
+    )
+
+    expect(picker.pagination.next.href).toContain('q=a')
+    expect(picker.pagination.next.href).toContain(`selected=${DANISH_MEAT_ID}`)
+    expect(picker.pagination.next.href).toContain('page=2')
+  })
+
+  it('Should leave the page out of a link to the first page, so its URL carries only the search and the choice', async () => {
+    const picker = pickerFrom(
+      await driveHandler(getConsignor, {
+        query: { page: '2', q: 'a', selected: DANISH_MEAT_ID }
+      })
+    )
+
+    expect(picker.pagination.previous.href).toContain('q=a')
+    expect(picker.pagination.previous.href).toContain(
+      `selected=${DANISH_MEAT_ID}`
+    )
+    expect(picker.pagination.previous.href).not.toContain('page=')
+  })
+
+  it('Should keep the results narrowed to the search term when a later page is asked for', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { q: 'Denmark', page: '2' }
+    })
+    const picker = pickerFrom(result)
+
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
+    expect(picker.query).toBe('Denmark')
+    expect(picker.pagination).toBeNull()
+  })
+
+  it('Should serve the last page, logged once, when the page asked for is past it', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { page: '40' }
+    })
+
+    expect(idsOf(pickerFrom(result))).toEqual(listedFor('CONSIGNOR').slice(8))
+    expectOneLogged(result.logger, {
+      level: 'info',
+      message:
+        'Address picker page is past the last page, serving the last page',
+      fields: expect.objectContaining({
+        partyId: 'consignor',
+        requestedPage: 40,
+        servedPage: 2
+      })
+    })
+  })
+
+  it.each(['nonsense', '3abc', '2.9', '1e3', '0', '-1'])(
+    'Should serve the first page, logged once, when the page asked for is %s',
+    async (asked) => {
+      const result = await driveHandler(getConsignor, {
+        query: { page: asked }
+      })
+
+      expect(idsOf(pickerFrom(result))).toEqual(
+        listedFor('CONSIGNOR').slice(0, 8)
+      )
+      expectOneLogged(result.logger, {
+        level: 'info',
+        message:
+          'Address picker page is not a page number, serving the first page',
+        fields: expect.objectContaining({
+          partyId: 'consignor',
+          requestedPage: asked,
+          servedPage: 1
+        })
+      })
+    }
+  )
 
   it('Should give each row its street lines and then its town and postcode on one line', async () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
@@ -109,7 +228,7 @@ describe('GET /consignors/select', () => {
     )
   })
 
-  it('Should carry the selection into the View link return, with no page', async () => {
+  it('Should carry the selection into the View link return', async () => {
     const result = await driveHandler(getConsignor, {
       query: { selected: DANISH_MEAT_ID }
     })
@@ -126,6 +245,7 @@ describe('GET /consignors/select', () => {
 
     expect(picker.resultsCount).toBe('Showing 2 out of 2 results')
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, JUTLAND_SWINE_ID])
+    expect(picker.pagination).toBeNull()
   })
 
   it('Should open with the record the held copy was picked from selected', async () => {
@@ -180,6 +300,29 @@ describe('POST /consignors/select', () => {
     expect(result.response.statusCode).toBe(200)
     expect(idsOf(picker)).toEqual([DANISH_MEAT_ID])
     expect(result.after.consignor).toBeUndefined()
+  })
+
+  it('Should start a search again at the first page', async () => {
+    const picker = pickerFrom(
+      await driveHandler(postConsignor, {
+        payload: { action: 'search', q: '', page: '2' }
+      })
+    )
+
+    expect(picker.page).toBe(1)
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(0, 8))
+  })
+
+  it('Should refuse an address the role does not offer on the page it was refused from', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: OTHER_ROLE_ONLY_ID, page: '2' }
+    })
+    const picker = pickerFrom(result)
+
+    expect(result.response.statusCode).toBe(400)
+    expect(picker.page).toBe(2)
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(8))
+    expect(picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
   })
 
   it('Should carry a row ticked before the search across the round trip, still selected but off the results', async () => {
@@ -356,8 +499,7 @@ describe('The five spokes share the one picker, each filtered to its own role', 
   it('Should give each spoke the stub records carrying its own role, with the role-less record, and nothing else', async () => {
     const seen = []
     for (const party of PARTIES) {
-      const result = await driveHandler(handlerFor('GET', party.slug))
-      seen.push(idsOf(result.view.context.picker))
+      seen.push(await idsAcrossEveryPage(party))
     }
 
     expect(seen).toEqual(
@@ -518,6 +660,40 @@ describe('View link to the INS address book', () => {
     ])
   })
 
+  it('Should return a View link to the page of results the row was on', async () => {
+    setInsFrontendBaseUrl('http://ins.example/')
+    addressBookListing(
+      Array.from({ length: 9 }, (_, index) =>
+        listedAddress(`consignor-${index + 1}`, `Consignor ${index + 1}`)
+      )
+    )
+
+    const result = await driveHandler(getConsignor, { query: { page: '2' } })
+
+    expect(pickerFrom(result).rows[0].viewHref).toBe(
+      insViewAddressUrl(
+        'consignor-9',
+        `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=2`
+      )
+    )
+  })
+
+  it('Should leave no empty query on a link to the first page, which carries only the page the trader came from', async () => {
+    addressBookListing(
+      Array.from({ length: 9 }, (_, index) =>
+        listedAddress(`consignor-${index + 1}`, `Consignor ${index + 1}`)
+      )
+    )
+
+    const result = await driveHandler(getConsignor, {
+      query: { page: '2', ...reviewChangeLinkQuery() }
+    })
+
+    expect(pickerFrom(result).pagination.previous.href).toBe(
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?from=${CYA_SLUG}`
+    )
+  })
+
   it('Should return to the page being shown with its chosen address, carrying the trail, when the picker was opened from the review', async () => {
     setInsFrontendBaseUrl('http://ins.example')
     addressBookListing([listedAddress(DANISH_MEAT_ID, DANISH_MEAT_NAME)])
@@ -573,6 +749,17 @@ describe('POST /consignors/select — recoverable save failure', () => {
       partyId: 'consignor',
       addressId: ALPINE_DAIRY_ID
     })
+  })
+
+  it('Should re-render a failed save on the page it was posted from', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: ALPINE_DAIRY_ID, page: '2' },
+      startingFrom: [refusingSaves(unavailableBackendError('save answers'))]
+    })
+    const picker = pickerFrom(result)
+
+    expect(picker.page).toBe(2)
+    expect(idsOf(picker)).toEqual(listedFor('CONSIGNOR').slice(8))
   })
 })
 
