@@ -59,6 +59,28 @@ describe('records journey counters', () => {
     )
   })
 
+  test('a start, submission, amendment, copy or deletion that resolves to no journey counts no event', async () => {
+    const resolvesToNoJourney = async () => undefined
+    const journeyId = 'unknown-journey'
+    configureRecords(SET_ID, {
+      ...recordsStub,
+      create: resolvesToNoJourney,
+      submit: resolvesToNoJourney,
+      amend: resolvesToNoJourney,
+      copy: resolvesToNoJourney,
+      softDelete: resolvesToNoJourney
+    })
+
+    await records.create()
+    await records.submit(journeyId, undefined, 0)
+    await records.amend(journeyId)
+    await records.copy(journeyId, 0)
+    await records.softDelete(journeyId)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+
+    expect(journeyCounts()).toEqual([])
+  })
+
   test('a save the store refuses for a stale concurrency token counts one conflict and rethrows the refusal', async () => {
     const started = await records.create()
     await records.replaceFulfilment(started.journeyId, {}, { known: started })

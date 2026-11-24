@@ -50,7 +50,9 @@ const writeCountingConflicts = async (write) => {
 
 const writeCountingSuccessAndConflicts = async (metric, write) => {
   const written = await writeCountingConflicts(write)
-  countEventInBackground(metric)
+  if (written) {
+    countEventInBackground(metric)
+  }
   return written
 }
 
