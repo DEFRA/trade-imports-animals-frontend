@@ -32,7 +32,7 @@ Run its unit suite from the frontend repo root: `npm run test:live-animals`.
 
 ### Node.js
 
-Node 24 or later, and npm 11.6.2 or later — the floor in `engines`.
+Node 26.13.1 or later, and npm 11.6.2 or later — the floor in `engines`.
 
 To use the correct version of Node.js for this application, via nvm:
 
@@ -219,7 +219,7 @@ npm run
 ## AUTHENTICATION (trade-imports-defra-id-stub)
 
 For local cross-service development the recommended path is the workspace
-docker stack at https://github.com/DEFRA/trade-imports-animals-workspace —
+docker stack at https://github.com/DEFRA/trade-imports-workspace —
 it stands the stub up alongside the frontend with the right env wiring;
 no `/etc/hosts` edits required.
 
@@ -281,7 +281,7 @@ docker run -p 3000:3000 trade-imports-animals-frontend
 
 The full local environment (MongoDB, Floci, Redis, the stubs, and every
 trade-imports-animals service including this one) is the workspace stack in
-[DEFRA/trade-imports-animals-workspace](https://github.com/DEFRA/trade-imports-animals-workspace):
+[DEFRA/trade-imports-workspace](https://github.com/DEFRA/trade-imports-workspace):
 
 ```bash
 # from the workspace root

@@ -20,10 +20,10 @@ See [testing.md](testing.md).
 
 ## The workspace repository owns
 
-`../../../../../../.github/workflows/e2e-tests.yml` delegates to:
+This repository's `.github/workflows/e2e-tests.yml` delegates to:
 
 ```text
-DEFRA/trade-imports-animals-workspace/.github/workflows/e2e-tests.yml@main
+DEFRA/trade-imports-workspace/.github/workflows/e2e-tests.yml@main
 ```
 
 That reusable workflow is the cross-repo test entry point used by this
