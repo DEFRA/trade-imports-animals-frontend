@@ -319,7 +319,11 @@ describe('POST /consignors/select', () => {
 
   it('Should refuse an address the role does not offer on the page it was refused from', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: OTHER_ROLE_ONLY_ID, page: '2' }
+      payload: {
+        action: 'save',
+        party: otherRoleOnlyIdFor({ addressBookRole: 'CONSIGNOR' }),
+        page: '2'
+      }
     })
     const picker = pickerFrom(result)
 
