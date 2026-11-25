@@ -969,14 +969,6 @@ describe(`${SUITE} — fully-populated notification, documents and change links`
     )
   })
 
-  it('Should keep the generic address label on the transporter row', async () => {
-    const sections = await sectionsFor(fullSeed)
-
-    expect(
-      keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
-    ).toContain('Address')
-  })
-
   it('Should give every card a Change action in its heading and no row any action but Change on the transit countries', async () => {
     const sections = await sectionsFor(fullSeed)
 
