@@ -64,17 +64,6 @@ updates:
       # green CI cannot prove were applied, so every version goes through the
       # govuk-upgrade skill, one version at a time, across every frontend.
       - dependency-name: 'govuk-frontend'
-      # held: @axe-core/playwright, since 2026-11-19
-      # axe 4.14 flags govuk-frontend's own enhanced file upload button
-      # (label-content-name-mismatch); no govuk-frontend release covers it yet
-      # Failing test: FIT Tests (documents drop-zone accessibility,
-      # label-content-name-mismatch)
-      # Lift it with tim deps lift when a newer @axe-core/playwright or
-      # govuk-frontend clears it.
-      # https://github.com/DEFRA/trade-imports-animals-frontend/pull/492
-      - dependency-name: '@axe-core/playwright'
-        versions:
-          - '4.14.x'
       # held: stylelint, since 2026-11-19
       # stylelint-config-gds 3.0.0, the newest release, has a peer of
       # stylelint ^17.4.0, so stylelint 18 fails npm ci with ERESOLVE

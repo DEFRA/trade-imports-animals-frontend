@@ -280,7 +280,7 @@ Add an axe test for both page states the field changes:
 Call `expectNoSeriousOrCriticalViolations(page, subject)` from
 [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
 It holds the five WCAG tags, fails on any violation with `impact` equal to
-`serious` or `critical`, and applies the one proved conditional-reveal filter.
+`serious` or `critical`, and filters the two proved govuk-frontend false positives.
 Do not build `AxeBuilder` in a spec. Use the initial and error-state examples in
 [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js).
 

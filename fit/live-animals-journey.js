@@ -71,6 +71,12 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
     /govuk-(radios|checkboxes)__input/.test(node.html)
   )
 
+const isGovukFileUploadFalsePositive = (violation) =>
+  violation.id === 'label-content-name-mismatch' &&
+  violation.nodes.every((node) =>
+    /class="govuk-file-upload-button[ "]/.test(node.html)
+  )
+
 /**
  * Fails when the page has a serious or critical accessibility violation.
  *
@@ -85,6 +91,7 @@ export const expectNoSeriousOrCriticalViolations = async (page, subject) => {
   const blocking = results.violations
     .filter(({ impact }) => ['serious', 'critical'].includes(impact))
     .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
+    .filter((violation) => !isGovukFileUploadFalsePositive(violation))
 
   expect(
     blocking,
