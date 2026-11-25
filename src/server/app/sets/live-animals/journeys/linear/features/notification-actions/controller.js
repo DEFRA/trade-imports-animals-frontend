@@ -4,6 +4,7 @@ import {
   pagePath,
   pageRoutePath
 } from '../../../../../../shared/paths.js'
+import { isStaleConcurrencyRefusal } from '../../../../../../engine/index.js'
 import { copyJourney } from '../../../../../../engine/journey.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -41,7 +42,7 @@ const copyPost = async (request, h) => {
       ? h.redirect(hubPath(copied.journeyId))
       : h.redirect(dashboardPath())
   } catch (error) {
-    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+    if (isStaleConcurrencyRefusal(error)) {
       request.logger.info(
         {
           journeyId: request.params.journeyId,

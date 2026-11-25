@@ -17,7 +17,7 @@ export const submitJourney = async (request, h, { concurrencyToken }) => {
     }
   }
   const actor = buildActor(request.auth.credentials)
-  const submitted = await records.finalise(
+  const submitted = await records.submit(
     current.journey.journeyId,
     actor,
     concurrencyToken

@@ -35,7 +35,7 @@ describe('#fetchCommodities', () => {
     await expect(
       fetchCommodities('ferret', { page: 0, size: 10 })
     ).rejects.toMatchObject({
-      message: 'Failed to search commodities',
+      message: 'reference-data refused to search commodities: 500 Error',
       status: 500,
       statusText: 'Error'
     })

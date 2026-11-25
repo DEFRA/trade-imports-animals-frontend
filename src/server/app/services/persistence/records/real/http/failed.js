@@ -1,16 +1,21 @@
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_CONFLICT } from '../config.js'
 
-export const failed = async (action, response) => {
-  const error = new BackendRequestError(action, response)
+export const failed = async (operation, response) => {
+  const error = new BackendRequestError(
+    { dependency: BACKEND_DEPENDENCY, operation },
+    response
+  )
   if (response.status === HTTP_CONFLICT) {
     try {
       const body = await response.clone().json()
       if (body?.code) {
         error.code = body.code
       }
-    } catch {
-      // body wasn't JSON — no code to attach
+    } catch (err) {
+      error.cause = err
+      error.responseBody = 'not-json'
     }
   }
   return error

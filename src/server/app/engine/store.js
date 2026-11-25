@@ -25,7 +25,7 @@ export const store = Object.freeze({
   submit: async (journeyId) => {
     const current = await records.load({ journeyId })
     return withAnswersProjection(
-      records.finalise(journeyId, undefined, current?.concurrencyToken)
+      records.submit(journeyId, undefined, current?.concurrencyToken)
     )
   },
   clear: records.clear

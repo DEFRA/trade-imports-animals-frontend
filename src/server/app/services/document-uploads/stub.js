@@ -1,4 +1,6 @@
+import { BACKEND_DEPENDENCY } from '../../../common/helpers/backend-client/backend-dependency.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
+import { RefusedCallError } from '../http/dependency-error.js'
 import {
   FILE_DOWNLOAD_FAILED,
   FILE_UPLOAD_FAILED,
@@ -76,10 +78,10 @@ export const documentUploads = {
   claim: async (claim) => {
     const refusedField = refusedClaimField(claim)
     if (refusedField) {
-      const error = new Error(
-        `Failed to claim document upload: ${HTTP_STATUS_BAD_REQUEST} Bad Request`
+      const error = new RefusedCallError(
+        { dependency: BACKEND_DEPENDENCY, operation: 'claim-document-upload' },
+        { status: HTTP_STATUS_BAD_REQUEST, statusText: 'Bad Request' }
       )
-      error.status = HTTP_STATUS_BAD_REQUEST
       error.field = refusedField
       throw error
     }

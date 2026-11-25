@@ -9,6 +9,7 @@ fetchMocker.enableMocks()
 
 const BACKEND_URL = 'http://localhost:8085'
 const PDF_CONTENT_TYPE = 'application/pdf'
+const PDF_CONTENT_DISPOSITION = 'inline; filename="itahc.pdf"'
 const UPLOAD_ID = 'up-1'
 const CORRELATION_ID = 'corr-1'
 const JOURNEY_ID = 'GBN-1'
@@ -18,6 +19,10 @@ const ID_WITH_SEPARATORS = '../../notifications/x'
 const ID_WITH_SEPARATORS_ENCODED = '..%2F..%2Fnotifications%2Fx'
 const JSON_CONTENT_TYPE = 'application/json'
 const NOT_FOUND_RESPONSE = { status: 404, statusText: 'Not Found' }
+const SERVICE_UNAVAILABLE_RESPONSE = {
+  status: 503,
+  statusText: 'Service Unavailable'
+}
 const SESSION_ORG = '5900066'
 
 const sentAs = ({ method, url, headers }) => ({
@@ -72,7 +77,8 @@ describe('#documentUploads', () => {
           })
         )
       ).rejects.toMatchObject({
-        message: 'Failed to register document upload: 409 Conflict',
+        message:
+          'animals-backend refused to register document upload: 409 Conflict',
         status: 409
       })
     })
@@ -112,7 +118,8 @@ describe('#documentUploads', () => {
       await expect(
         asSession(() => documentUploads.claim({ uploadId: UPLOAD_ID }))
       ).rejects.toMatchObject({
-        message: 'Failed to claim document upload: 404 Not Found',
+        message:
+          'animals-backend refused to claim document upload: 404 Not Found',
         status: 404
       })
     })
@@ -155,10 +162,7 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the session cannot be read', async () => {
-      fetchMocker.mockResponse(() => ({
-        status: 503,
-        statusText: 'Service Unavailable'
-      }))
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
 
       await expect(
         asSession(() =>
@@ -169,7 +173,7 @@ describe('#documentUploads', () => {
         )
       ).rejects.toMatchObject({
         message:
-          'Failed to get document upload session: 503 Service Unavailable',
+          'animals-backend refused to get document upload session: 503 Service Unavailable',
         status: 503
       })
     })
@@ -230,17 +234,15 @@ describe('#documentUploads', () => {
     })
 
     it('Should throw with the response status when the uploads cannot be read', async () => {
-      fetchMocker.mockResponse(() => ({
-        status: 503,
-        statusText: 'Service Unavailable'
-      }))
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
 
       await expect(
         asSession(() =>
           documentUploads.listByNotification({ journeyId: JOURNEY_ID })
         )
       ).rejects.toMatchObject({
-        message: 'Failed to list document uploads: 503 Service Unavailable',
+        message:
+          'animals-backend refused to list document uploads: 503 Service Unavailable',
         status: 503
       })
     })
@@ -322,6 +324,18 @@ describe('#documentUploads — scan status, removal and reads', () => {
       expect(read.scanStatus).toBe('REJECTED')
       expect(read.rejectionReason).toBeUndefined()
     })
+
+    it('Should throw with the response status when the scan status cannot be read', async () => {
+      fetchMocker.mockResponse(() => SERVICE_UNAVAILABLE_RESPONSE)
+
+      await expect(
+        asSession(() => documentUploads.scanStatus({ uploadId: UPLOAD_ID }))
+      ).rejects.toMatchObject({
+        message:
+          'animals-backend refused to get document upload status: 503 Service Unavailable',
+        status: 503
+      })
+    })
   })
 
   describe('#remove', () => {
@@ -341,18 +355,19 @@ describe('#documentUploads — scan status, removal and reads', () => {
       await expect(
         asSession(() => documentUploads.remove(UPLOAD_ID))
       ).rejects.toMatchObject({
-        message: 'Failed to delete document upload: 404 Not Found',
+        message:
+          'animals-backend refused to delete document upload: 404 Not Found',
         status: 404
       })
     })
   })
 
   describe('#streamFile', () => {
-    it('Should GET the file leg and hand back the streamed body and headers', async () => {
+    it("Should GET the upload's file and hand back the streamed body and headers", async () => {
       fetchMocker.mockResponse('%PDF-1.4 stored bytes', {
         headers: {
           'content-type': PDF_CONTENT_TYPE,
-          'content-disposition': 'inline) filename="itahc.pdf"'
+          'content-disposition': PDF_CONTENT_DISPOSITION
         }
       })
 
@@ -365,7 +380,7 @@ describe('#documentUploads — scan status, removal and reads', () => {
       expect(options.method).toBe('GET')
       expect(response.headers.get('content-type')).toBe(PDF_CONTENT_TYPE)
       expect(response.headers.get('content-disposition')).toBe(
-        'inline) filename="itahc.pdf"'
+        PDF_CONTENT_DISPOSITION
       )
       expect(await response.text()).toBe('%PDF-1.4 stored bytes')
     })
@@ -376,7 +391,8 @@ describe('#documentUploads — scan status, removal and reads', () => {
       await expect(
         asSession(() => documentUploads.streamFile(UPLOAD_ID))
       ).rejects.toMatchObject({
-        message: 'Failed to stream document file: 404 Not Found',
+        message:
+          'animals-backend refused to stream document file: 404 Not Found',
         status: 404
       })
     })

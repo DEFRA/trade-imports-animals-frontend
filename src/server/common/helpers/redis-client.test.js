@@ -4,22 +4,47 @@ import { Cluster, Redis } from 'ioredis'
 
 import { config } from '../../../config/config.js'
 import { buildRedisClient } from './redis-client.js'
+import {
+  DEPENDENCY_AVAILABLE,
+  recordEmfDocuments
+} from '../test-helpers/emf-documents.js'
+import { recordEcsLogLines } from '../test-helpers/ecs-log-lines.js'
 
 vi.mock('ioredis', async () => {
+  const { EventEmitter } = await import('node:events')
   const actual = await vi.importActual('ioredis')
 
   return {
     ...actual,
     Cluster: vi.fn(function () {
-      return { on: () => ({}) }
+      return new EventEmitter()
     }),
     Redis: vi.fn(function () {
-      return { on: () => ({}) }
+      return new EventEmitter()
     })
   }
 })
 
 describe('#buildRedisClient', () => {
+  describe('When the client connects', () => {
+    const ecsLog = recordEcsLogLines()
+    const emf = recordEmfDocuments()
+
+    test('publishes Redis as available and logs the connection once', async () => {
+      const client = buildRedisClient(config.get('redis'))
+
+      client.emit('connect')
+      client.emit('ready')
+
+      await vi.waitFor(() =>
+        expect(emf.valuesOf(DEPENDENCY_AVAILABLE)).toEqual([1])
+      )
+      expect(ecsLog.levelledMessages()).toEqual([
+        { level: 'info', message: 'Redis is available' }
+      ])
+    })
+  })
+
   describe('When Redis Single InstanceCache is requested', () => {
     beforeEach(() => {
       buildRedisClient(config.get('redis'))

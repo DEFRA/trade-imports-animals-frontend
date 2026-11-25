@@ -116,7 +116,7 @@ describe('cancel amendment routes', () => {
   it('Should redirect non-AMEND journeys without attempting the transition', async () => {
     const draft = await store.create()
     const submitted = await store.create()
-    await records.finalise(
+    await records.submit(
       submitted.journeyId,
       undefined,
       submitted.concurrencyToken

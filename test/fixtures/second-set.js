@@ -96,7 +96,7 @@ const createRecordsStub = () => {
       journeys.set(journeyId, journey)
       return structuredClone(journey)
     },
-    finalise: async (journeyId) => structuredClone(journeys.get(journeyId)),
+    submit: async (journeyId) => structuredClone(journeys.get(journeyId)),
     amend: async (journeyId) => structuredClone(journeys.get(journeyId)),
     cancelAmend: async (journeyId) => structuredClone(journeys.get(journeyId)),
     copy: async () => undefined,

@@ -1,10 +1,8 @@
 import { notificationsUrl } from '../config.js'
-import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
-import { headers } from '../http/headers.js'
+import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
 export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
@@ -14,10 +12,6 @@ export const load = async ({ journeyId } = {}) => {
   return undefined
 }
 
-// Dashboard list source. Reads notification-shape display fields (commodity,
-// origin, arrival date, party names) from /notifications; the fulfilments
-// payload used by the engine during rehydrate is fetched separately
-// per-notification via /notifications/{ref}/fulfilments in load() above.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',
@@ -26,16 +20,12 @@ export const list = async ({
   const referenceQuery = referenceNumber
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
-  const response = await backendFetch(
+  const response = await send(
+    'list-notifications',
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
-    {
-      method: 'GET',
-      headers: headers()
-    }
+    { method: 'GET' },
+    { referenceNumber }
   )
-  if (!response.ok) {
-    throw await failed('list notifications', response)
-  }
   const result = await response.json()
   return {
     rows: result.content.map(marshalListItem),

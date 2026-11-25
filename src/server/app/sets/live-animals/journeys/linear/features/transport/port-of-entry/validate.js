@@ -6,7 +6,7 @@ import {
   pageValidation,
   requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
-import { dateTextOf, readDate } from '../../../../../../../shared/kit.js'
+import { dateTextOf, readDateAnswer } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import * as transportReference from '../../../../../../../services/transport-reference/index.js'
@@ -83,6 +83,6 @@ export const validation = pageValidation({
   }),
   toAnswers: (values) => ({
     ...values,
-    arrivalDateAtPort: readDate(values, 'arrivalDateAtPort')
+    arrivalDateAtPort: readDateAnswer(values, 'arrivalDateAtPort')
   })
 })

@@ -2,12 +2,11 @@ import Wreck from '@hapi/wreck'
 import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
 import { config } from '../config/config.js'
-import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { measureExternalCall } from '../server/common/helpers/metrics/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
-const TOKEN_ENDPOINT_TIMEOUT_MS = 3000
-
 async function refreshTokens(refreshToken) {
+  const tokenEndpointTimeoutMs = 3000
   const { token_endpoint: url } = await getOidcConfig()
 
   const payload = new URLSearchParams({
@@ -29,12 +28,10 @@ async function refreshTokens(refreshToken) {
         },
         payload: payload.toString(),
         json: true,
-        timeout: TOKEN_ENDPOINT_TIMEOUT_MS
+        timeout: tokenEndpointTimeoutMs
       })
   )
 
-  // Payload will include both a new access token and a new refresh token
-  // Refresh tokens can only be used once, so the new refresh token should be stored in place of the old one
   return responsePayload
 }
 

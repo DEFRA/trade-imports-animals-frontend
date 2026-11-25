@@ -10,12 +10,17 @@ defines lifecycle constants and delegates these operations to a configured adapt
 
 - create, load, list and has
 - replace fulfilment
-- finalise, amend and cancel amend
+- submit, amend and cancel amend
 - copy and soft delete
 - clear for test support
 
 [`src/server/app/services/persistence/records/index.js`](../services/persistence/records/index.js)
 selects the stub or real implementation. Both expose the same operation names.
+
+The real adapter leaves the reference number to the backend: create posts an
+empty notification and returns the notification the backend created. list
+reads the dashboard's display fields from `/notifications`; load reads one
+notification's fulfilments from `/notifications/{ref}/fulfilments`.
 
 Canonical fulfilment is the durable answer source. Writes replace a whole evaluated
 and purged snapshot. Reads rebuild projected answers, scope and status, so derived
@@ -102,6 +107,14 @@ Every records call carries the signed-in organisation in
 `Trade-Imports-Organisation-Id`. The backend stores it as the owner on create and
 answers another organisation's notification as not found (403 on the fulfilments
 read, which the adapter treats as not found).
+
+A replace-fulfilment write sends the signed-in actor beside the notification,
+because the backend uses the actor's organisation to resolve referenced parties
+onto the edit event.
+
+The stub adapter refuses a missing concurrency token as a bad request before it
+compares tokens, because `Number(null)` is 0 and would match a fresh journey's
+token.
 
 GBN-AG's `TradeCountry` carries an ISO 3166-1 alpha-2 code, so a territory the
 destination and transit selects offer must leave as its country. The identification

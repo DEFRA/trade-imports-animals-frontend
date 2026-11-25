@@ -1,20 +1,19 @@
 import { Cluster, Redis } from 'ioredis'
 
-import { createLogger } from './logging/logger.js'
+import { reportRedisConnectionEvents } from './redis-connection-events.js'
 
 /**
- * Setup Redis and provide a redis client
+ * Builds a Redis client that speaks RESP2: a single-instance client when
+ * `useSingleInstanceCache` is set, otherwise a Cluster client. The client
+ * reports its connection events (see `reportRedisConnectionEvents`).
  *
- * Local development - 1 Redis instance
- * Environments - Elasticache / Redis Cluster with username and password
+ * @param {{ host: string, keyPrefix: string, username: string, password: string, useSingleInstanceCache: boolean, useTLS: boolean }} redisConfig - where and how to connect
+ * @returns {import('ioredis').Redis | import('ioredis').Cluster} the client
  */
 export function buildRedisClient(redisConfig) {
-  const logger = createLogger()
   const port = 6379
   const db = 0
-  // ioredis 6 defaults to RESP3 (HELLO 3). Pin RESP2 so the session store
-  // keeps the wire protocol it has always used against ElastiCache.
-  const protocol = 2
+  const resp2Protocol = 2
   const keyPrefix = redisConfig.keyPrefix
   const host = redisConfig.host
   let redisClient
@@ -33,7 +32,7 @@ export function buildRedisClient(redisConfig) {
       port,
       host,
       db,
-      protocol,
+      protocol: resp2Protocol,
       keyPrefix,
       ...credentials,
       ...tls
@@ -52,7 +51,7 @@ export function buildRedisClient(redisConfig) {
         dnsLookup: (address, callback) => callback(null, address),
         redisOptions: {
           db,
-          protocol,
+          protocol: resp2Protocol,
           ...credentials,
           ...tls
         }
@@ -60,13 +59,7 @@ export function buildRedisClient(redisConfig) {
     )
   }
 
-  redisClient.on('connect', () => {
-    logger.info('Connected to Redis server')
-  })
-
-  redisClient.on('error', (error) => {
-    logger.error({ err: error }, 'Redis connection error')
-  })
+  reportRedisConnectionEvents(redisClient)
 
   return redisClient
 }

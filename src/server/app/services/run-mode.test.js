@@ -5,64 +5,16 @@ import {
   switchToRealMode,
   switchToStubMode
 } from '../../common/test-helpers/run-mode.js'
-
-const okResponse = (body) => ({ ok: true, json: async () => body })
-
-const stubFetch = (impl) => vi.stubGlobal('fetch', vi.fn(impl))
-
-const okOnlyForBlock = (block, body) => async (url) => {
-  if (new URL(url).searchParams.get('blocks') !== block) {
-    return { ok: false, status: 400, statusText: 'Unexpected countries query' }
-  }
-  return okResponse(body)
-}
+import {
+  okOnlyForBlock,
+  okResponse,
+  stubFetch
+} from '../../common/test-helpers/reference-data-fetch.js'
 
 resetModulesAndRunModeEachTest()
 
 afterEach(() => {
   vi.unstubAllGlobals()
-})
-
-describe('countries client', () => {
-  it('Should parse a fetched [{code,name}] payload', async () => {
-    stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
-    const { fetchCountries } = await import('./countries/client.js')
-    await expect(fetchCountries()).resolves.toEqual([
-      { code: 'ZZ', name: 'Zedland' }
-    ])
-  })
-
-  it('Should request countries filtered to the given blocks', async () => {
-    stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
-    const { fetchCountries } = await import('./countries/client.js')
-    await expect(fetchCountries(['GBNAG_SPS_EX'])).resolves.toEqual([
-      { code: 'ZZ', name: 'Zedland' }
-    ])
-  })
-
-  it('Should throw on a non-ok response', async () => {
-    stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
-    const { fetchCountries } = await import('./countries/client.js')
-    await expect(fetchCountries()).rejects.toThrow('Failed to get countries')
-  })
-})
-
-describe('ports client', () => {
-  it('Should parse a fetched [{code,name}] payload', async () => {
-    stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
-    const { fetchPortsOfEntry } = await import('./ports/client.js')
-    await expect(fetchPortsOfEntry()).resolves.toEqual([
-      { code: 'GB ZZZ', name: 'Zed Port' }
-    ])
-  })
-
-  it('Should throw on a non-ok response', async () => {
-    stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
-    const { fetchPortsOfEntry } = await import('./ports/client.js')
-    await expect(fetchPortsOfEntry()).rejects.toThrow(
-      'Failed to get ports of entry'
-    )
-  })
 })
 
 describe('countries service — stub mode', () => {

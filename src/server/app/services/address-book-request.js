@@ -1,4 +1,5 @@
 import { config } from '../../../config/config.js'
+import { measureExternalResponse } from '../../common/helpers/metrics/external-call-metrics.js'
 import {
   ORGANISATION_ID_HEADER,
   organisationScopedHeaders
@@ -7,7 +8,15 @@ import { BackendRequestError } from './persistence/records/errors.js'
 
 const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
+const addressBookCall = (operation) => ({
+  dependency: 'address-book',
+  operation
+})
+
 export { ORGANISATION_ID_HEADER }
+
+/** The largest page size the address book serves. */
+export const MAX_API_PAGE_SIZE = 100
 
 /**
  * The absolute URL of a resource under the caller's organisation in the
@@ -43,14 +52,42 @@ export const addressBookHeaders = (organisationId) =>
   organisationScopedHeaders(organisationId)
 
 /**
- * Raises the backend's failure for an address-book response that was not ok.
+ * Makes one call to the address book, recorded as one external call under the
+ * operation it names.
  *
- * @param {string} what the operation being attempted, named in the error
- * @param {Response} response
+ * @param {string} operation the address-book operation, a fixed name such as `list-addresses`
+ * @param {string} url the request URL
+ * @param {RequestInit} init the fetch options, passed through unchanged
+ * @returns {Promise<Response>} the address book's response
+ */
+export const addressBookFetch = (operation, url, init) =>
+  measureExternalResponse(addressBookCall(operation), () => fetch(url, init))
+
+/**
+ * Raises the address book's refusal of a call when its response was not ok.
+ *
+ * @param {string} operation the address-book operation the response answered, named in the error
+ * @param {Response} response the address book's response
  * @throws {BackendRequestError} when the response is not ok
  */
-export const throwOnAddressBookError = (what, response) => {
+export const throwOnAddressBookError = (operation, response) => {
   if (!response.ok) {
-    throw new BackendRequestError(what, response)
+    throw new BackendRequestError(addressBookCall(operation), response)
   }
+}
+
+/**
+ * Makes one call to the address book, as {@link addressBookFetch} does, and
+ * raises its refusal when the response is not ok.
+ *
+ * @param {string} operation the address-book operation, a fixed name such as `list-addresses`
+ * @param {string} url the request URL
+ * @param {RequestInit} init the fetch options, passed through unchanged
+ * @returns {Promise<Response>} the address book's ok response
+ * @throws {BackendRequestError} named for the operation, when the response is not ok
+ */
+export const sendToAddressBook = async (operation, url, init) => {
+  const response = await addressBookFetch(operation, url, init)
+  throwOnAddressBookError(operation, response)
+  return response
 }

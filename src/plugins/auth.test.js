@@ -4,6 +4,7 @@ import hapiCookie from '@hapi/cookie'
 import Jwt from '@hapi/jwt'
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
+import { TOKEN_EXCHANGE_STARTED_AT_KEY } from '../auth/token-exchange-timer.js'
 import { config } from '../config/config.js'
 import {
   callCounts,
@@ -13,6 +14,7 @@ import {
 import { callCountsRoutes } from '../server/common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../server/common/helpers/call-counts/call-count-totals.js'
 import { createLogger } from '../server/common/helpers/logging/logger.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
@@ -81,11 +83,8 @@ describe('auth plugin', () => {
 
   restoreConfigAfterEach(Object.keys(configValues))
 
-  let logSpy
-
   beforeEach(() => {
     vi.resetAllMocks()
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     for (const [key, value] of Object.entries(configValues)) {
       config.set(key, value)
@@ -93,8 +92,9 @@ describe('auth plugin', () => {
     wreckGetMock.mockResolvedValue({ payload: oidcConfig })
   })
 
+  recordEmfDocuments()
+
   afterEach(() => {
-    logSpy.mockRestore()
     vi.useRealTimers()
   })
 
@@ -197,7 +197,7 @@ describe('auth plugin', () => {
       const token = getBellOptions(oidcConfig).provider.token(request)
 
       expect(token).toBe(oidcConfig.token_endpoint)
-      expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
+      expect(request.app[TOKEN_EXCHANGE_STARTED_AT_KEY]).toEqual(
         expect.any(Number)
       )
     })
@@ -361,8 +361,10 @@ describe('auth plugin', () => {
         sessionId: sessionIdInCache
       })
 
-      expect(callCountsOf(request).sessionResolutions).toBe(1)
-      expect(callCountsOf(request).backendCalls).toBe(0)
+      expect(callCountsOf(request)).toEqual({
+        sessionResolutions: 1,
+        externalCalls: {}
+      })
     })
 
     test('a request with a valid session cookie resolves the session once in a counted route', async () => {

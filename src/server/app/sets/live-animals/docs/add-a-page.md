@@ -485,7 +485,7 @@ as the example.
 Call `expectNoSeriousOrCriticalViolations(page, subject)` from
 [`fit/live-animals-journey.js`](../../../../../../fit/live-animals-journey.js).
 It holds the five WCAG tags, fails if any result has `impact` equal to
-`serious` or `critical`, and applies the one proved conditional-reveal filter.
+`serious` or `critical`, and filters the two proved govuk-frontend false positives.
 Do not build `AxeBuilder` in a spec.
 
 ## 10. Run every check

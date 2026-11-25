@@ -113,7 +113,9 @@ describe('#listTransporters', () => {
 
     const refusal = await refusalFrom(() => listTransporters(ORGANISATION_ID))
 
-    expect(refusal.message).toContain('Failed to list transporters')
+    expect(refusal.message).toContain(
+      'address-book refused to list transporters'
+    )
     expect(refusal.status).toBe(500)
   })
 })
@@ -157,7 +159,9 @@ describe('#createTransporter', () => {
       createTransporter(ORGANISATION_ID, { name: TRANSPORTER_NAME })
     )
 
-    expect(refusal.message).toContain('Failed to create transporter')
+    expect(refusal.message).toContain(
+      'address-book refused to create transporter'
+    )
     expect(refusal.status).toBe(500)
   })
 })

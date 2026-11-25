@@ -407,7 +407,7 @@ describe('POST transit-countries — continuing', () => {
     expect(result.view.context.recoverableError).toBe(true)
   })
 
-  it('Should log the unavailable backend once at warn with the journey id and the error', async () => {
+  it('Should log the save fallback once at info with the journey id and no error', async () => {
     const failure = unavailableBackendError(SAVE_ANSWERS)
 
     const result = await driveHandler(post, {
@@ -417,8 +417,7 @@ describe('POST transit-countries — continuing', () => {
     })
 
     expectOneSaveFallbackLogged(result.logger, {
-      journeyId: result.journeyId,
-      err: failure
+      journeyId: result.journeyId
     })
   })
 })

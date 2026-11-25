@@ -4,7 +4,7 @@ import Jwt from '@hapi/jwt'
 import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig, OIDC_DOCUMENT_TIMEOUT_MS } from './get-oidc-config.js'
 import { config } from '../config/config.js'
-import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { measureExternalCall } from '../server/common/helpers/metrics/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
 async function verifyToken(token) {

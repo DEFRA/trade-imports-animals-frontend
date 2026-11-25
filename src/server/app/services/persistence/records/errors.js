@@ -1,11 +1,11 @@
+import { RefusedCallError } from '../../http/dependency-error.js'
+
 const RECOVERABLE_BACKEND_ERROR = Symbol('recoverableBackendError')
 
-export class BackendRequestError extends Error {
-  constructor(action, response) {
-    super(`Failed to ${action}: ${response.status} ${response.statusText}`)
+export class BackendRequestError extends RefusedCallError {
+  constructor(call, response) {
+    super(call, response)
     this.name = 'BackendRequestError'
-    this.status = response.status
-    this.statusText = response.statusText
     this[RECOVERABLE_BACKEND_ERROR] = true
   }
 }

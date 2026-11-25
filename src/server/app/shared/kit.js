@@ -1,5 +1,11 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
-import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  isStaleConcurrencyRefusal,
+  SUBMITTED
+} from '../engine/index.js'
 import { nextStepLanding } from '../flow/navigation.js'
 import { journeyLayout, journeySectionCaption } from '../flow/journey-flow.js'
 import { copyFor } from './copy.js'
@@ -332,7 +338,7 @@ export const setlessBase = (title) => ({
 
 /**
  * Runs a save and answers a recoverable backend failure with the page's
- * fallback, logging the failure once at warn.
+ * fallback, logging the fallback taken at info.
  *
  * @param {object} request - the request being answered.
  * @param {() => Promise<*>} saveThunk - makes the save.
@@ -351,16 +357,15 @@ export const recoverableSave = async (
   try {
     return { value: await saveThunk() }
   } catch (error) {
-    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+    if (isStaleConcurrencyRefusal(error)) {
       throw error
     }
     if (isRecoverableBackendError(error)) {
-      request.logger.warn(
+      request.logger.info(
         {
           ...ids,
           journeyId: request.params.journeyId,
-          route: request.route?.path,
-          err: error
+          route: request.route?.path
         },
         SAVE_FALLBACK_LOG_MESSAGE
       )
@@ -374,7 +379,7 @@ const redirectOnStaleAction = (post) => async (request, h) => {
   try {
     return await post(request, h)
   } catch (error) {
-    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+    if (isStaleConcurrencyRefusal(error)) {
       request.logger.info(
         {
           journeyId: request.params.journeyId,
@@ -409,7 +414,7 @@ export const pageRoutes = (page, { get, post }) => [
     : [])
 ]
 
-export const readDate = (payload, name) => {
+export const readDateAnswer = (payload, name) => {
   const raw = String(payload[name] ?? '').trim()
   if (raw === '') {
     return { day: '', month: '', year: '' }

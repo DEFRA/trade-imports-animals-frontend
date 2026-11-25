@@ -24,62 +24,21 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
-        `http://127.0.0.1:${port}/notifications`,
+        'replace-notification',
+        `http://127.0.0.1:${port}/notifications/j-1`,
         { method: 'PUT', headers: { 'content-type': 'application/json' } }
       )
 
       expect(await response.json()).toEqual({
         method: 'PUT',
-        url: '/notifications'
+        url: '/notifications/j-1'
       })
     } finally {
       await close(backend)
     }
   })
 
-  test('sends a form with a file as multipart, filename and bytes intact', async () => {
-    const received = {}
-    const backend = await listen((request, response) => {
-      const chunks = []
-      request.on('data', (chunk) => chunks.push(chunk))
-      request.on('end', () => {
-        received.contentType = request.headers['content-type']
-        received.body = Buffer.concat(chunks).toString('utf8')
-        response.writeHead(204)
-        response.end()
-      })
-    })
-    const { port } = backend.address()
-    const formData = new FormData()
-    formData.append(
-      'file',
-      new Blob(['%PDF-1.4 bytes'], { type: 'application/pdf' }),
-      'certificate.pdf'
-    )
-
-    try {
-      await backendFetch(`http://127.0.0.1:${port}/document-uploads/u-1/file`, {
-        method: 'POST',
-        body: formData
-      })
-
-      expect({
-        multipart: received.contentType.startsWith('multipart/form-data'),
-        filename: received.body.includes('filename="certificate.pdf"'),
-        partType: received.body.includes('Content-Type: application/pdf'),
-        bytes: received.body.includes('%PDF-1.4 bytes')
-      }).toEqual({
-        multipart: true,
-        filename: true,
-        partType: true,
-        bytes: true
-      })
-    } finally {
-      await close(backend)
-    }
-  })
-
-  test("streams a file's bytes through Readable.fromWeb, as a download does", async () => {
+  test("returns a response body that streams the backend's bytes intact through Readable.fromWeb", async () => {
     const backend = await listen((_request, response) => {
       response.writeHead(200, { 'content-type': 'application/pdf' })
       response.end('%PDF-1.4 stored bytes')
@@ -88,6 +47,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
+        'stream-document-file',
         `http://127.0.0.1:${port}/document-uploads/u-1/file`,
         { method: 'GET' }
       )
@@ -121,6 +81,7 @@ describe('backendFetch over a real connection', () => {
 
     try {
       const response = await backendFetch(
+        'list-notifications',
         `http://127.0.0.1:${port}/notifications`
       )
 

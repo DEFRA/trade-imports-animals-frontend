@@ -1,59 +1,32 @@
 import { notificationsUrl } from '../config.js'
-import { failed } from '../http/failed.js'
-import { headers } from '../http/headers.js'
+import { send } from '../http/send.js'
 import { marshal } from '../marshal/document.js'
-import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
-const postTransition = async (url, action, body) => {
-  const response = await backendFetch(url, {
-    method: 'POST',
-    headers: headers(),
-    body: body === undefined ? undefined : JSON.stringify(body)
-  })
-  if (!response.ok) {
-    throw await failed(action, response)
-  }
-  return response
+const transition = async (operation, journeyId, path, actor) => {
+  const response = await send(
+    operation,
+    `${notificationsUrl}/${journeyId}/${path}`,
+    { method: 'POST', body: actor },
+    { journeyId }
+  )
+  return marshal(await response.json())
 }
 
-export const finalise = async (journeyId, actor, concurrencyToken) => {
+export const submit = async (journeyId, actor, concurrencyToken) => {
   if (concurrencyToken === undefined || concurrencyToken === null) {
     throw new Error(
-      `finalise requires a concurrencyToken to submit notification ${journeyId}`
+      `submit requires a concurrencyToken for notification ${journeyId}`
     )
   }
   const query = new URLSearchParams({ concurrencyToken })
-  const response = await postTransition(
-    `${notificationsUrl}/${journeyId}/submit?${query}`,
-    'submit notification',
-    actor
-  )
-  return marshal(await response.json())
+  return transition('submit-notification', journeyId, `submit?${query}`, actor)
 }
 
-export const amend = async (journeyId, actor) => {
-  const response = await postTransition(
-    `${notificationsUrl}/${journeyId}/amend`,
-    'amend notification',
-    actor
-  )
-  return marshal(await response.json())
-}
+export const amend = (journeyId, actor) =>
+  transition('amend-notification', journeyId, 'amend', actor)
 
-export const cancelAmend = async (journeyId, actor) => {
-  const response = await postTransition(
-    `${notificationsUrl}/${journeyId}/cancel-amend`,
-    'cancel notification amendment',
-    actor
-  )
-  return marshal(await response.json())
-}
+export const cancelAmend = (journeyId, actor) =>
+  transition('cancel-amend-notification', journeyId, 'cancel-amend', actor)
 
-export const softDelete = async (journeyId, actor) => {
-  const response = await postTransition(
-    `${notificationsUrl}/${journeyId}/soft-delete`,
-    'soft-delete notification',
-    actor
-  )
-  return marshal(await response.json())
-}
+export const softDelete = (journeyId, actor) =>
+  transition('soft-delete-notification', journeyId, 'soft-delete', actor)
