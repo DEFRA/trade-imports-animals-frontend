@@ -1,6 +1,7 @@
 import { config } from '../../../../config/config.js'
-import { measureExternalCall } from '../../../common/helpers/external-call-metrics.js'
-import { failedResponse, traceHeaders } from '../http/trace-headers.js'
+import { measureExternalCall } from '../../../common/helpers/metrics/external-call-metrics.js'
+import { RefusedCallError } from '../http/dependency-error.js'
+import { traceHeaders } from '../http/trace-headers.js'
 
 const uploaderBaseUrl = () => config.get('cdpUploader.baseUrl')
 const scanResultCallbackUrl = () =>
@@ -8,8 +9,16 @@ const scanResultCallbackUrl = () =>
 const documentsBucket = () => config.get('cdpUploader.documentsBucket')
 
 const UPLOADER_CALLS = Object.freeze({
-  openSession: { dependency: 'cdp-uploader', operation: 'initiate' },
-  readSession: { dependency: 'cdp-uploader', operation: 'status' }
+  openSession: {
+    dependency: 'cdp-uploader',
+    operation: 'initiate',
+    action: 'open an upload session'
+  },
+  readSession: {
+    dependency: 'cdp-uploader',
+    operation: 'status',
+    action: 'read an upload session'
+  }
 })
 
 export const documentUploadSessions = {
@@ -56,7 +65,7 @@ export const documentUploadSessions = {
           })
         })
         if (!response.ok) {
-          throw failedResponse('open an upload session', response)
+          throw new RefusedCallError(UPLOADER_CALLS.openSession, response)
         }
         return response.json()
       }
@@ -70,8 +79,6 @@ export const documentUploadSessions = {
   /**
    * Reads back what the browser submitted, including the text fields sent alongside the file.
    *
-   * The path is built on the configured base URL rather than taken from the session.
-   *
    * @param {string} uploadId - the session's id
    * @returns {Promise<{uploadStatus: string, form: object}>} the submitted form and its state
    */
@@ -82,7 +89,7 @@ export const documentUploadSessions = {
         headers: traceHeaders()
       })
       if (!response.ok) {
-        throw failedResponse('read an upload session', response)
+        throw new RefusedCallError(UPLOADER_CALLS.readSession, response)
       }
       return response.json()
     })

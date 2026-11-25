@@ -226,8 +226,7 @@ describe('GET /address-return', () => {
       expect(result.after.consignor).toBeUndefined()
       expect(result.cookies).toEqual({})
       expectOneSaveFallbackLogged(result.logger, {
-        journeyId: result.journeyId,
-        err: failure
+        journeyId: result.journeyId
       })
     })
   })

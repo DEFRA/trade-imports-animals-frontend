@@ -88,7 +88,8 @@ offers and where Save and continue lands.
 ## Dates and structured values
 
 The date helpers validate a `dd/mm/yyyy` text value, then
-[`kit.readDate()`](../shared/kit.js) stores `{ day, month, year }`.
+[`kit.readDateAnswer()`](../shared/kit.js) stores `{ day, month, year }` when the
+text parses as `d/m/yyyy`, else the text as entered, so validation can show it again.
 `kit.dateField()` creates the MoJ date-picker view model, and carries optional
 `minDate`/`maxDate` through to the picker's `data-min-date`/`data-max-date`
 attributes.

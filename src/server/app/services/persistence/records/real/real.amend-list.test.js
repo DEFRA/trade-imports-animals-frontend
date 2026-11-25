@@ -20,7 +20,7 @@ const RECORD_ARRIVAL_DATE = '2026-07-20'
 const CONSIGNOR_NAME = 'Consignor Ltd'
 const CONSIGNEE_NAME = 'Consignee Ltd'
 
-const notification = (referenceNumber, status) => ({
+const listedNotification = (referenceNumber, status) => ({
   referenceNumber,
   status,
   concurrencyToken: 0,
@@ -33,7 +33,7 @@ const notification = (referenceNumber, status) => ({
   consignee: { name: CONSIGNEE_NAME }
 })
 
-const mockNotification = (referenceNumber, status) => ({
+const notificationDocument = (referenceNumber, status) => ({
   referenceNumber,
   status,
   created: RECORD_CREATED_AT,
@@ -47,7 +47,9 @@ describe('real records adapter — amend', () => {
   })
 
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
-    fetchMocker.mockResponse(JSON.stringify(mockNotification('GBN-1', 'AMEND')))
+    fetchMocker.mockResponse(
+      JSON.stringify(notificationDocument('GBN-1', 'AMEND'))
+    )
 
     const amended = await asTestOrg(() => records.amend('GBN-1'))
 
@@ -63,7 +65,7 @@ describe('real records adapter — amend', () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(asTestOrg(() => records.amend('GBN-1'))).rejects.toThrow(
-      /Failed to amend notification: 409/
+      /animals-backend refused to amend notification: 409/
     )
   })
 })
@@ -81,9 +83,9 @@ describe('real records adapter — paged list', () => {
         totalElements: 3,
         totalPages: 1,
         content: [
-          notification('GBN-1', 'DRAFT'),
-          notification('GBN-2', 'SUBMITTED'),
-          notification('GBN-3', 'AMEND')
+          listedNotification('GBN-1', 'DRAFT'),
+          listedNotification('GBN-2', 'SUBMITTED'),
+          listedNotification('GBN-3', 'AMEND')
         ]
       })
     )
@@ -156,7 +158,7 @@ describe('real records adapter — has', () => {
 
   test('Should GET the notification fulfilments and return true when found and false on 404', async () => {
     fetchMocker.mockResponses(
-      [JSON.stringify(mockNotification('GBN-1', 'DRAFT')), { status: 200 }],
+      [JSON.stringify(notificationDocument('GBN-1', 'DRAFT')), { status: 200 }],
       ['Not Found', { status: 404 }]
     )
 

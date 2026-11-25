@@ -18,7 +18,6 @@ import {
   stubH,
   actWithSessionOrganisation,
   expectOneSaveFallbackLogged,
-  unavailableBackendError,
   useStubbedJourney
 } from '../../../../../../engine/test-support.js'
 import {
@@ -250,15 +249,7 @@ describe('#declaration submit', () => {
       expectNoRefusalLogged(result.logger)
     })
 
-    it('Should redirect to the confirmation page after a successful submit', async () => {
-      const result = await drivePost({ payload: { declaration: 'confirmed' } })
-
-      expect(result.response).toEqual({
-        redirect: pagePath(result.journeyId, 'confirmation')
-      })
-    })
-
-    it('Should submit the notification as Submitted and redirect to the confirmation page when the declaration is confirmed with no ITAHC uploaded', async () => {
+    it('Should submit the notification and redirect to the confirmation page when the declaration is confirmed', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
@@ -317,7 +308,7 @@ describe('#declaration submit', () => {
       expect((await store.get(result.journeyId)).status).toBe('draft')
     })
 
-    it('Should keep the not-ready outcome as a redirect to the review', async () => {
+    it('Should redirect to the review with its errors in focus when the notification is not ready for check your answers', async () => {
       configureReadyForCheckYourAnswers(SET_ID, () => false)
 
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
@@ -386,7 +377,7 @@ describe('#declaration submit against the real records adapter', () => {
     beforeEach(() => {
       configureRecords(SET_ID, {
         ...recordsStub,
-        finalise: realRecords.finalise
+        submit: realRecords.submit
       })
     })
 
@@ -461,7 +452,6 @@ describe('#declaration submit against the real records adapter', () => {
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
-      const failure = unavailableBackendError('submit notification')
       backendResponds({
         status: 503,
         statusText: 'Service Unavailable',
@@ -484,8 +474,7 @@ describe('#declaration submit against the real records adapter', () => {
         'live-animals/journeys/linear/features/declaration/template'
       )
       expectOneSaveFallbackLogged(result.logger, {
-        journeyId: result.journeyId,
-        err: failure
+        journeyId: result.journeyId
       })
     })
   })

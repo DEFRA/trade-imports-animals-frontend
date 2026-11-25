@@ -1,4 +1,5 @@
 import { isStubMode } from '../../../common/services/mode.js'
+import { MAX_API_PAGE_SIZE } from '../address-book-request.js'
 import * as client from './client.js'
 import { STUB_BOOK } from './stub/index.js'
 
@@ -22,7 +23,7 @@ const recordsFromEveryLivePage = async (orgId, query) => {
   const readPage = (page) =>
     client.listAddresses(orgId, {
       page,
-      pageSize: client.MAX_API_PAGE_SIZE,
+      pageSize: MAX_API_PAGE_SIZE,
       query
     })
   const first = await readPage(1)

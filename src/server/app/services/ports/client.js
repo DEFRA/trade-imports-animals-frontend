@@ -5,7 +5,7 @@ import {
 
 export const fetchPortsOfEntry = () =>
   requestReferenceData(
+    'get-ports-of-entry',
     referenceDataUrl('/ports-of-entry'),
-    { method: 'GET' },
-    'Failed to get ports of entry'
+    { method: 'GET' }
   )

@@ -1,28 +1,19 @@
 import { vi } from 'vitest'
 import { getOidcConfigWithRetry } from './get-oidc-config-with-retry.js'
+import { config } from '../config/config.js'
+import { defraIdDiscoveryCall } from '../server/common/test-helpers/defra-id-network.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { restoreConfigAfterEach } from '../server/common/test-helpers/restore-config-after-each.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
-const configGetMock = vi.hoisted(() => vi.fn())
 const getTraceIdMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock }
 }))
 
-vi.mock('../config/config.js', () => ({
-  config: { get: configGetMock }
-}))
-
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
-}))
-
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
 }))
 
 function timedOut() {
@@ -38,20 +29,19 @@ describe('getOidcConfigWithRetry', () => {
   const discoveryUrl =
     'https://defra-id-stub/idp/.well-known/openid-configuration'
   const payload = { authorization_endpoint: 'https://defra-id-stub/auth' }
+  const failedDiscoveryCall = { ...defraIdDiscoveryCall, failure: 1 }
+  const successfulDiscoveryCall = { ...defraIdDiscoveryCall, failure: 0 }
 
+  const emf = recordEmfDocuments()
+  restoreConfigAfterEach(['defraId.oidcDiscoveryUrl'])
   let logger
 
   beforeEach(() => {
     vi.useFakeTimers()
     wreckGetMock.mockReset()
-    configGetMock.mockReset()
     getTraceIdMock.mockReset()
 
-    configGetMock.mockImplementation((key) => {
-      if (key === 'defraId.oidcDiscoveryUrl') return discoveryUrl
-      if (key === 'tracing.header') return 'x-cdp-request-id'
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-    })
+    config.set('defraId.oidcDiscoveryUrl', discoveryUrl)
     getTraceIdMock.mockReturnValue('test-trace-id')
 
     logger = { warn: vi.fn() }
@@ -70,7 +60,7 @@ describe('getOidcConfigWithRetry', () => {
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
-  test('retries after a timeout and returns the document once the provider answers', async () => {
+  test('retries after a timeout, returns the document once the provider answers, and records a failed then a successful defra-id openid-configuration call', async () => {
     wreckGetMock
       .mockRejectedValueOnce(timedOut())
       .mockResolvedValueOnce({ payload })
@@ -90,9 +80,15 @@ describe('getOidcConfigWithRetry', () => {
     await expect(tracked).resolves.toEqual(payload)
     expect(wreckGetMock).toHaveBeenCalledTimes(2)
     expect(logger.warn).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual([
+        failedDiscoveryCall,
+        successfulDiscoveryCall
+      ])
+    )
   })
 
-  test('gives up only after the full 1s, 2s and 4s backoff and throws an error naming the discovery URL', async () => {
+  test('gives up only after the full 1s, 2s and 4s backoff, throws an error naming the discovery URL, and records four failed defra-id openid-configuration calls', async () => {
     wreckGetMock.mockRejectedValue(timedOut())
 
     const result = getOidcConfigWithRetry(logger)
@@ -114,5 +110,8 @@ describe('getOidcConfigWithRetry', () => {
     expect(error.cause.code).toBe('ETIMEDOUT')
     expect(wreckGetMock).toHaveBeenCalledTimes(4)
     expect(logger.warn).toHaveBeenCalledTimes(3)
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual(Array(4).fill(failedDiscoveryCall))
+    )
   })
 })

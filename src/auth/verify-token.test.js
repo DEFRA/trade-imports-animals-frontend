@@ -1,176 +1,127 @@
+import { generateKeyPairSync } from 'node:crypto'
+import Jwt from '@hapi/jwt'
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { verifyToken } from './verify-token.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
+import { config } from '../config/config.js'
+import {
+  defraIdDiscoveryCall,
+  defraIdDiscoveryDocument,
+  useDefraIdNetwork
+} from '../server/common/test-helpers/defra-id-network.js'
+import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
-const wreckGetMock = vi.hoisted(() => vi.fn())
-const getOidcConfigMock = vi.hoisted(() => vi.fn())
-const createPublicKeyMock = vi.hoisted(() => vi.fn())
-const jwtDecodeMock = vi.hoisted(() => vi.fn())
-const jwtVerifyMock = vi.hoisted(() => vi.fn())
-const configGetMock = vi.hoisted(() => vi.fn())
 const getTraceIdMock = vi.hoisted(() => vi.fn())
-
-vi.mock('@hapi/wreck', () => ({
-  default: { get: wreckGetMock }
-}))
-
-vi.mock('./get-oidc-config.js', async (importOriginal) => ({
-  ...(await importOriginal()),
-  getOidcConfig: getOidcConfigMock
-}))
-
-vi.mock('node:crypto', () => ({
-  createPublicKey: createPublicKeyMock
-}))
-
-vi.mock('@hapi/jwt', () => ({
-  default: {
-    token: {
-      decode: jwtDecodeMock,
-      verify: jwtVerifyMock
-    }
-  }
-}))
-
-vi.mock('../config/config.js', () => ({
-  config: { get: configGetMock }
-}))
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
-}))
+const rsaKeyPair = () => generateKeyPairSync('rsa', { modulusLength: 2048 })
+
+const signedWith = (privateKey) =>
+  Jwt.token.generate(
+    {
+      sub: 'user-123',
+      aud: config.get('defraId.clientId'),
+      iss: defraIdDiscoveryDocument.issuer
+    },
+    {
+      key: privateKey.export({ type: 'pkcs8', format: 'pem' }),
+      algorithm: 'RS256'
+    }
+  )
 
 describe('verifyToken', () => {
-  const tracingHeader = 'x-cdp-request-id'
   const traceId = 'test-trace-id'
+  const discoveryCall = { ...defraIdDiscoveryCall, failure: 0 }
+  const jwksCall = { dependency: 'defra-id', operation: 'jwks' }
+  const defraIdKeys = rsaKeyPair()
+  const publishedKeys = {
+    keys: [defraIdKeys.publicKey.export({ format: 'jwk' })]
+  }
 
-  let logSpy
+  const { serveDiscovery, interceptJwks } = useDefraIdNetwork()
+  const emf = recordEmfDocuments()
+  const ecsLog = recordEcsLogLines()
+  let tracingHeader
+
+  const jwksLine = () => ecsLog.externalCallLine('defra-id/jwks')
 
   beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    configGetMock.mockImplementation((key) => {
-      if (key === 'tracing.header') return tracingHeader
-      if (key === 'defraId.clientId') return 'test-client-id'
-      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
-    })
+    tracingHeader = config.get('tracing.header')
+    getTraceIdMock.mockReset()
     getTraceIdMock.mockReturnValue(traceId)
+    serveDiscovery()
   })
 
-  afterEach(() => {
-    logSpy.mockRestore()
-  })
+  test('resolves for a token signed with the key Defra ID publishes, fetched with the trace id, and records a successful defra-id jwks call logged as SYN-12', async () => {
+    interceptJwks()
+      .matchHeader(tracingHeader, traceId)
+      .reply(200, publishedKeys)
 
-  test('measures the key fetch as defra-id jwks', async () => {
-    getOidcConfigMock.mockResolvedValue({ jwks_uri: 'https://mock/jwks' })
-    wreckGetMock.mockResolvedValue({ payload: { keys: [{}] } })
-    createPublicKeyMock.mockReturnValue({
-      export: vi.fn().mockReturnValue('pem')
-    })
-    jwtDecodeMock.mockReturnValue({})
+    await expect(
+      verifyToken(signedWith(defraIdKeys.privateKey))
+    ).resolves.toBeUndefined()
 
-    await verifyToken('jwt-token')
-
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.Dependency).toBe('defra-id')
-    expect(document.Operation).toBe('jwks')
-    expect(document.Interface).toBe('SYN-12')
-    expect(document.ExternalCallFailure).toBe(0)
-  })
-
-  test('verifies token using first JWK', async () => {
-    const token = 'jwt-token'
-    const jwksUri = 'https://mock-auth-server/.well-known/jwks'
-
-    const jwk = { kty: 'RSA', n: 'abc', e: 'AQAB' }
-    const keys = [jwk]
-
-    const pem = '-----BEGIN PUBLIC KEY-----...'
-    const decoded = { header: {}, payload: { sub: '123' } }
-
-    getOidcConfigMock.mockResolvedValue({
-      jwks_uri: jwksUri,
-      issuer: 'https://mock-auth-server'
-    })
-    wreckGetMock.mockResolvedValue({ payload: { keys } })
-    createPublicKeyMock.mockReturnValue({
-      export: vi.fn().mockReturnValue(pem)
-    })
-    jwtDecodeMock.mockReturnValue(decoded)
-    jwtVerifyMock.mockReturnValue(true)
-
-    await expect(verifyToken(token)).resolves.toBeUndefined()
-
-    expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
-    expect(wreckGetMock).toHaveBeenCalledWith(jwksUri, {
-      headers: { [tracingHeader]: traceId },
-      json: true,
-      timeout: 1000
-    })
-    expect(createPublicKeyMock).toHaveBeenCalledWith({
-      key: jwk,
-      format: 'jwk'
-    })
-    expect(jwtDecodeMock).toHaveBeenCalledWith(token)
-    expect(jwtVerifyMock).toHaveBeenCalledWith(decoded, {
-      key: pem,
-      algorithm: 'RS256',
-      aud: 'test-client-id',
-      iss: 'https://mock-auth-server'
-    })
-  })
-
-  test('sends an empty tracing header when the request has no trace id', async () => {
-    const jwksUri = 'https://mock-auth-server/.well-known/jwks'
-    getTraceIdMock.mockReturnValue(undefined)
-    getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
-    wreckGetMock.mockResolvedValue({ payload: { keys: [{}] } })
-    createPublicKeyMock.mockReturnValue({
-      export: vi.fn().mockReturnValue('pem')
-    })
-    jwtDecodeMock.mockReturnValue({})
-
-    await verifyToken('jwt-token')
-
-    expect(wreckGetMock).toHaveBeenCalledWith(
-      jwksUri,
-      expect.objectContaining({ headers: { [tracingHeader]: '' } })
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual([
+        discoveryCall,
+        { ...jwksCall, failure: 0 }
+      ])
+    )
+    expect(jwksLine()['log.level']).toBe('info')
+    expect(jwksLine().message).toMatch(
+      /^External call defra-id\/jwks \(SYN-12\) success in \d+ ms$/
     )
   })
 
-  test('propagates errors from Wreck.get', async () => {
-    getOidcConfigMock.mockResolvedValue({
-      jwks_uri: 'https://mock-auth-server/jwks'
-    })
-    wreckGetMock.mockRejectedValue(new Error('jwks fetch failed'))
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    getTraceIdMock.mockReturnValue(undefined)
+    interceptJwks().matchHeader(tracingHeader, '').reply(200, publishedKeys)
 
-    await expect(verifyToken('token')).rejects.toThrow('jwks fetch failed')
-
-    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-    const [document] = readEmfDocuments(logSpy)
-    expect(document.Operation).toBe('jwks')
-    expect(document.ExternalCallFailure).toBe(1)
-    expect(document.Outcome).toBe('failure')
+    await expect(
+      verifyToken(signedWith(defraIdKeys.privateKey))
+    ).resolves.toBeUndefined()
   })
 
-  test('throws if JWKS has no keys', async () => {
-    getOidcConfigMock.mockResolvedValue({
-      jwks_uri: 'https://mock-auth-server/jwks'
-    })
-    wreckGetMock.mockResolvedValue({ payload: { keys: [] } })
+  test('rejects a token signed with a key Defra ID does not publish', async () => {
+    interceptJwks().reply(200, publishedKeys)
 
-    createPublicKeyMock.mockImplementation(() => {
-      throw new Error('no jwk available')
-    })
+    await expect(
+      verifyToken(signedWith(rsaKeyPair().privateKey))
+    ).rejects.toThrow('Invalid token signature')
+  })
 
-    await expect(verifyToken('token')).rejects.toThrow('no jwk available')
+  test('rejects a token when Defra ID publishes no keys', async () => {
+    interceptJwks().reply(200, { keys: [] })
+
+    await expect(
+      verifyToken(signedWith(defraIdKeys.privateKey))
+    ).rejects.toMatchObject({
+      code: 'ERR_INVALID_ARG_TYPE',
+      message:
+        'The "key.key" property must be of type object. Received undefined'
+    })
+  })
+
+  test('rethrows a key fetch Defra ID answers with 503, and records it as a failed defra-id jwks call logged as SYN-12', async () => {
+    interceptJwks().reply(503)
+
+    await expect(
+      verifyToken(signedWith(defraIdKeys.privateKey))
+    ).rejects.toThrow('Service Unavailable')
+
+    await vi.waitFor(() =>
+      expect(emf.externalCalls()).toEqual([
+        discoveryCall,
+        { ...jwksCall, failure: 1 }
+      ])
+    )
+    expect(jwksLine()['log.level']).toBe('warn')
+    expect(jwksLine().http).toEqual({ response: { status_code: 503 } })
+    expect(jwksLine().message).toMatch(
+      /^External call defra-id\/jwks \(SYN-12\) failure in \d+ ms$/
+    )
   })
 })

@@ -121,7 +121,7 @@ export const unrecognisedAnswerKeys = (answers) => {
 
 /**
  * Throw when the answers tree carries any unrecognised key — an inert key
- * would otherwise persist silently and ship at finalise.
+ * would otherwise persist silently and ship at submit.
  *
  * @param {object} answers - the nested answer POJO to check.
  * @param {string} context - the call-site label folded into the thrown error message.

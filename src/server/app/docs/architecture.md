@@ -139,7 +139,7 @@ way:
 - where a page's Back link goes: `trailBackLink()`, with `carryTrail()` and `pushTrail()` for the links that keep the trail
 - the return marker a sub-page round trip carries: `withReturnMarker()` and `readReturnMarker()`
 - saving: `recoverableSave()` and `pageRoutes()`
-- date fields: `readDate()`, `dateTextOf()` and `dateField()`
+- date fields: `readDateAnswer()`, `dateTextOf()` and `dateField()`
 
 [`shared/trail.js`](../shared/trail.js) owns the trail and return marker operations, and `kit.js` re-exports them.
 
@@ -199,11 +199,21 @@ and [`copy-parity.test.js`](../copy-parity.test.js) allowlists it as identical.
 
 ### Backend HTTP clients
 
-Each backend or reference-data call lives in its own module under `services/`,
-for example [`services/ports/client.js`](../services/ports/client.js) and
-[`services/persistence/records/real/http/`](../services/persistence/records/real/http/put.js).
+Each call to an HTTP dependency (journey backend, address book, reference data,
+CDP uploader) lives in its own module under `services/`, for example
+[`services/ports/client.js`](../services/ports/client.js) and
+[`services/persistence/records/real/http/`](../services/persistence/records/real/http/send.js).
 A controller calls the service, never `fetch`. Call counting and metrics
 helpers wrap a client; they do not hold one.
+
+A client never calls `fetch` directly either. It goes through
+[`backendFetch`](../../common/helpers/backend-client/backend-fetch.js) or
+[`measureExternalResponse` and `measureExternalCall`](../../common/helpers/metrics/external-call-metrics.js),
+under a fixed operation name, so every call records its metric, log line and
+availability. Each operation is listed in
+[`services/dependency-operations.test.js`](../services/dependency-operations.test.js),
+which proves every listed call records one success or one failure under its
+dependency and operation. A new client call adds its row there.
 
 ## Logging
 

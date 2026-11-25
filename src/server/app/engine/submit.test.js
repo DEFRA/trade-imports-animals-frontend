@@ -8,15 +8,10 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { authenticatedActor, stubH, journeyRequest } from './test-support.js'
 
-// submitJourney reads its scope through `makeScope` and gates on that scope's
-// `readyForCheckYourAnswers`. `records.finalise` is the persistence layer.
-// These tests confirm submit finalises the journey by its journeyId when
-// CYA-ready and blocks when not.
-
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('submitJourney — gates on scope readiness, finalises via records', () => {
+describe('submitJourney — gates on scope readiness, submits via records', () => {
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -24,9 +19,9 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     journeyId = (await records.create()).journeyId
   })
 
-  it('Should finalise the CYA-ready journey', async () => {
-    const finalise = vi.fn(recordsStub.finalise)
-    configureRecords(SET_ID, { ...recordsStub, finalise })
+  it('Should submit the CYA-ready journey', async () => {
+    const submit = vi.fn(recordsStub.submit)
+    configureRecords(SET_ID, { ...recordsStub, submit })
     configureReadyForCheckYourAnswers(SET_ID, () => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
@@ -36,7 +31,7 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
       concurrencyToken
     })
 
-    expect(finalise).toHaveBeenCalledWith(
+    expect(submit).toHaveBeenCalledWith(
       journeyId,
       authenticatedActor,
       concurrencyToken
@@ -47,7 +42,7 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 
-  it('Should refuse to finalise at a token the journey has moved on from', async () => {
+  it('Should refuse to submit at a token the journey has moved on from', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => true)
     const { concurrencyToken: reviewed } = await records.load({ journeyId })
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })

@@ -151,7 +151,7 @@ describe.skipIf(!runsIt('real'))(
       const { concurrencyToken } = await records.load({ journeyId })
 
       expect(
-        (await records.finalise(journeyId, undefined, concurrencyToken)).status
+        (await records.submit(journeyId, undefined, concurrencyToken)).status
       ).toBe(SUBMITTED)
       expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
       await expect(
@@ -175,7 +175,7 @@ describe.skipIf(!runsIt('real'))(
       await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
 
       await expect(
-        records.finalise(journeyId, undefined, staleToken)
+        records.submit(journeyId, undefined, staleToken)
       ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
       expect((await records.load({ journeyId })).status).toBe(DRAFT)
     })

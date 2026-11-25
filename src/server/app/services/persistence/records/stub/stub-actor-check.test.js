@@ -17,7 +17,7 @@ const seedSubmittedWithParty = async () => {
   const saved = await records.replaceFulfilment(draft.journeyId, {
     [consignor.id]: consignorCopy
   })
-  await records.finalise(draft.journeyId, undefined, saved.concurrencyToken)
+  await records.submit(draft.journeyId, undefined, saved.concurrencyToken)
   return draft.journeyId
 }
 

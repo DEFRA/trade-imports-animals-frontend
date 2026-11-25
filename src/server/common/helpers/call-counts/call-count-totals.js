@@ -1,4 +1,5 @@
 import { config } from '../../../../config/config.js'
+import { BACKEND_DEPENDENCY } from '../backend-client/backend-dependency.js'
 
 const EXCLUDED_ROUTE_PATHS = new Set([
   '/health',
@@ -59,9 +60,21 @@ const byPathThenMethod = (first, second) =>
   first.method.localeCompare(second.method)
 
 /**
+ * Adds up a request's calls to the journey backend, across every operation.
+ *
+ * @param {{ externalCalls: Record<string, Record<string, number>> }} counts - the request's counts
+ * @returns {number} the number of backend calls
+ */
+export const backendCallsOf = (counts) =>
+  Object.values(counts.externalCalls[BACKEND_DEPENDENCY] ?? {}).reduce(
+    (sum, calls) => sum + calls,
+    0
+  )
+
+/**
  * Adds one finished page request to its route's running totals.
  *
- * @param {{ method: string, path: string, counts: { backendCalls: number, sessionResolutions: number, externalCalls: Record<string, Record<string, number>> } }} pageRequest - the request's route and counts
+ * @param {{ method: string, path: string, counts: { sessionResolutions: number, externalCalls: Record<string, Record<string, number>> } }} pageRequest - the request's route and its counts
  */
 export const addPageRequest = ({ method, path, counts }) => {
   const key = `${method} ${path}`
@@ -69,7 +82,7 @@ export const addPageRequest = ({ method, path, counts }) => {
   routeTotals.set(key, {
     ...existing,
     pageRequests: existing.pageRequests + 1,
-    backendCalls: existing.backendCalls + counts.backendCalls,
+    backendCalls: existing.backendCalls + backendCallsOf(counts),
     sessionResolutions: existing.sessionResolutions + counts.sessionResolutions,
     externalCalls: mergeExternalCalls(
       existing.externalCalls,

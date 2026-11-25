@@ -1,6 +1,7 @@
+import { Redis } from 'ioredis'
 import { vi } from 'vitest'
 
-import { Engine as CatboxRedis } from '@hapi/catbox-redis'
+import { HitCountingRedisEngine } from './hit-counting-redis-engine.js'
 import { Engine as CatboxMemory } from '@hapi/catbox-memory'
 
 import { getCacheEngine } from './cache-engine.js'
@@ -10,7 +11,6 @@ const mockLoggerInfo = vi.fn()
 const mockLoggerError = vi.fn()
 
 vi.mock('ioredis', () => ({
-  ...vi.importActual('ioredis'),
   Cluster: vi.fn(function () {
     return { on: () => ({}) }
   }),
@@ -18,8 +18,6 @@ vi.mock('ioredis', () => ({
     return { on: () => ({}) }
   })
 }))
-vi.mock('@hapi/catbox-redis')
-vi.mock('@hapi/catbox-memory')
 vi.mock('../logging/logger.js', () => ({
   createLogger: () => ({
     info: (...args) => mockLoggerInfo(...args),
@@ -29,12 +27,16 @@ vi.mock('../logging/logger.js', () => ({
 
 describe('#getCacheEngine', () => {
   describe('When Redis cache engine has been requested', () => {
+    let engine
+
     beforeEach(() => {
-      getCacheEngine('redis')
+      engine = getCacheEngine('redis')
     })
 
-    test('Should setup Redis cache', () => {
-      expect(CatboxRedis).toHaveBeenCalledWith(expect.any(Object))
+    test('Should setup the hit-counting Redis cache on the built Redis client', () => {
+      const [builtClient] = vi.mocked(Redis).mock.results
+      expect(engine).toBeInstanceOf(HitCountingRedisEngine)
+      expect(engine.settings.client).toBe(builtClient.value)
     })
 
     test('Should log expected Redis message', () => {
@@ -43,12 +45,14 @@ describe('#getCacheEngine', () => {
   })
 
   describe('When In memory cache engine has been requested', () => {
+    let engine
+
     beforeEach(() => {
-      getCacheEngine()
+      engine = getCacheEngine()
     })
 
     test('Should setup In memory cache', () => {
-      expect(CatboxMemory).toHaveBeenCalledTimes(1)
+      expect(engine).toBeInstanceOf(CatboxMemory)
     })
 
     test('Should log expected CatBox memory message', () => {
@@ -59,9 +63,11 @@ describe('#getCacheEngine', () => {
   })
 
   describe('When In memory cache engine has been requested in Production', () => {
+    let engine
+
     beforeEach(() => {
       config.set('isProduction', true)
-      getCacheEngine()
+      engine = getCacheEngine()
     })
 
     test('Should log Production warning message', () => {
@@ -71,7 +77,7 @@ describe('#getCacheEngine', () => {
     })
 
     test('Should setup In memory cache', () => {
-      expect(CatboxMemory).toHaveBeenCalledTimes(1)
+      expect(engine).toBeInstanceOf(CatboxMemory)
     })
 
     test('Should log expected message', () => {

@@ -42,7 +42,7 @@ export const documentFromPayload = (payload) => ({
     payload.accompanyingDocumentReference ?? ''
   ).trim(),
   accompanyingDocumentType: (payload.accompanyingDocumentType ?? '').trim(),
-  accompanyingDocumentDateOfIssue: kit.readDate(
+  accompanyingDocumentDateOfIssue: kit.readDateAnswer(
     payload,
     'accompanyingDocumentDateOfIssue'
   )

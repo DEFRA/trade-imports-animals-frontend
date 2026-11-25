@@ -1,71 +1,76 @@
 import { vi } from 'vitest'
-import { Metrics } from '@defra/cdp-metrics'
 
 import {
   recordTokenExchange,
-  timeTokenExchange
+  timeTokenExchange,
+  TOKEN_EXCHANGE_STARTED_AT_KEY
 } from './token-exchange-timer.js'
-import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
-
-vi.mock('../server/common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
-}))
+import { recordEcsLogLines } from '../server/common/test-helpers/ecs-log-lines.js'
+import { recordEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
 describe('token exchange timer', () => {
-  let logSpy
-  let getMetricsLoggerSpy
+  const tokenEndpoint = 'https://idp.example.com/token'
+  const tokenExchange = { dependency: 'defra-id', operation: 'token-exchange' }
 
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    getMetricsLoggerSpy = vi.spyOn(Metrics.prototype, 'getMetricsLogger')
-  })
+  const emf = recordEmfDocuments()
+  const ecsLog = recordEcsLogLines()
 
-  afterEach(() => {
-    getMetricsLoggerSpy.mockRestore()
-    logSpy.mockRestore()
-  })
+  const recordExchangeTaking = (durationMs, { isAuthenticated }) => {
+    const startedAt = 1000
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(startedAt)
+    const request = { app: {}, auth: { isAuthenticated } }
+    timeTokenExchange(tokenEndpoint)(request)
+    clock.mockReturnValue(startedAt + durationMs)
+    recordTokenExchange(request)
+    clock.mockRestore()
+  }
 
   test('timeTokenExchange returns the token endpoint and stamps the start', () => {
     const request = { app: {} }
 
-    const endpoint = timeTokenExchange('https://idp.example.com/token')(request)
+    const endpoint = timeTokenExchange(tokenEndpoint)(request)
 
-    expect(endpoint).toBe('https://idp.example.com/token')
-    expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
+    expect(endpoint).toBe(tokenEndpoint)
+    expect(request.app[TOKEN_EXCHANGE_STARTED_AT_KEY]).toEqual(
       expect.any(Number)
     )
   })
 
-  test.each([
-    { isAuthenticated: true, expectedFailure: 0 },
-    { isAuthenticated: false, expectedFailure: 1 }
-  ])(
-    'recordTokenExchange emits the exchange with failure $expectedFailure when isAuthenticated is $isAuthenticated',
-    async ({ isAuthenticated, expectedFailure }) => {
-      const request = {
-        app: { defraIdTokenExchangeStartedAt: performance.now() },
-        auth: { isAuthenticated }
-      }
+  test('recordTokenExchange publishes the time since the stamp as the duration of a successful defra-id token-exchange call, logged as SYN-11', async () => {
+    recordExchangeTaking(250, { isAuthenticated: true })
 
-      recordTokenExchange(request)
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...tokenExchange,
+      failure: 0
+    })
+    expect(emf.valuesOf('external.call.duration')).toEqual([250])
+    const line = ecsLog.onlyExternalCallLine()
+    expect(line['log.level']).toBe('info')
+    expect(line.event.duration).toBe(250_000_000)
+    expect(line.message).toBe(
+      'External call defra-id/token-exchange (SYN-11) success in 250 ms'
+    )
+  })
 
-      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
-      const [document] = readEmfDocuments(logSpy)
-      expect(document.Dependency).toBe('defra-id')
-      expect(document.Operation).toBe('token-exchange')
-      expect(document.Interface).toBe('SYN-11')
-      expect(document.ExternalCallFailure).toBe(expectedFailure)
-    }
-  )
+  test('recordTokenExchange records an exchange that did not authenticate as a failed defra-id token-exchange call, logged as SYN-11 at warn', async () => {
+    recordExchangeTaking(250, { isAuthenticated: false })
 
-  test('recordTokenExchange emits nothing when Bell never reached the token call', () => {
+    expect(await emf.onlyExternalCall()).toEqual({
+      ...tokenExchange,
+      failure: 1
+    })
+    const line = ecsLog.onlyExternalCallLine()
+    expect(line['log.level']).toBe('warn')
+    expect(line.message).toBe(
+      'External call defra-id/token-exchange (SYN-11) failure in 250 ms'
+    )
+  })
+
+  test('recordTokenExchange publishes and logs no external call when Bell never reached the token call', async () => {
     recordTokenExchange({ app: {}, auth: { isAuthenticated: false } })
 
-    expect(getMetricsLoggerSpy).not.toHaveBeenCalled()
-    expect(readEmfDocuments(logSpy)).toHaveLength(0)
+    await emf.publishMarkerAndAwaitEarlierPublishes()
+    expect(emf.externalCalls()).toEqual([])
+    expect(ecsLog.externalCallLines()).toEqual([])
   })
 })

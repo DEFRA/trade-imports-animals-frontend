@@ -1,3 +1,5 @@
+import { STALE_CONCURRENCY_TOKEN } from '../../../../../engine/persistence/records.js'
+import { BACKEND_DEPENDENCY } from '../../../../../../common/helpers/backend-client/backend-dependency.js'
 import { BackendRequestError } from '../../errors.js'
 import { HTTP_BAD_REQUEST, HTTP_CONFLICT } from '../../real/config.js'
 
@@ -5,17 +7,16 @@ export const advanceConcurrencyToken = (journey) => {
   journey.concurrencyToken = (journey.concurrencyToken ?? 0) + 1
 }
 
+const isMissingToken = (token) => token === undefined || token === null
+
 export const assertConcurrencyToken = (
   journey,
   expectedConcurrencyToken,
-  action
+  operation
 ) => {
-  // Checked before coercion: Number(null) is 0, which would match a fresh journey.
-  if (
-    expectedConcurrencyToken === undefined ||
-    expectedConcurrencyToken === null
-  ) {
-    const error = new BackendRequestError(action, {
+  const call = { dependency: BACKEND_DEPENDENCY, operation }
+  if (isMissingToken(expectedConcurrencyToken)) {
+    const error = new BackendRequestError(call, {
       status: HTTP_BAD_REQUEST,
       statusText: 'Bad Request'
     })
@@ -23,11 +24,11 @@ export const assertConcurrencyToken = (
     throw error
   }
   if (Number(expectedConcurrencyToken) !== (journey.concurrencyToken ?? 0)) {
-    const error = new BackendRequestError(action, {
+    const error = new BackendRequestError(call, {
       status: HTTP_CONFLICT,
       statusText: 'Conflict'
     })
-    error.code = 'STALE_CONCURRENCY_TOKEN'
+    error.code = STALE_CONCURRENCY_TOKEN
     throw error
   }
 }

@@ -12,7 +12,7 @@ import {
   withOriginSaved
 } from '../../../../test-support.js'
 import { BOS_TAURUS_ROW, lineOf } from '../commodities/search/test-support.js'
-import { readDate } from '../../../../../../shared/kit.js'
+import { readDateAnswer } from '../../../../../../shared/kit.js'
 import { formatDateText } from '../../../../../../lib/validate/calendar.js'
 import { arrivalWindow } from '../transport/port-of-entry/arrival-window.js'
 import { routes } from './controller.js'
@@ -33,7 +33,7 @@ const KNOWN_PORT = 'GB ABD'
 const latestArrivalDate = arrivalWindow().max
 const arrivalDetailsAnswers = {
   portOfEntry: STALE_PORT,
-  arrivalDateAtPort: readDate(
+  arrivalDateAtPort: readDateAnswer(
     { arrivalDateAtPort: formatDateText(latestArrivalDate) },
     'arrivalDateAtPort'
   ),

@@ -1,36 +1,33 @@
 import { addressBookCountryName } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import {
+  addressBookFetch,
   addressBookHeaders,
   addressBookResourceUrl,
+  sendToAddressBook,
   throwOnAddressBookError
 } from '../address-book-request.js'
 
 const addressesUrl = (orgId, addressId) =>
   addressBookResourceUrl('addresses', orgId, addressId)
 
-const headers = addressBookHeaders
-
-const toRecord = async (operator) => ({
-  id: operator.id,
-  name: operator.name,
-  deleted: Boolean(operator.deleted),
-  roles: operator.roles,
+const toRecord = async (addressItem) => ({
+  id: addressItem.id,
+  name: addressItem.name,
+  deleted: Boolean(addressItem.deleted),
+  roles: addressItem.roles,
   address: {
-    addressLine1: operator.addressLine1,
-    addressLine2: operator.addressLine2,
-    townOrCity: operator.townOrCity,
-    county: operator.county,
-    postcode: operator.postcode,
-    countryCode: operator.countryCode,
-    country: await addressBookCountryName(operator.countryCode),
-    phone: operator.phone,
-    email: operator.email
+    addressLine1: addressItem.addressLine1,
+    addressLine2: addressItem.addressLine2,
+    townOrCity: addressItem.townOrCity,
+    county: addressItem.county,
+    postcode: addressItem.postcode,
+    countryCode: addressItem.countryCode,
+    country: await addressBookCountryName(addressItem.countryCode),
+    phone: addressItem.phone,
+    email: addressItem.email
   }
 })
-
-/** The largest page size the address book serves. */
-export const MAX_API_PAGE_SIZE = 100
 
 /** One page of the organisation's live addresses with its paging numbers. */
 export const listAddresses = async (
@@ -46,12 +43,10 @@ export const listAddresses = async (
     url.searchParams.set('q', query)
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await sendToAddressBook('list-addresses', url.toString(), {
     method: 'GET',
-    headers: headers(orgId)
+    headers: addressBookHeaders(orgId)
   })
-
-  throwOnAddressBookError('list addresses', response)
 
   const body = await response.json()
   return {
@@ -65,15 +60,20 @@ export const listAddresses = async (
 
 /** The address with the given id, a deleted one included and marked deleted, or nothing when the address book has none. */
 export const getAddress = async (orgId, addressId) => {
-  const response = await fetch(addressesUrl(orgId, addressId), {
-    method: 'GET',
-    headers: headers(orgId)
-  })
+  const operation = 'get-address'
+  const response = await addressBookFetch(
+    operation,
+    addressesUrl(orgId, addressId),
+    {
+      method: 'GET',
+      headers: addressBookHeaders(orgId)
+    }
+  )
 
   if (response.status === HTTP_STATUS_NOT_FOUND) {
     return undefined
   }
-  throwOnAddressBookError('get address', response)
+  throwOnAddressBookError(operation, response)
 
   return toRecord(await response.json())
 }

@@ -2,7 +2,8 @@ import { Agent, Dispatcher1Wrapper } from 'undici'
 
 import { config } from '../../../../config/config.js'
 import { createLogger } from '../logging/logger.js'
-import { countBackendCall } from './call-counts.js'
+import { measureExternalResponse } from '../metrics/external-call-metrics.js'
+import { BACKEND_DEPENDENCY } from './backend-dependency.js'
 
 const connectBoundedDispatcher = () =>
   config.get('httpProxy')
@@ -17,17 +18,7 @@ const isConnectError = (error) =>
 const fetchOnce = (url, init) =>
   dispatcher ? fetch(url, { ...init, dispatcher }) : fetch(url, init)
 
-/**
- * Builds a backend fetch: each use makes one call to the journey backend,
- * counted once against the page request in progress. A connection that is
- * refused, or has not opened within two seconds, is logged at warn on the
- * given logger and tried once more; any other failure is thrown to the caller.
- *
- * @param {import('pino').Logger} logger - where the retry warning is written
- * @returns {(url: string | URL, init?: RequestInit) => Promise<Response>} the backend fetch
- */
-export const createBackendFetch = (logger) => async (url, init) => {
-  countBackendCall()
+const fetchRetryingConnection = async (logger, url, init) => {
   try {
     return await fetchOnce(url, init)
   } catch (error) {
@@ -43,11 +34,23 @@ export const createBackendFetch = (logger) => async (url, init) => {
 }
 
 /**
- * Makes one call to the journey backend, counted once against the page request
- * in progress. A connection that is refused, or has not opened within two
- * seconds, is logged at warn on the service logger and tried once more; any
- * other failure is thrown to the caller.
+ * Builds a {@link backendFetch} that writes its retry warning to the given logger.
  *
+ * @param {import('pino').Logger} logger - where the retry warning is written
+ * @returns {(operation: string, url: string | URL, init?: RequestInit) => Promise<Response>} the backend fetch
+ */
+export const createBackendFetch = (logger) => (operation, url, init) =>
+  measureExternalResponse({ dependency: BACKEND_DEPENDENCY, operation }, () =>
+    fetchRetryingConnection(logger, url, init)
+  )
+
+/**
+ * Makes one call to the journey backend, recorded as one external call under
+ * the operation it names, timed from the first attempt. A connection that is
+ * refused, or has not opened within two seconds, is logged at warn on the
+ * service logger and tried once more; any other failure is thrown to the caller.
+ *
+ * @param {string} operation - the backend operation, a fixed name such as `get-fulfilment`
  * @param {string | URL} url - the backend URL
  * @param {RequestInit} [init] - the fetch options, passed through unchanged
  * @returns {Promise<Response>} the backend's response

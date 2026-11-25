@@ -6,13 +6,12 @@ import { config } from '../../../../config/config.js'
 import { callCounts } from '../../../common/helpers/call-counts/call-counts.js'
 import { callCountsRoutes } from '../../../common/helpers/call-counts/call-counts-routes.js'
 import { clearCallCountTotals } from '../../../common/helpers/call-counts/call-count-totals.js'
+import { recordEmfDocuments } from '../../../common/test-helpers/emf-documents.js'
 import { documentUploadSessions } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-// Deliberately unlike the defaults, so a value read from somewhere other than
-// the configuration — or hard-coded — fails rather than matching by accident.
 const UPLOADER_URL = 'http://uploader.test:7337'
 const CALLBACK_URL =
   'http://backend.test:8085/document-uploads/pending/scan-results'
@@ -26,8 +25,9 @@ beforeEach(() => {
   config.set('cdpUploader.baseUrl', UPLOADER_URL)
   config.set('cdpUploader.scanResultCallbackUrl', CALLBACK_URL)
   config.set('cdpUploader.documentsBucket', DOCUMENTS_BUCKET)
-  vi.spyOn(console, 'log').mockImplementation(() => {})
 })
+
+recordEmfDocuments()
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -72,25 +72,16 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    /**
-     * The upload service refuses the body without the JSON content type, and support follows a
-     * 50MB upload across services by the tracing header, so both are part of the contract.
-     */
-    it('Should send both requests as JSON with the tracing header', async () => {
+    it('Should send JSON with the tracing header', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
       await openSession()
-      await documentUploadSessions.read(UPLOAD_ID)
 
-      const [open, read] = fetchMocker.requests()
-      expect(open.headers.get('content-type')).toBe('application/json')
-      expect(open.headers.has(TRACING_HEADER)).toBe(true)
-      expect(read.method).toBe('GET')
-      expect(read.headers.has(TRACING_HEADER)).toBe(true)
+      const [request] = fetchMocker.requests()
+      expect(request.headers.get('content-type')).toBe('application/json')
+      expect(request.headers.has(TRACING_HEADER)).toBe(true)
     })
 
-    // The whole value is pinned, not just its first character: a protocol-relative
-    // URL starts with a slash and is refused too.
     it('Should ask the upload service to return the browser to a relative path', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
@@ -100,10 +91,6 @@ describe('#documentUploadSessions', () => {
       expect(sent.redirect).toBe(RETURN_PATH)
     })
 
-    /**
-     * cdp-uploader resolves the callback itself, from inside the platform's network, so a value
-     * that is not the configured one scans the file and posts the result nowhere.
-     */
     it('Should take the callback and the bucket from the configuration', async () => {
       fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
 
@@ -112,6 +99,14 @@ describe('#documentUploadSessions', () => {
       const sent = await jsonOf(fetchMocker.requests()[0])
       expect(sent.callback).toBe(CALLBACK_URL)
       expect(sent.s3Bucket).toBe(DOCUMENTS_BUCKET)
+    })
+
+    it('Should file the upload in the bucket under the journey id', async () => {
+      fetchMocker.mockResponse(JSON.stringify({ uploadId: UPLOAD_ID }))
+
+      await openSession()
+
+      const sent = await jsonOf(fetchMocker.requests()[0])
       expect(sent.s3Path).toBe(JOURNEY_ID)
     })
 
@@ -129,12 +124,14 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when a session cannot be opened', async () => {
+    it('Should throw naming the operation and the status when a session cannot be opened', async () => {
       fetchMocker.mockResponse(() => ({ status: 503, body: 'Unavailable' }))
 
       await expect(openSession()).rejects.toMatchObject({
         status: 503,
-        message: expect.stringContaining('open an upload session')
+        message: expect.stringContaining(
+          'cdp-uploader refused to open an upload session: 503'
+        )
       })
     })
   })
@@ -149,6 +146,18 @@ describe('#documentUploadSessions', () => {
 
       const [request] = fetchMocker.requests()
       expect(request.url).toBe(`${UPLOADER_URL}/status/${UPLOAD_ID}`)
+    })
+
+    it('Should read with GET and the tracing header', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({ uploadStatus: 'pending', form: {} })
+      )
+
+      await documentUploadSessions.read(UPLOAD_ID)
+
+      const [request] = fetchMocker.requests()
+      expect(request.method).toBe('GET')
+      expect(request.headers.has(TRACING_HEADER)).toBe(true)
     })
 
     it('Should answer the submitted form alongside the session state', async () => {
@@ -171,14 +180,16 @@ describe('#documentUploadSessions', () => {
       })
     })
 
-    it('Should throw naming the action and the status when the session cannot be read', async () => {
+    it('Should throw naming the operation and the status when the session cannot be read', async () => {
       fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
 
       await expect(
         documentUploadSessions.read(UPLOAD_ID)
       ).rejects.toMatchObject({
         status: 404,
-        message: expect.stringContaining('read an upload session')
+        message: expect.stringContaining(
+          'cdp-uploader refused to read an upload session: 404'
+        )
       })
     })
   })

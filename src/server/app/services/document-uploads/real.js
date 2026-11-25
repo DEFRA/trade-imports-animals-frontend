@@ -1,65 +1,58 @@
-import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
-import { failedResponse } from '../http/trace-headers.js'
-import { notificationBackendHeaders as headers } from '../http/organisation-headers.js'
-
-const backendBaseUrl =
-  process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
+import { backendBaseUrl } from '../persistence/records/real/config.js'
+import {
+  refuseUnlessOk,
+  requestBackend,
+  send
+} from '../persistence/records/real/http/send.js'
 
 const rejectionReasonOf = (files) =>
   (Array.isArray(files) ? files : []).find((file) => file.hasError)?.errorCode
 
 export const documentUploads = {
   register: async ({ journeyId, uploadId, correlationId }) => {
-    const response = await backendFetch(
+    await send(
+      'register-document-upload',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
-      {
-        method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ uploadId, correlationId })
-      }
+      { method: 'POST', body: { uploadId, correlationId } },
+      { journeyId, uploadId }
     )
-    if (!response.ok) {
-      throw failedResponse('register document upload', response)
-    }
   },
 
   claim: async ({ uploadId, documentType, documentReference, dateOfIssue }) => {
-    const response = await backendFetch(
+    await send(
+      'claim-document-upload',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/claim`,
       {
         method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ documentType, documentReference, dateOfIssue })
-      }
+        body: { documentType, documentReference, dateOfIssue }
+      },
+      { uploadId }
     )
-    if (!response.ok) {
-      throw failedResponse('claim document upload', response)
-    }
   },
 
   findByCorrelationId: async ({ journeyId, correlationId }) => {
-    const response = await backendFetch(
+    const operation = 'get-document-upload-session'
+    const response = await requestBackend(
+      operation,
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-upload-sessions/${encodeURIComponent(correlationId)}`,
-      { method: 'GET', headers: headers() }
+      { method: 'GET' }
     )
     if (response.status === HTTP_STATUS_NOT_FOUND) {
       return undefined
     }
-    if (!response.ok) {
-      throw failedResponse('get document upload session', response)
-    }
-    return response.json()
+    return (
+      await refuseUnlessOk(operation, response, { journeyId, correlationId })
+    ).json()
   },
 
   listByNotification: async ({ journeyId }) => {
-    const response = await backendFetch(
+    const response = await send(
+      'list-document-uploads',
       `${backendBaseUrl}/notifications/${encodeURIComponent(journeyId)}/document-uploads`,
-      { method: 'GET', headers: headers() }
+      { method: 'GET' },
+      { journeyId }
     )
-    if (!response.ok) {
-      throw failedResponse('list document uploads', response)
-    }
     const { items } = await response.json()
     return (items ?? []).map(({ uploadId, correlationId, claimed }) => ({
       uploadId,
@@ -69,35 +62,30 @@ export const documentUploads = {
   },
 
   scanStatus: async ({ uploadId }) => {
-    const response = await backendFetch(
+    const response = await send(
+      'get-document-upload-status',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'GET', headers: headers() }
+      { method: 'GET' },
+      { uploadId }
     )
-    if (!response.ok) {
-      throw failedResponse('get document upload status', response)
-    }
     const { scanStatus, files } = await response.json()
     return { scanStatus, rejectionReason: rejectionReasonOf(files) }
   },
 
   remove: async (uploadId) => {
-    const response = await backendFetch(
+    await send(
+      'delete-document-upload',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}`,
-      { method: 'DELETE', headers: headers() }
+      { method: 'DELETE' },
+      { uploadId }
     )
-    if (!response.ok) {
-      throw failedResponse('delete document upload', response)
-    }
   },
 
-  streamFile: async (uploadId) => {
-    const response = await backendFetch(
+  streamFile: async (uploadId) =>
+    send(
+      'stream-document-file',
       `${backendBaseUrl}/document-uploads/${encodeURIComponent(uploadId)}/file`,
-      { method: 'GET', headers: headers() }
+      { method: 'GET' },
+      { uploadId }
     )
-    if (!response.ok) {
-      throw failedResponse('stream document file', response)
-    }
-    return response
-  }
 }

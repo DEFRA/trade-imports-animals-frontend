@@ -12,9 +12,9 @@ import {
   assertConcurrencyToken
 } from '../store/concurrency.js'
 
-export const finalise = async (journeyId, _actor, concurrencyToken) => {
+export const submit = async (journeyId, _actor, concurrencyToken) => {
   const journey = loadWritable(journeyId)
-  assertConcurrencyToken(journey, concurrencyToken, 'submit notification')
+  assertConcurrencyToken(journey, concurrencyToken, 'submit-notification')
   advanceConcurrencyToken(journey)
   journey.status = SUBMITTED
   journey.submittedAt = new Date().toISOString()
